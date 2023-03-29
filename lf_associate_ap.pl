@@ -240,6 +240,8 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       [--wifi_mode {$mode_list}]
       [--ieee80211w {disabled,optional,required}] # protected management frames (wpa2-ent/wpa3) also { NA, 0, 1, 2 }
 
+      [--initial_band_pref {initial_band_pref}] # initially connect on this band, if available in scan. 0=ignore, 2=2ghz, 5=5ghz, 6=6ghz.
+
       ##       station configuration
       [--num_stations {$num_stations}] # Defaults to 1
       [--first_sta {$first_sta}]
@@ -590,6 +592,30 @@ sub fmt_vrad_cmd {
                   $mac, "$antenna", "$flags", "$flags_mask" );
 }
 
+sub fmt_set_wifi_extra2 {
+    my ($sta_name) = @_;
+    die("fmt_set_wifi_extra2 requires sta_name.") unless($sta_name);
+    my $port                  = "NA";
+    my $req_flush             = "NA";
+    my $ignore_probe          = "NA";
+    my $ignore_auth           = "NA";
+    my $ignore_assoc          = "NA";
+    my $ignore_reassoc        = "NA";
+    my $corrupt_gtk_rekey_mic = "NA";
+    my $radius_ip             = "NA";
+    my $radius_port           = "NA";
+    my $freq_24               = "NA";
+    my $freq_5                = "NA";
+    my $post_ifup_script      = "NA";
+    my $ocsp                  = "NA";
+    my $venue_id              = "NA";
+    my $sae_pwe               = "NA";
+    my $initial_band_pref     = $::initial_band_pref;
+    return $::utils->fmt_cmd("set_wifi_extra2", 1, $resource, $sta_name, $req_flush, $ignore_probe, $ignore_auth,
+                    $ignore_assoc, $ignore_reassoc, $corrupt_gtk_rekey_mic, $radius_ip, $radius_port, $freq_24, $freq_5,
+                    $post_ifup_script, $ocsp, $venue_id, $sae_pwe, $initial_band_pref);
+}
+
 sub createEpPair {
    my $sta_name      = shift;
    die("createEpPair: please pass station name, bye")    unless(defined $sta_name         && $sta_name ne '');
@@ -847,6 +873,21 @@ sub new_wifi_station {
      $::utils->doCmd($sta1_cmd);
      #$::utils->sleep_ms(20);
    }
+
+    my @list = (0,2,5,6);
+    if ( $::initial_band_pref) {
+        if ( $::initial_band_pref >= 0 && $::initial_band_pref <= 6 && (grep { $_ == $::initial_band_pref } @list)) {
+            print "Selected initial band preference as $::initial_band_pref GHz...\n";
+            my $cmd = fmt_set_wifi_extra2($sta_name);
+            $::utils->doCmd($cmd);
+        }
+        else {
+            print("\n* initial_band_pref value outside of values {0, 2, 5, 6} for -- 0=ignore, 2=2ghz, 5=5ghz, 6=6ghz.\n")
+        }
+    }
+    else {
+        print "Not selected initial band preference...\n";
+    }
 
    #if ($sleep_amt > 0) {
    #  sleep $sleep_amt;
@@ -1693,6 +1734,7 @@ GetOptions
   'port_del=s'                => \$::port_del,
   'admin_down_on_add'         => \$::admin_down_on_add,
   'ieee80211w=s'              => \$::ieee80211w,
+  'initial_band_pref=i'       => \$::initial_band_pref,
   'log_cli=s{0,1}'            => \$log_cli, # use ENV{LOG_CLI} elsewhere
   'help|?'                    => \$help,
 ) || (print($usage) && exit(1));
