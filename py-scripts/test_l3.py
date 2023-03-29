@@ -143,104 +143,104 @@ logger = logging.getLogger(__name__)
 # This class handles running the test and generating reports.
 class L3VariableTime(Realm):
     def __init__(self,
-                endp_types,
-                args,
-                tos,
-                side_b,
-                side_a,
-                radio_name_list,
-                number_of_stations_per_radio_list,
-                ssid_list,
-                ssid_password_list,
-                ssid_security_list,
-                wifi_mode_list,
-                enable_flags_list,
-                station_lists,
-                name_prefix,
-                outfile,
-                reset_port_enable_list,
-                reset_port_time_min_list,
-                reset_port_time_max_list,
-                side_a_min_rate=None,
-                side_a_max_rate=None,
-                side_b_min_rate=None,
-                side_b_max_rate=None,
-                side_a_min_pdu=None,
-                side_a_max_pdu=None,
-                side_b_min_pdu=None,
-                side_b_max_pdu=None,
-                user_tags=None,
-                rates_are_totals=False,
-                mconn=1,
-                attenuators=None,
-                atten_vals=None,
-                number_template="00",
-                test_duration="256s",
-                polling_interval="60s",
-                lfclient_host="localhost",
-                lfclient_port=8080,
-                debug=False,
-                db=None,
-                kpi_csv=None,
-                _exit_on_error=False,
-                _exit_on_fail=False,
-                _proxy_str=None,
-                _capture_signal_list=None,
-                no_cleanup=False,
-                use_existing_station_lists=False,
-                existing_station_lists=None,
-                wait_for_ip_sec="120s",
+                 endp_types,
+                 args,
+                 tos,
+                 side_b,
+                 side_a,
+                 radio_name_list,
+                 number_of_stations_per_radio_list,
+                 ssid_list,
+                 ssid_password_list,
+                 ssid_security_list,
+                 wifi_mode_list,
+                 enable_flags_list,
+                 station_lists,
+                 name_prefix,
+                 outfile,
+                 reset_port_enable_list,
+                 reset_port_time_min_list,
+                 reset_port_time_max_list,
+                 side_a_min_rate=None,
+                 side_a_max_rate=None,
+                 side_b_min_rate=None,
+                 side_b_max_rate=None,
+                 side_a_min_pdu=None,
+                 side_a_max_pdu=None,
+                 side_b_min_pdu=None,
+                 side_b_max_pdu=None,
+                 user_tags=None,
+                 rates_are_totals=False,
+                 mconn=1,
+                 attenuators=None,
+                 atten_vals=None,
+                 number_template="00",
+                 test_duration="256s",
+                 polling_interval="60s",
+                 lfclient_host="localhost",
+                 lfclient_port=8080,
+                 debug=False,
+                 db=None,
+                 kpi_csv=None,
+                 _exit_on_error=False,
+                 _exit_on_fail=False,
+                 _proxy_str=None,
+                 _capture_signal_list=None,
+                 no_cleanup=False,
+                 use_existing_station_lists=False,
+                 existing_station_lists=None,
+                 wait_for_ip_sec="120s",
 
-                # ap module
-                ap_read=False,
-                ap_module=None,
-                ap_test_mode=False,
-                ap_ip=None,
-                ap_user=None,
-                ap_passwd=None,
-                ap_scheme='ssh',
-                ap_serial_port='/dev/ttyUSB0',
-                ap_ssh_port="22",
-                ap_telnet_port="23",
-                ap_serial_baud='115200',
-                ap_if_2g="eth6",
-                ap_if_5g="eth7",
-                ap_if_6g="eth8",
-                ap_report_dir="",
-                ap_file="",
-                ap_band_list=['2g', '5g', '6g'],
+                 # ap module
+                 ap_read=False,
+                 ap_module=None,
+                 ap_test_mode=False,
+                 ap_ip=None,
+                 ap_user=None,
+                 ap_passwd=None,
+                 ap_scheme='ssh',
+                 ap_serial_port='/dev/ttyUSB0',
+                 ap_ssh_port="22",
+                 ap_telnet_port="23",
+                 ap_serial_baud='115200',
+                 ap_if_2g="eth6",
+                 ap_if_5g="eth7",
+                 ap_if_6g="eth8",
+                 ap_report_dir="",
+                 ap_file="",
+                 ap_band_list=['2g', '5g', '6g'],
 
-                # wifi extra configuration
-                key_mgmt_list=[],
-                pairwise_list=[],
-                group_list=[],
-                psk_list=[],
-                wep_key_list=[],
-                ca_cert_list=[],
-                eap_list=[], 
-                identity_list=[],
-                anonymous_identity_list=[], 
-                phase1_list=[], 
-                phase2_list=[], 
-                passwd_list=[], 
-                pin_list=[], 
-                pac_file_list=[], 
-                private_key_list=[], 
-                pk_password_list=[], 
-                hessid_list=[], 
-                realm_list=[], 
-                client_cert_list=[], 
-                imsi_list=[],
-                milenage_list=[], 
-                domain_list=[], 
-                roaming_consortium_list=[],
-                venue_group_list=[],
-                network_type_list=[], 
-                ipaddr_type_avail_list=[], 
-                network_auth_type_list=[], 
-                anqp_3gpp_cell_net_list=[] ,
-                ieee80211w_list=[] 
-                ):
+                 # wifi extra configuration
+                 key_mgmt_list=[],
+                 pairwise_list=[],
+                 group_list=[],
+                 psk_list=[],
+                 wep_key_list=[],
+                 ca_cert_list=[],
+                 eap_list=[],
+                 identity_list=[],
+                 anonymous_identity_list=[],
+                 phase1_list=[],
+                 phase2_list=[],
+                 passwd_list=[],
+                 pin_list=[],
+                 pac_file_list=[],
+                 private_key_list=[],
+                 pk_password_list=[],
+                 hessid_list=[],
+                 realm_list=[],
+                 client_cert_list=[],
+                 imsi_list=[],
+                 milenage_list=[],
+                 domain_list=[],
+                 roaming_consortium_list=[],
+                 venue_group_list=[],
+                 network_type_list=[],
+                 ipaddr_type_avail_list=[],
+                 network_auth_type_list=[],
+                 anqp_3gpp_cell_net_list=[],
+                 ieee80211w_list=[]
+                 ):
 
         self.eth_endps = []
         self.cx_names = []
@@ -301,7 +301,8 @@ class L3VariableTime(Realm):
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list = number_of_stations_per_radio_list
         # self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
-        self.polling_interval_seconds = self.duration_time_to_seconds(polling_interval)
+        self.polling_interval_seconds = self.duration_time_to_seconds(
+            polling_interval)
         self.cx_profile = self.new_l3_cx_profile()
         self.multicast_profile = self.new_multicast_profile()
         self.multicast_profile.name_prefix = "MLT-"
@@ -355,8 +356,6 @@ class L3VariableTime(Realm):
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
-
-
         # AP information
         self.ap = None
         self.ap_obj = None
@@ -379,36 +378,35 @@ class L3VariableTime(Realm):
         self.ap_band_list = ap_band_list
 
         # wifi extra configuration
-        self.key_mgmt_list=key_mgmt_list
-        self.pairwise_list=pairwise_list
-        self.group_list=group_list
-        self.psk_list=psk_list
-        self.wep_key_list=wep_key_list
-        self.ca_cert_list=ca_cert_list
-        self.eap_list=eap_list
-        self.identity_list=identity_list
-        self.anonymous_identity_list=anonymous_identity_list
-        self.phase1_list=phase1_list
-        self.phase2_list=phase2_list
-        self.passwd_list=passwd_list
-        self.pin_list=pin_list
-        self.pac_file_list=pac_file_list
-        self.private_key_list=private_key_list
-        self.pk_password_list=pk_password_list
-        self.hessid_list=hessid_list
-        self.realm_list=realm_list
-        self.client_cert_list=client_cert_list
-        self.imsi_list=imsi_list
-        self.milenage_list=milenage_list
-        self.domain_list=domain_list
-        self.roaming_consortium_list=roaming_consortium_list
-        self.venue_group_list=venue_group_list
-        self.network_type_list=network_type_list
-        self.ipaddr_type_avail_list=ipaddr_type_avail_list
-        self.network_auth_type_list=network_auth_type_list
-        self.anqp_3gpp_cell_net_list=anqp_3gpp_cell_net_list
-        self.ieee80211w_list=ieee80211w_list
-
+        self.key_mgmt_list = key_mgmt_list
+        self.pairwise_list = pairwise_list
+        self.group_list = group_list
+        self.psk_list = psk_list
+        self.wep_key_list = wep_key_list
+        self.ca_cert_list = ca_cert_list
+        self.eap_list = eap_list
+        self.identity_list = identity_list
+        self.anonymous_identity_list = anonymous_identity_list
+        self.phase1_list = phase1_list
+        self.phase2_list = phase2_list
+        self.passwd_list = passwd_list
+        self.pin_list = pin_list
+        self.pac_file_list = pac_file_list
+        self.private_key_list = private_key_list
+        self.pk_password_list = pk_password_list
+        self.hessid_list = hessid_list
+        self.realm_list = realm_list
+        self.client_cert_list = client_cert_list
+        self.imsi_list = imsi_list
+        self.milenage_list = milenage_list
+        self.domain_list = domain_list
+        self.roaming_consortium_list = roaming_consortium_list
+        self.venue_group_list = venue_group_list
+        self.network_type_list = network_type_list
+        self.ipaddr_type_avail_list = ipaddr_type_avail_list
+        self.network_auth_type_list = network_auth_type_list
+        self.anqp_3gpp_cell_net_list = anqp_3gpp_cell_net_list
+        self.ieee80211w_list = ieee80211w_list
 
         # AP information import the module
         if self.ap_read and self.ap_module is not None:
@@ -434,7 +432,8 @@ class L3VariableTime(Realm):
             self.ap.say_hi()
 
         else:
-            logger.info("self.ap_read set to True and self.module is None,  will set self.ap_read to False")
+            logger.info(
+                "self.ap_read set to True and self.module is None,  will set self.ap_read to False")
             self.ap_read = False
 
         dur = self.duration_time_to_seconds(self.test_duration)
@@ -447,7 +446,8 @@ class L3VariableTime(Realm):
             results = self.outfile[:-4]
             results = results + "-results.csv"
             self.csv_results_file = open(results, "w")
-            self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+            self.csv_results_writer = csv.writer(
+                self.csv_results_file, delimiter=",")
 
         # if it is a dataplane test the side_a is not None and an ethernet port
         # if side_a is None then side_a is radios
@@ -529,7 +529,7 @@ class L3VariableTime(Realm):
                     self.network_auth_type_list,
                     self.anqp_3gpp_cell_net_list,
                     self.ieee80211w_list
-                    ):
+            ):
                 self.station_profile = self.new_station_profile()
                 self.station_profile.lfclient_url = self.lfclient_url
                 self.station_profile.ssid = ssid_
@@ -541,9 +541,9 @@ class L3VariableTime(Realm):
                 self.station_profile.desired_add_sta_flags_mask = enable_flags_.copy()
 
                 # set_wifi_extra
-                if key_mgmt_ != '[BLANK]':                
-                # for teesting
-                # if key_mgmt_ == '[BLANK]':                
+                if key_mgmt_ != '[BLANK]':
+                    # for teesting
+                    # if key_mgmt_ == '[BLANK]':
                     self.station_profile.set_wifi_extra(key_mgmt=key_mgmt_,
                                                         pairwise=pairwise_,
                                                         group=group_,
@@ -572,16 +572,17 @@ class L3VariableTime(Realm):
                                                         ipaddr_type_avail=ipaddr_type_avail_,
                                                         network_auth_type=network_auth_type_,
                                                         anqp_3gpp_cell_net=anqp_3gpp_cell_net_
-                                                    )
+                                                        )
                     if ieee80211w_.lower() == 'disabled':
-                        self.station_profile.set_command_param("add_sta", "ieee80211w", 0)
+                        self.station_profile.set_command_param(
+                            "add_sta", "ieee80211w", 0)
                     elif ieee80211w_.lower() == 'required':
-                        self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
+                        self.station_profile.set_command_param(
+                            "add_sta", "ieee80211w", 2)
                     # may want to set an error if not optional yet for now default to optional
                     else:
-                        self.station_profile.set_command_param("add_sta", "ieee80211w", 1)
-
-
+                        self.station_profile.set_command_param(
+                            "add_sta", "ieee80211w", 1)
 
                 # place the enable and disable flags
                 # self.station_profile.desired_add_sta_flags = self.enable_flags
@@ -590,14 +591,16 @@ class L3VariableTime(Realm):
                     reset_port_enable=reset_port_enable_,
                     test_duration=self.duration_time_to_seconds(
                         self.test_duration),
-                    reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),
+                    reset_port_min_time=self.duration_time_to_seconds(
+                        reset_port_time_min_),
                     reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
                 self.station_profiles.append(self.station_profile)
             # Use existing station list is similiar to no rebuild
             if self.use_existing_station_lists:
                 for existing_station_list in self.existing_station_lists:
                     self.station_profile = self.new_station_profile()
-                    self.station_profile.station_names.append(existing_station_list)
+                    self.station_profile.station_names.append(
+                        existing_station_list)
                     self.station_profiles.append(self.station_profile)
         else:
             pass
@@ -719,7 +722,8 @@ class L3VariableTime(Realm):
                 for item, endp_value in endp_name.items():
                     if item in our_endps or self.use_existing_station_lists:
                         endps.append(endp_value)
-                        logger.debug("endpoint: {item} value:\n".format(item=item))
+                        logger.debug(
+                            "endpoint: {item} value:\n".format(item=item))
                         logger.debug(endp_value)
 
                         for value_name, value in endp_value.items():
@@ -811,7 +815,8 @@ class L3VariableTime(Realm):
                 self.rm_port(sta, check_exists=True)
                 self.total_stas += 1
         '''
-        cleanup = lf_cleanup.lf_clean(host=self.lfclient_host, port=self.lfclient_port, resource='all')
+        cleanup = lf_cleanup.lf_clean(
+            host=self.lfclient_host, port=self.lfclient_port, resource='all')
         cleanup.sanitize_all()
         # Make sure they are gone
         count = 0
@@ -944,7 +949,8 @@ class L3VariableTime(Realm):
         # TODO - Admin up existing stations
         if self.use_existing_station_lists:
             for existing_station in self.existing_station_lists:
-                logger.info("Bringing up existing stations %s" % existing_station)
+                logger.info("Bringing up existing stations %s" %
+                            existing_station)
                 self.admin_up(existing_station)
 
         temp_stations_list = []
@@ -968,7 +974,8 @@ class L3VariableTime(Realm):
             logger.info("ip's acquired")
         else:
             # No reason to continue
-            logger.critical("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
+            logger.critical(
+                "ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
             exit(1)
 
         # self.csv_generate_column_headers()
@@ -1048,10 +1055,12 @@ class L3VariableTime(Realm):
                 for atten_val in self.atten_vals:
                     if atten_val != -1:
                         for atten_idx in self.attenuators:
-                            atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
+                            atten_mod_test = lf_attenuator.CreateAttenuator(
+                                host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
                             atten_mod_test.build()
 
-                    logger.info("Starting multicast traffic (if any configured)")
+                    logger.info(
+                        "Starting multicast traffic (if any configured)")
                     self.multicast_profile.start_mc(debug_=self.debug)
                     self.multicast_profile.refresh_mc(debug_=self.debug)
                     logger.info("Starting layer-3 traffic (if any configured)")
@@ -1080,7 +1089,9 @@ class L3VariableTime(Realm):
 
                     while cur_time < end_time:
                         # interval_time = cur_time + datetime.timedelta(seconds=5)
-                        interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
+                        interval_time = cur_time + \
+                            datetime.timedelta(
+                                seconds=self.polling_interval_seconds)
                         # logger.info("polling_interval_seconds {}".format(self.polling_interval_seconds))
 
                         while cur_time < interval_time:
@@ -1116,30 +1127,38 @@ class L3VariableTime(Realm):
 
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
-                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0],
+                                                          eid[1], eid[2])
 
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    logger.info("query-port: %s: incomplete response:" % url)
+                                    logger.info(
+                                        "query-port: %s: incomplete response:" % url)
                                     logger.info(pformat(response))
                                 else:
                                     # print("response".format(response))
                                     logger.info(pformat(response))
                                     port_data = response['interface']
-                                    logger.info("From LANforge: port_data, response['insterface']:{}".format(port_data))
+                                    logger.info(
+                                        "From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
                                     logger.debug("mac : {mac}".format(mac=mac))
 
                                     # search for data fro the port mac
-                                    tx_dl_mac_found, ap_row_tx_dl = self.ap.tx_dl_stats(mac)
-                                    rx_ul_mac_found, ap_row_rx_ul = self.ap.rx_ul_stats(mac)
-                                    xtop_reported, ap_row_chanim = self.ap.chanim_stats(mac)
+                                    tx_dl_mac_found, ap_row_tx_dl = self.ap.tx_dl_stats(
+                                        mac)
+                                    rx_ul_mac_found, ap_row_rx_ul = self.ap.rx_ul_stats(
+                                        mac)
+                                    xtop_reported, ap_row_chanim = self.ap.chanim_stats(
+                                        mac)
 
-                                    self.get_endp_stats_for_port(port_data["port"], endps)
+                                    self.get_endp_stats_for_port(
+                                        port_data["port"], endps)
 
                                 if tx_dl_mac_found:
-                                    logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(mac=mac, ap_row_tx_dl=ap_row_tx_dl))
+                                    logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(
+                                        mac=mac, ap_row_tx_dl=ap_row_tx_dl))
                                     # Find latency, jitter for connections
                                     # using this port.
                                     latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
@@ -1196,14 +1215,16 @@ class L3VariableTime(Realm):
                                         dl_tx_drop_percent,
                                         ap_row_rx_ul)  # ap_ul_row added
 
-                                logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(ap_row_rx_ul=ap_row_rx_ul))
+                                logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(
+                                    ap_row_rx_ul=ap_row_rx_ul))
 
                         ####################################
                         else:
                             # NOT Reading the AP
                             port_eids = self.gather_port_eids()
                             if self.use_existing_station_lists:
-                                port_eids.extend(self.existing_station_lists.copy())
+                                port_eids.extend(
+                                    self.existing_station_lists.copy())
                                 # for existing_station in self.existing_station_lists:
                                 #    port_eids.append(self.existing_station)
                             for port_eid in port_eids:
@@ -1250,11 +1271,13 @@ class L3VariableTime(Realm):
                     #    port_eids.extend(self.existing_station_lists.copy())
 
                     for port_eid in port_eids:
-                        logger.debug("port files: {port_file}".format(port_file=self.port_csv_files[port_eid]))
+                        logger.debug("port files: {port_file}".format(
+                            port_file=self.port_csv_files[port_eid]))
                         name = self.port_csv_files[port_eid].name
                         logger.debug("name : {name}".format(name=name))
                         df_dl_tmp = pd.read_csv(name)
-                        all_dl_ports_df = pd.concat([all_dl_ports_df, df_dl_tmp], axis=0)
+                        all_dl_ports_df = pd.concat(
+                            [all_dl_ports_df, df_dl_tmp], axis=0)
 
                     all_dl_ports_file_name = self.outfile[:-4]
                     all_dl_port_file_name = all_dl_ports_file_name + "-dl-all-eids.csv"
@@ -1266,32 +1289,41 @@ class L3VariableTime(Realm):
                     # copy the above pandas dataframe (all_dl_ports_df)
                     all_dl_ports_stations_df = all_dl_ports_df.copy(deep=True)
                     # drop rows that have eth
-                    all_dl_ports_stations_df = all_dl_ports_stations_df[~all_dl_ports_stations_df['Name'].str.contains('eth')]
+                    all_dl_ports_stations_df = all_dl_ports_stations_df[~all_dl_ports_stations_df['Name'].str.contains(
+                        'eth')]
                     logger.info(pformat(all_dl_ports_stations_df))
 
                     # save to csv file
                     all_dl_ports_stations_file_name = self.outfile[:-4]
-                    all_dl_port_stations_file_name = all_dl_ports_stations_file_name + "-dl-all-eids-stations.csv"
-                    all_dl_ports_stations_df.to_csv(all_dl_port_stations_file_name)
+                    all_dl_port_stations_file_name = all_dl_ports_stations_file_name + \
+                        "-dl-all-eids-stations.csv"
+                    all_dl_ports_stations_df.to_csv(
+                        all_dl_port_stations_file_name)
 
                     # we should be able to add the values for each eid
                     all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
                                                                                                     'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'].sum()
                     all_dl_ports_stations_sum_file_name = self.outfile[:-4]
-                    all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + "-dl-all-eids-sum-per-interval.csv"
+                    all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + \
+                        "-dl-all-eids-sum-per-interval.csv"
 
                     # add some calculations, will need some selectable graphs
-                    logger.info("all_dl_ports_stations_sum_df : {df}".format(df=all_dl_ports_stations_sum_df))
+                    logger.info("all_dl_ports_stations_sum_df : {df}".format(
+                        df=all_dl_ports_stations_sum_df))
 
                     if all_dl_ports_stations_sum_df.empty:
-                        logger.warning("The dl (download) has no data check the AP connection or configuration")
+                        logger.warning(
+                            "The dl (download) has no data check the AP connection or configuration")
                         warnings += 1
 
                     else:
-                        all_dl_ports_stations_sum_df['Rx-Bps-Diff'] = all_dl_ports_stations_sum_df['Rx-Bps'].diff()
-                        all_dl_ports_stations_sum_df['Tx-Bps-Diff'] = all_dl_ports_stations_sum_df['Tx-Bps'].diff()
+                        all_dl_ports_stations_sum_df['Rx-Bps-Diff'] = all_dl_ports_stations_sum_df['Rx-Bps'].diff(
+                        )
+                        all_dl_ports_stations_sum_df['Tx-Bps-Diff'] = all_dl_ports_stations_sum_df['Tx-Bps'].diff(
+                        )
                         all_dl_ports_stations_sum_df['Rx-Latency-Diff'] = all_dl_ports_stations_sum_df['Rx-Latency'].diff()
-                        all_dl_ports_stations_sum_df['Rx-Jitter-Diff'] = all_dl_ports_stations_sum_df['Rx-Jitter'].diff()
+                        all_dl_ports_stations_sum_df['Rx-Jitter-Diff'] = all_dl_ports_stations_sum_df['Rx-Jitter'].diff(
+                        )
                         all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff()
                         all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff()
                         all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff()
@@ -1300,7 +1332,8 @@ class L3VariableTime(Realm):
                         all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
 
                     # write out the data
-                    all_dl_ports_stations_sum_df.to_csv(all_dl_port_stations_sum_file_name)
+                    all_dl_ports_stations_sum_df.to_csv(
+                        all_dl_port_stations_sum_file_name)
 
                     # if there are multiple loops then delete the df
                     del all_dl_ports_df
@@ -1312,51 +1345,70 @@ class L3VariableTime(Realm):
                         port_eids = self.gather_port_eids()
 
                         for port_eid in port_eids:
-                            logger.debug("ul port files: {port_file}".format(port_file=self.ul_port_csv_files[port_eid]))
+                            logger.debug("ul port files: {port_file}".format(
+                                port_file=self.ul_port_csv_files[port_eid]))
                             name = self.ul_port_csv_files[port_eid].name
                             logger.debug("name : {name}".format(name=name))
                             df_ul_tmp = pd.read_csv(name)
-                            all_ul_ports_df = pd.concat([all_ul_ports_df, df_ul_tmp], axis=0)
+                            all_ul_ports_df = pd.concat(
+                                [all_ul_ports_df, df_ul_tmp], axis=0)
 
                         all_ul_ports_file_name = self.outfile[:-4]
                         all_ul_port_file_name = all_ul_ports_file_name + "-ul-all-eids.csv"
                         all_ul_ports_df.to_csv(all_ul_port_file_name)
 
                         # copy over all_ul_ports_df so as create a dataframe summ of the data for each iteration
-                        all_ul_ports_stations_df = all_ul_ports_df.copy(deep=True)
+                        all_ul_ports_stations_df = all_ul_ports_df.copy(
+                            deep=True)
                         # drop rows that have eth
-                        all_ul_ports_stations_df = all_ul_ports_stations_df[~all_ul_ports_stations_df['Name'].str.contains('eth')]
+                        all_ul_ports_stations_df = all_ul_ports_stations_df[~all_ul_ports_stations_df['Name'].str.contains(
+                            'eth')]
                         logger.info(pformat(all_ul_ports_stations_df))
 
                         # save to csv
                         all_ul_ports_stations_file_name = self.outfile[:-4]
-                        all_ul_ports_stations_file_name = all_ul_ports_stations_file_name + "-ul-all-eids-stations.csv"
-                        all_ul_ports_stations_df.to_csv(all_ul_ports_stations_file_name)
+                        all_ul_ports_stations_file_name = all_ul_ports_stations_file_name + \
+                            "-ul-all-eids-stations.csv"
+                        all_ul_ports_stations_df.to_csv(
+                            all_ul_ports_stations_file_name)
 
                         # we add all the values based on the epoch time
                         all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
                                                                                                         'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'].sum()
                         all_ul_ports_stations_sum_file_name = self.outfile[:-4]
-                        all_ul_port_stations_sum_file_name = all_ul_ports_stations_sum_file_name + "-ul-all-eids-sum-per-interval.csv"
+                        all_ul_port_stations_sum_file_name = all_ul_ports_stations_sum_file_name + \
+                            "-ul-all-eids-sum-per-interval.csv"
 
                         # add some calculations, will need some selectable graphs
                         if all_ul_ports_stations_sum_df.empty:
-                            logger.warning("The ul (upload) has no data check the AP connection or configuration")
+                            logger.warning(
+                                "The ul (upload) has no data check the AP connection or configuration")
                             warnings += 1
                         else:
-                            all_ul_ports_stations_sum_df['Rx-Bps-Diff'] = all_ul_ports_stations_sum_df['Rx-Bps'].diff()
-                            all_ul_ports_stations_sum_df['Tx-Bps-Diff'] = all_ul_ports_stations_sum_df['Tx-Bps'].diff()
-                            all_ul_ports_stations_sum_df['Rx-Latency-Diff'] = all_ul_ports_stations_sum_df['Rx-Latency'].diff()
-                            all_ul_ports_stations_sum_df['Rx-Jitter-Diff'] = all_ul_ports_stations_sum_df['Rx-Jitter'].diff()
-                            all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff()
-                            all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff()
-                            all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff()
-                            all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff()
-                            all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff()
-                            all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
+                            all_ul_ports_stations_sum_df['Rx-Bps-Diff'] = all_ul_ports_stations_sum_df['Rx-Bps'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Tx-Bps-Diff'] = all_ul_ports_stations_sum_df['Tx-Bps'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Rx-Latency-Diff'] = all_ul_ports_stations_sum_df['Rx-Latency'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Rx-Jitter-Diff'] = all_ul_ports_stations_sum_df['Rx-Jitter'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff(
+                            )
 
                         # write out the data
-                        all_ul_ports_stations_sum_df.to_csv(all_ul_port_stations_sum_file_name)
+                        all_ul_ports_stations_sum_df.to_csv(
+                            all_ul_port_stations_sum_file_name)
 
                         # if there are multiple loops then delete the df
                         del all_ul_ports_df
@@ -1396,7 +1448,8 @@ class L3VariableTime(Realm):
                     # self.multicast_profile.stop_mc()
                     # TODO the passes and expected_passes are not checking anything
                     if warnings > 0:
-                        self._fail(" Total warnings:  {warnings}.   Check logs for warnings,  check AP connection ".format(warnings=str(warnings)))
+                        self._fail(" Total warnings:  {warnings}.   Check logs for warnings,  check AP connection ".format(
+                            warnings=str(warnings)))
 
                     if passes == expected_passes:
                         # Sets the pass indication
@@ -1645,7 +1698,8 @@ class L3VariableTime(Realm):
 
     # Remove traffic connections and stations.
     def cleanup(self):
-        cleanup = lf_cleanup.lf_clean(host=self.lfclient_host, port=self.lfclient_port, resource='all')
+        cleanup = lf_cleanup.lf_clean(
+            host=self.lfclient_host, port=self.lfclient_port, resource='all')
         cleanup.sanitize_all()
 
         # Make sure they are gone
@@ -1711,7 +1765,8 @@ class L3VariableTime(Realm):
         # Add in columns we are going to query from the AP
         if self.ap_read:
             self.ap_stats_dl_col_titles = self.ap.get_dl_col_titles()
-            logger.debug("ap_stats_dl_col_titles : {col}".format(col=self.ap_stats_dl_col_titles))
+            logger.debug("ap_stats_dl_col_titles : {col}".format(
+                col=self.ap_stats_dl_col_titles))
             for col in self.ap_stats_dl_col_titles:
                 csv_rx_headers.append(col)
 
@@ -1752,7 +1807,8 @@ class L3VariableTime(Realm):
         # Add in columns we are going to query from the AP
         if self.ap_read:
             self.ap_stats_ul_col_titles = self.ap.get_ul_col_titles()
-            logger.debug("ap_stats_ul_col_titles : {col}".format(col=self.ap_stats_ul_col_titles))
+            logger.debug("ap_stats_ul_col_titles : {col}".format(
+                col=self.ap_stats_ul_col_titles))
             for col in self.ap_stats_ul_col_titles:
                 csv_ul_rx_headers.append(col)
 
@@ -2011,6 +2067,27 @@ Example : Have script use wifi_settings enable flages  ::  wifi_settings==wifi_s
 
 Example : for setting the wifi_extra  ,  wifi_extra==key_mgmt&&WPA-EAP-SHA256!!passwd&&lf_ax88u_5g
 
+Example : LAN-1927  WPA2-TLS-Configuration
+
+./test_l3.py\
+ --lfmgr 192.168.0.103\
+ --test_duration 20s\
+ --polling_interval 5s\
+ --upstream_port 1.1.eth2\
+ --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa2,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!eap&&EAP-TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Disabled' \
+ --endp_type lf_udp\
+ --rates_are_totals\
+ --side_a_min_bps=256000\
+ --side_b_min_bps=300000000\
+ --test_rig ID_003\
+ --test_tag 'test_l3'\
+ --dut_model_num GT-AXE11000\
+ --dut_sw_version 3.0.0.4.386_44266\
+ --dut_hw_version 1.0\
+ --dut_serial_num 12345678\
+ --log_level debug
+
+
 wifi_extra keys:
                 key_mgmt  (Key Mangement)
                 pairwise  (Pairwise Ciphers)
@@ -2051,7 +2128,7 @@ Setting wifi_settings per radio
 ./test_l3.py --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s
 --polling_interval 5s --upstream_port eth2
 --radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2  mode==0 wifi_settings==wifi_settings
-    enable_flags==('ht160_enable'|'wpa2_enable'|'80211u_enable'|'create_admin_down'|'ht160_enable') "
+    enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down&&ht160_enable) "
 --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --test_rig CT-US-001 --test_tag 'test_l3'
 
         wifi_mode
@@ -2258,7 +2335,8 @@ Setting wifi_settings per radio
 
 
         ''')
-    test_l3_parser = parser.add_argument_group('arguments defined in test_l3.py file')
+    test_l3_parser = parser.add_argument_group(
+        'arguments defined in test_l3.py file')
     # add argument group
     # the local_lf_report_dir is the parent directory of where the results are used with lf_check.py
     test_l3_parser.add_argument('--local_lf_report_dir',
@@ -2456,32 +2534,48 @@ Setting wifi_settings per radio
                                 help='--station_list [list of stations] , use the stations in the list , multiple station lists may be entered')
 
     # Wait for IP made configurable
-    test_l3_parser.add_argument('--wait_for_ip_sec', help='--wait_for_ip_sec <seconds>  default : 120s ', default="120s")
+    test_l3_parser.add_argument(
+        '--wait_for_ip_sec', help='--wait_for_ip_sec <seconds>  default : 120s ', default="120s")
 
     # logging configuration
     test_l3_parser.add_argument(
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
-    test_l3_parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
+    test_l3_parser.add_argument(
+        '--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
     test_l3_parser.add_argument("--ap_module", type=str, help="series module")
 
-    test_l3_parser.add_argument('--ap_test_mode', help='--ap_mode ', default=True)
+    test_l3_parser.add_argument(
+        '--ap_test_mode', help='--ap_mode ', default=True)
 
-    test_l3_parser.add_argument('--ap_scheme', help="--ap_scheme '/dev/ttyUSB0'", choices=['serial', 'telnet', 'ssh', 'mux_serial'], default='serial')
-    test_l3_parser.add_argument('--ap_serial_port', help="--ap_serial_port '/dev/ttyUSB0'", default='/dev/ttyUSB0')
-    test_l3_parser.add_argument('--ap_serial_baud', help="--ap_baud '115200'',  default='115200", default="115200")
-    test_l3_parser.add_argument('--ap_ip', help='--ap_ip', default='192.168.50.1')
-    test_l3_parser.add_argument('--ap_ssh_port', help='--ap_ssh_port', default='1025')
-    test_l3_parser.add_argument('--ap_telnet_port', help='--ap_telnet_port', default='23')
-    test_l3_parser.add_argument('--ap_user', help='--ap_user , the user name for the ap, default = lanforge', default='lanforge')
-    test_l3_parser.add_argument('--ap_passwd', help='--ap_passwd, the password for the ap default = lanforge', default='lanforge')
+    test_l3_parser.add_argument('--ap_scheme', help="--ap_scheme '/dev/ttyUSB0'", choices=[
+                                'serial', 'telnet', 'ssh', 'mux_serial'], default='serial')
+    test_l3_parser.add_argument(
+        '--ap_serial_port', help="--ap_serial_port '/dev/ttyUSB0'", default='/dev/ttyUSB0')
+    test_l3_parser.add_argument(
+        '--ap_serial_baud', help="--ap_baud '115200'',  default='115200", default="115200")
+    test_l3_parser.add_argument(
+        '--ap_ip', help='--ap_ip', default='192.168.50.1')
+    test_l3_parser.add_argument(
+        '--ap_ssh_port', help='--ap_ssh_port', default='1025')
+    test_l3_parser.add_argument(
+        '--ap_telnet_port', help='--ap_telnet_port', default='23')
+    test_l3_parser.add_argument(
+        '--ap_user', help='--ap_user , the user name for the ap, default = lanforge', default='lanforge')
+    test_l3_parser.add_argument(
+        '--ap_passwd', help='--ap_passwd, the password for the ap default = lanforge', default='lanforge')
     # ASUS interfaces
-    test_l3_parser.add_argument('--ap_if_2g', help='--ap_if_2g eth6', default='wl0')
-    test_l3_parser.add_argument('--ap_if_5g', help='--ap_if_5g eth7', default='wl1')
-    test_l3_parser.add_argument('--ap_if_6g', help='--ap_if_6g eth8', default='wl2')
-    test_l3_parser.add_argument('--ap_file', help="--ap_file 'ap_file.txt'", default=None)
-    test_l3_parser.add_argument('--ap_band_list', help="--ap_band_list '2g,5g,6g' supported bands", default='2g,5g,6g')
+    test_l3_parser.add_argument(
+        '--ap_if_2g', help='--ap_if_2g eth6', default='wl0')
+    test_l3_parser.add_argument(
+        '--ap_if_5g', help='--ap_if_5g eth7', default='wl1')
+    test_l3_parser.add_argument(
+        '--ap_if_6g', help='--ap_if_6g eth8', default='wl2')
+    test_l3_parser.add_argument(
+        '--ap_file', help="--ap_file 'ap_file.txt'", default=None)
+    test_l3_parser.add_argument(
+        '--ap_band_list', help="--ap_band_list '2g,5g,6g' supported bands", default='2g,5g,6g')
 
     args = parser.parse_args()
 
@@ -2551,12 +2645,14 @@ Setting wifi_settings per radio
         report = lf_report.lf_report(
             _path=local_lf_report_dir,
             _results_dir_name=args.results_dir_name,
-            _output_html="{results_dir_name}.html".format(results_dir_name=args.results_dir_name),
+            _output_html="{results_dir_name}.html".format(
+                results_dir_name=args.results_dir_name),
             _output_pdf="{results_dir_name}.pdf".format(results_dir_name=args.results_dir_name))
     else:
         report = lf_report.lf_report(
             _results_dir_name=args.results_dir_name,
-            _output_html="{results_dir_name}.html".format(results_dir_name=args.results_dir_name),
+            _output_html="{results_dir_name}.html".format(
+                results_dir_name=args.results_dir_name),
             _output_pdf="{results_dir_name}.pdf".format(results_dir_name=args.results_dir_name))
 
     kpi_path = report.get_report_path()
@@ -2599,21 +2695,21 @@ Setting wifi_settings per radio
     reset_port_time_min_list = []
     reset_port_time_max_list = []
 
-    # wifi extra configuration 
-    key_mgmt_list=[]
-    pairwise_list=[]
+    # wifi extra configuration
+    key_mgmt_list = []
+    pairwise_list = []
     group_list = []
     psk_list = []
     wep_key_list = []
     ca_cert_list = []
     eap_list = []
-    identity_list =[]
-    anonymous_identity_list=[]
-    phase1_list=[]
-    phase2_list=[]
+    identity_list = []
+    anonymous_identity_list = []
+    phase1_list = []
+    phase2_list = []
     passwd_list = []
-    pin_list= []
-    pac_file_list=[]
+    pin_list = []
+    pac_file_list = []
     private_key_list = []
     pk_password_list = []
     hessid_list = []
@@ -2678,63 +2774,62 @@ Setting wifi_settings per radio
                     logger.info("wifi_extra_keys found")
                     wifi_extra_found = True
                     break
-            
 
             if wifi_extra_found:
 
-                logger.debug("wifi_extra: {extra}".format(extra=radio_info_dict['wifi_extra']))
+                logger.debug("wifi_extra: {extra}".format(
+                    extra=radio_info_dict['wifi_extra']))
 
+                key_mgmt = '[BLANK]'
+                pairwise = '[BLANK]'
+                group = '[BLANK]'
+                psk = '[BLANK]'
+                eap = '[BLANK]'
+                identity = '[BLANK]'
+                anonymous_identity = "[BLANK]"
+                phase1 = "[BLANK]"
+                phase2 = "[BLANK]"
+                passwd = '[BLANK]'
+                pin = '[BLANK]'
+                pac_file = '[BLANK]'
+                private_key = '[BLANK]'
+                pk_password = '[BLANK]'
+                hessid = "00:00:00:00:00:00"
+                realm = "[BLANK]"
+                client_cert = "[BLANK]"
+                imsi = "[BLANK]"
+                milenage = "[BLANK]"
+                domain = "[BLANK]"
+                roaming_consortium = "[BLANK]"
+                venue_group = "[BLANK]"
+                network_type = "[BLANK]"
+                ipaddr_type_avail = "[BLANK]"
+                network_auth_type = "[BLANK]"
+                anqp_3gpp_cell_net = "[BLANK]"
 
-                key_mgmt='[BLANK]'
-                pairwise='[BLANK]'
-                group='[BLANK]'
-                psk='[BLANK]'
-                eap='[BLANK]'
-                identity='[BLANK]'
-                anonymous_identity="[BLANK]"
-                phase1="[BLANK]"
-                phase2="[BLANK]"
-                passwd='[BLANK]'
-                pin='[BLANK]'
-                pac_file='[BLANK]'
-                private_key='[BLANK]'
-                pk_password='[BLANK]'
-                hessid="00:00:00:00:00:00"
-                realm="[BLANK]"
-                client_cert="[BLANK]"
-                imsi="[BLANK]"
-                milenage="[BLANK]"
-                domain="[BLANK]"
-                roaming_consortium="[BLANK]"
-                venue_group="[BLANK]"
-                network_type="[BLANK]"
-                ipaddr_type_avail="[BLANK]"
-                network_auth_type="[BLANK]"
-                anqp_3gpp_cell_net="[BLANK]"
+                ieee80211w = 'Optional'
 
-                ieee80211w='Optional'
-
-
-                wifi_extra_dict= dict(
-                map(
-                    lambda x: x.split('&&'),
-                    str(radio_info_dict['wifi_extra']).replace(
-                        '"',
-                        '').replace(
-                        '[',
-                        '').replace(
-                        ']',
-                        '').replace(
-                        "'",
-                        "").replace(
+                wifi_extra_dict = dict(
+                    map(
+                        lambda x: x.split('&&'),
+                        str(radio_info_dict['wifi_extra']).replace(
+                            '"',
+                            '').replace(
+                            '[',
+                            '').replace(
+                            ']',
+                            '').replace(
+                            "'",
+                            "").replace(
                             ",",
-                        " ").replace(
+                            " ").replace(
                             "!!",
-                        " "
+                            " "
                         )
                         .split()))
 
-                logger.info("wifi_extra_dict: {wifi_extra}".format(wifi_extra=wifi_extra_dict))
+                logger.info("wifi_extra_dict: {wifi_extra}".format(
+                    wifi_extra=wifi_extra_dict))
 
                 if 'key_mgmt' in wifi_extra_dict:
                     key_mgmt_list.append(wifi_extra_dict['key_mgmt'])
@@ -2744,143 +2839,147 @@ Setting wifi_settings per radio
                 if 'pairwise' in wifi_extra_dict:
                     pairwise_list.append(wifi_extra_dict['pairwise'])
                 else:
-                    pairwise_list.append('[BLANK]')        
-                
+                    pairwise_list.append('[BLANK]')
+
                 if 'group' in wifi_extra_dict:
                     group_list.append(wifi_extra_dict['group'])
                 else:
-                    group_list.append('[BLANK]') 
+                    group_list.append('[BLANK]')
 
                 if 'psk' in wifi_extra_dict:
                     psk_list.append(wifi_extra_dict['psk'])
                 else:
-                    psk_list.append('[BLANK]') 
+                    psk_list.append('[BLANK]')
 
                 if 'wep_key' in wifi_extra_dict:
                     wep_key_list.append(wifi_extra_dict['wep_key'])
                 else:
-                    wep_key_list.append('[BLANK]') 
+                    wep_key_list.append('[BLANK]')
 
                 if 'ca_cert' in wifi_extra_dict:
                     ca_cert_list.append(wifi_extra_dict['ca_cert'])
                 else:
-                    ca_cert_list.append('[BLANK]') 
+                    ca_cert_list.append('[BLANK]')
 
                 if 'eap' in wifi_extra_dict:
                     eap_list.append(wifi_extra_dict['eap'])
                 else:
-                    eap_list.append('[BLANK]') 
+                    eap_list.append('[BLANK]')
 
                 if 'identity' in wifi_extra_dict:
                     identity_list.append(wifi_extra_dict['identity'])
                 else:
-                    identity_list.append('[BLANK]') 
+                    identity_list.append('[BLANK]')
 
                 if 'anonymous' in wifi_extra_dict:
-                    anonymous_identity_list.append(wifi_extra_dict['anonymous'])
+                    anonymous_identity_list.append(
+                        wifi_extra_dict['anonymous'])
                 else:
-                    anonymous_identity_list.append('[BLANK]') 
+                    anonymous_identity_list.append('[BLANK]')
 
                 if 'phase1' in wifi_extra_dict:
                     phase1_list.append(wifi_extra_dict['phase1'])
                 else:
-                    phase1_list.append('[BLANK]') 
+                    phase1_list.append('[BLANK]')
 
                 if 'phase2' in wifi_extra_dict:
                     phase2_list.append(wifi_extra_dict['phase2'])
                 else:
-                    phase2_list.append('[BLANK]') 
+                    phase2_list.append('[BLANK]')
 
                 if 'passwd' in wifi_extra_dict:
                     passwd_list.append(wifi_extra_dict['passwd'])
                 else:
-                    passwd_list.append('[BLANK]') 
+                    passwd_list.append('[BLANK]')
 
                 if 'pin' in wifi_extra_dict:
                     pin_list.append(wifi_extra_dict['pin'])
                 else:
-                    pin_list.append('[BLANK]') 
+                    pin_list.append('[BLANK]')
 
                 if 'pac_file' in wifi_extra_dict:
                     pac_file_list.append(wifi_extra_dict['pac_file'])
                 else:
-                    pac_file_list.append('[BLANK]') 
+                    pac_file_list.append('[BLANK]')
 
                 if 'private_key' in wifi_extra_dict:
                     private_key_list.append(wifi_extra_dict['private_key'])
                 else:
-                    private_key_list.append('[BLANK]') 
+                    private_key_list.append('[BLANK]')
 
                 if 'pk_password' in wifi_extra_dict:
                     pk_password_list.append(wifi_extra_dict['pk_password'])
                 else:
-                    pk_password_list.append('[BLANK]') 
+                    pk_password_list.append('[BLANK]')
 
                 if 'hessid' in wifi_extra_dict:
                     hessid_list.append(wifi_extra_dict['hessid'])
                 else:
-                    hessid_list.append("00:00:00:00:00:00") 
+                    hessid_list.append("00:00:00:00:00:00")
 
                 if 'realm' in wifi_extra_dict:
                     realm_list.append(wifi_extra_dict['realm'])
                 else:
-                    realm_list.append('[BLANK]') 
+                    realm_list.append('[BLANK]')
 
                 if 'client_cert' in wifi_extra_dict:
                     client_cert_list.append(wifi_extra_dict['client_cert'])
                 else:
-                    client_cert_list.append('[BLANK]') 
+                    client_cert_list.append('[BLANK]')
 
                 if 'imsi' in wifi_extra_dict:
                     imsi_list.append(wifi_extra_dict['imsi'])
                 else:
-                    imsi_list.append('[BLANK]') 
+                    imsi_list.append('[BLANK]')
 
                 if 'milenage' in wifi_extra_dict:
                     milenage_list.append(wifi_extra_dict['milenage'])
                 else:
-                    milenage_list.append('[BLANK]') 
+                    milenage_list.append('[BLANK]')
 
                 if 'domain' in wifi_extra_dict:
                     domain_list.append(wifi_extra_dict['domain'])
                 else:
-                    domain_list.append('[BLANK]') 
+                    domain_list.append('[BLANK]')
 
                 if 'roaming_consortium' in wifi_extra_dict:
-                    roaming_consortium_list.append(wifi_extra_dict['roaming_consortium'])
+                    roaming_consortium_list.append(
+                        wifi_extra_dict['roaming_consortium'])
                 else:
-                    roaming_consortium_list.append('[BLANK]') 
+                    roaming_consortium_list.append('[BLANK]')
 
                 if 'venue_group' in wifi_extra_dict:
                     venue_group_list.append(wifi_extra_dict['venue_group'])
                 else:
-                    venue_group_list.append('[BLANK]') 
+                    venue_group_list.append('[BLANK]')
 
                 if 'network_type' in wifi_extra_dict:
                     network_type_list.append(wifi_extra_dict['network_type'])
                 else:
-                    network_type_list.append('[BLANK]') 
+                    network_type_list.append('[BLANK]')
 
                 if 'ipaddr_type_avail' in wifi_extra_dict:
-                    ipaddr_type_avail_list.append(wifi_extra_dict['ipaddr_type_avail'])
+                    ipaddr_type_avail_list.append(
+                        wifi_extra_dict['ipaddr_type_avail'])
                 else:
-                    ipaddr_type_avail_list.append('[BLANK]') 
+                    ipaddr_type_avail_list.append('[BLANK]')
 
                 if 'network_auth_type' in wifi_extra_dict:
-                    network_auth_type_list.append(wifi_extra_dict['network_auth_type'])
+                    network_auth_type_list.append(
+                        wifi_extra_dict['network_auth_type'])
                 else:
-                    network_auth_type_list.append('[BLANK]') 
+                    network_auth_type_list.append('[BLANK]')
 
                 if 'anqp_3gpp_cell_net' in wifi_extra_dict:
-                    anqp_3gpp_cell_net_list.append(wifi_extra_dict['anqp_3gpp_cell_net'])
+                    anqp_3gpp_cell_net_list.append(
+                        wifi_extra_dict['anqp_3gpp_cell_net'])
                 else:
-                    anqp_3gpp_cell_net_list.append('[BLANK]') 
+                    anqp_3gpp_cell_net_list.append('[BLANK]')
 
                 if 'ieee80211w' in wifi_extra_dict:
                     ieee80211w_list.append(wifi_extra_dict['ieee80211w'])
                 else:
-                    ieee80211w_list.append('Optional') 
-
+                    ieee80211w_list.append('Optional')
 
                 '''            
                 # wifi extra configuration 
@@ -2915,37 +3014,36 @@ Setting wifi_settings per radio
             # no wifi extra for this station
             else:
                 key_mgmt_list.append('[BLANK]')
-                pairwise_list.append('[BLANK]')        
-                group_list.append('[BLANK]') 
-                psk_list.append('[BLANK]') 
+                pairwise_list.append('[BLANK]')
+                group_list.append('[BLANK]')
+                psk_list.append('[BLANK]')
                 # for testing
-                # psk_list.append(radio_info_dict['ssid_pw']) 
-                wep_key_list.append('[BLANK]') 
-                ca_cert_list.append('[BLANK]') 
-                eap_list.append('[BLANK]') 
-                identity_list.append('[BLANK]') 
-                anonymous_identity_list.append('[BLANK]') 
-                phase1_list.append('[BLANK]') 
-                phase2_list.append('[BLANK]') 
-                passwd_list.append('[BLANK]') 
-                pin_list.append('[BLANK]') 
-                pac_file_list.append('[BLANK]') 
-                private_key_list.append('[BLANK]') 
-                pk_password_list.append('[BLANK]') 
-                hessid_list.append("00:00:00:00:00:00") 
-                realm_list.append('[BLANK]') 
-                client_cert_list.append('[BLANK]') 
-                imsi_list.append('[BLANK]') 
-                milenage_list.append('[BLANK]') 
-                domain_list.append('[BLANK]') 
-                roaming_consortium_list.append('[BLANK]') 
-                venue_group_list.append('[BLANK]') 
-                network_type_list.append('[BLANK]') 
-                ipaddr_type_avail_list.append('[BLANK]') 
-                network_auth_type_list.append('[BLANK]') 
-                anqp_3gpp_cell_net_list.append('[BLANK]') 
-                ieee80211w_list.append('Optional') 
-
+                # psk_list.append(radio_info_dict['ssid_pw'])
+                wep_key_list.append('[BLANK]')
+                ca_cert_list.append('[BLANK]')
+                eap_list.append('[BLANK]')
+                identity_list.append('[BLANK]')
+                anonymous_identity_list.append('[BLANK]')
+                phase1_list.append('[BLANK]')
+                phase2_list.append('[BLANK]')
+                passwd_list.append('[BLANK]')
+                pin_list.append('[BLANK]')
+                pac_file_list.append('[BLANK]')
+                private_key_list.append('[BLANK]')
+                pk_password_list.append('[BLANK]')
+                hessid_list.append("00:00:00:00:00:00")
+                realm_list.append('[BLANK]')
+                client_cert_list.append('[BLANK]')
+                imsi_list.append('[BLANK]')
+                milenage_list.append('[BLANK]')
+                domain_list.append('[BLANK]')
+                roaming_consortium_list.append('[BLANK]')
+                venue_group_list.append('[BLANK]')
+                network_type_list.append('[BLANK]')
+                ipaddr_type_avail_list.append('[BLANK]')
+                network_auth_type_list.append('[BLANK]')
+                anqp_3gpp_cell_net_list.append('[BLANK]')
+                ieee80211w_list.append('Optional')
 
             # check for wifi_settings
             wifi_settings_keys = ['wifi_settings']
@@ -2976,8 +3074,7 @@ Setting wifi_settings per radio
                 wifi_mode_list.append(0)
                 wifi_enable_flags_list.append(
                     ["wpa2_enable", "80211u_enable", "create_admin_down"])
-                    # 8021x_radius is the same as Advanced/8021x on the gui
-
+                # 8021x_radius is the same as Advanced/8021x on the gui
 
             # check for optional radio key , currently only reset is enabled
             # update for checking for reset_port_time_min, reset_port_time_max
@@ -3012,7 +3109,8 @@ Setting wifi_settings per radio
             station_list = LFUtils.portNameSeries(
                 prefix_="sta",
                 start_id_=0 + index * 1000 + int(args.sta_start_offset),
-                end_id_=number_of_stations - 1 + index * 1000 + int(args.sta_start_offset),
+                end_id_=number_of_stations - 1 + index *
+                1000 + int(args.sta_start_offset),
                 padding_number_=10000,
                 radio=radio_name_)
             station_lists.append(station_list)
@@ -3038,10 +3136,13 @@ Setting wifi_settings per radio
                 for existing_sta in existing_stations:
                     existing_station_lists.append(existing_sta)
         else:
-            logger.error("--use_station_list set true, --station_list is None Exiting")
-            raise Exception("--use_station_list is used in conjunction with a --station_list")
+            logger.error(
+                "--use_station_list set true, --station_list is None Exiting")
+            raise Exception(
+                "--use_station_list is used in conjunction with a --station_list")
 
-    logger.info("existing_station_lists: {sta}".format(sta=existing_station_lists))
+    logger.info("existing_station_lists: {sta}".format(
+        sta=existing_station_lists))
 
     # logger.info("endp-types: %s"%(endp_types))
     ul_rates = args.side_a_min_bps.replace(',', ' ').split()
@@ -3192,7 +3293,8 @@ Setting wifi_settings per radio
         logger.warning(ip_var_test.get_fail_message())
 
     if args.no_cleanup or args.no_stop_traffic:
-        logger.info("--no_cleanup or --no_stop_traffic set stations will be left intack")
+        logger.info(
+            "--no_cleanup or --no_stop_traffic set stations will be left intack")
     else:
         ip_var_test.cleanup()
 
@@ -3222,7 +3324,8 @@ Setting wifi_settings per radio
 
     report.set_table_title("Device Under Test Information")
     report.build_table_title()
-    report.test_setup_table(value="Device Under Test", test_setup_data=test_setup_info)
+    report.test_setup_table(value="Device Under Test",
+                            test_setup_data=test_setup_info)
 
     test_input_info = {
         "LANforge ip": args.lfmgr,
@@ -3234,7 +3337,8 @@ Setting wifi_settings per radio
 
     report.set_table_title("Test Configuration")
     report.build_table_title()
-    report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
+    report.test_setup_table(value="Test Configuration",
+                            test_setup_data=test_input_info)
 
     report.set_table_title("Radio Configuration")
     report.build_table_title()
@@ -3289,7 +3393,8 @@ Setting wifi_settings per radio
         }
         report.test_setup_table(value=radio_, test_setup_data=radio_info)
 
-    report.set_table_title("Total Layer 3 Cross-Connect Traffic across all Stations")
+    report.set_table_title(
+        "Total Layer 3 Cross-Connect Traffic across all Stations")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
@@ -3298,7 +3403,8 @@ Setting wifi_settings per radio
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
     if platform.system() == 'Linux':
-        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+        report.write_pdf_with_timestamp(
+            _page_size='A4', _orientation='Landscape')
 
     if test_passed:
         ip_var_test.exit_success()
