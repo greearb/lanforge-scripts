@@ -904,7 +904,7 @@ class L3VariableTime(Realm):
                     # TODO multi cast does not work
                     if etype == "mc_udp" or etype == "mc_udp6":
                         logger.info("Creating Multicast connections for endpoint type: %s" %etype)
-                        self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
+                        self.multicast_profile.create_mc_tx(etype, self.side_b)
                         self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
                     else:
                         for _tos in self.tos:
@@ -1040,6 +1040,8 @@ class L3VariableTime(Realm):
                 self.cx_profile.side_a_max_pdu = ul_pdu
                 self.cx_profile.side_b_min_pdu = dl_pdu
                 self.cx_profile.side_b_max_pdu = dl_pdu
+
+                # Multicast need to flow the same rates and pdu settings
 
                 # Update connections with the new rate and pdu size config.
                 self.build(rebuild=True)
@@ -1380,26 +1382,16 @@ class L3VariableTime(Realm):
                                 "The ul (upload) has no data check the AP connection or configuration")
                             warnings += 1
                         else:
-                            all_ul_ports_stations_sum_df['Rx-Bps-Diff'] = all_ul_ports_stations_sum_df['Rx-Bps'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Tx-Bps-Diff'] = all_ul_ports_stations_sum_df['Tx-Bps'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Rx-Latency-Diff'] = all_ul_ports_stations_sum_df['Rx-Latency'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Rx-Jitter-Diff'] = all_ul_ports_stations_sum_df['Rx-Jitter'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff(
-                            )
+                            all_ul_ports_stations_sum_df['Rx-Bps-Diff'] = all_ul_ports_stations_sum_df['Rx-Bps'].diff()
+                            all_ul_ports_stations_sum_df['Tx-Bps-Diff'] = all_ul_ports_stations_sum_df['Tx-Bps'].diff()
+                            all_ul_ports_stations_sum_df['Rx-Latency-Diff'] = all_ul_ports_stations_sum_df['Rx-Latency'].diff()
+                            all_ul_ports_stations_sum_df['Rx-Jitter-Diff'] = all_ul_ports_stations_sum_df['Rx-Jitter'].diff()
+                            all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff()
+                            all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff()
+                            all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff()
+                            all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff()
+                            all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff()
+                            all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
 
                         # write out the data
                         all_ul_ports_stations_sum_df.to_csv(
