@@ -264,7 +264,7 @@ class lf_clean(Realm):
                                 # logger.info(data)
                                 logger.info("Removing {cx_name}...".format(cx_name=cx_name))
                                 super().json_post(req_url, data)
-                time.sleep(1)
+                time.sleep(5)
             else:
                 logger.info("No cross connects found to cleanup")
                 still_looking_cxs = False
