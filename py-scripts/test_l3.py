@@ -903,13 +903,9 @@ class L3VariableTime(Realm):
                 for etype in self.endp_types:
                     # TODO multi cast does not work
                     if etype == "mc_udp" or etype == "mc_udp6":
-                        logger.info(
-                            "Creating Multicast connections for endpoint type: %s" %
-                            etype)
-                        self.multicast_profile.create_mc_tx(
-                            etype, self.side_b, etype)
-                        self.multicast_profile.create_mc_rx(
-                            etype, side_rx=station_profile.station_names)
+                        logger.info("Creating Multicast connections for endpoint type: %s" %etype)
+                        self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
+                        self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
                     else:
                         for _tos in self.tos:
                             logger.info("Creating connections for endpoint type: {etype} TOS: {tos}  cx-count: {cx_count}".format(
@@ -1059,8 +1055,7 @@ class L3VariableTime(Realm):
                                 host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
                             atten_mod_test.build()
 
-                    logger.info(
-                        "Starting multicast traffic (if any configured)")
+                    logger.info("Starting multicast traffic (if any configured)")
                     self.multicast_profile.start_mc(debug_=self.debug)
                     self.multicast_profile.refresh_mc(debug_=self.debug)
                     logger.info("Starting layer-3 traffic (if any configured)")
