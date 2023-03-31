@@ -1042,6 +1042,15 @@ class L3VariableTime(Realm):
                 self.cx_profile.side_b_max_pdu = dl_pdu
 
                 # Multicast need to flow the same rates and pdu settings
+                self.multicast_profile.side_a_min_bps = ul
+                self.multicast_profile.side_a_max_bps = ul
+                self.multicast_profile.side_b_min_bps = dl
+                self.multicast_profile.side_b_max_bps = dl
+
+                self.multicast_profile.side_a_min_pdu = ul_pdu
+                self.multicast_profile.side_a_max_pdu = ul_pdu
+                self.multicast_profile.side_b_min_pdu = dl_pdu
+                self.multicast_profile.side_b_max_pdu = dl_pdu
 
                 # Update connections with the new rate and pdu size config.
                 self.build(rebuild=True)
