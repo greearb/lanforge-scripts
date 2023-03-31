@@ -11,8 +11,45 @@ LFCliBase = lfcli_base.LFCliBase
 
 
 class MULTICASTProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, local_realm,
-                 report_timer_=3000, name_prefix_="Unset", number_template_="00000", debug_=False):
+    def __init__(self, 
+                lfclient_host, 
+                lfclient_port, 
+                local_realm,
+                side_a_min_bps=256000,  # rx
+                side_b_min_bps=256000,  # tx
+                side_a_max_bps=0,
+                side_b_max_bps=0, 
+                side_a_min_pdu=-1,
+                side_b_min_pdu=-1,
+                side_a_max_pdu=0,
+                side_b_max_pdu=0,
+                side_a_ip_port=-1,
+                side_b_ip_port=-1,
+                side_a_is_rate_bursty='NO',
+                side_b_is_rate_bursty='NO',
+                side_a_is_pkt_sz_random='NO',
+                side_b_is_pkt_sz_random='NO',
+                side_a_payload_pattern='INCREASING',
+                side_b_payload_pattern='INCREASING',
+                side_a_use_checksum = 'NO',
+                side_b_use_checksum = 'NO',
+                side_a_ttl = 32,
+                side_b_ttl = 32,
+                side_a_send_bad_crc_per_million = 0,
+                side_b_send_bad_crc_per_million = 0,
+                side_a_multi_conn = 0,
+                side_b_multi_conn = 0,
+                side_a_mcast_group="224.9.9.9", 
+                side_b_mcast_group="224.9.9.9", 
+                side_a_mcast_dest_port=9999,
+                side_b_mcast_dest_port=9999,
+                side_a_rcv_mcast='Yes',
+                side_b_rcv_mcast='NO',
+                
+                report_timer_=3000, 
+                name_prefix_="Unset", 
+                number_template_="00000", 
+                debug_=False):
         """
 
         :param lfclient_host:
@@ -30,6 +67,44 @@ class MULTICASTProfile(LFCliBase):
         self.created_mc = {}
         self.name_prefix = name_prefix_
         self.number_template = number_template_
+
+        self.side_a_min_pdu = side_a_min_pdu
+        self.side_b_min_pdu = side_b_min_pdu
+        self.side_a_max_pdu = side_a_max_pdu
+        self.side_b_max_pdu = side_b_max_pdu
+
+        self.side_a_min_bps = side_a_min_bps
+        self.side_b_min_bps = side_b_min_bps
+        self.side_a_max_bps = side_a_max_bps
+        self.side_b_max_bps = side_b_max_bps
+
+
+        self.side_a_ip_port=side_a_ip_port
+        self.side_b_ip_port=side_b_ip_port
+
+        self.side_a_is_rate_bursty=side_a_is_rate_bursty
+        self.side_b_is_rate_bursty=side_b_is_rate_bursty
+        self.side_a_is_pkt_sz_random=side_a_is_pkt_sz_random
+        self.side_b_is_pkt_sz_random=side_b_is_pkt_sz_random
+        self.side_a_payload_pattern=side_a_payload_pattern
+        self.side_b_payload_pattern=side_b_payload_pattern
+        self.side_a_use_checksum =side_a_use_checksum
+        self.side_b_use_checksum =side_b_use_checksum
+        self.side_a_ttl =side_a_ttl
+        self.side_b_ttl =side_b_ttl
+        self.side_a_send_bad_crc_per_million =side_a_send_bad_crc_per_million
+        self.side_b_send_bad_crc_per_million =side_b_send_bad_crc_per_million
+        self.side_a_multi_conn =side_a_multi_conn
+        self.side_b_multi_conn =side_b_multi_conn
+        self.side_a_mcast_group=side_a_mcast_group
+        self.side_b_mcast_group=side_b_mcast_group
+        self.side_a_mcast_dest_port=side_a_mcast_dest_port
+        self.side_b_mcast_dest_port=side_b_mcast_dest_port
+        self.side_a_rcv_mcast=side_a_rcv_mcast
+        self.side_b_rcv_mcast=side_b_rcv_mcast
+
+
+
 
     def clean_mc_lists(self):
         # Clean out our local lists, this by itself does NOT remove anything from LANforge manager.
@@ -89,21 +164,21 @@ class MULTICASTProfile(LFCliBase):
     def create_mc_tx(self,
                     endp_type,
                     side_tx, 
-                    ip_port = -1,
-                    is_rate_bursty = 'NO',
-                    min_rate =  256000,
-                    max_rate = 0,
-                    is_pkt_sz_random = 'NO',
-                    min_pkt = 1472,
-                    max_pkt = 0,
-                    payload_pattern = 'INCREASING',
-                    use_checksum = 'NO',
-                    ttl = 32,
-                    send_bad_crc_per_million = 0,
-                    multi_conn = 0,
-                    mcast_group="224.9.9.9", 
-                    mcast_dest_port=9999,
-                    rcv_mcast='NO',
+                    # ip_port = -1,
+                    # is_rate_bursty = 'NO',
+                    # min_rate =  256000,
+                    # max_rate = 0,
+                    # is_pkt_sz_random = 'NO',
+                    # min_pkt = 1472,
+                    # max_pkt = 0,
+                    # payload_pattern = 'INCREASING',
+                    # use_checksum = 'NO',
+                    # ttl = 32,
+                    # send_bad_crc_per_million = 0,
+                    # multi_conn = 0,
+                    # mcast_group="224.9.9.9", 
+                    # mcast_dest_port=9999,
+                    # rcv_mcast='NO',
                     suppress_related_commands=None, 
                     debug_=False):
         if self.debug:
@@ -122,18 +197,18 @@ class MULTICASTProfile(LFCliBase):
             'resource': side_tx_resource,
             'port': side_tx_port,
             'type': endp_type,
-            'ip_port': ip_port,
-            'is_rate_bursty': is_rate_bursty, 
-            'min_rate': min_rate,
-            'max_rate': max_rate,
-            'is_pkt_sz_random': is_pkt_sz_random,
-            'min_pkt': min_pkt,
-            'max_pkt': max_pkt,
-            'payload_pattern': payload_pattern,
-            'use_checksum': use_checksum,
-            'ttl': ttl,
-            'send_bad_crc_per_million': send_bad_crc_per_million,
-            'multi_conn': multi_conn
+            'ip_port': self.side_b_ip_port,
+            'is_rate_bursty': self.side_b_is_rate_bursty, 
+            'min_rate': self.side_b_min_bps,
+            'max_rate': self.side_b_max_bps,
+            'is_pkt_sz_random': self.side_b_is_pkt_sz_random,
+            'min_pkt': self.side_b_min_pdu,
+            'max_pkt': self.side_b_max_pdu,
+            'payload_pattern': self.side_b_payload_pattern,
+            'use_checksum': self.side_b_use_checksum,
+            'ttl': self.side_b_ttl,
+            'send_bad_crc_per_million': self.side_b_send_bad_crc_per_million,
+            'multi_conn': self.side_b_multi_conn
         }
 
         url = "/cli-json/add_endp"
@@ -141,10 +216,10 @@ class MULTICASTProfile(LFCliBase):
 
         json_data = {
             'name': side_tx_name,
-            'ttl': ttl,
-            'mcast_group': mcast_group,
-            'mcast_dest_port': mcast_dest_port,
-            'rcv_mcast': rcv_mcast
+            'ttl': self.side_b_ttl,
+            'mcast_group': self.side_b_mcast_group,
+            'mcast_dest_port': self.side_b_mcast_dest_port,
+            'rcv_mcast': self.side_b_rcv_mcast
         }
 
         url = "cli-json/set_mc_endp"
@@ -158,21 +233,21 @@ class MULTICASTProfile(LFCliBase):
     def create_mc_rx(self, 
                     endp_type, 
                     side_rx,
-                    ip_port = -1,
-                    is_rate_bursty = 'NO',
-                    min_rate =  256000,
-                    max_rate = 0,
-                    is_pkt_sz_random = 'NO',
-                    min_pkt = 1472,
-                    max_pkt = 0,
-                    payload_pattern = 'INCREASING',
-                    use_checksum = 'NO',
-                    ttl = 32,
-                    send_bad_crc_per_million = 0,
-                    multi_conn = 0,
-                    mcast_group="224.9.9.9", 
-                    mcast_dest_port=9999,
-                    rcv_mcast='Yes',
+                    # ip_port = -1,
+                    # is_rate_bursty = 'NO',
+                    # min_rate =  256000,
+                    # max_rate = 0,
+                    # is_pkt_sz_random = 'NO',
+                    # min_pkt = 1472,
+                    # max_pkt = 0,
+                    # payload_pattern = 'INCREASING',
+                    # use_checksum = 'NO',
+                    # ttl = 32,
+                    # send_bad_crc_per_million = 0,
+                    # multi_conn = 0,
+                    # mcast_group="224.9.9.9", 
+                    # mcast_dest_port=9999,
+                    # rcv_mcast='Yes',
                     suppress_related_commands=None, 
                     debug_=False):
         if self.debug:
@@ -194,18 +269,18 @@ class MULTICASTProfile(LFCliBase):
                 'port': side_rx_port,
                 'type': endp_type,
                 'type': endp_type,
-                'ip_port': ip_port,
-                'is_rate_bursty': is_rate_bursty, 
-                'min_rate': min_rate,
-                'max_rate': max_rate,
-                'is_pkt_sz_random': is_pkt_sz_random,
-                'min_pkt': min_pkt,
-                'max_pkt': max_pkt,
-                'payload_pattern': payload_pattern,
-                'use_checksum': use_checksum,
-                'ttl': ttl,
-                'send_bad_crc_per_million': send_bad_crc_per_million,
-                'multi_conn': multi_conn
+                'ip_port': self.side_a_ip_port,
+                'is_rate_bursty': self.side_a_is_rate_bursty, 
+                'min_rate': self.side_a_min_bps,
+                'max_rate': self.side_a_max_bps,
+                'is_pkt_sz_random': self.side_a_is_pkt_sz_random,
+                'min_pkt': self.side_a_min_pdu,
+                'max_pkt': self.side_a_max_pdu,
+                'payload_pattern': self.side_a_payload_pattern,
+                'use_checksum': self.side_a_use_checksum,
+                'ttl': self.side_a_ttl,
+                'send_bad_crc_per_million': self.side_a_send_bad_crc_per_million,
+                'multi_conn': self.side_a_multi_conn
             }
 
             url = "cli-json/add_endp"
@@ -214,10 +289,10 @@ class MULTICASTProfile(LFCliBase):
 
             json_data = {
                 'name': side_rx_name,
-                'ttl': ttl,
-                'mcast_group': mcast_group,
-                'mcast_dest_port': mcast_dest_port,
-                'rcv_mcast': rcv_mcast
+                'ttl': self.side_a_ttl,
+                'mcast_group': self.side_a_mcast_group,
+                'mcast_dest_port': self.side_a_mcast_dest_port,
+                'rcv_mcast': self.side_a_rcv_mcast
             }
             url = "cli-json/set_mc_endp"
             self.local_realm.json_post(url, json_data, debug_=debug_,
