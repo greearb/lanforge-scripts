@@ -42,6 +42,7 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
 
 
 class CreateStation(Realm):
@@ -138,6 +139,13 @@ class CreateStation(Realm):
         self._pass("PASS: Station build finished")
 
 
+    def modify_radio(self, mgr, radio, antenna, channel, tx_power):
+        shelf, resource, radio, *nil = LFUtils.name_to_eid(radio)
+
+        modify_radio = lf_modify_radio.lf_modify_radio(lf_mgr=mgr)
+        modify_radio.set_wifi_radio(_resource=resource, _radio=radio, _shelf=shelf, _antenna=antenna, _channel=channel,
+                                    _txpower=tx_power)
+
 def main():
     parser = LFCliBase.create_basic_argparse(  # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
         prog='create_station.py',
@@ -209,6 +217,19 @@ NOTES:
         required=False,
         default=None,
         action='append')
+    optional.add_argument("--radio_antenna", help='number of spatial streams: '
+                                            ' 0 Diversity (All),'
+                                            ' 1 Fixed-A (1x1),'
+                                            ' 4 AB (2x2),'
+                                            ' 7 ABC (3x3),'
+                                            ' 8 ABCD (4x4),'
+                                            ' 9 (8x8)'
+                                            ' default = -1', default='-1')
+    optional.add_argument("--radio_channel", help='channel of the radio: '
+                                                  'e.g. 6 (2.4G) or 36 (5G) '
+                                                  'default: AUTO',default='AUTO')
+    optional.add_argument("--radio_tx_power", help='radio tx power default: AUTO system defaults',default='AUTO')
+
 
     args = parser.parse_args()
 
@@ -253,6 +274,8 @@ NOTES:
                                    _proxy_str=args.proxy,
                                    _debug_on=args.debug)
 
+    create_station.modify_radio(mgr=args.mgr, radio=args.radio, antenna=args.radio_antenna, channel=args.radio_channel,
+                                tx_power=args.radio_tx_power)
     create_station.build()
 
     # TODO:  Add code to clean up the station, unless --no_cleanup was specified.
