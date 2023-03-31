@@ -451,8 +451,14 @@ class L3CXProfile(LFCliBase):
         self.created_cx.clear()
         self.created_endp.clear()
 
-    def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False,
-               tos=None, timeout=300):
+    def create(self,
+                endp_type,
+                side_a,
+                side_b,
+                sleep_time=0.03,
+                suppress_related_commands=None,
+                debug_=False,
+                tos=None, timeout=300):
         # Returns a 2-member array, list of cx, list of endp on success.
         # If endpoints creation fails, returns False, False
         # if Endpoints creation is OK, but CX creation fails, returns False, list of endp
