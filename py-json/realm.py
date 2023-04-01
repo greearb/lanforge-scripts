@@ -546,6 +546,7 @@ class Realm(LFCliBase):
             wait_more = False
             endp_list = self.json_get("/endp/list")
             found_endps = {}
+            # LAN-2064 the endp_list may be a string,  need to modify to handle single endpoint as compared to two
             if debug:
                 logger.debug("Waiting on endpoint endp_list {}".format(endp_list))
             if endp_list and ("items" not in endp_list):
