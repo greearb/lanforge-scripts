@@ -655,6 +655,8 @@ class L3VariableTime(Realm):
         endp_list = self.json_get(
             "endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll",
             debug_=False)
+
+        logger.debug("endp_list: {}".format(endp_list))
         endp_rx_drop_map = {}
         endp_rx_map = {}
         our_endps = {}
