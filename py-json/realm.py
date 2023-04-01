@@ -817,7 +817,7 @@ class Realm(LFCliBase):
                 # logger.info(pformat(response))
 
                 if (response is None) or ("interface" not in response):
-                    logger.info("station_list: incomplete response for eid: %s:" % sta_eid)
+                    logger.info("station_list: incomplete response for eid: %s:  wait longer" % sta_eid)
                     logger.info(pformat(response))
                     wait_more = True
                     break
