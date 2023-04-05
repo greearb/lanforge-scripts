@@ -713,8 +713,37 @@ class L3VariableTime(Realm):
         total_dl = 0
         total_dl_ll = 0
 
+
+        # Multicast endpoints
         for e in self.multicast_profile.get_mc_names():
             our_endps[e] = e
+        for endp_name in endp_list['endpoint']:
+            logger.debug("endpoint: {}".format(endp_name))
+            if endp_name != 'uri' and endp_name != 'handler':
+                for item, endp_value in endp_name.items():
+                    if item in our_endps:  # multicast does not support use existing: or self.use_existing_station_lists:
+                        # endps.append(endp_value) need to see how to affect
+                        logger.debug("multicast endpoint: {item} value:\n".format(item=item))
+                        logger.debug(endp_value)
+                        for value_name, value in endp_value.items():
+                            if value_name == 'rx rate':
+                                # This hack breaks for mcast or if someone names endpoints weirdly.
+                                # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
+                                if "-mrx-" in item:
+                                    total_dl += int(value)
+                                else:
+                                    total_ul += int(value)
+                            if value_name == 'rx rate ll':
+                                # This hack breaks for mcast or if someone
+                                # names endpoints weirdly.
+                                if "-mrx-" in item:
+                                    total_dl_ll += int(value)
+                                else:
+                                    total_ul_ll += int(value)
+
+                            # TODO need a way to report rates 
+
+        # Unicast endpoints
         for e in self.cx_profile.created_endp.keys():
             our_endps[e] = e
         for endp_name in endp_list['endpoint']:
