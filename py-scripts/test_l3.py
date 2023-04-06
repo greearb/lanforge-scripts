@@ -703,6 +703,11 @@ class L3VariableTime(Realm):
         endp_list = self.json_get(
             "endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll",
             debug_=False)
+        # multicast only shows tx rates
+        #endp_list = self.json_get(
+        #    "endp?fields=name,eid,delay,jitter,tx+rate,tx+rate+ll,tx+bytes,tx+drop+%25,tx+pkts+ll",
+        #    debug_=False)
+
         endp_rx_drop_map = {}
         endp_rx_map = {}
         our_endps = {}
@@ -723,6 +728,9 @@ class L3VariableTime(Realm):
                 for item, endp_value in endp_name.items():
                     if item in our_endps:  # multicast does not support use existing: or self.use_existing_station_lists:
                         # endps.append(endp_value) need to see how to affect
+                        # NOTE: during each monitor period the rates are added to get the totals
+                        # this is done so that if there is an issue the rate information will be in 
+                        # the csv for the individual polling period
                         logger.debug("multicast endpoint: {item} value:\n".format(item=item))
                         logger.debug(endp_value)
                         for value_name, value in endp_value.items():
@@ -1071,8 +1079,10 @@ class L3VariableTime(Realm):
                 self.cx_profile.side_b_max_pdu = dl_pdu
 
                 # Multicast need to flow the same rates and pdu settings
-                self.multicast_profile.side_a_min_bps = ul
-                self.multicast_profile.side_a_max_bps = ul
+                # the Min Tx Rate for the station needs to be zero
+                self.multicast_profile.side_a_min_bps = 0
+                self.multicast_profile.side_a_max_bps = 0
+
                 self.multicast_profile.side_b_min_bps = dl
                 self.multicast_profile.side_b_max_bps = dl
 
@@ -1080,6 +1090,8 @@ class L3VariableTime(Realm):
                 self.multicast_profile.side_a_max_pdu = ul_pdu
                 self.multicast_profile.side_b_min_pdu = dl_pdu
                 self.multicast_profile.side_b_max_pdu = dl_pdu
+
+                self
 
                 # Update connections with the new rate and pdu size config.
                 self.build(rebuild=True)
