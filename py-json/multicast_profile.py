@@ -23,8 +23,8 @@ class MULTICASTProfile(LFCliBase):
                 side_b_min_pdu=-1,
                 side_a_max_pdu=0,
                 side_b_max_pdu=0,
-                side_a_ip_port=-1,
-                side_b_ip_port=-1,
+                side_a_ip_port=9999, # the default needs to be the dest port
+                side_b_ip_port=9999,
                 side_a_is_rate_bursty='NO',
                 side_b_is_rate_bursty='NO',
                 side_a_is_pkt_sz_random='NO',
