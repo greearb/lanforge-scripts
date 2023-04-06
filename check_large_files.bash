@@ -449,17 +449,18 @@ clean_ath10_files() {
 clean_var_log() {
     note "Vacuuming journal..."
     journalctl --vacuum-size 1M
-    if (( ${#var_log_files[@]} < 1 )); then
-        note "No notable files in /var/log to remove"
-        return
-    fi
     local vee=""
     if (( $verbose > 0 )); then
-        printf "%s\n" "${var_log_files[@]}"
+        echo "Removing these log files:"
+        printf '      %s\n' "${var_log_files[@]}"
         vee="-v"
     fi
+    if (( ${#var_log_files[@]} < 1 )); then
+        note "    No notable files in /var/log to remove: ${#var_log_files[@]} "
+        return
+    fi
     cd /var/log
-    while read file; do
+    for file in "${var_log_files[@]}"; do
         case $file in
             /var/log/dnf.librepo.log)
                 truncate -s0 "$file" ;;
@@ -467,12 +468,24 @@ clean_var_log() {
                 rm -f $vee "$file" ;;
             /var/log/messages)
                 truncate -s0 "$file" ;;
+            /var/log/messages-*)
+                rm -f $vee "$file" ;;
             /var/log/sysmon.log)
+                truncate -s0 "$file" ;;
+            /var/log/audit/audit.log)
+                truncate -s0 "$file" ;;
+            /var/log/xrdp.log-*)
+                rm -f $vee "$file" ;;
+            /var/log/xrdp-sesman.log-*)
+                rm -f $vee "$file" ;;
+            /var/log/xrdp.log)
+                truncate -s0 "$file" ;;
+            /var/log/xrdp-sesman.log)
                 truncate -s0 "$file" ;;
             *)
                 rm -f $vee "$file";;
         esac
-    done <<< "${var_log_files[@]}"
+    done
     cd "$starting_dir"
 }
 
@@ -823,7 +836,7 @@ survey_ath10_files() {
 var_log_files=()
 survey_var_log() {
     debug "Surveying var log"
-    mapfile -t var_log_files < <(find /var/log -type f -size +1M \
+    mapfile -t var_log_files < <(find /var/log -type f -size +256k \
         -not \( -path '*/journal/*' -o -path '*/sa/*' -o -path '*/lastlog' \) 2>/dev/null ||:)
     if [[ ${var_log_files+x} = x ]]; then
         totals[l]=$(du -hc "${var_log_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
