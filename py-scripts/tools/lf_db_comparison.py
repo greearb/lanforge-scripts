@@ -15,7 +15,6 @@ import sys
 import sqlite3
 import argparse
 import openpyxl
-import importlib
 import pandas as pd
 from datetime import datetime
 import datetime
@@ -40,7 +39,7 @@ class db_comparison():
         now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S_")  # %Y-%m-%d-%H-h-%m-m-%S-s
         if directory_name:
             self.directory = os.path.join(now + str(directory_name))
-            print(self.directory)
+            print("Name of the Report Folder:", self.directory)
         try:
             if not os.path.exists(self.directory):
                 os.mkdir(self.directory)
@@ -139,13 +138,34 @@ class db_comparison():
                        'final_test_tags' : [],
                        'percentage_values' : None
                        }
+
+        # calculating the percentage for numeric-score_1 & numeric-score_2
+        percentage_list = []
+        for i in range(len(final_dict)):
+            for j in range(len(final_dict[i]['numeric-score_1'])):
+                if final_dict[i]['numeric-score_2'][
+                    j] == 0:  # checking the divisor value 0 or not, before calculating the percentage
+                    percentage_diff, for_color_box = 0.0, 0.0
+                    percentage_list.append(str(percentage_diff) + "%")
+                else:  # if divisor not equal to zero, calculate the simple percentage
+                    percentage_diff = round(
+                        (abs((final_dict[i]['numeric-score_2'][j] / final_dict[i]['numeric-score_1'][j])) * 100), 1)
+                    percentage_list.append(str(percentage_diff) + "%")
+        print("\n List of the percentage values for all stations:\n", percentage_list)
+
+        # TODO: need to remove the slicing the list
+        # slicing the list into equally with each sub-list 16 items due to the percentage_list has 64 items of the 4 tables values.
+        merged_dict['percentage_values'] = [percentage_list[i:i + 16] for i in range(0, len(percentage_list), 16)]
+        print("\n Comparison Values of all tables :", merged_dict['percentage_values'])
+
+
         for i in range(len(final_dict)):
             merged_dict['test_tag'].append(list((final_dict[i]['test-tag'].values())))
             merged_dict['n_score1'].append(list((final_dict[i]['numeric-score_1'].values())))
             merged_dict['n_score2'].append(list((final_dict[i]['numeric-score_2'].values())))
             merged_dict["sorted_test_tags"].append([tag for tag in merged_dict['test_tag'][i][0:len(merged_dict['test_tag'][i]):4]]) # TODO: Try to find the other way to access the test-tags instead list slicing
         print("\n All test-tags of the merged tables : \n", merged_dict['test_tag'])
-        print("\n Sorted Test-tags without duplicates for final tables :\n", merged_dict["sorted_test_tags"])
+        print("\n Sorted Test-tags of the all tables without duplicates :\n", merged_dict["sorted_test_tags"])
 
         # Separating the test-tags extended with ' ' 3 times for each table
         for item in merged_dict["sorted_test_tags"]:
@@ -157,22 +177,6 @@ class db_comparison():
         print("\n Numeric Score values of db1 :\n", merged_dict['n_score1'])
         print("\n Numeric Score values of db2 :\n", merged_dict['n_score2'])
 
-        # calculating the percentage for numeric-score_1 & numeric-score_2
-        percentage_list = []
-        for i in range(len(final_dict)):
-            for j in range(len(final_dict[i]['numeric-score_1'])):
-                if final_dict[i]['numeric-score_2'][j] == 0:    # checking the divisor value 0 or not, before calculating the percentage
-                    percentage_diff, for_color_box = 0.0, 0.0
-                    percentage_list.append(str(percentage_diff) + "%")
-                else:               # if divisor not equal to zero, calculate the simple percentage
-                    percentage_diff = round((abs((final_dict[i]['numeric-score_1'][j] / final_dict[i]['numeric-score_2'][j])) * 100), 1)
-                    percentage_list.append(str(percentage_diff) + "%")
-        print("List of the percentage values for 1-station:\n", percentage_list)
-
-        # TODO: need to remove the slicing the list
-        # slicing the list into equally with each sub-list 16 items due to the percentage_list has 64 items of the 4 tables values.
-        merged_dict['percentage_values'] = [percentage_list[i:i + 16] for i in range(0, len(percentage_list), 16)]
-        print("Comparison Values :", merged_dict['percentage_values'])
 
         # def extract_number(s):
         #     return int(s.split()[-2])
