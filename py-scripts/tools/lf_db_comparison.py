@@ -13,6 +13,7 @@ Example :
 import os
 import sys
 import sqlite3
+import logging
 import argparse
 import openpyxl
 import pandas as pd
@@ -22,8 +23,11 @@ from openpyxl.styles import Alignment, PatternFill
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
+logger =logging.getLogger(__name__)
+
 class db_comparison():
     def __init__(self, data_base1=None, data_base2=None, table_name=None):
+        self.csv_file_name = None
         self.short_description = None
         self.sub_lists = None
         self.conn2 = None
@@ -39,20 +43,20 @@ class db_comparison():
         now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S_")  # %Y-%m-%d-%H-h-%m-m-%S-s
         if directory_name:
             self.directory = os.path.join(now + str(directory_name))
-            print("Name of the Report Folder:", self.directory)
+            logger.info("Name of the Report Folder: {}".format(self.directory))
         try:
             if not os.path.exists(self.directory):
                 os.mkdir(self.directory)
         except Exception as e:
-            print(e)
+            logger.error("ERROR : The report path is existed but unable to find. Exception raised : {}\n".format(e))
 
     def checking_data_bases(self, db1, db2):
         # checking if database files r exist
         if not os.path.isfile(db1):
-            print(f"Error: File {db1} does not exist")
+            logger.error(f"Error: File {db1} does not exist\n")
             exit()
         if not os.path.isfile(db2):
-            print(f"Error: File {db2} does not exist")
+            logger.error(f"Error: File {db2} does not exist\n")
             exit()
 
         # cursor for first database
@@ -63,15 +67,15 @@ class db_comparison():
         # column names from first database
         cursor1.execute(f"SELECT * FROM {self.table_name} LIMIT 1")
         columns1 = [col[0] for col in cursor1.description]
-        print("First database columns names:", columns1)
+        logger.info(f"First database columns names: {columns1}")
 
         # column names from second database
         cursor2.execute(f"SELECT * FROM {self.table_name} LIMIT 1")
         columns2 = [col[0] for col in cursor2.description]
-        print("Second database columns names:", columns2)
+        logger.info(f"Second database columns names: {columns2}")
 
         if columns1 != columns2:
-            print("Error: Column names do not match")
+            logger.error("Error: DB1, DB2 column names are not matched.")
             exit()
 
         cursor1.execute(f"SELECT * FROM {self.table_name}")
@@ -81,9 +85,9 @@ class db_comparison():
         data2 = cursor2.fetchall()
 
         if data1 == data2:
-            print("Data is identical (Same) in the given two databases.")
+            logger.info("Data is identical (Same) in the given two databases.")
         else:
-            print("Data is not identical in the given two databases.")
+            logger.info("Data is not identical in the given two databases.")
 
     def querying(self):
         # Querying the databases base on the test-tags
@@ -103,6 +107,7 @@ class db_comparison():
             query.append(
                 'SELECT DISTINCT "test-tag",  "short-description", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
                 test_tags[i] + '\" and "short-description" LIKE \"'+ self.short_description + '\";')
+        # query dataframe dictionary
         query_df_dict = {
             "db1_df" : [],
             "db2_df" : [],
@@ -122,144 +127,101 @@ class db_comparison():
         for sorted_df in range(len(query_df_dict['sorted_db1_df'])):
             query_df_dict["merged_df"].append(query_df_dict["sorted_db1_df"][sorted_df].merge(query_df_dict["sorted_db2_df"][sorted_df], on=['test-tag', 'short-description'], suffixes=('_1', '_2')))
 
-        print("Query DataFrames List After Merge :", query_df_dict["merged_df"])
+        logger.info("Query DataFrames List After Merge : {}".format(query_df_dict["merged_df"]))
 
-        # converting 'merged_df' list to dict data
-        final_dict = []
-        for i in query_df_dict["merged_df"]:
-            final_dict.append(i.to_dict())
-        print("\n Final dictionary list:", final_dict)
-
-        # Separating the test-tags, numeric-score of the db1 and db2 and storing them in list
-        merged_dict = {'test_tag': [],
-                       'n_score1': [],
-                       'n_score2': [],
-                       'sorted_test_tags' : [],
-                       'final_test_tags' : [],
-                       'percentage_values' : None
-                       }
-
-        # calculating the percentage for numeric-score_1 & numeric-score_2
+        # Calculating the percentage for the db1-numeric-score & db2-numeric-score and attaching the Comparison (%) values to same dataframe
         percentage_list = []
-        for i in range(len(final_dict)):
-            for j in range(len(final_dict[i]['numeric-score_1'])):
-                if final_dict[i]['numeric-score_2'][
-                    j] == 0:  # checking the divisor value 0 or not, before calculating the percentage
-                    percentage_diff, for_color_box = 0.0, 0.0
-                    percentage_list.append(str(percentage_diff) + "%")
-                else:  # if divisor not equal to zero, calculate the simple percentage
-                    percentage_diff = round(
-                        (abs((final_dict[i]['numeric-score_2'][j] / final_dict[i]['numeric-score_1'][j])) * 100), 1)
-                    percentage_list.append(str(percentage_diff) + "%")
-        print("\n List of the percentage values for all stations:\n", percentage_list)
-
-        # TODO: need to remove the slicing the list
-        # slicing the list into equally with each sub-list 16 items due to the percentage_list has 64 items of the 4 tables values.
-        merged_dict['percentage_values'] = [percentage_list[i:i + 16] for i in range(0, len(percentage_list), 16)]
-        print("\n Comparison Values of all tables :", merged_dict['percentage_values'])
-
-
-        for i in range(len(final_dict)):
-            merged_dict['test_tag'].append(list((final_dict[i]['test-tag'].values())))
-            merged_dict['n_score1'].append(list((final_dict[i]['numeric-score_1'].values())))
-            merged_dict['n_score2'].append(list((final_dict[i]['numeric-score_2'].values())))
-            merged_dict["sorted_test_tags"].append([tag for tag in merged_dict['test_tag'][i][0:len(merged_dict['test_tag'][i]):4]]) # TODO: Try to find the other way to access the test-tags instead list slicing
-        print("\n All test-tags of the merged tables : \n", merged_dict['test_tag'])
-        print("\n Sorted Test-tags of the all tables without duplicates :\n", merged_dict["sorted_test_tags"])
-
-        # Separating the test-tags extended with ' ' 3 times for each table
-        for item in merged_dict["sorted_test_tags"]:
-            sub_list = []
-            for elm in item:
-                sub_list.extend([elm, ' ', ' ', ' '])
-            merged_dict['final_test_tags'].append(sub_list)
-        print("\n List of the test-tags extended with ' ' 3 times for each table :\n ", merged_dict['final_test_tags'])
-        print("\n Numeric Score values of db1 :\n", merged_dict['n_score1'])
-        print("\n Numeric Score values of db2 :\n", merged_dict['n_score2'])
-
-
-        # def extract_number(s):
-        #     return int(s.split()[-2])
-        # short_desc_values = list(final_dict[0]['short-description'].values())
-        # print("\n Short-Description list: ", list(short_desc_values))
-        # numbers = list(map(extract_number, short_desc_values))
-        # combined = list(zip(numbers, percentage_list))
-        # result = {k: v for k, v in combined}
-        # print("Mapping the result comparisons to the short-description :", result)  # result= {1: '100.2%', 19: '100.0%'}
-
-        tables = []
-        for i in range(len(merged_dict['n_score1'])):
-            if not test_tags[i] == "AP_AUTO":
-                tables.append(pd.DataFrame({'Radio-Type': merged_dict['final_test_tags'][i],
-                                            'No of Clients': ['1', '5', '10', '19', '1', '5', '10', '19', '1', '5',
-                                                              '10', '19',
-                                                              '1', '5', '10', '19'],
-                                            'Values DB1': merged_dict['n_score1'][i],
-                                            'Values DB2': merged_dict['n_score2'][i],
-                                            'Comparison (%)': merged_dict['percentage_values'][i]}))
+        for item in query_df_dict['merged_df']:
+            temp_list = []
+            for i in range(len(item['numeric-score_1'])):
+                temp_list.append(str(round(abs(((item['numeric-score_2'][i] / item['numeric-score_1'][i]) * 100)), 1)) + "%")
+            percentage_list.append(temp_list)
+            item['Comparison (%)'] = temp_list      # adding the comparison column
+            if item['test-tag'][0] == "AP_AUTO":
+                item.rename(columns={'test-tag': 'Radio-Type', 'short-description': 'Short Description - Band Ranges', 'numeric-score_1':'Values of DB1', 'numeric-score_2':'Values of DB2'}, inplace=True)
             else:
-                tables.append(pd.DataFrame({'Type': ['', '', '', '', 'AP_AUTO', '', '', '', ''],
-                                            'Band': ['', '2 Ghz', '', '', '5 Ghz', '', '', 'Dual Band', ''],
-                                            'Time': ['Min', 'Avg', 'Max', 'Min', 'Avg', 'Max', 'Min', 'Avg', 'Max'],
-                                            'Values DB1': merged_dict['n_score1'][i],
-                                            'Values DB2': merged_dict['n_score2'][i],
-                                            'Comparison (%)': merged_dict['percentage_values'][i]}))
+                item.rename(columns={'test-tag': 'Radio-Type', 'short-description': 'No of Clients', 'numeric-score_1':'Values of DB1', 'numeric-score_2':'Values of DB2'}, inplace=True)
+        logger.info("Percentage values for all tables in a list :".format(percentage_list))
+        logger.info("Final Data Frame List:".format(query_df_dict["merged_df"]))
 
+        # building the new output directory
         self.building_output_directory()
+        # converting the dataframes list into a csv file
+        for n in range(len(query_df_dict["merged_df"])):
+            if query_df_dict["merged_df"][n]['Radio-Type'][n] == 'AP_AUTO':
+                self.csv_file_name = 'ap_auto.csv'
+                with open(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/{self.csv_file_name}', 'w') as f:
+                    for i, df in enumerate(query_df_dict["merged_df"]):
+                        if df['Radio-Type'][n] == 'AP_AUTO':
+                            df.to_csv(f, index=True, header=f'Table{i+1}')
+            else:
+                self.csv_file_name = 'wct.csv'
+                with open(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/{self.csv_file_name}', 'w') as f:
+                    for i, df in enumerate(query_df_dict["merged_df"]):
+                        if df['Radio-Type'][n] != 'AP_AUTO':
+                            df.to_csv(f, index=True, header=f'Table{i+1}')
+
         writer_obj = pd.ExcelWriter(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/lrq_db_comparison.xlsx', engine='xlsxwriter')
 
-        tables[0].to_excel(writer_obj, sheet_name='LRQ', index=False, startrow=4, startcol=0)
+        # placing the tables in different Excel sheet based on the test-tags
 
-        tables[1].to_excel(writer_obj, sheet_name='LRQ', index=False, startrow=4, startcol=6)
+        row, column= 9, 0
+        for i, df in enumerate(query_df_dict["merged_df"]):
+            if i > 0:
+                if i % 2 != 0:
+                    column = len(query_df_dict["merged_df"][i - 1].columns) + 1
+                else:
+                    row += len(query_df_dict["merged_df"][i - 1]) + 2
+                    column = 0
+            if df['Radio-Type'][i] != 'AP_AUTO':
+                df.to_excel(writer_obj, sheet_name='LRQ-WCT', index=False, startrow=row, startcol=column)
+                writer_obj.sheets['LRQ-WCT'].write(2, 5, "THE LRQ WCT DATA COMPARISON")
+                writer_obj.sheets['LRQ-WCT'].write(4, 0, "Vaule of DB1 :")
+                writer_obj.sheets['LRQ-WCT'].write(6, 0, "Vaule of DB1 :")
+            else:
+                df.to_excel(writer_obj, sheet_name='LRQ-AP_AUT0', index=False, startrow=9, startcol=0)
+                writer_obj.sheets['LRQ-AP_AUT0'].write(2, 5, "THE LRQ AP-AUTO DATA COMPARISON")
+                writer_obj.sheets['LRQ-AP_AUT0'].write(4, 0, "Vaule of DB1 :")
+                writer_obj.sheets['LRQ-AP_AUT0'].write(6, 0, "Vaule of DB1 :")
 
-        tables[2].to_excel(writer_obj, sheet_name='LRQ', index=False, startrow=22, startcol=0)
+        writer_obj.save()
 
-        tables[3].to_excel(writer_obj, sheet_name='LRQ', index=False, startrow=22, startcol=6)
+        logger.info("Report Path : ", f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/lrq_db_comparison.xlsx')
 
-        tables[4].to_excel(writer_obj, sheet_name='LRQ', index=False, startrow=40, startcol=0)
-
-        tables[5].to_excel(writer_obj, sheet_name='LRQ', index=False, startrow=40, startcol=6)
-
-        tables[6].to_excel(writer_obj, sheet_name='LRQ', index=False, startrow=58, startcol=0)
-
-        tables[7].to_excel(writer_obj, sheet_name='LRQ', index=False, startrow=58, startcol=6)
-
-        tables[8].to_excel(writer_obj, sheet_name='LRQ', index=False, startrow=79, startcol=0)
-
-        writer_obj.sheets['LRQ'].write(2, 5, "THE LRQ DATA COMPARISON")
-
-        ############################################################
-
-        # for column in table1:
-        #  table1   column_width = max(table1[column].astype(str).map(len).max(), len(column))
-        #     col_idx = table1.columns.get_loc(column)
-        #     writer_obj.sheets['LRQ'].set_column(col_idx, col_idx, column_width)
-
-        #############################################################
-
-        writer_obj.close()
-
-        print("Report Path : ", f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/lrq_db_comparison.xlsx')
         wb = openpyxl.load_workbook(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/lrq_db_comparison.xlsx')
-        ws = wb['LRQ']
-        ws.column_dimensions['A'].width = 29
-        ws.column_dimensions['B'].width = 14
-        ws.column_dimensions['B'].alignment = Alignment(horizontal='center')
-        ws.column_dimensions['C'].width = 11
-        ws.column_dimensions['D'].width = 11
+        # Styling for sheet-1
+        ws = wb['LRQ-WCT']
+        ws.column_dimensions['A'].alignment = Alignment(horizontal='center')
+        ws.column_dimensions['A'].width = 30
+        ws.column_dimensions['B'].width = 17
+        ws.column_dimensions['C'].width = 13
+        ws.column_dimensions['D'].width = 13
         ws.column_dimensions['E'].width = 15
-        ws.column_dimensions['F'].width = 24
+        ws.column_dimensions['F'].width = 27
         ws.column_dimensions['F'].alignment = Alignment(horizontal='center')
         ws.column_dimensions['E'].alignment = Alignment(horizontal='right')
         fill_cell1 =  PatternFill(patternType='solid', fgColor='FEE135')
         ws['F3'].fill = fill_cell1
-        ws.column_dimensions['G'].width = 29
-        ws.column_dimensions['H'].width = 14
-        ws.column_dimensions['H'].alignment = Alignment(horizontal='center')
-        ws.column_dimensions['I'].width = 11
-        ws.column_dimensions['J'].width = 11
+        ws.column_dimensions['G'].width = 30
+        ws.column_dimensions['H'].width = 17
+        ws.column_dimensions['I'].width = 13
+        ws.column_dimensions['J'].width = 13
         ws.column_dimensions['K'].width = 15
         ws.column_dimensions['K'].alignment = Alignment(horizontal='right')
+
+        # Styling for sheet-2
+        ws1 = wb['LRQ-AP_AUT0']
+        ws1.column_dimensions['A'].alignment = Alignment(horizontal='center')
+        ws1.column_dimensions['A'].width = 15
+        ws1.column_dimensions['B'].width = 35
+        ws1.column_dimensions['C'].width = 13
+        ws1.column_dimensions['D'].width = 13
+        ws1.column_dimensions['E'].width = 15
+        ws1.column_dimensions['F'].width = 30
+        ws1.column_dimensions['F'].alignment = Alignment(horizontal='center')
+        ws1.column_dimensions['E'].alignment = Alignment(horizontal='right')
+        fill_cell1 =  PatternFill(patternType='solid', fgColor='FEE135')
+        ws1['F3'].fill = fill_cell1
         wb.save(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/lrq_db_comparison.xlsx')
         wb.close()
 
