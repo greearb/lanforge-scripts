@@ -12,6 +12,7 @@ Example :
 
 import os
 import sys
+import importlib
 import sqlite3
 import logging
 import argparse
@@ -21,9 +22,11 @@ from datetime import datetime
 import datetime
 from openpyxl.styles import Alignment, PatternFill
 
-sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 logger =logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
 
 class db_comparison():
     def __init__(self, data_base1=None, data_base2=None, table_name=None):
@@ -230,8 +233,25 @@ def main():
     parser.add_argument('--db1', help='Path to first database file (.db)')
     parser.add_argument('--db2', help='Path to second database file (.db)')
     parser.add_argument('--table_name', help='Name of table to compare', default="qa_table")
+    # logging configuration:
+    parser.add_argument('--log_level', default=None,  help='Set logging level: debug | info | warning | error | critical')
+
+    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
+
+    # set the logger level to debug
+    logger_config = lf_logger_config.lf_logger_config()
+
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
+    logger.debug("Comparing results db1: {db1} db2: {db2} ".format(db1=args.db1,db2=args.db2))
 
     obj = db_comparison(data_base1=args.db1,
                         data_base2=args.db2,
