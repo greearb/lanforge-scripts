@@ -92,6 +92,27 @@ class db_comparison():
         else:
             logger.info("Data is not identical in the given two databases.")
 
+    def db_querying(self, column_names):
+        # Querying the databases
+        column_names = ','.join(column_names)
+
+        query = ['SELECT '+ column_names +' FROM ' + self.table_name + ' LIMIT 1;']
+        logger.info("Query Results:".format(query))
+        merged_df = []
+        db1_query , db2_query = None, None
+        if query is not None:
+            for i in query:
+                db1_query = pd.read_sql_query(i, self.conn1)
+                db2_query = pd.read_sql_query(i, self.conn2)
+            df1 = pd.DataFrame(db1_query)
+            df2 = pd.DataFrame(db2_query)
+            merged_df = pd.concat([df1, df2])
+        else:
+            logger.info("Query is empty")
+
+        logger.info("Merged Query Results :".format(merged_df['kernel'][0]))
+        return merged_df
+
     def querying(self):
         # Querying the databases base on the test-tags
         query = []
@@ -107,8 +128,7 @@ class db_comparison():
                 self.short_description = 'DL Mbps - % STA'
             elif test_tags[i] == "AP_AUTO":
                 self.short_description = 'Basic Client Connectivity % %'
-            query.append(
-                'SELECT DISTINCT "test-tag",  "short-description", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
+            query.append('SELECT DISTINCT "test-tag",  "short-description", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
                 test_tags[i] + '\" and "short-description" LIKE \"'+ self.short_description + '\";')
         # query dataframe dictionary
         query_df_dict = {
@@ -118,19 +138,21 @@ class db_comparison():
             "sorted_db2_df" : [],
             "merged_df" : []
         }
-        # reading the sql query's from the both databases
-        for i in query:
-            query_df_dict['db1_df'].append(pd.read_sql_query(i, self.conn1))
-            query_df_dict['db2_df'].append(pd.read_sql_query(i, self.conn2))
-        # sorting the two databases based on test-tags and placing in different list
-        for df in range(len(query_df_dict['db1_df'])):
-            query_df_dict["sorted_db1_df"].append(query_df_dict["db1_df"][df].sort_values(by='test-tag', ascending=True))
-            query_df_dict["sorted_db2_df"].append(query_df_dict["db2_df"][df].sort_values(by='test-tag', ascending=True))
-        # merging the dataframes and placing in a 'merged_df' list
-        for sorted_df in range(len(query_df_dict['sorted_db1_df'])):
-            query_df_dict["merged_df"].append(query_df_dict["sorted_db1_df"][sorted_df].merge(query_df_dict["sorted_db2_df"][sorted_df], on=['test-tag', 'short-description'], suffixes=('_1', '_2')))
-
-        logger.info("Query DataFrames List After Merge : {}".format(query_df_dict["merged_df"]))
+        if query:
+            # reading the sql query's from the both databases
+            for i in query:
+                query_df_dict['db1_df'].append(pd.read_sql_query(i, self.conn1))
+                query_df_dict['db2_df'].append(pd.read_sql_query(i, self.conn2))
+            # sorting the two databases based on test-tags and placing in different list
+            for df in range(len(query_df_dict['db1_df'])):
+                query_df_dict["sorted_db1_df"].append(query_df_dict["db1_df"][df].sort_values(by='test-tag', ascending=True))
+                query_df_dict["sorted_db2_df"].append(query_df_dict["db2_df"][df].sort_values(by='test-tag', ascending=True))
+            # merging the dataframes and placing in a 'merged_df' list
+            for sorted_df in range(len(query_df_dict['sorted_db1_df'])):
+                query_df_dict["merged_df"].append(query_df_dict["sorted_db1_df"][sorted_df].merge(query_df_dict["sorted_db2_df"][sorted_df], on=['test-tag', 'short-description'], suffixes=('_1', '_2')))
+            # removing the empty dataframes from the list of the dataframes
+            query_df_dict["merged_df"] = [df for df in query_df_dict["merged_df"] if not df.empty]
+            logger.info("Query DataFrames List After Merge : {}".format(query_df_dict["merged_df"]))
 
         # Calculating the percentage for the db1-numeric-score & db2-numeric-score and attaching the Comparison (%) values to same dataframe
         percentage_list = []
@@ -149,26 +171,24 @@ class db_comparison():
 
         # building the new output directory
         self.building_output_directory()
-        # converting the dataframes list into a csv file
-        for n in range(len(query_df_dict["merged_df"])):
-            if query_df_dict["merged_df"][n]['Radio-Type'][n] == 'AP_AUTO':
-                self.csv_file_name = 'ap_auto.csv'
-                with open(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/{self.csv_file_name}', 'w') as f:
-                    for i, df in enumerate(query_df_dict["merged_df"]):
-                        if df['Radio-Type'][n] == 'AP_AUTO':
-                            df.to_csv(f, index=True, header=f'Table{i+1}')
-            else:
-                self.csv_file_name = 'wct.csv'
-                with open(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/{self.csv_file_name}', 'w') as f:
-                    for i, df in enumerate(query_df_dict["merged_df"]):
-                        if df['Radio-Type'][n] != 'AP_AUTO':
-                            df.to_csv(f, index=True, header=f'Table{i+1}')
 
+        if query_df_dict["merged_df"]:
+            # converting the dataframes list into a csv file
+            for n in range(len(query_df_dict["merged_df"])):
+                if query_df_dict["merged_df"][n]['Radio-Type'][0] == 'AP_AUTO':
+                    with open(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/ap_auto.csv', 'w') as f:
+                        for i, df in enumerate(query_df_dict["merged_df"]):
+                            if df['Radio-Type'][0] == 'AP_AUTO':
+                                df.to_csv(f, index=True, header=f'Table{i+1}')
+                else:
+                    with open(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/wct.csv', 'w') as f:
+                        for i, df in enumerate(query_df_dict["merged_df"]):
+                            if df['Radio-Type'][0] != 'AP_AUTO':
+                                df.to_csv(f, index=True, header=f'Table{i+1}')
+
+        # placing the tables in different Excel-Sheets based on the test-tags
         writer_obj = pd.ExcelWriter(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/lrq_db_comparison.xlsx', engine='xlsxwriter')
-
-        # placing the tables in different Excel sheet based on the test-tags
-
-        row, column= 9, 0
+        row, column = 9, 0
         for i, df in enumerate(query_df_dict["merged_df"]):
             if i > 0:
                 if i % 2 != 0:
@@ -176,7 +196,7 @@ class db_comparison():
                 else:
                     row += len(query_df_dict["merged_df"][i - 1]) + 2
                     column = 0
-            if df['Radio-Type'][i] != 'AP_AUTO':
+            if df['Radio-Type'][0] != 'AP_AUTO':
                 df.to_excel(writer_obj, sheet_name='LRQ-WCT', index=False, startrow=row, startcol=column)
                 writer_obj.sheets['LRQ-WCT'].write(2, 5, "THE LRQ WCT DATA COMPARISON")
                 writer_obj.sheets['LRQ-WCT'].write(4, 0, "Vaule of DB1 :")
@@ -189,43 +209,47 @@ class db_comparison():
 
         writer_obj.save()
 
-        logger.info("Report Path : ", f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/lrq_db_comparison.xlsx')
-
+        # styling the sheets
         wb = openpyxl.load_workbook(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/lrq_db_comparison.xlsx')
-        # Styling for sheet-1
-        ws = wb['LRQ-WCT']
-        ws.column_dimensions['A'].alignment = Alignment(horizontal='center')
-        ws.column_dimensions['A'].width = 30
-        ws.column_dimensions['B'].width = 17
-        ws.column_dimensions['C'].width = 13
-        ws.column_dimensions['D'].width = 13
-        ws.column_dimensions['E'].width = 15
-        ws.column_dimensions['F'].width = 27
-        ws.column_dimensions['F'].alignment = Alignment(horizontal='center')
-        ws.column_dimensions['E'].alignment = Alignment(horizontal='right')
-        fill_cell1 =  PatternFill(patternType='solid', fgColor='FEE135')
-        ws['F3'].fill = fill_cell1
-        ws.column_dimensions['G'].width = 30
-        ws.column_dimensions['H'].width = 17
-        ws.column_dimensions['I'].width = 13
-        ws.column_dimensions['J'].width = 13
-        ws.column_dimensions['K'].width = 15
-        ws.column_dimensions['K'].alignment = Alignment(horizontal='right')
+        for n in range(len(query_df_dict["merged_df"])):
+            if query_df_dict["merged_df"][n]['Radio-Type'][0] == 'AP_AUTO':
+                # Styling for sheet-LRQ-AP_AUTO
+                ws1 = wb['LRQ-AP_AUT0']
+                ws1.column_dimensions['A'].alignment = Alignment(horizontal='center')
+                ws1.column_dimensions['A'].width = 15
+                ws1.column_dimensions['B'].width = 35
+                ws1.column_dimensions['C'].width = 13
+                ws1.column_dimensions['D'].width = 13
+                ws1.column_dimensions['E'].width = 15
+                ws1.column_dimensions['F'].width = 30
+                ws1.column_dimensions['F'].alignment = Alignment(horizontal='center')
+                ws1.column_dimensions['E'].alignment = Alignment(horizontal='right')
+                fill_cell1 = PatternFill(patternType='solid', fgColor='FEE135')
+                ws1['F3'].fill = fill_cell1
+            else:
+                # Styling for sheet-LRQ-WCT
+                ws = wb['LRQ-WCT']
+                ws.column_dimensions['A'].alignment = Alignment(horizontal='center')
+                ws.column_dimensions['A'].width = 30
+                ws.column_dimensions['B'].width = 17
+                ws.column_dimensions['C'].width = 13
+                ws.column_dimensions['D'].width = 13
+                ws.column_dimensions['E'].width = 15
+                ws.column_dimensions['F'].width = 27
+                ws.column_dimensions['F'].alignment = Alignment(horizontal='center')
+                ws.column_dimensions['E'].alignment = Alignment(horizontal='right')
+                fill_cell1 =  PatternFill(patternType='solid', fgColor='FEE135')
+                ws['F3'].fill = fill_cell1
+                ws.column_dimensions['G'].width = 30
+                ws.column_dimensions['H'].width = 17
+                ws.column_dimensions['I'].width = 13
+                ws.column_dimensions['J'].width = 13
+                ws.column_dimensions['K'].width = 15
+                ws.column_dimensions['K'].alignment = Alignment(horizontal='right')
 
-        # Styling for sheet-2
-        ws1 = wb['LRQ-AP_AUT0']
-        ws1.column_dimensions['A'].alignment = Alignment(horizontal='center')
-        ws1.column_dimensions['A'].width = 15
-        ws1.column_dimensions['B'].width = 35
-        ws1.column_dimensions['C'].width = 13
-        ws1.column_dimensions['D'].width = 13
-        ws1.column_dimensions['E'].width = 15
-        ws1.column_dimensions['F'].width = 30
-        ws1.column_dimensions['F'].alignment = Alignment(horizontal='center')
-        ws1.column_dimensions['E'].alignment = Alignment(horizontal='right')
-        fill_cell1 =  PatternFill(patternType='solid', fgColor='FEE135')
-        ws1['F3'].fill = fill_cell1
         wb.save(f'/home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/lrq_db_comparison.xlsx')
+
+        logger.info(f'Report Path : /home/tharun/lanforge-scripts/py-scripts/tools/{self.directory}/lrq_db_comparison.xlsx')
         wb.close()
 
 def main():
