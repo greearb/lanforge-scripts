@@ -25,6 +25,10 @@ USAGE="$0 # Check for large files and purge many of the most inconsequencial
  -a   # automatic: quietly empty trash and remove crash files if free space is < ${cleanup_size_mb}MB
  -b   # remove extra kernels and modules
  -c   # remove all core files
+ -e   # remove lanforge related logs:
+    lanforge_log*       run_*out
+    l4logs/*            wifi/*_log_*.txt
+    l3helper*           /usr/local/lanforge/nginx/logs/*
  -d   # remove old LANforge downloads
  -h   # help
  -k   # remove ath10k crash files
@@ -123,7 +127,7 @@ function disk_space_below() {
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
 #opts=""
-opts="abcdhklmpqrtv"
+opts="abcdehklmpqrtv"
 while getopts $opts opt; do
   case "$opt" in
     a)
@@ -145,6 +149,9 @@ while getopts $opts opt; do
       ;;
     d)
       selections+=($opt)
+      ;;
+    e)
+      selection+=($opt)
       ;;
     h)
       echo "$USAGE"
@@ -204,6 +211,7 @@ declare -A totals=(
     [b]=0
     [c]=0
     [d]=0
+    [e]=0
     [k]=0
     [l]=0
     [m]=0
@@ -217,6 +225,7 @@ declare -A desc=(
     [b]="kernel files"
     [c]="core files"
     [d]="lf downloads"
+    [e]="lanforge logs"
     [k]="lf/ath10 files"
     [l]="/var/log"
     [m]="/mnt/lf files"
@@ -231,6 +240,7 @@ declare -A surveyors_map=(
     [b]="survey_kernel_files"
     [c]="survey_core_files"
     [d]="survey_lf_downloads"
+    [e]="survey_lflogs"
     [k]="survey_ath10_files"
     [l]="survey_var_log"
     [m]="survey_mnt_lf_files"
@@ -246,6 +256,7 @@ declare -A cleaners_map=(
     [b]="clean_old_kernels"
     [c]="clean_core_files"
     [d]="clean_lf_downloads"
+    [e]="clean_lflogs"
     [k]="clean_ath10_files"
     [l]="clean_var_log"
     [m]="clean_mnt_lf_files"
@@ -327,6 +338,20 @@ clean_compressed_files() {
     fi
     totals[z]=0
 }
+
+clean_lflogs() {
+    note "Cleaning LANforge logs..."
+    local f
+    if (( ${#removable_lflogs[@]} > 0 )); then
+        for f in "${removable_lflogs[@]}"; do
+            echo "rm -f $f"
+        done
+    fi
+    removable_lflogs=()
+    totals[e]=0
+    survey_lflogs
+}
+
 clean_old_kernels() {
     note "Cleaning old CT kernels..."
     local f
@@ -573,6 +598,7 @@ removable_kernels=()    # these are for CT kernels
 removable_libmod_dirs=() # these are for CT kernels
 removable_packages=()   # these are for Fedora kernels
 removable_pkg_series=()
+
 survey_kernel_files() {
     unset removable_kernels
     unset removable_libmod_dirs
@@ -917,7 +943,7 @@ survey_compressed_files() {
 # boot_usage=`du -sh .`
 
 survey_pcap_files() {
-    debug "Surveying for lanforge report data"
+    debug "Surveying for lanforge packet captures"
     cd /home/lanforge
 
     local fsiz=0
@@ -941,6 +967,37 @@ survey_pcap_files() {
     cd "$starting_dir"
 }
 
+removable_lflogs=()
+survey_lflogs() {
+    debug "Surveying lanforge, wpa_supplicant nginx and hostapd logs"
+    local fsiz=0
+    local fnum=0
+    cd /home/lanforge
+    mapfile -t removable_lflogs < <( find ./vr_conf/./wifi/ ./l4logs/ /usr/local/lanforge/nginx/ ./l3helper/ \
+        -type f -a \( \
+                -name 'error.log'               \
+            -o -name '*_access.log'             \
+            -o -name '*_error.log'              \
+            -o -name 'lanforge_log_*'           \
+            -o -name 'run_*.out'                \
+            -o -name 'ath10k_fw_kern_logs*txt'  \
+            -o -name 'xorp-log*.txt'            \
+            -o -name 'HgenHelper*_log*'         \
+            -o -name 'hostapd_log_*'            \
+            -o -name 'wpa_supplicant_log_*'     \
+            -o -name 'gnuforge_log_*'           \
+            -o -name 'helper_shared_log_*'      \
+        \) 2>/dev/null ||:)
+    fnum=$(( 0 + ${#removable_lflogs[@]} ))
+
+    #printf '      %s\n' "${removable_lflogs[@]}"
+    if (( $fnum > 0 )); then
+        fsiz=$(du -hc "${removable_lflogs[@]}" | awk '/total/{print $1}')
+    fi
+    totals[e]="$fnum files ($fsiz): ${#removable_lflogs[@]}"
+    [[ x${totals[e]} = x ]] && totals[e]=0
+    cd "$starting_dir"
+}
 
 # report_files=()
 survey_report_data() {
@@ -965,7 +1022,6 @@ survey_report_data() {
     # report_files=("CSV files: $fnum tt $fsiz")
     cd "$starting_dir"
 }
-
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #       gather usage areas
@@ -1091,6 +1147,7 @@ while [[ $choice != q ]]; do
     echo "  b) old kernels                : ${totals[b]}"
     echo "  c) core crash files           : ${totals[c]}"
     echo "  d) old LANforge downloads     : ${totals[d]}"
+    echo "  e) old LF, wifi or nginx logs : ${totals[e]}"
     echo "  k) ath10k crash files         : ${totals[k]}"
     echo "  l) old /var/log files         : ${totals[l]}"
     echo "  m) orphaned /mnt/lf files     : ${totals[m]}"
@@ -1114,6 +1171,10 @@ while [[ $choice != q ]]; do
         ;;
     d )
         clean_lf_downloads
+        refresh=1
+        ;;
+    e )
+        clean_lflogs
         refresh=1
         ;;
     k )
