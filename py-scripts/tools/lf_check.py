@@ -234,6 +234,7 @@ class lf_check():
         self.lanforge_kernel_version = ""
         self.lanforge_server_version_full = ""
         self.lanforge_server_version = ""
+        self.lanforge_server_build_info = ""
         self.lanforge_gui_version_full = ""
         self.lanforge_gui_version = ""
         self.lanforge_gui_build_date = ""
@@ -464,6 +465,30 @@ class lf_check():
         ssh.close()
         time.sleep(1)
         return self.lanforge_server_version_full
+
+    def get_lanforge_server_build_info(self):
+        # creating shh client object we use this object to connect to router
+        ssh = paramiko.SSHClient()
+        # automatically adds the missing host key
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=self.lf_mgr_ip, port=self.lf_mgr_ssh_port, username=self.lf_mgr_user, password=self.lf_mgr_pass,
+                    allow_agent=False, look_for_keys=False, banner_timeout=600)
+        stdin, stdout, stderr = ssh.exec_command(
+            './btserver --version')
+        self.lanforge_server_build_info = stdout.readlines()
+        self.lanforge_server_build_info = [line.replace(
+            '\n', '') for line in self.lanforge_server_build_info]
+
+        # self.lanforge_server_build_info = ''.join(self.lanforge_server_build_info)
+        self.logger.info("lanforge_server_build_info: {lanforge_server_build_info}".format(
+            lanforge_server_build_info=self.lanforge_server_build_info))
+        # self.lanforge_server_build_info = self.lanforge_server_build_info.strip()
+        self.logger.info("lanforge_server_build_info: {lanforge_server_build_info}".format(
+            lanforge_server_build_info=self.lanforge_server_build_info))
+        ssh.close()
+        time.sleep(1)
+        return self.lanforge_server_build_info
+
 
     def get_lanforge_gui_version(self):
         # creating shh client object we use this object to connect to router
@@ -2019,6 +2044,17 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         exit(1)
 
     try:
+        lanforge_server_build_info = check.get_lanforge_server_build_info()
+        logger.info("lanforge_server_build_info {lanforge_server_build_info}".format(
+            lanforge_server_build_info=lanforge_server_build_info))
+    except Exception as x:
+        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+        logger.error("ERROR: lanforge_server_build_info exception, tests aborted check lanforge ip")
+        exit(1)
+
+
+
+    try:
         lanforge_gui_version_full, lanforge_gui_version, lanforge_gui_build_date, lanforge_gui_git_sha = check.get_lanforge_gui_version()
         logger.info("lanforge_gui_version_full {lanforge_gui_version_full}".format(
             lanforge_gui_version_full=lanforge_gui_version_full))
@@ -2097,11 +2133,15 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     lf_test_setup['LANforg IP'] = lanforge_system_ip
     lf_test_setup['fedora version'] = lanforge_fedora_version
     lf_test_setup['kernel version'] = lanforge_kernel_version
-    lf_test_setup['server version'] = lanforge_server_version_full
+    lf_test_setup['server version'] = lanforge_server_version_full 
     lf_test_setup['gui version'] = lanforge_gui_version
     lf_test_setup['gui build date'] = lanforge_gui_build_date
     lf_test_setup['gui git sha'] = lanforge_gui_git_sha
     lf_test_setup['scripts git sha'] = scripts_git_sha
+
+    # LANforge server build information
+    lf_server_build_info = pd.DataFrame()
+    lf_server_build_info['Server Build Information'] = lanforge_server_build_info
 
     # Successfully gathered LANforge information Run Tests
     # This is the call that runs the scripts
@@ -2155,6 +2195,12 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     report.build_table_title()
     report.set_table_dataframe(lf_test_setup)
     report.build_table()
+
+    report.set_table_title("LANForge Server Build Info")
+    report.build_table_title()
+    report.set_table_dataframe(lf_server_build_info)
+    report.build_table()
+
     report.set_table_title("LANForge CICD Server")
     report.build_table_title()
     report.set_table_dataframe(lf_server)
