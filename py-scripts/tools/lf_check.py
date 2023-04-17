@@ -678,6 +678,8 @@ Server:{server_ver}
 GUI:{gui} {gui_build}
 Platform:{platform}
 
+Server_Build_Info:{server_build_info}
+
 
                         """.format(
                             lanforge=self.lanforge_system_node_version,
@@ -687,7 +689,8 @@ Platform:{platform}
                             gui_build=self.lanforge_gui_build_date,
                             kernel=self.lanforge_kernel_version,
                             server_ver=self.lanforge_server_version_full,
-                            platform=server_version)
+                            platform=server_version,
+                            server_build_info=self.lanforge_server_build_info)
 
         self.message_txt += """
 Tests Failed:
@@ -1352,6 +1355,11 @@ junit.xml path: allure serve {junit_path}
                 meta_data_fd.write(
                     '$ lanforge_server_version: {server_version} \n'.format(
                         server_version=self.lanforge_server_version))
+
+                meta_data_fd.write(
+                    '$ lanforge_server_build_info: {server_info} \n'.format(
+                        server_info=self.lanforge_server_build_info))
+
                 meta_data_fd.write('$ LANforge command\n')
                 meta_data_fd.write(
                     "command {command}\n".format(
