@@ -32,11 +32,16 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 class inspect_sql:
     def __init__(self,
-                 _path='.',
-                 _dir='',
-                 _database_list=[],
-                 _csv_results = '',
-                 _table=None):
+                _path='.',
+                _dir='',
+                _database_list=[],
+                _csv_results = '',
+                _table=None,
+                _outfile='',
+                _outfile_name='',
+                _report_path='',
+                _log_path=''
+                 ):
         self.path = _path
         self.dir = _dir
         self.table = _table
@@ -84,12 +89,24 @@ class inspect_sql:
 
 
     def start_csv_results(self):
-        self.logger.info("self.csv_results")
+        logger.info("self.csv_results")
         self.csv_results_file = open(self.csv_results, "w")
         self.csv_results_writer = csv.writer(
             self.csv_results_file, delimiter=",")
+        # TODO add the kernel information and build information or should that be 
+        # done through inspection of the csv file
         self.csv_results_column_headers = [
-            'Test', 'Command', 'Result', 'STDOUT', 'STDERR']
+            'test-rig',
+            'test-tag',
+            'Graph-Group',
+            'test-id',
+            'short-description',
+            'Units', 
+            'Date1',
+            'numeric-score-1', 
+            'Date2',
+            'numeric-score-2',
+            'percent']
         self.csv_results_writer.writerow(self.csv_results_column_headers)
         self.csv_results_file.flush()
 
@@ -154,7 +171,7 @@ class inspect_sql:
     def compare_data(self):
         logger.info("compare the data in the database from list: {db_list}".format(db_list=self.database_list))
 
-        # TODO for now deal with single database
+        
 
         self.database = self.database_list[0]
         self.conn =sqlite3.connect(self.database)
@@ -246,10 +263,33 @@ class inspect_sql:
                             if((int(numeric_score_list[-1]) != 0 and numeric_score_list[-1] is not None ) and numeric_score_list[-2] is not None):
                                 percent_delta = round(((numeric_score_list[-2]/numeric_score_list[-1]) * 100), 2)
 
+
+                            # this needs to be more generic
                             logger.debug("Desc1: {desc1} Desc2: {desc2} Date1: {date1} Date2: {date2} units: {units} numeric_score1: {ns1} numeric_score2: {ns2} percent: {percent}".format(
                                 desc1=short_description_list[-1],desc2=short_description_list[-2],date1=date_list[-1],date2=date_list[-2],
                                 units=units_list[-1],ns1=numeric_score_list[-1],ns2=numeric_score_list[-2], percent=percent_delta))
 
+                            # TODO write the html results also
+                            # TODO write the junit xml results
+
+                            # See the method start_csv_resuts for the column headers
+                            row = [
+                                test_rig,
+                                test_tag,
+                                group,
+                                test_id_list[-1],
+                                description,
+                                units_list[-1],
+                                date_list[-1],
+                                numeric_score_list[-1],
+                                date_list[-2],
+                                numeric_score_list[-2],
+                                percent_delta
+                            ]
+
+                            self.csv_results_writer.writerow(row)
+                            self.csv_results_file.flush()
+                            logger.debug("row {}".format(row))
                             '''
                                             'Date',
                                             'test_dir',
@@ -418,6 +458,11 @@ Usage: lf_inspect.py --db  db_one,db_two
     parser.add_argument('--database', help='--database db_one,db_two', default='qa_test_db')
     parser.add_argument('--table', help='--table qa_table  default: qa_table', default='qa_table')
     parser.add_argument('--dir', help="--dir <results directory> default lf_qa", default="lf_inspect")
+    parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="lf_inspect")
+    parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_inspect.log")
+    parser.add_argument('--flat_dir', help="--flat_dir , will place the results in the top directory", action='store_true')
+
+
     # logging configuration:
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
 
@@ -453,6 +498,19 @@ Usage: lf_inspect.py --db  db_one,db_two
                        _output_html="lf_inspect.html",
                        _output_pdf="lf_inspect.pdf")
 
+    current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+    csv_results = "{dir}-{outfile}-{current_time}.csv".format(dir=__dir, outfile=args.outfile, current_time=current_time)
+    csv_results = report.file_add_path(csv_results)
+    outfile_name = "{dir}-{outfile}-{current_time}".format(dir=__dir, outfile=args.outfile, current_time=current_time)
+    outfile = report.file_add_path(outfile_name)
+    if args.flat_dir:
+        report_path = report.get_flat_dir_report_path()
+    else:
+        report_path = report.get_report_path()
+
+    log_path = report.get_log_path()
+
+
     # for relative path reporting 
     __lf_inspect_report_path = report.get_path_date_time()
 
@@ -460,8 +518,16 @@ Usage: lf_inspect.py --db  db_one,db_two
         _path=__path,
         _dir = __dir,
         _database_list=__database_list,
-        _table=__table)
+        _table=__table,
+        _csv_results=csv_results,
+        _outfile=outfile,
+        _outfile_name=outfile_name,
+        _report_path=report_path,
+        _log_path=log_path
+        )
 
+    # TODO add abilit to pass in unique names
+    inspect_db.start_csv_results()
     # TODO there would neeed to be comparison parameters passed in 
     # what was going to be used for the comparison.
     # currently use the last two runs
