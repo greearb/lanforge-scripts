@@ -58,6 +58,9 @@ class inspect_sql:
         self.html_results = ""
         self.test_rig_list = []
         self.short_description_list = []
+
+
+        # this may or maynot be needed 
         self.dut_model_num_list = "NA"
         self.dut_model_num = "NA"
         self.dut_sw_version_list = "NA"
@@ -71,11 +74,11 @@ class inspect_sql:
         self.subtest_total = 0
         self.test_run = ""
 
+        # Used for csv results
         self.csv_results = _csv_results
         self.csv_results_file = ""
         self.csv_results_writer = ""
         self.csv_results_column_headers = ""
-
 
 
         # results
@@ -86,6 +89,11 @@ class inspect_sql:
         self.background_orange = "background-color:orange"
         self.background_purple = "background-color:purple"
         self.background_blue = "background-color:blue"
+
+    def get_html_results(self):
+        return self.html_results
+
+
 
 
     def start_csv_results(self):
@@ -171,7 +179,8 @@ class inspect_sql:
     def compare_data(self):
         logger.info("compare the data in the database from list: {db_list}".format(db_list=self.database_list))
 
-        
+        # start the html results for the compare
+        self.start_html_results()
 
         self.database = self.database_list[0]
         self.conn =sqlite3.connect(self.database)
@@ -289,89 +298,46 @@ class inspect_sql:
 
                             self.csv_results_writer.writerow(row)
                             self.csv_results_file.flush()
-                            logger.debug("row {}".format(row))
-                            '''
-                                            'Date',
-                                            'test_dir',
-                                            'numeric-score',
-                                            'kernel',
-                                            'radio_fw',
-                                            'gui_ver',
-                                            'gui_build_date',
-                                            'server_ver',
-                                            'server_build_date'
-                            '''
 
-
-                            # get Device Under Test Information ,
-                            # the set command uses a hash , sorted puts it back in order
-                            # the set reduces the redundency the filster removes None
-                            # list puts it back into a list
-                            # This code is since the dut is not passed in to lf_qa.py when
-                            # regernation of graphs from db
-
-                            # we now have a single entry to add to the csv file
-
-                            # units_list = list(df_tmp['Units'])
-                            # logger.info("Inspecting::: test-rig {tr} test-tag {tt}  Graph-Group {gg}".format(tr=test_rig, tt=test_tag, gg=group))
+                            # write the html results
+            # finish the results table     
+            self.finish_html_results()            
 
 
 
-                        '''
-                            kpi_fig = (
-                                px.scatter(
-                                    df_tmp,
-                                    x="Date",
-                                    y="numeric-score",
-                                    custom_data=[
-                                        'Date',
-                                        'test_dir',
-                                        'numeric-score',
-                                        'kernel',
-                                        'radio_fw',
-                                        'gui_ver',
-                                        'gui_build_date',
-                                        'server_ver',
-                                        'server_build_date'
-                                        ],
-                                    color="short-description",
-                                    hover_name="short-description",
-                                    size_max=60)).update_traces(
-                                mode='lines+markers')
-
-                            kpi_fig.update_layout(
-                                title="{test_id} : {group} : {test_tag} : {test_rig}".format(
-                                    test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
-                                xaxis_title="Time",
-                                yaxis_title="{units}".format(units=units_list[-1]),
-                                xaxis={'type': 'date'}
-                            )
-
-                            kpi_fig.update_traces(
-                                hovertemplate="<br>".join([
-                                    "Date: %{customdata[0]}",
-                                    "test_dir: %{customdata[1]}",
-                                    "numeric-score: %{customdata[2]}",
-                                    "kernel-version: %{customdata[3]}",
-                                    "radio-fw: %{customdata[4]}",
-                                    "gui-version: %{customdata[5]}",
-                                    "gui-build-date: %{customdata[6]}",
-                                    "server-version: %{customdata[7]}",
-                                    "server-build-date: %{customdata[8]}",
-                                ])
-                            )
-
-                        '''
 
 
+    # TODO have variable type of output
+    def start_html_results(self):
+        self.html_results += """
+                <table border="1" class="dataframe">
+                    <thead>
+                        <tr style="text-align: left;">
+                          <th>test-rig</th>
+                          <th>test-tag</th>
+                          <th>Graph-Group</th>
+                          <th>short-description</th>
+                          <th>Units</th>
+                          <th>Date1</th>
+                          <th>numeric-score-1</th>
+                          <th>Date2</th>
+                          <th>numeric-score-2</th>
+                          <th>percent</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      """
 
-        pass
 
-    def get_test_rig_list(self):
-        return self.test_rig_list
+    def finish_html_results(self):
+        self.html_results += """
+                    </tbody>
+                </table>
+                <br>
+                <br>
+                <br>
+                """
 
-    def get_html_results(self):
-        return self.html_results
 
     def get_suite_html(self):
         suite_html_results = """
@@ -543,10 +509,13 @@ Usage: lf_inspect.py --db  db_one,db_two
     report.set_title("Compare Results: Verification Test Run")
     report.build_banner_left()
     report.start_content_div2()
-    report.set_obj_html("Objective", "QA Verification")
+    report.set_obj_html("Objective", "QA test run comparision")
     report.build_objective()
-    report.set_table_title("Device Under Test")
+    report.set_table_title("Test Compare")
     report.build_table_title()
+    html_results = inspect_db.get_html_results()
+    report.set_custom_html(html_results)
+    report.build_custom()
 
     report_path = report.get_path()
     report_basename = os.path.basename(report_path)
