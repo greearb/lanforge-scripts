@@ -2552,7 +2552,7 @@ Setting wifi_settings per radio
         default='eth1')
     test_l3_parser.add_argument(
         '--downstream_port',
-        help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2', default=None)
+        help='--downstream_port <cross connect downstream_port>  for use when downstream is ethernet (eth to eth connection) do not use with wifi stations example: --downstream_port eth2', default=None)
     test_l3_parser.add_argument(
         '--polling_interval',
         help="--polling_interval <seconds>",
