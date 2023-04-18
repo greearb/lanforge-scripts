@@ -75,6 +75,11 @@ class inspect_sql:
         self.test_run = ""
         self.test_result = 'NA'
 
+        self.junit_test = ''
+        # TODO the comparison needs to have a name based
+        # on the type of comparison
+        self.test_suite = 'Compare Current Run to Previous Run'
+
         # Used for csv results
         self.csv_results = _csv_results
         self.csv_results_file = ""
@@ -91,10 +96,43 @@ class inspect_sql:
         self.background_purple = "background-color:purple"
         self.background_blue = "background-color:blue"
 
+        # Allure information
+        self.junit_results = ""
+        self.junit_path_only = ""        
+
+    def set_junit_results(self, junit_results):
+        self.junit_results = junit_results
+
+    def set_junit_path_only(self, junit_path_only):
+        self.junit_path_only = junit_path_only
+
+
     def get_html_results(self):
         return self.html_results
 
+    # TODO allow for running of multiple test suites
+    def start_junit_testsuites(self):
+        self.junit_results += """<?xml version="1.0" encoding="UTF-8" ?>
+            <testsuites>
+        """
 
+    def finish_junit_testsuites(self):
+        self.junit_results += """
+        </testsuites>
+        """
+
+    def start_junit_testsuite(self):
+        self.junit_results += """
+        <testsuite name="{suite}">
+        """.format(suite=self.test_suite)
+
+    def finish_junit_testsuite(self):
+        self.junit_results += """
+        </testsuite>
+        """
+
+    def get_junit_results(self):
+        return self.junit_results
 
 
     def start_csv_results(self):
@@ -181,11 +219,19 @@ class inspect_sql:
                 """
 
     # Helper methods
+    # for the same db
     def compare_data(self):
         logger.info("compare the data in the database from list: {db_list}".format(db_list=self.database_list))
 
         # start the html results for the compare
         self.start_html_results()
+
+        # TODO should this be outside the compare data? or should it be inside so that it may change 
+        # based on the type of comparision
+        # start the juni results 
+        self.start_junit_testsuites()
+        self.start_junit_testsuite()
+
 
         self.database = self.database_list[0]
         self.conn =sqlite3.connect(self.database)
@@ -330,6 +376,8 @@ class inspect_sql:
 
 
                             # set up a loop to go through all the results
+                            # need a kpi html library or in lf_report to compare the 
+                            # kpi
                             self.html_results += """
                             <tr><td>""" + str(test_rig) + """</td>
                             <td>""" + str(test_tag) + """</td>
@@ -345,13 +393,40 @@ class inspect_sql:
                             <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
                             <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
 
-                            <td></td>
                             </tr>"""
 
+                            self.junit_test = "{test_tag} {group} {test_id}".format(test_tag=test_tag, group=group, test_id=test_id_list[-1])
+                            # record the junit results
+                            self.junit_results += """
+                                <testcase name="{name}" id="{description}">
+                                """.format(name=self.junit_test, description=description)
 
-                            # write the html results
+                            self.junit_results += """
+                                <system-out>
+                                Performance: {test_result}
+
+                                Last Run: {numeric_score_1}
+                                Prev Run: {numeric_score_2}
+
+                                percent:  {percent}
+                                </system-out>
+                                """.format(test_result=self.test_result,numeric_score_1=numeric_score_list[-1],numeric_score_2=numeric_score_list[-2], percent=percent_delta)
+
+                            # need to have tests return error messages
+                            if self.test_result != "Good" and self.test_result != "Fair":
+                                self.junit_results += """
+                                    <failure message="Performance: {result}  Percent: {percent}">
+                                    </failure>""".format(result=self.test_result, percent=percent_delta)
+                            self.junit_results += """
+                                </testcase>
+                                """
+
+
             # finish the results table     
-            self.finish_html_results()            
+            self.finish_html_results()    
+
+            self.finish_junit_testsuite()
+            self.finish_junit_testsuites()
 
 
 
@@ -579,16 +654,34 @@ Usage: lf_inspect.py --db  db_one,db_two
     report_parent_url = './../../../' + report_parent_basename
     report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)
 
-
     report.build_footer()
+
+
     html_report = report.write_html_with_timestamp()
     # logger.info("html report: {}".format(html_report))
-    print("html report: {}".format(html_report))
+    logger.info("html report: {}".format(html_report))
     try:
         report.write_pdf_with_timestamp()
-    except BaseException:
+    except Exception as x:
+        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
         logger.info("exception write_pdf_with_timestamp()")
 
+    logger.info("lf_inspect_html_report: " + html_report)
+
+    # save the juni.xml file
+    junit_results = inspect_db.get_junit_results()
+    report.set_junit_results(junit_results)
+    junit_xml = report.write_junit_results()
+    junit_path_only = junit_xml.replace('junit.xml','')
+
+    inspect_db.set_junit_results(junit_xml)
+    inspect_db.set_junit_path_only(junit_path_only)
+
+    # print later so shows up last
+    logger.info("junit.xml: allure serve {}".format(junit_xml))
+    logger.info("junit.xml path: allure serve {}".format(junit_path_only))
+
+    
 
 if __name__ == '__main__':
     main()
