@@ -73,6 +73,7 @@ class inspect_sql:
         self.subtest_failed = 0
         self.subtest_total = 0
         self.test_run = ""
+        self.test_result = 'NA'
 
         # Used for csv results
         self.csv_results = _csv_results
@@ -153,14 +154,18 @@ class inspect_sql:
                 <table border="1" class="dataframe">
                     <thead>
                         <tr style="text-align: left;">
-                          <th>Test</th>
-                          <th>Command</th>
-                          <th>Duration</th>
-                          <th>Start</th>
-                          <th>End</th>
-                          <th>Result</th>
-                          <th>STDOUT</th>
-                          <th>STDERR</th>
+                          <th>test_rig</th>
+                          <th>test_tag</th>
+                          <th>group</th>
+                          <th>test_id</th>
+                          <th>description</th>
+                          <th>units</th>
+                          <th>date_1</th>
+                          <th>numeric_score_1</th>
+                          <th>date_2</th>
+                          <th>numeric_score_2</th>
+                          <th>percentage</th>
+                          <th>analysis</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -267,7 +272,7 @@ class inspect_sql:
                             units_list = list(df_tmp['Units'])
                             short_description_list = list(df_tmp['short-description'])
                             # print out last two values in the list
-                            # TODO need to check for other values
+                            # TODO need to check for other values, note this is not a delta
                             percent_delta = 0
                             if((int(numeric_score_list[-1]) != 0 and numeric_score_list[-1] is not None ) and numeric_score_list[-2] is not None):
                                 percent_delta = round(((numeric_score_list[-2]/numeric_score_list[-1]) * 100), 2)
@@ -281,7 +286,30 @@ class inspect_sql:
                             # TODO write the html results also
                             # TODO write the junit xml results
 
-                            # See the method start_csv_resuts for the column headers
+                            # pass criteria needs to be passed in as tiers
+                            # TODO find way to rank the results
+                            if percent_delta >= 90:
+                                logger.info("Performance Good {percent}".format(percent=percent_delta))
+                                self.test_result = "Good"
+                                background = self.background_green
+                            elif percent_delta >= 70:
+                                logger.info("Performance Fair {percent}".format(percent=percent_delta))
+                                self.test_result = "Fair"
+                                background = self.background_purple
+                            elif percent_delta >= 50:
+                                logger.info("Performance Poor {percent}".format(percent=percent_delta))
+                                self.test_result = "Poor"
+                                background = self.background_orange
+                            else:
+                                logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                self.test_result = "Critical"
+                                background = self.background_red
+
+
+                            # See the method start_csv_results for the column headers
+                            # need to have an ability to pass in the headers that are to be compared as a list
+                            # basically the fields of the kpi  or print out what db1 and db2 is
+                            # TODO this is to hardcoded
                             row = [
                                 test_rig,
                                 test_tag,
@@ -293,11 +321,33 @@ class inspect_sql:
                                 numeric_score_list[-1],
                                 date_list[-2],
                                 numeric_score_list[-2],
-                                percent_delta
+                                percent_delta,
+                                self.test_result
                             ]
 
                             self.csv_results_writer.writerow(row)
                             self.csv_results_file.flush()
+
+
+                            # set up a loop to go through all the results
+                            self.html_results += """
+                            <tr><td>""" + str(test_rig) + """</td>
+                            <td>""" + str(test_tag) + """</td>
+                            <td>""" + str(group) + """</td>
+                            <td>""" + str(test_id_list[-1]) + """</td>
+                            <td>""" + str(description) + """</td>
+                            <td>""" + str(units_list[-1]) + """</td>
+                            <td>""" + str(date_list[-1]) + """</td>
+                            <td>""" + str(numeric_score_list[-1]) + """</td>
+                            <td>""" + str(date_list[-2]) + """</td>
+                            <td>""" + str(numeric_score_list[-2]) + """</td>
+
+                            <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
+                            <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
+
+                            <td></td>
+                            </tr>"""
+
 
                             # write the html results
             # finish the results table     
@@ -313,16 +363,18 @@ class inspect_sql:
                 <table border="1" class="dataframe">
                     <thead>
                         <tr style="text-align: left;">
-                          <th>test-rig</th>
-                          <th>test-tag</th>
-                          <th>Graph-Group</th>
-                          <th>short-description</th>
-                          <th>Units</th>
+                          <th>test_rig    </th>
+                          <th>test_tag</th>
+                          <th>Graph_Group          </th>
+                          <th>test_id          </th>
+                          <th>short_description</th>
+                          <th>Units            </th>
                           <th>Date1</th>
-                          <th>numeric-score-1</th>
+                          <th>numeric_score_1</th>
                           <th>Date2</th>
-                          <th>numeric-score-2</th>
+                          <th>numeric_score_2</th>
                           <th>percent</th>
+                          <th>Analysis</th>
                         </tr>
                       </thead>
                       <tbody>
