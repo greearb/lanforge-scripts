@@ -42,11 +42,13 @@ class inspect_sql:
                 _outfile='',
                 _outfile_name='',
                 _report_path='',
-                _log_path=''
+                _log_path='',
+                _lf_inspect_report_path=''
                  ):
         self.path = _path
         self.dir = _dir
         self.table = _table
+        self.lf_inspect_report_path = _lf_inspect_report_path
         logger.debug("path: {path}".format(path=self.path))
         logger.debug("dir: {dir}".format(dir=self.dir))
         self.database_list = _database_list
@@ -144,6 +146,7 @@ class inspect_sql:
             self.csv_results_file, delimiter=",")
         # TODO add the kernel information and build information or should that be 
         # done through inspection of the csv file
+        # TODO have it match the html results
         self.csv_results_column_headers = [
             'test-rig',
             'test-tag',
@@ -206,6 +209,10 @@ class inspect_sql:
                           <th>numeric_score_2</th>
                           <th>percentage</th>
                           <th>analysis</th>
+                          <th>results_1</th>
+                          <th>report_dir_1</th>
+                          <th>results_2</th>
+                          <th>report_dir_2</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -356,6 +363,20 @@ class inspect_sql:
                     # set up a loop to go through all the results
                     # need a kpi html library or in lf_report to compare the 
                     # kpi
+                    # Set the relative path for results
+                    report_path_1 =  df_data_1['kpi_path']+ "readme.html"
+                    relative_report_1 = os.path.relpath(report_path_1, self.lf_inspect_report_path)
+
+                    report_dir_path_1 =  df_data_1['kpi_path']
+                    relative_report_dir_path_1 = os.path.relpath(report_dir_path_1, self.lf_inspect_report_path)
+
+                    report_path_2 =  df_data_2['kpi_path']+ "readme.html"
+                    relative_report_2 = os.path.relpath(report_path_2, self.lf_inspect_report_path)
+
+                    report_dir_path_2 =  df_data_2['kpi_path']
+                    relative_report_dir_path_2 = os.path.relpath(report_dir_path_2, self.lf_inspect_report_path)
+
+
                     self.html_results += """
                     <tr><td>""" + str(df_data_1['test-rig']) + """</td>
                     <td>""" + str(df_data_1['test-tag']) + """</td>
@@ -370,10 +391,16 @@ class inspect_sql:
 
                     <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
                     <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
+                    <td><a href=""" + str(relative_report_1) + """ target=\"_blank\">report_1</a></td>
+                    <td><a href=""" + str(relative_report_dir_path_1) + """ target=\"_blank\">report_dir_1</a></td>
+                    <td><a href=""" + str(relative_report_2) + """ target=\"_blank\">report_2</a></td>
+                    <td><a href=""" + str(relative_report_dir_path_2) + """ target=\"_blank\">report_dir_2</a></td>
+
 
                     </tr>"""
 
-                    self.junit_test = "{test_tag} {group} {test_id}".format(test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'])
+                    self.junit_test = "{test_tag} {group} {test_id} {description}".format(
+                            test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'],description=df_data_1['short-description'])
                     # record the junit results
                     self.junit_results += """
                         <testcase name="{name}" id="{description}">
@@ -531,10 +558,14 @@ class inspect_sql:
 
                         <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
                         <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
+                        <td><a href=""" + str(df_data_1['test_run']) + """ target=\"_blank\">DATA_1</a></td>
+                        <td><a href=""" + str(df_data_2['test_run']) + """ target=\"_blank\">DATA_2</a></td>
+
 
                         </tr>"""
 
-                        self.junit_test = "{test_tag} {group} {test_id}".format(test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'])
+                        self.junit_test = "{test_tag} {group} {test_id} {description}".format(
+                            test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'],description=df_data_1['short-description'])
                         # record the junit results
                         self.junit_results += """
                             <testcase name="{name}" id="{description}">
@@ -599,6 +630,10 @@ class inspect_sql:
                           <th>numeric_score_2</th>
                           <th>percent</th>
                           <th>Analysis</th>
+                          <th>report_1</th>
+                          <th>report_dir_1</th>
+                          <th>report_2</th>
+                          <th>report_dir_2</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -765,7 +800,8 @@ Usage: lf_inspect.py --db  db_one,db_two
         _outfile=outfile,
         _outfile_name=outfile_name,
         _report_path=report_path,
-        _log_path=log_path
+        _log_path=log_path,
+        _lf_inspect_report_path = __lf_inspect_report_path
         )
 
     # TODO add abilit to pass in unique names
