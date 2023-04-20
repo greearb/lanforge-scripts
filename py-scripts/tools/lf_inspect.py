@@ -620,17 +620,26 @@ class inspect_sql:
                             Last Run: {numeric_score_1}
                             Prev Run: {numeric_score_2}
                             percent:  {percent}
+
+
                             df_data_1 : {df_data_1}
+
+
                             df_data_2 : {df_data_2}
                             </system-out>
                             """.format(test_result=self.test_result,numeric_score_1=df_data_1['numeric-score'],numeric_score_2=df_data_2['numeric-score'], 
                             percent=percent_delta,df_data_1=str_df_data_1, df_data_2=str_df_data_2)
 
+                        # self.junit_results += """
+                        #    <properties>
+                        #    <property name= "{type1}" value= "{value1}"/>
+                        #    </properties>.""".format(type1="this",value1="and that")
                         # need to have tests return error messages
                         if self.test_result != "Good" and self.test_result != "Fair":
                             self.junit_results += """
                                 <failure message="Performance: {result}  Percent: {percent}">
                                 </failure>""".format(result=self.test_result, percent=percent_delta)
+
                         self.junit_results += """
                             </testcase>
                             """
