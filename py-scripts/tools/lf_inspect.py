@@ -360,9 +360,6 @@ class inspect_sql:
                     self.csv_results_writer.writerow(row)
                     self.csv_results_file.flush()
 
-                    # set up a loop to go through all the results
-                    # need a kpi html library or in lf_report to compare the 
-                    # kpi
                     # Set the relative path for results
                     report_path_1 =  df_data_1['kpi_path']+ "readme.html"
                     relative_report_1 = os.path.relpath(report_path_1, self.lf_inspect_report_path)
@@ -541,6 +538,20 @@ class inspect_sql:
                         self.csv_results_writer.writerow(row)
                         self.csv_results_file.flush()
 
+                        # Set the relative path for results
+                        report_path_1 =  df_data_1['kpi_path']+ "readme.html"
+                        relative_report_1 = os.path.relpath(report_path_1, self.lf_inspect_report_path)
+
+                        report_dir_path_1 =  df_data_1['kpi_path']
+                        relative_report_dir_path_1 = os.path.relpath(report_dir_path_1, self.lf_inspect_report_path)
+
+                        report_path_2 =  df_data_2['kpi_path']+ "readme.html"
+                        relative_report_2 = os.path.relpath(report_path_2, self.lf_inspect_report_path)
+
+                        report_dir_path_2 =  df_data_2['kpi_path']
+                        relative_report_dir_path_2 = os.path.relpath(report_dir_path_2, self.lf_inspect_report_path)
+
+
                         # set up a loop to go through all the results
                         # need a kpi html library or in lf_report to compare the 
                         # kpi
@@ -558,8 +569,10 @@ class inspect_sql:
 
                         <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
                         <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
-                        <td><a href=""" + str(df_data_1['test_run']) + """ target=\"_blank\">DATA_1</a></td>
-                        <td><a href=""" + str(df_data_2['test_run']) + """ target=\"_blank\">DATA_2</a></td>
+                        <td><a href=""" + str(relative_report_1) + """ target=\"_blank\">report_1</a></td>
+                        <td><a href=""" + str(relative_report_dir_path_1) + """ target=\"_blank\">report_dir_1</a></td>
+                        <td><a href=""" + str(relative_report_2) + """ target=\"_blank\">report_2</a></td>
+                        <td><a href=""" + str(relative_report_dir_path_2) + """ target=\"_blank\">report_dir_2</a></td>
 
 
                         </tr>"""
