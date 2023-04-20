@@ -18,6 +18,8 @@ import time
 import logging
 import re
 import csv
+import traceback
+
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
@@ -49,15 +51,15 @@ class inspect_sql:
         logger.debug("dir: {dir}".format(dir=self.dir))
         self.database_list = _database_list
         self.database = []
+        self.database_comp = []
         self.conn = None
+        self.conn_comp = None
         self.kpi_list = []
         self.html_list = []
         self.conn = None
         self.df = pd.DataFrame()
         self.plot_figure = []
         self.html_results = ""
-        self.test_rig_list = []
-        self.short_description_list = []
 
 
         # this may or maynot be needed 
@@ -221,7 +223,278 @@ class inspect_sql:
     # Helper methods
     # for the same db
     def compare_data(self):
-        logger.info("compare the data in the database from list: {db_list}".format(db_list=self.database_list))
+        if len(self.database_list) == 1:
+            self.compare_single_db_info()
+        elif len(self.database_list) == 2:
+            self.compare_multi_db_info()
+        else:
+            logger.critical("Only one or two database may be entered for compare")
+            exit(1)
+
+
+    def compare_multi_db_info(self):
+        logger.info("compare the data in multiple db: {db_list}".format(db_list=self.database_list))
+
+        # start the html results for the compare
+        self.start_html_results()
+
+        # based on the type of comparision
+        # start the juni results 
+        self.start_junit_testsuites()
+        self.start_junit_testsuite()
+
+        # TODO iterrate over multiple DB?
+        self.database = self.database_list[0]
+        self.database_comp = self.database_list[1]
+
+
+        # get intial datafram
+        self.conn =sqlite3.connect(self.database)
+        df_1 = pd.read_sql_query("SELECT * from {}".format(self.table), self.conn)
+        df_1.drop_duplicates(inplace=True)
+        # sort by date from oldest to newest.
+        try:
+            df_1 = df_1.sort_values(by='Date')
+        except BaseException:
+            logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
+            exit(1)
+        self.conn.close()
+
+        # get intial datafram
+        self.conn_comp =sqlite3.connect(self.database_comp)
+        df_2 = pd.read_sql_query("SELECT * from {}".format(self.table), self.conn_comp)
+        df_2.drop_duplicates(inplace=True)
+
+        # sort by date from oldest to newest.
+        try:
+            df_2 = df_2.sort_values(by='Date')
+        except BaseException:
+            logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
+            exit(1)
+        self.conn_comp.close()
+
+        # DB1
+        # the following list manipulation removes the duplicates 
+        graph_group_list = list(df_1['Graph-Group'])
+        graph_group_list = [x for x in graph_group_list if x is not None]
+        graph_group_list = list(sorted(set(graph_group_list)))
+        logger.info("graph_group_list: {}".format(graph_group_list))
+
+
+        test_tag_list = list(df_1['test-tag'])
+        test_tag_list = [x for x in test_tag_list if x is not None]
+        test_tag_list = list(sorted(set(test_tag_list)))
+        logger.info("test_tag_list: {}".format(test_tag_list) )
+
+        test_rig_list = list(df_1['test-rig'])
+        test_rig_list = [x for x in test_rig_list if x is not None]
+        test_rig_list = list(sorted(set(test_rig_list)))
+        logger.info("test_rig_list: {}".format(test_rig_list))
+
+        short_description_list = list(df_1['short-description'])
+        short_description_list = [x for x in short_description_list if x is not None]
+        short_description_list = list(sorted(set(short_description_list)))
+        logger.info("short_description_list: {}".format(short_description_list))
+
+
+        # DB2
+        # the following list manipulation removes the duplicates 
+        graph_group_list = list(df_2['Graph-Group'])
+        graph_group_list = [x for x in graph_group_list if x is not None]
+        graph_group_list = list(sorted(set(graph_group_list)))
+        logger.info("graph_group_list: {}".format(graph_group_list))
+
+
+        test_tag_list = list(df_2['test-tag'])
+        test_tag_list = [x for x in test_tag_list if x is not None]
+        test_tag_list = list(sorted(set(test_tag_list)))
+        logger.info("test_tag_list: {}".format(test_tag_list) )
+
+        test_rig_list = list(df_2['test-rig'])
+        test_rig_list = [x for x in test_rig_list if x is not None]
+        test_rig_list = list(sorted(set(test_rig_list)))
+        logger.info("test_rig_list: {}".format(test_rig_list))
+
+        short_description_list = list(df_2['short-description'])
+        short_description_list = [x for x in short_description_list if x is not None]
+        short_description_list = list(sorted(set(short_description_list)))
+        logger.info("short_description_list: {}".format(short_description_list))
+
+
+
+        # find the comparisons use db1 as the "KEY" for comparisons
+        for test_rig in test_rig_list:
+            for test_tag in test_tag_list:
+                for group in graph_group_list:
+                    for description in short_description_list:
+                        # df_temp will contain all the data for a single run 
+                        # TODO this pulls out the data,  there needs to be a similiar 
+                        # functionality that allows the user to request specific information on the queries
+                        # need to be very specific
+
+                        # check the first database
+                        # these comparison values need to be able to eventually be configured
+                        df_tmp = df_1.loc[(df_1['test-rig'] == test_rig) 
+                            & (df_1['Graph-Group'] == str(group)) 
+                            & (df_1['test-tag'] == str(test_tag)) 
+                            & (df_1['short-description'] == str(description))]
+                        if not df_tmp.empty:
+                            logger.info("db1 contains: {rig} {group} {tag} {desc}".format(rig=test_rig,group=group,tag=test_tag,desc=description))
+                            # Check the second DB for the same values
+                            df_tmp_comp = df_2.loc[(df_2['test-rig'] == test_rig) 
+                            & (df_2['Graph-Group'] == str(group)) 
+                            & (df_2['test-tag'] == str(test_tag)) 
+                            & (df_2['short-description'] == str(description))]
+                            if not df_tmp_comp.empty:
+                                logger.info("db2 contains: {rig} {group} {tag} {desc}".format(rig=test_rig,group=group,tag=test_tag,desc=description))
+
+
+
+                                # Sort db1
+                                df_tmp = df_tmp.sort_values(by='Date')
+
+                                # need to drop duplicates as lf_qa may have been run multiple times on the same data
+                                df_tmp.drop_duplicates(inplace=True)
+
+                                date_list = list(df_tmp['Date'])
+                                test_id_list = list(df_tmp['test-id'])
+                                kpi_path_list = list(df_tmp['kpi_path'])
+                                numeric_score_list = list(df_tmp['numeric-score'])
+                                units_list = list(df_tmp['Units'])
+                                short_description_list = list(df_tmp['short-description'])
+
+                                # Sort db2 (comp data base)
+                                # need to drop duplicates as lf_qa may have been run multiple times on the same data
+                                # we need only numeric_score and date
+                                df_tmp_comp.drop_duplicates(inplace=True)
+
+                                date_comp_list = list(df_tmp_comp['Date'])
+                                #test_id_comp_list = list(df_tmp_comp['test-id'])
+                                #kpi_path_comp_list = list(df_tmp_comp['kpi_path'])
+                                numeric_score_comp_list = list(df_tmp_comp['numeric-score'])
+                                #units_comp_list = list(df_tmp_comp['Units'])
+                                short_description_comp_list = list(df_tmp_comp['short-description'])
+
+
+
+                                # print out last two values in the list
+                                # TODO need to check for other values, note this is not a delta
+                                percent_delta = 0
+                                if((int(numeric_score_list[-1]) != 0 and numeric_score_list[-1] is not None ) and numeric_score_comp_list[-1] is not None):
+                                    percent_delta = round(((numeric_score_comp_list[-1]/numeric_score_list[-1]) * 100), 2)
+
+
+                                # this needs to be more generic
+                                logger.debug("Desc1: {desc1} Desc2: {desc2} Date1: {date1} Date2: {date2} units: {units} numeric_score_db1: {ns1} numeric_score_db2: {ns2} percent: {percent}".format(
+                                    desc1=short_description_list[-1],desc2=short_description_comp_list[-1],date1=date_list[-1],date2=date_comp_list[-1],
+                                    units=units_list[-1],ns1=numeric_score_list[-1],ns2=numeric_score_comp_list[-1], percent=percent_delta))
+
+                                # TODO write the html results also
+                                # TODO write the junit xml results
+
+                                # pass criteria needs to be passed in as tiers
+                                # TODO find way to rank the results
+                                if percent_delta >= 90:
+                                    logger.info("Performance Good {percent}".format(percent=percent_delta))
+                                    self.test_result = "Good"
+                                    background = self.background_green
+                                elif percent_delta >= 70:
+                                    logger.info("Performance Fair {percent}".format(percent=percent_delta))
+                                    self.test_result = "Fair"
+                                    background = self.background_purple
+                                elif percent_delta >= 50:
+                                    logger.info("Performance Poor {percent}".format(percent=percent_delta))
+                                    self.test_result = "Poor"
+                                    background = self.background_orange
+                                else:
+                                    logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                    self.test_result = "Critical"
+                                    background = self.background_red
+
+
+                                # See the method start_csv_results for the column headers
+                                # need to have an ability to pass in the headers that are to be compared as a list
+                                # basically the fields of the kpi  or print out what db1 and db2 is
+                                # TODO this is to hardcoded
+                                row = [
+                                    test_rig,
+                                    test_tag,
+                                    group,
+                                    test_id_list[-1],
+                                    description,
+                                    units_list[-1],
+                                    date_list[-1],
+                                    numeric_score_list[-1],
+                                    date_comp_list[-1],
+                                    numeric_score_comp_list[-1],
+                                    percent_delta,
+                                    self.test_result
+                                ]
+
+                                self.csv_results_writer.writerow(row)
+                                self.csv_results_file.flush()
+
+
+                                # set up a loop to go through all the results
+                                # need a kpi html library or in lf_report to compare the 
+                                # kpi
+                                self.html_results += """
+                                <tr><td>""" + str(test_rig) + """</td>
+                                <td>""" + str(test_tag) + """</td>
+                                <td>""" + str(group) + """</td>
+                                <td>""" + str(test_id_list[-1]) + """</td>
+                                <td>""" + str(description) + """</td>
+                                <td>""" + str(units_list[-1]) + """</td>
+                                <td>""" + str(date_list[-1]) + """</td>
+                                <td>""" + str(numeric_score_list[-1]) + """</td>
+                                <td>""" + str(date_comp_list[-1]) + """</td>
+                                <td>""" + str(numeric_score_comp_list[-1]) + """</td>
+
+                                <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
+                                <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
+
+                                </tr>"""
+
+                                self.junit_test = "{test_tag} {group} {test_id}".format(test_tag=test_tag, group=group, test_id=test_id_list[-1])
+                                # record the junit results
+                                self.junit_results += """
+                                    <testcase name="{name}" id="{description}">
+                                    """.format(name=self.junit_test, description=description)
+
+                                self.junit_results += """
+                                    <system-out>
+                                    Performance: {test_result}
+
+                                    Last Run: {numeric_score_1}
+                                    Prev Run: {numeric_score_2}
+
+                                    percent:  {percent}
+                                    </system-out>
+                                    """.format(test_result=self.test_result,numeric_score_1=numeric_score_list[-1],numeric_score_2=numeric_score_list[-2], percent=percent_delta)
+
+                                # need to have tests return error messages
+                                if self.test_result != "Good" and self.test_result != "Fair":
+                                    self.junit_results += """
+                                        <failure message="Performance: {result}  Percent: {percent}">
+                                        </failure>""".format(result=self.test_result, percent=percent_delta)
+                                self.junit_results += """
+                                    </testcase>
+                                    """
+                            else:
+                                logger.info("db2 did not contain which was in db1  : {rig} {group} {tag} {desc}  May want to check the databases or similiar runs".format(rig=test_rig,group=group,tag=test_tag,desc=description))
+
+
+            # finish the results table     
+            self.finish_html_results()    
+
+            self.finish_junit_testsuite()
+            self.finish_junit_testsuites()
+
+
+
+
+    def compare_single_db_info(self):
+        logger.info("compare the data in single db: {db_list}".format(db_list=self.database_list))
 
         # start the html results for the compare
         self.start_html_results()
@@ -236,201 +509,138 @@ class inspect_sql:
         self.database = self.database_list[0]
         self.conn =sqlite3.connect(self.database)
         df3 = pd.read_sql_query("SELECT * from {}".format(self.table), self.conn)
+
+        df3.drop_duplicates(inplace=True)
         # sort by date from oldest to newest.
         try:
-            df3 = df3.sort_values(by='Date')
-        except BaseException:
+            df3.sort_values(by='Date', ascending=False, inplace = True)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
             exit(1)
+
         self.conn.close()
 
-        # graph group and test-tag are used for detemining comparison, can use any columns
-        # the following list manipulation removes the duplicates 
-        graph_group_list = list(df3['Graph-Group'])
-        graph_group_list = [x for x in graph_group_list if x is not None]
-        graph_group_list = list(sorted(set(graph_group_list)))
-        logger.info("graph_group_list: {}".format(graph_group_list))
+        
+        # iterate though the unique values of the dataframe
+        for test_tag in df3['test-tag'].unique():
+            for graph_group in df3['Graph-Group'].unique():
+                for description in df3['short-description'].unique():
+                    df_tmp = df3.loc[( df3['Graph-Group'] == str(graph_group)) & (df3['test-tag'] == str(test_tag)) & (df3['short-description'] == str(description))]
+
+                    # TODO need to be sure that there is not two entries 
+                    if not df_tmp.empty and len(df_tmp.index) >= 2:
+                        # Note if graph group is score there is sub tests for pass and fail
+                        # would like a percentage
+                        df_tmp.drop_duplicates(inplace=True) 
+                        df_tmp.sort_values(by='Date', inplace=True, ascending=False)
+
+                        logger.debug("First row {first}".format(first=df_tmp.iloc[0]))
+                        df_data_1 = df_tmp.iloc[0]
+                        logger.debug("type: {data} {data1}".format(data=type(df_data_1),data1=df_data_1))
 
 
-        test_tag_list = list(df3['test-tag'])
-        test_tag_list = [x for x in test_tag_list if x is not None]
-        test_tag_list = list(sorted(set(test_tag_list)))
-        logger.info("test_tag_list: {}".format(test_tag_list) )
+                        logger.debug("Second row {second}".format(second=df_tmp.iloc[1]))
+                        df_data_2 = df_tmp.iloc[1]
 
-        test_rig_list = list(df3['test-rig'])
-        test_rig_list = [x for x in test_rig_list if x is not None]
-        test_rig_list = list(sorted(set(test_rig_list)))
-        self.test_rig_list = test_rig_list
-        logger.info("test_rig_list: {}".format(test_rig_list))
+                        percent_delta = 0
+                        if((int(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None ) and df_data_2 is not None):
+                            percent_delta = round(((df_data_2['numeric-score']/df_data_1['numeric-score']) * 100), 2)
 
-        short_description_list = list(df3['short-description'])
-        short_description_list = [x for x in short_description_list if x is not None]
-        short_description_list = list(sorted(set(short_description_list)))
-        self.short_description_list = short_description_list
-        logger.info("short_description_list: {}".format(short_description_list))
+                        if percent_delta >= 90:
+                            logger.info("Performance Good {percent}".format(percent=percent_delta))
+                            self.test_result = "Good"
+                            background = self.background_green
+                        elif percent_delta >= 70:
+                            logger.info("Performance Fair {percent}".format(percent=percent_delta))
+                            self.test_result = "Fair"
+                            background = self.background_purple
+                        elif percent_delta >= 50:
+                            logger.info("Performance Poor {percent}".format(percent=percent_delta))
+                            self.test_result = "Poor"
+                            background = self.background_orange
+                        else:
+                            logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                            self.test_result = "Critical"
+                            background = self.background_red
 
+                        # we can get most anything from the dataframe
+                        # TODO use the dataframe export line to CSV?
+                        row = [
+                            df_data_1['test-rig'],
+                            df_data_1['test-tag'],
+                            df_data_1['Graph-Group'],
+                            df_data_1['test-id'],
+                            df_data_1['short-description'],
+                            df_data_1['Units'],
+                            df_data_1['Date'],
+                            df_data_1['numeric-score'],
+                            df_data_2['Date'],
+                            df_data_2['numeric-score'],
+                            percent_delta,
+                            self.test_result
+                        ]
 
-        # find the comparisons
-        for test_rig in test_rig_list:
-            for test_tag in test_tag_list:
-                for group in graph_group_list:
-                    for description in short_description_list:
-                        # df_temp will contain all the data for a single run 
-                        # TODO this pulls out the data,  there needs to be a similiar 
-                        # functionality that allows the user to request specific information on the queries
-                        # need to be very specific
-                        df_tmp = df3.loc[(df3['test-rig'] == test_rig) & (
-                            df3['Graph-Group'] == str(group)) & (df3['test-tag'] == str(test_tag)) & (df3['short-description'] == str(description))]
-                        if not df_tmp.empty:
-                            # Note if graph group is score there is sub tests for pass and fail
-                            # would like a percentage
+                        self.csv_results_writer.writerow(row)
+                        self.csv_results_file.flush()
 
+                        # set up a loop to go through all the results
+                        # need a kpi html library or in lf_report to compare the 
+                        # kpi
+                        self.html_results += """
+                        <tr><td>""" + str(df_data_1['test-rig']) + """</td>
+                        <td>""" + str(df_data_1['test-tag']) + """</td>
+                        <td>""" + str(df_data_1['Graph-Group']) + """</td>
+                        <td>""" + str(df_data_1['test-id']) + """</td>
+                        <td>""" + str(df_data_1['short-description']) + """</td>
+                        <td>""" + str(df_data_1['Units']) + """</td>
+                        <td>""" + str(df_data_1['Date']) + """</td>
+                        <td>""" + str(df_data_1['numeric-score']) + """</td>
+                        <td>""" + str(df_data_2['Date']) + """</td>
+                        <td>""" + str(df_data_2['numeric-score']) + """</td>
 
-                            # TODO cannot sort by date as it is each individual entry 
-                            df_tmp = df_tmp.sort_values(by='Date')
+                        <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
+                        <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
 
-                            # need to drop duplicates as lf_qa may have been run multiple times on the same data
-                            df_tmp = df_tmp.drop_duplicates()
+                        </tr>"""
 
-                            # write out the df to a tmp_db for analysis
-                            # FOR TESTING ONLY 
-                            '''
-                            self.conn = sqlite3.connect('tmp_db.db')
-                            try:
-                                df_tmp.to_sql(self.table, self.conn, if_exists='append')
-                            except BaseException:
-                                logger.info("attempt to append to database with different column layout,\
-                                    caused an exception, input new name --database <new name>")
-                                print(
-                                    "Error attempt to append to database with different column layout,\
-                                        caused an exception, input new name --database <new name>",
-                                    file=sys.stderr)
-                                exit(1)
-                            self.conn.close()
-                            '''
+                        self.junit_test = "{test_tag} {group} {test_id}".format(test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'])
+                        # record the junit results
+                        self.junit_results += """
+                            <testcase name="{name}" id="{description}">
+                            """.format(name=self.junit_test, description=description)
 
+                        # remove junit xml characters
+                        str_df_data_1 = str(df_data_1).replace('<','').replace('>','')
+                        str_df_data_2 = str(df_data_2).replace('<','').replace('>','')
 
+                        self.junit_results += """
+                            <system-out>
+                            Performance: {test_result}
+                            Last Run: {numeric_score_1}
+                            Prev Run: {numeric_score_2}
+                            percent:  {percent}
+                            df_data_1 : {df_data_1}
+                            df_data_2 : {df_data_2}
+                            </system-out>
+                            """.format(test_result=self.test_result,numeric_score_1=df_data_1['numeric-score'],numeric_score_2=df_data_2['numeric-score'], 
+                            percent=percent_delta,df_data_1=str_df_data_1, df_data_2=str_df_data_2)
 
-                            date_list = list(df_tmp['Date'])
-                            test_id_list = list(df_tmp['test-id'])
-                            kpi_path_list = list(df_tmp['kpi_path'])
-                            numeric_score_list = list(df_tmp['numeric-score'])
-                            units_list = list(df_tmp['Units'])
-                            short_description_list = list(df_tmp['short-description'])
-                            # print out last two values in the list
-                            # TODO need to check for other values, note this is not a delta
-                            percent_delta = 0
-                            if((int(numeric_score_list[-1]) != 0 and numeric_score_list[-1] is not None ) and numeric_score_list[-2] is not None):
-                                percent_delta = round(((numeric_score_list[-2]/numeric_score_list[-1]) * 100), 2)
-
-
-                            # this needs to be more generic
-                            logger.debug("Desc1: {desc1} Desc2: {desc2} Date1: {date1} Date2: {date2} units: {units} numeric_score1: {ns1} numeric_score2: {ns2} percent: {percent}".format(
-                                desc1=short_description_list[-1],desc2=short_description_list[-2],date1=date_list[-1],date2=date_list[-2],
-                                units=units_list[-1],ns1=numeric_score_list[-1],ns2=numeric_score_list[-2], percent=percent_delta))
-
-                            # TODO write the html results also
-                            # TODO write the junit xml results
-
-                            # pass criteria needs to be passed in as tiers
-                            # TODO find way to rank the results
-                            if percent_delta >= 90:
-                                logger.info("Performance Good {percent}".format(percent=percent_delta))
-                                self.test_result = "Good"
-                                background = self.background_green
-                            elif percent_delta >= 70:
-                                logger.info("Performance Fair {percent}".format(percent=percent_delta))
-                                self.test_result = "Fair"
-                                background = self.background_purple
-                            elif percent_delta >= 50:
-                                logger.info("Performance Poor {percent}".format(percent=percent_delta))
-                                self.test_result = "Poor"
-                                background = self.background_orange
-                            else:
-                                logger.info("Performance Critical {percent}".format(percent=percent_delta))
-                                self.test_result = "Critical"
-                                background = self.background_red
-
-
-                            # See the method start_csv_results for the column headers
-                            # need to have an ability to pass in the headers that are to be compared as a list
-                            # basically the fields of the kpi  or print out what db1 and db2 is
-                            # TODO this is to hardcoded
-                            row = [
-                                test_rig,
-                                test_tag,
-                                group,
-                                test_id_list[-1],
-                                description,
-                                units_list[-1],
-                                date_list[-1],
-                                numeric_score_list[-1],
-                                date_list[-2],
-                                numeric_score_list[-2],
-                                percent_delta,
-                                self.test_result
-                            ]
-
-                            self.csv_results_writer.writerow(row)
-                            self.csv_results_file.flush()
-
-
-                            # set up a loop to go through all the results
-                            # need a kpi html library or in lf_report to compare the 
-                            # kpi
-                            self.html_results += """
-                            <tr><td>""" + str(test_rig) + """</td>
-                            <td>""" + str(test_tag) + """</td>
-                            <td>""" + str(group) + """</td>
-                            <td>""" + str(test_id_list[-1]) + """</td>
-                            <td>""" + str(description) + """</td>
-                            <td>""" + str(units_list[-1]) + """</td>
-                            <td>""" + str(date_list[-1]) + """</td>
-                            <td>""" + str(numeric_score_list[-1]) + """</td>
-                            <td>""" + str(date_list[-2]) + """</td>
-                            <td>""" + str(numeric_score_list[-2]) + """</td>
-
-                            <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
-                            <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
-
-                            </tr>"""
-
-                            self.junit_test = "{test_tag} {group} {test_id}".format(test_tag=test_tag, group=group, test_id=test_id_list[-1])
-                            # record the junit results
+                        # need to have tests return error messages
+                        if self.test_result != "Good" and self.test_result != "Fair":
                             self.junit_results += """
-                                <testcase name="{name}" id="{description}">
-                                """.format(name=self.junit_test, description=description)
-
-                            self.junit_results += """
-                                <system-out>
-                                Performance: {test_result}
-
-                                Last Run: {numeric_score_1}
-                                Prev Run: {numeric_score_2}
-
-                                percent:  {percent}
-                                </system-out>
-                                """.format(test_result=self.test_result,numeric_score_1=numeric_score_list[-1],numeric_score_2=numeric_score_list[-2], percent=percent_delta)
-
-                            # need to have tests return error messages
-                            if self.test_result != "Good" and self.test_result != "Fair":
-                                self.junit_results += """
-                                    <failure message="Performance: {result}  Percent: {percent}">
-                                    </failure>""".format(result=self.test_result, percent=percent_delta)
-                            self.junit_results += """
-                                </testcase>
-                                """
+                                <failure message="Performance: {result}  Percent: {percent}">
+                                </failure>""".format(result=self.test_result, percent=percent_delta)
+                        self.junit_results += """
+                            </testcase>
+                            """
 
 
-            # finish the results table     
-            self.finish_html_results()    
+        # finish the results table     
+        self.finish_html_results()    
 
-            self.finish_junit_testsuite()
-            self.finish_junit_testsuites()
-
-
-
-
+        self.finish_junit_testsuite()
+        self.finish_junit_testsuites()
 
     # TODO have variable type of output
     def start_html_results(self):
@@ -621,9 +831,9 @@ Usage: lf_inspect.py --db  db_one,db_two
 
     # TODO add abilit to pass in unique names
     inspect_db.start_csv_results()
-    # TODO there would neeed to be comparison parameters passed in 
-    # what was going to be used for the comparison.
-    # currently use the last two runs
+
+    # One database in list indicates a nightly comparison with 
+    # current run being compared to the previous run
     inspect_db.compare_data()
 
     # csv_dash.sub_test_information()
@@ -636,7 +846,12 @@ Usage: lf_inspect.py --db  db_one,db_two
     report.set_title("Compare Results: Verification Test Run")
     report.build_banner_left()
     report.start_content_div2()
-    report.set_obj_html("Objective", "QA test run comparision")
+    if len(__database_list) == 1:
+        objective = "QA test run comparision between last and previous run in {db}".format(db=__database_list)
+    else:
+        objective = "QA test run comparision between {db}".format(db=__database_list)
+
+    report.set_obj_html("Objective", objective)
     report.build_objective()
     report.set_table_title("Test Compare")
     report.build_table_title()
