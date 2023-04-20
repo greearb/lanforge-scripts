@@ -37,6 +37,7 @@ class inspect_sql:
                 _path='.',
                 _dir='',
                 _database_list=[],
+                _element_list=[],
                 _csv_results = '',
                 _table=None,
                 _outfile='',
@@ -53,6 +54,7 @@ class inspect_sql:
         logger.debug("dir: {dir}".format(dir=self.dir))
         self.database_list = _database_list
         self.database = []
+        self.element_list = _element_list
         self.database_comp = []
         self.conn = None
         self.conn_comp = None
@@ -231,7 +233,12 @@ class inspect_sql:
     # for the same db
     def compare_data(self):
         if len(self.database_list) == 1:
-            self.compare_single_db_info()
+            # TODO in future have ability to extract single DUT and compare      
+            # TODO make generic so could pass in kernel version or others      
+            if not self.element_list:
+                self.compare_single_db_info()
+            else:
+                self.compare_element_single_db_info()
         elif len(self.database_list) == 2:
             self.compare_multi_db_info()
         else:
@@ -319,123 +326,123 @@ class inspect_sql:
                             df_data_2 = df_tmp_comp.iloc[0]
                             logger.debug("type: {data} {data2}".format(data=type(df_data_2),data2=df_data_2))
 
-                    percent_delta = 0
-                    if((int(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None ) and df_data_2 is not None):
-                        percent_delta = round(((df_data_2['numeric-score']/df_data_1['numeric-score']) * 100), 2)
+                            percent_delta = 0
+                            if((int(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None ) and df_data_2 is not None):
+                                percent_delta = round(((df_data_2['numeric-score']/df_data_1['numeric-score']) * 100), 2)
 
-                    if percent_delta >= 90:
-                        logger.info("Performance Good {percent}".format(percent=percent_delta))
-                        self.test_result = "Good"
-                        background = self.background_green
-                    elif percent_delta >= 70:
-                        logger.info("Performance Fair {percent}".format(percent=percent_delta))
-                        self.test_result = "Fair"
-                        background = self.background_purple
-                    elif percent_delta >= 50:
-                        logger.info("Performance Poor {percent}".format(percent=percent_delta))
-                        self.test_result = "Poor"
-                        background = self.background_orange
-                    else:
-                        logger.info("Performance Critical {percent}".format(percent=percent_delta))
-                        self.test_result = "Critical"
-                        background = self.background_red
+                            if percent_delta >= 90:
+                                logger.info("Performance Good {percent}".format(percent=percent_delta))
+                                self.test_result = "Good"
+                                background = self.background_green
+                            elif percent_delta >= 70:
+                                logger.info("Performance Fair {percent}".format(percent=percent_delta))
+                                self.test_result = "Fair"
+                                background = self.background_purple
+                            elif percent_delta >= 50:
+                                logger.info("Performance Poor {percent}".format(percent=percent_delta))
+                                self.test_result = "Poor"
+                                background = self.background_orange
+                            else:
+                                logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                self.test_result = "Critical"
+                                background = self.background_red
 
-                    # we can get most anything from the dataframe
-                    # TODO use the dataframe export line to CSV?
-                    row = [
-                        df_data_1['test-rig'],
-                        df_data_1['test-tag'],
-                        df_data_1['Graph-Group'],
-                        df_data_1['test-id'],
-                        df_data_1['short-description'],
-                        df_data_1['Units'],
-                        df_data_1['Date'],
-                        df_data_1['numeric-score'],
-                        df_data_2['Date'],
-                        df_data_2['numeric-score'],
-                        percent_delta,
-                        self.test_result
-                    ]
+                            # we can get most anything from the dataframe
+                            # TODO use the dataframe export line to CSV?
+                            row = [
+                                df_data_1['test-rig'],
+                                df_data_1['test-tag'],
+                                df_data_1['Graph-Group'],
+                                df_data_1['test-id'],
+                                df_data_1['short-description'],
+                                df_data_1['Units'],
+                                df_data_1['Date'],
+                                df_data_1['numeric-score'],
+                                df_data_2['Date'],
+                                df_data_2['numeric-score'],
+                                percent_delta,
+                                self.test_result
+                            ]
 
-                    self.csv_results_writer.writerow(row)
-                    self.csv_results_file.flush()
+                            self.csv_results_writer.writerow(row)
+                            self.csv_results_file.flush()
 
-                    # Set the relative path for results
-                    report_path_1 =  df_data_1['kpi_path']+ "readme.html"
-                    relative_report_1 = os.path.relpath(report_path_1, self.lf_inspect_report_path)
+                            # Set the relative path for results
+                            report_path_1 =  df_data_1['kpi_path']+ "readme.html"
+                            relative_report_1 = os.path.relpath(report_path_1, self.lf_inspect_report_path)
 
-                    report_dir_path_1 =  df_data_1['kpi_path']
-                    relative_report_dir_path_1 = os.path.relpath(report_dir_path_1, self.lf_inspect_report_path)
+                            report_dir_path_1 =  df_data_1['kpi_path']
+                            relative_report_dir_path_1 = os.path.relpath(report_dir_path_1, self.lf_inspect_report_path)
 
-                    report_path_2 =  df_data_2['kpi_path']+ "readme.html"
-                    relative_report_2 = os.path.relpath(report_path_2, self.lf_inspect_report_path)
+                            report_path_2 =  df_data_2['kpi_path']+ "readme.html"
+                            relative_report_2 = os.path.relpath(report_path_2, self.lf_inspect_report_path)
 
-                    report_dir_path_2 =  df_data_2['kpi_path']
-                    relative_report_dir_path_2 = os.path.relpath(report_dir_path_2, self.lf_inspect_report_path)
-
-
-                    self.html_results += """
-                    <tr><td>""" + str(df_data_1['test-rig']) + """</td>
-                    <td>""" + str(df_data_1['test-tag']) + """</td>
-                    <td>""" + str(df_data_1['Graph-Group']) + """</td>
-                    <td>""" + str(df_data_1['test-id']) + """</td>
-                    <td>""" + str(df_data_1['short-description']) + """</td>
-                    <td>""" + str(df_data_1['Units']) + """</td>
-                    <td>""" + str(df_data_1['Date']) + """</td>
-                    <td>""" + str(df_data_1['numeric-score']) + """</td>
-                    <td>""" + str(df_data_2['Date']) + """</td>
-                    <td>""" + str(df_data_2['numeric-score']) + """</td>
-
-                    <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
-                    <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
-                    <td><a href=""" + str(relative_report_1) + """ target=\"_blank\">report_1</a></td>
-                    <td><a href=""" + str(relative_report_dir_path_1) + """ target=\"_blank\">report_dir_1</a></td>
-                    <td><a href=""" + str(relative_report_2) + """ target=\"_blank\">report_2</a></td>
-                    <td><a href=""" + str(relative_report_dir_path_2) + """ target=\"_blank\">report_dir_2</a></td>
+                            report_dir_path_2 =  df_data_2['kpi_path']
+                            relative_report_dir_path_2 = os.path.relpath(report_dir_path_2, self.lf_inspect_report_path)
 
 
-                    </tr>"""
+                            self.html_results += """
+                            <tr><td>""" + str(df_data_1['test-rig']) + """</td>
+                            <td>""" + str(df_data_1['test-tag']) + """</td>
+                            <td>""" + str(df_data_1['Graph-Group']) + """</td>
+                            <td>""" + str(df_data_1['test-id']) + """</td>
+                            <td>""" + str(df_data_1['short-description']) + """</td>
+                            <td>""" + str(df_data_1['Units']) + """</td>
+                            <td>""" + str(df_data_1['Date']) + """</td>
+                            <td>""" + str(df_data_1['numeric-score']) + """</td>
+                            <td>""" + str(df_data_2['Date']) + """</td>
+                            <td>""" + str(df_data_2['numeric-score']) + """</td>
 
-                    self.junit_test = "{test_tag} {group} {test_id} {description}".format(
-                            test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'],description=df_data_1['short-description'])
-                    # record the junit results
-                    self.junit_results += """
-                        <testcase name="{name}" id="{description}">
-                        """.format(name=self.junit_test, description=description)
-
-                    # remove junit xml characters
-                    str_df_data_1 = str(df_data_1).replace('<','').replace('>','')
-                    str_df_data_2 = str(df_data_2).replace('<','').replace('>','')
-
-                    self.junit_results += """
-                        <system-out>
-                        Performance: {test_result}
-                        Last Run: {numeric_score_1}
-                        Prev Run: {numeric_score_2}
-                        percent:  {percent}
-
-
-                        df_data_1 : {df_data_1}
+                            <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
+                            <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
+                            <td><a href=""" + str(relative_report_1) + """ target=\"_blank\">report_1</a></td>
+                            <td><a href=""" + str(relative_report_dir_path_1) + """ target=\"_blank\">report_dir_1</a></td>
+                            <td><a href=""" + str(relative_report_2) + """ target=\"_blank\">report_2</a></td>
+                            <td><a href=""" + str(relative_report_dir_path_2) + """ target=\"_blank\">report_dir_2</a></td>
 
 
-                        df_data_2 : {df_data_2}
-                        </system-out>
-                        """.format(test_result=self.test_result,numeric_score_1=df_data_1['numeric-score'],numeric_score_2=df_data_2['numeric-score'], 
-                        percent=percent_delta,df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+                            </tr>"""
 
-                    # self.junit_results += """
-                    #    <properties>
-                    #    <property name= "{type1}" value= "{value1}"/>
-                    #    </properties>.""".format(type1="this",value1="and that")
-                    # need to have tests return error messages
-                    if self.test_result != "Good" and self.test_result != "Fair":
-                        self.junit_results += """
-                            <failure message="Performance: {result}  Percent: {percent}">
-                            </failure>""".format(result=self.test_result, percent=percent_delta)
+                            self.junit_test = "{test_tag} {group} {test_id} {description}".format(
+                                    test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'],description=df_data_1['short-description'])
+                            # record the junit results
+                            self.junit_results += """
+                                <testcase name="{name}" id="{description}">
+                                """.format(name=self.junit_test, description=description)
 
-                    self.junit_results += """
-                        </testcase>
-                        """
+                            # remove junit xml characters
+                            str_df_data_1 = str(df_data_1).replace('<','').replace('>','')
+                            str_df_data_2 = str(df_data_2).replace('<','').replace('>','')
+
+                            self.junit_results += """
+                                <system-out>
+                                Performance: {test_result}
+                                Last Run: {numeric_score_1}
+                                Prev Run: {numeric_score_2}
+                                percent:  {percent}
+
+
+                                df_data_1 : {df_data_1}
+
+
+                                df_data_2 : {df_data_2}
+                                </system-out>
+                                """.format(test_result=self.test_result,numeric_score_1=df_data_1['numeric-score'],numeric_score_2=df_data_2['numeric-score'], 
+                                percent=percent_delta,df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+
+                            # self.junit_results += """
+                            #    <properties>
+                            #    <property name= "{type1}" value= "{value1}"/>
+                            #    </properties>.""".format(type1="this",value1="and that")
+                            # need to have tests return error messages
+                            if self.test_result != "Good" and self.test_result != "Fair":
+                                self.junit_results += """
+                                    <failure message="Performance: {result}  Percent: {percent}">
+                                    </failure>""".format(result=self.test_result, percent=percent_delta)
+
+                            self.junit_results += """
+                                </testcase>
+                                """
 
 
         # finish the results table     
@@ -625,6 +632,242 @@ class inspect_sql:
         self.finish_junit_testsuite()
         self.finish_junit_testsuites()
 
+    def compare_element_single_db_info(self):
+
+        # possibly want multiple column values 
+        logger.info("compare the elements {element} in single db: {db_list}".format(element=self.element_list,db_list=self.database_list))
+
+        col_list = []
+        attrib_list = []
+        for element in self.element_list:
+            element_tmp = element.split("==")
+            col_list.append(element_tmp[0])
+            attrib_list.append(element_tmp[1])  # note this is a list of two elements separated by &&
+
+        # start the html results for the compare
+        self.start_html_results()
+
+        # TODO should this be outside the compare data? or should it be inside so that it may change 
+        # based on the type of comparision
+        # start the juni results 
+        self.start_junit_testsuites()
+        self.start_junit_testsuite()
+        # initiallly work for two elements    
+        
+        # query unique db for each of the selections 
+        # TODO work out the loops for multiple columns like dut and kernel verion   
+        sub_attrib_list = attrib_list[0].split('&&') 
+
+        self.database = self.database_list[0]
+        self.conn =sqlite3.connect(self.database)
+        # https://stackoverflow.com/questions/3168644/can-a-table-field-contain-a-hyphen
+        # let the sql query do some of the filtering
+        df_1_total = pd.read_sql_query("SELECT * from {}".format(self.table), self.conn)
+
+        df_1_total.drop_duplicates(inplace=True)
+        try:
+            df_1_total.sort_values(by='Date', ascending=False, inplace = True)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
+            exit(1)
+
+        # TODO figure out how to loc more attributs
+        df_1 = df_1_total.loc[df_1_total[col_list[0]] == sub_attrib_list[0]]
+        # sort by date from oldest to newest.
+
+        self.conn.close()
+
+        if df_1.empty:
+            logger.debug("df_2 empty exiting")
+            exit(1)
+
+
+        self.conn =sqlite3.connect(self.database)
+
+        # let the sql query do some of the filtering
+        df_2_total = pd.read_sql_query("SELECT * from {}".format(self.table), self.conn)
+
+        df_2_total.drop_duplicates(inplace=True)
+        # sort by date from oldest to newest.
+        try:
+            df_2_total.sort_values(by='Date', ascending=False, inplace = True)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
+            exit(1)
+            
+        df_2 = df_2_total.loc[df_2_total[col_list[0]] == sub_attrib_list[1]]
+
+        self.conn.close()
+
+        if df_2.empty:
+            logger.debug("df_2 empty exiting")
+            exit(1)
+
+        # this can be a common function
+        # iterate though the unique values of the dataframe
+        for test_tag in df_1['test-tag'].unique():
+            for graph_group in df_1['Graph-Group'].unique():
+                for description in df_1['short-description'].unique():
+                    df_tmp = df_1.loc[
+                    ( df_1['Graph-Group'] == str(graph_group)) 
+                    & (df_1['test-tag'] == str(test_tag)) 
+                    & (df_1['short-description'] == str(description))]
+
+                    # For comparing two databases there only needs to be a single entry
+                    if not df_tmp.empty:
+                        logger.debug("df_tmp {}".format(df_tmp))
+                        # find the same information in db2
+                        df_tmp_comp = df_2.loc[
+                        (df_2['Graph-Group'] == str(graph_group)) 
+                        & (df_2['test-tag'] == str(test_tag)) 
+                        & (df_2['short-description'] == str(description))]
+                        logger.debug("df_tmp_comp {}".format(df_tmp_comp))
+                        if not df_tmp_comp.empty:
+                            logger.info("db2 contains: {group} {tag} {desc}".format(group=graph_group,tag=test_tag,desc=description))
+
+                            df_tmp.drop_duplicates(inplace=True) 
+                            df_tmp.sort_values(by='Date', inplace=True, ascending=False)
+
+                            logger.debug("First row {first}".format(first=df_tmp.iloc[0]))
+                            df_data_1 = df_tmp.iloc[0]
+                            logger.debug("type: {data} {data1}".format(data=type(df_data_1),data1=df_data_1))
+
+
+                            df_tmp_comp.drop_duplicates(inplace=True) 
+                            df_tmp_comp.sort_values(by='Date', inplace=True, ascending=False)
+
+                            logger.debug("First row {first}".format(first=df_tmp_comp.iloc[0]))
+                            df_data_2 = df_tmp_comp.iloc[0]
+                            logger.debug("type: {data} {data2}".format(data=type(df_data_2),data2=df_data_2))
+
+                            percent_delta = 0
+                            if((int(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None ) and df_data_2 is not None):
+                                percent_delta = round(((df_data_2['numeric-score']/df_data_1['numeric-score']) * 100), 2)
+
+                            if percent_delta >= 90:
+                                logger.info("Performance Good {percent}".format(percent=percent_delta))
+                                self.test_result = "Good"
+                                background = self.background_green
+                            elif percent_delta >= 70:
+                                logger.info("Performance Fair {percent}".format(percent=percent_delta))
+                                self.test_result = "Fair"
+                                background = self.background_purple
+                            elif percent_delta >= 50:
+                                logger.info("Performance Poor {percent}".format(percent=percent_delta))
+                                self.test_result = "Poor"
+                                background = self.background_orange
+                            else:
+                                logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                self.test_result = "Critical"
+                                background = self.background_red
+
+                            # we can get most anything from the dataframe
+                            # TODO use the dataframe export line to CSV?
+                            row = [
+                                df_data_1['test-rig'],
+                                df_data_1['test-tag'],
+                                df_data_1['Graph-Group'],
+                                df_data_1['test-id'],
+                                df_data_1['short-description'],
+                                df_data_1['Units'],
+                                df_data_1['Date'],
+                                df_data_1['numeric-score'],
+                                df_data_2['Date'],
+                                df_data_2['numeric-score'],
+                                percent_delta,
+                                self.test_result
+                            ]
+
+                            self.csv_results_writer.writerow(row)
+                            self.csv_results_file.flush()
+
+                            # Set the relative path for results
+                            report_path_1 =  df_data_1['kpi_path']+ "readme.html"
+                            relative_report_1 = os.path.relpath(report_path_1, self.lf_inspect_report_path)
+
+                            report_dir_path_1 =  df_data_1['kpi_path']
+                            relative_report_dir_path_1 = os.path.relpath(report_dir_path_1, self.lf_inspect_report_path)
+
+                            report_path_2 =  df_data_2['kpi_path']+ "readme.html"
+                            relative_report_2 = os.path.relpath(report_path_2, self.lf_inspect_report_path)
+
+                            report_dir_path_2 =  df_data_2['kpi_path']
+                            relative_report_dir_path_2 = os.path.relpath(report_dir_path_2, self.lf_inspect_report_path)
+
+
+                            self.html_results += """
+                            <tr><td>""" + str(df_data_1['test-rig']) + """</td>
+                            <td>""" + str(df_data_1['test-tag']) + """</td>
+                            <td>""" + str(df_data_1['Graph-Group']) + """</td>
+                            <td>""" + str(df_data_1['test-id']) + """</td>
+                            <td>""" + str(df_data_1['short-description']) + """</td>
+                            <td>""" + str(df_data_1['Units']) + """</td>
+                            <td>""" + str(df_data_1['Date']) + """</td>
+                            <td>""" + str(df_data_1['numeric-score']) + """</td>
+                            <td>""" + str(df_data_2['Date']) + """</td>
+                            <td>""" + str(df_data_2['numeric-score']) + """</td>
+
+                            <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
+                            <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
+                            <td><a href=""" + str(relative_report_1) + """ target=\"_blank\">report_1</a></td>
+                            <td><a href=""" + str(relative_report_dir_path_1) + """ target=\"_blank\">report_dir_1</a></td>
+                            <td><a href=""" + str(relative_report_2) + """ target=\"_blank\">report_2</a></td>
+                            <td><a href=""" + str(relative_report_dir_path_2) + """ target=\"_blank\">report_dir_2</a></td>
+
+
+                            </tr>"""
+
+                            self.junit_test = "{test_tag} {group} {test_id} {description}".format(
+                                    test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'],description=df_data_1['short-description'])
+                            # record the junit results
+                            self.junit_results += """
+                                <testcase name="{name}" id="{description}">
+                                """.format(name=self.junit_test, description=description)
+
+                            # remove junit xml characters
+                            str_df_data_1 = str(df_data_1).replace('<','').replace('>','')
+                            str_df_data_2 = str(df_data_2).replace('<','').replace('>','')
+
+                            self.junit_results += """
+                                <system-out>
+                                Performance: {test_result}
+                                Last Run: {numeric_score_1}
+                                Prev Run: {numeric_score_2}
+                                percent:  {percent}
+
+
+                                df_data_1 : {df_data_1}
+
+
+                                df_data_2 : {df_data_2}
+                                </system-out>
+                                """.format(test_result=self.test_result,numeric_score_1=df_data_1['numeric-score'],numeric_score_2=df_data_2['numeric-score'], 
+                                percent=percent_delta,df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+
+                                # self.junit_results += """
+                                #    <properties>
+                                #    <property name= "{type1}" value= "{value1}"/>
+                                #    </properties>.""".format(type1="this",value1="and that")
+                                # need to have tests return error messages
+                            if self.test_result != "Good" and self.test_result != "Fair":
+                                self.junit_results += """
+                                    <failure message="Performance: {result}  Percent: {percent}">
+                                    </failure>""".format(result=self.test_result, percent=percent_delta)
+
+                            self.junit_results += """
+                                </testcase>
+                                """
+
+
+        # finish the results table     
+        self.finish_html_results()    
+
+        self.finish_junit_testsuite()
+        self.finish_junit_testsuites()
+
+
     # TODO have variable type of output
     def start_html_results(self):
         self.html_results += """
@@ -745,7 +988,11 @@ Usage: lf_inspect.py --db  db_one,db_two
         ''')
     parser.add_argument('--path', help=''' --path to where to place the results ''', default='')
 
-    parser.add_argument('--database', help='--database db_one,db_two', default='qa_test_db')
+    parser.add_argument('--database', help='--database db_one,db_two may be a list of up to 2 db', default='qa_test_db')
+    parser.add_argument('--element', help='''
+                        --element  dut-model-num==dut1&&dut2  will column element dut-model-num between  dut1,dut2  
+                        for single db will look in same db for both, 
+                        (not supported) if two db then first dut queried in first db and second dut quired in second db''')
     parser.add_argument('--table', help='--table qa_table  default: qa_table', default='qa_table')
     parser.add_argument('--dir', help="--dir <results directory> default lf_qa", default="lf_inspect")
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="lf_inspect")
@@ -774,6 +1021,11 @@ Usage: lf_inspect.py --db  db_one,db_two
         logger_config.load_lf_logger_config()
 
     __database_list = args.database.split(',')
+    if args.element is not None:
+        __element_list = args.element.split(',')
+    else:
+        __element_list = []        
+
     __dir = args.dir
     __path = args.path
     __table = args.table
@@ -808,6 +1060,7 @@ Usage: lf_inspect.py --db  db_one,db_two
         _path=__path,
         _dir = __dir,
         _database_list=__database_list,
+        _element_list=__element_list,
         _table=__table,
         _csv_results=csv_results,
         _outfile=outfile,
