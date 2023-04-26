@@ -285,6 +285,7 @@ def main():
 
         AX210 sniff command
         ===================
+        
         ./lf_sniff_radio.py
         --mgr 192.168.0.104
         --mgr_port 8080
@@ -305,7 +306,7 @@ def main():
         --security wpa2
         --ssid axe11000_5g
         --password lf_axe11000_5g
-        --ax210_5g_scan_time 10
+        --ax210_scan_time 10
 
 
         """)
@@ -357,7 +358,7 @@ def main():
     parser.add_argument('--password', help='WiFi passphrase/password/key', default='[BLANK]')
     parser.add_argument('--mode', help='Used to force mode of stations default: 0 (auto)', default=0)
     parser.add_argument('--num_stations', type=int, default=0, help='Number of stations to create')
-    parser.add_argument('--ax210_5g_scan_time', default='20', help='Time to wait for 5g scan')
+    parser.add_argument('--ax210_scan_time', default='20', help='Time to wait for scan')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
 
     # Logging information
@@ -383,7 +384,7 @@ def main():
 
         if not args.station_list:
             station_list = LFUtils.portNameSeries(
-                prefix_="sta", start_id_=int(
+                prefix_="wlan", start_id_=int(
                     args.number_template), end_id_=num_sta + int(
                     args.number_template) - 1, padding_number_=10000, radio=args.radio)
         else:
@@ -414,9 +415,9 @@ def main():
 
         create_l3.start()
         # allow 10 seconds for a scan
-        logger.info("wait {scan_time} for 5g scan on AX210".format(scan_time=args.ax210_5g_scan_time))
-        for i in range(0, int(args.ax210_5g_scan_time)):
-            logger.info("AX210 scan 5g network, PLease wait: {scan_time}".format(scan_time=(int(args.ax210_5g_scan_time) - i)))
+        logger.info("wait {scan_time} for scan on AX210".format(scan_time=args.ax210_scan_time))
+        for i in range(0, int(args.ax210_scan_time)):
+            logger.info("AX210 scan network, PLease wait: {scan_time}".format(scan_time=(int(args.ax210_scan_time) - i)))
             time.sleep(1)
 
     obj = SniffRadio(lfclient_host=args.mgr,
