@@ -21,7 +21,6 @@ import csv
 import traceback
 
 
-
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 lf_report = importlib.import_module("py-scripts.lf_report")
@@ -32,20 +31,21 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 # Any style components can be used
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
+
 class inspect_sql:
     def __init__(self,
-                _path='.',
-                _dir='',
-                _database_list=[],
-                _element_list=[],
-                _db_index_list=[],
-                _csv_results = '',
-                _table=None,
-                _outfile='',
-                _outfile_name='',
-                _report_path='',
-                _log_path='',
-                _lf_inspect_report_path=''
+                 _path='.',
+                 _dir='',
+                 _database_list=[],
+                 _element_list=[],
+                 _db_index_list=[],
+                 _csv_results='',
+                 _table=None,
+                 _outfile='',
+                 _outfile_name='',
+                 _report_path='',
+                 _log_path='',
+                 _lf_inspect_report_path=''
                  ):
         self.path = _path
         self.dir = _dir
@@ -67,8 +67,7 @@ class inspect_sql:
         self.plot_figure = []
         self.html_results = ""
 
-
-        # this may or maynot be needed 
+        # this may or maynot be needed
         self.dut_model_num_list = "NA"
         self.dut_model_num = "NA"
         self.dut_sw_version_list = "NA"
@@ -94,7 +93,6 @@ class inspect_sql:
         self.csv_results_writer = ""
         self.csv_results_column_headers = ""
 
-
         # results
         self.junit_results = ""
         self.html_results = ""
@@ -106,14 +104,13 @@ class inspect_sql:
 
         # Allure information
         self.junit_results = ""
-        self.junit_path_only = ""        
+        self.junit_path_only = ""
 
     def set_junit_results(self, junit_results):
         self.junit_results = junit_results
 
     def set_junit_path_only(self, junit_path_only):
         self.junit_path_only = junit_path_only
-
 
     def get_html_results(self):
         return self.html_results
@@ -142,13 +139,12 @@ class inspect_sql:
     def get_junit_results(self):
         return self.junit_results
 
-
     def start_csv_results(self):
         logger.info("self.csv_results")
         self.csv_results_file = open(self.csv_results, "w")
         self.csv_results_writer = csv.writer(
             self.csv_results_file, delimiter=",")
-        # TODO add the kernel information and build information or should that be 
+        # TODO add the kernel information and build information or should that be
         # done through inspection of the csv file
         # TODO have it match the html results
         self.csv_results_column_headers = [
@@ -157,9 +153,9 @@ class inspect_sql:
             'Graph-Group',
             'test-id',
             'short-description',
-            'Units', 
+            'Units',
             'Date1',
-            'numeric-score-1', 
+            'numeric-score-1',
             'Date2',
             'numeric-score-2',
             'percent']
@@ -235,8 +231,8 @@ class inspect_sql:
     # for the same db
     def compare_data(self):
         if len(self.database_list) == 1:
-            # TODO in future have ability to extract single DUT and compare      
-            # TODO make generic so could pass in kernel version or others      
+            # TODO in future have ability to extract single DUT and compare
+            # TODO make generic so could pass in kernel version or others
             if not self.element_list:
                 self.compare_single_db_info()
             else:
@@ -247,7 +243,6 @@ class inspect_sql:
             logger.critical("Only one or two database may be entered for compare")
             exit(1)
 
-
     def compare_multi_db_info(self):
         logger.info("compare the data in multiple db: {db_list}".format(db_list=self.database_list))
 
@@ -255,7 +250,7 @@ class inspect_sql:
         self.start_html_results()
 
         # based on the type of comparision
-        # start the juni results 
+        # start the juni results
         self.start_junit_testsuites()
         self.start_junit_testsuite()
 
@@ -263,9 +258,8 @@ class inspect_sql:
         self.database = self.database_list[0]
         self.database_comp = self.database_list[1]
 
-
         # get intial datafram
-        self.conn =sqlite3.connect(self.database)
+        self.conn = sqlite3.connect(self.database)
         df_1 = pd.read_sql_query("SELECT * from {}".format(self.table), self.conn)
         df_1.drop_duplicates(inplace=True)
         # sort by date from oldest to newest.
@@ -275,11 +269,11 @@ class inspect_sql:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
             exit(1)
-            
+
         self.conn.close()
 
         # get intial datafram
-        self.conn_comp =sqlite3.connect(self.database_comp)
+        self.conn_comp = sqlite3.connect(self.database_comp)
         df_2 = pd.read_sql_query("SELECT * from {}".format(self.table), self.conn_comp)
         df_2.drop_duplicates(inplace=True)
 
@@ -293,45 +287,43 @@ class inspect_sql:
 
         self.conn_comp.close()
 
-
         # iterate though the unique values of the dataframe
         for test_tag in df_1['test-tag'].unique():
             for graph_group in df_1['Graph-Group'].unique():
                 for description in df_1['short-description'].unique():
                     df_tmp = df_1.loc[
-                    ( df_1['Graph-Group'] == str(graph_group)) 
-                    & (df_1['test-tag'] == str(test_tag)) 
-                    & (df_1['short-description'] == str(description))]
+                        (df_1['Graph-Group'] == str(graph_group))
+                        & (df_1['test-tag'] == str(test_tag))
+                        & (df_1['short-description'] == str(description))]
 
                     # For comparing two databases there only needs to be a single entry
                     if not df_tmp.empty:
                         # find the same information in db2
                         df_tmp_comp = df_2.loc[
-                        (df_2['Graph-Group'] == str(graph_group)) 
-                        & (df_2['test-tag'] == str(test_tag)) 
-                        & (df_2['short-description'] == str(description))]
+                            (df_2['Graph-Group'] == str(graph_group))
+                            & (df_2['test-tag'] == str(test_tag))
+                            & (df_2['short-description'] == str(description))]
                         if not df_tmp_comp.empty:
-                            logger.info("db2 contains: {group} {tag} {desc}".format(group=graph_group,tag=test_tag,desc=description))
+                            logger.info("db2 contains: {group} {tag} {desc}".format(group=graph_group, tag=test_tag, desc=description))
 
-                            df_tmp.drop_duplicates(inplace=True) 
+                            df_tmp.drop_duplicates(inplace=True)
                             df_tmp.sort_values(by='Date', inplace=True, ascending=False)
 
                             db_index_1 = int(self.db_index_list[0])
                             logger.debug("First row {first}".format(first=df_tmp.iloc[db_index_1]))
                             df_data_1 = df_tmp.iloc[db_index_1]
-                            logger.debug("type: {data} {data1}".format(data=type(df_data_1),data1=df_data_1))
+                            logger.debug("type: {data} {data1}".format(data=type(df_data_1), data1=df_data_1))
 
-
-                            df_tmp_comp.drop_duplicates(inplace=True) 
+                            df_tmp_comp.drop_duplicates(inplace=True)
                             df_tmp_comp.sort_values(by='Date', inplace=True, ascending=False)
 
                             db_index_2 = int(self.db_index_list[1])
                             logger.debug("First row {first}".format(first=df_tmp_comp.iloc[db_index_2]))
                             df_data_2 = df_tmp_comp.iloc[db_index_2]
-                            logger.debug("type: {data} {data2}".format(data=type(df_data_2),data2=df_data_2))
+                            logger.debug("type: {data} {data2}".format(data=type(df_data_2), data2=df_data_2))
 
                             percent_delta = 0
-                            if((int(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None ) and df_data_2 is not None):
+                            if((int(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
                                 percent_delta = round(((df_data_2['numeric-score']/df_data_1['numeric-score']) * 100), 2)
 
                             if percent_delta >= 90:
@@ -372,18 +364,17 @@ class inspect_sql:
                             self.csv_results_file.flush()
 
                             # Set the relative path for results
-                            report_path_1 =  df_data_1['kpi_path']+ "readme.html"
+                            report_path_1 = df_data_1['kpi_path'] + "readme.html"
                             relative_report_1 = os.path.relpath(report_path_1, self.lf_inspect_report_path)
 
-                            report_dir_path_1 =  df_data_1['kpi_path']
+                            report_dir_path_1 = df_data_1['kpi_path']
                             relative_report_dir_path_1 = os.path.relpath(report_dir_path_1, self.lf_inspect_report_path)
 
-                            report_path_2 =  df_data_2['kpi_path']+ "readme.html"
+                            report_path_2 = df_data_2['kpi_path'] + "readme.html"
                             relative_report_2 = os.path.relpath(report_path_2, self.lf_inspect_report_path)
 
-                            report_dir_path_2 =  df_data_2['kpi_path']
+                            report_dir_path_2 = df_data_2['kpi_path']
                             relative_report_dir_path_2 = os.path.relpath(report_dir_path_2, self.lf_inspect_report_path)
-
 
                             self.html_results += """
                             <tr><td>""" + str(df_data_1['test-rig']) + """</td>
@@ -408,15 +399,15 @@ class inspect_sql:
                             </tr>"""
 
                             self.junit_test = "{test_tag} {group} {test_id} {description}".format(
-                                    test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'],description=df_data_1['short-description'])
+                                test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'], description=df_data_1['short-description'])
                             # record the junit results
                             self.junit_results += """
                                 <testcase name="{name}" id="{description}">
                                 """.format(name=self.junit_test, description=description)
 
                             # remove junit xml characters
-                            str_df_data_1 = str(df_data_1).replace('<','').replace('>','')
-                            str_df_data_2 = str(df_data_2).replace('<','').replace('>','')
+                            str_df_data_1 = str(df_data_1).replace('<', '').replace('>', '')
+                            str_df_data_2 = str(df_data_2).replace('<', '').replace('>', '')
 
                             self.junit_results += """
                                 <system-out>
@@ -431,8 +422,8 @@ class inspect_sql:
 
                                 df_data_2 : {df_data_2}
                                 </system-out>
-                                """.format(test_result=self.test_result,numeric_score_1=df_data_1['numeric-score'],numeric_score_2=df_data_2['numeric-score'], 
-                                percent=percent_delta,df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+                                """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
+                                           percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
 
                             # self.junit_results += """
                             #    <properties>
@@ -448,13 +439,11 @@ class inspect_sql:
                                 </testcase>
                                 """
 
-
-        # finish the results table     
-        self.finish_html_results()    
+        # finish the results table
+        self.finish_html_results()
 
         self.finish_junit_testsuite()
         self.finish_junit_testsuites()
-
 
     def compare_single_db_info(self):
         logger.info("compare the data in single db: {db_list}".format(db_list=self.database_list))
@@ -462,21 +451,20 @@ class inspect_sql:
         # start the html results for the compare
         self.start_html_results()
 
-        # TODO should this be outside the compare data? or should it be inside so that it may change 
+        # TODO should this be outside the compare data? or should it be inside so that it may change
         # based on the type of comparision
-        # start the juni results 
+        # start the juni results
         self.start_junit_testsuites()
         self.start_junit_testsuite()
 
-
         self.database = self.database_list[0]
-        self.conn =sqlite3.connect(self.database)
+        self.conn = sqlite3.connect(self.database)
         df3 = pd.read_sql_query("SELECT * from {}".format(self.table), self.conn)
 
         df3.drop_duplicates(inplace=True)
         # sort by date from oldest to newest.
         try:
-            df3.sort_values(by='Date', ascending=False, inplace = True)
+            df3.sort_values(by='Date', ascending=False, inplace=True)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
@@ -484,34 +472,33 @@ class inspect_sql:
 
         self.conn.close()
 
-        
         # iterate though the unique values of the dataframe
         for test_tag in df3['test-tag'].unique():
             for graph_group in df3['Graph-Group'].unique():
                 for description in df3['short-description'].unique():
-                    df_tmp = df3.loc[( df3['Graph-Group'] == str(graph_group)) 
-                        & (df3['test-tag'] == str(test_tag)) 
-                        & (df3['short-description'] == str(description))]
+                    df_tmp = df3.loc[(df3['Graph-Group'] == str(graph_group))
+                                     & (df3['test-tag'] == str(test_tag))
+                                     & (df3['short-description'] == str(description))]
 
-                    # TODO need to be sure that there is not two entries 
+                    # TODO need to be sure that there is not two entries
                     if not df_tmp.empty and len(df_tmp.index) >= 2:
                         # Note if graph group is score there is sub tests for pass and fail
                         # would like a percentage
-                        df_tmp.drop_duplicates(inplace=True) 
+                        df_tmp.drop_duplicates(inplace=True)
                         df_tmp.sort_values(by='Date', inplace=True, ascending=False)
 
                         # TODO iloc 0 is the first row since ascending=False the most recent is at iloc 0
                         db_index_1 = int(self.db_index_list[0])
                         logger.debug("First row {first}".format(first=df_tmp.iloc[db_index_1]))
                         df_data_1 = df_tmp.iloc[0]
-                        logger.debug("type: {data} {data1}".format(data=type(df_data_1),data1=df_data_1))
+                        logger.debug("type: {data} {data1}".format(data=type(df_data_1), data1=df_data_1))
 
                         db_index_2 = int(self.db_index_list[1])
                         logger.debug("Second row {second}".format(second=df_tmp.iloc[db_index_2]))
                         df_data_2 = df_tmp.iloc[1]
 
                         percent_delta = 0
-                        if((int(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None ) and df_data_2 is not None):
+                        if((int(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
                             percent_delta = round(((df_data_2['numeric-score']/df_data_1['numeric-score']) * 100), 2)
 
                         if percent_delta >= 90:
@@ -552,21 +539,20 @@ class inspect_sql:
                         self.csv_results_file.flush()
 
                         # Set the relative path for results
-                        report_path_1 =  df_data_1['kpi_path']+ "readme.html"
+                        report_path_1 = df_data_1['kpi_path'] + "readme.html"
                         relative_report_1 = os.path.relpath(report_path_1, self.lf_inspect_report_path)
 
-                        report_dir_path_1 =  df_data_1['kpi_path']
+                        report_dir_path_1 = df_data_1['kpi_path']
                         relative_report_dir_path_1 = os.path.relpath(report_dir_path_1, self.lf_inspect_report_path)
 
-                        report_path_2 =  df_data_2['kpi_path']+ "readme.html"
+                        report_path_2 = df_data_2['kpi_path'] + "readme.html"
                         relative_report_2 = os.path.relpath(report_path_2, self.lf_inspect_report_path)
 
-                        report_dir_path_2 =  df_data_2['kpi_path']
+                        report_dir_path_2 = df_data_2['kpi_path']
                         relative_report_dir_path_2 = os.path.relpath(report_dir_path_2, self.lf_inspect_report_path)
 
-
                         # set up a loop to go through all the results
-                        # need a kpi html library or in lf_report to compare the 
+                        # need a kpi html library or in lf_report to compare the
                         # kpi
                         self.html_results += """
                         <tr><td>""" + str(df_data_1['test-rig']) + """</td>
@@ -591,15 +577,15 @@ class inspect_sql:
                         </tr>"""
 
                         self.junit_test = "{test_tag} {group} {test_id} {description}".format(
-                            test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'],description=df_data_1['short-description'])
+                            test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'], description=df_data_1['short-description'])
                         # record the junit results
                         self.junit_results += """
                             <testcase name="{name}" id="{description}">
                             """.format(name=self.junit_test, description=description)
 
                         # remove junit xml characters
-                        str_df_data_1 = str(df_data_1).replace('<','').replace('>','')
-                        str_df_data_2 = str(df_data_2).replace('<','').replace('>','')
+                        str_df_data_1 = str(df_data_1).replace('<', '').replace('>', '')
+                        str_df_data_2 = str(df_data_2).replace('<', '').replace('>', '')
 
                         self.junit_results += """
                             <system-out>
@@ -614,8 +600,8 @@ class inspect_sql:
 
                             df_data_2 : {df_data_2}
                             </system-out>
-                            """.format(test_result=self.test_result,numeric_score_1=df_data_1['numeric-score'],numeric_score_2=df_data_2['numeric-score'], 
-                            percent=percent_delta,df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+                            """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
+                                       percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
 
                         # self.junit_results += """
                         #    <properties>
@@ -631,17 +617,16 @@ class inspect_sql:
                             </testcase>
                             """
 
-
-        # finish the results table     
-        self.finish_html_results()    
+        # finish the results table
+        self.finish_html_results()
 
         self.finish_junit_testsuite()
         self.finish_junit_testsuites()
 
     def compare_element_single_db_info(self):
 
-        # possibly want multiple column values 
-        logger.info("compare the elements {element} in single db: {db_list}".format(element=self.element_list,db_list=self.database_list))
+        # possibly want multiple column values
+        logger.info("compare the elements {element} in single db: {db_list}".format(element=self.element_list, db_list=self.database_list))
 
         col_list = []
         attrib_list = []
@@ -653,26 +638,26 @@ class inspect_sql:
         # start the html results for the compare
         self.start_html_results()
 
-        # TODO should this be outside the compare data? or should it be inside so that it may change 
+        # TODO should this be outside the compare data? or should it be inside so that it may change
         # based on the type of comparision
-        # start the juni results 
+        # start the juni results
         self.start_junit_testsuites()
         self.start_junit_testsuite()
-        # initiallly work for two elements    
-        
-        # query unique db for each of the selections 
-        # TODO work out the loops for multiple columns like dut and kernel verion   
-        sub_attrib_list = attrib_list[0].split('&&') 
+        # initiallly work for two elements
+
+        # query unique db for each of the selections
+        # TODO work out the loops for multiple columns like dut and kernel verion
+        sub_attrib_list = attrib_list[0].split('&&')
 
         self.database = self.database_list[0]
-        self.conn =sqlite3.connect(self.database)
+        self.conn = sqlite3.connect(self.database)
         # https://stackoverflow.com/questions/3168644/can-a-table-field-contain-a-hyphen
         # let the sql query do some of the filtering
         df_1_total = pd.read_sql_query("SELECT * from {}".format(self.table), self.conn)
 
         df_1_total.drop_duplicates(inplace=True)
         try:
-            df_1_total.sort_values(by='Date', ascending=False, inplace = True)
+            df_1_total.sort_values(by='Date', ascending=False, inplace=True)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
@@ -688,8 +673,7 @@ class inspect_sql:
             logger.debug("df_2 empty exiting")
             exit(1)
 
-
-        self.conn =sqlite3.connect(self.database)
+        self.conn = sqlite3.connect(self.database)
 
         # let the sql query do some of the filtering
         df_2_total = pd.read_sql_query("SELECT * from {}".format(self.table), self.conn)
@@ -697,12 +681,12 @@ class inspect_sql:
         df_2_total.drop_duplicates(inplace=True)
         # sort by date from oldest to newest.
         try:
-            df_2_total.sort_values(by='Date', ascending=False, inplace = True)
+            df_2_total.sort_values(by='Date', ascending=False, inplace=True)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
             exit(1)
-            
+
         df_2 = df_2_total.loc[df_2_total[col_list[0]] == sub_attrib_list[1]]
 
         self.conn.close()
@@ -717,41 +701,40 @@ class inspect_sql:
             for graph_group in df_1['Graph-Group'].unique():
                 for description in df_1['short-description'].unique():
                     df_tmp = df_1.loc[
-                    ( df_1['Graph-Group'] == str(graph_group)) 
-                    & (df_1['test-tag'] == str(test_tag)) 
-                    & (df_1['short-description'] == str(description))]
+                        (df_1['Graph-Group'] == str(graph_group))
+                        & (df_1['test-tag'] == str(test_tag))
+                        & (df_1['short-description'] == str(description))]
 
                     # For comparing two databases there only needs to be a single entry
                     if not df_tmp.empty:
                         logger.debug("df_tmp {}".format(df_tmp))
                         # find the same information in db2
                         df_tmp_comp = df_2.loc[
-                        (df_2['Graph-Group'] == str(graph_group)) 
-                        & (df_2['test-tag'] == str(test_tag)) 
-                        & (df_2['short-description'] == str(description))]
+                            (df_2['Graph-Group'] == str(graph_group))
+                            & (df_2['test-tag'] == str(test_tag))
+                            & (df_2['short-description'] == str(description))]
                         logger.debug("df_tmp_comp {}".format(df_tmp_comp))
                         if not df_tmp_comp.empty:
-                            logger.info("db2 contains: {group} {tag} {desc}".format(group=graph_group,tag=test_tag,desc=description))
+                            logger.info("db2 contains: {group} {tag} {desc}".format(group=graph_group, tag=test_tag, desc=description))
 
-                            df_tmp.drop_duplicates(inplace=True) 
+                            df_tmp.drop_duplicates(inplace=True)
                             df_tmp.sort_values(by='Date', inplace=True, ascending=False)
 
                             db_index_1 = int(self.db_index_list[0])
                             logger.debug("First row {first}".format(first=df_tmp.iloc[db_index_1]))
                             df_data_1 = df_tmp.iloc[db_index_1]
-                            logger.debug("type: {data} {data1}".format(data=type(df_data_1),data1=df_data_1))
+                            logger.debug("type: {data} {data1}".format(data=type(df_data_1), data1=df_data_1))
 
-
-                            df_tmp_comp.drop_duplicates(inplace=True) 
+                            df_tmp_comp.drop_duplicates(inplace=True)
                             df_tmp_comp.sort_values(by='Date', inplace=True, ascending=False)
 
                             db_index_2 = int(self.db_index_list[1])
                             logger.debug("First row {first}".format(first=df_tmp_comp.iloc[db_index_2]))
                             df_data_2 = df_tmp_comp.iloc[db_index_2]
-                            logger.debug("type: {data} {data2}".format(data=type(df_data_2),data2=df_data_2))
+                            logger.debug("type: {data} {data2}".format(data=type(df_data_2), data2=df_data_2))
 
                             percent_delta = 0
-                            if((int(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None ) and df_data_2 is not None):
+                            if((int(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
                                 percent_delta = round(((df_data_2['numeric-score']/df_data_1['numeric-score']) * 100), 2)
 
                             if percent_delta >= 90:
@@ -792,18 +775,17 @@ class inspect_sql:
                             self.csv_results_file.flush()
 
                             # Set the relative path for results
-                            report_path_1 =  df_data_1['kpi_path']+ "readme.html"
+                            report_path_1 = df_data_1['kpi_path'] + "readme.html"
                             relative_report_1 = os.path.relpath(report_path_1, self.lf_inspect_report_path)
 
-                            report_dir_path_1 =  df_data_1['kpi_path']
+                            report_dir_path_1 = df_data_1['kpi_path']
                             relative_report_dir_path_1 = os.path.relpath(report_dir_path_1, self.lf_inspect_report_path)
 
-                            report_path_2 =  df_data_2['kpi_path']+ "readme.html"
+                            report_path_2 = df_data_2['kpi_path'] + "readme.html"
                             relative_report_2 = os.path.relpath(report_path_2, self.lf_inspect_report_path)
 
-                            report_dir_path_2 =  df_data_2['kpi_path']
+                            report_dir_path_2 = df_data_2['kpi_path']
                             relative_report_dir_path_2 = os.path.relpath(report_dir_path_2, self.lf_inspect_report_path)
-
 
                             self.html_results += """
                             <tr><td>""" + str(df_data_1['test-rig']) + """</td>
@@ -828,15 +810,15 @@ class inspect_sql:
                             </tr>"""
 
                             self.junit_test = "{test_tag} {group} {test_id} {description}".format(
-                                    test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'],description=df_data_1['short-description'])
+                                test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'], description=df_data_1['short-description'])
                             # record the junit results
                             self.junit_results += """
                                 <testcase name="{name}" id="{description}">
                                 """.format(name=self.junit_test, description=description)
 
                             # remove junit xml characters
-                            str_df_data_1 = str(df_data_1).replace('<','').replace('>','')
-                            str_df_data_2 = str(df_data_2).replace('<','').replace('>','')
+                            str_df_data_1 = str(df_data_1).replace('<', '').replace('>', '')
+                            str_df_data_2 = str(df_data_2).replace('<', '').replace('>', '')
 
                             self.junit_results += """
                                 <system-out>
@@ -851,14 +833,14 @@ class inspect_sql:
 
                                 df_data_2 : {df_data_2}
                                 </system-out>
-                                """.format(test_result=self.test_result,numeric_score_1=df_data_1['numeric-score'],numeric_score_2=df_data_2['numeric-score'], 
-                                percent=percent_delta,df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+                                """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
+                                           percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
 
-                                # self.junit_results += """
-                                #    <properties>
-                                #    <property name= "{type1}" value= "{value1}"/>
-                                #    </properties>.""".format(type1="this",value1="and that")
-                                # need to have tests return error messages
+                            # self.junit_results += """
+                            #    <properties>
+                            #    <property name= "{type1}" value= "{value1}"/>
+                            #    </properties>.""".format(type1="this",value1="and that")
+                            # need to have tests return error messages
                             if self.test_result != "Good" and self.test_result != "Fair":
                                 self.junit_results += """
                                     <failure message="Performance: {result}  Percent: {percent}">
@@ -868,15 +850,14 @@ class inspect_sql:
                                 </testcase>
                                 """
 
-
-        # finish the results table     
-        self.finish_html_results()    
+        # finish the results table
+        self.finish_html_results()
 
         self.finish_junit_testsuite()
         self.finish_junit_testsuites()
 
-
     # TODO have variable type of output
+
     def start_html_results(self):
         self.html_results += """
                 <table border="1" class="dataframe">
@@ -903,7 +884,6 @@ class inspect_sql:
                       <tbody>
                       """
 
-
     def finish_html_results(self):
         self.html_results += """
                     </tbody>
@@ -912,7 +892,6 @@ class inspect_sql:
                 <br>
                 <br>
                 """
-
 
     def get_suite_html(self):
         suite_html_results = """
@@ -946,15 +925,15 @@ class inspect_sql:
 
                     # for the chamberview tests the results is in index.html
                     # so need to move index.html to readme.html
-                    # use os.rename(source,destination) , 
+                    # use os.rename(source,destination) ,
                     # check for index
                     index_html_file = parent_path + "/index.html"
                     if os.path.exists(index_html_file):
                         readme_html_file = parent_path + "/readme.html"
-                        os.rename(index_html_file,readme_html_file)
+                        os.rename(index_html_file, readme_html_file)
 
-                    dir_path = '../' + parent_name 
-                    pdf_path = '../' + parent_name + "/" +  pdf_base_name
+                    dir_path = '../' + parent_name
+                    pdf_path = '../' + parent_name + "/" + pdf_base_name
                     html_path = "../" + parent_name + "/readme.html"
 
                     kpi_path = os.path.join(parent_path, "kpi.csv")
@@ -980,6 +959,8 @@ class inspect_sql:
 
 # Feature, Sum up the subtests passed/failed from the kpi files for each
 # run, poke those into the database, and generate a kpi graph for them.
+
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -1000,12 +981,15 @@ Usage: lf_inspect.py --db  db_one,db_two
                         --database db_one,db_two may be a list of up to 2 db', default='qa_test_db
                         for single db then will compare is done within same db.''')
     parser.add_argument('--db_index', help='''--db_index  db_index_one,db_index_two
-                         if db_index is not specified:
-                                 for single db compare, will compare last run with previous
-                                 for multiple db compare will compre last run in both db
-                                --db_index 0,1 with a single db will compae last run as previous 
-                                --db_index 0,0 with two db entered will compre the last run in db one with last run of db 2
-                                --db_index -1,-1 will compare the oldest in both db if 2 db's entered. 
+if db_index is not specified:
+    for single db compare, will compare last run with previous
+    for multiple db compare will compre last run in both db
+--db_index 0,1 with a single db will compare last to previous 
+--db_index 0,0 with two db entered will compare:
+        the last run in db one with last run of db 2
+--db_index n1,n1 will compare the oldest in both db if 2 db's entered and will be interperated as -1,-1
+
+Note: in the Allure report the dataframe indexs will be reduced by 1
                             ''')
 
     parser.add_argument('--element', help='''
@@ -1017,7 +1001,6 @@ Usage: lf_inspect.py --db  db_one,db_two
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="lf_inspect")
     parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_inspect.log")
     parser.add_argument('--flat_dir', help="--flat_dir , will place the results in the top directory", action='store_true')
-
 
     # logging configuration:
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
@@ -1043,23 +1026,23 @@ Usage: lf_inspect.py --db  db_one,db_two
     if args.element is not None:
         __element_list = args.element.split(',')
     else:
-        __element_list = []        
+        __element_list = []
 
     if args.db_index is not None:
-        __db_index_list = args.db_index.split(',')
+        db_index = args.db_index.replace('n','-')
+        __db_index_list =db_index.split(',')
     else:
         if len(__database_list) > 1:
             # compare the lastest in both dbs
-            __db_index_list = [0,0]
+            __db_index_list = [0, 0]
         else:
-            __db_index_list = [0,1]
+            __db_index_list = [0, 1]
 
     __dir = args.dir
     __path = args.path
     __table = args.table
 
-
-    if __path == '' :
+    if __path == '':
         logger.info("--path may be used ")
 
     # create report class for reporting
@@ -1080,13 +1063,12 @@ Usage: lf_inspect.py --db  db_one,db_two
 
     log_path = report.get_log_path()
 
-
-    # for relative path reporting 
+    # for relative path reporting
     __lf_inspect_report_path = report.get_path_date_time()
 
     inspect_db = inspect_sql(
         _path=__path,
-        _dir = __dir,
+        _dir=__dir,
         _database_list=__database_list,
         _db_index_list=__db_index_list,
         _element_list=__element_list,
@@ -1096,28 +1078,27 @@ Usage: lf_inspect.py --db  db_one,db_two
         _outfile_name=outfile_name,
         _report_path=report_path,
         _log_path=log_path,
-        _lf_inspect_report_path = __lf_inspect_report_path
-        )
+        _lf_inspect_report_path=__lf_inspect_report_path
+    )
 
     # TODO add abilit to pass in unique names
     inspect_db.start_csv_results()
 
-    # One database in list indicates a nightly comparison with 
+    # One database in list indicates a nightly comparison with
     # current run being compared to the previous run
     inspect_db.compare_data()
 
     # csv_dash.sub_test_information()
 
-    #if args.store:
+    # if args.store:
     #    csv_dash.store()
-        
 
     # generate output reports
     report.set_title("Compare Results: Verification Test Run")
     report.build_banner_left()
     report.start_content_div2()
     if len(__database_list) == 1:
-        objective = "QA test run comparision between db_indexs: {index}  in {db}".format(index=__db_index_list,db=__database_list)
+        objective = "QA test run comparision between db_indexs: {index}  in {db}".format(index=__db_index_list, db=__database_list)
     else:
         objective = "QA test run comparision between {db}  with db_index {index}".format(db=__database_list, index=__db_index_list)
 
@@ -1141,7 +1122,6 @@ Usage: lf_inspect.py --db  db_one,db_two
 
     report.build_footer()
 
-
     html_report = report.write_html_with_timestamp()
     # logger.info("html report: {}".format(html_report))
     logger.info("html report: {}".format(html_report))
@@ -1157,7 +1137,7 @@ Usage: lf_inspect.py --db  db_one,db_two
     junit_results = inspect_db.get_junit_results()
     report.set_junit_results(junit_results)
     junit_xml = report.write_junit_results()
-    junit_path_only = junit_xml.replace('junit.xml','')
+    junit_path_only = junit_xml.replace('junit.xml', '')
 
     inspect_db.set_junit_results(junit_xml)
     inspect_db.set_junit_path_only(junit_path_only)
@@ -1166,7 +1146,6 @@ Usage: lf_inspect.py --db  db_one,db_two
     logger.info("junit.xml: allure serve {}".format(junit_xml))
     logger.info("junit.xml path: allure serve {}".format(junit_path_only))
 
-    
 
 if __name__ == '__main__':
     main()
