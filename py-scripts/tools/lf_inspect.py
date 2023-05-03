@@ -38,6 +38,7 @@ class inspect_sql:
                 _dir='',
                 _database_list=[],
                 _element_list=[],
+                _db_index_list=[],
                 _csv_results = '',
                 _table=None,
                 _outfile='',
@@ -56,6 +57,7 @@ class inspect_sql:
         self.database = []
         self.element_list = _element_list
         self.database_comp = []
+        self.db_index_list = _db_index_list
         self.conn = None
         self.conn_comp = None
         self.kpi_list = []
@@ -314,16 +316,18 @@ class inspect_sql:
                             df_tmp.drop_duplicates(inplace=True) 
                             df_tmp.sort_values(by='Date', inplace=True, ascending=False)
 
-                            logger.debug("First row {first}".format(first=df_tmp.iloc[0]))
-                            df_data_1 = df_tmp.iloc[0]
+                            db_index_1 = int(self.db_index_list[0])
+                            logger.debug("First row {first}".format(first=df_tmp.iloc[db_index_1]))
+                            df_data_1 = df_tmp.iloc[db_index_1]
                             logger.debug("type: {data} {data1}".format(data=type(df_data_1),data1=df_data_1))
 
 
                             df_tmp_comp.drop_duplicates(inplace=True) 
                             df_tmp_comp.sort_values(by='Date', inplace=True, ascending=False)
 
-                            logger.debug("First row {first}".format(first=df_tmp_comp.iloc[0]))
-                            df_data_2 = df_tmp_comp.iloc[0]
+                            db_index_2 = int(self.db_index_list[1])
+                            logger.debug("First row {first}".format(first=df_tmp_comp.iloc[db_index_2]))
+                            df_data_2 = df_tmp_comp.iloc[db_index_2]
                             logger.debug("type: {data} {data2}".format(data=type(df_data_2),data2=df_data_2))
 
                             percent_delta = 0
@@ -496,12 +500,14 @@ class inspect_sql:
                         df_tmp.drop_duplicates(inplace=True) 
                         df_tmp.sort_values(by='Date', inplace=True, ascending=False)
 
-                        logger.debug("First row {first}".format(first=df_tmp.iloc[0]))
+                        # TODO iloc 0 is the first row since ascending=False the most recent is at iloc 0
+                        db_index_1 = int(self.db_index_list[0])
+                        logger.debug("First row {first}".format(first=df_tmp.iloc[db_index_1]))
                         df_data_1 = df_tmp.iloc[0]
                         logger.debug("type: {data} {data1}".format(data=type(df_data_1),data1=df_data_1))
 
-
-                        logger.debug("Second row {second}".format(second=df_tmp.iloc[1]))
+                        db_index_2 = int(self.db_index_list[1])
+                        logger.debug("Second row {second}".format(second=df_tmp.iloc[db_index_2]))
                         df_data_2 = df_tmp.iloc[1]
 
                         percent_delta = 0
@@ -730,16 +736,18 @@ class inspect_sql:
                             df_tmp.drop_duplicates(inplace=True) 
                             df_tmp.sort_values(by='Date', inplace=True, ascending=False)
 
-                            logger.debug("First row {first}".format(first=df_tmp.iloc[0]))
-                            df_data_1 = df_tmp.iloc[0]
+                            db_index_1 = int(self.db_index_list[0])
+                            logger.debug("First row {first}".format(first=df_tmp.iloc[db_index_1]))
+                            df_data_1 = df_tmp.iloc[db_index_1]
                             logger.debug("type: {data} {data1}".format(data=type(df_data_1),data1=df_data_1))
 
 
                             df_tmp_comp.drop_duplicates(inplace=True) 
                             df_tmp_comp.sort_values(by='Date', inplace=True, ascending=False)
 
-                            logger.debug("First row {first}".format(first=df_tmp_comp.iloc[0]))
-                            df_data_2 = df_tmp_comp.iloc[0]
+                            db_index_2 = int(self.db_index_list[1])
+                            logger.debug("First row {first}".format(first=df_tmp_comp.iloc[db_index_2]))
+                            df_data_2 = df_tmp_comp.iloc[db_index_2]
                             logger.debug("type: {data} {data2}".format(data=type(df_data_2),data2=df_data_2))
 
                             percent_delta = 0
@@ -988,7 +996,18 @@ Usage: lf_inspect.py --db  db_one,db_two
         ''')
     parser.add_argument('--path', help=''' --path to where to place the results ''', default='')
 
-    parser.add_argument('--database', help='--database db_one,db_two may be a list of up to 2 db', default='qa_test_db')
+    parser.add_argument('--database', help='''
+                        --database db_one,db_two may be a list of up to 2 db', default='qa_test_db
+                        for single db then will compare is done within same db.''')
+    parser.add_argument('--db_index', help='''--db_index  db_index_one,db_index_two
+                         if db_index is not specified:
+                                 for single db compare, will compare last run with previous
+                                 for multiple db compare will compre last run in both db
+                                --db_index 0,1 with a single db will compae last run as previous 
+                                --db_index 0,0 with two db entered will compre the last run in db one with last run of db 2
+                                --db_index -1,-1 will compare the oldest in both db if 2 db's entered. 
+                            ''')
+
     parser.add_argument('--element', help='''
                         --element  dut-model-num==dut1&&dut2  will column element dut-model-num between  dut1,dut2  
                         for single db will look in same db for both, 
@@ -1026,6 +1045,15 @@ Usage: lf_inspect.py --db  db_one,db_two
     else:
         __element_list = []        
 
+    if args.db_index is not None:
+        __db_index_list = args.db_index.split(',')
+    else:
+        if len(__database_list) > 1:
+            # compare the lastest in both dbs
+            __db_index_list = [0,0]
+        else:
+            __db_index_list = [0,1]
+
     __dir = args.dir
     __path = args.path
     __table = args.table
@@ -1060,6 +1088,7 @@ Usage: lf_inspect.py --db  db_one,db_two
         _path=__path,
         _dir = __dir,
         _database_list=__database_list,
+        _db_index_list=__db_index_list,
         _element_list=__element_list,
         _table=__table,
         _csv_results=csv_results,
@@ -1088,9 +1117,9 @@ Usage: lf_inspect.py --db  db_one,db_two
     report.build_banner_left()
     report.start_content_div2()
     if len(__database_list) == 1:
-        objective = "QA test run comparision between last and previous run in {db}".format(db=__database_list)
+        objective = "QA test run comparision between db_indexs: {index}  in {db}".format(index=__db_index_list,db=__database_list)
     else:
-        objective = "QA test run comparision between {db}".format(db=__database_list)
+        objective = "QA test run comparision between {db}  with db_index {index}".format(db=__database_list, index=__db_index_list)
 
     report.set_obj_html("Objective", objective)
     report.build_objective()
