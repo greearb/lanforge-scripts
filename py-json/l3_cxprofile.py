@@ -458,7 +458,7 @@ class L3CXProfile(LFCliBase):
                 sleep_time=0.03,
                 suppress_related_commands=None,
                 debug_=False,
-                tos=None, timeout=300):
+                tos=None, timeout=300, ip_port_a=-1, ip_port_b=-1,):
         # Returns a 2-member array, list of cx, list of endp on success.
         # If endpoints creation fails, returns False, False
         # if Endpoints creation is OK, but CX creation fails, returns False, list of endp
@@ -513,7 +513,7 @@ class L3CXProfile(LFCliBase):
                     "max_rate": self.side_a_max_bps,
                     "min_pkt": self.side_a_min_pdu,
                     "max_pkt": self.side_a_max_pdu,
-                    "ip_port": -1,
+                    "ip_port": ip_port_a,
                     "multi_conn": self.mconn,
                 }
                 endp_side_b = {
@@ -526,7 +526,7 @@ class L3CXProfile(LFCliBase):
                     "max_rate": self.side_b_max_bps,
                     "min_pkt": self.side_b_min_pdu,
                     "max_pkt": self.side_b_max_pdu,
-                    "ip_port": -1,
+                    "ip_port": ip_port_b,
                     "multi_conn": mconn_b,
                 }
 
@@ -608,7 +608,7 @@ class L3CXProfile(LFCliBase):
                     "max_rate": self.side_a_max_bps,
                     "min_pkt": self.side_a_min_pdu,
                     "max_pkt": self.side_a_max_pdu,
-                    "ip_port": -1,
+                    "ip_port": ip_port_a,
                     "multi_conn": self.mconn,
                 }
                 endp_side_b = {
@@ -621,7 +621,7 @@ class L3CXProfile(LFCliBase):
                     "max_rate": self.side_b_max_bps,
                     "min_pkt": self.side_b_min_pdu,
                     "max_pkt": self.side_b_max_pdu,
-                    "ip_port": -1,
+                    "ip_port": ip_port_b,
                     "multi_conn": mconn_b,
                 }
 
