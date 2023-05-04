@@ -779,14 +779,14 @@ class L3VariableTime(Realm):
                                 # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
                                 if item.endswith("-A"):
                                     total_dl += int(value)
-                                else:
+                                elif item.endswith("-B"):
                                     total_ul += int(value)
                             if value_name == 'rx rate ll':
                                 # This hack breaks for mcast or if someone
                                 # names endpoints weirdly.
                                 if item.endswith("-A"):
                                     total_dl_ll += int(value)
-                                else:
+                                elif item.endswith("-B"):
                                     total_ul_ll += int(value)
 
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
