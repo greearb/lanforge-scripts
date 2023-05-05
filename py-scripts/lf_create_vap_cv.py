@@ -153,10 +153,8 @@ class create_vap_cv(cv_test):
         if self.set_upstream:
             # TODO VAP needs to have ability to enable dhcp on the vap as compared to the upstream port. 
             self.raw_line_l1 = [[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},AUTO {self.freq} NA'],
-                                #[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},{upstream_name},AUTO {self.freq} NA'],
                                 [f'resource {vap_shelf}.{vap_resource}.0 0'],
-                                [f'profile_link {upstream_shelf}.{upstream_resource} upstream-dhcp 1 NA NA {upstream_name},AUTO -1 NA']
-                                ]
+                                [f'profile_link {upstream_shelf}.{upstream_resource} upstream-dhcp 1 NA NA {upstream_name},AUTO -1 NA']]
         else:
             self.raw_line_l1 = [[f'profile_link 1.1 {self.profile_name} 1 NA NA {self.vap_radio},AUTO {self.freq} NA'],
                                 ["resource 1.1.0 0"]]
