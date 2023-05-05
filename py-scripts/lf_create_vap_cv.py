@@ -210,7 +210,7 @@ EXAMPLE:
         --delete_old_scenario --scenario_name "Automation" --vap_radio "wiphy0"
         --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2" --vap_bw 20
 
-    JSON example:
+    vs_code launch.json example:
     "args": ["--mgr","localhost",
              "--port","8080",
              "--lf_user","lanforge",
@@ -222,6 +222,22 @@ EXAMPLE:
              "--vap_security","wpa2",
              "--vap_upstream_port","1.1.eth1"
             ]
+
+            "args": ["--mgr","192.168.0.104",
+            "--port","8080",
+            "--lf_user","lanforge",
+            "--lf_password","lanforge",
+            "--delete_old_scenario",
+            "--scenario_name","dfs",
+            "--vap_radio","wiphy3",
+            "--vap_freq","5660",
+            "--vap_ssid","mtk7915_5g",
+            "--vap_passwd","lf_mtk7915_5g",
+            "--vap_security","wpa2",
+            "--vap_bw","20",
+            "--vap_upstream_port","1.1.eth2"
+            ]
+
 
 NOTES:
 
