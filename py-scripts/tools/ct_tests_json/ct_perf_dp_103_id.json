@@ -1,0 +1,165 @@
+{
+    "ct_tests_003_scripts":{
+        "Notes":[
+            "This json file describes tests to be run by LANforge system performance 103 ID"
+        ]  
+    },
+    "test_suites":{
+        "dp_perf_5g":{
+            "lf_cleanup":{
+                "enabled":"FALSE",
+                "load_db":"skip",
+                "command":"lf_cleanup.py",
+                "args":"",
+                "args_list":[
+                    "--mgr LF_MGR_IP --sanitize --sleep 5"
+                ]
+            },
+            "CC_DUT":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+                ]
+            },
+            "CC_ATH10K_5G":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario DP_ATH10K_5G",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                ]
+            },
+            "DP_ATH10K_5G":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "timeout":"600",
+                "iterations":"1",
+                "command":"lf_dataplane_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name wpa2_dp",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut asus_5g --duration 30s --station 1.1.wlan1",
+                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
+                    " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
+                    " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_ATH10K_5G' ",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+            "CC_ATH9K_5G":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario DP_ATH9K_5G",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy2,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                ]
+            },
+            "DP_ATH9K_5G":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "timeout":"600",
+                "iterations":"1",
+                "command":"lf_dataplane_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name wpa2_dp",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut asus_5g --duration 30s --station 1.1.wlan2",
+                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
+                    " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
+                    " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_ATH9K_5G' ",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+
+            "CC_MT7921E_5G":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario DP_MT7921E_5G",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy4,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                ]
+            },
+            "DP_MT7921E_5G":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "timeout":"600",
+                "iterations":"1",
+                "command":"lf_dataplane_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name wpa2_dp",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut asus_5g --duration 30s --station 1.1.wlan4",
+                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
+                    " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
+                    " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_MT7921E_5G' ",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+
+            "CC_AX210_5G":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario DP_AX210_5G",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy6,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                ]
+            },
+            "DP_AX210_5G":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "timeout":"600",
+                "iterations":"1",
+                "command":"lf_dataplane_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name wpa2_dp",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut asus_5g --duration 30s --station 1.1.wlan6",
+                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
+                    " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
+                    " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_AX210_5G' ",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                ]
+            }
+
+        }
+    }
+}
