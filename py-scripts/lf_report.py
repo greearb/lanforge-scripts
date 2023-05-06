@@ -548,6 +548,14 @@ class lf_report:
         </div>""".format(text=self.text)
         self.html += self.text_html
 
+    def build_text_simple(self):
+        # please do not use 'style=' tags unless you cannot override a class
+        self.text_html = """
+            <p align='left' width='900'>{text}</p>
+        """.format(text=self.text)
+        self.html += self.text_html
+
+
     def build_date_time(self):
         self.date_time = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%m-m-%S-s")).replace(':', '-')
         return self.date_time
