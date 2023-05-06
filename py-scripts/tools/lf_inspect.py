@@ -338,6 +338,16 @@ class inspect_sql:
                                 logger.info("Performance Poor {percent}".format(percent=percent_delta))
                                 self.test_result = "Poor"
                                 background = self.background_orange
+                            elif percent_delta == 0:
+                                # negative logic like Stations Failed IP if zero is a goot thing
+                                if 'Failed' in df_data_1['short-description']:
+                                    logger.info("Performance Good {percent}".format(percent=percent_delta))
+                                    self.test_result = "Good"
+                                    background = self.background_green
+                                else:
+                                    logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                    self.test_result = "Critical"
+                                    background = self.background_red
                             else:
                                 logger.info("Performance Critical {percent}".format(percent=percent_delta))
                                 self.test_result = "Critical"
@@ -513,6 +523,16 @@ class inspect_sql:
                             logger.info("Performance Poor {percent}".format(percent=percent_delta))
                             self.test_result = "Poor"
                             background = self.background_orange
+                        elif percent_delta == 0:
+                            # negative logic like Stations Failed IP if zero is a goot thing
+                            if 'Failed' in df_data_1['short-description']:
+                                logger.info("Performance Good {percent}".format(percent=percent_delta))
+                                self.test_result = "Good"
+                                background = self.background_green
+                            else:
+                                logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                self.test_result = "Critical"
+                                background = self.background_red
                         else:
                             logger.info("Performance Critical {percent}".format(percent=percent_delta))
                             self.test_result = "Critical"
@@ -749,6 +769,17 @@ class inspect_sql:
                                 logger.info("Performance Poor {percent}".format(percent=percent_delta))
                                 self.test_result = "Poor"
                                 background = self.background_orange
+                            elif percent_delta == 0:
+                                # negative logic like Stations Failed IP if zero is a goot thing
+                                if 'Failed' in df_data_1['short-description']:
+                                    logger.info("Performance Good {percent}".format(percent=percent_delta))
+                                    self.test_result = "Good"
+                                    background = self.background_green
+                                else:
+                                    logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                    self.test_result = "Critical"
+                                    background = self.background_red
+
                             else:
                                 logger.info("Performance Critical {percent}".format(percent=percent_delta))
                                 self.test_result = "Critical"
