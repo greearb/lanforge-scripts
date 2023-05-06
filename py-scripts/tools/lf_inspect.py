@@ -1098,12 +1098,38 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     report.build_banner_left()
     report.start_content_div2()
     if len(__database_list) == 1:
-        objective = "QA test run comparision between db_indexs: {index}  in {db}".format(index=__db_index_list, db=__database_list)
-    else:
-        objective = "QA test run comparision between {db}  with db_index {index}".format(db=__database_list, index=__db_index_list)
+        # comparison was done on specific elements in the database
+        if __element_list: 
+            #   currently there should only be one element
+            for element in __element_list:
+                element_tmp = element.split("==")
+            sub_attrib_list = element_tmp[1].split('&&')
 
-    report.set_obj_html("Objective", objective)
-    report.build_objective()
+            objective = '''QA test run comparision between database element attribute:  {element}  
+                        '''.format(element=element_tmp[0])
+            report.set_obj_html("Objective", objective)
+            report.build_objective()
+            report.set_text("Column headings with #1 : {attrib_1}".format(attrib_1=sub_attrib_list[0]))
+            report.build_text_simple()
+            report.set_text("Column headings with #2 : {attrib_2}".format(attrib_2=sub_attrib_list[1]))
+            report.build_text_simple()
+
+
+
+        else:
+            objective ='''QA test run comparision between db_indexs: {index}  in {db}'''.format(index=__db_index_list, db=__database_list)
+            report.set_obj_html("Objective", objective)
+            report.build_objective()
+            report.set_text("Column headings with #1: for first db_index, Column headings with # 2 for second db_index ")
+            report.build_text_simple()
+
+    else:
+        objective = '''QA test run comparision between {db}  with db_index {index}'''.format(db=__database_list, index=__db_index_list)
+        report.set_obj_html("Objective", objective)
+        report.build_objective()
+        report.set_text("Column headings with # 1 first database , Column headings with #2 for second database")
+
+
     report.set_table_title("Test Compare")
     report.build_table_title()
     html_results = inspect_db.get_html_results()
@@ -1118,7 +1144,26 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     report_parent_path = report.get_parent_path()
     report_parent_basename = os.path.basename(report_parent_path)
     report_parent_url = './../../../' + report_parent_basename
-    report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)
+    report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)    
+
+    # save the juni.xml file
+    junit_results = inspect_db.get_junit_results()
+    report.set_junit_results(junit_results)
+    junit_xml = report.write_junit_results()
+    junit_path_only = junit_xml.replace('junit.xml', '')
+
+    inspect_db.set_junit_results(junit_xml)
+    inspect_db.set_junit_path_only(junit_path_only)
+
+    junit_info = "junit.xml: allure serve {}".format(junit_xml)
+    allure_info = "junit.xml path: allure serve {}".format(junit_path_only)
+
+    # report.set_text(junit_info)
+    # report.build_text_simple()
+    report.set_text(allure_info)
+    report.build_text_simple()
+
+
 
     report.build_footer()
 
@@ -1133,14 +1178,6 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
 
     logger.info("lf_inspect_html_report: " + html_report)
 
-    # save the juni.xml file
-    junit_results = inspect_db.get_junit_results()
-    report.set_junit_results(junit_results)
-    junit_xml = report.write_junit_results()
-    junit_path_only = junit_xml.replace('junit.xml', '')
-
-    inspect_db.set_junit_results(junit_xml)
-    inspect_db.set_junit_path_only(junit_path_only)
 
     # print later so shows up last
     logger.info("junit.xml: allure serve {}".format(junit_xml))
