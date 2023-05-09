@@ -1,0 +1,30 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        
+
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${fileDirname}",
+
+
+            // lf_check  192.168.0.103  ID 2/21/2022  - QA smoke test
+            "args": [
+                "--json_rig","./ct_rig_json/ct_id_103_rig.json",
+                "--json_dut","./ct_dut_json/ct_id_AX88U_dut.json",  //103
+                "--json_test","./ct_tests_json/ct_perf_wc_103_id.json",
+                "--db_override","./tools/perf_wc_id_103.db",
+                "--suite","perf_wc_5g", 
+                "--path","/home/lanforge/html-reports/ct_id_103",
+            ]   
+
+        }
+    ]
+}
