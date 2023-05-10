@@ -98,7 +98,7 @@ stability of the network when clients move between APs.
     4. The station experiences disconnection during/after the roaming process.
     5. The duration of the roaming process exceeds 50 ms.
 
-STATUS: PROTOTYPE
+STATUS: BETA RELEASE (MORE TESTING ONLY WITH MULTICAST)
 
 VERIFIED_ON: 11-MAY-2023, Underdevelopment
 
