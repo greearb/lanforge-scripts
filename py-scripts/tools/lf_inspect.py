@@ -317,7 +317,7 @@ class inspect_sql:
                             df_tmp_comp.drop_duplicates(inplace=True)
                             df_tmp_comp.sort_values(by='Date', inplace=True, ascending=False)
 
-                            db_index_2 = int(self.db_index_list[1])
+                            db_index_2 = int(self.db_index_list[0])
                             logger.debug("First row {first}".format(first=df_tmp_comp.iloc[db_index_2]))
                             df_data_2 = df_tmp_comp.iloc[db_index_2]
                             logger.debug("type: {data} {data2}".format(data=type(df_data_2), data2=df_data_2))
