@@ -341,9 +341,14 @@ class inspect_sql:
                             elif percent_delta == 0:
                                 # negative logic like Stations Failed IP if zero is a goot thing
                                 if 'Failed' in df_data_1['short-description']:
-                                    logger.info("Performance Good {percent}".format(percent=percent_delta))
-                                    self.test_result = "Good"
-                                    background = self.background_green
+                                    if((int(df_data_1['numeric-score']) != 0) or (int(df_data_2['numeric-score']) !=0)):
+                                        logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                        self.test_result = "Critical"
+                                        background = self.background_red
+                                    else:
+                                        logger.info("Performance Good {percent}".format(percent=percent_delta))
+                                        self.test_result = "Good"
+                                        background = self.background_green
                                 else:
                                     logger.info("Performance Critical {percent}".format(percent=percent_delta))
                                     self.test_result = "Critical"
