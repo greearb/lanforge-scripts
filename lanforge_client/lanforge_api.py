@@ -482,6 +482,9 @@ class BaseLFJsonRequest:
                 post_data['suppress_postexec_cli'] = True
                 post_data['suppress_postexec_method'] = True
 
+            if debug:
+                post_data['__debug'] = 1
+
             # self.logger.warning("Post_data: "+pformat(post_data))
             # self.logger.warning("Encoded Post_data: %s"%json.dumps(post_data).encode("utf-8"))
             change_list = []
@@ -1462,6 +1465,8 @@ class LFJsonCommand(JsonCommand):
                      display: str = None,                      # The DISPLAY option, for example: 192.168.1.5:0.0. Will
                      # guess if left blank.
                      flags: str = None,                        # See flags defined above.
+                     max_size: str = None,                     # Limit both the width and height of the video to value.
+                     # (scrcpy only). 0 is default.
                      resource: int = None,                     # Resource number. [W]
                      screen_size_prcnt: str = None,            # 0.1 to 1.0, screen size percentage for the Android display.
                      shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
@@ -1483,6 +1488,8 @@ class LFJsonCommand(JsonCommand):
             data["display"] = display
         if flags is not None:
             data["flags"] = flags
+        if max_size is not None:
+            data["max_size"] = max_size
         if resource is not None:
             data["resource"] = resource
         if screen_size_prcnt is not None:
@@ -1513,6 +1520,7 @@ class LFJsonCommand(JsonCommand):
         self.post_adb_gui(adb_id=param_map.get("adb_id"),
                           display=param_map.get("display"),
                           flags=param_map.get("flags"),
+                          max_size=param_map.get("max_size"),
                           resource=param_map.get("resource"),
                           screen_size_prcnt=param_map.get("screen_size_prcnt"),
                           shelf=param_map.get("shelf"),
@@ -1592,6 +1600,7 @@ class LFJsonCommand(JsonCommand):
                      adb_model: str = None,                    # Android device model ID
                      adb_product: str = None,                  # Android device product ID
                      app_identifier: str = None,               # Identifier that App and adb can both query (mac of wlan0)
+                     device_type: str = None,                  # Interop device type
                      lf_username: str = None,                  # LANforge Interop app user-name
                      resource: int = None,                     # Resource number. [W]
                      sdk_release: str = None,                  # Android sdk release (example: 4.4.2)
@@ -1619,6 +1628,8 @@ class LFJsonCommand(JsonCommand):
             data["adb_product"] = adb_product
         if app_identifier is not None:
             data["app_identifier"] = app_identifier
+        if device_type is not None:
+            data["device_type"] = device_type
         if lf_username is not None:
             data["lf_username"] = lf_username
         if resource is not None:
@@ -1655,6 +1666,7 @@ class LFJsonCommand(JsonCommand):
                           adb_model=param_map.get("adb_model"),
                           adb_product=param_map.get("adb_product"),
                           app_identifier=param_map.get("app_identifier"),
+                          device_type=param_map.get("device_type"),
                           lf_username=param_map.get("lf_username"),
                           resource=param_map.get("resource"),
                           sdk_release=param_map.get("sdk_release"),
@@ -6964,7 +6976,16 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#clear_cx_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    class ClearCxCountersClearFlags(Enum):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        PORTS_TOO = 1       # Clear port counters this CX uses as well.
+        SEND_EVENT = 2      # Send event when clearing counters.
+
     def post_clear_cx_counters(self, 
+                               clear_flags: str = None,                  # Optional argument to control clear logic.
                                cx_name: str = None,                      # Name of Cross Connect, or 'all'. Null argument is
                                # same as 'all'. [W][D:all]
                                response_json_list: list = None,
@@ -6979,6 +7000,8 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if clear_flags is not None:
+            data["clear_flags"] = clear_flags
         if cx_name is not None:
             data["cx_name"] = cx_name
         if len(data) < 1:
@@ -7002,7 +7025,8 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_clear_cx_counters(cx_name=param_map.get("cx_name"),
+        self.post_clear_cx_counters(clear_flags=param_map.get("clear_flags"),
+                                    cx_name=param_map.get("cx_name"),
                                     )
         """
 
@@ -7011,7 +7035,17 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#clear_endp_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    class ClearEndpCountersClearFlags(Enum):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        PORTS_TOO = 1       # Clear this endpoint's port counters as well.
+        SEND_EVENT = 2      # Send event when clearing counters.
+
     def post_clear_endp_counters(self, 
+                                 clear_flags: str = None,                  # Optional argument to control clear logic.
+                                 # Ignored if just_latency is specified.
                                  endp_name: str = None,                    # Name of Endpoint, or 'all'. Null argument is
                                  # same as 'all'. [W][D:all]
                                  incr_seqno: str = None,                   # Enter 'YES' if you want the target to increment
@@ -7030,6 +7064,8 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if clear_flags is not None:
+            data["clear_flags"] = clear_flags
         if endp_name is not None:
             data["endp_name"] = endp_name
         if incr_seqno is not None:
@@ -7057,7 +7093,8 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_clear_endp_counters(endp_name=param_map.get("endp_name"),
+        self.post_clear_endp_counters(clear_flags=param_map.get("clear_flags"),
+                                      endp_name=param_map.get("endp_name"),
                                       incr_seqno=param_map.get("incr_seqno"),
                                       just_latency=param_map.get("just_latency"),
                                       )
@@ -7068,6 +7105,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#clear_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    class ClearGroupClearFlags(Enum):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        PORTS_TOO = 1       # Clear this endpoint's port counters as well.
+        SEND_EVENT = 2      # Send event when clearing counters.
+
     def post_clear_group(self, 
                          name: str = None,                         # The name of the test group. [W]
                          response_json_list: list = None,
@@ -8462,6 +8507,132 @@ class LFJsonCommand(JsonCommand):
                              resource=param_map.get("resource"),
                              shelf=param_map.get("shelf"),
                              )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/IOS> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#ios
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_ios(self, 
+                 arg1: str = None,                         # arg1
+                 arg10: str = None,                        # arg10
+                 arg11: str = None,                        # arg11
+                 arg12: str = None,                        # arg12
+                 arg13: str = None,                        # arg13
+                 arg14: str = None,                        # arg14
+                 arg15: str = None,                        # arg15
+                 arg16: str = None,                        # arg16
+                 arg17: str = None,                        # arg17
+                 arg18: str = None,                        # arg18
+                 arg19: str = None,                        # arg19
+                 arg2: str = None,                         # arg2
+                 arg20: str = None,                        # arg20
+                 arg3: str = None,                         # arg3
+                 arg4: str = None,                         # arg4
+                 arg5: str = None,                         # arg5
+                 arg6: str = None,                         # arg6
+                 arg7: str = None,                         # arg7
+                 arg8: str = None,                         # arg8
+                 arg9: str = None,                         # arg9
+                 cmd: str = None,                          # Operation that device is requesting
+                 response_json_list: list = None,
+                 debug: bool = False,
+                 errors_warnings: list = None,
+                 suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_ios(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if arg1 is not None:
+            data["arg1"] = arg1
+        if arg10 is not None:
+            data["arg10"] = arg10
+        if arg11 is not None:
+            data["arg11"] = arg11
+        if arg12 is not None:
+            data["arg12"] = arg12
+        if arg13 is not None:
+            data["arg13"] = arg13
+        if arg14 is not None:
+            data["arg14"] = arg14
+        if arg15 is not None:
+            data["arg15"] = arg15
+        if arg16 is not None:
+            data["arg16"] = arg16
+        if arg17 is not None:
+            data["arg17"] = arg17
+        if arg18 is not None:
+            data["arg18"] = arg18
+        if arg19 is not None:
+            data["arg19"] = arg19
+        if arg2 is not None:
+            data["arg2"] = arg2
+        if arg20 is not None:
+            data["arg20"] = arg20
+        if arg3 is not None:
+            data["arg3"] = arg3
+        if arg4 is not None:
+            data["arg4"] = arg4
+        if arg5 is not None:
+            data["arg5"] = arg5
+        if arg6 is not None:
+            data["arg6"] = arg6
+        if arg7 is not None:
+            data["arg7"] = arg7
+        if arg8 is not None:
+            data["arg8"] = arg8
+        if arg9 is not None:
+            data["arg9"] = arg9
+        if cmd is not None:
+            data["cmd"] = cmd
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/ios",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+    #
+
+    def post_ios_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_ios(arg1=param_map.get("arg1"),
+                      arg10=param_map.get("arg10"),
+                      arg11=param_map.get("arg11"),
+                      arg12=param_map.get("arg12"),
+                      arg13=param_map.get("arg13"),
+                      arg14=param_map.get("arg14"),
+                      arg15=param_map.get("arg15"),
+                      arg16=param_map.get("arg16"),
+                      arg17=param_map.get("arg17"),
+                      arg18=param_map.get("arg18"),
+                      arg19=param_map.get("arg19"),
+                      arg2=param_map.get("arg2"),
+                      arg20=param_map.get("arg20"),
+                      arg3=param_map.get("arg3"),
+                      arg4=param_map.get("arg4"),
+                      arg5=param_map.get("arg5"),
+                      arg6=param_map.get("arg6"),
+                      arg7=param_map.get("arg7"),
+                      arg8=param_map.get("arg8"),
+                      arg9=param_map.get("arg9"),
+                      cmd=param_map.get("cmd"),
+                      )
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -19288,7 +19459,8 @@ class LFJsonQuery(JsonQuery):
         /adb/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        api, app-id, device, model, name, phantom, product, release, user-name
+        api, app-id, device, device-type, model, name, phantom, product, release, 
+        user-name
     Example URL: /adb?fields=api,app-id
 
     Example py-json call (it knows the URL):
@@ -19298,16 +19470,17 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        'api':       # Android SDK API Version
-        'app-id':    # Interop app identifier reported by adb.
-        'device':    # Android device identifier.
-        'model':     # Android device model identifier.
-        'name':      # Adb device's name
-        'phantom':   # If the device is phantom, that means we cannot find it (maybe it was
-                     # unplugged?).
-        'product':   # Android device product identifier.
-        'release':   # Android SDK Release
-        'user-name': # LANforge interop app username for this ADB device.
+        'api':         # Android SDK API Version
+        'app-id':      # Interop app identifier reported by adb.
+        'device':      # Android device identifier.
+        'device-type': # Interop device type
+        'model':       # Android device model identifier.
+        'name':        # Android device serial number and LANforge Resource location.
+        'phantom':     # If the device is phantom, that means we cannot find it (maybe it was
+                       # unplugged?).
+        'product':     # Android device product identifier.
+        'release':     # Android SDK Release
+        'user-name':   # LANforge interop app username for this ADB device.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -21213,7 +21386,7 @@ class LFJsonQuery(JsonQuery):
         4way+time+%28us%29, activity, alias, anqp+time+%28us%29, ap, avg+chain+rssi, beacon, 
         bps+rx, bps+rx+ll, bps+tx, bps+tx+ll, bytes+rx+ll, bytes+tx+ll, chain+rssi, 
         channel, collisions, connections, crypt, cx+ago, cx+time+%28us%29, device, dhcp+%28ms%29, 
-        down, entity+id, gateway+ip, ip, ipv6+address, ipv6+gateway, key%2Fphrase, 
+        down, entity+id, gateway+ip, hardware, ip, ipv6+address, ipv6+gateway, key%2Fphrase, 
         login-fail, login-ok, logout-fail, logout-ok, mac, mask, misc, mode, mtu, 
         no+cx+%28us%29, noise, parent+dev, phantom, port, port+type, pps+rx, pps+tx, 
         qlen, reset, retry+failed, rx+bytes, rx+crc, rx+drop, rx+errors, rx+fifo, 
@@ -21268,6 +21441,7 @@ class LFJsonQuery(JsonQuery):
                           # active use.
         'entity id':      # Entity ID
         'gateway ip':     # Default Router/Gateway IP for the Interface.
+        'hardware':       # Port hardware type.
         'ip':             # IP Address of the Interface.
         'ipv6 address':   # IPv6 Address for this interface.  If global-scope address exists, it
                           # will be displayed,otherwise link-local will be displayed.
