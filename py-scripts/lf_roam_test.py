@@ -33,6 +33,12 @@ EXAMPLE: For multiple station and multiple iteration
       --security_key "something" --duration None --upstream "eth2" --iteration 10 --channel "40" --option "ota"
       --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based
 
+EXAMPLE: For  multiple station and multiple iteration with multicast traffic enable
+   python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "10:f9:20:fd:f3:4b" --ap2_bssid "14:16:9d:53:58:cb"
+   --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 2 --ssid_name "RoamAP5g" --security "wpa2"
+     --security_key "something" --duration None --upstream "eth2" --iteration 1 --channel "36" --option "ota"
+      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --sta_type normal --multicast True
+
 Soft Roam
 EXAMPLE: For a single station and a single iteration
     python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
@@ -58,6 +64,7 @@ EXAMPLE: For multiple station and multiple iteration
       --security_key "something" --duration None --upstream "eth2" --iteration 10 --channel "40" --option "ota"
       --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --soft_roam True
 
+SCRIPT_CLASSIFICATION:  Test
 NOTES:
 
 The primary focus of this script is to enable seamless roaming of clients/stations between two access points (APs).
@@ -90,6 +97,10 @@ stability of the network when clients move between APs.
     3. The captured packet does not contain a Reassociation Response Frame.
     4. The station experiences disconnection during/after the roaming process.
     5. The duration of the roaming process exceeds 50 ms.
+
+STATUS: PROTOTYPE
+
+VERIFIED_ON: 11-MAY-2023, Underdevelopment
 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
@@ -134,6 +145,7 @@ lf_clean = importlib.import_module("py-scripts.lf_cleanup")
 series = importlib.import_module("cc_module_9800_3504")
 attenuator = importlib.import_module("py-scripts.attenuator_serial")
 modify = importlib.import_module("py-scripts.lf_atten_mod_test")
+multicast_profile = importlib.import_module("py-json.multicast_profile")
 
 
 class HardRoam(Realm):
@@ -177,7 +189,8 @@ class HardRoam(Realm):
                  log_file=False,
                  debug=False,
                  soft_roam=False,
-                 sta_type=None
+                 sta_type=None,
+                 multicast=None
                  ):
         super().__init__(lanforge_ip,
                          lanforge_port)
@@ -238,8 +251,11 @@ class HardRoam(Realm):
         self.debug = debug
         self.mac_data = None
         self.soft_roam = soft_roam
+        self.multicast = multicast
         print("Number of iteration : ", self.iteration)
         # logging.basicConfig(filename='roam.log', filemode='w', level=logging.INFO, force=True)
+        self.multi_cast_profile = multicast_profile.MULTICASTProfile(self.lanforge_ip, self.lanforge_port,
+                                                                     local_realm=self)
 
     # Start debugger of controller
     def start_debug_(self, mac_list):
@@ -528,6 +544,23 @@ class HardRoam(Realm):
             logging.info("Stations failed to get IPs")
             return False
 
+    # create a multicast profile
+    def mcast_tx(self):
+        # set 1mbps tx rate
+        self.multi_cast_profile.side_b_min_bps = 1000000
+        self.multi_cast_profile.create_mc_tx("mc_udp", self.upstream)
+
+    def mcast_rx(self, sta_list):
+        self.multi_cast_profile.side_a_min_bps = 0
+        print("Station List :", sta_list)
+        self.multi_cast_profile.create_mc_rx("mc_udp", sta_list)
+
+    def mcast_start(self):
+        self.multi_cast_profile.start_mc()
+
+    def mcast_stop(self):
+        self.multi_cast_profile.stop_mc()
+
     # Create layer-3 traffic on clients
     def create_layer3(self, side_a_min_rate, side_a_max_rate, side_b_min_rate, side_b_max_rate, side_a_min_pdu,
                       side_b_min_pdu, traffic_type, sta_list):
@@ -639,8 +672,12 @@ class HardRoam(Realm):
         file_name = []
         for i in range(self.num_sta):
             file = 'test_client_' + str(i) + '.csv'
-            lf_csv_obj = lf_csv.lf_csv(_columns=['Iterations', 'bssid1', 'bssid2', "Roam Time(ms)", "PASS/FAIL",
-                                                 "Pcap file Name", "Log File", "Remark"], _rows=[], _filename=file)
+            if self.multicast == "True":
+                lf_csv_obj = lf_csv.lf_csv(_columns=['Iterations', 'bssid1', 'bssid2', "PASS/FAIL", "Remark"], _rows=[],
+                                           _filename=file)
+            else:
+                lf_csv_obj = lf_csv.lf_csv(_columns=['Iterations', 'bssid1', 'bssid2', "Roam Time(ms)", "PASS/FAIL",
+                                                     "Pcap file Name", "Log File", "Remark"], _rows=[], _filename=file)
             # "Packet loss",
             file_name.append(file)
             lf_csv_obj.generate_csv()
@@ -700,7 +737,6 @@ class HardRoam(Realm):
         except Exception as e:
             logging.warning(str(e))
         finally:
-
             kernel_log = []
             message = None, None
 
@@ -732,7 +768,8 @@ class HardRoam(Realm):
             print("Begin sniffing to establish the initial connection.")
             logging.info("Begin sniffing to establish the initial connection.")
             self.start_sniffer(radio_channel=self.channel, radio=self.sniff_radio,
-                               test_name="roam_" + str(self.sta_type) + "_" + str(self.option) + "start" + "_", duration=3600)
+                               test_name="roam_" + str(self.sta_type) + "_" + str(self.option) + "start" + "_",
+                               duration=3600)
             if self.band == "twog":
                 self.local_realm.reset_port(self.twog_radios)
                 self.create_n_clients(sta_prefix="wlan1", num_sta=self.num_sta, dut_ssid=self.ssid_name,
@@ -804,9 +841,15 @@ class HardRoam(Realm):
 
                     #  if all BSSID's are identical / same, run layer3 traffic b/w station to upstream
                     if result:
-                        self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=0, side_b_min_rate=1000000,
-                                           side_b_max_rate=0, sta_list=sta_list, traffic_type=self.traffic_type,
-                                           side_a_min_pdu=1250, side_b_min_pdu=1250)
+                        if self.multicast == "True":
+                            print("multicast is true")
+                            self.mcast_tx()
+                            self.mcast_rx(sta_list=sta_list)
+                            self.mcast_start()
+                        else:
+                            self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=0, side_b_min_rate=1000000,
+                                               side_b_max_rate=0, sta_list=sta_list, traffic_type=self.traffic_type,
+                                               side_a_min_pdu=1250, side_b_min_pdu=1250)
                     else:
                         #  if BSSID's are not identical / same, try to move all clients to one ap
                         print("Attempt to ensure that all clients are connected to the same AP before "
@@ -859,10 +902,15 @@ class HardRoam(Realm):
                             # radio, and then sleep should be 5 seconds, then roam every station that needs to roam.
                             # You do not need this sleep and scan for each STA.
                             self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
-
-                        self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=0, side_b_min_rate=1000000,
-                                           side_b_max_rate=0, sta_list=sta_list, traffic_type=self.traffic_type,
-                                           side_a_min_pdu=1250, side_b_min_pdu=1250)
+                        if self.multicast == "True":
+                            print("multicast is true")
+                            self.mcast_tx()
+                            self.mcast_rx(sta_list=sta_list)
+                            self.mcast_start()
+                        else:
+                            self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=0, side_b_min_rate=1000000,
+                                               side_b_max_rate=0, sta_list=sta_list, traffic_type=self.traffic_type,
+                                               side_a_min_pdu=1250, side_b_min_pdu=1250)
                     timeout, variable, iterable_var = None, None, None
                     if self.duration_based is True:
                         timeout = time.time() + 60 * float(self.duration)
@@ -875,6 +923,12 @@ class HardRoam(Realm):
                     # post_bssid = None
 
                     while variable:  # The iteration loop for roaming begins at this point.
+                        if self.multicast == "True":
+                            if variable == 1:
+                                print("ignore")
+                            else:
+                                print("wait for 5 mins for next roam process")
+                                time.sleep(120)
                         print("Value of the Variable : ", variable)
                         logging.info("Value of the Variable :" + str(variable))
                         iterations, number, ser_1, ser_2 = self.iteration, None, None, None
@@ -1053,7 +1107,8 @@ class HardRoam(Realm):
                                         print("Starting sniffer")
                                         logging.info("Starting sniffer")
                                         self.start_sniffer(radio_channel=self.channel, radio=self.sniff_radio,
-                                                           test_name="roam_" + str(self.sta_type) + "_" + str(self.option) + "_iteration_" + str(
+                                                           test_name="roam_" + str(self.sta_type) + "_" + str(
+                                                               self.option) + "_iteration_" + str(
                                                                iterations) + "_", duration=3600)
                                         if self.soft_roam:
                                             ser_num = None
@@ -1125,7 +1180,8 @@ class HardRoam(Realm):
                                                     bssid_check2 = []
                                                     for sta_name in sta_list:
                                                         sta = sta_name.split(".")[2]
-                                                        bssid = self.station_data_query(station_name=str(sta), query="ap")
+                                                        bssid = self.station_data_query(station_name=str(sta),
+                                                                                        query="ap")
                                                         # if bssid == "NA":
                                                         #     time.sleep(10)
                                                         bssid_check2.append(bssid)
@@ -1152,7 +1208,8 @@ class HardRoam(Realm):
                                         else:
                                             if station_before == self.final_bssid[0]:
                                                 print("Connected stations bssid is same to bssid list first element")
-                                                logging.info("Connected stations bssid is same to bssid list first element")
+                                                logging.info(
+                                                    "Connected stations bssid is same to bssid list first element")
                                                 for sta_name in sta_list:
                                                     sta = sta_name.split(".")[2]
                                                     logging.info(str(sta))
@@ -1176,9 +1233,11 @@ class HardRoam(Realm):
                                                     }
                                                     print("Roam Command : ", wifi_cli_cmd_data)
                                                     logging.info("Roam Command : " + str(wifi_cli_cmd_data))
-                                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
+                                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd",
+                                                                               wifi_cli_cmd_data1)
                                                     # TODO:  See note in similar code above about only needing to scan once per radio
-                                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
+                                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd",
+                                                                               wifi_cli_cmd_data)
                                             else:
                                                 print("Connected stations bssid is same to bssid list second  element")
                                                 logging.info(
@@ -1205,9 +1264,11 @@ class HardRoam(Realm):
                                                     }
                                                     print("Roam Command : ", wifi_cli_cmd_data)
                                                     logging.info("Roam Command : " + str(wifi_cli_cmd_data))
-                                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
+                                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd",
+                                                                               wifi_cli_cmd_data1)
                                                     # TODO:  See note in similar code above about only needing to scan once per radio
-                                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
+                                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd",
+                                                                               wifi_cli_cmd_data)
                                         # Kernel logs
                                         kernel = self.journal_ctl_logs(file=str(iterations))
                                         print("Name of the Kernel logs file :", kernel)
@@ -1271,259 +1332,365 @@ class HardRoam(Realm):
                                                 res = "PASS"
                                             if res == "FAIL":
                                                 res = "FAIL"
-                                            if res == "PASS":
-                                                if self.sta_type == "normal":
-                                                    query_reasso_response = self.get_wlan_mgt_status(file_name=file_name,
-                                                        pyshark_filter="wlan.da eq %s and wlan.fc.type_subtype eq 3" % (str(i)))
-                                                else:
-                                                    query_reasso_response = self.get_wlan_mgt_status(file_name=file_name,
-                                                        pyshark_filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
-                                                            str(i)))
-                                                print(query_reasso_response)
-                                                logging.info(str(query_reasso_response))
-                                                if len(query_reasso_response) != 0 and query_reasso_response != "empty":
-                                                    if query_reasso_response == "Successful":
-                                                        print("Re-association status is successful")
-                                                        logging.info("Re-association status is successful")
-                                                        if self.sta_type == "normal":
-                                                            reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
-                                                                                               filter="wlan.da eq %s and wlan.fc.type_subtype eq 3" % (str(i)))
-                                                        else:
-                                                            reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
-                                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
-                                                                                                   str(i)))
-                                                        print("Re-association time is", reasso_t)
-                                                        logging.info("Re-association time is " + str(reasso_t))
-                                                        if self.option == "otds":
-                                                            print("Checking for Action Frame")
-                                                            logging.info("Checking for Action Frame")
+                                            if self.multicast == "True":
+                                                print("multicast function")
+                                                if res == "PASS":
+                                                    print("roam success")
+                                                    print("check for multicast traffic resumed or not")
+                                                    endp_list = self.json_get(
+                                                        "endp?fields=name,eid,rx rate (last)",
+                                                        debug_=False)
+                                                    print("endpoint", endp_list)
+                                                    local_list, local_list1, final_list = [], [], []
+                                                    if "endpoint" in endp_list:
+                                                        print(endp_list["endpoint"])
 
-                                                            # Action frame check
-                                                            query_action_frame = self.pcap_obj.check_frame_present(
-                                                                pcap_file=str(file_name),
-                                                                filter="(wlan.fixed.category_code == 6)  && (wlan.sa == %s)" % (
-                                                                    str(i)))
-                                                            print("Action Frame", query_action_frame)
-                                                            if len(query_action_frame) != 0 and query_action_frame != "empty":
-                                                                print("Action frame  is present")
-                                                                logging.info("Action frame is present")
-                                                                query_action_frame_time = self.pcap_obj.read_time(
+                                                        for i in range(1, len(endp_list["endpoint"])):
+                                                            local_list.append(endp_list['endpoint'][i])
+                                                        print(local_list)
+                                                        new_lst = []
+                                                        for i in range(len(local_list)):
+                                                            local_list1 = list(local_list[i].keys())
+                                                            new_lst.append(local_list1[0])
+                                                            print(local_list1)
+                                                        print(new_lst)
+                                                        for i in range(len(new_lst)):
+                                                            final_list.append(
+                                                                endp_list['endpoint'][i + 1][new_lst[i]][
+                                                                    'rx rate (last)'])
+                                                        print(final_list)
+                                                        if 0 in final_list:
+                                                            print("try to start multicast few times")
+                                                            print("start multicast once again")
+                                                            self.mcast_start()
+                                                            time.sleep(60)
+                                                            self.mcast_start()
+                                                            print("check for multicast resumed or not  ")
+                                                            endp_list = self.json_get(
+                                                                "endp?fields=name,eid,rx rate (last)",
+                                                                debug_=False)
+                                                            print("endpoint", endp_list)
+                                                            local_list, local_list1, final_list = [], [], []
+                                                            if "endpoint" in endp_list:
+                                                                print(endp_list["endpoint"])
+
+                                                                for i in range(1, len(endp_list["endpoint"])):
+                                                                    local_list.append(endp_list['endpoint'][i])
+                                                                print(local_list)
+                                                                for i in range(len(local_list)):
+                                                                    local_list1 = list(local_list[i].keys())
+                                                                print(local_list1)
+                                                                for i in range(len(local_list1)):
+                                                                    final_list.append(
+                                                                        endp_list['endpoint'][i + 1][local_list1[i]][
+                                                                            'rx rate (last)'])
+                                                                print(final_list)
+                                                                if 0 in final_list:
+                                                                    print("multicast did not resumed after few trials")
+                                                                    pass_fail_list.append("FAIL")
+                                                                    remark.append(
+                                                                        "bssid switched but multicast did not resumed after few trials")
+                                                                else:
+                                                                    pass_fail_list.append("PASS")
+                                                                    remark.append(
+                                                                        "bssid switched and multicast resumed after few trials ")
+                                                        else:
+                                                            pass_fail_list.append("PASS")
+                                                            remark.append("multicast resumed after roam")
+                                                else:
+                                                    print("roaming failed")
+                                                    pass_fail_list.append("FAIL")
+                                                    remark.append("bssid does not switched")
+                                            else:
+                                                if res == "PASS":
+                                                    if self.sta_type == "normal":
+                                                        query_reasso_response = self.get_wlan_mgt_status(
+                                                            file_name=file_name,
+                                                            pyshark_filter="wlan.da eq %s and wlan.fc.type_subtype eq 3" % (
+                                                                str(i)))
+                                                    else:
+                                                        query_reasso_response = self.get_wlan_mgt_status(
+                                                            file_name=file_name,
+                                                            pyshark_filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
+                                                                str(i)))
+                                                    print(query_reasso_response)
+                                                    logging.info(str(query_reasso_response))
+                                                    if len(query_reasso_response) != 0 and query_reasso_response != "empty":
+                                                        if query_reasso_response == "Successful":
+                                                            print("Re-association status is successful")
+                                                            logging.info("Re-association status is successful")
+                                                            if self.sta_type == "normal":
+                                                                reasso_t = self.pcap_obj.read_time(
+                                                                    pcap_file=str(file_name),
+                                                                    filter="wlan.da eq %s and wlan.fc.type_subtype eq 3" % (
+                                                                        str(i)))
+                                                            else:
+                                                                reasso_t = self.pcap_obj.read_time(
+                                                                    pcap_file=str(file_name),
+                                                                    filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
+                                                                        str(i)))
+                                                            print("Re-association time is", reasso_t)
+                                                            logging.info("Re-association time is " + str(reasso_t))
+                                                            if self.option == "otds":
+                                                                print("Checking for Action Frame")
+                                                                logging.info("Checking for Action Frame")
+
+                                                                # Action frame check
+                                                                query_action_frame = self.pcap_obj.check_frame_present(
                                                                     pcap_file=str(file_name),
                                                                     filter="(wlan.fixed.category_code == 6)  && (wlan.sa == %s)" % (
                                                                         str(i)))
-                                                                print("Action frame time is", query_action_frame_time)
-                                                                logging.info("Action frame time is " + str(reasso_t))
+                                                                print("Action Frame", query_action_frame)
+                                                                if len(query_action_frame) != 0 and query_action_frame != "empty":
+                                                                    print("Action frame  is present")
+                                                                    logging.info("Action frame is present")
+                                                                    query_action_frame_time = self.pcap_obj.read_time(
+                                                                        pcap_file=str(file_name),
+                                                                        filter="(wlan.fixed.category_code == 6)  && (wlan.sa == %s)" % (
+                                                                            str(i)))
+                                                                    print("Action frame time is",
+                                                                          query_action_frame_time)
+                                                                    logging.info(
+                                                                        "Action frame time is " + str(reasso_t))
+                                                                else:
+                                                                    roam_time1.append("No Action frame")
+                                                                    pass_fail_list.append("FAIL")
+                                                                    pcap_file_list.append(str(file_name))
+                                                                    remark.append("No Action Frame")
+                                                                    print("Row list :", row_list)
+                                                                    logging.info("Row list " + str(row_list))
                                                             else:
-                                                                roam_time1.append("No Action frame")
-                                                                pass_fail_list.append("FAIL")
+                                                                print("Checking for Authentication Frame")
+                                                                logging.info("Checking for Authentication Frame")
+                                                                if self.sta_type == "normal":
+                                                                    query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(
+                                                                        pcap_file=str(file_name),
+                                                                        filter="(wlan.fixed.auth.alg == 0 &&  wlan.sa == %s)" % (
+                                                                            str(i)))
+                                                                else:
+                                                                    query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(
+                                                                        pcap_file=str(file_name),
+                                                                        filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001) && (wlan.sa == %s)" % (
+                                                                            str(i)))
+                                                                print("Authentication Frames response is",
+                                                                      query_auth_response)
+                                                                if len(query_auth_response) != 0 and query_auth_response != "empty":
+                                                                    if query_auth_response == "Successful":
+                                                                        print("Authentication Request Frame is present")
+                                                                        logging.info(
+                                                                            "Authentication Request Frame is present")
+                                                                        if self.sta_type == "normal":
+                                                                            auth_time = self.pcap_obj.read_time(
+                                                                                pcap_file=str(file_name),
+                                                                                filter="(wlan.fixed.auth.alg == 0 &&  wlan.sa == %s)" % (
+                                                                                    str(i)))
+                                                                        else:
+                                                                            auth_time = self.pcap_obj.read_time(
+                                                                                pcap_file=str(file_name),
+                                                                                filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)  && (wlan.sa == %s)" % (
+                                                                                    str(i)))
+                                                                        print("Authentication Request Frame time is",
+                                                                              auth_time)
+                                                                        logging.info(
+                                                                            "Authentication Request Frame time is" + str(
+                                                                                auth_time))
+                                                                    else:
+                                                                        roam_time1.append('Auth Fail')
+                                                                        pass_fail_list.append("FAIL")
+                                                                        pcap_file_list.append(str(file_name))
+                                                                        remark.append(" auth failure")
+                                                                else:
+                                                                    roam_time1.append("No Auth frame")
+                                                                    pass_fail_list.append("FAIL")
+                                                                    pcap_file_list.append(str(file_name))
+                                                                    remark.append("No Auth frame")
+                                                                    print("Row list :", row_list)
+                                                                    logging.info("row list " + str(row_list))
+                                                            # roam_time = None
+                                                            if self.option == "otds":
+                                                                roam_time = reasso_t - query_action_frame_time
+                                                            else:
+                                                                roam_time = reasso_t - auth_time
+                                                            print("Roam Time (ms)", roam_time)
+                                                            logging.info("Roam Time (ms)" + str(roam_time))
+                                                            roam_time1.append(roam_time)
+                                                            if self.option == "ota":
+                                                                if roam_time < 50:
+                                                                    pass_fail_list.append("PASS")
+                                                                    pcap_file_list.append(str(file_name))
+                                                                    remark.append("Passed all criteria")
+                                                                else:
+                                                                    pass_fail_list.append("FAIL")
+                                                                    pcap_file_list.append(str(file_name))
+                                                                    remark.append("Roam time is greater then 50 ms")
+                                                            else:
+                                                                pass_fail_list.append("PASS")
                                                                 pcap_file_list.append(str(file_name))
-                                                                remark.append("No Action Frame")
-                                                                print("Row list :", row_list)
-                                                                logging.info("Row list " + str(row_list))
+                                                                remark.append("Passed all criteria")
                                                         else:
-                                                            print("Checking for Authentication Frame")
-                                                            logging.info("Checking for Authentication Frame")
-                                                            if self.sta_type == "normal":
-                                                                query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(
+                                                            roam_time1.append('Reassociation Fail')
+                                                            pass_fail_list.append("FAIL")
+                                                            pcap_file_list.append(str(file_name))
+                                                            remark.append("Reassociation failure")
+                                                            print(
+                                                                "pcap_file name for fail instance of iteration value ")
+                                                            logging.info(
+                                                                "pcap_file name for fail instance of iteration value ")
+                                                    else:
+                                                        roam_time1.append("No Reassociation")
+                                                        pass_fail_list.append("FAIL")
+                                                        pcap_file_list.append(str(file_name))
+                                                        remark.append("No Reasso response")
+                                                        print("Row list : ", row_list)
+                                                        logging.info("row list " + str(row_list))
+                                                else:
+                                                    query_reasso_response = self.get_wlan_mgt_status(
+                                                        file_name=file_name,
+                                                        pyshark_filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
+                                                            str(i)))
+                                                    print("Query_reasso_response:", query_reasso_response)
+                                                    logging.info(str(query_reasso_response))
+                                                    if len(query_reasso_response) != 0 and query_reasso_response != 'empty':
+                                                        if query_reasso_response == "Successful":
+                                                            print("Re-Association status is successful")
+                                                            logging.info("Re-Association status is successful")
+                                                            reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
+                                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
+                                                                                                   str(i)))
+                                                            print("Re-Association time is", reasso_t)
+                                                            logging.info("Re-Association time is " + str(reasso_t))
+                                                            if self.option == "otds":
+                                                                print("Check for Action frame")
+                                                                logging.info("Check for Action Frame")
+
+                                                                # action frame check
+                                                                query_action_frame = self.pcap_obj.check_frame_present(
                                                                     pcap_file=str(file_name),
-                                                                    filter="(wlan.fixed.auth.alg == 0 &&  wlan.sa == %s)" % (str(i)))
+                                                                    filter="(wlan.fixed.category_code == 6)  && (wlan.sa == %s)" % (
+                                                                        str(i)))
+                                                                if len(query_action_frame) != 0 and query_action_frame != "empty":
+                                                                    print("Action Frame is present")
+                                                                    logging.info("Action Frame is present")
+                                                                    query_action_frame_time = self.pcap_obj.read_time(
+                                                                        pcap_file=str(file_name),
+                                                                        filter="(wlan.fixed.category_code == 6)  && (wlan.sa == %s)" % (
+                                                                            str(i)))
+                                                                    print("Action Frame  time is",
+                                                                          query_action_frame_time)
+                                                                    logging.info(
+                                                                        "Action Frame) time is " + str(reasso_t))
+                                                                else:
+                                                                    roam_time1.append("No Action frame")
+                                                                    pass_fail_list.append("FAIL")
+                                                                    pcap_file_list.append(str(file_name))
+                                                                    remark.append("bssid miNo Action Frame")
+                                                                    print("Row list :", row_list)
+                                                                    logging.info("Row list :" + str(row_list))
                                                             else:
+                                                                print("Check for Authentication Frame")
+                                                                logging.info("Check for Authentication Frame")
                                                                 query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(
                                                                     pcap_file=str(file_name),
                                                                     filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001) && (wlan.sa == %s)" % (
                                                                         str(i)))
-                                                            print("Authentication Frames response is", query_auth_response)
-                                                            if len(query_auth_response) != 0 and query_auth_response != "empty":
-                                                                if query_auth_response == "Successful":
-                                                                    print("Authentication Request Frame is present")
-                                                                    logging.info("Authentication Request Frame is present")
-                                                                    if self.sta_type == "normal":
-                                                                        auth_time = self.pcap_obj.read_time(pcap_file=str(file_name),
-                                                                                                            filter="(wlan.fixed.auth.alg == 0 &&  wlan.sa == %s)" % (str(i)))
-                                                                    else:
+                                                                if len(query_auth_response) != 0 and query_auth_response != "empty":
+                                                                    if query_auth_response == "Successful":
+                                                                        print("Authentication Request is present")
+                                                                        logging.info(
+                                                                            "Authentication Request is present")
                                                                         auth_time = self.pcap_obj.read_time(
                                                                             pcap_file=str(file_name),
                                                                             filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)  && (wlan.sa == %s)" % (
                                                                                 str(i)))
-                                                                    print("Authentication Request Frame time is", auth_time)
-                                                                    logging.info("Authentication Request Frame time is" + str(auth_time))
+                                                                        print("Authentication time is", auth_time)
+                                                                        logging.info(
+                                                                            "Authentication time is " + str(auth_time))
+                                                                    else:
+                                                                        roam_time1.append('Auth Fail')
+                                                                        pass_fail_list.append("FAIL")
+                                                                        pcap_file_list.append(str(file_name))
+                                                                        remark.append("bssid mismatch  auth failure")
                                                                 else:
-                                                                    roam_time1.append('Auth Fail')
+                                                                    roam_time1.append("No Auth frame")
                                                                     pass_fail_list.append("FAIL")
                                                                     pcap_file_list.append(str(file_name))
-                                                                    remark.append(" auth failure")
+                                                                    remark.append("bssid mismatched No Auth frame")
+                                                                    print("Row list :", row_list)
+                                                                    logging.info("Row list :" + str(row_list))
+                                                            # roam_time = None
+                                                            if self.option == "otds":
+                                                                roam_time = reasso_t - query_action_frame_time
                                                             else:
-                                                                roam_time1.append("No Auth frame")
-                                                                pass_fail_list.append("FAIL")
-                                                                pcap_file_list.append(str(file_name))
-                                                                remark.append("No Auth frame")
-                                                                print("Row list :", row_list)
-                                                                logging.info("row list " + str(row_list))
-                                                        # roam_time = None
-                                                        if self.option == "otds":
-                                                            roam_time = reasso_t - query_action_frame_time
-                                                        else:
-                                                            roam_time = reasso_t - auth_time
-                                                        print("Roam Time (ms)", roam_time)
-                                                        logging.info("Roam Time (ms)" + str(roam_time))
-                                                        roam_time1.append(roam_time)
-                                                        if self.option == "ota":
-                                                            if roam_time < 50:
-                                                                pass_fail_list.append("PASS")
-                                                                pcap_file_list.append(str(file_name))
-                                                                remark.append("Passed all criteria")
-                                                            else:
-                                                                pass_fail_list.append("FAIL")
-                                                                pcap_file_list.append(str(file_name))
-                                                                remark.append("Roam time is greater then 50 ms")
-                                                        else:
-                                                            pass_fail_list.append("PASS")
-                                                            pcap_file_list.append(str(file_name))
-                                                            remark.append("Passed all criteria")
-                                                    else:
-                                                        roam_time1.append('Reassociation Fail')
-                                                        pass_fail_list.append("FAIL")
-                                                        pcap_file_list.append(str(file_name))
-                                                        remark.append("Reassociation failure")
-                                                        print("pcap_file name for fail instance of iteration value ")
-                                                        logging.info("pcap_file name for fail instance of iteration value ")
-                                                else:
-                                                    roam_time1.append("No Reassociation")
-                                                    pass_fail_list.append("FAIL")
-                                                    pcap_file_list.append(str(file_name))
-                                                    remark.append("No Reasso response")
-                                                    print("Row list : ", row_list)
-                                                    logging.info("row list " + str(row_list))
-                                            else:
-                                                query_reasso_response = self.get_wlan_mgt_status(file_name=file_name,
-                                                                                                 pyshark_filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
-                                                                                                     str(i)))
-                                                print("Query_reasso_response:", query_reasso_response)
-                                                logging.info(str(query_reasso_response))
-                                                if len(query_reasso_response) != 0 and query_reasso_response != 'empty':
-                                                    if query_reasso_response == "Successful":
-                                                        print("Re-Association status is successful")
-                                                        logging.info("Re-Association status is successful")
-                                                        reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
-                                                                                           filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
-                                                                                               str(i)))
-                                                        print("Re-Association time is", reasso_t)
-                                                        logging.info("Re-Association time is " + str(reasso_t))
-                                                        if self.option == "otds":
-                                                            print("Check for Action frame")
-                                                            logging.info("Check for Action Frame")
-
-                                                            # action frame check
-                                                            query_action_frame = self.pcap_obj.check_frame_present(
-                                                                pcap_file=str(file_name),
-                                                                filter="(wlan.fixed.category_code == 6)  && (wlan.sa == %s)" % (
-                                                                    str(i)))
-                                                            if len(query_action_frame) != 0 and query_action_frame != "empty":
-                                                                print("Action Frame is present")
-                                                                logging.info("Action Frame is present")
-                                                                query_action_frame_time = self.pcap_obj.read_time(
-                                                                    pcap_file=str(file_name),
-                                                                    filter="(wlan.fixed.category_code == 6)  && (wlan.sa == %s)" % (
-                                                                        str(i)))
-                                                                print("Action Frame  time is", query_action_frame_time)
-                                                                logging.info("Action Frame) time is " + str(reasso_t))
-                                                            else:
-                                                                roam_time1.append("No Action frame")
-                                                                pass_fail_list.append("FAIL")
-                                                                pcap_file_list.append(str(file_name))
-                                                                remark.append("bssid miNo Action Frame")
-                                                                print("Row list :", row_list)
-                                                                logging.info("Row list :" + str(row_list))
-                                                        else:
-                                                            print("Check for Authentication Frame")
-                                                            logging.info("Check for Authentication Frame")
-                                                            query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(
-                                                                pcap_file=str(file_name),
-                                                                filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001) && (wlan.sa == %s)" % (
-                                                                    str(i)))
-                                                            if len(query_auth_response) != 0 and query_auth_response != "empty":
-                                                                if query_auth_response == "Successful":
-                                                                    print("Authentication Request is present")
-                                                                    logging.info("Authentication Request is present")
-                                                                    auth_time = self.pcap_obj.read_time(
-                                                                        pcap_file=str(file_name),
-                                                                        filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)  && (wlan.sa == %s)" % (
-                                                                            str(i)))
-                                                                    print("Authentication time is", auth_time)
-                                                                    logging.info("Authentication time is " + str(auth_time))
-                                                                else:
-                                                                    roam_time1.append('Auth Fail')
+                                                                roam_time = reasso_t - auth_time
+                                                            print("Roam time (ms)", roam_time)
+                                                            logging.info("Roam time (ms) " + str(roam_time))
+                                                            roam_time1.append(roam_time)
+                                                            if self.option == "ota":
+                                                                if roam_time < 50:
                                                                     pass_fail_list.append("FAIL")
                                                                     pcap_file_list.append(str(file_name))
-                                                                    remark.append("bssid mismatch  auth failure")
-                                                            else:
-                                                                roam_time1.append("No Auth frame")
-                                                                pass_fail_list.append("FAIL")
-                                                                pcap_file_list.append(str(file_name))
-                                                                remark.append("bssid mismatched No Auth frame")
-                                                                print("Row list :", row_list)
-                                                                logging.info("Row list :" + str(row_list))
-                                                        # roam_time = None
-                                                        if self.option == "otds":
-                                                            roam_time = reasso_t - query_action_frame_time
-                                                        else:
-                                                            roam_time = reasso_t - auth_time
-                                                        print("Roam time (ms)", roam_time)
-                                                        logging.info("Roam time (ms) " + str(roam_time))
-                                                        roam_time1.append(roam_time)
-                                                        if self.option == "ota":
-                                                            if roam_time < 50:
-                                                                pass_fail_list.append("FAIL")
-                                                                pcap_file_list.append(str(file_name))
-                                                                remark.append(
-                                                                    "(BSSID mismatched)Client disconnected after roaming")
+                                                                    remark.append(
+                                                                        "(BSSID mismatched)Client disconnected after roaming")
+                                                                else:
+                                                                    pass_fail_list.append("FAIL")
+                                                                    pcap_file_list.append(str(file_name))
+                                                                    remark.append(
+                                                                        "(BSSID mismatched)Roam time is greater then 50 ms,")
                                                             else:
                                                                 pass_fail_list.append("FAIL")
                                                                 pcap_file_list.append(str(file_name))
-                                                                remark.append(
-                                                                    "(BSSID mismatched)Roam time is greater then 50 ms,")
+                                                                remark.append("BSSID mismatched")
                                                         else:
+                                                            roam_time1.append('Reassociation Fail')
                                                             pass_fail_list.append("FAIL")
                                                             pcap_file_list.append(str(file_name))
-                                                            remark.append("BSSID mismatched")
+                                                            remark.append("BSSID mismatched  Reassociation failure")
                                                     else:
-                                                        roam_time1.append('Reassociation Fail')
+                                                        roam_time1.append("No Reassociation")
                                                         pass_fail_list.append("FAIL")
                                                         pcap_file_list.append(str(file_name))
-                                                        remark.append("BSSID mismatched  Reassociation failure")
-                                                else:
-                                                    roam_time1.append("No Reassociation")
-                                                    pass_fail_list.append("FAIL")
-                                                    pcap_file_list.append(str(file_name))
-                                                    remark.append("BSSID mismatched , No Reasso response")
-                                                    print("Row list :", row_list)
-                                                    logging.info("row list " + str(row_list))
-                                        for i, x in zip(row_list, roam_time1):
-                                            i.append(x)
-                                        print("Row list :", row_list)
-                                        logging.info("Row list : " + str(row_list))
-                                        # for i, x in zip(row_list, packet_loss_lst):
-                                        #     i.append(x)
-                                        for i, x in zip(row_list, pass_fail_list):
-                                            i.append(x)
-                                        print("Row list :", row_list)
-                                        logging.info("Row list : " + str(row_list))
-                                        for i, x in zip(row_list, pcap_file_list):
-                                            i.append(x)
-                                        print("Log file :", log_file)
-                                        logging.info("Log file : " + str(log_file))
-                                        my_unnested_list = list(chain(*log_file))
-                                        print(my_unnested_list)
-                                        logging.info(str(my_unnested_list))
-                                        for i, x in zip(row_list, my_unnested_list):
-                                            i.append(x)
-                                        print("Row list :", row_list)
-                                        for i, x in zip(row_list, remark):
-                                            i.append(x)
-                                        print("Row list :", row_list)
-                                        logging.info("row list " + str(row_list))
-                                        for i, x in zip(file_n, row_list):
-                                            self.lf_csv_obj.open_csv_append(fields=x, name=i)
+                                                        remark.append("BSSID mismatched , No Reasso response")
+                                                        print("Row list :", row_list)
+                                                        logging.info("row list " + str(row_list))
+                                        if self.multicast == "True":
+                                            print(row_list)
+                                            print(pass_fail_list)
+                                            print(remark)
+                                            for i, x in zip(row_list, pass_fail_list):
+                                                i.append(x)
+                                            for i, x in zip(row_list, remark):
+                                                i.append(x)
+                                            print("Row list :", row_list)
+                                            for i, x in zip(file_n, row_list):
+                                                self.lf_csv_obj.open_csv_append(fields=x, name=i)
+
+                                        else:
+                                            for i, x in zip(row_list, roam_time1):
+                                                i.append(x)
+                                            print("Row list :", row_list)
+                                            logging.info("Row list : " + str(row_list))
+                                            # for i, x in zip(row_list, packet_loss_lst):
+                                            #     i.append(x)
+                                            for i, x in zip(row_list, pass_fail_list):
+                                                i.append(x)
+                                            print("Row list :", row_list)
+                                            logging.info("Row list : " + str(row_list))
+                                            for i, x in zip(row_list, pcap_file_list):
+                                                i.append(x)
+                                            print("Log file :", log_file)
+                                            logging.info("Log file : " + str(log_file))
+                                            my_unnested_list = list(chain(*log_file))
+                                            print(my_unnested_list)
+                                            logging.info(str(my_unnested_list))
+                                            for i, x in zip(row_list, my_unnested_list):
+                                                i.append(x)
+                                            print("Row list :", row_list)
+                                            for i, x in zip(row_list, remark):
+                                                i.append(x)
+                                            print("Row list :", row_list)
+                                            logging.info("row list " + str(row_list))
+                                            for i, x in zip(file_n, row_list):
+                                                self.lf_csv_obj.open_csv_append(fields=x, name=i)
                                     else:
                                         message = "all stations are not connected to same ap for iteration " + str(
                                             iterations)
@@ -1532,7 +1699,8 @@ class HardRoam(Realm):
                                         print("Starting Sniffer")
                                         logging.info("Starting Sniffer")
                                         self.start_sniffer(radio_channel=self.channel, radio=self.sniff_radio,
-                                                           test_name="roam_" + str(self.sta_type) + "_" + str(self.option) + "_iteration_" + str(
+                                                           test_name="roam_" + str(self.sta_type) + "_" + str(
+                                                               self.option) + "_iteration_" + str(
                                                                iterations) + "_", duration=3600)
                                         print("Stop Sniffer")
                                         logging.info("Stop Sniffer")
@@ -1752,7 +1920,7 @@ class HardRoam(Realm):
                                 " process can be expedited, reducing the time it takes to connect to the new Access Point. This results"
                                 " in a faster and more seamless handoff between Access Points.<br>"
                                 "<br>"
-                                "<b>Soft Roaming:</b><br>" 
+                                "<b>Soft Roaming:</b><br>"
                                 "This happens when a wireless device maintains a connection with both the current and new Access Points"
                                 " during the transition. With 802.11r, the device can maintain its security context during the handoff,"
                                 " allowing for a faster and more secure transition. Soft roaming with 11r is designed to be seamless,"
@@ -1793,27 +1961,44 @@ class HardRoam(Realm):
                                     "the capture file, and any relevant remarks.")
                 report.build_objective()
                 lf_csv_obj = lf_csv.lf_csv()
-                y = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Iterations")
-                z = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="bssid1")
-                u = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="bssid2")
-                t = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Roam Time(ms)")
-                # l = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Packet loss")
-                h = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="PASS/FAIL")
-                p = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Pcap file Name")
-                lf = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Log File")
-                r = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Remark")
-                table = {
-                    "iterations": y,
-                    "Bssid before": z,
-                    "Bssid After": u,
-                    "Roam Time(ms)": t,
-                    "PASS/FAIL": h,
-                    "pcap file name": p,
-                    "Log File": lf,
-                    "Remark": r
-                }
-                if not self.log_file:
-                    del table["Log File"]
+                if self.multicast == "True":
+                    y = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Iterations")
+                    z = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="bssid1")
+                    u = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="bssid2")
+                    h = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="PASS/FAIL")
+                    r = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Remark")
+                else:
+                    y = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Iterations")
+                    z = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="bssid1")
+                    u = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="bssid2")
+                    t = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Roam Time(ms)")
+                    # l = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Packet loss")
+                    h = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="PASS/FAIL")
+                    p = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Pcap file Name")
+                    lf = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Log File")
+                    r = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Remark")
+                if self.multicast == "True":
+                    table = {
+                        "iterations": y,
+                        "Bssid before": z,
+                        "Bssid After": u,
+                        "PASS/FAIL": h,
+                        "Remark": r
+                    }
+                else:
+                    table = {
+                        "iterations": y,
+                        "Bssid before": z,
+                        "Bssid After": u,
+                        "Roam Time(ms)": t,
+                        "PASS/FAIL": h,
+                        "pcap file name": p,
+                        "Log File": lf,
+                        "Remark": r
+                    }
+                if self.multicast != "True":
+                    if not self.log_file:
+                        del table["Log File"]
                 print("Tabel Data :", table)
                 test_setup = pd.DataFrame(table)
                 report.set_table_dataframe(test_setup)
@@ -1924,7 +2109,14 @@ EXAMPLE: For multiple station and multiple iteration
      --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 10 --ssid_name "RoamAP5g" --security "wpa2"
       --security_key "something" --duration None --upstream "eth2" --iteration 10 --channel "40" --option "ota"
       --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based
-      
+
+EXAMPLE: For  multiple station and multiple iteration with multicast traffic enable
+   python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "10:f9:20:fd:f3:4b" --ap2_bssid "14:16:9d:53:58:cb" 
+   --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 2 --ssid_name "RoamAP5g" --security "wpa2"
+     --security_key "something" --duration None --upstream "eth2" --iteration 1 --channel "36" --option "ota" 
+      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --sta_type normal --multicast True
+
+
 Soft Roam
 EXAMPLE: For a single station and a single iteration
     python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
@@ -1987,6 +2179,8 @@ EXAMPLE: For multiple station and multiple iteration
     required.add_argument('--sta_type', type=str, help="provide the type of"
                                                        " client you want to creatE i.e 11r,11r-sae,"
                                                        " 11r-sae-802.1x or simple as none", default="11r")
+    required.add_argument('--multicast', default=False, help="set to true only if we want multicast "
+                                                             "traffic run along the hard roam process")
 
     optional = parser.add_argument_group('Optional arguments')
 
@@ -2039,7 +2233,8 @@ EXAMPLE: For multiple station and multiple iteration
                    identity=args.identity,
                    ttls_pass=args.ttls_pass,
                    soft_roam=args.soft_roam,
-                   sta_type=args.sta_type
+                   sta_type=args.sta_type,
+                   multicast=args.multicast
                    )
     x = os.getcwd()
     print("Current Working Directory :", x)
