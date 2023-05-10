@@ -170,6 +170,7 @@ class csv_sql:
                     match = re.search(pattern, line)
                     if (match is not None):
                         gui_build_date = match.group(1)
+                        gui_build_date = gui_build_date.replace(' ','_')
 
 
                     logger.info("meta_data_path: {meta_data_path} GUI Version: {gui_version} GUI Build Date {gui_build_date}".format(
@@ -203,6 +204,7 @@ class csv_sql:
                     match = re.search(pattern, line)
                     if (match  is not None):
                         server_build_date = match.group(1)
+                        server_build_date = server_build_date.replace(' ','_')
 
 
                     logger.info("meta_data_path: {meta_data_path} server Version: {server_version}".format(
@@ -287,7 +289,7 @@ class csv_sql:
             meta_data_fd = open(meta_data_path, 'r')
             for line in meta_data_fd:
                 if "test_run" in line:
-                    test_run = line.replace("test_run", "")
+                    test_run = line.replace("$ test_run: ", "")
                     test_run = test_run.strip()
                     logger.info("meta_data_path: {meta_data_path} test_run: {test_run}".format(
                         meta_data_path=meta_data_path, test_run=test_run))
@@ -318,7 +320,7 @@ class csv_sql:
             meta_data_fd = open(meta_data_path, 'r')
             for line in meta_data_fd:
                 if "gui_version:" in line:
-                    gui_version = line.replace("lanforge_gui_version:", "")
+                    gui_version = line.replace("$ lanforge_gui_version:", "")
                     gui_version = gui_version.strip()
                     if gui_version == '5.4.3':
                         gui_version_5_4_3 = True
