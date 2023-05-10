@@ -317,7 +317,7 @@ class inspect_sql:
                             df_tmp_comp.drop_duplicates(inplace=True)
                             df_tmp_comp.sort_values(by='Date', inplace=True, ascending=False)
 
-                            db_index_2 = int(self.db_index_list[0])
+                            db_index_2 = int(self.db_index_list[1])
                             logger.debug("First row {first}".format(first=df_tmp_comp.iloc[db_index_2]))
                             df_data_2 = df_tmp_comp.iloc[db_index_2]
                             logger.debug("type: {data} {data2}".format(data=type(df_data_2), data2=df_data_2))
@@ -748,7 +748,7 @@ class inspect_sql:
                             df_tmp_comp.drop_duplicates(inplace=True)
                             df_tmp_comp.sort_values(by='Date', inplace=True, ascending=False)
 
-                            db_index_2 = int(self.db_index_list[0])
+                            db_index_2 = int(self.db_index_list[1])
                             logger.debug("First row {first}".format(first=df_tmp_comp.iloc[db_index_2]))
                             df_data_2 = df_tmp_comp.iloc[db_index_2]
                             logger.debug("type: {data} {data2}".format(data=type(df_data_2), data2=df_data_2))
@@ -1067,7 +1067,7 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
             # compare the lastest in both dbs
             __db_index_list = [0, 0]
         else:
-            __db_index_list = [0, 1]
+            __db_index_list = [0, 0]
 
     __dir = args.dir
     __path = args.path
