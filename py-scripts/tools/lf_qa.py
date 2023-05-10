@@ -170,7 +170,6 @@ class csv_sql:
                     match = re.search(pattern, line)
                     if (match is not None):
                         gui_build_date = match.group(1)
-                        gui_build_date = gui_build_date.replace(' ','_')
 
 
                     logger.info("meta_data_path: {meta_data_path} GUI Version: {gui_version} GUI Build Date {gui_build_date}".format(
@@ -204,7 +203,6 @@ class csv_sql:
                     match = re.search(pattern, line)
                     if (match  is not None):
                         server_build_date = match.group(1)
-                        server_build_date = server_build_date.replace(' ','_')
 
 
                     logger.info("meta_data_path: {meta_data_path} server Version: {server_version}".format(
