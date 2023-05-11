@@ -7,25 +7,25 @@ PURPOSE: This script is designed to run dataplane tests under various scenarios.
 EXAMPLE:
         # Sample cli to test Dataplane Test :
 
-        ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge 
-        --instance_name dataplane-instance --config_name test_con --upstream 1.1eth1 --dut LISP_VAP_DUT 
-        --duration 30s --station 1.1.wlan0 --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60' 
-        --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' 
+        ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
+        --instance_name dataplane-instance --config_name test_con --upstream 1.1eth1 --dut LISP_VAP_DUT
+        --duration 30s --station 1.1.wlan0 --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60'
+        --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP'
         --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2' --raw_line 'modes: 802.11bgn-AX' --pull_report
 
         # Sample cli to test Dataplane Test with influx db (Optional):
 
-        ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge 
-        --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth2 --dut linksys-8450 
-        --duration 15s --station 1.1.sta01500 --download_speed 85% --upload_speed 0 
-        --raw_line 'pkts: Custom;60;142;256;512;1024;MTU' --raw_line 'cust_pkt_sz: 88 1200' 
+        ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
+        --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth2 --dut linksys-8450
+        --duration 15s --station 1.1.sta01500 --download_speed 85% --upload_speed 0
+        --raw_line 'pkts: Custom;60;142;256;512;1024;MTU' --raw_line 'cust_pkt_sz: 88 1200'
         --raw_line 'directions: DUT Transmit;DUT Receive' --raw_line 'traffic_types: UDP;TCP'
-        --test_rig Testbed-01 --pull_report 
+        --test_rig Testbed-01 --pull_report
         --influx_host c7-graphana --influx_port 8086 --influx_org Candela
         --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==
         --influx_bucket ben --influx_tag testbed Ferndale-01
 
-    
+
 Example 2:
 
         # Sample cli to test Dataplane Test with <_dp_cli_config_>.json :
@@ -36,7 +36,7 @@ Example 2:
 
             "lf_dataplane_config.json"
 
-            Sample <name>.json between using eth1 and eth2 
+            Sample <name>.json between using eth1 and eth2
             {
                 "mgr":"192.168.0.101",
                 "port":"8080",
@@ -49,11 +49,11 @@ Example 2:
                 "duration":"15s",
                 "station":"1.1.eth2",
                 "download_speed":"85%",
-                "upload_speed":"0",	
-                "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit", 
+                "upload_speed":"0",
+                "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit",
                 "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
             }
-            
+
             Sample <name>.json between using eth1 and station 1.1.sta0002
             {
                 "mgr":"192.168.0.101",
@@ -67,39 +67,39 @@ Example 2:
                 "duration":"15s",
                 "station":"1.1.sta0002",
                 "download_speed":"85%",
-                "upload_speed":"0",	
+                "upload_speed":"0",
                 "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit",
                 "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
             }
 
 SCRIPT_CLASSIFICATION:  Test
-    
+
 SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation
 
 NOTES:
-        This script is used to automate running Dataplane tests.  You may need to view a Dataplane test 
+        This script is used to automate running Dataplane tests.  You may need to view a Dataplane test
         configured through the GUI to understand the options and how best to input data.
 
-        Note : 
+        Note :
                 To Run this script gui should be opened with
 
                 path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
                         pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
                         ./lfclient.bash -cli-socket 3990
-        
+
         ---> lf_dataplane_test.py is designed to run dataplane tests under various scenarios.
 
-            ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge 
-            --instance_name <instance name> --config_name test_con --upstream <upstream port> --dut <dut name> 
-            --duration <test duration> --station <staion name> --download_speed <download rate> --upload_speed <Opposit rate> 
-            --raw_line 'pkts: 60' --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' 
-            --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2' 
-            --raw_line 'modes: 802.11bgn-AX' --pull_report 
+            ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
+            --instance_name <instance name> --config_name test_con --upstream <upstream port> --dut <dut name>
+            --duration <test duration> --station <staion name> --download_speed <download rate> --upload_speed <Opposit rate>
+            --raw_line 'pkts: 60' --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit'
+            --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2'
+            --raw_line 'modes: 802.11bgn-AX' --pull_report
 
-            *   --raw_line : 'line contents' will add any setting to the test config.  This is useful way to support 
+            *   --raw_line : 'line contents' will add any setting to the test config.  This is useful way to support
                         any options not specifically enabled by the command options.
 
-            *  --set modifications will be applied after the other config has happened, so it can be used to 
+            *  --set modifications will be applied after the other config has happened, so it can be used to
                         override any other config.
 
     Example of raw text config for Dataplane, to show other possible options:
@@ -110,7 +110,7 @@ NOTES:
     kpi_id: Dataplane Pkt-Size
     notes0: ec5211 in bridge mode, wpa2 auth.
     bg: 0xE0ECF8
-    test_rig: 
+    test_rig:
     show_scan: 1
     auto_helper: 0
     skip_2: 0
@@ -158,7 +158,7 @@ NOTES:
     pause_iter: 0
     outer_loop_atten: 0
     show_realtime: 1
-    operator: 
+    operator:
     mconn: 1
     mpkt: 1000
     tos: 0
@@ -166,7 +166,7 @@ NOTES:
 
 
 STATUS: BETA RELEASE
-    
+
 VERIFIED_ON:   11-MAY-2023,
              Build Version:  5.4.6
              Kernel Version: 6.2.14+
@@ -175,7 +175,7 @@ LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
           Copyright 2023 Candela Technologies Inc
 
-INCLUDE_IN_README: False 
+INCLUDE_IN_README: False
 
 """
 import sys
@@ -326,25 +326,25 @@ PURPOSE: This script is designed to run dataplane tests under various scenarios.
 EXAMPLE:
         # Sample cli to test Dataplane Test :
 
-        ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge 
-        --instance_name dataplane-instance --config_name test_con --upstream 1.1eth1 --dut LISP_VAP_DUT 
-        --duration 30s --station 1.1.wlan0 --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60' 
-        --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' 
+        ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
+        --instance_name dataplane-instance --config_name test_con --upstream 1.1eth1 --dut LISP_VAP_DUT
+        --duration 30s --station 1.1.wlan0 --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60'
+        --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP'
         --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2' --raw_line 'modes: 802.11bgn-AX' --pull_report
 
         # Sample cli to test Dataplane Test with influx db (Optional):
 
-        ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge 
-        --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth2 --dut linksys-8450 
-        --duration 15s --station 1.1.sta01500 --download_speed 85% --upload_speed 0 
-        --raw_line 'pkts: Custom;60;142;256;512;1024;MTU' --raw_line 'cust_pkt_sz: 88 1200' 
+        ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
+        --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth2 --dut linksys-8450
+        --duration 15s --station 1.1.sta01500 --download_speed 85% --upload_speed 0
+        --raw_line 'pkts: Custom;60;142;256;512;1024;MTU' --raw_line 'cust_pkt_sz: 88 1200'
         --raw_line 'directions: DUT Transmit;DUT Receive' --raw_line 'traffic_types: UDP;TCP'
-        --test_rig Testbed-01 --pull_report 
+        --test_rig Testbed-01 --pull_report
         --influx_host c7-graphana --influx_port 8086 --influx_org Candela
         --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==
         --influx_bucket ben --influx_tag testbed Ferndale-01
 
-    
+
 Example 2:
 
         # Sample cli to test Dataplane Test with <_dp_cli_config_>.json :
@@ -355,7 +355,7 @@ Example 2:
 
             "lf_dataplane_config.json"
 
-            Sample <name>.json between using eth1 and eth2 
+            Sample <name>.json between using eth1 and eth2
             {
                 "mgr":"192.168.0.101",
                 "port":"8080",
@@ -368,11 +368,11 @@ Example 2:
                 "duration":"15s",
                 "station":"1.1.eth2",
                 "download_speed":"85%",
-                "upload_speed":"0",	
-                "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit", 
+                "upload_speed":"0",
+                "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit",
                 "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
             }
-            
+
             Sample <name>.json between using eth1 and station 1.1.sta0002
             {
                 "mgr":"192.168.0.101",
@@ -386,39 +386,39 @@ Example 2:
                 "duration":"15s",
                 "station":"1.1.sta0002",
                 "download_speed":"85%",
-                "upload_speed":"0",	
+                "upload_speed":"0",
                 "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit",
                 "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
             }
 
 SCRIPT_CLASSIFICATION:  Test
-    
+
 SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation
 
 NOTES:
-        This script is used to automate running Dataplane tests.  You may need to view a Dataplane test 
+        This script is used to automate running Dataplane tests.  You may need to view a Dataplane test
         configured through the GUI to understand the options and how best to input data.
 
-        Note : 
+        Note :
                 To Run this script gui should be opened with
 
                 path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
                         pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
                         ./lfclient.bash -cli-socket 3990
-        
+
         ---> lf_dataplane_test.py is designed to run dataplane tests under various scenarios.
 
-            ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge 
-            --instance_name <instance name> --config_name test_con --upstream <upstream port> --dut <dut name> 
-            --duration <test duration> --station <staion name> --download_speed <download rate> --upload_speed <Opposit rate> 
-            --raw_line 'pkts: 60' --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' 
-            --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2' 
-            --raw_line 'modes: 802.11bgn-AX' --pull_report 
+            ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
+            --instance_name <instance name> --config_name test_con --upstream <upstream port> --dut <dut name>
+            --duration <test duration> --station <staion name> --download_speed <download rate> --upload_speed <Opposit rate>
+            --raw_line 'pkts: 60' --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit'
+            --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2'
+            --raw_line 'modes: 802.11bgn-AX' --pull_report
 
-            *   --raw_line : 'line contents' will add any setting to the test config.  This is useful way to support 
+            *   --raw_line : 'line contents' will add any setting to the test config. This is useful way to support
                         any options not specifically enabled by the command options.
 
-            *  --set modifications will be applied after the other config has happened, so it can be used to 
+            *  --set modifications will be applied after the other config has happened, so it can be used to
                         override any other config.
 
     Example of raw text config for Dataplane, to show other possible options:
@@ -429,7 +429,7 @@ NOTES:
     kpi_id: Dataplane Pkt-Size
     notes0: ec5211 in bridge mode, wpa2 auth.
     bg: 0xE0ECF8
-    test_rig: 
+    test_rig:
     show_scan: 1
     auto_helper: 0
     skip_2: 0
@@ -477,7 +477,7 @@ NOTES:
     pause_iter: 0
     outer_loop_atten: 0
     show_realtime: 1
-    operator: 
+    operator:
     mconn: 1
     mpkt: 1000
     tos: 0
@@ -485,7 +485,7 @@ NOTES:
 
 
 STATUS: BETA RELEASE
-    
+
 VERIFIED_ON:   11-MAY-2023,
              Build Version:  5.4.6
              Kernel Version: 6.2.14+
@@ -494,7 +494,7 @@ LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
           Copyright 2023 Candela Technologies Inc
 
-INCLUDE_IN_README: False 
+INCLUDE_IN_README: False
 
       """
     )
@@ -624,6 +624,7 @@ INCLUDE_IN_README: False
         CV_Test.exit_success()
     else:
         CV_Test.exit_fail()
+
 
 if __name__ == "__main__":
     main()
