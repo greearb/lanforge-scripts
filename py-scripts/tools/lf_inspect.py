@@ -1163,8 +1163,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
                 element_tmp = element.split("==")
             sub_attrib_list = element_tmp[1].split('&&')
 
-            objective = '''QA test run comparision between database element attribute:  {element}  
-                        '''.format(element=element_tmp[0])
+            objective = '''QA test run comparision between database: {db_1} index: {index_1} and index: {index_2}
+                        '''.format(db_1=__database_list[0],index_1=__db_index_list[0],index_2=__db_index_list[1])
             report.set_obj_html("Objective", objective)
             report.build_objective()
             report.set_text("Column headings with #1 : {attrib_1}".format(attrib_1=sub_attrib_list[0]))
@@ -1175,7 +1175,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
 
 
         else:
-            objective ='''QA test run comparision between db_indexs: {index}  in {db}'''.format(index=__db_index_list, db=__database_list)
+            objective = '''QA test run comparision in database: {db_1} index: {index_1} and index: {index_2}
+                        '''.format(db_1=__database_list[0],index_1=__db_index_list[0],index_2=__db_index_list[1])
             report.set_obj_html("Objective", objective)
             report.build_objective()
             report.set_text("Column headings with #1: for first db_index, Column headings with # 2 for second db_index ")
@@ -1189,8 +1190,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
                 element_tmp = element.split("==")
             sub_attrib_list = element_tmp[1].split('&&')
 
-            objective = '''QA test run comparision between {db} with individual db_index {index} element attribute:  {element}  
-                        '''.format(db=__database_list,index=__db_index_list,element=element_tmp[0])
+            objective = '''QA test run comparision between database: {db_1} index: {index_1} and database: {db_2} index: {index_2} with element attribute:  {element}  
+                        '''.format(db_1=__database_list[0],index_1=__db_index_list[0],db_2=__database_list[1],index_2=__db_index_list[1],element=element_tmp[0])
             report.set_obj_html("Objective", objective)
             report.build_objective()
             report.set_text("Column headings with #1 db {db_1} index {index_1}: {attrib_1}".format(db_1=__database_list[0],index_1=__db_index_list[0],attrib_1=sub_attrib_list[0]))
@@ -1199,7 +1200,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
             report.build_text_simple()
 
         else:
-            objective = '''QA test run comparision between {db}  with db_index {index}'''.format(db=__database_list, index=__db_index_list)
+            objective = '''QA test run comparision between database: {db_1} index: {index_1} and database: {db_2} index: {index_2} 
+                        '''.format(db_1=__database_list[0],index_1=__db_index_list[0],db_2=__database_list[1],index_2=__db_index_list[1])
             report.set_obj_html("Objective", objective)
             report.build_objective()
             report.set_text("Column headings with # 1 first database , Column headings with #2 for second database")
