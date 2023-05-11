@@ -56,6 +56,7 @@ class inspect_sql:
         self.database_list = _database_list
         self.database = []
         self.element_list = _element_list
+        self.compare_on_element = False
         self.database_comp = []
         self.db_index_list = _db_index_list
         self.conn = None
@@ -246,6 +247,19 @@ class inspect_sql:
     def compare_multi_db_info(self):
         logger.info("compare the data in multiple db: {db_list}".format(db_list=self.database_list))
 
+        col_list= []
+        attrib_list = []
+        #if the element list is empty the compare only on db index
+        if self.element_list:
+            self.compare_on_element = True
+            for element in self.element_list:
+                element_tmp = element.split('==')
+                col_list.append(element_tmp[0])
+                attrib_list.append(element_tmp[1])  # note this is a list of two elements separated by &&
+            sub_attrib_list = attrib_list[0].split('&&')
+
+
+
         # start the html results for the compare
         self.start_html_results()
 
@@ -270,6 +284,9 @@ class inspect_sql:
             logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
             exit(1)
 
+        if self.element_list:
+            df_1 = df_1.loc[df_1[col_list[0]] == sub_attrib_list[0]]         
+
         self.conn.close()
 
         # get intial datafram
@@ -284,6 +301,9 @@ class inspect_sql:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
             exit(1)
+
+        if self.element_list:
+            df_2 = df_2.loc[df_2[col_list[0]] == sub_attrib_list[1]]
 
         self.conn_comp.close()
 
@@ -1162,10 +1182,27 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
             report.build_text_simple()
 
     else:
-        objective = '''QA test run comparision between {db}  with db_index {index}'''.format(db=__database_list, index=__db_index_list)
-        report.set_obj_html("Objective", objective)
-        report.build_objective()
-        report.set_text("Column headings with # 1 first database , Column headings with #2 for second database")
+
+        if __element_list: 
+            #   currently there should only be one element
+            for element in __element_list:
+                element_tmp = element.split("==")
+            sub_attrib_list = element_tmp[1].split('&&')
+
+            objective = '''QA test run comparision between {db} with individual db_index {index} element attribute:  {element}  
+                        '''.format(db=__database_list,index=__db_index_list,element=element_tmp[0])
+            report.set_obj_html("Objective", objective)
+            report.build_objective()
+            report.set_text("Column headings with #1 db {db_1} index {index_1}: {attrib_1}".format(db_1=__database_list[0],index_1=__db_index_list[0],attrib_1=sub_attrib_list[0]))
+            report.build_text_simple()
+            report.set_text("Column headings with #2 db {db_2} index {index_2}: {attrib_2}".format(db_2=__database_list[1],index_2=__db_index_list[1],attrib_2=sub_attrib_list[1]))
+            report.build_text_simple()
+
+        else:
+            objective = '''QA test run comparision between {db}  with db_index {index}'''.format(db=__database_list, index=__db_index_list)
+            report.set_obj_html("Objective", objective)
+            report.build_objective()
+            report.set_text("Column headings with # 1 first database , Column headings with #2 for second database")
 
 
     report.set_table_title("Test Compare")
