@@ -333,6 +333,9 @@ class lf_check():
         self.test_run = ""
         self.hostname = ""
 
+        # Inspect report
+        self.inspect_report_html = "NA"
+
         # Allure information
         self.junit_results = ""
         self.junit_path_only = ""        
@@ -536,6 +539,11 @@ class lf_check():
         qa_url = self.qa_report_html.replace('/home/lanforge', '')
         if qa_url.startswith('/'):
             qa_url = qa_url[1:]
+
+        inspect_url = self.inspect_report_html.replace('/home/lanforge', '')
+        if inspect_url.startswith('/'):
+            inspect_url = qa_url[1:]
+
         # following recommendation
         # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
         # Mail
@@ -576,8 +584,6 @@ http://{hostname}/{report}
 
 QA Report Dashboard:
 http://{ip_qa}/{qa_url}
-
-
 NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url, qa_url_local=qa_url)
 
         else:
@@ -585,6 +591,23 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url, qa_url_
 QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
         server_version = platform.platform()
+
+        # Put in report information current two methods supported,
+        if "NA" not in self.inspect_report_html:
+            self.message_txt += """
+
+INSPECT Report Dashboard:
+http://{ip_inspect}/{inspect_url}
+
+
+NOTE: Diagrams are links in dashboard""".format(ip_inspect=ip, inspect_url=inspect_url)
+
+        else:
+            self.message_txt += """
+QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
+
+        server_version = platform.platform()
+
 
         # get the Fedora platform 
         if (self.email_title_txt != ""):
@@ -1230,6 +1253,7 @@ junit.xml path: allure serve {junit_path}
         # need to take into account --raw_line parameters thus need to use shlex.split
         # need to preserve command to have correct command syntax
         # in command output
+
         # TODO this is where the batch  needs to itterate
         command_to_run = command
         self.logger.info("command : {command}".format(command=command))
@@ -1504,6 +1528,18 @@ junit.xml path: allure serve {junit_path}
                     break
             self.qa_report_html = self.qa_report_html.replace(
                 'html report: ', '')
+
+        if 'lf_inspect' in command:
+            line_list = open(stdout_log_txt).readlines()
+            for line in line_list:
+                if 'html report:' in line:
+                    self.inspect_report_html = line
+                    self.logger.info(
+                        "html_report: {report}".format(
+                            report=self.inspect_report_html))
+                    break
+            self.inspect_report_html = self.inspect_report_html.replace('html report: ', '')
+
 
         if self.test_result != 'Finished':
             if self.test_result == "TIMEOUT":
@@ -2158,6 +2194,9 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # Add the qa_report_html
     qa_report_html = check.qa_report_html
 
+    # Add the inspect_report_html
+    inspect_report_html = check.inspect_report_html
+
     # add the python3 version information
     lf_server = pd.DataFrame()
     hostname = socket.getfqdn()
@@ -2239,6 +2278,20 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
             qa_url = './' + parent_name + '/' + qa_report_base_name
             logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
             report.build_link("QA Test Results", qa_url)
+
+    if "NA" not in inspect_report_html:
+        report.set_table_title("LF Inspect QA ")
+        report.build_table_title()
+
+        # try relative path
+        parent_path = os.path.dirname(inspect_report_html)
+        parent_name = os.path.basename(parent_path)
+        inspect_report_base_name = os.path.basename(inspect_report_html)
+
+        inspect_url = './' + parent_name + '/' + inspect_report_base_name
+        logger.info("QA Test Results inspect_run custom: {inspect_url}".format(inspect_url=inspect_url))
+        report.build_link("Inspect Test Results", inspect_url)
+
 
     report.set_table_title("LF Check Suite Summary: {suite}".format(suite=test_suite))
     report.build_table_title()
