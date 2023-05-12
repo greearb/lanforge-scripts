@@ -1246,7 +1246,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
 
     html_report = report.write_html_with_timestamp()
     # logger.info("html report: {}".format(html_report))
-    logger.info("html report: {}".format(html_report))
+    # DO NOT remove the print statement
+    print("html report: {}".format(html_report))
     try:
         report.write_pdf_with_timestamp(_page_size='A4',_orientation='Landscape')
     except Exception as x:
