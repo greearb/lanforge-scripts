@@ -184,6 +184,8 @@ import importlib
 import argparse
 import time
 import json
+import logging
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -195,6 +197,10 @@ cv_test_manager = importlib.import_module("py-json.cv_test_manager")
 cv_test = cv_test_manager.cv_test
 cv_add_base_parser = cv_test_manager.cv_add_base_parser
 cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
+
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
+logger = logging.getLogger(__name__)
 
 
 class DataplaneTest(cv_test):
@@ -524,11 +530,24 @@ INCLUDE_IN_README: False
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
                         default="")
 
+    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
+
+
     # TODO:  Add debug and log-level support, and propagate as needed.
     # TODO:  Add ability to pull from a machine that is not running the
     #   GUI, for instance when GUI is running locally against a remote LANforge system.
 
     args = parser.parse_args()
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    # lf_logger_config_json will take presidence to changing debug levels
+    if args.lf_logger_config_json:
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
+
 
     # use json config file
     if args.json:
