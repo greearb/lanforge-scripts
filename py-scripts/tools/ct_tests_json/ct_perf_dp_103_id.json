@@ -158,8 +158,17 @@
                 "args_list":[
                     " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
+            },
+            "lf_inspect":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_inspect.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1"
+                ]
             }
-
         }
     }
 }
