@@ -12,7 +12,7 @@ EXAMPLE:
 SCRIPT_CLASSIFICATION :  Creation
 SCRIPT_CATEGORIES:   Functional
 
-NOTES: 
+NOTES:
 To Run this script gui should be opened with
 
     path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
@@ -56,7 +56,7 @@ The contents of '--ssid' argument are split with shlex, so you can do commands l
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON: 
+VERIFIED_ON:
 Working date - 11/05/2023
 Build version - 5.4.6
 kernel version - 6.2.14+
@@ -65,7 +65,7 @@ LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
     Copyright 2023 Candela Technologies Inc
 
-INCLUDE_IN_README: False 
+INCLUDE_IN_README: False
 
 
 """
@@ -92,6 +92,7 @@ dut = cv_dut_profile.cv_dut
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
 cvtest = cv_test_manager.cv_test
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
 
 class DUT(dut):
     def __init__(self,
@@ -134,13 +135,13 @@ class DUT(dut):
         flags['11r'] = 0x200
         flags['eap-ttls'] = 0x400
         flags['eap-peap'] = 0x800
-        flags['open']=0x0
+        flags['open'] = 0x0
         if self.ssid:
             for j in range(len(self.ssid)):
                 self.ssid[j] = shlex.split(self.ssid[j][0])
                 for k in range(len(self.ssid[j])):
                     kvp = self.ssid[j][k].split('=')
-                    #print("key -:%s:-  val -:%s:-" % (kvp[0], kvp[1]))
+                    # print("key -:%s:-  val -:%s:-" % (kvp[0], kvp[1]))
                     self.ssid[j][k] = kvp
 
                 d = dict()
@@ -153,10 +154,10 @@ class DUT(dut):
                 if 'security' in self.ssid[j].keys():
                     self.ssid[j]['security'] = self.ssid[j]['security'].split('|')
                     for security in self.ssid[j]['security']:
-                        #print("security: %s  flags: %s  keys: %s" % (security, flags, flags.keys()))
+                        # print("security: %s  flags: %s  keys: %s" % (security, flags, flags.keys()))
                         if security.lower() in flags:
                             flag |= flags[security.lower()]
-                            #print("updated flag: %s" % (flag))
+                            # print("updated flag: %s" % (flag))
                         else:
                             emsg = "ERROR:  Un-supported security flag: %s" % (security)
                             logger.critical(emsg)
@@ -198,7 +199,7 @@ EXAMPLE1:
 SCRIPT_CLASSIFICATION :  Creation
 SCRIPT_CATEGORIES:   Functional
 
-NOTES: 
+NOTES:
 To Run this script gui should be opened with
 
     path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
@@ -242,7 +243,7 @@ The contents of '--ssid' argument are split with shlex, so you can do commands l
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON: 
+VERIFIED_ON:
 Working date - 11/05/2023
 Build version - 5.4.6
 kernel version - 6.2.14+
@@ -251,7 +252,7 @@ LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
     Copyright 2023 Candela Technologies Inc
 
-INCLUDE_IN_README: False 
+INCLUDE_IN_README: False
 
                """)
     parser.add_argument(
@@ -308,7 +309,7 @@ INCLUDE_IN_README: False
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
-    
+
     new_dut = DUT(lfmgr=args.lfmgr,
                   port=args.port,
                   dut_name=args.dut_name,
