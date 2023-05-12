@@ -1217,6 +1217,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         report.build_footer()
         html_report = report.write_html_with_timestamp()
         # logger.info("html report: {}".format(html_report))
+        # DO NOT remove print statement
         print("html report: {}".format(html_report))
         try:
             report.write_pdf_with_timestamp()
