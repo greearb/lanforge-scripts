@@ -18,18 +18,28 @@ EXAMPLE:
              "--lf_user","lanforge",
              "--lf_password","lanforge",
              "--vap_radio","wiphy0",
-             "--vap_freq","36",
+             "--vap_freq","2437",
              "--vap_ssid","test_vap",
              "--vap_passwd","password",
              "--vap_security","wpa2",
              "--vap_upstream_port","1.1.eth1"
             ]
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:
 
 NOTES:
 
+STATUS:      RELEASE
 
-Copyright 2021 Candela Technologies Inc
-License: Free to distribute and modify. LANforge systems must be licensed.
+VERIFIED_ON: 12th May 2023
+
+LICENSE:
+
+        Copyright 2021 Candela Technologies Inc
+        License: Free to distribute and modify. LANforge systems must be licensed.
+
+INCLUDE_IN_README: False
 
 """
 import subprocess
@@ -101,14 +111,20 @@ class create_vap_cv(cv_test):
 
     def setup_vap(self, scenario_name="Automation", radio="wiphy0", frequency="-1", name=None, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
 
-        profile_flag = {"wep": "2", "wpa": "4", "wpa2": "8", "wpa3": "32", "open": None}
-        mode = {"AUTO": "0", "a":"1", "aAX": "15", "abg": "4", "abgn": "5", "abgnAC":"8", "abgnAX":"12", "an":"10",
+        profile_flag = {"wep": "2", "wpa": "4", "wpa2": "8", "wpa3": "20", "open": None}
+        mode = {"AUTO": "0", "a": "1", "aAX": "15", "abg": "4", "abgn": "5", "abgnAC": "8", "abgnAX": "12", "an": "10",
                 "anAC": "9", "anAX": "14", "b": "2", "bg": "7", "bgn": "6", "bgnAC": "11", "bgnAX": "13"}
         profile = lf_add_profile(lf_mgr=self.lfclient_host,
                                  lf_port=self.lf_port,
                                  lf_user=self.lf_user,
                                  lf_passwd=self.lf_passwd,
                                  )
+
+        # enables security(like wpa,wpa2,wpa3,wep etc..) along with DHCP_SERVER flags for vap.
+        prof_flag = str(int(profile_flag[vap_security], 16) + int("1", 16))
+
+        # for more flags please refer below
+        # http://<mgr_ip>:8080/help/add_profile
 
         profile.add_profile(
             _antenna=None,  # Antenna count for this profile.
@@ -120,11 +136,11 @@ class create_vap_cv(cv_test):
             _mac_pattern=None,  # Optional MAC-Address pattern, for instance: xx:xx:xx:*:*:xx
             _name=scenario_name,  # Profile Name. [R]
             _passwd=vap_pawd,  # WiFi Password to be used (AP Mode), [BLANK] means no password.
-            _profile_flags=profile_flag[str(vap_security)],  # Flags for this profile, see above.
+            _profile_flags=prof_flag,  # Flags for this profile, see above.
             _profile_type="routed_ap",  # Profile type: See above. [W]
             _ssid=vap_ssid,  # WiFi SSID to be used, [BLANK] means any.
             _vid=None,  # Vlan-ID (only valid for vlan profiles).
-            _wifi_mode=mode[str(self.vap_mode)] # WiFi Mode for this profile.
+            _wifi_mode=mode[str(self.vap_mode)]  # WiFi Mode for this profile.
         )
 
     def setup_chamberview(self, delete_scenario=True,
@@ -151,7 +167,7 @@ class create_vap_cv(cv_test):
         vap_shelf, vap_resource, vap_radio_name, *nil = LFUtils.name_to_eid(vap_radio)
         upstream_shelf, upstream_resource, upstream_name, *nil = LFUtils.name_to_eid(vap_upstream_port)
         if self.set_upstream:
-            # TODO VAP needs to have ability to enable dhcp on the vap as compared to the upstream port. 
+            # TODO VAP needs to have ability to enable dhcp on the vap as compared to the upstream port.
             self.raw_line_l1 = [[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},AUTO {self.freq} NA'],
                                 [f'resource {vap_shelf}.{vap_resource}.0 0'],
                                 [f'profile_link {upstream_shelf}.{upstream_resource} upstream-dhcp 1 NA NA {upstream_name},AUTO -1 NA']]
@@ -236,10 +252,16 @@ EXAMPLE:
             "--vap_upstream_port","1.1.eth2"
             ]
 
+<<<<<<< HEAD
+=======
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:
+
+>>>>>>> 41db00c2 (lf_create_vap_cv.py : LISP-48 added support for enabling DHCP Server Flag for vap)
 
 NOTES:
 
-         tested on 01/31/2023:
          kernel version: 5.19.17+
          gui version: 5.4.6
          the vap was created on each radio listed below, and tested with a station on another radio running test_l3 or manually
@@ -249,6 +271,16 @@ NOTES:
          - mt7915e(7915) , Mediatek , 802.11abgn-AC , 2.4GHz and 5GHz , tested with test_l3.py
          - ath10k(988x) , wave-1 , 802.11abgn-AC , 2.4GHz and 5GHz , tested with test_l3.py
          - ath9k() , n-radio , 802.11abgn , 2.4GHz and 5GHz , tested with test_l3.py
+
+STATUS:      RELEASE
+
+VERIFIED_ON: 12th May 2023
+
+LICENSE:
+    Free to distribute and modify. LANforge systems must be licensed.
+    Copyright 2022 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
         """)
 
@@ -278,7 +310,7 @@ NOTES:
     parser.add_argument("--vap_upstream_port", default="1.1.eth2",
                         help="vap upstream_port (by default: 1.1.eth2")
     parser.add_argument("--vap_bw", type=str, default=None, help="vap bw like 20, 40, 80, 160(by default: None")
-    parser.add_argument("--vap_mode", type=str,  default="AUTO",
+    parser.add_argument("--vap_mode", type=str, default="AUTO",
                         help="vap mode can be selected from these"
                              '"AUTO", "a", "aAX", "abg", "abgn", "abgnAC", "abgnAX", "an","anAC", "anAX", "b", "bg", "bgn", "bgnAC"", "bgnAX"')
 
