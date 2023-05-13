@@ -1,32 +1,52 @@
 #!/usr/bin/env python3
 """
-Note: To Run this script gui should be opened with
+TEST NAME        :   Rate vs Range Test
 
-    path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
-          pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
-          ./lfclient.bash -cli-socket 3990
+TEST SCRIPT      :   lf_rvr_test.py
 
-This script is used to automate running Rate-vs-Range tests.  You
-may need to view a Rate-vs-Range test configured through the GUI to understand
-the options and how best to input data.
+PURPOSE          :   The Purpose of this script is to caluclate the Throughput rate with increasing attenuation with one emulated vitual client.
 
-    ./lf_rvr_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
-      --instance_name rvr-instance --config_name test_con --upstream 1.1.eth1 \
-      --dut RootAP --duration 15s --station 1.1.wlan0 \
-      --download_speed 85% --upload_speed 56Kbps \
-      --raw_line 'pkts: MTU' \
-      --raw_line 'directions: DUT Transmit' \
-      --raw_line 'traffic_types: TCP' \
-      --test_rig Ferndale-Mesh-01 --pull_report \
-      --raw_line 'attenuator: 1.1.1040' \
-      --raw_line 'attenuations: 0..+50..950' \
-      --raw_line 'attenuator_mod: 3' \
-      --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-      --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-      --influx_bucket ben \
-      --influx_tag testbed Ferndale-Mesh
+NOTES            :   To Run this script gui should be opened with
 
-Note:
+                        path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
+                        pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
+                        ./lfclient.bash -cli-socket 3990
+
+                        This script is used to automate running Rate-vs-Range tests.  You
+                        may need to view a Rate-vs-Range test configured through the GUI to understand
+                        the options and how best to input data.
+EXAMPLE-1        :
+                          ./lf_rvr_test.py --mgr 192.168.100.205 --lf_user lanforge --lf_password lanforge
+                          --instance_name rvr-instance --config_name test_con --upstream 1.2.vap0000
+                          --dut routed-AP --duration 1m --station 1.1.sta0000 --download_speed 85%
+                          --upload_speed 56Kbps --raw_line 'pkts: MTU' --raw_line 'directions: DUT Transmit'
+                          --raw_line 'traffic_types: TCP' --raw_line 'attenuator: 1.1.3219' --raw_line 'attenuations: 0..+50..950'
+                          --raw_line 'attenuator_mod: 243' --ssid rvr_2g --ssidpw Password@123 --security wpa2 --radio wiphy0
+                          --bssid DEFAULT --create_station
+
+EXAMPLE-2        :
+
+                        ./lf_rvr_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \\
+                        --instance_name rvr-instance --config_name test_con --upstream 1.1.eth1 \\
+                        --dut RootAP --duration 15s --station 1.1.wlan0 \\
+                        --download_speed 85% --upload_speed 56Kbps \\
+                        --raw_line 'pkts: MTU' \\
+                        --raw_line 'directions: DUT Transmit' \\
+                        --raw_line 'traffic_types: TCP' \\
+                        --test_rig Ferndale-Mesh-01 --pull_report \\
+                        --raw_line 'attenuator: 1.1.1040' \\
+                        --raw_line 'attenuations: 0..+50..950' \\
+                        --raw_line 'attenuator_mod: 3' \\
+                        --influx_host c7-graphana --influx_port 8086 --influx_org Candela \\
+                        --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \\
+                        --influx_bucket ben \\
+                        --influx_tag testbed Ferndale-Mesh
+
+SCRIPT_CLASSIFICATION:  [Test, Module, Example, Tool or Creation]
+
+SCRIPT_CATEGORIES:
+
+NOTES:
     attenuator_mod: selects the attenuator modules, bit-field.
        This example uses 3, which is first two attenuator modules on Attenuator ID 1040.
 
@@ -35,6 +55,16 @@ Note:
         command options.
     --set modifications will be applied after the other config has happened,
         so it can be used to override any other config.
+
+STATUS: RELEASE
+
+VERIFIED_ON: [Working Date, Not Working Date, or Underdevelopment]
+
+LICENSE:
+    Free to distribute and modify. LANforge systems must be licensed.
+    Copyright 2022 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
 Example of raw text config for Rate-vsRange, to show other possible options:
 
@@ -114,7 +144,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
@@ -126,6 +156,7 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
 
 class RvrTest(cvtest):
     def __init__(self,
@@ -230,63 +261,84 @@ def main():
         prog="lf_rvr_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
-    Open this file in an editor and read the top notes for more details.
 
-    Example:
+    TEST NAME        :   Rate vs Range Test
 
-    ./lf_rvr_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \\
-      --instance_name rvr-instance --config_name test_con --upstream 1.1.eth1 \\
-      --dut RootAP --duration 15s --station 1.1.wlan0 \\
-      --download_speed 85% --upload_speed 56Kbps \\
-      --raw_line 'pkts: MTU' \\
-      --raw_line 'directions: DUT Transmit' \\
-      --raw_line 'traffic_types: TCP' \\
-      --test_rig Ferndale-Mesh-01 --pull_report \\
-      --raw_line 'attenuator: 1.1.1040' \\
-      --raw_line 'attenuations: 0..+50..950' \\
-      --raw_line 'attenuator_mod: 3' \\
-      --influx_host c7-graphana --influx_port 8086 --influx_org Candela \\
-      --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \\
-      --influx_bucket ben \\
-      --influx_tag testbed Ferndale-Mesh
+    TEST SCRIPT      :   lf_rvr_test.py
 
-    ./lf_rvr_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \\
-      --instance_name rvr-instance --config_name test_con --upstream 1.1.eth1 \\
-      --dut RootAP --duration 15s --station 1.1.wlan0 \\
-      --download_speed 85% --upload_speed 56Kbps \\
-      --raw_line 'pkts: MTU' \\
-      --raw_line 'directions: DUT Transmit' \\
-      --raw_line 'traffic_types: TCP' \\
-      --test_rig Ferndale-Mesh-01 \\
-      --raw_line 'attenuator: 1.1.1040' \\
-      --raw_line 'attenuations: 0..+50..950' \\
-      --raw_line 'attenuator_mod: 3' \\
-      --local_lf_report_dir /tmp/rvr-report \\
-      --raw_line 'notes0: my rvr notes' \\
-      --raw_line 'notes1: are here.' \\
-      --raw_line 'rvr_bringup_wait: 30000' \\
-      --raw_line 'first_byte_wait: 30000' \\
-      --pull_report \\
+    PURPOSE          :   The Purpose of this script is to caluclate the Throughput rate with increasing attenuation with one emulated vitual client.
 
-    To create a station 
-        --create_station
-        --band 5g
-        --radio wiphy1
-        --ssid asus_5g
-        --ssidpw lf_asus_5g
-        --bssid f0:2f:74:c7:a2:04
-        --security wpa2
+    NOTES            :   To Run this script gui should be opened with
 
-      """
-                                     )
-    # more command line args in py-json/cv_test_manager.py 
+                            path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
+                            pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
+                            ./lfclient.bash -cli-socket 3990
+
+                            This script is used to automate running Rate-vs-Range tests.  You
+                            may need to view a Rate-vs-Range test configured through the GUI to understand
+                            the options and how best to input data.
+    EXAMPLE-1        :
+
+                          ./lf_rvr_test.py --mgr 192.168.100.205 --lf_user lanforge --lf_password lanforge
+                          --instance_name rvr-instance --config_name test_con --upstream 1.2.vap0000
+                          --dut routed-AP --duration 1m --station 1.1.sta0000 --download_speed 85%
+                          --upload_speed 56Kbps --raw_line 'pkts: MTU' --raw_line 'directions: DUT Transmit'
+                          --raw_line 'traffic_types: TCP' --raw_line 'attenuator: 1.1.3219' --raw_line 'attenuations: 0..+50..950'
+                          --raw_line 'attenuator_mod: 243' --ssid rvr_2g --ssidpw Password@123 --security wpa2 --radio wiphy0
+                          --bssid DEFAULT --create_station
+
+    EXAMPLE-2        :
+
+                            ./lf_rvr_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \\
+                            --instance_name rvr-instance --config_name test_con --upstream 1.1.eth1 \\
+                            --dut RootAP --duration 15s --station 1.1.wlan0 \\
+                            --download_speed 85% --upload_speed 56Kbps \\
+                            --raw_line 'pkts: MTU' \\
+                            --raw_line 'directions: DUT Transmit' \\
+                            --raw_line 'traffic_types: TCP' \\
+                            --test_rig Ferndale-Mesh-01 --pull_report \\
+                            --raw_line 'attenuator: 1.1.1040' \\
+                            --raw_line 'attenuations: 0..+50..950' \\
+                            --raw_line 'attenuator_mod: 3' \\
+                            --influx_host c7-graphana --influx_port 8086 --influx_org Candela \\
+                            --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \\
+                            --influx_bucket ben \\
+                            --influx_tag testbed Ferndale-Mesh
+
+    SCRIPT_CLASSIFICATION:  [Test, Module, Example, Tool or Creation]
+
+    SCRIPT_CATEGORIES:
+
+    NOTES:
+        attenuator_mod: selects the attenuator modules, bit-field.
+        This example uses 3, which is first two attenuator modules on Attenuator ID 1040.
+
+        --raw_line 'line contents' will add any setting to the test config.  This is
+            useful way to support any options not specifically enabled by the
+            command options.
+        --set modifications will be applied after the other config has happened,
+            so it can be used to override any other config.
+
+    STATUS: RELEASE
+
+    VERIFIED_ON: [Working Date, Not Working Date, or Underdevelopment]
+
+    LICENSE:
+        Free to distribute and modify. LANforge systems must be licensed.
+        Copyright 2022 Candela Technologies Inc
+
+    INCLUDE_IN_README: False
+
+    """
+    )
+    # more command line args in py-json/cv_test_manager.py
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
     parser.add_argument("-u", "--upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
     parser.add_argument("--station", type=str, default="", help="Station to be used in this test, example: 1.1.sta01500")
 
-    # LANforge station configuration 
+    # LANforge station configuration
     parser.add_argument("--band", type=str, help="band testing --band 6g", choices=["5g", "24g", "6g", "dual_band_5g", "dual_band_6g"], default='5g')
     parser.add_argument("--radio", type=str, help="[LANforge station configuration] LANforge radio station created on --radio wiphy0")
     parser.add_argument("--create_station", help="[LANforge station configuration] create LANforge station at the beginning of the test", action='store_true')
@@ -308,7 +360,7 @@ def main():
                         help="Specify duration of each traffic run")
     parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
     parser.add_argument("--report_dir", default="")
-    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",default="")
+    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from", default="")
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     # logging configuration
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
@@ -328,12 +380,11 @@ def main():
         logger_config.load_lf_logger_config()
 
     cv_base_adjust_parser(args)
-    
 
     # The script has the ability to create a station if one does not exist
     if (args.create_station):
-    # go up one directory to run perl 
-    # TODO use lanforge_api
+        # go up one directory to run perl
+        # TODO use lanforge_api
         shelf, resource, station_name, *nil = LFUtils.name_to_eid(args.station)
 
         cwd = os.getcwd()
@@ -374,8 +425,6 @@ def main():
         # change back to the currentl workin directory
         os.chdir(cwd)
 
-
-
     CV_Test = RvrTest(lf_host=args.mgr,
                       lf_port=args.port,
                       lf_user=args.lf_user,
@@ -384,7 +433,7 @@ def main():
                       config_name=args.config_name,
                       upstream=args.upstream,
                       pull_report=args.pull_report,
-                      local_lf_report_dir = args.local_lf_report_dir,
+                      local_lf_report_dir=args.local_lf_report_dir,
                       load_old_cfg=args.load_old_cfg,
                       download_speed=args.download_speed,
                       upload_speed=args.upload_speed,
@@ -406,4 +455,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
