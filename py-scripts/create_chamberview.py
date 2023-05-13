@@ -1,34 +1,61 @@
 #!/usr/bin/env python3
 """
-Note: To Run this script gui should be opened with
+NOTES: DUT_Radio is really the last part of the 'maps to' component of the scenario,
+so it can also be LAN when using and Upstream profile, for instance.
+
+If scenario with same name already exists as given in 'create_scenario' argument, --delete_scenario flag 
+must be used to overwrite scenario with same name. If --delete_scenario isn't given, script will append lines 
+to scenario that exists with same name.
+
+NAME: create_chamberview.py
+
+PURPOSE: This script creates a scenario in which stations,bridged-AP,vap,etc can be created and
+upstream, upstream-dhcp, uplink-nat can be configured in chamber view.
+
+EXAMPLE:
+EXAMPLE1
+python create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+    --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
+        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
+    --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
+        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
+
+EXAMPLE2:
+create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+    --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
+    --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
+
+SCRIPT_CLASSIFICATION :  Creation
+SCRIPT_CATEGORIES:   Functional  
+
+NOTES: 
+To Run this script gui should be opened with
 
     path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
           pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
           ./lfclient.bash -cli-socket 3990
 
-Note: Scenario names should be different, for each run of this script.
+Scenario names should be different, for each run of this script.
     in case of same scenario name scenario will be appended to the same name.
 
-Note: Script for creating a chamberview scenario.
-    Run this script to set/create a chamber view scenario.
-    ex. on how to run this script:
-
-    create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
-    --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
-        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN="
-    --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
-        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN="
-
-    ********************************      OR        ********************************
-
-    create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
-    --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
-    --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
-
-Output:
-    You should see build scenario with the given arguments at the end of this script.
+You should see build scenario with the given arguments at the end of this script.
     To verify this:
         open Chamber View -> Manage scenario
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON: 
+Working date - 11/05/2023
+Build version - 5.4.6
+kernel version - 6.2.14+
+
+LICENSE:
+    Free to distribute and modify. LANforge systems must be licensed.
+    Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False 
+
+
 """
 import sys
 import os
@@ -185,29 +212,54 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
 
-        Notes:
+NAME: create_chamberview.py
 
-        For Two line scenario use --line twice as shown in example, for multi line scenario
-        use --line argument to create multiple lines
-        \n
-           create_chamberview.py --mgr "localhost" --mgr_port "8080" -cs "scenario_name"
-             --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
-                    DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=2"
-             --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
-                    DUT=Test DUT_Radio=Radio-1 Traffic=NA"
+PURPOSE: This script creates a scenario in which stations,bridged-AP,vap,etc can be created and
+upstream, upstream-dhcp, uplink-nat can be configured in chamber view.
 
-           ********************************      OR        ********************************
+EXAMPLE:
+EXAMPLE1:
+python create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+    --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
+        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
+    --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
+        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
 
-           create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
-             --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
-             --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
+EXAMPLE2:
+create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+    --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
+    --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
 
-           DUT_Radio is really the last part of the 'maps to' component of the scenario,
-           so it can also be LAN when using and Upstream profile, for instance.
+SCRIPT_CLASSIFICATION :  Creation
+SCRIPT_CATEGORIES:   Functional  
 
-           If scenario with same name already exists as given in 'create_scenario' argument, --delete_scenario flag 
-           must be used to overwrite scenario with same name. If --delete_scenario isn't given, script will append lines 
-           to scenario that exists with same name.   
+NOTES: 
+To Run this script gui should be opened with
+
+    path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
+          pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
+          ./lfclient.bash -cli-socket 3990
+
+Scenario names should be different, for each run of this script.
+    in case of same scenario name scenario will be appended to the same name.
+
+You should see build scenario with the given arguments at the end of this script.
+    To verify this:
+        open Chamber View -> Manage scenario
+ 
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON: 
+Working date - 11/05/2023
+Build version - 5.4.6
+kernel version - 6.2.14+
+
+LICENSE:
+    Free to distribute and modify. LANforge systems must be licensed.
+    Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False  
 
            """)
     parser.add_argument(
