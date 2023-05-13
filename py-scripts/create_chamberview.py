@@ -3,8 +3,8 @@
 NOTES: DUT_Radio is really the last part of the 'maps to' component of the scenario,
 so it can also be LAN when using and Upstream profile, for instance.
 
-If scenario with same name already exists as given in 'create_scenario' argument, --delete_scenario flag 
-must be used to overwrite scenario with same name. If --delete_scenario isn't given, script will append lines 
+If scenario with same name already exists as given in 'create_scenario' argument, --delete_scenario flag
+must be used to overwrite scenario with same name. If --delete_scenario isn't given, script will append lines
 to scenario that exists with same name.
 
 NAME: create_chamberview.py
@@ -26,9 +26,9 @@ create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
     --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
 
 SCRIPT_CLASSIFICATION :  Creation
-SCRIPT_CATEGORIES:   Functional  
+SCRIPT_CATEGORIES:   Functional
 
-NOTES: 
+NOTES:
 To Run this script gui should be opened with
 
     path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
@@ -44,7 +44,7 @@ You should see build scenario with the given arguments at the end of this script
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON: 
+VERIFIED_ON:
 Working date - 11/05/2023
 Build version - 5.4.6
 kernel version - 6.2.14+
@@ -53,7 +53,7 @@ LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
     Copyright 2023 Candela Technologies Inc
 
-INCLUDE_IN_README: False 
+INCLUDE_IN_README: False
 
 
 """
@@ -231,9 +231,9 @@ create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
     --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
 
 SCRIPT_CLASSIFICATION :  Creation
-SCRIPT_CATEGORIES:   Functional  
+SCRIPT_CATEGORIES:   Functional
 
-NOTES: 
+NOTES:
 To Run this script gui should be opened with
 
     path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
@@ -246,11 +246,11 @@ Scenario names should be different, for each run of this script.
 You should see build scenario with the given arguments at the end of this script.
     To verify this:
         open Chamber View -> Manage scenario
- 
+
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON: 
+VERIFIED_ON:
 Working date - 11/05/2023
 Build version - 5.4.6
 kernel version - 6.2.14+
@@ -259,7 +259,7 @@ LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
     Copyright 2023 Candela Technologies Inc
 
-INCLUDE_IN_README: False  
+INCLUDE_IN_README: False
 
            """)
     parser.add_argument(
