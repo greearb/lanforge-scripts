@@ -2,7 +2,7 @@
 """
 NAME: lf_wifi_capacity_test.py
 
-PURPOSE: This script runs wifi capacity test on the existing stations or runs on the stations specified 
+PURPOSE: This script runs wifi capacity test on the existing stations or runs on the stations specified
 (if --stations argument is mentioned or stations can be created using -cs with stations names mentioned with --stations)
 by creating layer3 cross connects and generates html and pdf report.
 
@@ -26,7 +26,7 @@ example 2:
 --influx_tag testbed Ferndale-01
 
 SCRIPT_CLASSIFICATION :  Test
-SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation 
+SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation
 
 NOTES: This script is used to automate wifi capacity tests.You need a configured upstream to run the script.
 To Run this script gui should be opened with
@@ -42,7 +42,7 @@ To Run this script gui should be opened with
     ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
              --instance_name this_inst --config_name test_con --upstream 1.1.eth2 --batch_size 1,5,25,50,100 --loop_iter 1 \
              --protocol UDP-IPv4 --duration 6000 --pull_report \
-             
+
 
     --pull_report == If specified, this will pull reports from lanforge to your code directory,
                     from where you are running this code
@@ -54,7 +54,7 @@ To Run this script gui should be opened with
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON: 
+VERIFIED_ON:
 Working date - 11/05/2023
 Build version - 5.4.6
 kernel version - 6.2.14+
@@ -63,9 +63,9 @@ LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
     Copyright 2023 Candela Technologies Inc
 
-INCLUDE_IN_README: False 
+INCLUDE_IN_README: False
 
-    
+
 
 
 Example of raw text config for Capacity, to show other possible options:
@@ -321,7 +321,7 @@ pf_max_reconnects: 0
 use_mix_pdu: 0
 pdu_prcnt_pps: 1
 pdu_prcnt_bps: 0
-pdu_mix_ln-0: 
+pdu_mix_ln-0:
 show_scan: 1
 show_golden_3p: 0
 save_csv: 0
@@ -347,7 +347,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -539,7 +539,7 @@ def main():
 
 NAME: lf_wifi_capacity_test.py
 
-PURPOSE: This script runs wifi capacity test on the existing stations or runs on the stations specified 
+PURPOSE: This script runs wifi capacity test on the existing stations or runs on the stations specified
 (if --stations argument is mentioned or stations can be created using -cs with stations names mentioned with --stations)
 by creating layer3 cross connects and generates html and pdf report.
 
@@ -563,7 +563,7 @@ example 2:
 --influx_tag testbed Ferndale-01
 
 SCRIPT_CLASSIFICATION :  Test
-SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation 
+SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation
 
 NOTES: This script is used to automate wifi capacity tests.You need a configured upstream to run the script.
 To Run this script gui should be opened with
@@ -590,7 +590,7 @@ This is a test file which will run a wifi capacity test.
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON: 
+VERIFIED_ON:
 Working date - 11/05/2023
 Build version - 5.4.6
 kernel version - 6.2.14+
@@ -599,7 +599,7 @@ LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
     Copyright 2023 Candela Technologies Inc
 
-INCLUDE_IN_README: False 
+INCLUDE_IN_README: False
 
                """)
 
@@ -638,7 +638,6 @@ INCLUDE_IN_README: False
     parser.add_argument("--graph_groups", help="File to save graph groups to", default=None)
     parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from", default="")
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
-
 
     args = parser.parse_args()
 
