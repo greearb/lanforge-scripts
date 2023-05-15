@@ -566,6 +566,7 @@ class csv_sql:
         if not self.kpi_list:
             logger.info("WARNING: used --store , no new kpi.csv found, check input path or remove --store from command line")
 
+        rows = []
         for kpi in self.kpi_list:  # TODO note empty kpi.csv failed test
             df_kpi_tmp = pd.read_csv(kpi, sep='\t')
             # only store the path to the kpi.csv file
@@ -590,8 +591,8 @@ class csv_sql:
             df_kpi_tmp['server_ver'], df_kpi_tmp['server_build_date'] = self.get_server_info_from_meta(_kpi_path)
 
             # this next line creats duplicate entries
-            # df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
-            self.df = self.df.append(df_kpi_tmp, ignore_index=True)
+            self.df = pd.concat([self.df,df_kpi_tmp], ignore_index=True)
+
 
         self.conn = sqlite3.connect(self.database)
         try:
