@@ -42,9 +42,9 @@ EXAMPLE-2        :
                         --influx_bucket ben \\
                         --influx_tag testbed Ferndale-Mesh
 
-SCRIPT_CLASSIFICATION:  [Test, Module, Example, Tool or Creation]
+SCRIPT_CLASSIFICATION:  Test
 
-SCRIPT_CATEGORIES:
+SCRIPT_CATEGORIES:      Performance,  Functional,  KPI Generation,  Report Generation
 
 NOTES:
     attenuator_mod: selects the attenuator modules, bit-field.
@@ -55,11 +55,73 @@ NOTES:
         command options.
     --set modifications will be applied after the other config has happened,
         so it can be used to override any other config.
+        sel_port-0: 1.1.wlan0
+        show_events: 1
+        show_log: 0
+        port_sorting: 0
+        kpi_id: Rate vs Range
+        bg: 0xE0ECF8
+        test_rig:
+        show_scan: 1
+        auto_helper: 0
+        skip_2: 0
+        skip_5: 0
+        skip_5b: 1
+        skip_dual: 0
+        skip_tri: 1
+        selected_dut: RootAP
+        duration: 15000
+        traffic_port: 1.1.6 wlan0
+        upstream_port: 1.1.1 eth1
+        path_loss: 10
+        speed: 85%
+        speed2: 56Kbps
+        min_rssi_bound: -150
+        max_rssi_bound: 0
+        channels: AUTO
+        modes: Auto
+        pkts: MTU
+        spatial_streams: AUTO
+        security_options: AUTO
+        bandw_options: AUTO
+        traffic_types: TCP
+        directions: DUT Transmit
+        txo_preamble: OFDM
+        txo_mcs: 0 CCK, OFDM, HT, VHT
+        txo_retries: No Retry
+        txo_sgi: OFF
+        txo_txpower: 15
+        attenuator: 1.1.1040
+        attenuator2: 0
+        attenuator_mod: 243
+        attenuator_mod2: 255
+        attenuations: 0..+50..950
+        attenuations2: 0..+50..950
+        chamber: 0
+        tt_deg: 0..+45..359
+        cust_pkt_sz:
+        show_bar_labels: 1
+        show_prcnt_tput: 0
+        show_3s: 0
+        show_ll_graphs: 0
+        show_gp_graphs: 1
+        show_1m: 1
+        pause_iter: 0
+        outer_loop_atten: 0
+        show_realtime: 1
+        operator:
+        mconn: 1
+        mpkt: 1000
+        tos: 0
+        loop_iterations: 1
 
-STATUS: RELEASE
+STATUS: BETA RELEASE
 
-VERIFIED_ON: [Working Date, Not Working Date, or Underdevelopment]
-
+VERIFIED_ON: 
+            12th May 2023
+            GUI Version    : 5.4.6
+            Kernel Version : 5.19.17+
+ 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
     Copyright 2022 Candela Technologies Inc
@@ -68,65 +130,7 @@ INCLUDE_IN_README: False
 
 Example of raw text config for Rate-vsRange, to show other possible options:
 
-sel_port-0: 1.1.wlan0
-show_events: 1
-show_log: 0
-port_sorting: 0
-kpi_id: Rate vs Range
-bg: 0xE0ECF8
-test_rig:
-show_scan: 1
-auto_helper: 0
-skip_2: 0
-skip_5: 0
-skip_5b: 1
-skip_dual: 0
-skip_tri: 1
-selected_dut: RootAP
-duration: 15000
-traffic_port: 1.1.6 wlan0
-upstream_port: 1.1.1 eth1
-path_loss: 10
-speed: 85%
-speed2: 56Kbps
-min_rssi_bound: -150
-max_rssi_bound: 0
-channels: AUTO
-modes: Auto
-pkts: MTU
-spatial_streams: AUTO
-security_options: AUTO
-bandw_options: AUTO
-traffic_types: TCP
-directions: DUT Transmit
-txo_preamble: OFDM
-txo_mcs: 0 CCK, OFDM, HT, VHT
-txo_retries: No Retry
-txo_sgi: OFF
-txo_txpower: 15
-attenuator: 1.1.1040
-attenuator2: 0
-attenuator_mod: 243
-attenuator_mod2: 255
-attenuations: 0..+50..950
-attenuations2: 0..+50..950
-chamber: 0
-tt_deg: 0..+45..359
-cust_pkt_sz:
-show_bar_labels: 1
-show_prcnt_tput: 0
-show_3s: 0
-show_ll_graphs: 0
-show_gp_graphs: 1
-show_1m: 1
-pause_iter: 0
-outer_loop_atten: 0
-show_realtime: 1
-operator:
-mconn: 1
-mpkt: 1000
-tos: 0
-loop_iterations: 1
+
 """
 import sys
 import os
@@ -278,14 +282,13 @@ def main():
                             may need to view a Rate-vs-Range test configured through the GUI to understand
                             the options and how best to input data.
     EXAMPLE-1        :
-
-                          ./lf_rvr_test.py --mgr 192.168.100.205 --lf_user lanforge --lf_password lanforge
-                          --instance_name rvr-instance --config_name test_con --upstream 1.2.vap0000
-                          --dut routed-AP --duration 1m --station 1.1.sta0000 --download_speed 85%
-                          --upload_speed 56Kbps --raw_line 'pkts: MTU' --raw_line 'directions: DUT Transmit'
-                          --raw_line 'traffic_types: TCP' --raw_line 'attenuator: 1.1.3219' --raw_line 'attenuations: 0..+50..950'
-                          --raw_line 'attenuator_mod: 243' --ssid rvr_2g --ssidpw Password@123 --security wpa2 --radio wiphy0
-                          --bssid DEFAULT --create_station
+                            ./lf_rvr_test.py --mgr 192.168.100.205 --lf_user lanforge --lf_password lanforge
+                            --instance_name rvr-instance --config_name test_con --upstream 1.2.vap0000
+                            --dut routed-AP --duration 1m --station 1.1.sta0000 --download_speed 85%
+                            --upload_speed 56Kbps --raw_line 'pkts: MTU' --raw_line 'directions: DUT Transmit'
+                            --raw_line 'traffic_types: TCP' --raw_line 'attenuator: 1.1.3219' --raw_line 'attenuations: 0..+50..950'
+                            --raw_line 'attenuator_mod: 243' --ssid rvr_2g --ssidpw Password@123 --security wpa2 --radio wiphy0
+                            --bssid DEFAULT --create_station
 
     EXAMPLE-2        :
 
@@ -305,9 +308,9 @@ def main():
                             --influx_bucket ben \\
                             --influx_tag testbed Ferndale-Mesh
 
-    SCRIPT_CLASSIFICATION:  [Test, Module, Example, Tool or Creation]
+    SCRIPT_CLASSIFICATION:  Test
 
-    SCRIPT_CATEGORIES:
+    SCRIPT_CATEGORIES:      Performance,  Functional,  KPI Generation,  Report Generation
 
     NOTES:
         attenuator_mod: selects the attenuator modules, bit-field.
@@ -318,16 +321,80 @@ def main():
             command options.
         --set modifications will be applied after the other config has happened,
             so it can be used to override any other config.
+            sel_port-0: 1.1.wlan0
+            show_events: 1
+            show_log: 0
+            port_sorting: 0
+            kpi_id: Rate vs Range
+            bg: 0xE0ECF8
+            test_rig:
+            show_scan: 1
+            auto_helper: 0
+            skip_2: 0
+            skip_5: 0
+            skip_5b: 1
+            skip_dual: 0
+            skip_tri: 1
+            selected_dut: RootAP
+            duration: 15000
+            traffic_port: 1.1.6 wlan0
+            upstream_port: 1.1.1 eth1
+            path_loss: 10
+            speed: 85%
+            speed2: 56Kbps
+            min_rssi_bound: -150
+            max_rssi_bound: 0
+            channels: AUTO
+            modes: Auto
+            pkts: MTU
+            spatial_streams: AUTO
+            security_options: AUTO
+            bandw_options: AUTO
+            traffic_types: TCP
+            directions: DUT Transmit
+            txo_preamble: OFDM
+            txo_mcs: 0 CCK, OFDM, HT, VHT
+            txo_retries: No Retry
+            txo_sgi: OFF
+            txo_txpower: 15
+            attenuator: 1.1.1040
+            attenuator2: 0
+            attenuator_mod: 243
+            attenuator_mod2: 255
+            attenuations: 0..+50..950
+            attenuations2: 0..+50..950
+            chamber: 0
+            tt_deg: 0..+45..359
+            cust_pkt_sz:
+            show_bar_labels: 1
+            show_prcnt_tput: 0
+            show_3s: 0
+            show_ll_graphs: 0
+            show_gp_graphs: 1
+            show_1m: 1
+            pause_iter: 0
+            outer_loop_atten: 0
+            show_realtime: 1
+            operator:
+            mconn: 1
+            mpkt: 1000
+            tos: 0
+            loop_iterations: 1
 
-    STATUS: RELEASE
+    STATUS: BETA RELEASE
 
-    VERIFIED_ON: [Working Date, Not Working Date, or Underdevelopment]
-
+    VERIFIED_ON: 
+                12th May 2023
+                GUI Version    : 5.4.6
+                Kernel Version : 5.19.17+
+ 
     LICENSE:
         Free to distribute and modify. LANforge systems must be licensed.
         Copyright 2022 Candela Technologies Inc
 
     INCLUDE_IN_README: False
+
+    Example of raw text config for Rate-vsRange, to show other possible options:
 
     """
     )
