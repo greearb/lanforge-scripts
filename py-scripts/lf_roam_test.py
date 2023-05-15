@@ -100,7 +100,7 @@ stability of the network when clients move between APs.
 
 STATUS: BETA RELEASE (MORE TESTING ONLY WITH MULTICAST)
 
-VERIFIED_ON: 11-MAY-2023, Underdevelopment
+VERIFIED_ON: 15-MAY-2023, Underdevelopment
 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
@@ -1377,12 +1377,15 @@ class HardRoam(Realm):
                                                                 for i in range(1, len(endp_list["endpoint"])):
                                                                     local_list.append(endp_list['endpoint'][i])
                                                                 print(local_list)
+                                                                new_lst = []
                                                                 for i in range(len(local_list)):
                                                                     local_list1 = list(local_list[i].keys())
-                                                                print(local_list1)
-                                                                for i in range(len(local_list1)):
+                                                                    new_lst.append(local_list1[0])
+                                                                    print(local_list1)
+                                                                print(new_lst)
+                                                                for i in range(len(new_lst)):
                                                                     final_list.append(
-                                                                        endp_list['endpoint'][i + 1][local_list1[i]][
+                                                                        endp_list['endpoint'][i + 1][new_lst[i]][
                                                                             'rx rate (last)'])
                                                                 print(final_list)
                                                                 if 0 in final_list:
@@ -1727,38 +1730,43 @@ class HardRoam(Realm):
                                             i.append(x)
                                         print("Row list :", row_list)
                                         logging.info("Row list : " + str(row_list))
-                                        for i in row_list:
-                                            i.append("No Roam Time")
-                                        print("Row list :", row_list)
-                                        logging.info("Row list : " + str(row_list))
-                                        for a in row_list:
-                                            a.append("FAIL")
-                                        print("Row list :", row_list)
-                                        logging.info("Row list : " + str(row_list))
-                                        # pcap
-                                        for i in row_list:
-                                            i.append("N/A")
-                                        print("Row list:", row_list)
-                                        logging.info("Row list : " + str(row_list))
-                                        if self.debug:
-                                            print("Stop Debugger")
-                                            logging.info("Stop Debugger")
-                                            self.stop_debug_(mac_list=mac_list)
+                                        if self.multicast == "True":
+                                            for a in row_list:
+                                                a.append("FAIL")
+                                            print("Row list :", row_list)
                                         else:
-                                            print("Debug is  disabled")
-                                            logging.info("Debug is  disabled")
+                                            for i in row_list:
+                                                i.append("No Roam Time")
+                                            print("Row list :", row_list)
+                                            logging.info("Row list : " + str(row_list))
+                                            for a in row_list:
+                                                a.append("FAIL")
+                                            print("Row list :", row_list)
+                                            logging.info("Row list : " + str(row_list))
+                                            # pcap
+                                            for i in row_list:
+                                                i.append("N/A")
+                                            print("Row list:", row_list)
+                                            logging.info("Row list : " + str(row_list))
+                                            if self.debug:
+                                                print("Stop Debugger")
+                                                logging.info("Stop Debugger")
+                                                self.stop_debug_(mac_list=mac_list)
+                                            else:
+                                                print("Debug is  disabled")
+                                                logging.info("Debug is  disabled")
 
-                                        trace = self.get_file_name(client=self.num_sta)
-                                        log_file.append(trace)
-                                        print("Log file :", log_file)
-                                        logging.info("Log file : " + str(log_file))
-                                        my_unnested_list = list(chain(*log_file))
-                                        print(my_unnested_list)
-                                        logging.info(str(my_unnested_list))
-                                        for i, x in zip(row_list, my_unnested_list):
-                                            i.append(x)
-                                        print("Row list:", row_list)
-                                        logging.info("Row list : " + str(row_list))
+                                            trace = self.get_file_name(client=self.num_sta)
+                                            log_file.append(trace)
+                                            print("Log file :", log_file)
+                                            logging.info("Log file : " + str(log_file))
+                                            my_unnested_list = list(chain(*log_file))
+                                            print(my_unnested_list)
+                                            logging.info(str(my_unnested_list))
+                                            for i, x in zip(row_list, my_unnested_list):
+                                                i.append(x)
+                                            print("Row list:", row_list)
+                                            logging.info("Row list : " + str(row_list))
                                         for i in row_list:
                                             i.append("No roam performed all stations are not connected to same ap")
                                         print("Row list:", row_list)
@@ -1935,7 +1943,17 @@ class HardRoam(Realm):
             report.move_csv_file()
             report.move_graph_image()
             report.build_graph_without_border()
-            report.set_obj_html("Pass/Fail Criteria:",
+            if self.multicast == "True":
+                report.set_obj_html("Pass/Fail Criteria:",
+                                    "<b>The following are the criteria for PASS the test:</b><br><br>"
+                                    "1. The BSSID of the station should change after roaming from one AP to another.<br>"
+                                    "2. multicast traffic should resume after the client roams.<br>"
+                                    "<br>"
+                                    "<b>The following are the criteria for FAIL the test:</b><br><br>"
+                                    "1. The BSSID of the station remains unchanged after roaming from one AP to another.<br>"
+                                    "2. No roaming occurs, as all stations are connected to the same AP.<br>")
+            else:
+                 report.set_obj_html("Pass/Fail Criteria:",
                                 "<b>The following are the criteria for PASS the test:</b><br><br>"
                                 "1. The BSSID of the station should change after roaming from one AP to another.<br>"
                                 "2. The station should not experience any disconnections during/after the roaming process.<br>"
@@ -1954,11 +1972,17 @@ class HardRoam(Realm):
             for i, x in zip(range(self.num_sta), csv_list):
                 # report.set_table_title("Client information  " + str(i))
                 # report.build_table_title()
-                report.set_obj_html("Client " + str(i + 1) + "  Information",
-                                    "The table below presents comprehensive information regarding Client " + str(
-                                        i + 1) +
-                                    ", including its BSSID before and after roaming, the time of roaming, the name of "
-                                    "the capture file, and any relevant remarks.")
+                if self.multicast == "True":
+                    report.set_obj_html("Client " + str(i + 1) + "  Information",
+                                        "The table below presents comprehensive information regarding Client " + str(
+                                            i + 1) +
+                                        ", including its BSSID before and after roaming, PASS/FAIL criteria and Remark")
+                else:
+                    report.set_obj_html("Client " + str(i + 1) + "  Information",
+                                        "The table below presents comprehensive information regarding Client " + str(
+                                            i + 1) +
+                                        ", including its BSSID before and after roaming, the time of roaming, the name of "
+                                        "the capture file, and any relevant remarks.")
                 report.build_objective()
                 lf_csv_obj = lf_csv.lf_csv()
                 if self.multicast == "True":
