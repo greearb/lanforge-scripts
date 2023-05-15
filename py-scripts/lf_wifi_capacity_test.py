@@ -1,39 +1,72 @@
 #!/usr/bin/env python3
 """
-Note: To Run this script gui should be opened with
+NAME: lf_wifi_capacity_test.py
 
+PURPOSE: This script runs wifi capacity test on the existing stations or runs on the stations specified 
+(if --stations argument is mentioned or stations can be created using -cs with stations names mentioned with --stations)
+by creating layer3 cross connects and generates html and pdf report.
+
+EXAMPLE:
+example 1:
+./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
+--instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1,3,5,7,9,12 --loop_iter 1 \
+--protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
+--create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
+--test_rig Testbed-01 --set DUT_NAME linksys-8450
+
+example 2:
+./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
+--instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \
+--protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
+--create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
+--test_rig Testbed-01 -test_tag TAG\
+--influx_host c7-graphana --influx_port 8086 --influx_org Candela \
+--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+--influx_bucket ben \
+--influx_tag testbed Ferndale-01
+
+SCRIPT_CLASSIFICATION :  Test
+SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation 
+
+NOTES: This script is used to automate wifi capacity tests.You need a configured upstream to run the script.
+To Run this script gui should be opened with
+192.168.200.147:1
     path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
           pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
           ./lfclient.bash -cli-socket 3990
 
-Note: This is a test file which will run a wifi capacity test.
+ This is a test file which will run a wifi capacity test.
     ex. on how to run this script (if stations are available in lanforge):
     The influx part can be skipped if you are not using influx/graphana.
 
     ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
              --instance_name this_inst --config_name test_con --upstream 1.1.eth2 --batch_size 1,5,25,50,100 --loop_iter 1 \
              --protocol UDP-IPv4 --duration 6000 --pull_report \
-             --test_rig Testbed-01 \
-             --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-             --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-             --influx_bucket ben \
-             --influx_tag testbed Ferndale-01
+             
 
-    ex. on how to run this script (to create new stations):
-    ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
-             --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1,5,25 --loop_iter 1 \
-             --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
-             --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
-             --test_rig Testbed-01 --set DUT_NAME linksys-8450
-
-
-Note:
     --pull_report == If specified, this will pull reports from lanforge to your code directory,
                     from where you are running this code
 
     --stations == Enter stations to use for wifi capacity
 
     --set DUT_NAME XXXX == Determines which DUT the wifi capacity test should use to get details on
+
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON: 
+Working date - 11/05/2023
+Build version - 5.4.6
+kernel version - 6.2.14+
+
+LICENSE:
+    Free to distribute and modify. LANforge systems must be licensed.
+    Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False 
+
+    
+
 
 Example of raw text config for Capacity, to show other possible options:
 
@@ -503,15 +536,71 @@ def main():
         prog="lf_wifi_capacity_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
-        ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
-             --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \
-             --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
-             --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
-             --test_rig Testbed-01 -test_tag TAG\
-             --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-             --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-             --influx_bucket ben \
-             --influx_tag testbed Ferndale-01
+
+NAME: lf_wifi_capacity_test.py
+
+PURPOSE: This script runs wifi capacity test on the existing stations or runs on the stations specified 
+(if --stations argument is mentioned or stations can be created using -cs with stations names mentioned with --stations)
+by creating layer3 cross connects and generates html and pdf report.
+
+EXAMPLE:
+example 1:
+./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
+--instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1,3,5,7,9,12 --loop_iter 1 \
+--protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
+--create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
+--test_rig Testbed-01 --set DUT_NAME linksys-8450
+
+example 2:
+./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
+--instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \
+--protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
+--create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
+--test_rig Testbed-01 -test_tag TAG\
+--influx_host c7-graphana --influx_port 8086 --influx_org Candela \
+--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+--influx_bucket ben \
+--influx_tag testbed Ferndale-01
+
+SCRIPT_CLASSIFICATION :  Test
+SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation 
+
+NOTES: This script is used to automate wifi capacity tests.You need a configured upstream to run the script.
+To Run this script gui should be opened with
+192.168.200.147:1
+    path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
+          pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
+          ./lfclient.bash -cli-socket 3990
+
+This is a test file which will run a wifi capacity test.
+    ex. on how to run this script (if stations are available in lanforge):
+    The influx part can be skipped if you are not using influx/graphana.
+
+    ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
+             --instance_name this_inst --config_name test_con --upstream 1.1.eth2 --batch_size 1,5,25,50,100 --loop_iter 1 \
+             --protocol UDP-IPv4 --duration 6000 --pull_report \
+
+    --pull_report == If specified, this will pull reports from lanforge to your code directory,
+                    from where you are running this code
+
+    --stations == Enter stations to use for wifi capacity
+
+    --set DUT_NAME XXXX == Determines which DUT the wifi capacity test should use to get details on
+
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON: 
+Working date - 11/05/2023
+Build version - 5.4.6
+kernel version - 6.2.14+
+
+LICENSE:
+    Free to distribute and modify. LANforge systems must be licensed.
+    Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False 
+
                """)
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
