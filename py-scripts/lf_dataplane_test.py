@@ -168,7 +168,7 @@ NOTES:
 STATUS: BETA RELEASE
 
 VERIFIED_ON:   11-MAY-2023,
-             Build Version:  5.4.6
+             GUI Version:  5.4.6
              Kernel Version: 6.2.14+
 
 LICENSE:
@@ -324,6 +324,9 @@ def main():
     parser = argparse.ArgumentParser(
         prog='lf_dataplane_test',
         formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+         Data Plane Test
+            ''',
         description="""
 NAME: lf_dataplane_test.py
 
@@ -493,7 +496,7 @@ NOTES:
 STATUS: BETA RELEASE
 
 VERIFIED_ON:   11-MAY-2023,
-             Build Version:  5.4.6
+             GUI Version:  5.4.6
              Kernel Version: 6.2.14+
 
 LICENSE:
