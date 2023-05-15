@@ -252,13 +252,10 @@ EXAMPLE:
             "--vap_upstream_port","1.1.eth2"
             ]
 
-<<<<<<< HEAD
-=======
 SCRIPT_CLASSIFICATION:  Creation
 
 SCRIPT_CATEGORIES:
 
->>>>>>> 41db00c2 (lf_create_vap_cv.py : LISP-48 added support for enabling DHCP Server Flag for vap)
 
 NOTES:
 
