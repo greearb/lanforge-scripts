@@ -1,33 +1,51 @@
 #!/usr/bin/env python3
 """
+NAME: create_l3.py
 
- Create Layer-3 Cross Connection Using LANforge JSON API : https://www.candelatech.com/cookbook.php?vol=fire&book=scripted+layer-3+test
- Written by Candela Technologies Inc.
+PURPOSE: This script is used to create the user-specified Layer-3 cross-connection.
 
-PURPOSE:
-Supports creating user-specified Layer-3 cross-connection.
-Supports regression testing for QA
+EXAMPLE:
+        # For layer-3 cx creation on LANforge:
 
- Example Command:
+                p
 
- For layer-3 cx creation on LANforge:
-   ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
+        # For remote layer-3 cx creation:
 
-For remote layer-3 cx creation:
-   ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
+            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
 
- For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
-  ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+        # For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
 
-For batch creation functionality:
-  ./create_l3.py --mgr 192.168.200.93 --endp_a 'sta0000' --endp_b 'sta0001' --min_rate_a '6200000' --min_rate_b '6200000'
-   --batch_creation --quantity 100 --endp_a_increment 0 --endp_b_increment 0 --ip_port_increment_a 1 --ip_port_increment_b 1
-    --min_ip_port_b 2000 --multi_conn 1 --no_cleanup
+            ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
 
-Tested on 02/10/2023:
-         kernel version: 5.19.17+
-         gui version: 5.4.6
-         the layer-3 scenario successfully created and tested was an eth-to-eth cross connection (eth1-to-eth2 on an APU2/ct521a).
+        # For batch creation functionality:
+
+            ./create_l3.py --mgr 192.168.200.93 --endp_a 'sta0000' --endp_b 'sta0001' --min_rate_a '6200000' --min_rate_b '6200000'
+            --batch_creation --quantity 100 --endp_a_increment 0 --endp_b_increment 0 --ip_port_increment_a 1 --ip_port_increment_b 1
+            --min_ip_port_b 2000 --multi_conn 1 --no_cleanup
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:   Functional
+
+NOTES:
+        Create Layer-3 Cross Connection Using LANforge JSON API : https://www.candelatech.com/cookbook.php?vol=fire&book=scripted+layer-3+test
+        Written by Candela Technologies Inc.
+
+        * Supports only creating user-specified Layer-3 cross-connection.
+        * Supports regression testing for QA
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   15-MAY-2023,
+             Build Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+
+INCLUDE_IN_README: False
 
 """
 import sys
@@ -136,59 +154,64 @@ def main():
         prog='create_l3.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            Generate traffic between ports
+            Used for creating layer-3 cross connections
             ''',
         description='''\
-Create Layer-3 Cross Connection Using LANforge JSON API : https://www.candelatech.com/cookbook.php?vol=fire&book=scripted+layer-3+test
+NAME: create_l3.py
 
-PURPOSE:
-Supports creating user-specified Layer-3 cross-connection.
-Supports regression testing for QA
+PURPOSE: This script is used to create the user-specified Layer-3 cross-connection.
 
-Example Command:
+EXAMPLE:
+        # For layer-3 cx creation on LANforge:
 
-For cross-connection creation:
-   ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
-   ./create_l3.py --ssid lanforge --password password --security wpa2 --radio 1.1.wiphy0 --endp_a wiphy0 --endp_b wiphy1 --no_cleanup
+            ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
 
-For remote layer-3 cx creation:
-   ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
+        # For remote layer-3 cx creation:
 
-For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
-  ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
 
-Tested on 02/10/2023:
-         kernel version: 5.19.17+
-         gui version: 5.4.6
-         the layer-3 scenario successfully created and tested was an eth-to-eth cross connection (eth1-to-eth2 on an APU2/ct521a).
+        # For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
 
+            ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+
+        # For batch creation functionality:
+
+            ./create_l3.py --mgr 192.168.200.93 --endp_a 'sta0000' --endp_b 'sta0001' --min_rate_a '6200000' --min_rate_b '6200000'
+            --batch_creation --quantity 100 --endp_a_increment 0 --endp_b_increment 0 --ip_port_increment_a 1 --ip_port_increment_b 1
+            --min_ip_port_b 2000 --multi_conn 1 --no_cleanup
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:   Functional
+
+NOTES:
+        Create Layer-3 Cross Connection Using LANforge JSON API : https://www.candelatech.com/cookbook.php?vol=fire&book=scripted+layer-3+test
+        Written by Candela Technologies Inc.
+
+        * Supports only creating user-specified Layer-3 cross-connection.
+        * Supports regression testing for QA
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   15-MAY-2023,
+             Build Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+
+INCLUDE_IN_README: False
         ''')
-    parser.add_argument(
-        '--min_rate_a',
-        help='--min_rate_a bps rate minimum for side_a',
-        default=56000)
-    parser.add_argument(
-        '--min_rate_b',
-        help='--min_rate_b bps rate minimum for side_b',
-        default=56000)
-    parser.add_argument(
-        '--endp_a',
-        help='--endp_a station list',
-        default=[],
-        action="append",
-        required=True)
-    parser.add_argument(
-        '--endp_b',
-        help='--upstream port',
-        default="eth2",
-        required=True)
-    parser.add_argument(
-        '--ap',
-        help='Used to force a connection to a particular AP')
-    parser.add_argument(
-        '--number_template',
-        help='Start the station numbering with a particular number. Default is 0000',
-        default=0000)
+    parser.add_argument('--min_rate_a',help='--min_rate_a bps rate minimum for side_a',default=56000)
+    parser.add_argument('--min_rate_b',help='--min_rate_b bps rate minimum for side_b',default=56000)
+    parser.add_argument('--endp_a', help='--endp_a station list',default=[],action="append",required=True)
+    parser.add_argument('--endp_b',help='--upstream port',default="eth2",required=True)
+
+    parser.add_argument('--ap',help='Used to force a connection to a particular AP')
+    parser.add_argument('--number_template',help='Start the station numbering with a particular number. Default is 0000',default=0000)
+
     parser.add_argument('--mode', help='Used to force mode of stations')
 
     parser.add_argument('--min_ip_port_a', help='min ip port range for endp-a', default=-1)
@@ -249,5 +272,4 @@ Tested on 02/10/2023:
 
 
 if __name__ == "__main__":
-
     main()
