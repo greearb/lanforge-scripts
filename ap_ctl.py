@@ -402,14 +402,16 @@ def main():
         logg.info("no action")
 
     i = egg.expect_exact([AP_PROMPT,AP_HASH,pexpect.TIMEOUT],timeout=1)
-    if i == 0:
-        logg.info("received {} we are done send exit".format(AP_PROMPT))
-        egg.sendline(AP_EXIT)
-    if i == 1:
-        logg.info("received {} send exit".format(AP_HASH))
-        egg.sendline(AP_EXIT)
-    if i == 2:
-        logg.info("timed out waiting for {} or {}".format(AP_PROMPT,AP_HASH))
+    # for the mux_client do not take down the server
+    if scheme != "mux_client":
+        if i == 0:
+            logg.info("received {} we are done send exit".format(AP_PROMPT))
+            egg.sendline(AP_EXIT)
+        if i == 1:
+            logg.info("received {} send exit".format(AP_HASH))
+            egg.sendline(AP_EXIT)
+        if i == 2:
+            logg.info("timed out waiting for {} or {}".format(AP_PROMPT,AP_HASH))
         
     #             ctlr.execute(cn_cmd)
 
