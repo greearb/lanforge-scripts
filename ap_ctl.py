@@ -275,7 +275,8 @@ def main():
             if (scheme == "serial"):
                 egg.sendline("r")
             else:
-                egg.sendcontrol('c')
+                if scheme != "mux_serial":
+                    egg.sendcontrol('c')
             sleep(1)
         # for Testing serial connection using Lanforge
         # LF_PROMPT
@@ -289,9 +290,13 @@ def main():
         # MUX_PROMPT
         if i == 7:
             logg.info("Received MUX prompt, send carriage return")
-            logg.info("Expect: {} i: {} before: {} after: {}".format("Timeout",i,egg.before,egg.after))
-            egg.sendline(CR) 
-            sleep(1)
+            logg.info("Expect: {} i: {} before: {} after: {}".format(MUX_PROMPT,i,egg.before,egg.after))
+            #  For MUX_PROMPT can possibly log in 
+            egg.sendline(args.user) 
+            sleep(2)
+            egg.sendline(args.passwd)
+            sleep(2) 
+
         # TIMEOUT
         if i == 8:
             logg.info("Expect: {} i: {} before: {} after: {}".format("Timeout",i,egg.before,egg.after))
@@ -306,10 +311,12 @@ def main():
         print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
         i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=5)
         if i == 0:
-            egg.sendcontrol('c')
+            if scheme != "mux_client":
+                egg.sendcontrol('c')
         if i == 1:
-            logg.info("send cntl c anyway")
-            egg.sendcontrol('c')
+            if scheme != "mux_client":
+                logg.info("send cntl c anyway")
+                egg.sendcontrol('c')
 
     # include or i will include all lines that match the criteria
     # section or s will include entire sections that match
@@ -322,10 +329,12 @@ def main():
         print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
         i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=5)
         if i == 0:
-            egg.sendcontrol('c')
+            if scheme != "mux_client":
+                egg.sendcontrol('c')
         if i == 1:
-            logg.info("send cntl c anyway")
-            egg.sendcontrol('c')
+            if scheme != "mux_client":
+                logg.info("send cntl c anyway")
+                egg.sendcontrol('c')
 
     elif (args.action == "powerreg"):
         command = "show controllers dot11Radio {slot} powerreg".format(slot=args.radio_slot)
@@ -361,6 +370,7 @@ def main():
         i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=4)
         if i == 0:
             egg.sendline('r')
+            # TODO may need more time
             egg.expect([pexpect.TIMEOUT], timeout=4)  # do not delete this for it allows for subprocess to see output
             print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
         if i == 1:
