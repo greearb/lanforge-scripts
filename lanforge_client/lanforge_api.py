@@ -4196,18 +4196,22 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_802_11a = "802.11a"        # 802.11a
         AUTO = "AUTO"                # 802.11g
+        a7 = "a7"                    # 802.11a-EHT (6E disables /n and /ac)
         aAX = "aAX"                  # 802.11a-AX (6E disables /n and /ac)
         abg = "abg"                  # 802.11abg
         abgn = "abgn"                # 802.11abgn
+        abgn7 = "abgn7"              # 802.11abgn-EHT
         abgnAC = "abgnAC"            # 802.11abgn-AC
         abgnAX = "abgnAX"            # 802.11abgn-AX
         an = "an"                    # 802.11an
+        an7 = "an7"                  # 802.11an-EHT
         anAC = "anAC"                # 802.11an-AC
         anAX = "anAX"                # 802.11an-AX
         as_is = "as_is"              # Make no changes to current configuration
         b = "b"                      # 802.11b
         bg = "bg"                    # 802.11bg
         bgn = "bgn"                  # 802.11bgn
+        bgn7 = "bgn7"                # 802.11bgn-EHT
         bgnAC = "bgnAC"              # 802.11bgn-AC
         bgnAX = "bgnAX"              # 802.11bgn-AX
         bond = "bond"                # Bonded pair of Ethernet ports.
@@ -4580,17 +4584,21 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_802_11a = 1      # 802.11a
         AUTO = 0           # 802.11g
+        a7 = 19            # 802.11a-EHT (6E disables /n and /ac)
         aAX = 15           # 802.11a-AX (6E disables /n and /ac)
         abg = 4            # 802.11abg
         abgn = 5           # 802.11abgn
+        abgn7 = 16         # 802.11abgn-EHT
         abgnAC = 8         # 802.11abgn-AC
         abgnAX = 12        # 802.11abgn-AX
         an = 10            # 802.11an
+        an7 = 18           # 802.11an-EHT
         anAC = 9           # 802.11an-AC
         anAX = 14          # 802.11an-AX
         b = 2              # 802.11b
         bg = 7             # 802.11bg
         bgn = 6            # 802.11bgn
+        bgn7 = 17          # 802.11bgn-EHT
         bgnAC = 11         # 802.11bgn-AC
         bgnAX = 13         # 802.11bgn-AX
         g = 3              # 802.11g
@@ -4620,12 +4628,8 @@ class LFJsonCommand(JsonCommand):
                      mac: str = None,                          # The MAC address, can also use parent-pattern in 5.3.8 and
                      # higher: <tt>xx:xx:xx:*:*:xx</tt>
                      max_amsdu: str = None,                    # 1 == enabled, 0 == disabled, 0xFF == do not set.
-                     mode: str = None,                         # WiFi mode: <ul><li>0: AUTO, <li>1: 802.11a</li> <li>2:
-                     # b</li> <li>3: g</li> <li>4: abg</li> <li>5: abgn</li>
-                     # <li>6: bgn</li> <li>7: bg</li> <li>8: abgnAC</li> <li>9
-                     # anAC</li> <li>10 an</li><li>11 bgnAC</li><li>12
-                     # abgnAX</li><li>13 bgnAX</li><li>14 anAX</li><li>15
-                     # aAX</li></ul> [D:0]
+                     mode: str = None,                         # WiFi mode: See above, use the numeric value (0 means AUTO,
+                     # 1 means 802.11a, etc. [D:0]
                      nickname: str = None,                     # Nickname for this Virtual STA. (No longer used)
                      radio: str = None,                        # Name of the physical radio interface, for example: wiphy0
                      rate: str = None,                         # Max rate, see help above.
@@ -5335,17 +5339,21 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_802_11a = 1      # 802.11a
         AUTO = 0           # 802.11g
+        a7 = 19            # 802.11a-EHT (6E disables /n and /ac)
         aAX = 15           # 802.11a-AX (6E disables /n and /ac)
         abg = 4            # 802.11abg
         abgn = 5           # 802.11abgn
+        abgn7 = 16         # 802.11abgn-EHT
         abgnAC = 8         # 802.11abgn-AC
         abgnAX = 12        # 802.11abgn-AX
         an = 10            # 802.11an
+        an7 = 18           # 802.11an-EHT
         anAC = 9           # 802.11an-AC
         anAX = 14          # 802.11an-AX
         b = 2              # 802.11b
         bg = 7             # 802.11bg
         bgn = 6            # 802.11bgn
+        bgn7 = 17          # 802.11bgn-EHT
         bgnAC = 11         # 802.11bgn-AC
         bgnAX = 13         # 802.11bgn-AX
         g = 3              # 802.11g
@@ -16187,17 +16195,21 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_802_11a = 1      # 802.11a
         AUTO = 0           # 802.11g
+        a7 = 19            # 802.11a-EHT (6E disables /n and /ac)
         aAX = 15           # 802.11a-AX (6E disables /n and /ac)
         abg = 4            # 802.11abg
         abgn = 5           # 802.11abgn
+        abgn7 = 16         # 802.11abgn-EHT
         abgnAC = 8         # 802.11abgn-AC
         abgnAX = 12        # 802.11abgn-AX
         an = 10            # 802.11an
+        an7 = 18           # 802.11an-EHT
         anAC = 9           # 802.11an-AC
         anAX = 14          # 802.11an-AX
         b = 2              # 802.11b
         bg = 7             # 802.11bg
         bgn = 6            # 802.11bgn
+        bgn7 = 17          # 802.11bgn-EHT
         bgnAC = 11         # 802.11bgn-AC
         bgnAX = 13         # 802.11bgn-AX
         g = 3              # 802.11g
