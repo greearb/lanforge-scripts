@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NAME: lf_create_vap_cv.py.py
+NAME: lf_create_vap_cv.py
 
 PURPOSE:
     This script will create a vap using chamberview based upon a user defined frequency.
@@ -26,17 +26,23 @@ EXAMPLE:
             ]
 SCRIPT_CLASSIFICATION:  Creation
 
-SCRIPT_CATEGORIES:
+SCRIPT_CATEGORIES: Functional
 
 NOTES:
+This script creates 
+1. Chamber view scenario for vap
+2. Vap profile with given parameters
 
-STATUS:      RELEASE
+STATUS:  BETA RELEASE
 
-VERIFIED_ON: 12th May 2023
+VERIFIED_ON: 
+Working date : 16/05/2023
+Build version: 5.4.6
+Kernel version: 6.2.14+
 
 LICENSE:
 
-        Copyright 2021 Candela Technologies Inc
+        Copyright 2023 Candela Technologies Inc
         License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README: False
@@ -49,6 +55,7 @@ import importlib
 import argparse
 import time
 import logging
+import requests
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -186,7 +193,7 @@ class create_vap_cv(cv_test):
     def build_chamberview(self, chamber, scenario_name):
         chamber.build(scenario_name)        # self.apply_and_build_scenario("Sushant1")
 
-    def build_and_setup_vap(self, delete_old_scenario=True, scenario_name="Automation", radio="wiphy0", vap_upstream_port="1.1.eth2",
+    def build_and_setup_vap(self,args, delete_old_scenario=True, scenario_name="Automation", radio="wiphy0", vap_upstream_port="1.1.eth2",
                             frequency=-1, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
         self.setup_vap(scenario_name=scenario_name,
                        radio=radio,
@@ -205,6 +212,15 @@ class create_vap_cv(cv_test):
                                          line=None)
 
         self.build_chamberview(chamber=chamber, scenario_name=scenario_name)
+        c=args.vap_radio.split(".")
+        m=requests.get("http://"+self.lfclient_host+":"+str(self.lf_port)+"/port/all")
+        n=m.json()
+        for i in n["interfaces"]:
+            for a,b in i.items():
+                if c[2] in b["parent dev"]:
+                    if "vap" in b["alias"]:
+                        vap=c[0]+"."+c[1]+"."+b["alias"]
+        self.wait_for_ip(station_list=[vap])
 
 
 def main():
@@ -212,7 +228,8 @@ def main():
         prog="lf_create_vap_cv.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
-NAME: lf_create_vap_cv.py.py
+        
+NAME: lf_create_vap_cv.py
 
 PURPOSE:
     This script will create a vap using chamberview based upon a user defined frequency.
@@ -254,28 +271,25 @@ EXAMPLE:
 
 SCRIPT_CLASSIFICATION:  Creation
 
-SCRIPT_CATEGORIES:
+SCRIPT_CATEGORIES: Functional
 
 
 NOTES:
 
-         kernel version: 5.19.17+
-         gui version: 5.4.6
-         the vap was created on each radio listed below, and tested with a station on another radio running test_l3 or manually
-         successfully tested radios:
-         - ath10k(9984) , wave-2 , 802.11bgn-AC , 2.4GHz , tested with test_l3.py
-         - ath10k(9884) , wave-2 , 802.11an-AC , 5GHz , tested with test_l3.py
-         - mt7915e(7915) , Mediatek , 802.11abgn-AC , 2.4GHz and 5GHz , tested with test_l3.py
-         - ath10k(988x) , wave-1 , 802.11abgn-AC , 2.4GHz and 5GHz , tested with test_l3.py
-         - ath9k() , n-radio , 802.11abgn , 2.4GHz and 5GHz , tested with test_l3.py
+This script creates 
+1. Chamber view scenario for vap
+2. Vap profile with given parameters
 
-STATUS:      RELEASE
+STATUS:   BETA RELEASE
 
-VERIFIED_ON: 12th May 2023
+VERIFIED_ON: 
+Working date : 16/05/2023
+Build version: 5.4.6
+Kernel version: 6.2.14+
 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2022 Candela Technologies Inc
+    Copyright 2023 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 
@@ -335,7 +349,7 @@ INCLUDE_IN_README: False
     vap_passwd = args.vap_passwd
     vap_security = args.vap_security
 
-    lf_create_vap_cv.build_and_setup_vap(delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
+    lf_create_vap_cv.build_and_setup_vap(args,delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
                                          vap_upstream_port=vap_upstream_port, frequency=vap_freq, vap_ssid=vap_ssid, vap_pawd=vap_passwd, vap_security=vap_security)
 
 
