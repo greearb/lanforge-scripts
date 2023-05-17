@@ -29,13 +29,13 @@ SCRIPT_CLASSIFICATION:  Creation
 SCRIPT_CATEGORIES: Functional
 
 NOTES:
-This script creates 
+This script creates
 1. Chamber view scenario for vap
 2. Vap profile with given parameters
 
 STATUS:  BETA RELEASE
 
-VERIFIED_ON: 
+VERIFIED_ON:
 Working date : 16/05/2023
 Build version: 5.4.6
 Kernel version: 6.2.14+
@@ -193,7 +193,7 @@ class create_vap_cv(cv_test):
     def build_chamberview(self, chamber, scenario_name):
         chamber.build(scenario_name)        # self.apply_and_build_scenario("Sushant1")
 
-    def build_and_setup_vap(self,args, delete_old_scenario=True, scenario_name="Automation", radio="wiphy0", vap_upstream_port="1.1.eth2",
+    def build_and_setup_vap(self, args, delete_old_scenario=True, scenario_name="Automation", radio="wiphy0", vap_upstream_port="1.1.eth2",
                             frequency=-1, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
         self.setup_vap(scenario_name=scenario_name,
                        radio=radio,
@@ -212,14 +212,14 @@ class create_vap_cv(cv_test):
                                          line=None)
 
         self.build_chamberview(chamber=chamber, scenario_name=scenario_name)
-        c=args.vap_radio.split(".")
-        m=requests.get("http://"+self.lfclient_host+":"+str(self.lf_port)+"/port/all")
-        n=m.json()
+        c = args.vap_radio.split(".")
+        m = requests.get("http://" + self.lfclient_host + ":" + str(self.lf_port) + "/port/all")
+        n = m.json()
         for i in n["interfaces"]:
-            for a,b in i.items():
+            for a, b in i.items():
                 if c[2] in b["parent dev"]:
                     if "vap" in b["alias"]:
-                        vap=c[0]+"."+c[1]+"."+b["alias"]
+                        vap = c[0] + "." + c[1] + "." + b["alias"]
         self.wait_for_ip(station_list=[vap])
 
 
@@ -228,7 +228,7 @@ def main():
         prog="lf_create_vap_cv.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
-        
+
 NAME: lf_create_vap_cv.py
 
 PURPOSE:
@@ -276,13 +276,13 @@ SCRIPT_CATEGORIES: Functional
 
 NOTES:
 
-This script creates 
+This script creates
 1. Chamber view scenario for vap
 2. Vap profile with given parameters
 
 STATUS:   BETA RELEASE
 
-VERIFIED_ON: 
+VERIFIED_ON:
 Working date : 16/05/2023
 Build version: 5.4.6
 Kernel version: 6.2.14+
@@ -349,7 +349,7 @@ INCLUDE_IN_README: False
     vap_passwd = args.vap_passwd
     vap_security = args.vap_security
 
-    lf_create_vap_cv.build_and_setup_vap(args,delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
+    lf_create_vap_cv.build_and_setup_vap(args, delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
                                          vap_upstream_port=vap_upstream_port, frequency=vap_freq, vap_ssid=vap_ssid, vap_pawd=vap_passwd, vap_security=vap_security)
 
 
