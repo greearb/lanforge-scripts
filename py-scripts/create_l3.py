@@ -114,7 +114,7 @@ class CreateL3(Realm):
         self.cx_profile.side_b_max_bps = max_rate_b
         self.cx_profile.mconn = _multi_conn
         # for batch creation window automation attributes
-        self.batch_create = _batch_create
+        self.batch_create =  _batch_create
         self.quantity = _quantity
         self.port_increment_a = _endp_a_increment
         self.port_increment_b = _endp_b_increment
@@ -204,13 +204,13 @@ LICENSE:
 
 INCLUDE_IN_README: False
         ''')
-    parser.add_argument('--min_rate_a', help='--min_rate_a bps rate minimum for side_a', default=56000)
-    parser.add_argument('--min_rate_b', help='--min_rate_b bps rate minimum for side_b', default=56000)
-    parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
-    parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
+    parser.add_argument('--min_rate_a',help='--min_rate_a bps rate minimum for side_a',default=56000)
+    parser.add_argument('--min_rate_b',help='--min_rate_b bps rate minimum for side_b',default=56000)
+    parser.add_argument('--endp_a', help='--endp_a station list',default=[],action="append",required=True)
+    parser.add_argument('--endp_b',help='--upstream port',default="eth2",required=True)
 
-    parser.add_argument('--ap', help='Used to force a connection to a particular AP')
-    parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
+    parser.add_argument('--ap',help='Used to force a connection to a particular AP')
+    parser.add_argument('--number_template',help='Start the station numbering with a particular number. Default is 0000',default=0000)
 
     parser.add_argument('--mode', help='Used to force mode of stations')
 
