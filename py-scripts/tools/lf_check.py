@@ -542,7 +542,7 @@ class lf_check():
 
         inspect_url = self.inspect_report_html.replace('/home/lanforge', '')
         if inspect_url.startswith('/'):
-            inspect_url = qa_url[1:]
+            inspect_url = inspect_url[1:]
 
         # following recommendation
         # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
