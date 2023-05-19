@@ -7,7 +7,7 @@ PURPOSE: This script is used to create the user-specified Layer-3 cross-connecti
 EXAMPLE:
         # For layer-3 cx creation on LANforge:
 
-                p
+            ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
 
         # For remote layer-3 cx creation:
 
