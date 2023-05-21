@@ -1,26 +1,119 @@
 #!/usr/bin/env python3
 
 """
-NAME: create_l4.py
+NAME: create_l3_stations.py
 
 PURPOSE:
-    This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
+     This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
      The connections are not started, nor are stations set admin up in this script.
 
 EXAMPLE:
-    ./create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2
-    ./create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
-    ./create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
+    # For creating station and layer-3 cx creation [ Endpoint_A = station Endpoint_B eth1(default)] on LANForge:
+        ./create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2
+
+    # For creating two stations with the specified station ID and layer-3 cx creation[ Endpoint_A = station Endpoint_B eth1(default)]
+     on LANforge:
+
+        ./create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
+
+    # For creating two stations with the specified station ID and layer-3 cx creation[ Endpoint_A = station Endpoint_B eth1(default)] on LANforge:
+        ./create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password
+        --security wpa2
+
+    # For creating two stations with the specified station ID and layer-3 cx creation[ customise the traffic and upstream port] on LANforge:
+        ./create_l3_stations.py --station_list sta00  --radio wiphy0 --ssid lanforge --password password --security psk2
+         -u eth2 --a_min 8 --b_min 1000
+
+    # Remotely create two stations with the specified station ID and layer-3 cx [ customise the traffic and upstream port]:
+        ./create_l3_stations.py --station_list sta00  --radio wiphy0 --ssid lanforge --password password --security psk2
+         -u eth2 --a_min 8 --b_min 1000
+
+
+
+    Generic command layout:
+
+        python3 ./create_l3_stations.py
+            --upstream_port eth1
+            --radio wiphy0
+            --num_stations 32
+            --security {open|wep|wpa|wpa2|wpa3} \\
+            --mode   1
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13",
+            --ssid netgear
+            --password admin123
+            --a_min 1000
+            --b_min 1000
+            --ap "00:0e:8e:78:e1:76"
+            --number_template 0000
+            --debug
+
+            python3 ./create_l3_stations.py
+            --upstream_port eth1
+            --radio wiphy0
+            --station_list sta00,sta01
+            --security {open|wep|wpa|wpa2|wpa3} \\
+            --mode   1
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13",
+            --ssid netgear
+            --password admin123
+            --a_min 1000
+            --b_min 1000
+            --ap "00:0e:8e:78:e1:76"
+            --number_template 0000
+            --debug
+
+
+
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:   Functional
 
 NOTES:
+        Create Layer-3 Cross Connection Using LANforge JSON API : https://www.candelatech.com/cookbook.php?vol=fire&book=scripted+layer-3+test
+        Written by Candela Technologies Inc.
 
-    Tested on 03/16/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
+        * Supports creating of stations and creates Layer-3 cross-connection with the endpoint_A as stations created and endpoint_B as upstream port.
+        * Supports regression testing for QA
 
-COPYRIGHT:
-    Copyright 2023 Candela Technologies Inc
-    License: Free to distribute and modify. LANforge systems must be licensed.
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   16-MAY-2023,
+             Build Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+
+INCLUDE_IN_README: False
 
 """
 
@@ -179,18 +272,36 @@ def main():
             ''',
 
         description='''\
-NAME: create_l4.py
+"""
+NAME: create_l3_stations.py
 
 PURPOSE:
-    This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
+     This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
      The connections are not started, nor are stations set admin up in this script.
 
 EXAMPLE:
-    ./create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2
-    ./create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
-    ./create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
+    # For creating station and layer-3 cx creation [ Endpoint_A = station Endpoint_B eth1(default)] on LANForge:
+        ./create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2
 
-    Generic command layout:
+    # For creating two stations with the specified station ID and layer-3 cx creation[ Endpoint_A = station Endpoint_B eth1(default)]
+     on LANforge:
+
+        ./create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
+    
+    # For creating two stations with the specified station ID and layer-3 cx creation[ Endpoint_A = station Endpoint_B eth1(default)] on LANforge:
+        ./create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password 
+        --security wpa2
+    
+    # For creating two stations with the specified station ID and layer-3 cx creation[ customise the traffic and upstream port] on LANforge:
+        ./create_l3_stations.py --station_list sta00  --radio wiphy0 --ssid lanforge --password password --security psk2
+         -u eth2 --a_min 8 --b_min 1000
+
+    # Remotely create two stations with the specified station ID and layer-3 cx [ customise the traffic and upstream port]:
+        ./create_l3_stations.py --station_list sta00  --radio wiphy0 --ssid lanforge --password password --security psk2
+         -u eth2 --a_min 8 --b_min 1000
+         
+         
+      Generic command layout:
 
         python3 ./create_l3_stations.py
             --upstream_port eth1
@@ -248,17 +359,33 @@ EXAMPLE:
             --number_template 0000
             --debug
 
+
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:   Functional
+
 NOTES:
+        Create Layer-3 Cross Connection Using LANforge JSON API : https://www.candelatech.com/cookbook.php?vol=fire&book=scripted+layer-3+test
+        Written by Candela Technologies Inc.
 
-    Tested on 03/16/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
+        * Supports creating of stations and creates Layer-3 cross-connection with the endpoint_A as stations created and endpoint_B as upstream port.
+        * Supports regression testing for QA
 
-COPYRIGHT:
-    Copyright 2023 Candela Technologies Inc
-    License: Free to distribute and modify. LANforge systems must be licensed.
+STATUS: BETA RELEASE
 
-            ''')
+VERIFIED_ON:   16-MAY-2023,
+             Build Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+
+INCLUDE_IN_README: False
+
+''')
 
     parser.add_argument(
         '--a_min',
