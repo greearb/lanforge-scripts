@@ -114,6 +114,41 @@ class db_comparison():
         logger.info("Merged Query Results :".format(merged_df))
         return merged_df
 
+    def db_querying_with_limit(self, column_names, condition='', limit=None):
+        # Querying the databases
+        split_column_names = column_names.split(', ')
+        adding_quotes = ['"' + item + '"' for item in split_column_names]
+        column_names = ', '.join(adding_quotes)
+        query = [
+            'SELECT ' + column_names + ' FROM ' + self.table_name + ' WHERE ' + condition + ' LIMIT ' + limit + ';']
+        # logger.info(" Your Data Base Query : {}".format(query))
+        db1_query, db2_query = None, None
+        converted_results = []
+        if query is not None:
+            for i in query:
+                db1_query = pd.read_sql_query(i, self.conn1)
+                db2_query = pd.read_sql_query(i, self.conn2)
+            df1 = pd.DataFrame(db1_query)
+            df2 = pd.DataFrame(db2_query)
+            query_result = [df1.replace(r'\s+', '', regex=True), df2.replace(r'\s+', '', regex=True)]
+            # checking the selected columns data are identical or not
+            if str(df1) == str(df2):
+                logger.info("The values of %s columns are same in db1 & db2" % column_names)
+                # TODO : Need to sort and merge the dataframes are identical in db1 & db2
+            else:
+                logger.info("The values of %s columns are not same in db1 & db2" % column_names)
+                # TODO : Need to sort and merge the dataframes if the data are not identical in db1 & db2
+
+            for i, df in enumerate(query_result):
+                result_dict = {}
+                for column in df.columns:
+                    result_dict[f"{column}_{i + 1}"] = df[column].values[0]
+                converted_results.append(result_dict)
+        else:
+            logger.info("Query is empty")
+        # logger.info("List of the dictionary values of the two databases : %s" % converted_results)
+        return converted_results
+
     def querying(self):
         # Querying the databases base on the test-tags
         query = []
@@ -199,14 +234,31 @@ class db_comparison():
                     column = 0
             if df['Radio-Type'][0] != 'AP_AUTO':
                 df.to_excel(writer_obj, sheet_name='LRQ-WCT', index=False, startrow=row, startcol=column)
+                # fetching the info about kernel and gui_ver for WifiCapacity
+                result = self.db_querying_with_limit(column_names='kernel, gui_ver',
+                                                     condition='"test-id" == "WiFi Capacity"', limit='1')
+
                 writer_obj.sheets['LRQ-WCT'].write(2, 5, "THE LRQ WCT DATA COMPARISON")
                 writer_obj.sheets['LRQ-WCT'].write(4, 0, "Vaule of DB1 :")
+                writer_obj.sheets['LRQ-WCT'].write(4, 1, f"Kernel : {result[0]['kernel_1']}")
+                writer_obj.sheets['LRQ-WCT'].write(4, 3, f"Gui-Ver : {result[0]['gui_ver_1']}")
                 writer_obj.sheets['LRQ-WCT'].write(6, 0, "Vaule of DB1 :")
+                writer_obj.sheets['LRQ-WCT'].write(6, 1, f"Kernel : {result[1]['kernel_2']}")
+                writer_obj.sheets['LRQ-WCT'].write(6, 3, f"Gui-Ver : {result[1]['gui_ver_2']}")
             else:
                 df.to_excel(writer_obj, sheet_name='LRQ-AP_AUT0', index=False, startrow=9, startcol=0)
+                # fetching the info about kernel and gui_ver for AP Auto
+                result = self.db_querying_with_limit(column_names='kernel, gui_ver',
+                                                     condition='"test-id" == "AP Auto"', limit='1')
+
                 writer_obj.sheets['LRQ-AP_AUT0'].write(2, 5, "THE LRQ AP-AUTO DATA COMPARISON")
+                writer_obj.sheets['LRQ-AP_AUT0'].write(2, 5, "THE LRQ WCT DATA COMPARISON")
                 writer_obj.sheets['LRQ-AP_AUT0'].write(4, 0, "Vaule of DB1 :")
+                writer_obj.sheets['LRQ-AP_AUT0'].write(4, 1, f"Kernel : {result[0]['kernel_1']}")
+                writer_obj.sheets['LRQ-AP_AUT0'].write(4, 3, f"Gui-Ver : {result[0]['gui_ver_1']}")
                 writer_obj.sheets['LRQ-AP_AUT0'].write(6, 0, "Vaule of DB1 :")
+                writer_obj.sheets['LRQ-AP_AUT0'].write(6, 1, f"Kernel : {result[1]['kernel_2']}")
+                writer_obj.sheets['LRQ-AP_AUT0'].write(6, 3, f"Gui-Ver : {result[1]['gui_ver_2']}")
 
         writer_obj.save()
 
