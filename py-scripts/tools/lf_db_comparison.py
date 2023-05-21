@@ -92,13 +92,15 @@ class db_comparison():
         else:
             logger.info("Data is not identical in the given two databases.")
 
-    def db_querying(self, column_names):
+    def db_querying_with_where_clause(self, column_names, condition=''):
         # Querying the databases
-        column_names = ','.join(column_names)
+        split_column_names = column_names.split(', ')
+        adding_quotes = ['"' + item + '"' for item in split_column_names]
+        column_names = ', '.join(adding_quotes)
 
-        query = ['SELECT '+ column_names +' FROM ' + self.table_name + ' LIMIT 1;']
-        logger.info("Query Results:".format(query))
-        merged_df = []
+        query = ['SELECT ' + column_names + ' FROM ' + self.table_name + ' WHERE ' + condition + ';']
+        logger.info(" Your Data Base Query : {}".format(query))
+        merged_df = None
         db1_query , db2_query = None, None
         if query is not None:
             for i in query:
@@ -106,11 +108,10 @@ class db_comparison():
                 db2_query = pd.read_sql_query(i, self.conn2)
             df1 = pd.DataFrame(db1_query)
             df2 = pd.DataFrame(db2_query)
-            merged_df = pd.concat([df1, df2])
+            merged_df = df1.merge(df2, left_index=True, right_index=True, suffixes=('_1', '_2'))
         else:
             logger.info("Query is empty")
-
-        logger.info("Merged Query Results :".format(merged_df['kernel'][0]))
+        logger.info("Merged Query Results :".format(merged_df))
         return merged_df
 
     def querying(self):
