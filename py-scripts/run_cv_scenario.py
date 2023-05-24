@@ -289,8 +289,9 @@ Example:
         debug = args.debug
 
     report_file_n = "untitled_report"
-    if args.report_file_name:
-        report_file_n = args.report_file_name
+
+    #if args.report_file_name:
+    #    report_file_n = args.report_file_name
 
     run_cv_scenario = RunCvScenario(lfjson_host, lfjson_port, debug_=debug, report_file_name=report_file_n)
 
