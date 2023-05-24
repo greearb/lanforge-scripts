@@ -277,7 +277,7 @@ Example:
     parser.add_argument("--debug", help='Enable debugging', default=False, action="store_true")
     parser.add_argument("--log_level", help='debug message verbosity', type=str)
     # TODO: update report output file or directory
-    # parser.add_argument("--report_file_name", help="name of the report file", type=str)
+    parser.add_argument("--report_file_name", help="name of the report file", type=str)
 
     args = parser.parse_args()
     if args.lfmgr is not None:
@@ -290,8 +290,8 @@ Example:
 
     report_file_n = "untitled_report"
 
-    #if args.report_file_name:
-    #    report_file_n = args.report_file_name
+    if args.report_file_name:
+        report_file_n = args.report_file_name
 
     run_cv_scenario = RunCvScenario(lfjson_host, lfjson_port, debug_=debug, report_file_name=report_file_n)
 
