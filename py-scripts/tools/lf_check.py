@@ -549,14 +549,15 @@ class lf_check():
         # Mail
         # command to check if mail running : systemctl status postfix
         # command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
-        self.hostname = socket.getfqdn()
-        ip = socket.gethostbyname(self.hostname)
+        #self.hostname = socket.getfqdn()
+        #ip = socket.gethostbyname(self.hostname)
 
         # a hostname lacking dots by definition lacks a domain name
         # this is not useful for hyperlinks outside the known domain, so an IP
         # address should be preferred
-        if self.hostname.find('.') < 1:
-            self.hostname = ip
+        #if self.hostname.find('.') < 1:
+            # 5/25/2023 - use IP for now
+        #    self.hostname = ip
 
         self.message_txt = ""
         if (self.email_txt != ""):
@@ -567,7 +568,7 @@ Database: {db}
 
 lf_check Test Suite Report:
 http://{hostname}/{report}
-""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, db=self.database_sqlite, hostname=self.hostname, report=report_url)
+""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, db=self.database_sqlite, hostname=self.server_ip, report=report_url)
 
         else:
             self.message_txt = """Results from {hostname}:
@@ -576,7 +577,7 @@ Database: {db}
 
 lf_check Test Suite Report:
 http://{hostname}/{report}
-""".format(hostname=self.hostname, suite=self.test_suite, db=self.database_sqlite, report=report_url)
+""".format(hostname=self.server_ip, suite=self.test_suite, db=self.database_sqlite, report=report_url)
 
         # Put in report information current two methods supported,
         if "NA" not in self.qa_report_html:
@@ -584,7 +585,7 @@ http://{hostname}/{report}
 
 QA Report Dashboard:
 http://{ip_qa}/{qa_url}
-NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url, qa_url_local=qa_url)
+NOTE: Diagrams are links in dashboard""".format(ip_qa=self.server_ip, qa_url=qa_url, qa_url_local=qa_url)
 
         else:
             self.message_txt += """
@@ -600,7 +601,7 @@ INSPECT Report Dashboard:
 http://{ip_inspect}/{inspect_url}
 
 
-NOTE: Diagrams are links in dashboard""".format(ip_inspect=ip, inspect_url=inspect_url)
+NOTE: Diagrams are links in dashboard""".format(ip_inspect=self.server_ip, inspect_url=inspect_url)
 
         else:
             self.message_txt += """
@@ -616,7 +617,7 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
                 email=self.email_title_txt,
                 suite=self.test_suite,
                 tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
-                hostname=self.hostname,
+                hostname=self.server_ip,
                 server_ver=server_version,
                 db=self.database_sqlite, 
                 date=datetime.datetime.now())
@@ -625,7 +626,7 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
                 email=self.email_title_txt,
                 suite=self.test_suite, 
                 tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
-                hostname=self.hostname,
+                hostname=self.server_ip,
                 server_ver=server_version,
                 db=self.database_sqlite, 
                 date=datetime.datetime.now())
@@ -761,7 +762,7 @@ junit.xml path: allure serve {junit_path}
                     subject=self.mail_subject,
                     address=self.email_list_production)
             else:
-                self.msg = self.message_txt.format(ip=ip)
+                self.msg = self.message_txt.format(ip=self.server_ip)
                 command = "echo \"{message}\" | mail -s \"{subject}\" {address}".format(
                     message=self.msg,
                     subject=self.mail_subject,
