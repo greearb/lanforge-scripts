@@ -1220,6 +1220,14 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
             report.set_text("Column headings with # 1 first database , Column headings with #2 for second database")
 
 
+    report.set_table_title("Key:")
+    report.build_table_title()
+
+    report.set_text("Percentages are calculated by:  (numeric_score_2 / numeric_score_1) * 100 ")
+    report.build_text_simple()
+    report.set_text("Good: % > 90, Fair: % > 70, Poor: % > 50, Critical: % < 50 ")
+    report.build_text_simple()
+
     report.set_table_title("Test Compare")
     report.build_table_title()
     html_results = inspect_db.get_html_results()
