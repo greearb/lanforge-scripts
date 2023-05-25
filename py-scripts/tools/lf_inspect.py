@@ -64,7 +64,6 @@ class inspect_sql:
         self.kpi_list = []
         self.html_list = []
         self.conn = None
-        self.df = pd.DataFrame()
         self.plot_figure = []
         self.html_results = ""
 
@@ -387,9 +386,11 @@ class inspect_sql:
                                 df_data_1['test-id'],
                                 df_data_1['short-description'],
                                 df_data_1['Units'],
-                                df_data_1['Date'],
+                                df_data_1['kernel'],
+                                df_data_1['gui_build_date'],
                                 df_data_1['numeric-score'],
-                                df_data_2['Date'],
+                                df_data_2['kernel'],
+                                df_data_2['gui_build_date'],
                                 df_data_2['numeric-score'],
                                 percent_delta,
                                 self.test_result
@@ -418,9 +419,11 @@ class inspect_sql:
                             <td>""" + str(df_data_1['test-id']) + """</td>
                             <td>""" + str(df_data_1['short-description']) + """</td>
                             <td>""" + str(df_data_1['Units']) + """</td>
-                            <td>""" + str(df_data_1['Date']) + """</td>
+                            <td>""" + str(df_data_1['kernel']) + """</td>
+                            <td>""" + str(df_data_1['gui_build_date']) + """</td>
                             <td>""" + str(df_data_1['numeric-score']) + """</td>
-                            <td>""" + str(df_data_2['Date']) + """</td>
+                            <td>""" + str(df_data_2['kernel']) + """</td>
+                            <td>""" + str(df_data_2['gui_build_date']) + """</td>
                             <td>""" + str(df_data_2['numeric-score']) + """</td>
 
                             <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
@@ -573,9 +576,11 @@ class inspect_sql:
                             df_data_1['test-id'],
                             df_data_1['short-description'],
                             df_data_1['Units'],
-                            df_data_1['Date'],
+                            df_data_1['kernel'],
+                            df_data_1['gui_build_date'],
                             df_data_1['numeric-score'],
-                            df_data_2['Date'],
+                            df_data_2['kernel'],
+                            df_data_2['gui_build_date'],
                             df_data_2['numeric-score'],
                             percent_delta,
                             self.test_result
@@ -607,9 +612,11 @@ class inspect_sql:
                         <td>""" + str(df_data_1['test-id']) + """</td>
                         <td>""" + str(df_data_1['short-description']) + """</td>
                         <td>""" + str(df_data_1['Units']) + """</td>
-                        <td>""" + str(df_data_1['Date']) + """</td>
+                        <td>""" + str(df_data_1['kernel']) + """</td>
+                        <td>""" + str(df_data_1['gui_build_date']) + """</td>
                         <td>""" + str(df_data_1['numeric-score']) + """</td>
-                        <td>""" + str(df_data_2['Date']) + """</td>
+                        <td>""" + str(df_data_2['kernel']) + """</td>
+                        <td>""" + str(df_data_2['gui_build_date']) + """</td>
                         <td>""" + str(df_data_2['numeric-score']) + """</td>
 
                         <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
@@ -821,9 +828,11 @@ class inspect_sql:
                                 df_data_1['test-id'],
                                 df_data_1['short-description'],
                                 df_data_1['Units'],
-                                df_data_1['Date'],
+                                df_data_1['kernel'],
+                                df_data_1['gui_build_date'],
                                 df_data_1['numeric-score'],
-                                df_data_2['Date'],
+                                df_data_2['kernel'],
+                                df_data_2['gui_build_date'],
                                 df_data_2['numeric-score'],
                                 percent_delta,
                                 self.test_result
@@ -852,9 +861,11 @@ class inspect_sql:
                             <td>""" + str(df_data_1['test-id']) + """</td>
                             <td>""" + str(df_data_1['short-description']) + """</td>
                             <td>""" + str(df_data_1['Units']) + """</td>
-                            <td>""" + str(df_data_1['Date']) + """</td>
+                            <td>""" + str(df_data_1['kernel']) + """</td>
+                            <td>""" + str(df_data_1['gui_build_date']) + """</td>
                             <td>""" + str(df_data_1['numeric-score']) + """</td>
-                            <td>""" + str(df_data_2['Date']) + """</td>
+                            <td>""" + str(df_data_2['kernel']) + """</td>
+                            <td>""" + str(df_data_2['gui_build_date']) + """</td>
                             <td>""" + str(df_data_2['numeric-score']) + """</td>
 
                             <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
@@ -927,9 +938,11 @@ class inspect_sql:
                           <th>test_id          </th>
                           <th>short_description</th>
                           <th>Units            </th>
-                          <th>Date1</th>
+                          <th>Kernel_1</th>
+                          <th>GUI_1</th>
                           <th>numeric_score_1</th>
-                          <th>Date2</th>
+                          <th>Kernel_2</th>
+                          <th>GUI_2</th>
                           <th>numeric_score_2</th>
                           <th>percent</th>
                           <th>Analysis</th>
