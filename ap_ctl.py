@@ -300,10 +300,11 @@ def main():
             logg.info("Received MUX prompt, send carriage return")
             logg.info("Expect: {} i: {} before: {} after: {}".format(MUX_PROMPT,i,egg.before,egg.after))
             #  For MUX_PROMPT can possibly log in 
-            egg.sendline(args.user) 
-            sleep(2)
-            egg.sendline(args.passwd)
-            sleep(2) 
+            #egg.sendline(args.user) 
+            #sleep(2)
+            #egg.sendline(args.passwd)
+            #sleep(2) 
+            egg.sendline(CR)
 
         # TIMEOUT
         if i == 8:
