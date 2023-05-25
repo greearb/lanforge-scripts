@@ -122,7 +122,15 @@ def main():
     CR = "\r\n"
 
     
-    parser = argparse.ArgumentParser(description="Cisco AP Control Script")
+    parser = argparse.ArgumentParser(description='''
+    Cisco AP Control Script
+
+        exmaple :
+        ./ap_ctl.py --scheme mux_client --dest 192.168.100.221 --port 23202 --user cisco --passwd Cisco --action show_log
+
+        Note if the AP is reset the user: admin passwd: Admin
+
+    ''')
     parser.add_argument("--scheme",  type=str, choices=["serial", "ssh", "telnet", "mux_client"], help="Connect via serial, ssh, telnet, mux_client")
     parser.add_argument("--dest",    type=str, help="address of the AP  172.19.27.55 or address of the mux_serial server 192.168.100.239")
     parser.add_argument("--radio_slot",    type=str, help="slot of the radio for powerreg and powercfg commands",default='2')
