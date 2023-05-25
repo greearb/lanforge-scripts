@@ -376,11 +376,11 @@ def main():
         sleep(0.4)
         egg.expect([pexpect.TIMEOUT], timeout=2)  # do not delete this for it allows for subprocess to see output
         print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
-        i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=4)
+        i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=2)
         if i == 0:
             egg.sendline('r')
             # TODO may need more time
-            egg.expect([pexpect.TIMEOUT], timeout=4)  # do not delete this for it allows for subprocess to see output
+            egg.expect([pexpect.TIMEOUT], timeout=6)  # do not delete this for it allows for subprocess to see output
             print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
         if i == 1:
             print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
@@ -420,9 +420,10 @@ def main():
         #logg.info("no action so execute: show controllers dot11Radio 1 powercfg | g T1")
         logg.info("no action")
 
-    i = egg.expect_exact([AP_PROMPT,AP_HASH,pexpect.TIMEOUT],timeout=1)
     # for the mux_client do not take down the server
     if scheme != "mux_client":
+        i = egg.expect_exact([AP_PROMPT,AP_HASH,pexpect.TIMEOUT],timeout=1)
+
         if i == 0:
             logg.info("received {} we are done send exit".format(AP_PROMPT))
             egg.sendline(AP_EXIT)
