@@ -405,7 +405,18 @@
                 "args_list":[
                     " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
+            },
+            "lf_inspect":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_inspect.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1"
+                ]
             }
+
         },
         "suite_ap_stability":{
             "create_chamberview_dut_ap_stability":{
@@ -469,7 +480,18 @@
                 "args_list":[
                     " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
+            },
+            "lf_inspect":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_inspect.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1"
+                ]
             }
+
         },
         "suite_ap_bc":{
             "create_chamberview_dut_ap_bc":{
@@ -533,7 +555,18 @@
                 "args_list":[
                     " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
+            },
+            "lf_inspect":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_inspect.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1"
+                ]
             }
+
         },
         "suite_vap": {
             "CT-US-003_VAP": {
@@ -571,7 +604,18 @@
                 "args_list":[
                     " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
+            },
+            "lf_inspect":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_inspect.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1"
+                ]
             }
+
         },
         "suite_wc_dp_shorter":{
             "create_chamberview_dut_mt7915e_wc":{
@@ -663,7 +707,18 @@
                 "args_list":[
                     " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
+            },
+            "lf_inspect":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_inspect.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1"
+                ]
             }
+
         },
         "suite_l3":{
             "test_l3_longevity":{
@@ -688,7 +743,18 @@
                 "args_list":[
                     " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
+            },
+            "lf_inspect":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_inspect.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1"
+                ]
             }
+
         },
         "suite_l3f":{
             "test_l3_longevity":{
@@ -713,7 +779,18 @@
                 "args_list":[
                     " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
+            },
+            "lf_inspect":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_inspect.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1"
+                ]
             }
+
         }
     }   
 }
