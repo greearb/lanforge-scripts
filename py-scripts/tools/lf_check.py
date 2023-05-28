@@ -549,8 +549,8 @@ class lf_check():
         # Mail
         # command to check if mail running : systemctl status postfix
         # command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
-        #self.hostname = socket.getfqdn()
-        #ip = socket.gethostbyname(self.hostname)
+        self.hostname = socket.getfqdn()
+        self.server_ip = socket.gethostbyname(self.hostname)
 
         # a hostname lacking dots by definition lacks a domain name
         # this is not useful for hyperlinks outside the known domain, so an IP
