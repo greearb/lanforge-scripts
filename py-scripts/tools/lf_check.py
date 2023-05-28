@@ -754,7 +754,7 @@ junit.xml path: allure serve {junit_path}
 
         try:
             if self.production_run:
-                self.msg = self.message_txt.format(ip=ip)
+                self.msg = self.message_txt.format(ip=self.server_ip)
                 # for postfix from command line  echo "My message" | mail -s
                 # subject user@candelatech.com
                 command = "echo \"{message}\" | mail -s \"{subject}\" {address}".format(
