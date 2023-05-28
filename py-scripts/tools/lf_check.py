@@ -288,9 +288,6 @@ class lf_check():
         # radio firmware list
         self.radio_firmware_list = ["NA"]
 
-        # radio firmware dict
-        self.radio_fw_dict = {}
-
         # section DUT
         # dut selection
         # note the name will be set as --set DUT_NAME ASUSRT-AX88U, this is not
@@ -339,6 +336,7 @@ class lf_check():
         # Allure information
         self.junit_results = ""
         self.junit_path_only = ""        
+
 
     def set_junit_results(self, junit_results):
         self.junit_results = junit_results
@@ -1917,476 +1915,504 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-    # load test config file information either <config>.json
-    json_rig = ""
-    if args.json_rig is not None:
-        try:
-            logger.info("reading json_rig: {rig}".format(rig=args.json_rig))
-            with open(args.json_rig, 'r') as json_rig_config:
-                json_rig = json.load(json_rig_config)
-        except json.JSONDecodeError as err:
-            logger.error("ERROR reading {json}, ERROR: {error} ".format(json=args.json_rig, error=err))
-            exit(1)
 
-    json_dut = ""
-    if args.json_dut is not None:
-        try:
-            logger.info("reading json_dut: {dut}".format(dut=args.json_dut))
-            with open(args.json_dut, 'r') as json_dut_config:
-                json_dut = json.load(json_dut_config)
-        except json.JSONDecodeError as err:
-            logger.error("ERROR reading {json}, ERROR: {error} ".format(json=args.json_dut, error=err))
-            exit(1)
-
-    json_test = ""
-    try:
-        logger.info("reading json_test:  {}".format(args.json_test))
-        with open(args.json_test, 'r') as json_test_config:
-            json_test = json.load(json_test_config)
-    except json.JSONDecodeError as err:
-        logger.error("ERROR reading {json}, ERROR: {error} ".format(json=args.json_test, error=err))
+    # TODO Here is where the multiple suite and multiple json may be added 
+    if ((args.json_rig is None )
+        or (args.json_dut is None)
+        or (args.json_test is None)
+        or (args.suite is None)):
+        logger.error("Must enter json_rig, json_dut, json_tests and suite")
         exit(1)
 
-    # Test-rig information information
-    lanforge_system_node_version = 'NO_LF_NODE_VER'
-    lanforge_system_ip ='NO_LF_IP'
-    scripts_git_sha = 'NO_GIT_SHA'
-    lanforge_fedora_version = 'NO_FEDORA_VER'
-    lanforge_kernel_version = 'NO_KERNEL_VER'
-    lanforge_server_version_full = 'NO_LF_SERVER_VER'
+    json_rig_list =  args.json_rig.split(',')
+    json_dut_list =  args.json_dut.split(',')
+    json_test_list =  args.json_test.split(',')
+    suite_list =  args.suite.split(',')
 
-    # select test suite
-    test_suite = args.suite
-    if args.dir == "":
-        if args.outfile == "":
-            __dir = "lf_check_{suite}".format(suite=test_suite)
-        else:
-            __dir = "lf_ch_{outfile}_{suite}".format(outfile=args.outfile, suite=test_suite)
-
-    else:
-        if args.outfile == "":
-            __dir = args.dir
-        else:
-            __dir = "{dir}_{outfile}_{suite}".format(dir=args.dir, outfile=args.outfile, suite=test_suite)
-
-    __path = args.path
-
-    server_override = args.server_override
-    db_override = args.db_override
-
-    if args.production:
-        production = True
-        logger.info("Email to production list")
-    else:
-        production = False
-        logger.info("Email to email list")
-
-    # create report class for reporting
-    report = lf_report.lf_report(_path=__path,
-                                 _results_dir_name=__dir,
-                                 _output_html="{dir}.html".format(dir=__dir),
-                                 _output_pdf="{dir}.pdf".format(dir=__dir))
-
-    current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-    csv_results = "{dir}-{outfile}-{current_time}.csv".format(dir=__dir, outfile=args.outfile, current_time=current_time)
-    csv_results = report.file_add_path(csv_results)
-    outfile_name = "{dir}-{outfile}-{current_time}".format(dir=__dir, outfile=args.outfile, current_time=current_time)
-    outfile = report.file_add_path(outfile_name)
-    if args.flat_dir:
-        report_path = report.get_flat_dir_report_path()
-    else:
-        report_path = report.get_report_path()
-
-    log_path = report.get_log_path()
-
-    # Check if a test_list passed as the user would like to do a selected
-    # set of tests from the test list
-    use_test_list = args.use_test_list
-    test_list = args.test_list
-    if use_test_list:
-        # if the test_list is empty should probably exit?
-        if test_list == []:
-            use_test_list = False
-            logger.warning("use_testlist set to True yet test list was empty")
-        else:
-            test_list = args.test_list.split(',')
-            logger.info("use_testlist set True test list : {list}".format(list=test_list))
-
-    # lf_check() class created
-    check = lf_check(_json_rig=json_rig,
-                     _json_dut=json_dut,
-                     _json_test=json_test,
-                     _test_suite=test_suite,
-                     _json_rig_file=args.json_rig,
-                     _json_dut_file=args.json_dut,
-                     _json_test_file=args.json_test,
-                     _use_test_list=use_test_list,
-                     _test_list=test_list,
-                     _server_override=server_override,
-                     _db_override=db_override,
-                     _production=production,
-                     _csv_results=csv_results,
-                     _outfile=outfile,
-                     _outfile_name=outfile_name,
-                     _report_path=report_path,
-                     _log_path=log_path)
-
-    # set up logging
-    logfile = args.logfile[:-4]
-    logger.info("logfile: {}".format(logfile))
-    logfile = "{}-{}.log".format(logfile, current_time)
-    logfile = report.file_add_path(logfile)
-    logger.info("logfile {}".format(logfile))
-
-    # read config and run tests
-    check.read_json_rig()  # check.read_config
-    check.read_json_dut()
-    check.read_json_test()
-
-    # get sha and lanforge information for results
-    # Need to do this after reading the configuration
-    try:
-        scripts_git_sha = check.get_scripts_git_sha()
-        logger.info("git_sha {sha}".format(sha=scripts_git_sha))
-    except BaseException:
-        logger.warning("WARNING: git_sha read exception unable to read")
-
-    try:
-        lanforge_system_node_version = check.get_lanforge_system_node_version()
-        logger.info("lanforge_system_node_version {system_node_ver}".format(
-            system_node_ver=lanforge_system_node_version))
-    except Exception as x:
-        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-        logger.warning("WARNING: lanforge_system_node_version exception")
-
-    lanforge_system_ip = check.get_lanforge_system_ip()
-
-    try:
-        lanforge_fedora_version = check.get_lanforge_fedora_version()
-        logger.info("lanforge_fedora_version {fedora_ver}".format(
-            fedora_ver=lanforge_fedora_version))
-    except Exception as x:
-        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-        logger.error("ERROR: lanforge_fedora_version exception, tests aborted check lanforge ip")
-        exit(1)
-
-    try:
-        lanforge_kernel_version = check.get_lanforge_kernel_version()
-        logger.info("lanforge_kernel_version {kernel_ver}".format(
-            kernel_ver=lanforge_kernel_version))
-    except Exception as x:
-        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-        logger.error("ERROR: lanforge_kernel_version exception, tests aborted check lanforge ip")
-        exit(1)
-
-    try:
-        lanforge_server_version_full = check.get_lanforge_server_version()
-        logger.info("lanforge_server_version_full {lanforge_server_version_full}".format(
-            lanforge_server_version_full=lanforge_server_version_full))
-    except Exception as x:
-        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-        logger.error("ERROR: lanforge_server_version exception, tests aborted check lanforge ip")
-        exit(1)
-
-    try:
-        lanforge_server_build_info = check.get_lanforge_server_build_info()
-        logger.info("lanforge_server_build_info {lanforge_server_build_info}".format(
-            lanforge_server_build_info=lanforge_server_build_info))
-    except Exception as x:
-        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-        logger.error("ERROR: lanforge_server_build_info exception, tests aborted check lanforge ip")
-        exit(1)
+    if(len(json_test_list) != len(suite_list)):
+        logger.error("Currently the suite and the test_json need to have the same number of entries in the list, either add suite names or test_json names")
 
 
+    # Save away the current working directory
+    current_working_directory = os.getcwd()
+    logger.debug("current working directory {cwd}".format(cwd=current_working_directory))
 
-    try:
-        lanforge_gui_version_full, lanforge_gui_version, lanforge_gui_build_date, lanforge_gui_git_sha = check.get_lanforge_gui_version()
-        logger.info("lanforge_gui_version_full {lanforge_gui_version_full}".format(
-            lanforge_gui_version_full=lanforge_gui_version_full))
-    except Exception as x:
-        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-        logger.error("ERROR: lanforge_gui_version exception, tests aborted check lanforge ip")
-        exit(1)
+    # for rig json (lanforge)
+    for json_rig_name in json_rig_list:
 
-    try:
-        lanforge_radio_json, lanforge_radio_text = check.get_lanforge_radio_information()
-        lanforge_radio_formatted_str = json.dumps(
-            lanforge_radio_json, indent=2)
-        logger.info("lanforge_radio_json: {lanforge_radio_json}".format(
-            lanforge_radio_json=lanforge_radio_formatted_str))
+        # for test json and suite
+        for (json_test_name,suite_name) in zip(json_test_list,suite_list):
 
-        # note put into the meta data
-        lf_radio_df = pd.DataFrame(
-            columns=[
-                'Radio',
-                'WIFI-Radio Driver',
-                'Radio Capabilities',
-                'Firmware Version',
-                'max_clients',
-                'max_vap',
-                'max_sta'])
+            # for dut json 
+            for (json_dut_name) in json_dut_list:
 
-        radio_firmware_list = []
-        radio_fw_dict = {}
-        for key in lanforge_radio_json:
-            if 'wiphy' in key:
-                # self.logger.info("key {}".format(key))
-                # self.logger.info("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
-                driver = lanforge_radio_json[key]['driver'].split(
-                    'Driver:', maxsplit=1)[-1].split(maxsplit=1)[0]
+                # change back to the original working directory
+                os.chdir(current_working_directory)
                 try:
-                    firmware_version = lanforge_radio_json[key]['firmware version']
-                    firmware_version = firmware_version.replace('release/','')
-                    radio_firmware_list.append(firmware_version)
-                    radio_fw_dict[key] = firmware_version.replace('release/','')
+                    logger.info("reading json_rig: {rig}".format(rig=json_rig_name))
+                    with open(json_rig_name, 'r') as json_rig_config:
+                        json_rig = json.load(json_rig_config)
+                except json.JSONDecodeError as err:
+                    logger.error("ERROR reading {json}, ERROR: {error} ".format(json=json_rig, error=err))
+                    exit(1)
+
+                try:
+                    logger.info("reading json_test:  {}".format(json_test_name))
+                    with open(json_test_name, 'r') as json_test_config:
+                        json_test = json.load(json_test_config)
+                except json.JSONDecodeError as err:
+                    logger.error("ERROR reading {json}, ERROR: {error} ".format(json=json_test_name, error=err))
+                    exit(1)
+
+                try:
+                    logger.info("reading json_dut: {dut}".format(dut=json_dut_name))
+                    with open(json_dut_name, 'r') as json_dut_config:
+                        json_dut = json.load(json_dut_config)
+                except json.JSONDecodeError as err:
+                    logger.error("ERROR reading {json}, ERROR: {error} ".format(json=json_dut_name, error=err))
+                    exit(1)
+
+
+                # Test-rig information information
+                lanforge_system_node_version = 'NO_LF_NODE_VER'
+                lanforge_system_ip ='NO_LF_IP'
+                scripts_git_sha = 'NO_GIT_SHA'
+                lanforge_fedora_version = 'NO_FEDORA_VER'
+                lanforge_kernel_version = 'NO_KERNEL_VER'
+                lanforge_server_version_full = 'NO_LF_SERVER_VER'
+
+                # select test suite
+                test_suite = suite_name
+                if args.dir == "":
+                    if args.outfile == "":
+                        __dir = "lf_check_{suite}".format(suite=test_suite)
+                    else:
+                        __dir = "lf_ch_{outfile}_{suite}".format(outfile=args.outfile, suite=test_suite)
+
+                else:
+                    if args.outfile == "":
+                        __dir = args.dir
+                    else:
+                        __dir = "{dir}_{outfile}_{suite}".format(dir=args.dir, outfile=args.outfile, suite=test_suite)
+
+                __path = args.path
+
+                server_override = args.server_override
+                db_override = args.db_override
+
+                if args.production:
+                    production = True
+                    logger.info("Email to production list")
+                else:
+                    production = False
+                    logger.info("Email to email list")
+
+                # create report class for reporting
+                report = lf_report.lf_report(_path=__path,
+                                            _results_dir_name=__dir,
+                                            _output_html="{dir}.html".format(dir=__dir),
+                                            _output_pdf="{dir}.pdf".format(dir=__dir))
+
+                current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+                csv_results = "{dir}-{outfile}-{current_time}.csv".format(dir=__dir, outfile=args.outfile, current_time=current_time)
+                csv_results = report.file_add_path(csv_results)
+                outfile_name = "{dir}-{outfile}-{current_time}".format(dir=__dir, outfile=args.outfile, current_time=current_time)
+                outfile = report.file_add_path(outfile_name)
+                if args.flat_dir:
+                    report_path = report.get_flat_dir_report_path()
+                else:
+                    report_path = report.get_report_path()
+
+                log_path = report.get_log_path()
+
+                # Check if a test_list passed as the user would like to do a selected
+                # set of tests from the test list
+                use_test_list = args.use_test_list
+                test_list = args.test_list
+                if use_test_list:
+                    # if the test_list is empty should probably exit?
+                    if test_list == []:
+                        use_test_list = False
+                        logger.warning("use_testlist set to True yet test list was empty")
+                    else:
+                        test_list = args.test_list.split(',')
+                        logger.info("use_testlist set True test list : {list}".format(list=test_list))
+
+                # lf_check() class created
+                check = lf_check(_json_rig=json_rig,
+                                _json_dut=json_dut,
+                                _json_test=json_test,
+                                _test_suite=test_suite,
+                                _json_rig_file=args.json_rig,
+                                _json_dut_file=args.json_dut,
+                                _json_test_file=args.json_test,
+                                _use_test_list=use_test_list,
+                                _test_list=test_list,
+                                _server_override=server_override,
+                                _db_override=db_override,
+                                _production=production,
+                                _csv_results=csv_results,
+                                _outfile=outfile,
+                                _outfile_name=outfile_name,
+                                _report_path=report_path,
+                                _log_path=log_path)
+
+                # set up logging
+                logfile = args.logfile[:-4]
+                logger.info("logfile: {}".format(logfile))
+                logfile = "{}-{}.log".format(logfile, current_time)
+                logfile = report.file_add_path(logfile)
+                logger.info("logfile {}".format(logfile))
+
+                # read config and run tests
+                check.read_json_rig()  # check.read_config
+                check.read_json_dut()
+                check.read_json_test()
+
+                # get sha and lanforge information for results
+                # Need to do this after reading the configuration
+                try:
+                    scripts_git_sha = check.get_scripts_git_sha()
+                    logger.info("git_sha {sha}".format(sha=scripts_git_sha))
+                except BaseException:
+                    logger.warning("WARNING: git_sha read exception unable to read")
+
+                try:
+                    lanforge_system_node_version = check.get_lanforge_system_node_version()
+                    logger.info("lanforge_system_node_version {system_node_ver}".format(
+                        system_node_ver=lanforge_system_node_version))
                 except Exception as x:
                     traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                    logger.info("5.4.3 radio fw version not in /radiostatus/all ")
-                    firmware_version = "5.4.3 N/A"
-                    #radio_firmware_list = radio_firmware_list.append("NA")
+                    logger.warning("WARNING: lanforge_system_node_version exception")
 
-                lf_radio_df = lf_radio_df.append(
-                    {'Radio': lanforge_radio_json[key]['entity id'],
-                     'WIFI-Radio Driver': driver,
-                     'Radio Capabilities': lanforge_radio_json[key]['capabilities'],
-                     'Firmware Version': firmware_version,
-                     'max_clients': lanforge_radio_json[key]['max_sta'],
-                     'max_vap': lanforge_radio_json[key]['max_vap'],
-                     'max_sta': lanforge_radio_json[key]['max_vifs']}, ignore_index=True)
+                lanforge_system_ip = check.get_lanforge_system_ip()
 
+                try:
+                    lanforge_fedora_version = check.get_lanforge_fedora_version()
+                    logger.info("lanforge_fedora_version {fedora_ver}".format(
+                        fedora_ver=lanforge_fedora_version))
+                except Exception as x:
+                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                    logger.error("ERROR: lanforge_fedora_version exception, tests aborted check lanforge ip")
+                    exit(1)
 
-        logger.info("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
-        logger.info("radio_fw_dict:: {radio_fw_dict}".format(radio_fw_dict=radio_fw_dict))
+                try:
+                    lanforge_kernel_version = check.get_lanforge_kernel_version()
+                    logger.info("lanforge_kernel_version {kernel_ver}".format(
+                        kernel_ver=lanforge_kernel_version))
+                except Exception as x:
+                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                    logger.error("ERROR: lanforge_kernel_version exception, tests aborted check lanforge ip")
+                    exit(1)
 
-        # using set() to remove duplicated entries
-        radio_firmware_list = list(set(radio_firmware_list))
+                try:
+                    lanforge_server_version_full = check.get_lanforge_server_version()
+                    logger.info("lanforge_server_version_full {lanforge_server_version_full}".format(
+                        lanforge_server_version_full=lanforge_server_version_full))
+                except Exception as x:
+                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                    logger.error("ERROR: lanforge_server_version exception, tests aborted check lanforge ip")
+                    exit(1)
 
-        check.set_radio_firmware_list(radio_firmware_list)
-        check.set_radio_fw_dict(radio_fw_dict)
-
-    except Exception as error:
-        logger.error("print_exc(): {error}".format(error=error))
-        traceback.print_exc(file=sys.stdout)
-        lf_radio_df = pd.DataFrame()
-        logger.info("get_lanforge_radio_json exception, no radio data, is radio admin down, a windows radio, or check for LANforge GUI running")
-        # TODO should we exit or should it be a work around 
-        # exit(1)
-
-    # LANforge and scripts config for results
-    lf_test_setup = pd.DataFrame()
-    lf_test_setup['LANforge'] = lanforge_system_node_version
-    lf_test_setup['LANforg IP'] = lanforge_system_ip
-    lf_test_setup['fedora version'] = lanforge_fedora_version
-    lf_test_setup['kernel version'] = lanforge_kernel_version
-    lf_test_setup['server version'] = lanforge_server_version_full 
-    lf_test_setup['gui version'] = lanforge_gui_version
-    lf_test_setup['gui build date'] = lanforge_gui_build_date
-    lf_test_setup['gui git sha'] = lanforge_gui_git_sha
-    lf_test_setup['scripts git sha'] = scripts_git_sha
-
-    # LANforge server build information
-    lf_server_build_info = pd.DataFrame()
-    lf_server_build_info['Server Build Information'] = lanforge_server_build_info
-
-    # Successfully gathered LANforge information Run Tests
-    # This is the call that runs the scripts
-    check.run_script_test()
-
-    # Add the qa_report_html
-    qa_report_html = check.qa_report_html
-
-    # Add the inspect_report_html
-    inspect_report_html = check.inspect_report_html
-
-    # add the python3 version information
-    lf_server = pd.DataFrame()
-    hostname = socket.getfqdn()
-    ip = socket.gethostbyname(hostname)
-
-    lf_server['Server Host Name'] = [hostname]
-    lf_server['Server ip'] = [ip]
-    lf_server['Server Fedora Version'] = [platform.platform()]
-    lf_server['Python3 Version'] = [sys.version]
-    lf_server['Python3 Executable'] = [sys.executable]
-
-    lf_suite_time = pd.DataFrame()
-    lf_suite_time['Suite Start'] = [check.suite_start_time]
-    lf_suite_time['Suite End'] = [check.suite_end_time]
-    lf_suite_time['Suite Duration'] = [check.suite_duration]
-
-    lf_test_summary = pd.DataFrame()
-    lf_test_summary['Tests Run'] = [check.tests_run]
-    lf_test_summary['Finished'] = [check.tests_success]
-    lf_test_summary['Some Tests Failed'] = [check.tests_some_failure]
-    lf_test_summary['Failure'] = [check.tests_failure]
-    lf_test_summary['Timeout'] = [check.tests_timeout]
-
-    lf_test_json = pd.DataFrame()
-    lf_test_json['DUT JSON'] = [args.json_dut]
-    lf_test_json['RIG JSON'] = [args.json_rig]
-    lf_test_json['TEST JSON'] = [args.json_test]
-
-    # generate output reports
-    test_rig = check.get_test_rig()
-    report.set_title(
-        "LF Check: {test_rig}: {suite} : {ip} ".format(
-            test_rig=test_rig, suite=test_suite, ip=lanforge_system_ip ))
-    report.build_banner_left()
-    report.start_content_div2()
-    report.set_obj_html("Objective", "Execution of test_suite {suite}".format(suite=test_suite))
-    report.build_objective()
-    report.set_table_title("Test Input Files")
-    report.build_table_title()
-    report.set_table_dataframe(lf_test_json)
-    report.build_table()
-    report.set_table_title("LANForge")
-    report.build_table_title()
-    report.set_table_dataframe(lf_test_setup)
-    report.build_table()
-
-    report.set_table_title("LANForge Server Build Info")
-    report.build_table_title()
-    report.set_table_dataframe(lf_server_build_info)
-    report.build_table()
-
-    report.set_table_title("LANForge CICD Server")
-    report.build_table_title()
-    report.set_table_dataframe(lf_server)
-    report.build_table()
-    report.set_table_title("LANForge Radios")
-    report.build_table_title()
-    report.set_table_dataframe(lf_radio_df)
-    report.build_table()
-    report.set_table_title("LF Check Suite Run")
-    report.build_table_title()
-    report.set_table_dataframe(lf_suite_time)
-    report.build_table()
-    if "NA" not in qa_report_html:
-        report.set_table_title("LF Check QA ")
-        report.build_table_title()
-
-        abs_path = False
-        if abs_path:
-            qa_url = qa_report_html.replace('/home/lanforge', '')
-            logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
-            report.build_link("QA Test Results", qa_url)
-        else:
-            # try relative path
-            parent_path = os.path.dirname(qa_report_html)
-            parent_name = os.path.basename(parent_path)
-            qa_report_base_name = os.path.basename(qa_report_html)
-
-            qa_url = './' + parent_name + '/' + qa_report_base_name
-            logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
-            report.build_link("QA Test Results", qa_url)
-
-    if "NA" not in inspect_report_html:
-        report.set_table_title("LF Inspect QA ")
-        report.build_table_title()
-
-        # try relative path
-        parent_path = os.path.dirname(inspect_report_html)
-        parent_name = os.path.basename(parent_path)
-        inspect_report_base_name = os.path.basename(inspect_report_html)
-
-        inspect_url = './' + parent_name + '/' + inspect_report_base_name
-        logger.info("QA Test Results inspect_run custom: {inspect_url}".format(inspect_url=inspect_url))
-        report.build_link("Inspect Test Results", inspect_url)
-
-
-    report.set_table_title("LF Check Suite Summary: {suite}".format(suite=test_suite))
-    report.build_table_title()
-    report.set_table_dataframe(lf_test_summary)
-    report.build_table()
-    report.set_table_title("LF Check Suite Results")
-    report.build_table_title()
-    html_results = check.get_html_results()
-    report.set_custom_html(html_results)
-    report.build_custom()
-    report.build_footer()
-    report.copy_js()
-
-    html_report = report.write_html_with_timestamp()
-    logger.info("html report: {}".format(html_report))
-    try:
-        report.write_pdf_with_timestamp()
-    except Exception as x:
-        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-        logger.info("exception write_pdf_with_timestamp()")
-
-    logger.info("lf_check_html_report: " + html_report)
-
-
-    # save the juni.xml file
-    junit_results = check.get_junit_results()
-    report.set_junit_results(junit_results)
-    junit_xml = report.write_junit_results()
-    junit_path_only = junit_xml.replace('junit.xml','')
-
-    check.set_junit_results(junit_xml)
-    check.set_junit_path_only(junit_path_only)
-
-
-    # Send email
-    if args.no_send_email or check.email_list_test == "":
-        logger.info("send email not set or email_list_test not set")
-    else:
-        check.send_results_email(report_file=html_report)
-
-    # print later so shows up last
-    logger.info("junit.xml: allure serve {}".format(junit_xml))
-    logger.info("junit.xml path: allure serve {}".format(junit_path_only))
+                try:
+                    lanforge_server_build_info = check.get_lanforge_server_build_info()
+                    logger.info("lanforge_server_build_info {lanforge_server_build_info}".format(
+                        lanforge_server_build_info=lanforge_server_build_info))
+                except Exception as x:
+                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                    logger.error("ERROR: lanforge_server_build_info exception, tests aborted check lanforge ip")
+                    exit(1)
 
 
 
-    if args.update_latest:
-        report_path = os.path.dirname(html_report)
-        parent_report_dir = os.path.dirname(report_path)
+                try:
+                    lanforge_gui_version_full, lanforge_gui_version, lanforge_gui_build_date, lanforge_gui_git_sha = check.get_lanforge_gui_version()
+                    logger.info("lanforge_gui_version_full {lanforge_gui_version_full}".format(
+                        lanforge_gui_version_full=lanforge_gui_version_full))
+                except Exception as x:
+                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                    logger.error("ERROR: lanforge_gui_version exception, tests aborted check lanforge ip")
+                    exit(1)
 
-        # copy results to lastest so someone may see the latest.
-        # duplicates html_report file up one directory is the destination
-        html_report_latest = parent_report_dir + "/{dir}_latest.html".format(dir=__dir)
+                try:
+                    lanforge_radio_json, lanforge_radio_text = check.get_lanforge_radio_information()
+                    lanforge_radio_formatted_str = json.dumps(
+                        lanforge_radio_json, indent=2)
+                    logger.info("lanforge_radio_json: {lanforge_radio_json}".format(
+                        lanforge_radio_json=lanforge_radio_formatted_str))
 
-        banner_src_png = report_path + "/banner.png"
-        banner_dest_png = parent_report_dir + "/banner.png"
-        CandelaLogo_src_png = report_path + "/CandelaLogo2-90dpi-200x90-trans.png"
-        CandelaLogo_dest_png = parent_report_dir + "/CandelaLogo2-90dpi-200x90-trans.png"
-        CandelaLogo_small_src_png = report_path + "/candela_swirl_small-72h.png"
-        CandelaLogo_small_dest_png = parent_report_dir + "/candela_swirl_small-72h.png"
-        report_src_css = report_path + "/report.css"
-        report_dest_css = parent_report_dir + "/report.css"
-        custom_src_css = report_path + "/custom.css"
-        custom_dest_css = parent_report_dir + "/custom.css"
-        font_src_woff = report_path + "/CenturyGothic.woff"
-        font_dest_woff = parent_report_dir + "/CenturyGothic.woff"
+                    # note put into the meta data
+                    lf_radio_df = pd.DataFrame(
+                        columns=[
+                            'Radio',
+                            'WIFI-Radio Driver',
+                            'Radio Capabilities',
+                            'Firmware Version',
+                            'max_clients',
+                            'max_vap',
+                            'max_sta'])
 
-        # pprint.pprint([
-        #    ('banner_src', banner_src_png),
-        #    ('banner_dest', banner_dest_png),
-        #    ('CandelaLogo_src_png', CandelaLogo_src_png),
-        #    ('CandelaLogo_dest_png', CandelaLogo_dest_png),
-        #    ('report_src_css', report_src_css),
-        #    ('custom_src_css', custom_src_css)
-        # ])
+                    radio_firmware_list = []
+                    radio_fw_dict = {}
+                    for key in lanforge_radio_json:
+                        if 'wiphy' in key:
+                            # self.logger.info("key {}".format(key))
+                            # self.logger.info("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
+                            driver = lanforge_radio_json[key]['driver'].split(
+                                'Driver:', maxsplit=1)[-1].split(maxsplit=1)[0]
+                            try:
+                                firmware_version = lanforge_radio_json[key]['firmware version']
+                                firmware_version = firmware_version.replace('release/','')
+                                radio_firmware_list.append(firmware_version)
+                                radio_fw_dict[key] = firmware_version.replace('release/','')
+                            except Exception as x:
+                                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                logger.info("5.4.3 radio fw version not in /radiostatus/all ")
+                                firmware_version = "5.4.3 N/A"
+                                #radio_firmware_list = radio_firmware_list.append("NA")
 
-        # copy one directory above
-        try:
-            shutil.copyfile(html_report, html_report_latest)
-        except Exception as x:
-            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.info("unable to copy results from {html} to {html_latest}".format(html=html_report, html_latest=html_report_latest))
-            logger.info("check permissions on {html_report_latest}".format(html_report_latest=html_report_latest))
+                            lf_radio_df = lf_radio_df.append(
+                                {'Radio': lanforge_radio_json[key]['entity id'],
+                                'WIFI-Radio Driver': driver,
+                                'Radio Capabilities': lanforge_radio_json[key]['capabilities'],
+                                'Firmware Version': firmware_version,
+                                'max_clients': lanforge_radio_json[key]['max_sta'],
+                                'max_vap': lanforge_radio_json[key]['max_vap'],
+                                'max_sta': lanforge_radio_json[key]['max_vifs']}, ignore_index=True)
 
-        # copy banner and logo up one directory,
-        shutil.copyfile(banner_src_png, banner_dest_png)
-        shutil.copyfile(CandelaLogo_src_png, CandelaLogo_dest_png)
-        shutil.copyfile(report_src_css, report_dest_css)
-        shutil.copyfile(custom_src_css, custom_dest_css)
-        shutil.copyfile(font_src_woff, font_dest_woff)
-        shutil.copyfile(CandelaLogo_small_src_png, CandelaLogo_small_dest_png)
 
-        # print out locations of results
-        logger.info("html_report_latest: {latest}".format(latest=html_report_latest))
+                    logger.info("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
+                    logger.info("radio_fw_dict:: {radio_fw_dict}".format(radio_fw_dict=radio_fw_dict))
+
+                    # using set() to remove duplicated entries
+                    radio_firmware_list = list(set(radio_firmware_list))
+
+                    check.set_radio_firmware_list(radio_firmware_list)
+                    check.set_radio_fw_dict(radio_fw_dict)
+
+                except Exception as error:
+                    logger.error("print_exc(): {error}".format(error=error))
+                    traceback.print_exc(file=sys.stdout)
+                    lf_radio_df = pd.DataFrame()
+                    logger.info("get_lanforge_radio_json exception, no radio data, is radio admin down, a windows radio, or check for LANforge GUI running")
+                    # TODO should we exit or should it be a work around 
+                    # exit(1)
+
+                # LANforge and scripts config for results
+                lf_test_setup = pd.DataFrame()
+                lf_test_setup['LANforge'] = lanforge_system_node_version
+                lf_test_setup['LANforg IP'] = lanforge_system_ip
+                lf_test_setup['fedora version'] = lanforge_fedora_version
+                lf_test_setup['kernel version'] = lanforge_kernel_version
+                lf_test_setup['server version'] = lanforge_server_version_full 
+                lf_test_setup['gui version'] = lanforge_gui_version
+                lf_test_setup['gui build date'] = lanforge_gui_build_date
+                lf_test_setup['gui git sha'] = lanforge_gui_git_sha
+                lf_test_setup['scripts git sha'] = scripts_git_sha
+
+                # LANforge server build information
+                lf_server_build_info = pd.DataFrame()
+                lf_server_build_info['Server Build Information'] = lanforge_server_build_info
+
+                # Successfully gathered LANforge information Run Tests
+                # This is the call that runs the scripts
+                check.run_script_test()
+
+                # Add the qa_report_html
+                qa_report_html = check.qa_report_html
+
+                # Add the inspect_report_html
+                inspect_report_html = check.inspect_report_html
+
+                # add the python3 version information
+                lf_server = pd.DataFrame()
+                hostname = socket.getfqdn()
+                ip = socket.gethostbyname(hostname)
+
+                lf_server['Server Host Name'] = [hostname]
+                lf_server['Server ip'] = [ip]
+                lf_server['Server Fedora Version'] = [platform.platform()]
+                lf_server['Python3 Version'] = [sys.version]
+                lf_server['Python3 Executable'] = [sys.executable]
+
+                lf_suite_time = pd.DataFrame()
+                lf_suite_time['Suite Start'] = [check.suite_start_time]
+                lf_suite_time['Suite End'] = [check.suite_end_time]
+                lf_suite_time['Suite Duration'] = [check.suite_duration]
+
+                lf_test_summary = pd.DataFrame()
+                lf_test_summary['Tests Run'] = [check.tests_run]
+                lf_test_summary['Finished'] = [check.tests_success]
+                lf_test_summary['Some Tests Failed'] = [check.tests_some_failure]
+                lf_test_summary['Failure'] = [check.tests_failure]
+                lf_test_summary['Timeout'] = [check.tests_timeout]
+
+                lf_test_json = pd.DataFrame()
+                lf_test_json['DUT JSON'] = [args.json_dut]
+                lf_test_json['RIG JSON'] = [args.json_rig]
+                lf_test_json['TEST JSON'] = [args.json_test]
+
+                # generate output reports
+                test_rig = check.get_test_rig()
+                report.set_title(
+                    "LF Check: {test_rig}: {suite} : {ip} ".format(
+                        test_rig=test_rig, suite=test_suite, ip=lanforge_system_ip ))
+                report.build_banner_left()
+                report.start_content_div2()
+                report.set_obj_html("Objective", "Execution of test_suite {suite}".format(suite=test_suite))
+                report.build_objective()
+                report.set_table_title("Test Input Files")
+                report.build_table_title()
+                report.set_table_dataframe(lf_test_json)
+                report.build_table()
+                report.set_table_title("LANForge")
+                report.build_table_title()
+                report.set_table_dataframe(lf_test_setup)
+                report.build_table()
+
+                report.set_table_title("LANForge Server Build Info")
+                report.build_table_title()
+                report.set_table_dataframe(lf_server_build_info)
+                report.build_table()
+
+                report.set_table_title("LANForge CICD Server")
+                report.build_table_title()
+                report.set_table_dataframe(lf_server)
+                report.build_table()
+                report.set_table_title("LANForge Radios")
+                report.build_table_title()
+                report.set_table_dataframe(lf_radio_df)
+                report.build_table()
+                report.set_table_title("LF Check Suite Run")
+                report.build_table_title()
+                report.set_table_dataframe(lf_suite_time)
+                report.build_table()
+                if "NA" not in qa_report_html:
+                    report.set_table_title("LF Check QA ")
+                    report.build_table_title()
+
+                    abs_path = False
+                    if abs_path:
+                        qa_url = qa_report_html.replace('/home/lanforge', '')
+                        logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
+                        report.build_link("QA Test Results", qa_url)
+                    else:
+                        # try relative path
+                        parent_path = os.path.dirname(qa_report_html)
+                        parent_name = os.path.basename(parent_path)
+                        qa_report_base_name = os.path.basename(qa_report_html)
+
+                        qa_url = './' + parent_name + '/' + qa_report_base_name
+                        logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
+                        report.build_link("QA Test Results", qa_url)
+
+                if "NA" not in inspect_report_html:
+                    report.set_table_title("LF Inspect QA ")
+                    report.build_table_title()
+
+                    # try relative path
+                    parent_path = os.path.dirname(inspect_report_html)
+                    parent_name = os.path.basename(parent_path)
+                    inspect_report_base_name = os.path.basename(inspect_report_html)
+
+                    inspect_url = './' + parent_name + '/' + inspect_report_base_name
+                    logger.info("QA Test Results inspect_run custom: {inspect_url}".format(inspect_url=inspect_url))
+                    report.build_link("Inspect Test Results", inspect_url)
+
+
+                report.set_table_title("LF Check Suite Summary: {suite}".format(suite=test_suite))
+                report.build_table_title()
+                report.set_table_dataframe(lf_test_summary)
+                report.build_table()
+                report.set_table_title("LF Check Suite Results")
+                report.build_table_title()
+                html_results = check.get_html_results()
+                report.set_custom_html(html_results)
+                report.build_custom()
+                report.build_footer()
+                report.copy_js()
+
+                html_report = report.write_html_with_timestamp()
+                logger.info("html report: {}".format(html_report))
+                try:
+                    report.write_pdf_with_timestamp()
+                except Exception as x:
+                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                    logger.info("exception write_pdf_with_timestamp()")
+
+                logger.info("lf_check_html_report: " + html_report)
+
+
+                # save the juni.xml file
+                junit_results = check.get_junit_results()
+                report.set_junit_results(junit_results)
+                junit_xml = report.write_junit_results()
+                junit_path_only = junit_xml.replace('junit.xml','')
+
+                check.set_junit_results(junit_xml)
+                check.set_junit_path_only(junit_path_only)
+
+
+                # Send email
+                if args.no_send_email or check.email_list_test == "":
+                    logger.info("send email not set or email_list_test not set")
+                else:
+                    check.send_results_email(report_file=html_report)
+
+                # print later so shows up last
+                logger.info("junit.xml: allure serve {}".format(junit_xml))
+                logger.info("junit.xml path: allure serve {}".format(junit_path_only))
+
+
+
+                if args.update_latest:
+                    report_path = os.path.dirname(html_report)
+                    parent_report_dir = os.path.dirname(report_path)
+
+                    # copy results to lastest so someone may see the latest.
+                    # duplicates html_report file up one directory is the destination
+                    html_report_latest = parent_report_dir + "/{dir}_latest.html".format(dir=__dir)
+
+                    banner_src_png = report_path + "/banner.png"
+                    banner_dest_png = parent_report_dir + "/banner.png"
+                    CandelaLogo_src_png = report_path + "/CandelaLogo2-90dpi-200x90-trans.png"
+                    CandelaLogo_dest_png = parent_report_dir + "/CandelaLogo2-90dpi-200x90-trans.png"
+                    CandelaLogo_small_src_png = report_path + "/candela_swirl_small-72h.png"
+                    CandelaLogo_small_dest_png = parent_report_dir + "/candela_swirl_small-72h.png"
+                    report_src_css = report_path + "/report.css"
+                    report_dest_css = parent_report_dir + "/report.css"
+                    custom_src_css = report_path + "/custom.css"
+                    custom_dest_css = parent_report_dir + "/custom.css"
+                    font_src_woff = report_path + "/CenturyGothic.woff"
+                    font_dest_woff = parent_report_dir + "/CenturyGothic.woff"
+
+                    # pprint.pprint([
+                    #    ('banner_src', banner_src_png),
+                    #    ('banner_dest', banner_dest_png),
+                    #    ('CandelaLogo_src_png', CandelaLogo_src_png),
+                    #    ('CandelaLogo_dest_png', CandelaLogo_dest_png),
+                    #    ('report_src_css', report_src_css),
+                    #    ('custom_src_css', custom_src_css)
+                    # ])
+
+                    # copy one directory above
+                    try:
+                        shutil.copyfile(html_report, html_report_latest)
+                    except Exception as x:
+                        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                        logger.info("unable to copy results from {html} to {html_latest}".format(html=html_report, html_latest=html_report_latest))
+                        logger.info("check permissions on {html_report_latest}".format(html_report_latest=html_report_latest))
+
+                    # copy banner and logo up one directory,
+                    shutil.copyfile(banner_src_png, banner_dest_png)
+                    shutil.copyfile(CandelaLogo_src_png, CandelaLogo_dest_png)
+                    shutil.copyfile(report_src_css, report_dest_css)
+                    shutil.copyfile(custom_src_css, custom_dest_css)
+                    shutil.copyfile(font_src_woff, font_dest_woff)
+                    shutil.copyfile(CandelaLogo_small_src_png, CandelaLogo_small_dest_png)
+
+                    # print out locations of results
+                    logger.info("html_report_latest: {latest}".format(latest=html_report_latest))
 
 
 if __name__ == '__main__':
