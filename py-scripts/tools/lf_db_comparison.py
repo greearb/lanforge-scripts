@@ -26,6 +26,9 @@ from openpyxl.styles import Alignment, PatternFill
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
+lf_pdf_report = importlib.import_module("py-scripts.lf_report")
+# lf_report = lf_report.lf_report
+
 logger =logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
@@ -138,6 +141,14 @@ class db_comparison():
             for i in range(len(item['numeric-score_1'])):
                 temp_list.append(
                     str(round(abs(((item['numeric-score_2'][i] / item['numeric-score_1'][i]) * 100)), 1)) + "%")
+
+                # if int(item['numeric-score_1'][i]) > int(item['numeric-score_2'][i]):
+                #     temp_list.append(
+                #         str(round(abs(((item['numeric-score_2'][i] / item['numeric-score_1'][i]) * 100)), 1)) + "%")
+                # else:
+                #     temp_list.append(
+                #         str(round(abs((((item['numeric-score_2'][i] - item['numeric-score_1'][i]) / item['numeric-score_1'][i]) * 100)), 1)) + "%")
+
             percentage_list.append(temp_list)
             item['Comparison (%)'] = temp_list  # adding the comparison column
             # renaming the data frame keys or column names
@@ -491,6 +502,50 @@ class db_comparison():
             # applying the stying for the Excel sheets
             self.excel_styling(query_df_list=query_df_dict["merged_df"])
 
+    def generate_report(self):
+            # report = lf_report(_dataframe=dataframe)
+            result_directory = f'./{self.directory}/'
+            date = str(datetime.datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
+            print(date)
+
+            report = lf_pdf_report.lf_report(result_directory,
+                       _results_dir_name='lf_db_compare_report',
+                       _output_html="lf_db_compare.html",
+                       _output_pdf="lf_db_compare.pdf")
+
+            # generate output reports
+            report.set_title("Percentage Compare Results:")
+            report.set_date(date)
+            report.build_banner_cover()
+            report.set_table_title("Report Information")
+            report.build_table_title()
+            report.test_setup_table(value="Database Percentage Results in Report", test_setup_data=report_info)
+            report.set_obj_html("Objective",
+                                "< Object On the Way.... >")
+            report.build_objective()
+
+            report.set_table_title("Table Title")
+            report.build_table_title()
+
+            # report.set_table_dataframe(dataframe)
+            # report.build_table()
+
+            report_path = report.get_path()
+            report_basename = os.path.basename(report_path)
+            report_url = './../../' + report_basename
+            report.build_link("Current Results Directory", report_url)
+
+            # html_file = report.write_html()
+            # logger.info(html_file)
+            # report.write_pdf()
+
+            report.build_footer()
+            report.write_html()
+            report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+
+            logger.info("report path {}".format(report.get_path()))
+
+
 def main():
     parser = argparse.ArgumentParser(description='Compare data in two SQLite databases')
     parser.add_argument('--db1', help='Path to first database file (.db)')
@@ -529,6 +584,8 @@ def main():
     obj.checking_data_bases(db1=args.db1, db2=args.db2)
     # querying
     obj.querying()
+
+    obj.generate_report()
 
 if __name__ == "__main__":
     main()
