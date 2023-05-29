@@ -506,7 +506,11 @@ class db_comparison():
             # report = lf_report(_dataframe=dataframe)
             result_directory = f'./{self.directory}/'
             date = str(datetime.datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
-            print(date)
+            report_info = {
+                "Wifi Capacity": self.wct,
+                "Data Plane": self.dp,
+                "Ap Auto": self.ap_auto,
+            }
 
             report = lf_pdf_report.lf_report(result_directory,
                        _results_dir_name='lf_db_compare_report',
