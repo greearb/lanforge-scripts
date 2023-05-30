@@ -164,7 +164,7 @@ class db_comparison():
                 item.rename(columns={'test-tag': 'Radio-Type', 'short-description': 'Short Description - (NSS-Band-Packet-Size)',
                                      'numeric-score_1': 'Values of DB1', 'numeric-score_2': 'Values of DB2'},
                             inplace=True)
-        logger.info("Percentage values for all dataframes in a list :".format(percentage_list))
+        logger.info("Percentage values for all dataframes in a list :{}".format(percentage_list))
         logger.info("Final Data Frame List: {}".format(query_dict))
 
     def converting_df_to_csv(self, query_df_list):
@@ -502,7 +502,9 @@ class db_comparison():
             # applying the stying for the Excel sheets
             self.excel_styling(query_df_list=query_df_dict["merged_df"])
 
-    def generate_report(self):
+            self.generate_report(dataframes=query_df_dict["merged_df"])
+
+    def generate_report(self, dataframes):
             # report = lf_report(_dataframe=dataframe)
             result_directory = f'./{self.directory}/'
             date = str(datetime.datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
@@ -525,14 +527,28 @@ class db_comparison():
             report.build_table_title()
             report.test_setup_table(value="Database Percentage Results in Report", test_setup_data=report_info)
             report.set_obj_html("Objective",
-                                "< Object On the Way.... >")
+                                "< Object Need to add.... >")
             report.build_objective()
 
-            report.set_table_title("Table Title")
+            report.set_table_title("Comparison Tables :")
             report.build_table_title()
 
-            # report.set_table_dataframe(dataframe)
-            # report.build_table()
+            for i, df in enumerate(dataframes):
+                if 'WCT' in df['Radio-Type'][0]:
+                    report.set_table_title("WIFI-CAPACITY")
+                    report.build_table_title()
+                    report.set_table_dataframe(df)
+                    report.build_table()
+                elif 'DP' in df['Radio-Type'][0]:
+                    report.set_table_title("DATA PLANE")
+                    report.build_table_title()
+                    report.set_table_dataframe(df)
+                    report.build_table()
+                elif 'AP_AUTO' in df['Radio-Type'][0]:
+                    report.set_table_title("AP AUTO")
+                    report.build_table_title()
+                    report.set_table_dataframe(df)
+                    report.build_table()
 
             report_path = report.get_path()
             report_basename = os.path.basename(report_path)
@@ -588,8 +604,6 @@ def main():
     obj.checking_data_bases(db1=args.db1, db2=args.db2)
     # querying
     obj.querying()
-
-    obj.generate_report()
 
 if __name__ == "__main__":
     main()
