@@ -983,6 +983,15 @@ junit.xml path: allure serve {junit_path}
         # dut_set_name selectes the DUT to test against , it is different then use_dut_name
         # this value gets set in the test
     def read_dut_parameters(self):
+        # the UPSTREAM_PORT may be in the DUT
+        if "UPSTREAM_PORT" in self.json_dut["test_dut"]:
+            self.upstream_port = self.json_dut["test_dut"]["UPSTREAM_PORT"]
+        else:
+            self.logger.info("UPSTREAM_PORT not in test_dut json so so may be in rig json")
+        if "UPSTREAM_ALIAS" in self.json_dut["test_dut"]:
+            self.upstream_alias = self.json_dut["test_dut"]["UPSTREAM_ALIAS"]
+        else:
+            self.logger.info("UPSTREAM_ALIAS not in test_dut json so so may be in rig json")
         if "DUT_SET_NAME" in self.json_dut["test_dut"]:
             self.dut_set_name = self.json_dut["test_dut"]["DUT_SET_NAME"]
         else:
