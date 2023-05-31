@@ -18,10 +18,11 @@ EXAMPLE:
             ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
 
         # For batch creation functionality:
+        (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
 
-            ./create_l3.py --mgr 192.168.200.93 --endp_a 'sta0000' --endp_b 'sta0001' --min_rate_a '6200000' --min_rate_b '6200000'
-            --batch_creation --quantity 100 --endp_a_increment 0 --endp_b_increment 0 --ip_port_increment_a 1 --ip_port_increment_b 1
-            --min_ip_port_b 2000 --multi_conn 1 --no_cleanup
+            ./create_l3.py --mgr 192.168.200.93 --endp_a 'eth1' --endp_b 'wlan2' --min_rate_a '6200000' --min_rate_b '6200000'
+             --quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000
+             --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn 1 --no_cleanup
 
 SCRIPT_CLASSIFICATION:  Creation
 
@@ -33,6 +34,8 @@ NOTES:
 
         * Supports only creating user-specified Layer-3 cross-connection.
         * Supports regression testing for QA
+
+        * If the specified ports used for creating endpoints are not present in the port manager, the cross-connects will be in a PHANTOM state.
 
 STATUS: BETA RELEASE
 
@@ -83,7 +86,6 @@ class CreateL3(Realm):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,
-                 _batch_create=None,
                  _quantity=None,
                  _endp_a_increment=None,
                  _endp_b_increment=None,
@@ -114,7 +116,6 @@ class CreateL3(Realm):
         self.cx_profile.side_b_max_bps = max_rate_b
         self.cx_profile.mconn = _multi_conn
         # for batch creation window automation attributes
-        self.batch_create = _batch_create
         self.quantity = _quantity
         self.port_increment_a = _endp_a_increment
         self.port_increment_b = _endp_b_increment
@@ -127,26 +128,21 @@ class CreateL3(Realm):
         self.cx_profile.cleanup_prefix()
 
     def build(self):
-        logger.info("Batch Creator: %s" % self.batch_create)
-        if not self.batch_create:
-            if self.cx_profile.create(endp_type="lf_udp",
-                                      side_a=self.endp_a,
-                                      side_b=self.endp_b,
-                                      sleep_time=0):
-                self._pass("Cross-connect build finished")
-            else:
-                self._fail("Cross-connect build did not succeed.")
+        if self.cx_profile.create(endp_type="lf_udp",
+                                  side_a=self.endp_a,
+                                  side_b=self.endp_b,
+                                  sleep_time=0,
+                                  ip_port_a=self.min_ip_port_a,
+                                  ip_port_b=self.min_ip_port_b,
+                                  quantity=self.quantity,
+                                  port_increment_a=self.port_increment_a,
+                                  port_increment_b=self.port_increment_b,
+                                  ip_port_increment_a=self.ip_port_increment_a,
+                                  ip_port_increment_b=self.ip_port_increment_b
+                                  ):
+            self._pass("Cross-connect build finished")
         else:
-            for i in range(int(self.quantity)):
-                if self.cx_profile.create(endp_type="lf_udp",
-                                          side_a=self.endp_a,
-                                          side_b=self.endp_b,
-                                          sleep_time=0, ip_port_a=self.min_ip_port_a, ip_port_b=self.min_ip_port_b):
-                    # self.min_ip_port_a = int(self.min_ip_port_a) + int(self.ip_port_increment_a)
-                    self.min_ip_port_b = int(self.min_ip_port_b) + int(self.ip_port_increment_b)
-                    self._pass("Cross-connect build finished")
-                else:
-                    self._fail("Cross-connect build did not succeed.")
+            self._fail("Cross-connect build did not succeed.")
 
 
 def main():
@@ -175,10 +171,11 @@ EXAMPLE:
             ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
 
         # For batch creation functionality:
+        (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
 
-            ./create_l3.py --mgr 192.168.200.93 --endp_a 'sta0000' --endp_b 'sta0001' --min_rate_a '6200000' --min_rate_b '6200000'
-            --batch_creation --quantity 100 --endp_a_increment 0 --endp_b_increment 0 --ip_port_increment_a 1 --ip_port_increment_b 1
-            --min_ip_port_b 2000 --multi_conn 1 --no_cleanup
+            ./create_l3.py --mgr 192.168.200.93 --endp_a 'eth1' --endp_b 'wlan2' --min_rate_a '6200000' --min_rate_b '6200000'
+             --quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000 
+             --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn 1 --no_cleanup
 
 SCRIPT_CLASSIFICATION:  Creation
 
@@ -190,6 +187,8 @@ NOTES:
 
         * Supports only creating user-specified Layer-3 cross-connection.
         * Supports regression testing for QA
+
+        * If the specified ports used for creating endpoints are not present in the port manager, the cross-connects will be in a PHANTOM state.
 
 STATUS: BETA RELEASE
 
@@ -217,10 +216,9 @@ INCLUDE_IN_README: False
     parser.add_argument('--min_ip_port_a', help='min ip port range for endp-a', default=-1)
     parser.add_argument('--min_ip_port_b', help='min ip port range for endp-b', default=-1)
     parser.add_argument('--multi_conn', help='modify multi connection for cx', default=0, type=int)
-    parser.add_argument('--batch_creation', help='Enable the batch-creation to use the ip-port increment', action='store_true')
-    parser.add_argument('--quantity', help='No of cx endp to create', default=1)
-    parser.add_argument('--endp_a_increment', help='End point - A port increment', default=1)
-    parser.add_argument('--endp_b_increment', help='End point - B port increment', default=1)
+    parser.add_argument('--quantity', help='No of cx endpoints to batch-create', default=1)
+    parser.add_argument('--endp_a_increment', help='End point - A port increment', default=0)
+    parser.add_argument('--endp_b_increment', help='End point - B port increment', default=0)
     parser.add_argument('--ip_port_increment_a', help='ip port increment for endp-a', default=1)
     parser.add_argument('--ip_port_increment_b', help='ip port increment for endp-b', default=1)
     args = parser.parse_args()
@@ -243,7 +241,6 @@ INCLUDE_IN_README: False
                            min_rate_b=args.min_rate_b,
                            mode=args.mode,
                            _debug_on=args.debug,
-                           _batch_create=args.batch_creation,
                            _quantity=args.quantity,
                            _endp_a_increment=args.endp_a_increment,
                            _endp_b_increment=args.endp_b_increment,
