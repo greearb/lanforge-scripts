@@ -33,7 +33,7 @@ logger =logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
-class db_comparison():
+class db_comparison:
     def __init__(self, data_base1=None, data_base2=None, table_name=None, dp=None, wct=None, ap_auto=None):
         self.test_tags = None
         self.csv_file_name = None
@@ -164,8 +164,8 @@ class db_comparison():
                 item.rename(columns={'test-tag': 'Radio-Type', 'short-description': 'Short Description - (NSS-Band-Packet-Size)',
                                      'numeric-score_1': 'Values of DB1', 'numeric-score_2': 'Values of DB2'},
                             inplace=True)
-        logger.info("Percentage values for all dataframes in a list :{}".format(percentage_list))
-        logger.info("Final Data Frame List: {}".format(query_dict))
+        # logger.info("Percentage values for all dataframes in a list :{}".format(percentage_list))
+        # logger.info("Final Data Frame List: {}".format(query_dict))
 
     def converting_df_to_csv(self, query_df_list):
         if query_df_list:
@@ -188,8 +188,6 @@ class db_comparison():
                                 df.to_csv(f, index=True, header=f'Table{i + 1}')
 
     def excel_placing(self, query_df_list):
-        print("%%^&**$%$", query_df_list)
-        print("%%^&**$%$", type(query_df_list))
         # creating the different Excel-Sheets for wct, ap_auto, dp & placing the tables side-by-side
         writer_obj = pd.ExcelWriter(f'./{self.directory}/lrq_db_comparison.xlsx', engine='xlsxwriter')
 
@@ -206,8 +204,6 @@ class db_comparison():
             elif 'AP_AUTO' in df['Radio-Type'][0]:
                 ap_autolist.append(df)
         list_dfs = [wct_list, dp_list, ap_autolist]
-
-        print("LIST OF DF:", list_dfs)
 
         # setting up the Excel sheet header part with kernel, gui_ver and dut_model from both databases.
         def setup_excel_header(sheet_name=None, sheet_title=None, kernel_ver_info_1=None, gui_ver_info_1=None,
@@ -356,7 +352,7 @@ class db_comparison():
             query = ['SELECT ' + column_names + ' FROM ' + self.table_name + ' WHERE ' + condition + ';']
         elif distinct is True:
             query = ['SELECT DISTINCT' + column_names + ' FROM ' + self.table_name + ' WHERE ' + condition + ';']
-        logger.info("Your Data Base Query : {}".format(query))
+        # logger.info("Your Data Base Query : {}".format(query))
         if query is not None:
             for i in query:
                 db1_query = pd.read_sql_query(i, self.conn1)
@@ -388,10 +384,12 @@ class db_comparison():
             query_result = [df1.replace(r'\s+', '', regex=True), df2.replace(r'\s+', '', regex=True)]
             # checking the selected columns data are identical or not
             if str(df1) == str(df2):
-                logger.info("The values of %s columns are same in db1 & db2" % column_names)
+                # logger.info("The values of %s columns are same in db1 & db2" % column_names)
+                pass
                 # TODO : Need to sort and merge the dataframes are identical in db1 & db2
             else:
-                logger.info("The values of %s columns are not same in db1 & db2" % column_names)
+                # logger.info("The values of %s columns are not same in db1 & db2" % column_names)
+                pass
                 # TODO : Need to sort and merge the dataframes if the data are not identical in db1 & db2
 
             for i, df in enumerate(query_result):
@@ -412,30 +410,22 @@ class db_comparison():
             wifi_capacity = self.db_querying_with_where_clause(column_names='test-tag',
                                                                condition='"test-id" == "WiFi Capacity"', distinct=True)
             list_of_wct_tags = sorted(list(set(wifi_capacity['test-tag_1'].unique()) & set(wifi_capacity['test-tag_2'].unique())))
-            print("WiFi Capacity Test Tags : %s" % list_of_wct_tags)
-            print("Length of the unique wifi capacity test-tags : %s" % len(list_of_wct_tags))
             self.test_tags = list_of_wct_tags
         if self.ap_auto:
             # For AP Auto querying
             ap_auto = self.db_querying_with_where_clause(column_names='test-tag',
                                                          condition='"test-id" == "AP Auto"', distinct=True)
             list_of_ap_auto_tags = sorted(list(set(ap_auto['test-tag_1'].unique()) & set(ap_auto['test-tag_2'].unique())))
-            print("The total length of the Data Frame : %s" % len(ap_auto))
-            print("AP Auto Test Tags : %s" % list_of_ap_auto_tags)
-            print("Length of the unique AP Auto test-tags : %s" % len(list_of_ap_auto_tags))
             self.test_tags = list_of_ap_auto_tags
         if self.dp:
             # For Data Plane querying
             dp_test_tags = self.db_querying_with_where_clause(column_names='test-tag',
                                                         condition='"test-id" == "Dataplane"', distinct=True)
             list_of_dp_tags = sorted(list(set(dp_test_tags['test-tag_1'].unique()) & set(dp_test_tags['test-tag_2'].unique())))
-            print("The total length of the Data Frame : %s" % len(dp_test_tags))
-            print("Data Plane Test Tags : %s" % list_of_dp_tags)
-            print("Length of the unique Data Plane test-tags : %s" % len(list_of_dp_tags))
             self.test_tags = list_of_dp_tags
         if self.wct or self.ap_auto or self.dp:
             self.test_tags = list_of_wct_tags + list_of_dp_tags + list_of_ap_auto_tags
-        print("@ Final Test Tags List : ", self.test_tags)
+        print("Final Test Tags List : ", self.test_tags)
 
         #  If the list of test-tags for the Wi-Fi Capacity not empty
         if len(self.test_tags) is not None:
@@ -464,8 +454,6 @@ class db_comparison():
                         dp_short_desc['short-description_1'].unique())))
                     slicing_short_description_tag = ['-'.join(str(item).split('-')[0:3]) + '-%' for item in list_of_short_desc]
                     sorted_short_description = list(set(slicing_short_description_tag))
-                    print(sorted_short_description)
-                    print(len(sorted_short_description))
                     # self.short_description = 'TCP-%'
                     for short_desc in sorted_short_description:
                         self.short_description = short_desc
@@ -481,11 +469,8 @@ class db_comparison():
                     query_results.append(
                         'SELECT DISTINCT "test-tag",  "short-description", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
                         test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\";')
-            print("$$$$$$" , query_results)
             # sort and merge the data frames
             query_df_dict = self.sort_and_merge_db(querylist=query_results)
-
-            print("#query_df_dict :", query_df_dict)
 
             # calculating the percentage
             self.percentage_calculation(query_dict=query_df_dict["merged_df"])
