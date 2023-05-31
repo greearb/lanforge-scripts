@@ -1,4 +1,5 @@
 # !/usr/bin/env python3
+import re
 import sys
 import os
 import importlib
@@ -82,6 +83,12 @@ class L3CXProfile(LFCliBase):
         for cx_name in self.get_cx_names():
             data[cx_name] = self.json_get("/cx/" + cx_name).get(cx_name)
         return data
+
+    # To separate the prefix (alphabets) and suffix(numerics/digits) in the endpoint
+    def separate_endpoints_prefix(self, endpoint):
+        endpoint_prefix = re.findall('[A-Za-z]', endpoint)
+        endpoint_suffix = re.findall('[0-9]', endpoint)
+        return ''.join(endpoint_prefix), ''.join(endpoint_suffix)
 
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes")
@@ -458,7 +465,9 @@ class L3CXProfile(LFCliBase):
                 sleep_time=0.03,
                 suppress_related_commands=None,
                 debug_=False,
-                tos=None, timeout=300, ip_port_a=-1, ip_port_b=-1,):
+                tos=None, timeout=300, ip_port_a=-1, ip_port_b=-1,
+                quantity=None, port_increment_a=None, port_increment_b=None,
+                ip_port_increment_a=0, ip_port_increment_b=0):
         # Returns a 2-member array, list of cx, list of endp on success.
         # If endpoints creation fails, returns False, False
         # if Endpoints creation is OK, but CX creation fails, returns False, list of endp
@@ -485,182 +494,303 @@ class L3CXProfile(LFCliBase):
             side_b_shelf = side_b_info[0]
             side_b_resource = side_b_info[1]
 
-            for port_name in side_a:
-                side_a_info = self.local_realm.name_to_eid(port_name, debug=debug_)
-                side_a_shelf = side_a_info[0]
-                side_a_resource = side_a_info[1]
+            endp_a_list, endp_b_list = [], []
+            end_point_list = side_a
+            # setting the end points for batch-create functionality if type of side_a is list
+            if int(quantity) > 1:
+                # separating the endpoints prefix
+                endp_a_prefix, endp_a_suffix = self.separate_endpoints_prefix(side_a[0])
+                endp_b_prefix, endp_b_suffix = self.separate_endpoints_prefix(side_b)
 
-                cx_name = "%s%s-%i" % (self.name_prefix, side_a_info[2], len(self.created_cx))
+                # separating the endpoints prefix if it's macvlan (eth1#0, eth1#1,..)
+                if '#' in (side_a[0] or side_b):
+                    if '#' in side_a[0]:
+                        prefix = side_a[0][::-1][side_a[0][::-1].index('#'):][::-1]
+                        suffix = side_a[0][::-1][0:side_a[0][::-1].index('#')][::-1]
+                        endp_a_prefix = prefix
+                        endp_a_suffix = suffix
+                    if '#' in side_b:
+                        prefix = side_b[::-1][side_b[::-1].index('#'):][::-1]
+                        suffix = side_b[::-1][0:side_b[::-1].index('#')][::-1]
+                        endp_b_prefix = prefix
+                        endp_b_suffix = suffix
+                if port_increment_a != '0' and port_increment_b != '0':
+                    for i in range(int(endp_a_suffix),
+                                   int(int(quantity) * int(port_increment_a) + int(endp_a_suffix)),
+                                   int(port_increment_a)):
+                        endp_a_list.append(endp_a_prefix + str(i).zfill(len(endp_a_suffix)))
+                    for j in range(int(endp_b_suffix),
+                                   int(int(quantity) * int(port_increment_b) + int(endp_b_suffix)),
+                                   int(port_increment_b)):
+                        endp_b_list.append(endp_b_prefix + str(j).zfill(len(endp_b_suffix)))
+                elif port_increment_a == '0' and port_increment_b != '0':
+                    for i in range(int(quantity)):
+                        endp_a_list.append(side_a[0])
+                    for j in range(int(endp_b_suffix),
+                                   int(int(quantity) * int(port_increment_b) + int(endp_b_suffix)),
+                                   int(port_increment_b)):
+                        endp_b_list.append(endp_b_prefix + str(j).zfill(len(endp_b_suffix)))
+                elif port_increment_a != '0' and port_increment_b == '0':
+                    for i in range(int(endp_a_suffix),
+                                   int(int(quantity) * int(port_increment_a) + int(endp_a_suffix)),
+                                   int(port_increment_a)):
+                        endp_a_list.append(endp_a_prefix + str(i).zfill(len(endp_a_suffix)))
+                    for j in range(int(quantity)):
+                        endp_b_list.append(side_b)
+                end_point_list = list(zip(endp_a_list, endp_b_list))
+                # logger.info("Endpoint-A List:%s" % endp_a_list)
+                # logger.info("Endpoint-B List:%s" % endp_b_list)
+                # logger.info("End Points Combinations : %s" % end_point_list)
+            # iterating the end points list
+            for endpoint in end_point_list:
+                if int(quantity) > 1:
+                    side_a = [endpoint[0]]
+                    side_b_info = self.local_realm.name_to_eid(endpoint[1])
+                    side_b_shelf = side_b_info[0]
+                    side_b_resource = side_b_info[1]
+                for port_name in side_a:
+                    side_a_info = self.local_realm.name_to_eid(port_name, debug=debug_)
+                    side_a_shelf = side_a_info[0]
+                    side_a_resource = side_a_info[1]
 
-                endp_a_name = cx_name + "-A"
-                endp_b_name = cx_name + "-B"
-                self.created_cx[cx_name] = [endp_a_name, endp_b_name]
-                self.created_endp[endp_a_name] = endp_a_name
-                self.created_endp[endp_b_name] = endp_b_name
-                these_cx.append(cx_name)
-                these_endp.append(endp_a_name)
-                these_endp.append(endp_b_name)
-                mconn_b = self.mconn
-                if mconn_b > 1:
-                    mconn_b = 1
-                endp_side_a = {
-                    "alias": endp_a_name,
-                    "shelf": side_a_shelf,
-                    "resource": side_a_resource,
-                    "port": side_a_info[2],
-                    "type": endp_type,
-                    "min_rate": self.side_a_min_bps,
-                    "max_rate": self.side_a_max_bps,
-                    "min_pkt": self.side_a_min_pdu,
-                    "max_pkt": self.side_a_max_pdu,
-                    "ip_port": ip_port_a,
-                    "multi_conn": self.mconn,
-                }
-                endp_side_b = {
-                    "alias": endp_b_name,
-                    "shelf": side_b_shelf,
-                    "resource": side_b_resource,
-                    "port": side_b_info[2],
-                    "type": endp_type,
-                    "min_rate": self.side_b_min_bps,
-                    "max_rate": self.side_b_max_bps,
-                    "min_pkt": self.side_b_min_pdu,
-                    "max_pkt": self.side_b_max_pdu,
-                    "ip_port": ip_port_b,
-                    "multi_conn": mconn_b,
-                }
+                    cx_name = "%s%s-%i" % (self.name_prefix, side_a_info[2], len(self.created_cx))
 
-                url = "/cli-json/add_endp"
-                self.local_realm.json_post(url, endp_side_a, debug_=debug_,
-                                           suppress_related_commands_=suppress_related_commands)
-                self.local_realm.json_post(url, endp_side_b, debug_=debug_,
-                                           suppress_related_commands_=suppress_related_commands)
-                time.sleep(sleep_time)
+                    endp_a_name = cx_name + "-A"
+                    endp_b_name = cx_name + "-B"
+                    self.created_cx[cx_name] = [endp_a_name, endp_b_name]
+                    self.created_endp[endp_a_name] = endp_a_name
+                    self.created_endp[endp_b_name] = endp_b_name
+                    these_cx.append(cx_name)
+                    these_endp.append(endp_a_name)
+                    these_endp.append(endp_b_name)
+                    mconn_b = self.mconn
+                    if mconn_b > 1:
+                        mconn_b = 1
+                    endp_side_a = {
+                        "alias": endp_a_name,
+                        "shelf": side_a_shelf,
+                        "resource": side_a_resource,
+                        "port": side_a_info[2],
+                        "type": endp_type,
+                        "min_rate": self.side_a_min_bps,
+                        "max_rate": self.side_a_max_bps,
+                        "min_pkt": self.side_a_min_pdu,
+                        "max_pkt": self.side_a_max_pdu,
+                        "ip_port": ip_port_a,
+                        "multi_conn": self.mconn,
+                    }
+                    endp_side_b = {
+                        "alias": endp_b_name,
+                        "shelf": side_b_shelf,
+                        "resource": side_b_resource,
+                        "port": side_b_info[2],
+                        "type": endp_type,
+                        "min_rate": self.side_b_min_bps,
+                        "max_rate": self.side_b_max_bps,
+                        "min_pkt": self.side_b_min_pdu,
+                        "max_pkt": self.side_b_max_pdu,
+                        "ip_port": ip_port_b,
+                        "multi_conn": mconn_b,
+                    }
 
-                url = "cli-json/set_endp_flag"
-                data = {
-                    "name": endp_a_name,
-                    "flag": "AutoHelper",
-                    "val": 1
-                }
-                self.local_realm.json_post(url, data, debug_=debug_,
-                                           suppress_related_commands_=suppress_related_commands)
-                data["name"] = endp_b_name
-                self.local_realm.json_post(url, data, debug_=debug_,
-                                           suppress_related_commands_=suppress_related_commands)
+                    url = "/cli-json/add_endp"
+                    self.local_realm.json_post(url, endp_side_a, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+                    self.local_realm.json_post(url, endp_side_b, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+                    time.sleep(sleep_time)
 
-                if (endp_type == "lf_udp") or (endp_type == "udp") or (endp_type == "lf_udp6") or (endp_type == "udp6"):
-                    data["name"] = endp_a_name
-                    data["flag"] = "UseAutoNAT"
+                    url = "cli-json/set_endp_flag"
+                    data = {
+                        "name": endp_a_name,
+                        "flag": "AutoHelper",
+                        "val": 1
+                    }
                     self.local_realm.json_post(url, data, debug_=debug_,
                                                suppress_related_commands_=suppress_related_commands)
                     data["name"] = endp_b_name
                     self.local_realm.json_post(url, data, debug_=debug_,
                                                suppress_related_commands_=suppress_related_commands)
 
-                if tos:
-                    self.local_realm.set_endp_tos(endp_a_name, tos)
-                    self.local_realm.set_endp_tos(endp_b_name, tos)
+                    if (endp_type == "lf_udp") or (endp_type == "udp") or (endp_type == "lf_udp6") or (endp_type == "udp6"):
+                        data["name"] = endp_a_name
+                        data["flag"] = "UseAutoNAT"
+                        self.local_realm.json_post(url, data, debug_=debug_,
+                                                   suppress_related_commands_=suppress_related_commands)
+                        data["name"] = endp_b_name
+                        self.local_realm.json_post(url, data, debug_=debug_,
+                                                   suppress_related_commands_=suppress_related_commands)
 
-                data = {
-                    "alias": cx_name,
-                    "test_mgr": "default_tm",
-                    "tx_endp": endp_a_name,
-                    "rx_endp": endp_b_name,
-                }
-                cx_post_data.append(data)
-                timer_post_data.append({
-                    "test_mgr": "default_tm",
-                    "cx_name": cx_name,
-                    "milliseconds": self.report_timer
-                })
+                    if tos:
+                        self.local_realm.set_endp_tos(endp_a_name, tos)
+                        self.local_realm.set_endp_tos(endp_b_name, tos)
+
+                    data = {
+                        "alias": cx_name,
+                        "test_mgr": "default_tm",
+                        "tx_endp": endp_a_name,
+                        "rx_endp": endp_b_name,
+                    }
+                    cx_post_data.append(data)
+                    timer_post_data.append({
+                        "test_mgr": "default_tm",
+                        "cx_name": cx_name,
+                        "milliseconds": self.report_timer
+                    })
+                if ip_port_a != -1:
+                    if ip_port_increment_a != 0:
+                        ip_port_a = int(ip_port_a) + int(ip_port_increment_a)
+                if ip_port_b != -1:
+                    if ip_port_increment_b != 0:
+                        ip_port_b = int(ip_port_b) + int(ip_port_increment_b)
 
         elif type(side_b) == list and type(side_a) != list:
             side_a_info = self.local_realm.name_to_eid(side_a, debug=debug_)
             side_a_shelf = side_a_info[0]
             side_a_resource = side_a_info[1]
 
-            for port_name in side_b:
-                logger.info(side_b)
-                side_b_info = self.local_realm.name_to_eid(port_name, debug=debug_)
-                side_b_shelf = side_b_info[0]
-                side_b_resource = side_b_info[1]
+            endp_a_list, endp_b_list = [], []
+            end_point_list = side_b
+            # setting the end points for batch-create functionality if type of side_b list
+            if int(quantity) > 1:
+                # separating the endpoints prefix
+                endp_a_prefix, endp_a_suffix = self.separate_endpoints_prefix(side_a)
+                endp_b_prefix, endp_b_suffix = self.separate_endpoints_prefix(side_b[0])
 
-                cx_name = "%s%s-%i" % (self.name_prefix, port_name, len(self.created_cx))
-                endp_a_name = cx_name + "-A"
-                endp_b_name = cx_name + "-B"
-                self.created_cx[cx_name] = [endp_a_name, endp_b_name]
-                self.created_endp[endp_a_name] = endp_a_name
-                self.created_endp[endp_b_name] = endp_b_name
-                these_cx.append(cx_name)
-                these_endp.append(endp_a_name)
-                these_endp.append(endp_b_name)
-                mconn_b = self.mconn
-                if mconn_b > 1:
-                    mconn_b = 1
-                endp_side_a = {
-                    "alias": endp_a_name,
-                    "shelf": side_a_shelf,
-                    "resource": side_a_resource,
-                    "port": side_a_info[2],
-                    "type": endp_type,
-                    "min_rate": self.side_a_min_bps,
-                    "max_rate": self.side_a_max_bps,
-                    "min_pkt": self.side_a_min_pdu,
-                    "max_pkt": self.side_a_max_pdu,
-                    "ip_port": ip_port_a,
-                    "multi_conn": self.mconn,
-                }
-                endp_side_b = {
-                    "alias": endp_b_name,
-                    "shelf": side_b_shelf,
-                    "resource": side_b_resource,
-                    "port": side_b_info[2],
-                    "type": endp_type,
-                    "min_rate": self.side_b_min_bps,
-                    "max_rate": self.side_b_max_bps,
-                    "min_pkt": self.side_b_min_pdu,
-                    "max_pkt": self.side_b_max_pdu,
-                    "ip_port": ip_port_b,
-                    "multi_conn": mconn_b,
-                }
+                # separating the endpoints prefix if it's macvlan (eth1#0, eth1#1,..)
+                if '#' in (side_a or side_b[0]):
+                    if '#' in side_a:
+                        prefix = side_a[::-1][side_a[::-1].index('#'):][::-1]
+                        suffix = side_a[::-1][0:side_a[::-1].index('#')][::-1]
+                        endp_a_prefix = prefix
+                        endp_a_suffix = suffix
+                    if '#' in side_b[0]:
+                        prefix = side_b[0][::-1][side_b[0][::-1].index('#'):][::-1]
+                        suffix = side_b[0][::-1][0:side_b[0][::-1].index('#')][::-1]
+                        endp_b_prefix = prefix
+                        endp_b_suffix = suffix
+                if port_increment_a != '0' and port_increment_b != '0':
+                    for i in range(int(endp_a_suffix),
+                                   int(int(quantity) * int(port_increment_a) + int(endp_a_suffix)),
+                                   int(port_increment_a)):
+                        endp_a_list.append(endp_a_prefix + str(i).zfill(len(endp_a_suffix)))
+                    for j in range(int(endp_b_suffix),
+                                   int(int(quantity) * int(port_increment_b) + int(endp_b_suffix)),
+                                   int(port_increment_b)):
+                        endp_b_list.append(endp_b_prefix + str(j).zfill(len(endp_b_suffix)))
+                elif port_increment_a == '0' and port_increment_b != '0':
+                    for i in range(int(quantity)):
+                        endp_a_list.append(side_a)
+                    for j in range(int(endp_b_suffix),
+                                   int(int(quantity) * int(port_increment_b) + int(endp_b_suffix)),
+                                   int(port_increment_b)):
+                        endp_b_list.append(endp_b_prefix + str(j).zfill(len(endp_b_suffix)))
+                elif port_increment_a != '0' and port_increment_b == '0':
+                    for i in range(int(endp_a_suffix),
+                                   int(int(quantity) * int(port_increment_a) + int(endp_a_suffix)),
+                                   int(port_increment_a)):
+                        endp_a_list.append(endp_a_prefix + str(i).zfill(len(endp_a_suffix)))
+                    for j in range(int(quantity)):
+                        endp_b_list.append(side_b[0])
+                end_point_list = list(zip(endp_a_list, endp_b_list))
+                # logger.info("Endpoint-A List:%s" % endp_a_list)
+                # logger.info("Endpoint-B List:%s" % endp_b_list)
+                # logger.info("End Points Combinations : %s" % end_point_list)
 
-                url = "/cli-json/add_endp"
-                self.local_realm.json_post(url, endp_side_a, debug_=debug_,
-                                           suppress_related_commands_=suppress_related_commands)
-                self.local_realm.json_post(url, endp_side_b, debug_=debug_,
-                                           suppress_related_commands_=suppress_related_commands)
-                time.sleep(sleep_time)
+            # iterating the end points list
+            for endpoint in end_point_list:
+                if int(quantity) > 1:
+                    side_a_info = self.local_realm.name_to_eid(endpoint[0])
+                    side_a_shelf = side_a_info[0]
+                    side_a_resource = side_a_info[1]
+                    side_b = [endpoint[1]]
+                for port_name in side_b:
+                    logger.info(side_b)
+                    side_b_info = self.local_realm.name_to_eid(port_name, debug=debug_)
+                    side_b_shelf = side_b_info[0]
+                    side_b_resource = side_b_info[1]
 
-                url = "cli-json/set_endp_flag"
-                data = {
-                    "name": endp_a_name,
-                    "flag": "autohelper",
-                    "val": 1
-                }
-                self.local_realm.json_post(url, data, debug_=debug_,
-                                           suppress_related_commands_=suppress_related_commands)
+                    cx_name = "%s%s-%i" % (self.name_prefix, port_name, len(self.created_cx))
+                    endp_a_name = cx_name + "-A"
+                    endp_b_name = cx_name + "-B"
+                    self.created_cx[cx_name] = [endp_a_name, endp_b_name]
+                    self.created_endp[endp_a_name] = endp_a_name
+                    self.created_endp[endp_b_name] = endp_b_name
+                    these_cx.append(cx_name)
+                    these_endp.append(endp_a_name)
+                    these_endp.append(endp_b_name)
+                    mconn_b = self.mconn
+                    if mconn_b > 1:
+                        mconn_b = 1
+                    endp_side_a = {
+                        "alias": endp_a_name,
+                        "shelf": side_a_shelf,
+                        "resource": side_a_resource,
+                        "port": side_a_info[2],
+                        "type": endp_type,
+                        "min_rate": self.side_a_min_bps,
+                        "max_rate": self.side_a_max_bps,
+                        "min_pkt": self.side_a_min_pdu,
+                        "max_pkt": self.side_a_max_pdu,
+                        "ip_port": ip_port_a,
+                        "multi_conn": self.mconn,
+                    }
+                    endp_side_b = {
+                        "alias": endp_b_name,
+                        "shelf": side_b_shelf,
+                        "resource": side_b_resource,
+                        "port": side_b_info[2],
+                        "type": endp_type,
+                        "min_rate": self.side_b_min_bps,
+                        "max_rate": self.side_b_max_bps,
+                        "min_pkt": self.side_b_min_pdu,
+                        "max_pkt": self.side_b_max_pdu,
+                        "ip_port": ip_port_b,
+                        "multi_conn": mconn_b,
+                    }
 
-                url = "cli-json/set_endp_flag"
-                data = {
-                    "name": endp_b_name,
-                    "flag": "autohelper",
-                    "val": 1
-                }
-                self.local_realm.json_post(url, data, debug_=debug_,
-                                           suppress_related_commands_=suppress_related_commands)
-                data = {
-                    "alias": cx_name,
-                    "test_mgr": "default_tm",
-                    "tx_endp": endp_a_name,
-                    "rx_endp": endp_b_name,
-                }
-                cx_post_data.append(data)
-                timer_post_data.append({
-                    "test_mgr": "default_tm",
-                    "cx_name": cx_name,
-                    "milliseconds": self.report_timer
-                })
+                    url = "/cli-json/add_endp"
+                    self.local_realm.json_post(url, endp_side_a, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+                    self.local_realm.json_post(url, endp_side_b, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+                    time.sleep(sleep_time)
+
+                    url = "cli-json/set_endp_flag"
+                    data = {
+                        "name": endp_a_name,
+                        "flag": "autohelper",
+                        "val": 1
+                    }
+                    self.local_realm.json_post(url, data, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+
+                    url = "cli-json/set_endp_flag"
+                    data = {
+                        "name": endp_b_name,
+                        "flag": "autohelper",
+                        "val": 1
+                    }
+                    self.local_realm.json_post(url, data, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+                    data = {
+                        "alias": cx_name,
+                        "test_mgr": "default_tm",
+                        "tx_endp": endp_a_name,
+                        "rx_endp": endp_b_name,
+                    }
+                    cx_post_data.append(data)
+                    timer_post_data.append({
+                        "test_mgr": "default_tm",
+                        "cx_name": cx_name,
+                        "milliseconds": self.report_timer
+                    })
+                if ip_port_a != -1:
+                    if ip_port_increment_a != 0:
+                        ip_port_a = int(ip_port_a) + int(ip_port_increment_a)
+                if ip_port_b != -1:
+                    if ip_port_increment_b != 0:
+                        ip_port_b = int(ip_port_b) + int(ip_port_increment_b)
         else:
             logger.critical(
                 "side_a or side_b must be of type list but not both: side_a is type {side_a} side_b is type {side_b}".format(
