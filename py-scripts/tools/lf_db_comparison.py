@@ -139,9 +139,10 @@ class db_comparison:
         for item in query_dict:
             temp_list = []
             for i in range(len(item['numeric-score_1'])):
-                temp_list.append(
-                    str(round(abs(((item['numeric-score_2'][i] / item['numeric-score_1'][i]) * 100)), 1)) + "%")
-
+                if item['numeric-score_1'][i] != 0:
+                    temp_list.append(str(round(abs(((item['numeric-score_2'][i] / item['numeric-score_1'][i]) * 100)), 1)) + "%")
+                else:
+                    temp_list.append("NaN")
                 # if int(item['numeric-score_1'][i]) > int(item['numeric-score_2'][i]):
                 #     temp_list.append(
                 #         str(round(abs(((item['numeric-score_2'][i] / item['numeric-score_1'][i]) * 100)), 1)) + "%")
@@ -425,7 +426,7 @@ class db_comparison:
             self.test_tags = list_of_dp_tags
         if self.wct or self.ap_auto or self.dp:
             self.test_tags = list_of_wct_tags + list_of_dp_tags + list_of_ap_auto_tags
-        print("Final Test Tags List : ", self.test_tags)
+        logger.info("All Test Tags List : %s" % self.test_tags)
 
         #  If the list of test-tags for the Wi-Fi Capacity not empty
         if len(self.test_tags) is not None:
