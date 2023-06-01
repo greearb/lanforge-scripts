@@ -151,7 +151,7 @@ class db_comparison:
                 #         str(round(abs((((item['numeric-score_2'][i] - item['numeric-score_1'][i]) / item['numeric-score_1'][i]) * 100)), 1)) + "%")
 
             percentage_list.append(temp_list)
-            item['Comparison (%)'] = temp_list  # adding the comparison column
+            item['Comparison'] = temp_list  # adding the comparison column
             # renaming the data frame keys or column names
             if 'WCT' in item['test-tag'][0]:
                 item.rename(columns={'test-tag': 'Radio-Type', 'short-description': 'No of Clients',
@@ -285,34 +285,42 @@ class db_comparison:
                 # Styling for sheet-LRQ-AP_AUTO
                 ws1 = wb['LRQ-AP_AUTO']
                 ws1.column_dimensions['A'].alignment = Alignment(horizontal='center')
-                ws1.column_dimensions['A'].width = 15
+                ws1.column_dimensions['A'].width = 22
                 ws1.column_dimensions['B'].width = 35
-                ws1.column_dimensions['C'].width = 13
-                ws1.column_dimensions['D'].width = 13
+                ws1.column_dimensions['C'].width = 14
+                ws1.column_dimensions['D'].width = 14
                 ws1.column_dimensions['E'].width = 15
                 ws1.column_dimensions['F'].width = 30
                 ws1.column_dimensions['F'].alignment = Alignment(horizontal='center')
                 ws1.column_dimensions['E'].alignment = Alignment(horizontal='right')
                 fill_cell1 = PatternFill(patternType='solid', fgColor='FEE135')
                 ws1['F3'].fill = fill_cell1
+                ws1.column_dimensions['G'].alignment = Alignment(horizontal='center')
+                ws1.column_dimensions['G'].width = 30
+                ws1.column_dimensions['H'].width = 17
+                ws1.column_dimensions['I'].width = 14
+                ws1.column_dimensions['J'].width = 14
+                ws1.column_dimensions['K'].width = 15
+                ws1.column_dimensions['K'].alignment = Alignment(horizontal='right')
             elif 'WCT' in query_df_list[n]['Radio-Type'][0]:
                 # Styling for sheet-LRQ-WiFi_Capacity
                 ws = wb['LRQ-WiFi_Capacity']
                 ws.column_dimensions['A'].alignment = Alignment(horizontal='center')
                 ws.column_dimensions['A'].width = 30
                 ws.column_dimensions['B'].width = 17
-                ws.column_dimensions['C'].width = 13
-                ws.column_dimensions['D'].width = 13
+                ws.column_dimensions['C'].width = 14
+                ws.column_dimensions['D'].width = 14
                 ws.column_dimensions['E'].width = 15
                 ws.column_dimensions['F'].width = 27
                 ws.column_dimensions['F'].alignment = Alignment(horizontal='center')
                 ws.column_dimensions['E'].alignment = Alignment(horizontal='right')
                 fill_cell1 = PatternFill(patternType='solid', fgColor='FEE135')
                 ws['F3'].fill = fill_cell1
+                ws.column_dimensions['G'].alignment = Alignment(horizontal='center')
                 ws.column_dimensions['G'].width = 30
                 ws.column_dimensions['H'].width = 17
-                ws.column_dimensions['I'].width = 13
-                ws.column_dimensions['J'].width = 13
+                ws.column_dimensions['I'].width = 14
+                ws.column_dimensions['J'].width = 14
                 ws.column_dimensions['K'].width = 15
                 ws.column_dimensions['K'].alignment = Alignment(horizontal='right')
             elif 'DP' in query_df_list[n]['Radio-Type'][0]:
@@ -320,19 +328,20 @@ class db_comparison:
                 ws = wb['LRQ-Data_Plane']
                 ws.column_dimensions['A'].alignment = Alignment(horizontal='center')
                 ws.column_dimensions['A'].width = 30
-                ws.column_dimensions['B'].width = 17
-                ws.column_dimensions['C'].width = 13
-                ws.column_dimensions['D'].width = 13
+                ws.column_dimensions['B'].width = 47
+                ws.column_dimensions['C'].width = 16
+                ws.column_dimensions['D'].width = 16
                 ws.column_dimensions['E'].width = 15
                 ws.column_dimensions['F'].width = 27
                 ws.column_dimensions['F'].alignment = Alignment(horizontal='center')
                 ws.column_dimensions['E'].alignment = Alignment(horizontal='right')
                 fill_cell1 = PatternFill(patternType='solid', fgColor='FEE135')
                 ws['F3'].fill = fill_cell1
+                ws.column_dimensions['G'].alignment = Alignment(horizontal='center')
                 ws.column_dimensions['G'].width = 30
-                ws.column_dimensions['H'].width = 17
-                ws.column_dimensions['I'].width = 13
-                ws.column_dimensions['J'].width = 13
+                ws.column_dimensions['H'].width = 47
+                ws.column_dimensions['I'].width = 16
+                ws.column_dimensions['J'].width = 16
                 ws.column_dimensions['K'].width = 15
                 ws.column_dimensions['K'].alignment = Alignment(horizontal='right')
 
