@@ -217,7 +217,7 @@
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_ATH10K_5G' ",
+                    " --raw_line 'spatial_streams: 3' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_ATH10K_5G' ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
                 ]
