@@ -1878,12 +1878,11 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
         help="--json_dut <dut json config> ")
     parser.add_argument(
         '--json_test',
-        help="--json_test <test json config> ",
+        help="--json_test <test json config>  may also be <test json config>:<suite> ",
         required=True)
     parser.add_argument(
         '--suite',
-        help="--suite <suite name> ",
-        required=True)
+        help="--suite <suite name> (the suite may be associated with the json_test as <test json config>:<suite>)")
     parser.add_argument(
         '--use_test_list',
         help='''
@@ -1946,15 +1945,30 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     # TODO Here is where the multiple suite and multiple json may be added 
     if ((args.json_rig is None )
         or (args.json_dut is None)
-        or (args.json_test is None)
-        or (args.suite is None)):
+        or (args.json_test is None)):
         logger.error("Must enter json_rig, json_dut, json_tests and suite")
         exit(1)
 
+    if args.suite is None:
+        # the suites are associated with the specific json
+        suite_list = []
+        json_test_list = []
+        test_json_and_suite_list = args.json_test.split(',')
+        for test_json_suite in test_json_and_suite_list:
+            colon_count = test_json_suite.count(':')
+            if (colon_count == 1):
+                test_suite_tmp = test_json_suite.split(':')
+                json_test_list.append(test_suite_tmp[0])
+                suite_list.append(test_suite_tmp[1])
+            else:
+                logger.error("Is there a suite or test json missing? syntax is <test_json:suite_name> {test_suite} ".format(test_suite=args.json_test))
+                exit(1)
+    else:
+        suite_list =  args.suite.split(',')
+        json_test_list =  args.json_test.split(',')
+
     json_rig_list =  args.json_rig.split(',')
     json_dut_list =  args.json_dut.split(',')
-    json_test_list =  args.json_test.split(',')
-    suite_list =  args.suite.split(',')
 
     if(len(json_test_list) != len(suite_list)):
         logger.error("Currently the suite and the test_json need to have the same number of entries in the list, either add suite names or test_json names")
