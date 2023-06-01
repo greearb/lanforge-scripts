@@ -38,6 +38,8 @@
         when iw parent is not matching, can be show with command:
         cat /sys/class/ieee80211/wiphy0/index
 
+    IK:  two features from lf_sniff that are needed for ofdma sniffing is obtaining the AID
+    and using multiple sniffer radios for targeting multiple stations
 
 """
 import sys
@@ -60,6 +62,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 createL3 = importlib.import_module("py-scripts.create_l3_stations")
+wifi_monitor_profile = importlib.import_module("py-json.wifi_monitor_profile")
 
 
 class SniffRadio(Realm):
@@ -75,7 +78,9 @@ class SniffRadio(Realm):
                  center_freq=None,
                  radio_mode="AUTO",
                  debug_on_=True,
-                 monitor_name=None,):
+                 monitor_name=None,
+                 sniff_snapshot_bytes=None,
+                 sniff_flags=None):
         super().__init__(lfclient_host, lfclient_port)
         self.lfclient_host = lfclient_host
         self.lfclient_port = lfclient_port
@@ -94,6 +99,9 @@ class SniffRadio(Realm):
         self.mode = radio_mode
         self.monitor_name = monitor_name
         self.monitor_info = ''
+        self.sniff_snapshot_bytes = sniff_snapshot_bytes # default to max size
+        self.sniff_flags = sniff_flags # will default to dumpcap, see wifi_monitor_profile::SNIFF_X constants
+
         # TODO allow the channel_frequency to be entered
         # if self.channel is None and self.channel_freq is None:
         #    print("either --channel or --channel_freq needs to be set")
@@ -143,7 +151,8 @@ class SniffRadio(Realm):
         # TODO:  Use LFUtils.wait_until_ports_admin_up instead of sleep, check return code.
         # time.sleep(5)
         self.set_freq(ssh_root=self.lfclient_host, ssh_passwd='lanforge', freq=self.freq)
-        self.monitor.start_sniff(capname=self.outfile, duration_sec=self.duration)
+        self.monitor.start_sniff(capname=self.outfile, duration_sec=self.duration, flags=self.sniff_flags,
+                                 snap_len_bytes=self.sniff_snapshot_bytes)
         for i in range(0, self.duration):
             logger.info("started sniffer, PLease wait,{duration}".format(duration=(self.duration - i)))
             time.sleep(1)
@@ -366,6 +375,15 @@ def main():
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
 
+    parser.add_argument('--sniff_bytes', default=None, help='keep this many bytes per packet, helps to reduce overall capture size')
+    parser.add_argument('--sniff_using', default=None,
+                        help="""Default sniffer is wireshark, which is only useful from a desktop setting.
+                        Combine options with a comma: dumpcap,mate_xterm
+        tshark:             headless tshark utility
+        dumpcap:            headless dumpcap utility
+        mate_terminal:      make tshark/dumpcap interactive in a MATE terminal
+        mate_xterm:         make tshark/dumpcap interactive in an xterm
+        mate_kill_dumpcap:  kill previously issued dumpcap""")
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
@@ -419,7 +437,21 @@ def main():
         for i in range(0, int(args.ax210_scan_time)):
             logger.info("AX210 scan network, PLease wait: {scan_time}".format(scan_time=(int(args.ax210_scan_time) - i)))
             time.sleep(1)
+    sniff_flags_choice = None
+    if args.sniff_using:
+        sniff_flags_choice = wifi_monitor_profile.flagname_to_hex(flagnames=args.sniff_using)
 
+    sniff_snaplen_choice = None
+    if args.sniff_bytes:
+        try:
+            bytesize = int(args.sniff_bytes)
+            if bytesize > -1:
+                sniff_snaplen_choice = bytesize
+            else:
+                raise ValueError("bad sniff_bytes")
+        except:
+            print(f"Strange sniff length [{args.sniff_bytes}], please choose a positive value")
+            exit(1)
     obj = SniffRadio(lfclient_host=args.mgr,
                      lfclient_port=args.mgr_port,
                      radio=args.radio,
@@ -430,7 +462,9 @@ def main():
                      channel_bw=args.channel_bw,
                      center_freq=args.center_freq,
                      radio_mode=args.radio_mode,
-                     monitor_name=args.monitor_name)
+                     monitor_name=args.monitor_name,
+                     sniff_flags=sniff_flags_choice,
+                     sniff_snapshot_bytes=sniff_snaplen_choice)
     obj.setup(int(args.disable_ht40), int(args.disable_ht80), int(args.ht160_enable))
 
     if args.ax210:
