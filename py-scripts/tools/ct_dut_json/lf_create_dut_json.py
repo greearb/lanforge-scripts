@@ -1,8 +1,39 @@
 #!/usr/bin/env python3
-'''
-File: create lf_dut.json file for --json_dut input to lf_check.py , LANforge traffic generation system
-Usage: lf_create_dut_json.py 
-'''
+"""
+NAME: lf_create_dut_json.py
+
+PURPOSE:
+     This script will create a lf_dut.json file that is used as a input --json_dut to the lf_check.py script
+     This script helps to store the of the information on DUT under use
+EXAMPLE:
+    # For creating dut.json file according to the DUT present:
+    lf_create_dut_json.py --file dut.json --dut_name TIP_AP --dut_hw A1.1 --dut_sw 3.0.0.4.3 --dut_model ESP101
+    --dut_serial 128765387 --log_level debug --ssid_idx "ssid_idx==0,SSID_USED==OpenWifi-psk21,SSID_PW_USED==OpenWifi,
+    BSSID_TO_USE==00:0a:52:7b:37:fe,SECURITY_USED==wpa2"
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:   Functional
+
+NOTES:
+        This will create a file with the name specified in the CLI  [ --json_dut example_name.json ]
+        * Helps to store the data related to the DUT being used
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   23-MAY-2023,
+             Build Version:  5.4.6
+             Kernel Version: 5.19.17+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+
+INCLUDE_IN_README: False
+
+
+"""
 
 import argparse
 import logging
@@ -11,19 +42,14 @@ import os
 import sys
 import traceback
 
-
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../../")))
-
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
-
-
 
 
 class lf_create_dut_json():
@@ -67,7 +93,8 @@ class lf_create_dut_json():
 }}
 
         """.format(file=self.file, dut_name=self.dut_name, dut_hw=self.dut_hw, dut_sw=self.dut_sw,
-                   dut_model=self.dut_model, dut_serial=self.dut_serial, ssid_idx_dict_dict_str=self.ssid_idx_dict_dict_str
+                   dut_model=self.dut_model, dut_serial=self.dut_serial,
+                   ssid_idx_dict_dict_str=self.ssid_idx_dict_dict_str
                    )
 
         file_fd.write(dut_json)
@@ -77,7 +104,6 @@ class lf_create_dut_json():
 
 
 def main():
-
     parser = argparse.ArgumentParser(
         prog='lf_create_dut_json.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -88,14 +114,41 @@ def main():
 
             ''',
         description='''\
-File: create lf_dut.json file for --json_dut input to lf_check.py , LANforge traffic generation system
-Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_hw A1.1 --dut_sw 3.0.0.4.386 --dut_model GT-AXE11000 
-                --dut_serial 123456 --log_level debug
-                --ssid_idx "ssid_idx==0,SSID_USED==axe11000_2g,SSID_PW_USED==lf_axe11000_2g,BSSID_TO_USE==fc:34:97:2b:38:90,SECURITY_USED==wpa2"
-                --ssid_idx "ssid_idx==1,SSID_USED==axe11000_5g,SSID_PW_USED==lf_axe11000_5g,BSSID_TO_USE==fc:34:97:2b:38:94,SECURITY_USED==wpa2"
-            ]
+NAME: lf_create_dut_json.py
 
-        ''')
+PURPOSE:
+     This script will create a lf_dut.json file that is used as a input --json_dut to the lf_check.py script
+     This script helps to store the of the information on DUT under use
+EXAMPLE:
+    # For creating dut.json file according to the DUT present:
+    lf_create_dut_json.py --file dut.json --dut_name TIP_AP --dut_hw A1.1 --dut_sw 3.0.0.4.3 --dut_model ESP101
+    --dut_serial 128765387 --log_level debug --ssid_idx "ssid_idx==0,SSID_USED==OpenWifi-psk21,SSID_PW_USED==OpenWifi,
+    BSSID_TO_USE==00:0a:52:7b:37:fe,SECURITY_USED==wpa2"
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:   Functional
+
+NOTES:
+        This will create a file with the name specified in the CLI  [ --json example_name.json ]
+        * Helps to store the data related to the DUT being used
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   23-MAY-2023,
+             Build Version:  5.4.6
+             Kernel Version: 5.19.17+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+
+INCLUDE_IN_README: False
+
+
+'''
+    )
     parser.add_argument('--file', help='--file lf_dut.json , required', required=True)
     parser.add_argument('--dut_name', help='--dut_name <device under test> required', required=True)
     parser.add_argument('--dut_hw', help='--dut_hw <dut hardware version> ', default='dut_hw')
@@ -110,15 +163,15 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
         help='''
             The ssid_idx is used to enter multiple ssid, ssid password, bssid, security types 
 
-            Example:
-            --ssid_idx ssid_idx==0,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
-            --ssid_idx ssid_idx==1,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
-            --ssid_idx ssid_idx==2,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
+        Example:
+        --ssid_idx ssid_idx==0,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
+        --ssid_idx ssid_idx==1,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
+        --ssid_idx ssid_idx==2,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
 
             The ssid_idx will be used in the test json,  there can be as many combinations of ssid, ssid passwork , bssid and security used
             The bssid is entered as there are usesers that have the same ssid for 24g, 5g, 6g
 
-            NOTE: SSID_USE , SSID_PW_USED , BSSID_TO_USE, SECUITY_USED are keys used by lf_check.py so that test json files may
+            NOTE: SSID_USE , SSID_PW_USED , BSSID_TO_USE, SECUITY_USED are keys used by l    m9f_check.py so that test json files may
                     be reused between test setups and only the dut json needs to change.
 
             '''
@@ -131,7 +184,6 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
     parser.add_argument(
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger, optional")
-
 
     args = parser.parse_args()
 
@@ -148,22 +200,22 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-    _file=args.file
-    _dut_name=args.dut_name
-    _dut_hw=args.dut_hw
-    _dut_sw=args.dut_sw
-    _dut_model=args.dut_model
-    _dut_serial=args.dut_serial
-    _ssid_idx=args.ssid_idx
+    _file = args.file
+    _dut_name = args.dut_name
+    _dut_hw = args.dut_hw
+    _dut_sw = args.dut_sw
+    _dut_model = args.dut_model
+    _dut_serial = args.dut_serial
+    _ssid_idx = args.ssid_idx
 
     # create wifi dictionary, ssid indx
     ssid_idx_dict_dict_str = ""
-    
+
     logger.debug("_ssid_idx len {len_ssid_idx}".format(len_ssid_idx=len(_ssid_idx)))
 
     ssid_idx_lengh = len(_ssid_idx)
     for ssid_idx_ in _ssid_idx:
-        ssid_idx_keys = ['ssid_idx','SSID_USED','SSID_PW_USED','BSSID_TO_USE','SECURITY_USED']
+        ssid_idx_keys = ['ssid_idx', 'SSID_USED', 'SSID_PW_USED', 'BSSID_TO_USE', 'SECURITY_USED']
         try:
             _ssid_idx_dict_element = dict(
                 map(
@@ -177,20 +229,21 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
                         '').replace(
                         "'",
                         "").replace(
-                            ",",
+                        ",",
                         " ").split()))
         except  Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.error("Check the format of the --ssid_idx , verify there is == between keys and values in ssid_idx {ssid_idx_}".format(ssid_idx_=ssid_idx_))            
+            logger.error(
+                "Check the format of the --ssid_idx , verify there is == between keys and values in ssid_idx {ssid_idx_}".format(
+                    ssid_idx_=ssid_idx_))
             exit(1)
-
-
 
         _ssid_idx_dict_element_keys = list(_ssid_idx_dict_element)
 
-
         if len(ssid_idx_keys) != len(_ssid_idx_dict_element_keys):
-            logger.critical("missing ssid_idx keys  , keys needed: {needed} keys input {input}".format(needed=ssid_idx_keys,input=_ssid_idx_dict_element))
+            logger.critical(
+                "missing ssid_idx keys  , keys needed: {needed} keys input {input}".format(needed=ssid_idx_keys,
+                                                                                           input=_ssid_idx_dict_element))
         for key in _ssid_idx_dict_element_keys:
             if key not in ssid_idx_keys:
                 logger.critical(
@@ -204,7 +257,7 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
         ssid_idx_str = "\"ssid_idx={idx}\":".format(idx=_ssid_idx_dict_element['ssid_idx'])
 
         # convert a dictionary to a string
-        ssid_idx_dict_element_str = str(_ssid_idx_dict_element) # .strip() # may not needed
+        ssid_idx_dict_element_str = str(_ssid_idx_dict_element)  # .strip() # may not needed
         logger.debug("ssid_idx_dict_element {dict}".format(dict=_ssid_idx_dict_element))
 
         # convert string to json
@@ -220,15 +273,13 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
             # last element does not have comma at the end
             ssid_idx_dict_dict_str += "\t\t\t" + ssid_idx_str + ssid_idx_dict_element_str + "\n"
 
-
-
     dut_json = lf_create_dut_json(_file=_file,
-                                _dut_name=_dut_name,
-                                _dut_hw=_dut_hw,
-                                _dut_sw=_dut_sw,
-                                _dut_model=_dut_model,
-                                _dut_serial=_dut_serial,
-                                _ssid_idx_dict_dict_str=ssid_idx_dict_dict_str)
+                                  _dut_name=_dut_name,
+                                  _dut_hw=_dut_hw,
+                                  _dut_sw=_dut_sw,
+                                  _dut_model=_dut_model,
+                                  _dut_serial=_dut_serial,
+                                  _ssid_idx_dict_dict_str=ssid_idx_dict_dict_str)
     dut_json.create()
 
     logger.info("Device under test json created {file}".format(file=_file))
