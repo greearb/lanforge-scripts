@@ -983,6 +983,15 @@ junit.xml path: allure serve {junit_path}
         # dut_set_name selectes the DUT to test against , it is different then use_dut_name
         # this value gets set in the test
     def read_dut_parameters(self):
+        if self.db_override is None:
+            if "DATABASE_SQLITE" in self.json_dut["test_dut"]:
+                self.database_sqlite = self.json_dut["test_dut"]["DATABASE_SQLITE"]
+            else:
+                self.logger.info(
+                    "DATABASE_SQLITE not in test_dut_parameters json")
+        else:
+            self.database_sqlite = self.db_override
+
         # the UPSTREAM_PORT may be in the DUT
         if "UPSTREAM_PORT" in self.json_dut["test_dut"]:
             self.upstream_port = self.json_dut["test_dut"]["UPSTREAM_PORT"]
@@ -1840,7 +1849,16 @@ running scripts
 
 Example :
 ./lf_check.py --json_rig rig.json --json_dut dut.json --json_test tests.json --suite suite_test
-note if all json data (rig,dut,tests)  in same json file pass same json in for all 3 inputs
+
+Note if all json data (rig,dut,tests)  in same json file pass same json in for all 3 inputs
+The order of reading the json files it 
+1. Rig
+2. Dut
+3. Test
+
+Thus an DUT setting will override the Rig settings.  
+This is to allow multiple DUTs connected to a LANforge to have different upstream ports or database.
+
 ---------
             ''')
 
