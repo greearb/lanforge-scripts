@@ -50,8 +50,8 @@ import time
 import paramiko
 import logging
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -59,8 +59,6 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
-
-
 createL3 = importlib.import_module("py-scripts.create_l3_stations")
 wifi_monitor_profile = importlib.import_module("py-json.wifi_monitor_profile")
 
@@ -154,7 +152,7 @@ class SniffRadio(Realm):
         self.monitor.start_sniff(capname=self.outfile, duration_sec=self.duration, flags=self.sniff_flags,
                                  snap_len_bytes=self.sniff_snapshot_bytes)
         for i in range(0, self.duration):
-            logger.info("started sniffer, PLease wait,{duration}".format(duration=(self.duration - i)))
+            logger.info("running sniffer for {duration} more seconds".format(duration=(self.duration - i)))
             time.sleep(1)
         logger.info("Sniffing Completed Success Check {outfile}".format(outfile=self.outfile))
         self.monitor.admin_down()
@@ -428,9 +426,7 @@ def main():
                                       mode=args.mode,
                                       ap=args.ap,
                                       _debug_on=True)
-
         create_l3.build()
-
         create_l3.start()
         # allow 10 seconds for a scan
         logger.info("wait {scan_time} for scan on AX210".format(scan_time=args.ax210_scan_time))
