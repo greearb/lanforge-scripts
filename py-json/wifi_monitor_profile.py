@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-
+import logging
+#import pprint
 import sys
 import os
 import importlib
@@ -14,6 +15,41 @@ add_monitor = importlib.import_module("py-json.LANforge.add_monitor")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 set_wifi_radio = importlib.import_module("py-json.LANforge.set_wifi_radio")
 set_radio_mode = set_wifi_radio.set_radio_mode
+
+SNIFF_WIRESHARK = 0x0
+SNIFF_TSHARK = 0x1
+SNIFF_DUMPCAP = 0x2
+SNIFF_MATE_TERMINAL = 0x4
+SNIFF_MATE_XTERM = 0x8
+SNIFF_MATE_KILL_DUMPCAP = 0x10
+
+@staticmethod
+def flagname_to_hex(flagnames=None):
+    """
+    Translate a comma-combined list of sniffing options into hex flag
+    :param flagname: example tshark,mate_terminal to run tshark and monitor it in a mate_terminal
+    :return: combined bit flags
+    """
+    if not flagnames:
+        return 0x0
+
+    combined_flags = 0x0
+    for flagname in flagnames.split(','):
+        if flagname == "wireshark":
+            combined_flags |= SNIFF_WIRESHARK
+        elif flagname == "tshark":
+            combined_flags |= SNIFF_TSHARK
+        elif flagname == "dumpcap":
+            combined_flags |= SNIFF_DUMPCAP
+        elif flagname == "mate_terminal":
+            combined_flags |= SNIFF_MATE_TERMINAL
+        elif flagname == "mate_xterm":
+            combined_flags |= SNIFF_MATE_XTERM
+        elif flagname == "kill_dumpcap":
+            combined_flags |= SNIFF_MATE_KILL_DUMPCAP
+        else:
+            logging.warning(f"flagname_to_hex: unknown flag name[{flagname}]")
+    return combined_flags
 
 
 class WifiMonitor:
@@ -132,16 +168,22 @@ class WifiMonitor:
         down_request = LFUtils.portDownRequest(resource_id=self.resource, port_name=self.monitor_name)
         self.local_realm.json_post("/cli-json/set_port", down_request)
 
-    def start_sniff(self, capname=None, duration_sec=60):
+    def start_sniff(self, capname=None, duration_sec=60, flags=None, snap_len_bytes=None):
         if capname is None:
             raise ValueError("Need a capture file name")
+        if not flags:
+            flags = SNIFF_DUMPCAP
         data = {
             "shelf": 1,
             "resource": self.resource,
             "port": self.monitor_name,
             "display": "NA",
-            "flags": 0x2,
+            "flags": flags,
             "outfile": capname,
             "duration": duration_sec
         }
+        if snap_len_bytes is not None:
+            # zero is valid
+            data["snaplen"] = snap_len_bytes
+        # pprint.pprint(("sniff_port", data))
         self.local_realm.json_post("/cli-json/sniff_port", _data=data)
