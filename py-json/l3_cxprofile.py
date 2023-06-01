@@ -466,7 +466,7 @@ class L3CXProfile(LFCliBase):
                 suppress_related_commands=None,
                 debug_=False,
                 tos=None, timeout=300, ip_port_a=-1, ip_port_b=-1,
-                quantity=None, port_increment_a=None, port_increment_b=None,
+                quantity=1, port_increment_a=None, port_increment_b=None,
                 ip_port_increment_a=0, ip_port_increment_b=0):
         # Returns a 2-member array, list of cx, list of endp on success.
         # If endpoints creation fails, returns False, False
