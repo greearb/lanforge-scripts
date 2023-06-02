@@ -192,40 +192,7 @@ class inspect_sql:
     def get_html_results(self):
         return self.html_results
 
-    def start_html_results(self):
-        self.html_results += """
-                <table border="1" class="dataframe">
-                    <thead>
-                        <tr style="text-align: left;">
-                          <th>test_rig</th>
-                          <th>test_tag</th>
-                          <th>group</th>
-                          <th>test_id</th>
-                          <th>description</th>
-                          <th>units</th>
-                          <th>date_1</th>
-                          <th>numeric_score_1</th>
-                          <th>date_2</th>
-                          <th>numeric_score_2</th>
-                          <th>percentage</th>
-                          <th>analysis</th>
-                          <th>results_1</th>
-                          <th>report_dir_1</th>
-                          <th>results_2</th>
-                          <th>report_dir_2</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                      """
 
-    def finish_html_results(self):
-        self.html_results += """
-                    </tbody>
-                </table>
-                <br>
-                <br>
-                <br>
-                """
 
     # Helper methods
     # for the same db
@@ -386,9 +353,15 @@ class inspect_sql:
                                 df_data_1['test-id'],
                                 df_data_1['short-description'],
                                 df_data_1['Units'],
+                                df_data_1['dut-hw-version'],
+                                df_data_1['dut-sw-version'],
+                                df_data_1['dut-model-num'],
                                 df_data_1['kernel'],
                                 df_data_1['gui_build_date'],
                                 df_data_1['numeric-score'],
+                                df_data_2['dut-hw-version'],
+                                df_data_2['dut-sw-version'],
+                                df_data_2['dut-model-num'],
                                 df_data_2['kernel'],
                                 df_data_2['gui_build_date'],
                                 df_data_2['numeric-score'],
@@ -419,9 +392,11 @@ class inspect_sql:
                             <td>""" + str(df_data_1['test-id']) + """</td>
                             <td>""" + str(df_data_1['short-description']) + """</td>
                             <td>""" + str(df_data_1['Units']) + """</td>
+                            <td>""" + str(df_data_1['dut-model-num']) + """</td>
                             <td>""" + str(df_data_1['kernel']) + """</td>
                             <td>""" + str(df_data_1['gui_build_date']) + """</td>
                             <td>""" + str(df_data_1['numeric-score']) + """</td>
+                            <td>""" + str(df_data_2['dut-model-num']) + """</td>
                             <td>""" + str(df_data_2['kernel']) + """</td>
                             <td>""" + str(df_data_2['gui_build_date']) + """</td>
                             <td>""" + str(df_data_2['numeric-score']) + """</td>
@@ -938,9 +913,11 @@ class inspect_sql:
                           <th>test_id          </th>
                           <th>short_description</th>
                           <th>Units            </th>
+                          <th>DUT_1</th>
                           <th>Kernel_1</th>
                           <th>GUI_1</th>
                           <th>numeric_score_1</th>
+                          <th>DUT2</th>
                           <th>Kernel_2</th>
                           <th>GUI_2</th>
                           <th>numeric_score_2</th>
@@ -1042,8 +1019,11 @@ def main():
 
             ''',
         description='''\
-Read in two databases and compare the inputs
-Usage: lf_inspect.py --db  db_one,db_two
+Compare last test run to previous
+    --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1
+
+To compare a kpi element such as dut-model-num
+    --path REPORT_PATH --databasek DATABASE_SQLITE_1,DATABASE_SQLITE_2 --db_index 0,0 --element dut-model-num==AXE11000&&NETGEAR_R7000
 
         ''')
     parser.add_argument('--path', help=''' --path to where to place the results ''', default='')
