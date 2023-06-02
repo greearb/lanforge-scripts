@@ -929,7 +929,11 @@ class csv_sql:
                                         'gui_ver',
                                         'gui_build_date',
                                         'server_ver',
-                                        'server_build_date'
+                                        'server_build_date',
+                                        'dut-hw-version',
+                                        'dut-sw-version',
+                                        'dut-model-num',
+                                        'dut-serial-num'
                                         ],
                                     color="short-description",
                                     hover_name="short-description",
@@ -955,6 +959,10 @@ class csv_sql:
                                     "gui-build-date: %{customdata[6]}",
                                     "server-version: %{customdata[7]}",
                                     "server-build-date: %{customdata[8]}",
+                                    "dut-hw-version: %{customdata[9]}",
+                                    "dut-sw-version: %{customdata[10]}",
+                                    "dut-model-num: %{customdata[11]}",
+                                    "dut-serial-num: %{customdata[12]}",
                                 ])
                             )
 
