@@ -102,7 +102,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name ATH10K_9984_dp",
-                    " --config_name test_con --upstream 1.1.eth1 --dut DUT_SET_NAME --duration 30s --station 1.1.wlan1",
+                    " --config_name test_con --upstream 1.1.eth1 --dut USE_DUT_NAME --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -181,7 +181,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name AX210_dp",
-                    " --config_name test_con --upstream 1.1.eth1 --dut DUT_SET_NAME --duration 30s --station 1.1.wlan3",
+                    " --config_name test_con --upstream 1.1.eth1 --dut USE_DUT_NAME --duration 30s --station 1.1.wlan3",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -261,7 +261,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name mt7915e_dp",
-                    " --config_name test_con --upstream 1.1.eth1 --dut DUT_SET_NAME --duration 30s --station 1.1.wlan7",
+                    " --config_name test_con --upstream 1.1.eth1 --dut USE_DUT_NAME --duration 30s --station 1.1.wlan7",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -689,7 +689,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name mt7915e_dp",
-                    " --config_name test_con --upstream 1.1.eth1 --dut DUT_SET_NAME --duration 30s --station 1.1.wlan1",
+                    " --config_name test_con --upstream 1.1.eth1 --dut USE_DUT_NAME --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
