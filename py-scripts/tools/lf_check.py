@@ -563,19 +563,32 @@ class lf_check():
 Results from {hostname}:
 Suite: {suite}
 Database: {db}
+Dut Model: {dut_model}
+Dut HW: {dut_hw}
+Dut SW: {dut_sw}
+Dut SN: {dut_sn}
 
 lf_check Test Suite Report:
 http://{hostname}/{report}
-""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, db=self.database_sqlite, hostname=self.server_ip, report=report_url)
+""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, 
+    suite=self.test_suite, db=self.database_sqlite, hostname=self.server_ip, report=report_url,
+    dut_model=self.use_dut_name,dut_hw=self.dut_hw,dut_sw=self.dut_sw,dut_sn=self.dut_serial)
 
         else:
             self.message_txt = """Results from {hostname}:
 Suite: {suite}
 Database: {db}
+Dut Model: {dut_model}
+Dut HW: {dut_hw}
+Dut SW: {dut_sw}
+Dut SN: {dut_sn}
+
 
 lf_check Test Suite Report:
 http://{hostname}/{report}
-""".format(hostname=self.server_ip, suite=self.test_suite, db=self.database_sqlite, report=report_url)
+""".format(hostname=self.server_ip, suite=self.test_suite, db=self.database_sqlite, report=report_url,
+    dut_model=self.use_dut_name,dut_hw=self.dut_hw,dut_sw=self.dut_sw,dut_sn=self.dut_serial)
+
 
         # Put in report information current two methods supported,
         if "NA" not in self.qa_report_html:
