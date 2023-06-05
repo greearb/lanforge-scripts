@@ -302,6 +302,7 @@ INCLUDE_IN_README: False
                         default="")
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
 
     parser.add_argument("-dos", "--delete_old_scenario", default=True,
                         action='store_true',
@@ -330,6 +331,10 @@ INCLUDE_IN_README: False
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
+
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
 
     # lf_logger_config_json will take presidence to changing debug levels
     if args.lf_logger_config_json:
