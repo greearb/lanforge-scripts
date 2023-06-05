@@ -16,6 +16,8 @@
         "wireless_network_dict":{
             "ssid_idx=0":{"ssid_idx":"0","SSID_USED":"ax88u_2g","SSID_PW_USED":"lf_ax88u_2g","BSSID_TO_USE":"f0:2f:74:c7:a2:00","SECURITY_USED":"wpa2"},
             "ssid_idx=1":{"ssid_idx":"1","SSID_USED":"ax88u_5g","SSID_PW_USED":"lf_ax88u_5g","BSSID_TO_USE":"f0:2f:74:c7:a2:04","SECURITY_USED":"wpa2"}
-        }
+        },
+        "UPSTREAM_PORT": "1.1.eth2",
+        "UPSTREAM_ALIAS": "eth2"
     }
 }
