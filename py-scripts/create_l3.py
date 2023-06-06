@@ -7,7 +7,7 @@ PURPOSE: This script is used to create the user-specified Layer-3 cross-connecti
 EXAMPLE:
         # For layer-3 cx creation on LANforge:
 
-            ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
+            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
 
         # For remote layer-3 cx creation:
 
@@ -15,7 +15,7 @@ EXAMPLE:
 
         # For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
 
-            ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
 
         # For batch creation functionality:
         (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
@@ -160,7 +160,7 @@ PURPOSE: This script is used to create the user-specified Layer-3 cross-connecti
 EXAMPLE:
         # For layer-3 cx creation on LANforge:
 
-            ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
+            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
 
         # For remote layer-3 cx creation:
 
@@ -168,7 +168,7 @@ EXAMPLE:
 
         # For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
 
-            ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
 
         # For batch creation functionality:
         (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
