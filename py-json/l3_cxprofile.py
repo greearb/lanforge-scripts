@@ -719,7 +719,6 @@ class L3CXProfile(LFCliBase):
                                 side_b = [f'{side_b_shelf}.{side_b_resource}.{endp_name}']
                     side_a_info = self.local_realm.name_to_eid(endpoint[0])
                 for port_name in side_b:
-                    logger.info(side_b)
                     side_b_info = self.local_realm.name_to_eid(port_name, debug=debug_)
                     side_b_shelf = side_b_info[0]
                     side_b_resource = side_b_info[1]
