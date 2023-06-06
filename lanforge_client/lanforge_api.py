@@ -85,13 +85,12 @@ import http.client
 from http.client import HTTPResponse
 import json
 import logging
-from logging import Logger
 from pprint import pformat
 import time
 import traceback
 from typing import Optional
 import urllib
-from urllib import request, error, parse
+from urllib import request
 import base64
 import string
 import re
@@ -102,7 +101,8 @@ from .logg import Logg
 from .strutil import nott, iss
 
 SESSION_HEADER = 'X-LFJson-Session'
-LOGGER = Logger('json_api')
+# LOGGER = Logger('json_api')
+LOGGER = logging.getLogger(__name__)
 
 
 def _now_ms() -> int:
@@ -257,7 +257,8 @@ class BaseLFJsonRequest:
         self.stream_errors = stream_errors
         self.warnings = []
         self.stream_warnings = stream_warnings
-        self.logger = Logg(name="LFJsonRequest-@", debug=debug)
+        #self.logger = Logg(name="LFJsonRequest-@", debug=debug)
+        self.logger = logging.getLogger(__name__)
         self.debug_on = debug
         self.receives_async_feedback = False
 
@@ -296,7 +297,8 @@ class BaseLFJsonRequest:
         if corrected_url.find(' ') >= 1:
             corrected_url = corrected_url.replace(' ', '%20')
         if debug:
-            self.logger.by_method("%s: url [%s] now [%s]" % (str(__class__), url, corrected_url))
+            #self.logger.by_method("%s: url [%s] now [%s]" % (str(__class__), url, corrected_url))
+            self.logger.debug("{info}: url [{url}] now [{correct_url}]".format(info= str(__class__), url=url, correct_url=corrected_url))
         return corrected_url
 
     def add_error(self, message: str = None):
@@ -368,10 +370,12 @@ class BaseLFJsonRequest:
             request.install_opener(opener)
 
         # if debug:
-            self.logger.by_method("form_post: url: " + url)
+            #self.logger.by_method("form_post: url: " + url)
+            self.logger.debug("form_post: url {url} ".format(url=url))
         if (post_data is not None) and (post_data is not self.No_Data):
             urlenc_data = urllib.parse.urlencode(post_data).encode("utf-8")
-            self.logger.by_method("formPost: data looks like:" + str(urlenc_data))
+            #self.logger.by_method("formPost: data looks like:" + str(urlenc_data))
+            self.logger.debug("formPost: data looks like: {data}".format(data=str(urlenc_data)))
             if debug:
                 print("formPost: url: " + url)
             myrequest = request.Request(url=url,
@@ -379,7 +383,8 @@ class BaseLFJsonRequest:
                                         headers=self.default_headers)
         else:
             myrequest = request.Request(url=url, headers=self.default_headers)
-            self.logger.by_method("json_post: No data sent to [%s]" % url)
+            # self.logger.by_method("json_post: No data sent to [%s]" % url)
+            self.logger.debug("json_post: No data sent to [{url}]".format(url=url))
 
         myrequest.headers['Content-type'] = 'application/x-www-form-urlencoded'
 
@@ -453,7 +458,8 @@ class BaseLFJsonRequest:
                 exit(1)
         responses: list = []  # p3.9 list[HTTPResponse]
         url = self.get_corrected_url(url)
-        self.logger.by_method("url: "+url)
+        #self.logger.by_method("url: "+url)
+        self.logger.debug("url: {url}".format(url=url))
 
         if (post_data is None) or (post_data is self.No_Data):
             # this is sending a post request without data
@@ -520,9 +526,11 @@ class BaseLFJsonRequest:
                                         headers=self.default_headers)
 
         if not post_data or not len(post_data.items()):
-            self.logger.by_method("empty post sent to [%s]" % url)
+            #self.logger.by_method("empty post sent to [%s]" % url)
+            self.logger.debug("empty post sent to [%s]" % url)
         else:
-            self.logger.by_method("post data "+pformat(post_data))
+            #self.logger.by_method("post data "+pformat(post_data))
+            self.logger.debug(pformat(post_data))
 
         if not connection_timeout_sec:
             if self.session_instance.get_timeout_sec():
@@ -578,8 +586,11 @@ class BaseLFJsonRequest:
                 responses.append(response)
                 header_items = response.getheaders()
                 if debug:
-                    self.logger.by_method("BaseJsonRequest::json_post: response headers:")
-                    self.logger.by_method(pformat(header_items))
+                    #self.logger.by_method("BaseJsonRequest::json_post: response headers:")
+                    #self.logger.by_method(pformat(header_items))
+                    self.logger.debug("BaseJsonRequest::json_post: response headers:")
+                    self.logger.debug(pformat(header_items))
+
                 if SESSION_HEADER in header_items:
                     if self.session_id != response.getheader(SESSION_HEADER):
                         self.logger.warning("established session header [%s] different from response session header[%s]"
@@ -1158,7 +1169,9 @@ class BaseSession:
                  stream_warnings: bool = False,
                  exit_on_error: bool = False):
         self.debug_on = debug
-        self.logger = Logg(name='json_api_session')
+        # self.logger = Logg(name='json_api_session')
+        self.logger = logging.getLogger(__name__)
+
         if debug:
             self.logger.level = logging.DEBUG
         self.exit_on_error = exit_on_error
@@ -1525,6 +1538,77 @@ class LFJsonCommand(JsonCommand):
                           screen_size_prcnt=param_map.get("screen_size_prcnt"),
                           shelf=param_map.get("shelf"),
                           )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/ADB_TIMEOUT> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#adb_timeout
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_adb_timeout(self, 
+                         adb_cmd: str = None,                      # All remaining text after adb_id will be sent to the adb
+                         # command. <tt escapearg='false'>Unescaped Value</tt>
+                         adb_id: str = None,                       # Android device identifier, use NA if it should not be
+                         # used/specified. [W]
+                         key: str = None,                          # Key to be used in response messages, NA for generic
+                         # keyed message. Key should not have - or spaces or other
+                         # non-alphanumeric characters in it.
+                         max_dur: str = None,                      # Num of milliseconds to let this command run before
+                         # killing it. 0 indicates no timeout.
+                         resource: int = None,                     # Resource number. [W]
+                         shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                         response_json_list: list = None,
+                         debug: bool = False,
+                         errors_warnings: list = None,
+                         suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_adb_timeout(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if adb_cmd is not None:
+            data["adb_cmd"] = adb_cmd
+        if adb_id is not None:
+            data["adb_id"] = adb_id
+        if key is not None:
+            data["key"] = key
+        if max_dur is not None:
+            data["max_dur"] = max_dur
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/adb_timeout",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+    #
+
+    def post_adb_timeout_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_adb_timeout(adb_cmd=param_map.get("adb_cmd"),
+                              adb_id=param_map.get("adb_id"),
+                              key=param_map.get("key"),
+                              max_dur=param_map.get("max_dur"),
+                              resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              )
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -16411,15 +16495,15 @@ class LFJsonCommand(JsonCommand):
                           resource: int = None,                     # Resource number. [W]
                           shelf: int = 1,                           # Shelf number. [R][D:1]
                           txo_bw: str = None,                       # Configure bandwidth: 0 == 20, 1 == 40, 2 == 80, 3 ==
-                          # 160, 4 == 80+80.
+                          # 160, 4 == 80+80, 5 = 320.
                           txo_enable: str = None,                   # Set to 1 if you wish to enable transmit override, 0 to
                           # disable.
                           txo_mcs: str = None,                      # Configure the MCS (0-3 for CCK, 0-7 for OFDM, 0-7 for
-                          # HT, 0-9 for VHT, 0-11 for HE
+                          # HT, 0-9 for VHT, 0-11 for HE, 0-13 for EHT
                           txo_nss: str = None,                      # Configure number of spatial streams (0 == nss1, 1 ==
                           # nss2, ...).
                           txo_pream: str = None,                    # Select rate preamble: 0 == OFDM, 1 == CCK, 2 == HT, 3
-                          # == VHT, 4 == HE_SU.
+                          # == VHT, 4 == HE_SU, 5 = EHT.
                           txo_retries: str = None,                  # Configure number of retries. 0 or 1 means no retries).
                           txo_sgi: str = None,                      # Should rates be sent with short-guard-interval or not?
                           txo_txpower: str = None,                  # Configure TX power in db. Use 255 for system defaults.
@@ -19472,7 +19556,7 @@ class LFJsonQuery(JsonQuery):
 
     When requesting specific column names, they need to be URL encoded:
         api, app-id, device, device-type, model, name, phantom, product, release, 
-        user-name
+        timed-out, user-name
     Example URL: /adb?fields=api,app-id
 
     Example py-json call (it knows the URL):
@@ -19492,6 +19576,8 @@ class LFJsonQuery(JsonQuery):
                        # unplugged?).
         'product':     # Android device product identifier.
         'release':     # Android SDK Release
+        'timed-out':   # The device has timed out too many times while running adb commands. Go
+                       # check on it?
         'user-name':   # LANforge interop app username for this ADB device.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -21249,8 +21335,8 @@ class LFJsonQuery(JsonQuery):
         'total-err':                 # Total Errors. This is also total failed URLs.
         'total-rebuffers':           # Total Rebuffers in Video Stream Test with InterOp
         'total-urls':                # URLs processed and in process. This includes passed and failed URLs.
-        'total-wait-time':           # Total Time taken by video playback due to Initial Playback during Join
-                                     # Time and playback Buffering in Video Resume State.
+        'total-wait-time':           # Total Time taken by video playback in miliseconds due to Initial
+                                     # Playback during Join Time and playback Buffering in Video Resume State.
         'tx rate':                   # Payload transmit rate (bps).
         'tx rate (1&nbsp;min)':      # Payload transmit rate over the last minute (bps).
         'type':                      # The specific type of this Layer 4-7 Endpoint.
@@ -23129,17 +23215,20 @@ class LFJsonQuery(JsonQuery):
         tx_hetrig_3mu, tx_hetrig_3ru, tx_hetrig_4mu, tx_hetrig_4ru, tx_hetrig_5to8ru, 
         tx_hetrig_9to16ru, tx_hetrig_gtr16ru, tx_hetrig_su, tx_msdu_pack_0, tx_msdu_pack_1, 
         tx_msdu_pack_2, tx_msdu_pack_3, tx_msdu_pack_4, tx_msdu_pack_5, tx_msdu_pack_6, 
-        tx_msdu_pack_7, tx_pkt_ebf, tx_pkt_ibf, v_rx_bw_160, v_rx_bw_20, v_rx_bw_40, 
+        tx_msdu_pack_7, tx_pkt_ebf, tx_pkt_ibf, txo_mpdu_attempts, txo_mpdu_fail, 
+        txo_mpdu_ok, txo_mpdu_retry, v_rx_bw_160, v_rx_bw_20, v_rx_bw_320, v_rx_bw_40, 
         v_rx_bw_80, v_rx_bw_he_ru, v_rx_mcs_0, v_rx_mcs_1, v_rx_mcs_10, v_rx_mcs_11, 
-        v_rx_mcs_2, v_rx_mcs_3, v_rx_mcs_4, v_rx_mcs_5, v_rx_mcs_6, v_rx_mcs_7, v_rx_mcs_8, 
-        v_rx_mcs_9, v_rx_mode_cck, v_rx_mode_he_ext_su, v_rx_mode_he_mu, v_rx_mode_he_su, 
-        v_rx_mode_he_tb, v_rx_mode_ht, v_rx_mode_ht_gf, v_rx_mode_ofdm, v_rx_mode_vht, 
-        v_rx_nss_1, v_rx_nss_2, v_rx_nss_3, v_rx_nss_4, v_rx_ru_106, v_tx_bw_160, 
-        v_tx_bw_20, v_tx_bw_40, v_tx_bw_80, v_tx_mcs_0, v_tx_mcs_1, v_tx_mcs_10, 
-        v_tx_mcs_11, v_tx_mcs_2, v_tx_mcs_3, v_tx_mcs_4, v_tx_mcs_5, v_tx_mcs_6, 
-        v_tx_mcs_7, v_tx_mcs_8, v_tx_mcs_9, v_tx_mode_cck, v_tx_mode_he_ext_su, v_tx_mode_he_mu, 
-        v_tx_mode_he_su, v_tx_mode_he_tb, v_tx_mode_ht, v_tx_mode_ht_gf, v_tx_mode_ofdm, 
-        v_tx_mode_vht, v_tx_nss_1, v_tx_nss_2, v_tx_nss_3, v_tx_nss_4        # hidden columns:
+        v_rx_mcs_12, v_rx_mcs_13, v_rx_mcs_2, v_rx_mcs_3, v_rx_mcs_4, v_rx_mcs_5, 
+        v_rx_mcs_6, v_rx_mcs_7, v_rx_mcs_8, v_rx_mcs_9, v_rx_mode_cck, v_rx_mode_eht, 
+        v_rx_mode_he_ext_su, v_rx_mode_he_mu, v_rx_mode_he_su, v_rx_mode_he_tb, v_rx_mode_ht, 
+        v_rx_mode_ht_gf, v_rx_mode_ofdm, v_rx_mode_vht, v_rx_nss_1, v_rx_nss_2, v_rx_nss_3, 
+        v_rx_nss_4, v_rx_ru_106, v_tx_bw_160, v_tx_bw_20, v_tx_bw_320, v_tx_bw_40, 
+        v_tx_bw_80, v_tx_mcs_0, v_tx_mcs_1, v_tx_mcs_10, v_tx_mcs_11, v_tx_mcs_12, 
+        v_tx_mcs_13, v_tx_mcs_2, v_tx_mcs_3, v_tx_mcs_4, v_tx_mcs_5, v_tx_mcs_6, 
+        v_tx_mcs_7, v_tx_mcs_8, v_tx_mcs_9, v_tx_mode_cck, v_tx_mode_eht, v_tx_mode_he_ext_su, 
+        v_tx_mode_he_mu, v_tx_mode_he_su, v_tx_mode_he_tb, v_tx_mode_ht, v_tx_mode_ht_gf, 
+        v_tx_mode_ofdm, v_tx_mode_vht, v_tx_nss_1, v_tx_nss_2, v_tx_nss_3, v_tx_nss_4, 
+              # hidden columns:
         resource
     Example URL: /wifi-stats?fields=alias,ba_miss_count
 
@@ -23235,8 +23324,13 @@ class LFJsonQuery(JsonQuery):
         'tx_msdu_pack_7':        # Radio level stat:  TX MSDU packing of 8 frames.
         'tx_pkt_ebf':            # Radio level stat:  Explicit beamforming packet transmitted.
         'tx_pkt_ibf':            # Radio level stat:  Implicit beamforming packet transmitted.
+        'txo_mpdu_attempts':     # Port level stat:  TX Override packet transmit attempts.
+        'txo_mpdu_fail':         # Port level stat:  TX Override packet transmit failures.
+        'txo_mpdu_ok':           # Port level stat:  TX Override packet transmit success.
+        'txo_mpdu_retry':        # Port level stat:  TX Override packet retransmit attempts.
         'v_rx_bw_160':           # Port level stat: Received packets with 160Mhz encoding.
         'v_rx_bw_20':            # Port level stat: Received packets with 20Mhz encoding.
+        'v_rx_bw_320':           # Port level stat: Received packets with 320Mhz encoding.
         'v_rx_bw_40':            # Port level stat: Received packets with 40Mhz encoding.
         'v_rx_bw_80':            # Port level stat: Received packets with 80Mhz encoding.
         'v_rx_bw_he_ru':         # Port level stat: Received packets with HE RU (OFDMA) bandwidth encoding.
@@ -23244,6 +23338,8 @@ class LFJsonQuery(JsonQuery):
         'v_rx_mcs_1':            # Port level stat: Received packets with MCS 1 encoding.
         'v_rx_mcs_10':           # Port level stat: Received packets with MCS 10 encoding.
         'v_rx_mcs_11':           # Port level stat: Received packets with MCS 11 encoding.
+        'v_rx_mcs_12':           # Port level stat: Received packets with MCS 12 encoding.
+        'v_rx_mcs_13':           # Port level stat: Received packets with MCS 13 encoding.
         'v_rx_mcs_2':            # Port level stat: Received packets with MCS 2 encoding.
         'v_rx_mcs_3':            # Port level stat: Received packets with MCS 3 encoding.
         'v_rx_mcs_4':            # Port level stat: Received packets with MCS 4 encoding.
@@ -23253,15 +23349,16 @@ class LFJsonQuery(JsonQuery):
         'v_rx_mcs_8':            # Port level stat: Received packets with MCS 8 encoding.
         'v_rx_mcs_9':            # Port level stat: Received packets with MCS 9 encoding.
         'v_rx_mode_cck':         # Port level stat: Received packets with CCK (/b) encoding.
-        'v_rx_mode_he_ext_su':   # Port level stat: Received packets with extended HE single-user (/ax)
+        'v_rx_mode_eht':         # Port level stat: Received packets with EHT (/be) encoding.
+        'v_rx_mode_he_ext_su':   # Port level stat: Received packets with extended HE single-user (/ax+)
                                  # encoding.
-        'v_rx_mode_he_mu':       # Port level stat: Received packets with HE MU (/ax) encoding.
-        'v_rx_mode_he_su':       # Port level stat: Received packets with HE single-user (/ax) encoding.
-        'v_rx_mode_he_tb':       # Port level stat: Received packets with HE TB (/ax) encoding.
+        'v_rx_mode_he_mu':       # Port level stat: Received packets with HE MU (/ax+) encoding.
+        'v_rx_mode_he_su':       # Port level stat: Received packets with HE single-user (/ax+) encoding.
+        'v_rx_mode_he_tb':       # Port level stat: Received packets with HE TB (/ax+) encoding.
         'v_rx_mode_ht':          # Port level stat: Received packets with HT (/n) encoding.
         'v_rx_mode_ht_gf':       # Port level stat: Received packets with HT greenfield (/n) encoding.
         'v_rx_mode_ofdm':        # Port level stat: Received packets with OFDM (a/g) encoding.
-        'v_rx_mode_vht':         # Port level stat: Received packets with VHT greenfield (/ac) encoding.
+        'v_rx_mode_vht':         # Port level stat: Received packets with VHT (/ac) encoding.
         'v_rx_nss_1':            # Port level stat: Received packets with 1 spatial stream encoding.
         'v_rx_nss_2':            # Port level stat: Received packets with 2 spatial streams encoding.
         'v_rx_nss_3':            # Port level stat: Received packets with 3 spatial streams encoding.
@@ -23269,12 +23366,15 @@ class LFJsonQuery(JsonQuery):
         'v_rx_ru_106':           # Port level stat: Received packets with HE RU-106 (OFDMA) encoding.
         'v_tx_bw_160':           # Port level stat: Transmitted packets with 160Mhz encoding.
         'v_tx_bw_20':            # Port level stat: Transmitted packets with 20Mhz encoding.
+        'v_tx_bw_320':           # Port level stat: Transmitted packets with 320Mhz encoding.
         'v_tx_bw_40':            # Port level stat: Transmitted packets with 40Mhz encoding.
         'v_tx_bw_80':            # Port level stat: Transmitted packets with 80Mhz encoding.
         'v_tx_mcs_0':            # Port level stat: Transmitted packets with MCS 0 encoding.
         'v_tx_mcs_1':            # Port level stat: Transmitted packets with MCS 1 encoding.
         'v_tx_mcs_10':           # Port level stat: Transmitted packets with MCS 10 encoding.
         'v_tx_mcs_11':           # Port level stat: Transmitted packets with MCS 11 encoding.
+        'v_tx_mcs_12':           # Port level stat: Transmitted packets with MCS 11 encoding.
+        'v_tx_mcs_13':           # Port level stat: Transmitted packets with MCS 11 encoding.
         'v_tx_mcs_2':            # Port level stat: Transmitted packets with MCS 2 encoding.
         'v_tx_mcs_3':            # Port level stat: Transmitted packets with MCS 3 encoding.
         'v_tx_mcs_4':            # Port level stat: Transmitted packets with MCS 4 encoding.
@@ -23284,15 +23384,17 @@ class LFJsonQuery(JsonQuery):
         'v_tx_mcs_8':            # Port level stat: Transmitted packets with MCS 8 encoding.
         'v_tx_mcs_9':            # Port level stat: Transmitted packets with MCS 9 encoding.
         'v_tx_mode_cck':         # Port level stat: Transmitted packets with CCK (/b) encoding.
-        'v_tx_mode_he_ext_su':   # Port level stat: Transmitted packets with extended HE single-user (/ax)
+        'v_tx_mode_eht':         # Port level stat: Transmitted packets with EHT (/be) encoding.
+        'v_tx_mode_he_ext_su':   # Port level stat: Transmitted packets with extended HE single-user (/ax+)
                                  # encoding.
-        'v_tx_mode_he_mu':       # Port level stat: Transmitted packets with HE MU (/ax) encoding.
-        'v_tx_mode_he_su':       # Port level stat: Transmitted packets with HE single-user (/ax) encoding.
-        'v_tx_mode_he_tb':       # Port level stat: Transmitted packets with HE TB (/ax) encoding.
+        'v_tx_mode_he_mu':       # Port level stat: Transmitted packets with HE MU (/ax+) encoding.
+        'v_tx_mode_he_su':       # Port level stat: Transmitted packets with HE single-user (/ax+)
+                                 # encoding.
+        'v_tx_mode_he_tb':       # Port level stat: Transmitted packets with HE TB (/ax+) encoding.
         'v_tx_mode_ht':          # Port level stat: Transmitted packets with HT (/n) encoding.
         'v_tx_mode_ht_gf':       # Port level stat: Transmitted packets with HT greenfield (/n) encoding.
         'v_tx_mode_ofdm':        # Port level stat: Transmitted packets with OFDM (a/g) encoding.
-        'v_tx_mode_vht':         # Port level stat: Transmitted packets with VHT greenfield (/ac) encoding.
+        'v_tx_mode_vht':         # Port level stat: Transmitted packets with VHT (/ac) encoding.
         'v_tx_nss_1':            # Port level stat: Transmitted packets with 1 spatial stream encoding.
         'v_tx_nss_2':            # Port level stat: Transmitted packets with 2 spatial streams encoding.
         'v_tx_nss_3':            # Port level stat: Transmitted packets with 3 spatial streams encoding.
