@@ -86,6 +86,8 @@ class L3CXProfile(LFCliBase):
 
     # To separate the prefix (alphabets) and suffix(numerics/digits) in the endpoint
     def separate_endpoints_prefix(self, endpoint):
+        separation = endpoint.split('.')
+        endpoint = separation[-1]
         endpoint_prefix = re.findall('[A-Za-z]', endpoint)
         endpoint_suffix = re.findall('[0-9]', endpoint)
         return ''.join(endpoint_prefix), ''.join(endpoint_suffix)
