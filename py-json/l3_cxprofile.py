@@ -544,10 +544,16 @@ class L3CXProfile(LFCliBase):
             # iterating the end points list
             for endpoint in end_point_list:
                 if int(quantity) > 1:
-                    side_a = [endpoint[0]]
+                    if port_increment_a == '0' and port_increment_b != '0':
+                        side_a = list(set(endp_a_list))
+                    else:
+                        for i in side_a:
+                            side_a_info = self.local_realm.name_to_eid(i)
+                            side_a_shelf = side_a_info[0]
+                            side_a_resource = side_a_info[1]
+                            for endp_name in [endpoint[0]]:
+                                side_a = [f'{side_a_shelf}.{side_a_resource}.{endp_name}']
                     side_b_info = self.local_realm.name_to_eid(endpoint[1])
-                    side_b_shelf = side_b_info[0]
-                    side_b_resource = side_b_info[1]
                 for port_name in side_a:
                     side_a_info = self.local_realm.name_to_eid(port_name, debug=debug_)
                     side_a_shelf = side_a_info[0]
@@ -700,10 +706,16 @@ class L3CXProfile(LFCliBase):
             # iterating the end points list
             for endpoint in end_point_list:
                 if int(quantity) > 1:
+                    if port_increment_a != '0' and port_increment_b == '0':
+                        side_b = list(set(endp_b_list))
+                    else:
+                        for i in side_b:
+                            side_b_info = self.local_realm.name_to_eid(i)
+                            side_b_shelf = side_b_info[0]
+                            side_b_resource = side_b_info[1]
+                            for endp_name in [endpoint[1]]:
+                                side_b = [f'{side_b_shelf}.{side_b_resource}.{endp_name}']
                     side_a_info = self.local_realm.name_to_eid(endpoint[0])
-                    side_a_shelf = side_a_info[0]
-                    side_a_resource = side_a_info[1]
-                    side_b = [endpoint[1]]
                 for port_name in side_b:
                     logger.info(side_b)
                     side_b_info = self.local_realm.name_to_eid(port_name, debug=debug_)
