@@ -2187,7 +2187,9 @@ Example : LAN-1927  WPA3-TLS-Configuration
  --log_level debug
 
 
-
+For wifi_extra_keys syntax 
+telnet <lanforge ip> 4001 
+type: help set_wifi_extra 
 wifi_extra keys:
                 key_mgmt  (Key Mangement)
                 pairwise  (Pairwise Ciphers)
@@ -2195,7 +2197,7 @@ wifi_extra keys:
                 psk     (WPA PSK)
                 wep_key
                 ca_cert (CA Cert File)
-                eap     (EAP Methods)
+                eap     (EAP Methods) EAP method: MD5, MSCHAPV2, OTP, GTC, TLS, PEAP, TTLS. (note different the GUI no appended EAP-)
                 identity    (EAP Identity)
                 anonymous_identity  (EAP Anon Identity)
                 phase1  (Phase-1)
