@@ -17,7 +17,7 @@ EXAMPLE:
              "--port","8080",
              "--lf_user","lanforge",
              "--lf_password","lanforge",
-             "--vap_radio","wiphy0",
+             "--vap_radio","1.1.wiphy0",
              "--vap_freq","2437",
              "--vap_ssid","test_vap",
              "--vap_passwd","password",
