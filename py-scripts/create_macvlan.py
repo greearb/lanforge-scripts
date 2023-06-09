@@ -19,16 +19,6 @@ EXAMPLE:
 
             ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0,eth1#1,eth1#2 
 
-        # Broken CLI
-
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
-            --netmask 255.255.240.0 --gateway 10.40.0.1 --add_to_group test_two
-        
-        # Broken CLI
-
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
-            --connections_per_port 2 --netmask 255.255.240.0 --gateway 10.40.0.1
-
 SCRIPT_CLASSIFICATION:  Creation
 
 SCRIPT_CATEGORIES:  Functional 
@@ -38,9 +28,9 @@ NOTES:
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   20-MAY-2023,
+VERIFIED_ON:   09-JUN-2023,
              GUI Version:  5.4.6
-             Kernel Version: 6.2.14+
+             Kernel Version: 5.19.17+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
@@ -154,16 +144,6 @@ EXAMPLE:
 
             ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0,eth1#1,eth1#2 
 
-        # Broken CLI
-
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
-            --netmask 255.255.240.0 --gateway 10.40.0.1 --add_to_group test_two
-        
-        # Broken CLI
-
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
-            --connections_per_port 2 --netmask 255.255.240.0 --gateway 10.40.0.1
-
 SCRIPT_CLASSIFICATION:  Creation
 
 SCRIPT_CATEGORIES:  Functional 
@@ -173,9 +153,9 @@ NOTES:
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   20-MAY-2023,
+VERIFIED_ON:   09-JUN-2023,
              GUI Version:  5.4.6
-             Kernel Version: 6.2.14+
+             Kernel Version: 5.19.17+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
