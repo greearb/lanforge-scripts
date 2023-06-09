@@ -26,7 +26,7 @@ EXAMPLE:
 
 SCRIPT_CLASSIFICATION:  Creation
 
-SCRIPT_CATEGORIES:   Not Functional (--station_flag Functionality Broken)
+SCRIPT_CATEGORIES:   Functional 
 
 NOTES: 
         Does not create cross connects 
@@ -34,30 +34,59 @@ NOTES:
          
         * We can also specify the mode for the stations using "--mode" argument
     
-        --mode   1
-            {"auto"   : "0",
-            "a"      : "1",
-            "b"      : "2",
-            "g"      : "3",
-            "abg"    : "4",
-            "abgn"   : "5",
-            "bgn"    : "6",
-            "bg"     : "7",
-            "abgnAC" : "8",
-            "anAC"   : "9",
-            "an"     : "10",
-            "bgnAC"  : "11",
-            "abgnAX" : "12",
-            "bgnAX"  : "13"}
-    
-        example:
-                create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2 --mode 6
+            --mode   1
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13"}
+
+            example:
+                    create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
+                    --security wpa2 --mode 6
+
+            --station_flag  <staion_flags>
+                add_sta_flags = {
+                "osen_enable"          :  Enable OSEN protocol (OSU Server-only Authentication)
+                "ht40_disable"         :  Disable HT-40 even if hardware and AP support it.
+                "ht160_enable"         :  Enable HT160 mode.
+                "disable_sgi"          :  Disable SGI (Short Gu
+                "hs20_enable"          :  Enable Hotspot 2.0 (HS20) feature.  R
+                "txo-enable"           :  Enable/disable tx-offloads, typically managed by set_wifi_txo command
+                "custom_conf"          :  Use Custom wpa_supplicant config file.
+                "ibss_mode"            :  Station should be in IBSS mode.
+                "mesh_mode"            :  Station should be in MESH mode.
+                "wds-mode"             :  WDS station (sort of like a lame mesh), not supported on ath10k
+                "scan_ssid"            :  Enable SCAN-SSID flag in wpa_supplicant.
+                "passive_scan"         :  Use passive scanning (don't send probe requests).
+                "lf_sta_migrate"       :  OK-To-Migrate (Allow station migration between LANforge radios)
+                "disable_fast_reauth"  :  Disable fast_reauth option for virtual stations.
+                "power_save_enable"    :  Station should enable power-save.  May not work in all drivers/configurations.
+                "disable_roam"         :  Disable automatic station roaming based on scan results.
+                "no-supp-op-class-ie"  :  Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
+                "use-bss-transition"   :  Enable BSS transition.
+                "ft-roam-over-ds"      :  Roam over DS when AP supports it.
+                "disable_ht80"         :  Disable HT80 (for AC chipset NICs only)}
+
+            example:
+                    create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
+                    --security wpa2 --station_flag power_save_enable
+
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   20-MAY-2023,
+VERIFIED_ON:   9-JUN-2023,
              GUI Version:  5.4.6
-             Kernel Version: 6.2.14+
+             Kernel Version: 5.19.17+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
@@ -131,9 +160,15 @@ class CreateStation(Realm):
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
         self.station_profile.mode = self.mode
+        # if self.sta_flags is not None:
+        #     self.station_profile.desired_add_sta_flags = self.sta_flags
+        #     self.station_profile.desired_add_sta_mask = self.sta_flags
+
         if self.sta_flags is not None:
-            self.station_profile.desired_add_sta_flags = self.sta_flags
-            self.station_profile.desired_add_sta_mask = self.sta_flags
+            _flags = self.sta_flags.split(',')
+            for flags in _flags:
+                print(flags)
+                self.station_profile.set_command_flag("add_sta", flags, 1)
 
         if self.debug:
             print("----- Station List ----- ----- ----- ----- ----- ----- \n")
@@ -215,17 +250,19 @@ EXAMPLE:
             create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 22 --num_stations 10 --ssid <ssid> --passwd <password> --security wpa2
 
          # For creating the stations with radio settings like anteena, channel, etc.
-
-
-    Add a single station:
          
-    Add a single station:
             create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
             --radio_antenna 4 --radio_channel 6
 
+         # For station enabled with additional flags
+            
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
+            --station_flag <staion_flags>
+           
+
 SCRIPT_CLASSIFICATION:  Creation
 
-SCRIPT_CATEGORIES:   Not Functional (--station_flag Functionality Broken)
+SCRIPT_CATEGORIES:   Functional 
 
 NOTES: 
         Does not create cross connects 
@@ -233,30 +270,59 @@ NOTES:
          
         * We can also specify the mode for the stations using "--mode" argument
     
-        --mode   1
-            {"auto"   : "0",
-            "a"      : "1",
-            "b"      : "2",
-            "g"      : "3",
-            "abg"    : "4",
-            "abgn"   : "5",
-            "bgn"    : "6",
-            "bg"     : "7",
-            "abgnAC" : "8",
-            "anAC"   : "9",
-            "an"     : "10",
-            "bgnAC"  : "11",
-            "abgnAX" : "12",
-            "bgnAX"  : "13"}
-    
-        example:
-                create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2 --mode 6
+            --mode   1
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13"}
+
+            example:
+                    create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
+                    --security wpa2 --mode 6
+
+            --station_flag  <staion_flags>
+                add_sta_flags = {
+                "osen_enable"          :  Enable OSEN protocol (OSU Server-only Authentication)
+                "ht40_disable"         :  Disable HT-40 even if hardware and AP support it.
+                "ht160_enable"         :  Enable HT160 mode.
+                "disable_sgi"          :  Disable SGI (Short Gu
+                "hs20_enable"          :  Enable Hotspot 2.0 (HS20) feature.  R
+                "txo-enable"           :  Enable/disable tx-offloads, typically managed by set_wifi_txo command
+                "custom_conf"          :  Use Custom wpa_supplicant config file.
+                "ibss_mode"            :  Station should be in IBSS mode.
+                "mesh_mode"            :  Station should be in MESH mode.
+                "wds-mode"             :  WDS station (sort of like a lame mesh), not supported on ath10k
+                "scan_ssid"            :  Enable SCAN-SSID flag in wpa_supplicant.
+                "passive_scan"         :  Use passive scanning (don't send probe requests).
+                "lf_sta_migrate"       :  OK-To-Migrate (Allow station migration between LANforge radios)
+                "disable_fast_reauth"  :  Disable fast_reauth option for virtual stations.
+                "power_save_enable"    :  Station should enable power-save.  May not work in all drivers/configurations.
+                "disable_roam"         :  Disable automatic station roaming based on scan results.
+                "no-supp-op-class-ie"  :  Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
+                "use-bss-transition"   :  Enable BSS transition.
+                "ft-roam-over-ds"      :  Roam over DS when AP supports it.
+                "disable_ht80"         :  Disable HT80 (for AC chipset NICs only)}
+
+            example:
+                    create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
+                    --security wpa2 --station_flag power_save_enable
+
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   20-MAY-2023,
+VERIFIED_ON:   9-JUN-2023,
              GUI Version:  5.4.6
-             Kernel Version: 6.2.14+
+             Kernel Version: 5.19.17+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
@@ -278,10 +344,9 @@ INCLUDE_IN_README: False
         default=0)
     optional.add_argument(
         '--station_flag',
-        help='station flags to add',
+        help='station flags to add. eg: --station_flag ht40_disable',
         required=False,
-        default=None,
-        action='append')
+        default=None)
 
     optional.add_argument(
         "--radio_antenna",
