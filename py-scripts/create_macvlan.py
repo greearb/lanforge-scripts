@@ -2,36 +2,51 @@
 """
 NAME: create_macvlan.py
 
-PURPOSE:
-    This script will create a variable number of macvlans on a specified ethernet port.
+PURPOSE:  This script will create a variable number of macvlans on a specified ethernet port.
 
 EXAMPLE:
-    ./create_macvlan.py --mgr localhost --macvlan_parent <port> --num_ports <num ports>
-      --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
+        # Sample CLI Formate:
 
-    ./create_macvlan.py --mgr localhost --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
-      --netmask 255.255.255.0 --gateway 192.168.92.1
+            ./create_macvlan.py --mgr localhost --macvlan_parent <port> --num_ports <num ports>
+            --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
-    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3
-      --use_ports eth1#0,eth1#1,eth1#2 --connections_per_port 2
+        # For creating the variable number of macvlan's
 
-    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
-      --netmask 255.255.240.0 --gateway 10.40.0.1 --add_to_group test_two
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
+            --netmask 255.255.255.0 --gateway 192.168.92.1
 
-    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
-      --connections_per_port 2 --netmask 255.255.240.0 --gateway 10.40.0.1
+        # For creating the macvlan's using user-defined port names
+
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0,eth1#1,eth1#2 
+
+        # Broken CLI
+
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
+            --netmask 255.255.240.0 --gateway 10.40.0.1 --add_to_group test_two
+        
+        # Broken CLI
+
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
+            --connections_per_port 2 --netmask 255.255.240.0 --gateway 10.40.0.1
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:  Functional 
 
 NOTES:
+        You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
 
-    You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
+STATUS: BETA RELEASE
 
-    Tested on 03/17/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
+VERIFIED_ON:   20-MAY-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.14+
 
-COPYRIGHT:
-    Copyright 2023 Candela Technologies Inc
-    License: Free to distribute and modify. LANforge systems must be licensed.
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
 """
 
@@ -120,37 +135,57 @@ def main():
         prog='create_macvlan.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''Creates MACVLAN endpoints.''',
+        epilog='''\
+            Creates MACVLAN endpoints.''',
 
         description='''\
 NAME: create_macvlan.py
 
-PURPOSE:
-    This script will create a variable number of macvlans on a specified ethernet port.
+PURPOSE:  This script will create a variable number of macvlans on a specified ethernet port.
 
 EXAMPLE:
-    ./create_macvlan.py --mgr localhost --macvlan_parent <port> --num_ports <num ports>
-      --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
+        # Sample CLI Formate:
 
-    ./create_macvlan.py --mgr localhost --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
-      --netmask 255.255.255.0 --gateway 192.168.92.1
+            ./create_macvlan.py --mgr localhost --macvlan_parent <port> --num_ports <num ports>
+            --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
-    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3
-      --use_ports eth1#0,eth1#1,eth1#2 --connections_per_port 2
+        # For creating the variable number of macvlan's
 
-    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
-      --netmask 255.255.240.0 --gateway 10.40.0.1 --add_to_group test_two
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
+            --netmask 255.255.255.0 --gateway 192.168.92.1
 
-    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
-      --connections_per_port 2 --netmask 255.255.240.0 --gateway 10.40.0.1
+        # For creating the macvlan's using user-defined port names
+
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0,eth1#1,eth1#2 
+
+        # Broken CLI
+
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
+            --netmask 255.255.240.0 --gateway 10.40.0.1 --add_to_group test_two
+        
+        # Broken CLI
+
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
+            --connections_per_port 2 --netmask 255.255.240.0 --gateway 10.40.0.1
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:  Functional 
 
 NOTES:
+        You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
 
-    You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
+STATUS: BETA RELEASE
 
-    Tested on 03/17/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
+VERIFIED_ON:   20-MAY-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
 ''')
     parser.add_argument(
@@ -160,7 +195,7 @@ NOTES:
     parser.add_argument(
         '-u',
         '--upstream_port',
-        help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
+        help='Non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
         default='1.eth1')
     parser.add_argument(
         '--macvlan_parent',
@@ -181,8 +216,8 @@ NOTES:
         type=int)
     parser.add_argument(
         '--use_ports',
-        help='list of comma separated ports to use with ips, \'=\' separates name and ip'
-        '{ port_name1=ip_addr1,port_name1=ip_addr2 }. '
+        help='List of comma separated ports to use with ips, \'=\' separates name and ip'
+        '{ port_name1=ip_addr1, port_name1=ip_addr2 }. \n'
         'Ports without ips will be left alone',
         default=None)
     parser.add_argument(
