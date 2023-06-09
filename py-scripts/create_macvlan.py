@@ -75,7 +75,6 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class CreateMacVlan(Realm):
     def __init__(self, host, port,
-                 upstream_port="eth1",
                  num_ports=1,
                  macvlan_parent=None,
                  first_mvlan_ip=None,
@@ -92,7 +91,6 @@ class CreateMacVlan(Realm):
                          _exit_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail)
         self.port = port
-        self.upstream_port = upstream_port
         self.port_list = []
         self.connections_per_port = connections_per_port
         self.ip_list = ip_list
@@ -188,11 +186,6 @@ LICENSE:
 INCLUDE_IN_README: False
 
 ''')
-    parser.add_argument(
-        '-u',
-        '--upstream_port',
-        help='Non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
-        default='1.eth1')
     parser.add_argument(
         '--macvlan_parent',
         help='specifies parent port for macvlan creation',
@@ -300,7 +293,6 @@ INCLUDE_IN_README: False
                             args.mgr_port,
                             port_list=port_list,
                             ip_list=ip_list,
-                            upstream_port=args.upstream_port,
                             _debug_on=args.debug,
                             macvlan_parent=args.macvlan_parent,
                             first_mvlan_ip=args.first_mvlan_ip,
