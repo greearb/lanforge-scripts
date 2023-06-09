@@ -6,7 +6,7 @@ PURPOSE: This script will query and display information associated with a specif
 EXAMPLE:
         # Sample CLI Formate:
 
-            ./lf_port_probe.py --mgr localhost --port 1.1.eth0
+            ./lf_port_probe.py --mgr localhost --port_eid 1.1.eth0
 
 SCRIPT_CLASSIFICATION:  Port scanner
 
@@ -97,7 +97,7 @@ PURPOSE: This script will query and display information associated with a specif
 EXAMPLE:
         # Sample CLI Formate:
 
-            ./lf_port_probe.py --mgr localhost --port 1.1.eth0
+            ./lf_port_probe.py --mgr localhost --port_eid 1.1.eth0
 
 SCRIPT_CLASSIFICATION:  Port scanner
 
