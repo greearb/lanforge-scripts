@@ -2,22 +2,33 @@
 """
 NAME: lf_port_probe.py
 
-PURPOSE:
-    This script will query and display information associated with a specified port.
-
+PURPOSE: This script will query and display information associated with a specified port.
 EXAMPLE:
-    Use './lf_port_probe.py --help' to see command line usage and options
+        # Sample CLI Formate:
 
-    ./lf_port_probe.py --mgr localhost --port 1.1.eth0
+            ./lf_port_probe.py --mgr localhost --port 1.1.eth0
+
+SCRIPT_CLASSIFICATION:  Port scanner
+
+SCRIPT_CATEGORIES:  Functional 
 
 NOTES:
+        This script performs a targeted query on a specified port and subsequently presents 
+        comprehensive information associated with it. The gathered details will include the port's 
+        Radio information, Regulatory information.
 
-    Tested on 03/24/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
 
-Copyright 2021 Candela Technologies Inc
-License: Free to distribute and modify. LANforge systems must be licensed.
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   28-MAY-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
 """
 
@@ -82,19 +93,33 @@ def main():
         description='''\
 NAME: lf_port_probe.py
 
-PURPOSE:
-    This script will query and display information associated with a specified port.
-
+PURPOSE: This script will query and display information associated with a specified port.
 EXAMPLE:
-    Use './lf_port_probe.py --help' to see command line usage and options
+        # Sample CLI Formate:
 
-    ./lf_port_probe.py --mgr localhost --port 1.1.eth0
+            ./lf_port_probe.py --mgr localhost --port 1.1.eth0
+
+SCRIPT_CLASSIFICATION:  Port scanner
+
+SCRIPT_CATEGORIES:  Functional 
 
 NOTES:
+        This script performs a targeted query on a specified port and subsequently presents 
+        comprehensive information associated with it. The gathered details will include the port's 
+        Radio information, Regulatory information.
 
-    Tested on 03/24/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   28-MAY-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
         ''')
 
