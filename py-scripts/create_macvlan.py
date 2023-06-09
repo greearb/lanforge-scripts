@@ -232,10 +232,6 @@ INCLUDE_IN_README: False
         '--gateway',
         help='specifies default gateway to be used with static addressing',
         default=None)
-    parser.add_argument(
-        '--cxs',
-        help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group',
-        default=None)
 
     args = parser.parse_args()
 
