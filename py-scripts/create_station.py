@@ -2,23 +2,68 @@
 """
 NAME: create_station.py
 
-PURPOSE:
-    create_station.py will create a variable number of stations, and connect them to a specified wireless network.
+PURPOSE: create_station.py will create a variable number of stations, and connect them to a specified wireless network.
 
 EXAMPLE:
-    create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
+         # For creating the single stations
+
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
+
+         # For creating the multiple stations
+         
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 22 --num_stations 10 --ssid <ssid> --passwd <password> --security wpa2
+
+         # For creating the stations with radio settings like anteena, channel, etc.
+         
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
+            --radio_antenna 4 --radio_channel 6
+
+         # For station enabled with additional flags
+            
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
+            --station_flag <staion_flags>
+           
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:   Not Functional (--station_flag Functionality Broken)
 
 NOTES: 
-    Does not create cross connects 
-    Mainly used to determine how to create a station
+        Does not create cross connects 
+        Mainly used to determine how to create a station
+         
+        * We can also specify the mode for the stations using "--mode" argument
+    
+        --mode   1
+            {"auto"   : "0",
+            "a"      : "1",
+            "b"      : "2",
+            "g"      : "3",
+            "abg"    : "4",
+            "abgn"   : "5",
+            "bgn"    : "6",
+            "bg"     : "7",
+            "abgnAC" : "8",
+            "anAC"   : "9",
+            "an"     : "10",
+            "bgnAC"  : "11",
+            "abgnAX" : "12",
+            "bgnAX"  : "13"}
+    
+        example:
+                create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2 --mode 6
 
-    Tested on 03/08/2023:
-         kernel version: 5.19.17+
-         gui version: 5.4.6
+STATUS: BETA RELEASE
 
-COPYRIGHT: 
-Copyright 2022 Candela Technologies Inc
-License: Free to distribute and modify. LANforge systems must be licensed.
+VERIFIED_ON:   20-MAY-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
 """
 import sys
@@ -158,52 +203,72 @@ def main():
 
 NAME: create_station.py
 
-PURPOSE:
-    create_station.py will create a variable number of stations, and connect them to a specified wireless network.
+PURPOSE: create_station.py will create a variable number of stations, and connect them to a specified wireless network.
 
 EXAMPLE:
+         # For creating the single stations
+
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
+
+         # For creating the multiple stations
+         
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 22 --num_stations 10 --ssid <ssid> --passwd <password> --security wpa2
+
+         # For creating the stations with radio settings like anteena, channel, etc.
+
 
     Add a single station:
-        create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
+         
+    Add a single station:
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
+            --radio_antenna 4 --radio_channel 6
 
-    Add multiple stations:
-        ./create_station.py
-            --radio wiphy0
-            --start_id 2
-            --num_stations 3
-            --security open
-            --ssid netgear
-            --passwd BLANK
-            --mode   1
-                {"auto"   : "0",
-                "a"      : "1",
-                "b"      : "2",
-                "g"      : "3",
-                "abg"    : "4",
-                "abgn"   : "5",
-                "bgn"    : "6",
-                "bg"     : "7",
-                "abgnAC" : "8",
-                "anAC"   : "9",
-                "an"     : "10",
-                "bgnAC"  : "11",
-                "abgnAX" : "12",
-                "bgnAX"  : "13"}
-            --debug
+SCRIPT_CLASSIFICATION:  Creation
 
-NOTES:
-    Does not create cross connects
-    Mainly used to determine how to create a station
+SCRIPT_CATEGORIES:   Not Functional (--station_flag Functionality Broken)
 
-    Tested on 03/08/2023:
-         kernel version: 5.19.17+
-         gui version: 5.4.6
+NOTES: 
+        Does not create cross connects 
+        Mainly used to determine how to create a station
+         
+        * We can also specify the mode for the stations using "--mode" argument
+    
+        --mode   1
+            {"auto"   : "0",
+            "a"      : "1",
+            "b"      : "2",
+            "g"      : "3",
+            "abg"    : "4",
+            "abgn"   : "5",
+            "bgn"    : "6",
+            "bg"     : "7",
+            "abgnAC" : "8",
+            "anAC"   : "9",
+            "an"     : "10",
+            "bgnAC"  : "11",
+            "abgnAX" : "12",
+            "bgnAX"  : "13"}
+    
+        example:
+                create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2 --mode 6
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   20-MAY-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
             ''')
     required = parser.add_argument_group('required arguments')
     required.add_argument(
         '--start_id',
-        help='--start_id <value> default 0',
+        help='Specify the station starting id \n e.g: --start_id <value> default 0', 
         default=0)
 
     optional = parser.add_argument_group('Optional arguments')
@@ -217,19 +282,30 @@ NOTES:
         required=False,
         default=None,
         action='append')
-    optional.add_argument("--radio_antenna", help='number of spatial streams: '
-                                            ' 0 Diversity (All),'
-                                            ' 1 Fixed-A (1x1),'
-                                            ' 4 AB (2x2),'
-                                            ' 7 ABC (3x3),'
-                                            ' 8 ABCD (4x4),'
-                                            ' 9 (8x8)'
-                                            ' default = -1', default='-1')
-    optional.add_argument("--radio_channel", help='channel of the radio: '
-                                                  'e.g. 6 (2.4G) or 36 (5G) '
-                                                  'default: AUTO',default='AUTO')
-    optional.add_argument("--radio_tx_power", help='radio tx power default: AUTO system defaults',default='AUTO')
 
+    optional.add_argument(
+        "--radio_antenna",
+        help='Number of spatial streams: \n'
+            ' default = -1 \n'
+            ' 0 Diversity (All) \n'
+            ' 1 Fixed-A (1x1) \n'
+            ' 4 AB (2x2) \n'
+            ' 7 ABC (3x3) \n'
+            ' 8 ABCD (4x4) \n'
+            ' 9 (8x8) \n', 
+        default='-1')
+    optional.add_argument(
+        "--radio_channel", 
+        help='Radio Channel: \n'
+            ' default: AUTO \n'
+            ' e.g:   --radio_channel 6 (2.4G) \n'
+                    '\t--radio_channel 36 (5G) \n',
+        default='AUTO')
+    optional.add_argument(
+        "--radio_tx_power", 
+        help='Radio tx-power \n'
+            ' default: AUTO system defaults',
+        default='AUTO')
 
     args = parser.parse_args()
 
