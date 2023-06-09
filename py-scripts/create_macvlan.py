@@ -189,10 +189,6 @@ INCLUDE_IN_README: False
 
 ''')
     parser.add_argument(
-        '--num_stations',
-        help='Number of stations to create',
-        default=0)
-    parser.add_argument(
         '-u',
         '--upstream_port',
         help='Non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
