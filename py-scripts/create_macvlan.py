@@ -288,7 +288,7 @@ INCLUDE_IN_README: False
     # TODO:  Cleanup by default, add --no_cleanup option to not do cleanup.
 
     if ip_test.passes():
-        logging.info(msg)('Created %s MacVlan connections' % args.num_ports)
+        logging.info('Created %s MacVlan connections' % args.num_ports)
         ip_test.exit_success()
     else:
         ip_test.exit_fail()
