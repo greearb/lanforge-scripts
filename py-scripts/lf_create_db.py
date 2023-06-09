@@ -2,21 +2,41 @@
 '''
 NAME: lf_create_db.py
 
-PURPOSE:
-    This script will create the BLANK & FACTORY_DFLT database's on a newly built LANforge system.
-     The script will preform the following tasks:
-     - set existing ports up, down, and then up again.
-     - enable and disable dhcp on existing ethernet ports.
-     - create BLANK db and arrange port coordinates.
-     - create FACTORY_DFLT db and arrange port coordinates.
+PURPOSE: This script will create the BLANK & FACTORY_DFLT database's on a newly built LANforge system.
 
+EXAMPLE:
+        # Sample CLI Formate:
 
-EXAMPLE ct521a:
-    ./lf_create_db.py --mgr <localhost> --db_name defaults
+            ./lf_create_db.py --mgr <localhost> --db_name <db_name>
 
-COPYRIGHT:
-    Copyright 2022 Candela Technologies Inc
-    License: Free to distribute and modify. LANforge systems must be licensed.
+        # Create default database BLANK and FACTORY_DFLT
+            
+            ./lf_create_db.py --mgr localhost --db_name defaults
+
+SCRIPT_CLASSIFICATION:  Creation, Loading
+
+SCRIPT_CATEGORIES:  Not Functional 
+
+NOTES:
+        The script will preform the following tasks:    [Currently, these operations are broken.]
+
+        - set existing ports up, down, and then up again.
+        - enable and disable dhcp on existing ethernet ports.
+        - create BLANK db and arrange port coordinates.
+        - create FACTORY_DFLT db and arrange port coordinates.
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   28-MAY-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
+
 '''
 
 import sys
@@ -222,19 +242,44 @@ def main():
     parser = argparse.ArgumentParser(
         prog='lf_create_db.py',
         formatter_class=argparse.RawTextHelpFormatter,
-        description='''
----------------------------
-LANforge Unit Test:  Create Netsmith Database's - lf_create_db.py
----------------------------
-Summary:
-This script will create the FACTORY_DFLT and BLANK Netsmith database's.
----------------------------
-CLI Example:
+        description='''\
 
-Create default database BLANK and FACTORY_DFLT
-./lf_create_db.py --mgr localhost --db_name defaults
+NAME: lf_create_db.py
 
----------------------------
+PURPOSE: This script will create the BLANK & FACTORY_DFLT database's on a newly built LANforge system.
+
+EXAMPLE:
+        # Sample CLI Formate:
+
+            ./lf_create_db.py --mgr <localhost> --db_name <db_name>
+
+        # Create default database BLANK and FACTORY_DFLT
+            
+            ./lf_create_db.py --mgr localhost --db_name defaults
+
+SCRIPT_CLASSIFICATION:  Creation, Loading
+
+SCRIPT_CATEGORIES:  Not Functional 
+
+NOTES:
+        The script will preform the following tasks:    [Currently, these operations are broken.]
+
+        - set existing ports up, down, and then up again.
+        - enable and disable dhcp on existing ethernet ports.
+        - create BLANK db and arrange port coordinates.
+        - create FACTORY_DFLT db and arrange port coordinates.
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   28-MAY-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 ''')
     parser.add_argument("-m", "--mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
                         default='localhost')
