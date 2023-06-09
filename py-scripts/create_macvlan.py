@@ -15,9 +15,13 @@ EXAMPLE:
             ./create_macvlan.py --mgr localhost --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
             --netmask 255.255.255.0 --gateway 192.168.92.1
 
-        # For creating the macvlan's using user-defined port names
+        # For creating the macvlan's with user-defined port names
 
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0,eth1#1,eth1#2 
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0,eth1#1,eth1#2
+
+        # For creating the macvlan's with first defiende port name
+
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_port eth1#143
 
 SCRIPT_CLASSIFICATION:  Creation
 
@@ -140,9 +144,13 @@ EXAMPLE:
             ./create_macvlan.py --mgr localhost --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
             --netmask 255.255.255.0 --gateway 192.168.92.1
 
-        # For creating the macvlan's using user-defined port names
+        # For creating the macvlan's with user-defined port names
 
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0,eth1#1,eth1#2 
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0,eth1#1,eth1#2
+
+        # For creating the macvlan's with first defiende port name
+
+            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_port eth1#143
 
 SCRIPT_CLASSIFICATION:  Creation
 
@@ -205,7 +213,7 @@ INCLUDE_IN_README: False
     args.macvlan_parent = LFUtils.name_to_eid(args.macvlan_parent)
     port_list = []
     ip_list = []
-    if args.first_port is not None and args.use_ports is not None:
+    if args.first_port is not None:
         if args.first_port.startswith("sta"):
             if (args.num_ports is not None) and (int(args.num_ports) > 0):
                 start_num = int(args.first_port[3:])
