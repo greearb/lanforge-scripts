@@ -123,7 +123,6 @@ INCLUDE_IN_README: False
 
         ''')
 
-    parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--port_eid', help='EID of station to be used', default="1.1.eth0")
 
     args = parser.parse_args()
