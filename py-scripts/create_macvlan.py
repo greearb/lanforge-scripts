@@ -83,7 +83,6 @@ class CreateMacVlan(Realm):
                  dhcp=True,
                  port_list=None,
                  ip_list=None,
-                 connections_per_port=1,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -92,7 +91,6 @@ class CreateMacVlan(Realm):
                          _exit_on_fail=_exit_on_fail)
         self.port = port
         self.port_list = []
-        self.connections_per_port = connections_per_port
         self.ip_list = ip_list
         self.netmask = netmask
         self.gateway = gateway
@@ -116,7 +114,7 @@ class CreateMacVlan(Realm):
         self.created_ports = []
 
     def build(self):
-        # Build stations
+        # Build MACVLANs
         print("Creating MACVLANs")
         if self.mvlan_profile.create(
             admin_down=False,
@@ -198,11 +196,6 @@ INCLUDE_IN_README: False
         '--num_ports',
         help='number of ports to create',
         default=1)
-    parser.add_argument(
-        '--connections_per_port',
-        help='specifies number of connections to be used per port',
-        default=1,
-        type=int)
     parser.add_argument(
         '--use_ports',
         help='List of comma separated ports to use with ips, \'=\' separates name and ip'
@@ -300,7 +293,6 @@ INCLUDE_IN_README: False
                             gateway=args.gateway,
                             dhcp=dhcp,
                             num_ports=args.num_ports,
-                            connections_per_port=args.connections_per_port,
                             # want a mount options param
                             )
 
