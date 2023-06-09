@@ -109,7 +109,7 @@ class CreateMacVlan(Realm):
 
     def build(self):
         # Build MACVLANs
-        print("Creating MACVLANs")
+        logger.info("Creating MACVLANs")
         if self.mvlan_profile.create(
             admin_down=False,
             sleep_time=0,
@@ -268,9 +268,7 @@ INCLUDE_IN_README: False
             dhcp = False
     else:
         dhcp = True
-    # print(port_list)
 
-    # exit(1)
     ip_test = CreateMacVlan(args.mgr,
                             args.mgr_port,
                             port_list=port_list,
@@ -290,7 +288,7 @@ INCLUDE_IN_README: False
     # TODO:  Cleanup by default, add --no_cleanup option to not do cleanup.
 
     if ip_test.passes():
-        print('Created %s MacVlan connections' % args.num_ports)
+        logging.info(msg)('Created %s MacVlan connections' % args.num_ports)
         ip_test.exit_success()
     else:
         ip_test.exit_fail()
