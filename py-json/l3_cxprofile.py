@@ -539,6 +539,11 @@ class L3CXProfile(LFCliBase):
                         endp_a_list.append(endp_a_prefix + str(i).zfill(len(endp_a_suffix)))
                     for j in range(int(quantity)):
                         endp_b_list.append(side_b)
+                elif port_increment_a == '0' and port_increment_b == '0':
+                    for i in range(int(quantity)):
+                        endp_a_list.append(side_a[0])
+                    for j in range(int(quantity)):
+                        endp_b_list.append(side_b)
                 end_point_list = list(zip(endp_a_list, endp_b_list))
                 # logger.info("Endpoint-A List:%s" % endp_a_list)
                 # logger.info("Endpoint-B List:%s" % endp_b_list)
@@ -547,6 +552,8 @@ class L3CXProfile(LFCliBase):
             for endpoint in end_point_list:
                 if int(quantity) > 1:
                     if port_increment_a == '0' and port_increment_b != '0':
+                        side_a = list(set(endp_a_list))
+                    elif port_increment_a == '0' and port_increment_b == '0':
                         side_a = list(set(endp_a_list))
                     else:
                         for i in side_a:
@@ -700,6 +707,11 @@ class L3CXProfile(LFCliBase):
                         endp_a_list.append(endp_a_prefix + str(i).zfill(len(endp_a_suffix)))
                     for j in range(int(quantity)):
                         endp_b_list.append(side_b[0])
+                elif port_increment_a == '0' and port_increment_b == '0':
+                    for i in range(int(quantity)):
+                        endp_a_list.append(side_a)
+                    for j in range(int(quantity)):
+                        endp_b_list.append(side_b[0])
                 end_point_list = list(zip(endp_a_list, endp_b_list))
                 # logger.info("Endpoint-A List:%s" % endp_a_list)
                 # logger.info("Endpoint-B List:%s" % endp_b_list)
@@ -709,6 +721,8 @@ class L3CXProfile(LFCliBase):
             for endpoint in end_point_list:
                 if int(quantity) > 1:
                     if port_increment_a != '0' and port_increment_b == '0':
+                        side_b = list(set(endp_b_list))
+                    elif port_increment_a == '0' and port_increment_b == '0':
                         side_b = list(set(endp_b_list))
                     else:
                         for i in side_b:
