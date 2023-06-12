@@ -93,7 +93,8 @@ class CreateL3(Realm):
                  _ip_port_increment_b=None,
                  _min_ip_port_a=None,
                  _min_ip_port_b=None,
-                 _multi_conn=None):
+                 _multi_conn_a=None,
+                 _multi_conn_b=None):
         super().__init__(host, port)
         self.host = host
         self.port = port
@@ -114,7 +115,8 @@ class CreateL3(Realm):
         self.cx_profile.side_a_max_bps = max_rate_a
         self.cx_profile.side_b_min_bps = min_rate_b
         self.cx_profile.side_b_max_bps = max_rate_b
-        self.cx_profile.mconn = _multi_conn
+        self.cx_profile.mconn_A = _multi_conn_a
+        self.cx_profile.mconn_B = _multi_conn_b
         # for batch creation window automation attributes
         self.quantity = _quantity
         self.port_increment_a = _endp_a_increment
@@ -164,7 +166,8 @@ EXAMPLE:
 
         # For remote layer-3 cx creation:
 
-            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
+            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+             --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
 
         # For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
 
@@ -175,7 +178,7 @@ EXAMPLE:
 
             ./create_l3.py --mgr 192.168.200.93 --endp_a 'eth1' --endp_b 'wlan2' --min_rate_a '6200000' --min_rate_b '6200000'
              --quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000 
-             --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn 1 --no_cleanup
+             --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
 
 SCRIPT_CLASSIFICATION:  Creation
 
@@ -208,6 +211,9 @@ INCLUDE_IN_README: False
     parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
     parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
 
+    parser.add_argument('--multi_conn_a', help='modify multi connection endpoint-a for cx', default=0, type=int)
+    parser.add_argument('--multi_conn_b', help='modify multi connection endpoint-b for cx', default=0, type=int)
+
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
     parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
 
@@ -215,7 +221,6 @@ INCLUDE_IN_README: False
 
     parser.add_argument('--min_ip_port_a', help='min ip port range for endp-a', default=-1)
     parser.add_argument('--min_ip_port_b', help='min ip port range for endp-b', default=-1)
-    parser.add_argument('--multi_conn', help='modify multi connection for cx', default=0, type=int)
     parser.add_argument('--quantity', help='No of cx endpoints to batch-create', default=1)
     parser.add_argument('--endp_a_increment', help='End point - A port increment', default=0)
     parser.add_argument('--endp_b_increment', help='End point - B port increment', default=0)
@@ -248,7 +253,8 @@ INCLUDE_IN_README: False
                            _ip_port_increment_b=args.ip_port_increment_b,
                            _min_ip_port_a=args.min_ip_port_a,
                            _min_ip_port_b=args.min_ip_port_b,
-                           _multi_conn=args.multi_conn
+                           _multi_conn_a=args.multi_conn_a,
+                           _multi_conn_b=args.multi_conn_b
                            )
 
     ip_var_test.pre_cleanup()
