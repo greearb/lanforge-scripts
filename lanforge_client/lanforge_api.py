@@ -549,8 +549,8 @@ class BaseLFJsonRequest:
         elif not url.endswith("/newsession"):
             self.logger.warning("Request (%s) sent without X-LFJson-ID header".format(url))
         if debug:
-            self.logger.by_method("headers sent to: " + url)
-            self.logger.by_method(pformat(myrequest.headers))
+            self.logger.debug(msg="headers sent to: " + url)
+            self.logger.debug(msg=pformat(myrequest.headers))
 
         # https://stackoverflow.com/a/59635684/11014343
 
@@ -771,7 +771,7 @@ class BaseLFJsonRequest:
         die_on_error |= self.die_on_error
 
         if debug:
-            self.logger.debug(message="%s url:[%s]" % (__name__, url))
+            self.logger.debug(msg="%s url:[%s]" % (__name__, url))
 
         if not connection_timeout_sec:
             if self.session_instance.get_timeout_sec():
@@ -852,7 +852,7 @@ class BaseLFJsonRequest:
 
         if responses[0] is None:
             if debug:
-                self.logger.debug(message="No response from " + url)
+                self.logger.debug(msg="No response from " + url)
             return None
 
         json_data = json.loads(responses[0].read().decode('utf-8'))
