@@ -70,7 +70,8 @@ class L3CXProfile(LFCliBase):
         self.created_endp = {}
         self.name_prefix = name_prefix_
         self.number_template = number_template_
-        self.mconn = mconn
+        self.mconn_A = mconn
+        self.mconn_B = mconn
 
     def get_cx_count(self):
         return len(self.created_cx.keys())
@@ -578,9 +579,6 @@ class L3CXProfile(LFCliBase):
                     these_cx.append(cx_name)
                     these_endp.append(endp_a_name)
                     these_endp.append(endp_b_name)
-                    mconn_b = self.mconn
-                    if mconn_b > 1:
-                        mconn_b = 1
                     endp_side_a = {
                         "alias": endp_a_name,
                         "shelf": side_a_shelf,
@@ -592,7 +590,7 @@ class L3CXProfile(LFCliBase):
                         "min_pkt": self.side_a_min_pdu,
                         "max_pkt": self.side_a_max_pdu,
                         "ip_port": ip_port_a,
-                        "multi_conn": self.mconn,
+                        "multi_conn": self.mconn_A,
                     }
                     endp_side_b = {
                         "alias": endp_b_name,
@@ -605,7 +603,7 @@ class L3CXProfile(LFCliBase):
                         "min_pkt": self.side_b_min_pdu,
                         "max_pkt": self.side_b_max_pdu,
                         "ip_port": ip_port_b,
-                        "multi_conn": mconn_b,
+                        "multi_conn": self.mconn_B,
                     }
 
                     url = "/cli-json/add_endp"
@@ -746,9 +744,6 @@ class L3CXProfile(LFCliBase):
                     these_cx.append(cx_name)
                     these_endp.append(endp_a_name)
                     these_endp.append(endp_b_name)
-                    mconn_b = self.mconn
-                    if mconn_b > 1:
-                        mconn_b = 1
                     endp_side_a = {
                         "alias": endp_a_name,
                         "shelf": side_a_shelf,
@@ -760,7 +755,7 @@ class L3CXProfile(LFCliBase):
                         "min_pkt": self.side_a_min_pdu,
                         "max_pkt": self.side_a_max_pdu,
                         "ip_port": ip_port_a,
-                        "multi_conn": self.mconn,
+                        "multi_conn": self.mconn_A,
                     }
                     endp_side_b = {
                         "alias": endp_b_name,
@@ -773,7 +768,7 @@ class L3CXProfile(LFCliBase):
                         "min_pkt": self.side_b_min_pdu,
                         "max_pkt": self.side_b_max_pdu,
                         "ip_port": ip_port_b,
-                        "multi_conn": mconn_b,
+                        "multi_conn": self.mconn_B,
                     }
 
                     url = "/cli-json/add_endp"
