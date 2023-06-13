@@ -631,7 +631,7 @@ INCLUDE_IN_README: False
                         help="ssid name")
     parser.add_argument("-security", "--security", default="open",
                         help="ssid Security type")
-    parser.add_argument("-paswd", "--paswd", default="[BLANK]",
+    parser.add_argument("-paswd", "--paswd", "-passwd", "--passwd", default="[BLANK]",
                         help="ssid Password")
     parser.add_argument("--report_dir", default="")
     parser.add_argument("--scenario", default="")
