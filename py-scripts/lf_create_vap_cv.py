@@ -212,15 +212,18 @@ class create_vap_cv(cv_test):
                                          line=None)
 
         self.build_chamberview(chamber=chamber, scenario_name=scenario_name)
-        c = args.vap_radio.split(".")
+        c = args.vap_radio
+        eid = self.name_to_eid(c)
+        k=str(eid[0])+'.'+str(eid[1])+'.'
         m = requests.get("http://" + self.lfclient_host + ":" + str(self.lf_port) + "/port/all")
         n = m.json()
         for i in n["interfaces"]:
             for a, b in i.items():
-                if c[2] in b["parent dev"]:
-                    if "vap" in b["alias"]:
-                        vap = c[0] + "." + c[1] + "." + b["alias"]
-        self.wait_for_ip(station_list=[vap])
+                if k in b["port"]:
+                    if eid[2] in b["parent dev"]:
+                        if "vap" in b["alias"]:
+                            vap = b["alias"]
+        self.wait_for_ip(station_list=[k+vap])
 
 
 def main():
