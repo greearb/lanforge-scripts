@@ -24,6 +24,7 @@ TO DO NOTES:
 
 """
 import sys
+import time
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -346,6 +347,9 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
     parser.add_argument('--speed', help='(set wanlink info) The maximum speed of traffic this endpoint will accept (bps). both ports', default=1000000)
     parser.add_argument('--speed_A', help='(set wanlink info) The maximum speed of traffic this endpoint will accept (bps). port A', default=None)
     parser.add_argument('--speed_B', help='(set wanlink info) The maximum speed of traffic this endpoint will accept (bps). port B', default=None)
+    parser.add_argument('--drop_nth_pkt', help='(set wanlink info) drop packets at every Nth received packet', default=None)
+    parser.add_argument('--drop_nth_pkt_A', help='(set wanlink info) drop packets at every Nth received packet, port A', default=None)
+    parser.add_argument('--drop_nth_pkt_B', help='(set wanlink info) drop packets at every Nth received packet, port B', default=None)
     parser.add_argument('--suppress_related_commands', help='(set wanlink info) Used by lanforge_api Default False if set store true', action='store_true')
 
     # Set Endp Flags enable KernelMode
@@ -444,6 +448,9 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
     speed_A = args.speed_A if args.speed_A is not None else args.speed
     speed_B = args.speed_B if args.speed_B is not None else args.speed
 
+    drop_nth_pkt_A = args.drop_nth_pkt_A if args.drop_nth_pkt_A is not None else args.drop_nth_pkt
+    drop_nth_pkt_B = args.drop_nth_pkt_B if args.drop_nth_pkt_B is not None else args.drop_nth_pkt
+
     # Comment out some parameters like 'max_jitter', 'drop_freq' and 'wanlink'
     # in order to view the X-Errors headers
 
@@ -509,7 +516,16 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
                              # accept (bps).
                              _debug=args.debug,
                              _suppress_related_commands=args.suppress_related_commands)
-
+    if drop_nth_pkt_A:
+        wanlink.set_endp_flag(_name=endp_A,
+                              _flag=wanlink.command.SetEndpFlagFlag.dropXthPkt.value,
+                              _val=1,
+                              _suppress_related_commands=args.suppress_related_commands)
+    if drop_nth_pkt_B:
+        wanlink.set_endp_flag(_name=endp_B,
+                              _flag=wanlink.command.SetEndpFlagFlag.dropXthPkt.value,
+                              _val=1,
+                              _suppress_related_commands=args.suppress_related_commands)
     if args.kernel_mode:
         wanlink.set_endp_flag(_name=endp_A,
                               _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
@@ -589,6 +605,12 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
                               _val=0,
                               _suppress_related_commands=args.suppress_related_commands)
 
+    wanlink.command.post_nc_show_endpoints(endpoint=endp_A,
+                                        debug=args.debug,
+                                        suppress_related_commands=args.suppress_related_commands)
+    wanlink.command.post_nc_show_endpoints(endpoint=endp_B,
+                                        debug=args.debug,
+                                        suppress_related_commands=args.suppress_related_commands)
     eid_list = [args.wl_name]
     ewarn_list = []
     result = wanlink.get_wl(_eid_list=eid_list,
