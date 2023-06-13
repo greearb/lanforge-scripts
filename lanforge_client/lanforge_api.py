@@ -12701,6 +12701,9 @@ class LFJsonCommand(JsonCommand):
         QuiesceAfterRange = "QuiesceAfterRange"            # quiesce after range of bytes
         Unmanaged = "Unmanaged"                            # Set endpoint unmanaged
         UseAutoNAT = "UseAutoNAT"                          # NAT friendly behavior
+        dropXthPkt = "dropXthPkt"                          # Drop every Nth packet on a WANpath endpoint. This
+        # +feature is WANlink endpoint based and not WANpath
+        # +based.
 
     def post_set_endp_flag(self, 
                            flag: str = None,                         # The name of the flag. [R]
