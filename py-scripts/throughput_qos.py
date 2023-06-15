@@ -7,13 +7,13 @@ PURPOSE: throughput_qos.py will create stations and endpoints which evaluates  l
 
 EXAMPLE:
 To Test with 2.4GHz clients, use:
-python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_2g wiphy0 --ssid_2g testqos --passwd_2g [BLANK] --security_2g open --upstream eth1 --test_duration 1m --download 1000000 --bands 2.4g 
+python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_2g wiphy0 --ssid_2g testqos --passwd_2g [BLANK] --security_2g open --upstream eth1 --test_duration 1m --download 1000000 --bands 2.4g --traffic_type lf_tcp
 
 To Test with 5GHz clients, use:
-python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_5g wiphy0 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --upstream eth1 --test_duration 1m --download 1000000 --bands 5g 
+python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_5g wiphy0 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --upstream eth1 --test_duration 1m --download 1000000 --bands 5g --traffic_type lf_udp
 
 To Test with 2.4GHz & 5GHz clients (BOTH), use:
-python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_2g wiphy0 --ssid_2g testqos --passwd_2g [BLANK] --security_2g open --radio_5g wiphy0 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --radio_5g wiphy1 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open –upstream eth1 --test_duration 1m --download 1000000 --bands both 
+python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_2g wiphy0 --ssid_2g testqos --passwd_2g [BLANK] --security_2g open --radio_5g wiphy0 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --upstream eth1 --test_duration 1m --download 1000000 --bands both --traffic_type lf_tcp
 
 Use './throughput_qos.py --help' to see command line usage and options
 Copyright 2022 Candela Technologies Inc
@@ -113,7 +113,7 @@ class ThroughputQOS(Realm):
         self.station_profile.debug = self.debug
         self.station_profile.use_ht160 = use_ht160
         if self.station_profile.use_ht160:
-            self.station_profile.mode = 9
+            self.station_profile.mode = 14
         # self.station_profile.mode = mode
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
@@ -157,7 +157,7 @@ class ThroughputQOS(Realm):
         for key in self.bands:
             if self.create_sta:
                 if key == "2.4G" or key == "2.4g":
-                    self.station_profile.mode = 11
+                    self.station_profile.mode = 13
                     if self.ssid is None:
                         self.station_profile.use_security(self.security_2g, self.ssid_2g, self.password_2g)
                     else:
@@ -169,7 +169,7 @@ class ThroughputQOS(Realm):
                     self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                     self.station_profile.create(radio=self.radio_2g, sta_names_=self.sta_list, debug=self.debug)
                 if key == "5G" or key == "5g":
-                    self.station_profile.mode = 9
+                    self.station_profile.mode = 14
                     if self.ssid is None:
                         self.station_profile.use_security(self.security_5g, self.ssid_5g, self.password_5g)
                     else:
@@ -186,7 +186,7 @@ class ThroughputQOS(Realm):
                         self.station_profile.use_security(self.security_2g, self.ssid_2g, self.password_2g)
                     else:
                         self.station_profile.use_security(self.security, self.ssid, self.password)
-                    self.station_profile.mode = 11
+                    self.station_profile.mode = 13
                     self.station_profile.set_number_template(self.number_template)
                     print("Creating stations")
                     self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
@@ -198,7 +198,7 @@ class ThroughputQOS(Realm):
                         self.station_profile.use_security(self.security_5g, self.ssid_5g, self.password_5g)
                     else:
                         self.station_profile.use_security(self.security, self.ssid, self.password)
-                    self.station_profile.mode = 9
+                    self.station_profile.mode = 14
                     self.station_profile.set_number_template(self.number_template)
                     self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                     self.station_profile.set_command_param("set_port", "report_timer", 1500)
@@ -404,13 +404,13 @@ class ThroughputQOS(Realm):
                 latency_df = [[], [], [], []]
                 if case == "2.4g" or case == "2.4G":
                     num_stations.append("{}".format(str(len(self.sta_list))))
-                    mode.append("bgn-Ac")
+                    mode.append("bgn-AX")
                 elif case == "5g" or case == "5G":
                     num_stations.append("{}".format(str(len(self.sta_list))))
-                    mode.append("an-AC")
+                    mode.append("an-AX")
                 elif case == "both" or case == "BOTH":
                     num_stations.append("{} + {}".format(str(len(self.sta_list) // 2), str(len(self.sta_list) // 2)))
-                    mode.append("bgn-AC + an-AC")
+                    mode.append("bgn-AX + an-AX")
                 for key in res[case]:
                     # if case == "both" or case == "BOTH":
                     #     key
@@ -845,7 +845,7 @@ python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num
     for i in range(len(bands)):
         if bands[i] == "2.4G" or bands[i] == "2.4g":
             args.bands = bands[i]
-            args.mode = 11
+            args.mode = 13
             if args.create_sta:
                 station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=int(args.num_stations) - 1,
                                                       padding_number_=10000, radio=args.radio_2g)
@@ -853,7 +853,7 @@ python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num
                 station_list = args.sta_names.split(",")
         elif bands[i] == "5G" or bands[i] == "5g":
             args.bands = bands[i]
-            args.mode = 9
+            args.mode = 14
             if args.create_sta:
                 station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=int(args.num_stations) - 1,
                                                       padding_number_=10000,
@@ -931,7 +931,7 @@ python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num
                 if not throughput_qos.passes():
                     print(throughput_qos.get_fail_message())
                     throughput_qos.exit_fail()
-                LFUtils.wait_until_ports_admin_up(port_list=station_list)
+                #LFUtils.wait_until_ports_admin_up(port_list=station_list)
                 if throughput_qos.passes():
                     throughput_qos.success()
                 throughput_qos.cleanup()
