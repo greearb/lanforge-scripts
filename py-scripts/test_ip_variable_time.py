@@ -506,6 +506,7 @@ class IPVariableTime(Realm):
                                 output_format=output,
                                 compared_report=compared_rept,
                                 script_name='test_ip_variable_time',
+                                resource= self.resource,
                                 debug=self.debug)
 
         # fill out data kpi.csv and results reports
