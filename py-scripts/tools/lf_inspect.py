@@ -503,12 +503,12 @@ class inspect_sql:
                         # TODO iloc 0 is the first row since ascending=False the most recent is at iloc 0
                         db_index_1 = int(self.db_index_list[0])
                         logger.debug("First row {first}".format(first=df_tmp.iloc[db_index_1]))
-                        df_data_1 = df_tmp.iloc[0]
+                        df_data_1 = df_tmp.iloc[db_index_1]
                         logger.debug("type: {data} {data1}".format(data=type(df_data_1), data1=df_data_1))
 
                         db_index_2 = int(self.db_index_list[1])
                         logger.debug("Second row {second}".format(second=df_tmp.iloc[db_index_2]))
-                        df_data_2 = df_tmp.iloc[1]
+                        df_data_2 = df_tmp.iloc[db_index_2]
 
                         percent_delta = 0
                         if((int(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
