@@ -551,9 +551,15 @@ class inspect_sql:
                             df_data_1['test-id'],
                             df_data_1['short-description'],
                             df_data_1['Units'],
+                            df_data_1['dut-hw-version'],
+                            df_data_1['dut-sw-version'],
+                            df_data_1['dut-model-num'],
                             df_data_1['kernel'],
                             df_data_1['gui_build_date'],
                             df_data_1['numeric-score'],
+                            df_data_2['dut-hw-version'],
+                            df_data_2['dut-sw-version'],
+                            df_data_2['dut-model-num'],
                             df_data_2['kernel'],
                             df_data_2['gui_build_date'],
                             df_data_2['numeric-score'],
@@ -587,9 +593,11 @@ class inspect_sql:
                         <td>""" + str(df_data_1['test-id']) + """</td>
                         <td>""" + str(df_data_1['short-description']) + """</td>
                         <td>""" + str(df_data_1['Units']) + """</td>
+                        <td>""" + str(df_data_1['dut-model-num']) + """</td>
                         <td>""" + str(df_data_1['kernel']) + """</td>
                         <td>""" + str(df_data_1['gui_build_date']) + """</td>
                         <td>""" + str(df_data_1['numeric-score']) + """</td>
+                        <td>""" + str(df_data_2['dut-model-num']) + """</td>
                         <td>""" + str(df_data_2['kernel']) + """</td>
                         <td>""" + str(df_data_2['gui_build_date']) + """</td>
                         <td>""" + str(df_data_2['numeric-score']) + """</td>
@@ -803,9 +811,15 @@ class inspect_sql:
                                 df_data_1['test-id'],
                                 df_data_1['short-description'],
                                 df_data_1['Units'],
+                                df_data_1['dut-hw-version'],
+                                df_data_1['dut-sw-version'],
+                                df_data_1['dut-model-num'],
                                 df_data_1['kernel'],
                                 df_data_1['gui_build_date'],
                                 df_data_1['numeric-score'],
+                                df_data_2['dut-hw-version'],
+                                df_data_2['dut-sw-version'],
+                                df_data_2['dut-model-num'],
                                 df_data_2['kernel'],
                                 df_data_2['gui_build_date'],
                                 df_data_2['numeric-score'],
@@ -836,9 +850,11 @@ class inspect_sql:
                             <td>""" + str(df_data_1['test-id']) + """</td>
                             <td>""" + str(df_data_1['short-description']) + """</td>
                             <td>""" + str(df_data_1['Units']) + """</td>
+                            <td>""" + str(df_data_1['dut-model-num']) + """</td>
                             <td>""" + str(df_data_1['kernel']) + """</td>
                             <td>""" + str(df_data_1['gui_build_date']) + """</td>
                             <td>""" + str(df_data_1['numeric-score']) + """</td>
+                            <td>""" + str(df_data_2['dut-model-num']) + """</td>
                             <td>""" + str(df_data_2['kernel']) + """</td>
                             <td>""" + str(df_data_2['gui_build_date']) + """</td>
                             <td>""" + str(df_data_2['numeric-score']) + """</td>
