@@ -470,7 +470,7 @@ class L3CXProfile(LFCliBase):
                 suppress_related_commands=None,
                 debug_=False,
                 tos=None, timeout=300, ip_port_a=-1, ip_port_b=-1,
-                quantity=1, port_increment_a=None, port_increment_b=None,
+                batch_quantity=1, port_increment_a=None, port_increment_b=None,
                 ip_port_increment_a=0, ip_port_increment_b=0):
         # Returns a 2-member array, list of cx, list of endp on success.
         # If endpoints creation fails, returns False, False
@@ -504,7 +504,7 @@ class L3CXProfile(LFCliBase):
             endp_a_list, endp_b_list = [], []
             end_point_list = side_a
             # setting the end points for batch-create functionality if type of side_a is list
-            if int(quantity) > 1:
+            if int(batch_quantity) > 1:
                 # separating the endpoints prefix
                 endp_a_prefix, endp_a_suffix = self.separate_endpoints_prefix(side_a[0])
                 endp_b_prefix, endp_b_suffix = self.separate_endpoints_prefix(side_b)
@@ -523,31 +523,31 @@ class L3CXProfile(LFCliBase):
                         endp_b_suffix = suffix
                 if port_increment_a != '0' and port_increment_b != '0':
                     for i in range(int(endp_a_suffix),
-                                   int(int(quantity) * int(port_increment_a) + int(endp_a_suffix)),
+                                   int(int(batch_quantity) * int(port_increment_a) + int(endp_a_suffix)),
                                    int(port_increment_a)):
                         endp_a_list.append(endp_a_prefix + str(i).zfill(len(endp_a_suffix)))
                     for j in range(int(endp_b_suffix),
-                                   int(int(quantity) * int(port_increment_b) + int(endp_b_suffix)),
+                                   int(int(batch_quantity) * int(port_increment_b) + int(endp_b_suffix)),
                                    int(port_increment_b)):
                         endp_b_list.append(endp_b_prefix + str(j).zfill(len(endp_b_suffix)))
                 elif port_increment_a == '0' and port_increment_b != '0':
-                    for i in range(int(quantity)):
+                    for i in range(int(batch_quantity)):
                         endp_a_list.append(side_a[0])
                     for j in range(int(endp_b_suffix),
-                                   int(int(quantity) * int(port_increment_b) + int(endp_b_suffix)),
+                                   int(int(batch_quantity) * int(port_increment_b) + int(endp_b_suffix)),
                                    int(port_increment_b)):
                         endp_b_list.append(endp_b_prefix + str(j).zfill(len(endp_b_suffix)))
                 elif port_increment_a != '0' and port_increment_b == '0':
                     for i in range(int(endp_a_suffix),
-                                   int(int(quantity) * int(port_increment_a) + int(endp_a_suffix)),
+                                   int(int(batch_quantity) * int(port_increment_a) + int(endp_a_suffix)),
                                    int(port_increment_a)):
                         endp_a_list.append(endp_a_prefix + str(i).zfill(len(endp_a_suffix)))
-                    for j in range(int(quantity)):
+                    for j in range(int(batch_quantity)):
                         endp_b_list.append(side_b)
                 elif port_increment_a == '0' and port_increment_b == '0':
-                    for i in range(int(quantity)):
+                    for i in range(int(batch_quantity)):
                         endp_a_list.append(side_a[0])
-                    for j in range(int(quantity)):
+                    for j in range(int(batch_quantity)):
                         endp_b_list.append(side_b)
                 end_point_list = list(zip(endp_a_list, endp_b_list))
                 # logger.info("Endpoint-A List:%s" % endp_a_list)
@@ -556,7 +556,7 @@ class L3CXProfile(LFCliBase):
 
             # iterating the end points list
             for port_name in end_point_list:
-                if int(quantity) > 1:
+                if int(batch_quantity) > 1:
                     side_a_info = self.local_realm.name_to_eid(port_name[0])
                     side_b_info = self.local_realm.name_to_eid(port_name[1])
                 else:
@@ -663,7 +663,7 @@ class L3CXProfile(LFCliBase):
             endp_a_list, endp_b_list = [], []
             end_point_list = side_b
             # setting the end points for batch-create functionality if type of side_b list
-            if int(quantity) > 1:
+            if int(batch_quantity) > 1:
                 # separating the endpoints prefix
                 endp_a_prefix, endp_a_suffix = self.separate_endpoints_prefix(side_a)
                 endp_b_prefix, endp_b_suffix = self.separate_endpoints_prefix(side_b[0])
@@ -682,31 +682,31 @@ class L3CXProfile(LFCliBase):
                         endp_b_suffix = suffix
                 if port_increment_a != '0' and port_increment_b != '0':
                     for i in range(int(endp_a_suffix),
-                                   int(int(quantity) * int(port_increment_a) + int(endp_a_suffix)),
+                                   int(int(batch_quantity) * int(port_increment_a) + int(endp_a_suffix)),
                                    int(port_increment_a)):
                         endp_a_list.append(endp_a_prefix + str(i).zfill(len(endp_a_suffix)))
                     for j in range(int(endp_b_suffix),
-                                   int(int(quantity) * int(port_increment_b) + int(endp_b_suffix)),
+                                   int(int(batch_quantity) * int(port_increment_b) + int(endp_b_suffix)),
                                    int(port_increment_b)):
                         endp_b_list.append(endp_b_prefix + str(j).zfill(len(endp_b_suffix)))
                 elif port_increment_a == '0' and port_increment_b != '0':
-                    for i in range(int(quantity)):
+                    for i in range(int(batch_quantity)):
                         endp_a_list.append(side_a)
                     for j in range(int(endp_b_suffix),
-                                   int(int(quantity) * int(port_increment_b) + int(endp_b_suffix)),
+                                   int(int(batch_quantity) * int(port_increment_b) + int(endp_b_suffix)),
                                    int(port_increment_b)):
                         endp_b_list.append(endp_b_prefix + str(j).zfill(len(endp_b_suffix)))
                 elif port_increment_a != '0' and port_increment_b == '0':
                     for i in range(int(endp_a_suffix),
-                                   int(int(quantity) * int(port_increment_a) + int(endp_a_suffix)),
+                                   int(int(batch_quantity) * int(port_increment_a) + int(endp_a_suffix)),
                                    int(port_increment_a)):
                         endp_a_list.append(endp_a_prefix + str(i).zfill(len(endp_a_suffix)))
-                    for j in range(int(quantity)):
+                    for j in range(int(batch_quantity)):
                         endp_b_list.append(side_b[0])
                 elif port_increment_a == '0' and port_increment_b == '0':
-                    for i in range(int(quantity)):
+                    for i in range(int(batch_quantity)):
                         endp_a_list.append(side_a)
-                    for j in range(int(quantity)):
+                    for j in range(int(batch_quantity)):
                         endp_b_list.append(side_b[0])
                 end_point_list = list(zip(endp_a_list, endp_b_list))
                 # logger.info("Endpoint-A List:%s" % endp_a_list)
@@ -715,7 +715,7 @@ class L3CXProfile(LFCliBase):
 
             # iterating the end points list
             for port_name in end_point_list:
-                if int(quantity) > 1:
+                if int(batch_quantity) > 1:
                     side_b_info = self.local_realm.name_to_eid(port_name[1])
                     side_a_info = self.local_realm.name_to_eid(port_name[0])
                 else:
