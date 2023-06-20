@@ -494,6 +494,9 @@ class L3CXProfile(LFCliBase):
                 "side_a_min_bps, side_a_max_bps, side_b_min_bps, and side_b_max_bps must all be set to a value")
 
         if type(side_a) == list and type(side_b) != list:
+            side_a_info = self.local_realm.name_to_eid(side_a[0])
+            side_a_shelf = side_a_info[0]
+            side_a_resource = side_a_info[1]
             side_b_info = self.local_realm.name_to_eid(side_b)
             side_b_shelf = side_b_info[0]
             side_b_resource = side_b_info[1]
@@ -550,25 +553,16 @@ class L3CXProfile(LFCliBase):
                 # logger.info("Endpoint-A List:%s" % endp_a_list)
                 # logger.info("Endpoint-B List:%s" % endp_b_list)
                 # logger.info("End Points Combinations : %s" % end_point_list)
-            # # iterating the end points list
-            # for endpoint in end_point_list:
-            #     if int(quantity) > 1:
-            #         if port_increment_a == '0' and port_increment_b != '0':
-            #             side_a = list(set(endp_a_list))
-            #         elif port_increment_a == '0' and port_increment_b == '0':
-            #             side_a = list(set(endp_a_list))
-            #         else:
-            #             for i in side_a:
-            #                 side_a_info = self.local_realm.name_to_eid(i)
-            #                 side_a_shelf = side_a_info[0]
-            #                 side_a_resource = side_a_info[1]
-            #                 for endp_name in [endpoint[0]]:
-            #                     side_a = [f'{side_a_shelf}.{side_a_resource}.{endp_name}']
-            #         side_b_info = self.local_realm.name_to_eid(endpoint[1])
-            for port_name in side_a:
-                side_a_info = self.local_realm.name_to_eid(port_name, debug=debug_)
-                side_a_shelf = side_a_info[0]
-                side_a_resource = side_a_info[1]
+
+            # iterating the end points list
+            for port_name in end_point_list:
+                if int(quantity) > 1:
+                    side_a_info = self.local_realm.name_to_eid(port_name[0])
+                    side_b_info = self.local_realm.name_to_eid(port_name[1])
+                else:
+                    side_a_info = self.local_realm.name_to_eid(port_name, debug=debug_)
+                    side_a_shelf = side_a_info[0]
+                    side_a_resource = side_a_info[1]
 
                 cx_name = "%s%s-%i" % (self.name_prefix, side_a_info[2], len(self.created_cx))
 
@@ -651,14 +645,17 @@ class L3CXProfile(LFCliBase):
                     "cx_name": cx_name,
                     "milliseconds": self.report_timer
                 })
-            if ip_port_a != -1:
-                if ip_port_increment_a != 0:
-                    ip_port_a = int(ip_port_a) + int(ip_port_increment_a)
-            if ip_port_b != -1:
-                if ip_port_increment_b != 0:
-                    ip_port_b = int(ip_port_b) + int(ip_port_increment_b)
+                if ip_port_a != -1:
+                    if ip_port_increment_a != 0:
+                        ip_port_a = int(ip_port_a) + int(ip_port_increment_a)
+                if ip_port_b != -1:
+                    if ip_port_increment_b != 0:
+                        ip_port_b = int(ip_port_b) + int(ip_port_increment_b)
 
         elif type(side_b) == list and type(side_a) != list:
+            side_b_info = self.local_realm.name_to_eid(side_b[0])
+            side_b_shelf = side_b_info[0]
+            side_b_resource = side_b_info[1]
             side_a_info = self.local_realm.name_to_eid(side_a, debug=debug_)
             side_a_shelf = side_a_info[0]
             side_a_resource = side_a_info[1]
@@ -716,27 +713,17 @@ class L3CXProfile(LFCliBase):
                 # logger.info("Endpoint-B List:%s" % endp_b_list)
                 # logger.info("End Points Combinations : %s" % end_point_list)
 
-            # # iterating the end points list
-            # for endpoint in end_point_list:
-            #     if int(quantity) > 1:
-            #         if port_increment_a != '0' and port_increment_b == '0':
-            #             side_b = list(set(endp_b_list))
-            #         elif port_increment_a == '0' and port_increment_b == '0':
-            #             side_b = list(set(endp_b_list))
-            #         else:
-            #             for i in side_b:
-            #                 side_b_info = self.local_realm.name_to_eid(i)
-            #                 side_b_shelf = side_b_info[0]
-            #                 side_b_resource = side_b_info[1]
-            #                 for endp_name in [endpoint[1]]:
-            #                     side_b = [f'{side_b_shelf}.{side_b_resource}.{endp_name}']
-            #         side_a_info = self.local_realm.name_to_eid(endpoint[0])
-            for port_name in side_b:
-                side_b_info = self.local_realm.name_to_eid(port_name, debug=debug_)
-                side_b_shelf = side_b_info[0]
-                side_b_resource = side_b_info[1]
+            # iterating the end points list
+            for port_name in end_point_list:
+                if int(quantity) > 1:
+                    side_b_info = self.local_realm.name_to_eid(port_name[1])
+                    side_a_info = self.local_realm.name_to_eid(port_name[0])
+                else:
+                    side_b_info = self.local_realm.name_to_eid(port_name, debug=debug_)
+                    side_b_shelf = side_b_info[0]
+                    side_b_resource = side_b_info[1]
 
-                cx_name = "%s%s-%i" % (self.name_prefix, port_name, len(self.created_cx))
+                cx_name = "%s%s-%i" % (self.name_prefix, side_b_info[2], len(self.created_cx))
                 endp_a_name = cx_name + "-A"
                 endp_b_name = cx_name + "-B"
                 self.created_cx[cx_name] = [endp_a_name, endp_b_name]
@@ -808,12 +795,12 @@ class L3CXProfile(LFCliBase):
                     "cx_name": cx_name,
                     "milliseconds": self.report_timer
                 })
-            if ip_port_a != -1:
-                if ip_port_increment_a != 0:
-                    ip_port_a = int(ip_port_a) + int(ip_port_increment_a)
-            if ip_port_b != -1:
-                if ip_port_increment_b != 0:
-                    ip_port_b = int(ip_port_b) + int(ip_port_increment_b)
+                if ip_port_a != -1:
+                    if ip_port_increment_a != 0:
+                        ip_port_a = int(ip_port_a) + int(ip_port_increment_a)
+                if ip_port_b != -1:
+                    if ip_port_increment_b != 0:
+                        ip_port_b = int(ip_port_b) + int(ip_port_increment_b)
         else:
             logger.critical(
                 "side_a or side_b must be of type list but not both: side_a is type {side_a} side_b is type {side_b}".format(
