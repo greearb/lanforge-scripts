@@ -101,7 +101,6 @@ class CreateL3(Realm):
         self.endp_b = endp_b
         self.endp_a = endp_a
         self.name_prefix = name_prefix
-        # self.mode = mode
         # self.station_profile = self.new_station_profile()
         # self.station_profile.lfclient_url = self.lfclient_url
         # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0,
@@ -234,7 +233,6 @@ INCLUDE_IN_README: False
                            endp_b=args.endp_b,
                            min_rate_a=args.min_rate_a,
                            min_rate_b=args.min_rate_b,
-                           mode=args.mode,
                            _debug_on=args.debug,
                            _quantity=args.batch_quantity,
                            _endp_a_increment=args.endp_a_increment,
