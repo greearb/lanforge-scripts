@@ -15,7 +15,7 @@ EXAMPLE:
 
 SCRIPT_CLASSIFICATION:  Creation, Loading
 
-SCRIPT_CATEGORIES:  Not Functional 
+SCRIPT_CATEGORIES:  Not Functional [Loading Factory Database is not developed.]
 
 NOTES:
         The script will preform the following tasks:    [Currently, these operations are broken.]
@@ -123,13 +123,16 @@ class create_database(Realm):
                     port_name = list(entity_id.keys())[0]
                     
                     # create pandas df from localhost:8080/ports/
-                    self.lf_ports_df = self.lf_ports_df.append(
-                        {'EID': port_name,
-                         '_links': entity_id[port_name].get('_links'),
-                         'Alias': entity_id[port_name].get('alias'),
-                         'Down': entity_id[port_name].get('down'),
-                         'Phantom': entity_id[port_name].get('phantom'),
-                         'Port': entity_id[port_name].get('port')}, ignore_index=True)
+                    # print(self.lf_ports_df)
+                    data = {'EID': port_name,
+                                        '_links': entity_id[port_name].get('_links'),
+                                        'Alias': entity_id[port_name].get('alias'),
+                                        'Down': entity_id[port_name].get('down'),
+                                        'Phantom': entity_id[port_name].get('phantom'),
+                                        'Port': entity_id[port_name].get('port')}
+                    df = pd.DataFrame([data])
+                    self.lf_ports_df = pd.concat(
+                        [self.lf_ports_df, df], ignore_index=True)
 
         return self.lf_ports_df
 
@@ -141,6 +144,7 @@ class create_database(Realm):
         # modify eth1 and eth2 to verify dhcp ipv4 unchecked
         
         port_status = self.lf_ports_df.get(["EID", "Down"])
+        print(port_status)
 
         for row in port_status.index:
             if not "eth0" in port_status.loc[row, "EID"]:
@@ -259,7 +263,7 @@ EXAMPLE:
 
 SCRIPT_CLASSIFICATION:  Creation, Loading
 
-SCRIPT_CATEGORIES:  Not Functional 
+SCRIPT_CATEGORIES:  Not Functional [Loading Factory Database is not developed.]
 
 NOTES:
         The script will preform the following tasks:    [Currently, these operations are broken.]
@@ -320,7 +324,7 @@ INCLUDE_IN_README: False
 
     # get all system port information as pandas df:
     all_ports_df = create_db.get_ports_data()
-    logger.info(all_ports_df)
+    logger.info("All Port Info : %s" % all_ports_df)
 
     # apply initial port configuration steps for default DB's:
     create_db.pre_config_ports()
