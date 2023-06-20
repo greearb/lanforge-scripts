@@ -80,7 +80,7 @@ class CreateL3(Realm):
                  name_prefix,
                  endp_b,
                  endp_a,
-                 host="localhost", port=8080, mode=0,
+                 host="localhost", port=8080,
                  min_rate_a=56, max_rate_a=0,
                  min_rate_b=56, max_rate_b=0,
                  _debug_on=False,
@@ -100,8 +100,8 @@ class CreateL3(Realm):
         self.port = port
         self.endp_b = endp_b
         self.endp_a = endp_a
-        self.mode = mode
         self.name_prefix = name_prefix
+        # self.mode = mode
         # self.station_profile = self.new_station_profile()
         # self.station_profile.lfclient_url = self.lfclient_url
         # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0,
@@ -228,10 +228,6 @@ INCLUDE_IN_README: False
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    num_sta = 0
-    # if (args.num_stations is not None) and (int(args.num_stations) > 0):
-    #     num_sta = int(args.num_stations)
-
     ip_var_test = CreateL3(host=args.mgr,
                            port=args.mgr_port,
                            name_prefix="VT",
@@ -263,7 +259,7 @@ INCLUDE_IN_README: False
         ip_var_test.pre_cleanup()
 
     if ip_var_test.passes():
-        logger.info("Created %s stations and connections" % num_sta)
+        logger.info("Cross Connects created successfully.")
         ip_var_test.exit_success()
     else:
         ip_var_test.exit_fail()
