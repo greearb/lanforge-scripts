@@ -27,7 +27,7 @@ def main():
     packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'websocket-client',
                 'xlsxwriter', 'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search',
                 'pyserial',
-                'pexpect-serial', 'scp','scipy','simple-geometry','kaleido']
+                'pexpect-serial', 'scp','scipy','simple-geometry','kaleido','psutil']
     if args.pyjwt:
         packages.append('pyjwt')
     else:
