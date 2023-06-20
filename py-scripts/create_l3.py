@@ -7,22 +7,23 @@ PURPOSE: This script is used to create the user-specified Layer-3 cross-connecti
 EXAMPLE:
         # For layer-3 cx creation on LANforge:
 
-            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
+            ./create_l3.py --mgr localhost --endp_a eth1 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000 --no_cleanup
 
         # For remote layer-3 cx creation:
 
-            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
+            ./create_l3.py --mgr localhost --endp_a eth1 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000
+             --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
 
         # For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
 
-            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+            ./create_l3.py --mgr localhost --endp_a 1.1.sta0000 --endp_b 1.2.sta0000 --min_rate_a 56000 --min_rate_b 40000 --no_cleanup
 
         # For batch creation functionality:
         (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
 
-            ./create_l3.py --mgr 192.168.200.93 --endp_a 'eth1' --endp_b 'wlan2' --min_rate_a '6200000' --min_rate_b '6200000'
-             --quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000
-             --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn 1 --no_cleanup
+            ./create_l3.py --mgr 192.168.200.93 --endp_a 1.1.eth1 --endp_b 1.1.wlan2 --min_rate_a 6200000 --min_rate_b 6200000
+             --batch_quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000 
+             --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
 
 SCRIPT_CLASSIFICATION:  Creation
 
@@ -39,14 +40,13 @@ NOTES:
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   15-MAY-2023,
+VERIFIED_ON:   20-JUN-2023,
              Build Version:  5.4.6
              Kernel Version: 6.2.14+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
           Copyright 2023 Candela Technologies Inc
-
 
 INCLUDE_IN_README: False
 
@@ -162,21 +162,21 @@ PURPOSE: This script is used to create the user-specified Layer-3 cross-connecti
 EXAMPLE:
         # For layer-3 cx creation on LANforge:
 
-            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
+            ./create_l3.py --mgr localhost --endp_a eth1 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000 --no_cleanup
 
         # For remote layer-3 cx creation:
 
-            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+            ./create_l3.py --mgr localhost --endp_a eth1 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000
              --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
 
         # For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
 
-            ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+            ./create_l3.py --mgr localhost --endp_a 1.1.sta0000 --endp_b 1.2.sta0000 --min_rate_a 56000 --min_rate_b 40000 --no_cleanup
 
         # For batch creation functionality:
         (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
 
-            ./create_l3.py --mgr 192.168.200.93 --endp_a 'eth1' --endp_b 'wlan2' --min_rate_a '6200000' --min_rate_b '6200000'
+            ./create_l3.py --mgr 192.168.200.93 --endp_a 1.1.eth1 --endp_b 1.1.wlan2 --min_rate_a 6200000 --min_rate_b 6200000
              --batch_quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000 
              --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
 
@@ -195,14 +195,13 @@ NOTES:
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   15-MAY-2023,
+VERIFIED_ON:   20-JUN-2023,
              Build Version:  5.4.6
              Kernel Version: 6.2.14+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
           Copyright 2023 Candela Technologies Inc
-
 
 INCLUDE_IN_README: False
         ''')
