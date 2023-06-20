@@ -1,4 +1,38 @@
 #!/usr/bin/env python3
+'''
+NAME: example_security_connection.py
+
+PURPOSE: This Python script generates a specified number of stations with a defined configuration. 
+         It aims to validate the fundamental(most basic form) security functionality of the LANforge device.
+
+EXAMPLE:
+        # Sample CLI Formate:
+            
+        ./example_security_connection.py --mgr 192.168.200.112 --mgr_port 8080 --num_stations 5 --mode 1
+        --radio wiphy2 --security {open|wep|wpa|wpa2|wpa3} --ssid NETGEAR_5G --ap "3c:37:86:13:81:70" 
+        --passwd Password@123 --debug
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES: Functional 
+
+NOTES:
+        * This python script creates a specified number of stations using with specified configuration.
+        * This verifies that the most basic form of security works with the LANforge device.
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   20-JUN-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.16+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
+
+'''
 import sys
 import os
 import importlib
@@ -93,23 +127,38 @@ def main():
              This verifies that the most basic form of security works with the LANforge device.
                 ''',
         description='''\
-        example_security_connection.py
-        ---------------------------------------------------------------------------
+NAME: example_security_connection.py
 
-    Example of command line to run:
-   ./example_security_connection.py  
-        --mgr localhost 
-        --mgr_port 8080  
-        --num_stations 6 
-        --mode   1      
-        --radio wiphy2
-        --security {open|wep|wpa|wpa2|wpa3} 
-        --ssid netgear-wpa3 
-        --ap "00:0e:8e:78:e1:76"
-        --passwd admin123-wpa3
-        --radio 1.1.wiphy0
-        --debug 
-        --log_level info
+PURPOSE: This Python script generates a specified number of stations with a defined configuration. 
+         It aims to validate the fundamental(most basic form) security functionality of the LANforge device.
+
+EXAMPLE:
+        # Sample CLI Formate:
+            
+        ./example_security_connection.py --mgr 192.168.200.112 --mgr_port 8080 --num_stations 5 --mode 1
+        --radio wiphy2 --security {open|wep|wpa|wpa2|wpa3} --ssid NETGEAR_5G --ap "3c:37:86:13:81:70" 
+        --passwd Password@123 --debug
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES: Functional 
+
+NOTES:
+        * This python script creates a specified number of stations using with specified configuration.
+        * This verifies that the most basic form of security works with the LANforge device.
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   20-JUN-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.16+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
+
             ''')
     # if required is not None:
     optional = None
