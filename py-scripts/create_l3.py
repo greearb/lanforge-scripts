@@ -118,7 +118,7 @@ class CreateL3(Realm):
         self.cx_profile.mconn_A = _multi_conn_a
         self.cx_profile.mconn_B = _multi_conn_b
         # for batch creation window automation attributes
-        self.quantity = _quantity
+        self.batch_quantity = _quantity
         self.port_increment_a = _endp_a_increment
         self.port_increment_b = _endp_b_increment
         self.ip_port_increment_a = _ip_port_increment_a
@@ -136,7 +136,7 @@ class CreateL3(Realm):
                                   sleep_time=0,
                                   ip_port_a=self.min_ip_port_a,
                                   ip_port_b=self.min_ip_port_b,
-                                  quantity=self.quantity,
+                                  batch_quantity=self.batch_quantity,
                                   port_increment_a=self.port_increment_a,
                                   port_increment_b=self.port_increment_b,
                                   ip_port_increment_a=self.ip_port_increment_a,
@@ -177,7 +177,7 @@ EXAMPLE:
         (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
 
             ./create_l3.py --mgr 192.168.200.93 --endp_a 'eth1' --endp_b 'wlan2' --min_rate_a '6200000' --min_rate_b '6200000'
-             --quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000 
+             --batch_quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000 
              --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
 
 SCRIPT_CLASSIFICATION:  Creation
@@ -221,7 +221,7 @@ INCLUDE_IN_README: False
 
     parser.add_argument('--min_ip_port_a', help='min ip port range for endp-a', default=-1)
     parser.add_argument('--min_ip_port_b', help='min ip port range for endp-b', default=-1)
-    parser.add_argument('--quantity', help='No of cx endpoints to batch-create', default=1)
+    parser.add_argument('--batch_quantity', help='No of cx endpoints to batch-create', default=1)
     parser.add_argument('--endp_a_increment', help='End point - A port increment', default=0)
     parser.add_argument('--endp_b_increment', help='End point - B port increment', default=0)
     parser.add_argument('--ip_port_increment_a', help='ip port increment for endp-a', default=1)
@@ -246,7 +246,7 @@ INCLUDE_IN_README: False
                            min_rate_b=args.min_rate_b,
                            mode=args.mode,
                            _debug_on=args.debug,
-                           _quantity=args.quantity,
+                           _quantity=args.batch_quantity,
                            _endp_a_increment=args.endp_a_increment,
                            _endp_b_increment=args.endp_b_increment,
                            _ip_port_increment_a=args.ip_port_increment_a,
