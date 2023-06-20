@@ -134,7 +134,7 @@ class InteropCommands(Realm):
             if self.debug:
                 print("====== ====== destination [%s] dur[%s] user_key[%s] " %
                       (self.log_destination, self.log_dur, user_key))
-                self.session.logger.register_method_name("json_post")
+                # self.session.logger.register_method_name("json_post")
             json_response = []
             self.command.post_log_capture(shelf=eid[0],
                                           resource=eid[1],
@@ -193,7 +193,7 @@ class InteropCommands(Realm):
             errors_warnings = []
 
             adb_key = self.session.get_session_based_key()
-            self.session.logger.error("adb_key: " + adb_key)
+            # self.session.logger.error("adb_key: " + adb_key)
             self.command.post_adb(shelf=eid[0],
                                   resource=eid[1],
                                   adb_id=eid[2],
@@ -229,7 +229,7 @@ class InteropCommands(Realm):
         errors_warnings = []
 
         adb_key = self.session.get_session_based_key()
-        self.session.logger.error("adb_key: " + adb_key)
+        # self.session.logger.error("adb_key: " + adb_key)
         self.command.post_adb(shelf=eid[0],
                               resource=eid[1],
                               key=adb_key,

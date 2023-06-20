@@ -212,8 +212,8 @@ class Turntable(Realm):
                 last_tilt = float(self.found_chamber[Turntable.CURRENT_TILT])
 
             if last_position == self.position and last_tilt == self.tilt:
-                self.api_session.logger.warning("target position %s and tilt %s reached in %s ms" %
-                                (self.position, self.tilt, (now_ms - start_ms)))
+                # self.api_session.logger.warning("target position %s and tilt %s reached in %s ms" %
+                #                 (self.position, self.tilt, (now_ms - start_ms)))
                 break
             time.sleep(check_ms / 1000)
             now_ms = lanforge_api._now_ms()
@@ -323,12 +323,12 @@ def main():
                                      stream_warnings=True,
                                      require_session=True,
                                      exit_on_error=True)
-    session.logger.enable(reserved_tag="json_get")
-    session.logger.enable(reserved_tag="json_post")
+    # session.logger.enable(reserved_tag="json_get")
+    # session.logger.enable(reserved_tag="json_post")
 
     # Validate arguments
     if not args.chamber:
-        session.logger.error("No chamber name provided")
+        # session.logger.error("No chamber name provided")
         sys.exit(1)
     if args.log_level is not None:
         logger.setLevel(args.log_level)

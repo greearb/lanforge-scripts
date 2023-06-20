@@ -71,8 +71,8 @@ def main():
     query: LFJsonQuery
     query = session.get_query()
 
-    session.logger.enable(reserved_tag="json_get")
-    session.logger.enable(reserved_tag="json_post")
+    # session.logger.enable(reserved_tag="json_get")
+    # session.logger.enable(reserved_tag="json_post")
 
     txt_cmd = args.cmd
     if (not args.cmd) or (args.cmd == "saved01"):
@@ -84,7 +84,7 @@ def main():
     # command.post_rm_adb(shelf=1, resource=1, adb_id=args.id, debug=args.debug, suppress_related_commands=True)
     command.post_show_adb(shelf=1, resource=1, serno='ALL')
     adb_key = session.get_session_based_key()
-    session.logger.error("adb_key: " + adb_key)
+    # session.logger.error("adb_key: " + adb_key)
     errors_warnings = []
     response_list = []
     command.post_adb(shelf=1,

@@ -203,7 +203,8 @@ class LFCliBase:
 
     def log_enable(self, reserved_tag=None):
         if os.environ.get("LF_USE_AUTOGEN") == 1:
-            Logg.enable(reserved_tag=reserved_tag)
+            # Logg.enable(reserved_tag=reserved_tag)
+            self.log_register_tag(reserved_tag)
         else:
             self.log_register_tag(reserved_tag)
 

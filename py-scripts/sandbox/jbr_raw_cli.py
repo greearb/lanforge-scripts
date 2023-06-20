@@ -71,8 +71,8 @@ def main():
     query: LFJsonQuery
     query = session.get_query()
 
-    session.logger.enable(reserved_tag="json_get")
-    session.logger.enable(reserved_tag="json_post")
+    # session.logger.enable(reserved_tag="json_get")
+    # session.logger.enable(reserved_tag="json_post")
 
     txt_cmd = args.cmd
     if (not args.cmd) or (args.cmd == "saved01"):
