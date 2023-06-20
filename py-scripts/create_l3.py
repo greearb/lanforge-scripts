@@ -214,11 +214,6 @@ INCLUDE_IN_README: False
     parser.add_argument('--multi_conn_a', help='modify multi connection endpoint-a for cx', default=0, type=int)
     parser.add_argument('--multi_conn_b', help='modify multi connection endpoint-b for cx', default=0, type=int)
 
-    parser.add_argument('--ap', help='Used to force a connection to a particular AP')
-    parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
-
-    parser.add_argument('--mode', help='Used to force mode of stations')
-
     parser.add_argument('--min_ip_port_a', help='min ip port range for endp-a', default=-1)
     parser.add_argument('--min_ip_port_b', help='min ip port range for endp-b', default=-1)
     parser.add_argument('--batch_quantity', help='No of cx endpoints to batch-create', default=1)
