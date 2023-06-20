@@ -4,7 +4,7 @@
             "This json file describes tests to be run by LANforge system performance 007"
         ]  
     },
-    "test_rvr":{
+    "test_suites":{
         "rvr_perf_5g":{
             "CC_DUT":{
                 "enabled":"TRUE",
