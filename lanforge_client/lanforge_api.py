@@ -257,7 +257,6 @@ class BaseLFJsonRequest:
         self.stream_errors = stream_errors
         self.warnings = []
         self.stream_warnings = stream_warnings
-        #self.logger = Logg(name="LFJsonRequest-@", debug=debug)
         self.logger = logging.getLogger(__name__)
         self.debug_on = debug
         self.receives_async_feedback = False
@@ -297,21 +296,20 @@ class BaseLFJsonRequest:
         if corrected_url.find(' ') >= 1:
             corrected_url = corrected_url.replace(' ', '%20')
         if debug:
-            #self.logger.by_method("%s: url [%s] now [%s]" % (str(__class__), url, corrected_url))
-            self.logger.debug("{info}: url [{url}] now [{correct_url}]".format(info= str(__class__), url=url, correct_url=corrected_url))
+            self.logger.debug(f"{__class__!s}: url [{url}] now [{corrected_url}]")
         return corrected_url
 
     def add_error(self, message: str = None):
         if not message:
             return
         if self.stream_errors:
-            self.logger.error(message=message)
+            self.logger.error(message)
         self.error_list.append(message)
 
     def add_warning(self, message: str = None):
         self.logger.warning(message)
         if self.stream_errors:
-            self.logger.warning(message=message)
+            self.logger.warning(message)
         self.warnings.append(message)
 
     def get_errors(self) -> list:
@@ -324,13 +322,13 @@ class BaseLFJsonRequest:
         """ erase errors and warnings """
         if flush_to_session:
             if not self.session_instance:
-                self.logger.error(message="cannot flush messages to session when there is no session instance")
+                self.logger.error("cannot flush messages to session when there is no session instance")
             else:
                 self.session_instance.session_error_list.extend(self.error_list)
                 self.session_instance.session_warnings_list.extend(self.warnings)
         self.error_list = []
         self.warnings = []
-        self.logger.info(message='BaseLFJsonRequest.clear()')
+        self.logger.info('BaseLFJsonRequest.clear()')
 
     def extract_values(self,
                        response: dict = None,
@@ -346,13 +344,13 @@ class BaseLFJsonRequest:
 
         if singular_key not in response:
             if plural_key not in response:
-                self.add_warning("response did not contain <{}> or <{}>".format(singular_key, plural_key))
+                self.add_warning(f"response did not contain <{singular_key}> or <{plural_key}>")
                 return []
             if not response[plural_key]:
-                self.add_warning("response[{}] is empty".format(plural_key))
+                self.add_warning(f"response[{plural_key}] is empty")
             return response[plural_key]
         if not response[singular_key]:
-            self.add_warning("response[{}] is empty".format(singular_key))
+            self.add_warning(f"response[{singular_key}] is empty")
         return response[singular_key]
 
     def form_post(self,
@@ -369,13 +367,10 @@ class BaseLFJsonRequest:
             opener = request.build_opener(request.ProxyHandler(self.session_instance.proxy_map))
             request.install_opener(opener)
 
-        # if debug:
-            #self.logger.by_method("form_post: url: " + url)
-            self.logger.debug("form_post: url {url} ".format(url=url))
+        self.logger.debug(f"form_post: url {url}")
         if (post_data is not None) and (post_data is not self.No_Data):
             urlenc_data = urllib.parse.urlencode(post_data).encode("utf-8")
-            #self.logger.by_method("formPost: data looks like:" + str(urlenc_data))
-            self.logger.debug("formPost: data looks like: {data}".format(data=str(urlenc_data)))
+            self.logger.debug(f"formPost: data looks like: {urlenc_data!s}")
             if debug:
                 print("formPost: url: " + url)
             myrequest = request.Request(url=url,
@@ -384,7 +379,7 @@ class BaseLFJsonRequest:
         else:
             myrequest = request.Request(url=url, headers=self.default_headers)
             # self.logger.by_method("json_post: No data sent to [%s]" % url)
-            self.logger.debug("json_post: No data sent to [{url}]".format(url=url))
+            self.logger.debug(f"json_post: No data sent to [{url}]")
 
         myrequest.headers['Content-type'] = 'application/x-www-form-urlencoded'
 
@@ -458,8 +453,7 @@ class BaseLFJsonRequest:
                 exit(1)
         responses: list = []  # p3.9 list[HTTPResponse]
         url = self.get_corrected_url(url)
-        #self.logger.by_method("url: "+url)
-        self.logger.debug("url: {url}".format(url=url))
+        self.logger.debug(f"url: {url}")
 
         if (post_data is None) or (post_data is self.No_Data):
             # this is sending a post request without data
@@ -498,13 +492,13 @@ class BaseLFJsonRequest:
                 if not isinstance(value, str):
                     continue
                 if ((value.find("\\") >= 0)
-                    or (value.find("\n") >= 0)
-                    or (value.find("\r") >= 0)
-                    or (value.find("\t") >= 0)):
+                        or (value.find("\n") >= 0)
+                        or (value.find("\r") >= 0)
+                        or (value.find("\t") >= 0)):
                     if key.endswith(BaseLFJsonRequest.BASE64_SUFFIX):
-                        self.logger.warning("Post_data: "+pformat(post_data))
-                        self.logger.error(" misformated post_data key: "+key)
-                        raise ValueError("Complex value submitted in a base64 tagged parameter [%s]. Cannot continue" % key)
+                        self.logger.warning(f"Post_data: {pformat(post_data)}")
+                        self.logger.error(f"Misformatted post_data key: {key}")
+                        raise ValueError(f"Complex value submitted in a base64 tagged parameter [{key}]. Cannot continue")
                     change_list.append(key)
 
             if change_list:
@@ -512,7 +506,7 @@ class BaseLFJsonRequest:
                     value = post_data[key]
                     # base64.encodebytes provides MIME encoding which appears to be sufficient for JSON
                     # if we need to move to base64 URL encoding, please test, but CliCmd.java should
-                    # maintain both decodings depening on the detection of _ and - characters
+                    # maintain both decodings depending on the detection of _ and - characters
                     new_value = base64.encodebytes(value.encode("utf-8")).decode("ascii")
                     new_key = key + BaseLFJsonRequest.BASE64_SUFFIX
                     del post_data[key]
@@ -526,10 +520,8 @@ class BaseLFJsonRequest:
                                         headers=self.default_headers)
 
         if not post_data or not len(post_data.items()):
-            #self.logger.by_method("empty post sent to [%s]" % url)
             self.logger.debug("empty post sent to [%s]" % url)
         else:
-            #self.logger.by_method("post data "+pformat(post_data))
             self.logger.debug(pformat(post_data))
 
         if not connection_timeout_sec:
@@ -547,10 +539,9 @@ class BaseLFJsonRequest:
         elif iss(session_id_):
             myrequest.headers[SESSION_HEADER] = str(session_id_)
         elif not url.endswith("/newsession"):
-            self.logger.warning("Request (%s) sent without X-LFJson-ID header".format(url))
+            self.logger.warning(f"Request ({url}) sent without X-LFJson-ID header")
         if debug:
-            self.logger.debug(msg="headers sent to: " + url)
-            self.logger.debug(msg=pformat(myrequest.headers))
+            self.logger.warning(f"Request ({url}) sent without X-LFJson-ID header\n{pformat(myrequest.headers)}")
 
         # https://stackoverflow.com/a/59635684/11014343
 
@@ -586,8 +577,6 @@ class BaseLFJsonRequest:
                 responses.append(response)
                 header_items = response.getheaders()
                 if debug:
-                    #self.logger.by_method("BaseJsonRequest::json_post: response headers:")
-                    #self.logger.by_method(pformat(header_items))
                     self.logger.debug("BaseJsonRequest::json_post: response headers:")
                     self.logger.debug(pformat(header_items))
 
@@ -887,19 +876,17 @@ class BaseLFJsonRequest:
             max_timeout_sec = self.session_instance.max_timeout_sec
 
         if nott(url):
-            raise ValueError("json_get called withou url")
+            raise ValueError("json_get called without url")
 
         url = self.get_corrected_url(url=url)
 
         deadline_sec: float = _now_sec() + max_timeout_sec
         self.error_list.clear()
         attempt_counter = 1
-        self.logger.debug(" request_timeout_sec[{}] max_timeout_sec[{}] deadline_sec[{}] ".format(
-            request_timeout_sec, max_timeout_sec, deadline_sec))
+        self.logger.debug((f"request_timeout_sec[{request_timeout_sec}] max_timeout_sec[{max_timeout_sec}] "
+                           f"deadline_sec[{deadline_sec}]"))
         if _now_sec() >= deadline_sec:
-            self.logger.error("url[{}]".format(url))
-            self.logger.error("request_timeout_sec[{}] max_timeout_sec[{}] deadline_sec[{}] ".format(
-                request_timeout_sec, max_timeout_sec, deadline_sec))
+            self.logger.error(f"url[{url}]")
             raise Exception("_now_sec()[{}] >= deadline_sec[{}] before starting".format(
                 _now_sec(), deadline_sec))
 
@@ -16251,8 +16238,8 @@ class LFJsonCommand(JsonCommand):
         allow_all_mcs = 0x400000         # Enable MCS otherwise disabled by firmware (ath10k only).
         ct_sta_mode = 0x40000            # Enable CT-STA mode if radio supports it. Efficiently replaces sw-crypt
         # +in some firmware.
-        extra_rxstatus = 0x2000000       # Enable increased packet rx-stats. May decrease performance. MTK 7915
-        # +radio only.
+        extra_rxstatus = 0x2000000       # Enable increased packet rx-stats. May decrease performance. MTK radios
+        # +only.
         extra_txstatus = 0x1000000       # Enable increased packet tx-stats. May decrease performance. MTK radios
         # +only.
         firmware_cfg = 0x80000           # Apply firmware config.
@@ -16262,7 +16249,9 @@ class LFJsonCommand(JsonCommand):
         no_scan_share = 0x40             # Disable sharing scan results.
         no_sw_crypt = 0x20000            # Disable software-crypt for this radio. Disables some virtual-station
         # +features.
-        ofdma_stats = 0x4000000          # Enable increased OFDMA statistics. May decrease performance. MTK 7915
+        ofdma_stats = 0x4000000          # Enable increased OFDMA statistics. May decrease performance. MTK
+        # +radios only.
+        txs_all_skb = 0x8000000          # Request TX status for every packet. May decrease performance. MTK
         # +radios only.
         use_syslog = 0x20000000          # Put supplicant logs in syslog instead of a file.
         verbose = 0x10000                # Verbose-Debug: Increase debug info in wpa-supplicant and hostapd logs.
