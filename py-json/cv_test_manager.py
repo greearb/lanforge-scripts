@@ -300,8 +300,9 @@ class cv_test(Realm):
         start_try = 0
         while True:
             response = self.create_test(test_name, instance_name, load_old)
-            if response[0]["LAST"]["response"] == "OK":
-                break
+            if response is not None and "response" in response[0]["LAST"]:
+                if response[0]["LAST"]["response"] == "OK":
+                    break
             else:
                 logger.info("Could not create test, try: %i/60:\n" % start_try)
                 pprint(response)
