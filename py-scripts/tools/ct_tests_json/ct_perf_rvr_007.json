@@ -41,10 +41,13 @@
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name wpa2_dp",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan0",
-                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60' ",
+                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: MTU' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MTK7915_5G' ",
+                    " --raw_line 'attenuator: 1.1.3360' ",
+                    " --raw_line 'attenuations: 0..+50..100' ",
+                    " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
                 ]
