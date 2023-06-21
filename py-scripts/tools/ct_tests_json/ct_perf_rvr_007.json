@@ -1,7 +1,7 @@
 {
     "ct_perf_rvr_007":{
         "Notes":[
-            "This json file describes tests to be run by LANforge system performance 007"
+            "This json file describes tests to be run by LANforge system performance 007, note ssid_idx=0 is for Radio-1, ssid_idx_1 is for Radio-2"
         ]  
     },
     "test_suites":{
@@ -15,6 +15,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
