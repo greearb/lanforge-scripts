@@ -1,0 +1,28 @@
+
+{
+    "ct_AXE16000_dut.json":{
+        "Notes":[
+            "This json file describes device under test run configuration used as input for --dut_json for lf_check.py"
+
+        ]
+    },
+    "test_dut":{
+        "DUT_SET_NAME": "DUT_NAME ASUS_GT-AXE16000",
+        "USE_DUT_NAME": "ASUS_GT-AXE16000",
+        "DUT_HW":"DUT_HW",
+        "DUT_SW":"DUT_SW",
+        "DUT_MODEL":"AXE16000",
+        "DUT_SERIAL":"DUT_SERIAL",
+        "wireless_network_dict":{
+			"ssid_idx=0":{"ssid_idx": "0", "SSID_USED": "ASUS_2C", "SSID_PW_USED": "hello123", "BSSID_TO_USE": "c8:7f:54:14:42:2c", "SECURITY_USED": "wpa2"},
+			"ssid_idx=1":{"ssid_idx": "1", "SSID_USED": "ASUS_2C_5G-1", "SSID_PW_USED": "hello123", "BSSID_TO_USE": "c8:7f:54:14:42:30", "SECURITY_USED": "wpa2"},
+			"ssid_idx=2":{"ssid_idx": "2", "SSID_USED": "ASUS_2C_5G-2", "SSID_PW_USED": "hello123", "BSSID_TO_USE": "c8:7f:54:14:42:32", "SECURITY_USED": "wpa2"}
+ 		},
+         "UPSTREAM_PORT": "1.1.eth1",
+         "UPSTREAM_ALIAS": "eth1",
+         "DATABASE_SQLITE":"./tools/CT_007_AXE160000.db"
+ 
+    }
+}
+
+        
