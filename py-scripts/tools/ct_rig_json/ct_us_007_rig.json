@@ -1,0 +1,26 @@
+
+{
+    "ct_us_007_rig.json":{
+        "Notes":[
+            "This json file describes LANforge system used as input for --dut_json for lf_check.py"
+        ]
+    },
+    "test_rig_parameters":{
+        "TEST_BED": "CT-US-007",
+        "TEST_RIG": "CT-US-007",
+        "TEST_SERVER": "http://10.0.0.40/",
+        "DATABASE_SQLITE": "./tools/./tools/qa_007.db",
+        "LF_MGR_IP": "192.168.102.197",
+        "LF_MGR_PORT": "8080",
+        "LF_MGR_USER": "lanforge",
+        "LF_MGR_PASS": "lanforge",
+        "UPSTREAM_PORT":"1.1.eth3",
+        "TEST_TIMEOUT": 300,
+        "EMAIL_LIST_PRODUCTION": "amy.tucker@candelatech.com",
+        "EMAIL_LIST_TEST": "amy.tucker@candelatech.com",
+        "EMAIL_TITLE_TXT": "CT-US-007 192.168.102.197",
+        "EMAIL_TXT": "CT-US-007 192.168.102.197"
+    }
+}
+
+        
