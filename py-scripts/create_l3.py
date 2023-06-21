@@ -147,7 +147,7 @@ class CreateL3(Realm):
 
 
 def main():
-    parser = LFCliBase.create_basic_argparse(
+    parser = argparse.ArgumentParser(
         prog='create_l3.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -204,14 +204,15 @@ LICENSE:
 
 INCLUDE_IN_README: False
         ''')
+
+    parser.add_argument('--mgr', help='give the host ip')
+    parser.add_argument('--mgr_port', default=8080, help='port LANforge GUI HTTP service is running on')
     parser.add_argument('--min_rate_a', help='--min_rate_a bps rate minimum for side_a', default=56000)
     parser.add_argument('--min_rate_b', help='--min_rate_b bps rate minimum for side_b', default=56000)
     parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
     parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
-
     parser.add_argument('--multi_conn_a', help='modify multi connection endpoint-a for cx', default=0, type=int)
     parser.add_argument('--multi_conn_b', help='modify multi connection endpoint-b for cx', default=0, type=int)
-
     parser.add_argument('--min_ip_port_a', help='min ip port range for endp-a', default=-1)
     parser.add_argument('--min_ip_port_b', help='min ip port range for endp-b', default=-1)
     parser.add_argument('--batch_quantity', help='No of cx endpoints to batch-create', default=1)
@@ -219,6 +220,10 @@ INCLUDE_IN_README: False
     parser.add_argument('--endp_b_increment', help='End point - B port increment', default=0)
     parser.add_argument('--ip_port_increment_a', help='ip port increment for endp-a', default=1)
     parser.add_argument('--ip_port_increment_b', help='ip port increment for endp-b', default=1)
+    parser.add_argument('--no_cleanup', help='Do not cleanup before exit', action='store_true')
+    parser.add_argument('--log_level', default=None,help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--lf_logger_config_json',help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--debug','-d',default=False,action="store_true",help='Enable debugging')
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
