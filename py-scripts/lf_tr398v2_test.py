@@ -342,12 +342,15 @@ class TR398v2Test(cvtest):
         time.sleep(2)
         self.sync_cv()
 
-        blob_test = "TR398v2-"
+        blob_test = "TR-398v2-"
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
         self.show_text_blob(None, None, False)
 
         # Test related settings
+
+        # These options are so that the config is 3rd priority, the built-in method is first, and any raw-line is 2nd. 
+        # all cfgs are added to the cfg options and the array will be read top to bottom. so last cfg option will override the old c
         cfg_options = []
 
         self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
@@ -363,7 +366,7 @@ class TR398v2Test(cvtest):
             cfg_options.append("test_rig: " + self.test_rig)
 
         # We deleted the scenario earlier, now re-build new one line at a time.
-
+        # print("here are the cfg options: ", cfg_options)
         self.build_cfg(self.config_name, blob_test, cfg_options)
 
         cv_cmds = []
