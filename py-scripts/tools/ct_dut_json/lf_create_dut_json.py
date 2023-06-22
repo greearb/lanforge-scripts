@@ -95,9 +95,9 @@ class lf_create_dut_json():
         "DUT_MODEL":"{dut_model}",
         "DUT_SERIAL":"{dut_serial}",
         "wireless_network_dict":{{\n{ssid_idx_dict_dict_str} \t\t}},
-        "UPSTREAM_PORT":"{dut_upstream_port},
-        "UPSTREAM_ALIAS":"{dut_upstream_alias},
-        "DATABASE_SQLITE":{dut_database}
+        "UPSTREAM_PORT":"{dut_upstream_port}",
+        "UPSTREAM_ALIAS":"{dut_upstream_alias}",
+        "DATABASE_SQLITE":"{dut_database}"
     }}
 }}
 
