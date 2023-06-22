@@ -20,7 +20,7 @@
  		},
          "UPSTREAM_PORT": "1.1.eth3",
          "UPSTREAM_ALIAS": "eth3",
-         "DATABASE_SQLITE":"./tools/CT_007_AXE160000_10Gbps_eth3.db"
+         "DATABASE_SQLITE":"./tools/CT_007_ASUS_AXE160000_10Gbps_eth3.db"
  
     }
 }
