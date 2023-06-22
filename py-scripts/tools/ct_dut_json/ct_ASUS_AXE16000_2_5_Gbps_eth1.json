@@ -9,9 +9,9 @@
     "test_dut":{
         "DUT_SET_NAME": "DUT_NAME ASUS_GT-AXE16000",
         "USE_DUT_NAME": "ASUS_GT-AXE16000",
-        "DUT_HW":"DUT_HW",
+        "DUT_HW":"ASUS_AXE16000",
         "DUT_SW":"DUT_SW",
-        "DUT_MODEL":"AXE16000",
+        "DUT_MODEL":"ASUS_AXE16000",
         "DUT_SERIAL":"DUT_SERIAL",
         "wireless_network_dict":{
 			"ssid_idx=0":{"ssid_idx": "0", "SSID_USED": "ASUS_2C", "SSID_PW_USED": "hello123", "BSSID_TO_USE": "c8:7f:54:14:42:2c", "SECURITY_USED": "wpa2"},
@@ -20,7 +20,7 @@
  		},
          "UPSTREAM_PORT": "1.1.eth1",
          "UPSTREAM_ALIAS": "eth1",
-         "DATABASE_SQLITE":"./tools/CT_007_AXE160000_2_5_Gbps_eth1.db"
+         "DATABASE_SQLITE":"./tools/CT_007_ASUS_AXE160000_2_5_Gbps_eth1.db"
  
     }
 }
