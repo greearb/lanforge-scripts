@@ -353,7 +353,7 @@ def main():
     parser.add_argument('--ht160_enable', type=str, help='Enable/Disable \"ht160_enable\\ [0-disable,1-enable]" ',
                         default=0)
 
-    parser.add_argument('--ax210', help='ax210 needs to have a station created so the sniff will work on 6g', action='store_true')
+    parser.add_argument('--ax210', help='--ax210 will create a station on the ax210 to get the regulatory domain for 6g and admin down the station then create the monitor for 6g on the AX210 radio', action='store_true')
     parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
     parser.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='+', default=None)
     parser.add_argument('--upstream_port', help='--upstream_port upstream port default: eth2', default='eth2')
