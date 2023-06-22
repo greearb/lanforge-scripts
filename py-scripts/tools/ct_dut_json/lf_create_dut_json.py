@@ -61,6 +61,9 @@ class lf_create_dut_json():
                  _dut_model,
                  _dut_serial,
                  _ssid_idx_dict_dict_str,
+                 _dut_upsteam_port,
+                 _dut_upstream_alias,
+                 _dut_database
                  ):
         self.file = _file
         self.dut_name = _dut_name
@@ -69,6 +72,9 @@ class lf_create_dut_json():
         self.dut_model = _dut_model
         self.dut_serial = _dut_serial
         self.ssid_idx_dict_dict_str = _ssid_idx_dict_dict_str
+        self.dut_upstream_port = _dut_upsteam_port
+        self.dut_upstream_alias = _dut_upstream_alias
+        self.dut_database = _dut_database
 
     # Helper methods
     def create(self):
@@ -88,13 +94,19 @@ class lf_create_dut_json():
         "DUT_SW":"{dut_sw}",
         "DUT_MODEL":"{dut_model}",
         "DUT_SERIAL":"{dut_serial}",
-        "wireless_network_dict":{{\n{ssid_idx_dict_dict_str} \t\t}}
+        "wireless_network_dict":{{\n{ssid_idx_dict_dict_str} \t\t}},
+        "UPSTREAM_PORT":"{dut_upstream_port},
+        "UPSTREAM_ALIAS":"{dut_upstream_alias},
+        "DATABASE_SQLITE":{dut_database}
     }}
 }}
 
         """.format(file=self.file, dut_name=self.dut_name, dut_hw=self.dut_hw, dut_sw=self.dut_sw,
                    dut_model=self.dut_model, dut_serial=self.dut_serial,
-                   ssid_idx_dict_dict_str=self.ssid_idx_dict_dict_str
+                   ssid_idx_dict_dict_str=self.ssid_idx_dict_dict_str,
+                   dut_upstream_port=self.dut_upstream_port,
+                   dut_upstream_alias=self.dut_upstream_alias,
+                   dut_database=self.dut_database
                    )
 
         file_fd.write(dut_json)
@@ -155,6 +167,10 @@ INCLUDE_IN_README: False
     parser.add_argument('--dut_sw', help='--dut_sw <dut software version> ', default='dut_sw')
     parser.add_argument('--dut_model', help='--dut_model <dut model> ', default='dut_model')
     parser.add_argument('--dut_serial', help='--dut_serial <dut_serial_num> ', default='123456578')
+    parser.add_argument('--dut_upstream_port', help='--dut_upstream_port shelf.resource.<port>  example 1.1.eth3 default eth1',default='1.1.eth2')
+    parser.add_argument('--dut_upstream_alias', help='--dut_upstream_alias <port>  example eth3 ', default='eth2')
+    parser.add_argument('--dut_database', help='--dut_database <db location>   example ./tools/CT_007_AXE160000_2_5_Gbps_eth1.db default ./tools/DUT_DB',default='./tools/DUT_DB')
+
     parser.add_argument(
         '--ssid_idx',
         action='append',
@@ -207,6 +223,9 @@ INCLUDE_IN_README: False
     _dut_model = args.dut_model
     _dut_serial = args.dut_serial
     _ssid_idx = args.ssid_idx
+    _dut_upstream_port = args.dut_upstream_port
+    _dut_upstream_alias = args.dut_upstream_alias
+    _dut_database = args.dut_database
 
     # create wifi dictionary, ssid indx
     ssid_idx_dict_dict_str = ""
@@ -279,7 +298,10 @@ INCLUDE_IN_README: False
                                   _dut_sw=_dut_sw,
                                   _dut_model=_dut_model,
                                   _dut_serial=_dut_serial,
-                                  _ssid_idx_dict_dict_str=ssid_idx_dict_dict_str)
+                                  _ssid_idx_dict_dict_str=ssid_idx_dict_dict_str,
+                                  _dut_upstream_port=_dut_upstream_port,
+                                  _dut_upstream_alias=_dut_upstream_alias,
+                                  _dut_database=_dut_database)
     dut_json.create()
 
     logger.info("Device under test json created {file}".format(file=_file))
