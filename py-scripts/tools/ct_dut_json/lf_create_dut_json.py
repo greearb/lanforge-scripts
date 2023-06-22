@@ -61,7 +61,7 @@ class lf_create_dut_json():
                  _dut_model,
                  _dut_serial,
                  _ssid_idx_dict_dict_str,
-                 _dut_upsteam_port,
+                 _dut_upstream_port,
                  _dut_upstream_alias,
                  _dut_database
                  ):
@@ -72,7 +72,7 @@ class lf_create_dut_json():
         self.dut_model = _dut_model
         self.dut_serial = _dut_serial
         self.ssid_idx_dict_dict_str = _ssid_idx_dict_dict_str
-        self.dut_upstream_port = _dut_upsteam_port
+        self.dut_upstream_port = _dut_upstream_port
         self.dut_upstream_alias = _dut_upstream_alias
         self.dut_database = _dut_database
 
