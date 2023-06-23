@@ -359,7 +359,7 @@ def main():
     parser.add_argument('--upstream_port', help='--upstream_port upstream port default: eth2', default='eth2')
     parser.add_argument('--side_a_min_rate', help='--side_a_min_rate bps rate minimum for side_a default: 1024000', default=1024000)
     parser.add_argument('--side_b_min_rate', help='--side_b_min_rate bps rate minimum for side_b default: 1024000', default=1024000)
-
+    parser.add_argument('--sta_prefix', help='--sta_prefix <station prefix>   --sta_prefix  sta   : default: wlan', default='wlan')
     parser.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default='open')
     parser.add_argument('--ssid', help='WiFi SSID for script objects to associate to', default='axe11000_5g')
     parser.add_argument('--password', help='WiFi passphrase/password/key', default='[BLANK]')
@@ -400,7 +400,7 @@ def main():
 
         if not args.station_list:
             station_list = LFUtils.portNameSeries(
-                prefix_="wlan", start_id_=int(
+                prefix_=args.sta_prefix, start_id_=int(
                     args.number_template), end_id_=num_sta + int(
                     args.number_template) - 1, padding_number_=10000, radio=args.radio)
         else:
