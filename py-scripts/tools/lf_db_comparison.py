@@ -36,20 +36,20 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 class db_comparison:
     def __init__(self, db, data_base1=None, data_base2=None, table_name=None, dp=None, wct=None, ap_auto=None,
                  index=None):
-        self.test_tags = None
-        self.csv_file_name = None
-        self.short_description = None
-        self.sub_lists = None
         self.conn2 = None
         self.conn1 = None
+        self.test_tags = None
+        self.directory = None
+        self.sub_lists = None
+        self.csv_file_name = None
+        self.short_description = None
         self.database = db
         self.db1 = data_base1
         self.db2 = data_base2
-        self.directory = None
-        self.dp  = dp
+        self.index = index
+        self.dp = dp
         self.wct = wct
         self.ap_auto = ap_auto
-        self.index = index
         self.table_name = table_name
         if self.database:
             self.db_conn = sqlite3.connect(self.database)
@@ -76,7 +76,7 @@ class db_comparison:
             logger.error("ERROR : The report path is existed but unable to find. Exception raised : {}\n".format(e))
 
     def checking_data_bases(self, db1, db2):
-        # checking if database files r exist
+        # checking if database files are exist
         if not os.path.isfile(db1):
             logger.error(f"Error: File {db1} does not exist\n")
             exit()
@@ -132,13 +132,15 @@ class db_comparison:
                     query_df_dict['db1_df'].append(pd.read_sql_query(i, self.conn1))
                     query_df_dict['db2_df'].append(pd.read_sql_query(i, self.conn2))
                 # sorting the two databases based on test-tags and placing in different list
-                for df in range(len(query_df_dict['db1_df'])):      #TODO: Need to avoid the length of 'query_df_dict['db1_df']'
+                for df in range(
+                    len(query_df_dict['db1_df'])):  #TODO: Need to avoid the length of 'query_df_dict['db1_df']'
                     query_df_dict["sorted_db1_df"].append(
                         query_df_dict["db1_df"][df].sort_values(by='test-tag', ascending=True))
                     query_df_dict["sorted_db2_df"].append(
                         query_df_dict["db2_df"][df].sort_values(by='test-tag', ascending=True))
                 # merging the dataframes and placing in a 'merged_df' list
-                for sorted_df in range(len(query_df_dict['sorted_db1_df'])):    #TODO: Need to avoid the length of 'query_df_dict['sorted_db1_df']'
+                for sorted_df in range(len(query_df_dict[
+                                               'sorted_db1_df'])):  #TODO: Need to avoid the length of 'query_df_dict['sorted_db1_df']'
                     query_df_dict["merged_df"].append(query_df_dict["sorted_db1_df"][sorted_df].merge(
                         query_df_dict["sorted_db2_df"][sorted_df], on=['test-tag', 'short-description'],
                         suffixes=('_1', '_2')))
@@ -147,19 +149,15 @@ class db_comparison:
                 for i in querylist:
                     query_df_dict['single_db_df'].append(pd.read_sql_query(i, self.db_conn))
                 new = [[query_df_dict['single_db_df'][i]] for i in range(0, len(query_df_dict['single_db_df']))]
-                print("new1", new)
+                print("New list of DFs:", new)
                 # FETCHING THE INDEX items INTO A LIST TO BREAK THE DATA FRAMES
                 sub_lists = []
                 for n in range(len(new)):
                     DF = pd.DataFrame(new[n][0])
                     short_description_first_item = DF["short-description"][0]
-                    # print("jjjjj", short_description_first_item)
                     for i, row in new[n][0].iterrows():
                         short_desc = row["short-description"]
-                        # print("STARTING ITEM OF short-description IN EACH DF :", short_description_first_item)
-                        # print("row short_Desc :", short_desc)
                         if short_desc == short_description_first_item:
-                            # print("MATCHED ", short_desc)
                             sub_lists.append(i)
                 print("INDEX_LIST : ", sub_lists)
                 # CONVERTING LIST OF INDEX items into SUB-LISTS
@@ -185,7 +183,7 @@ class db_comparison:
                     for ind in _index_list[i]:
                         dfs.append(new[i][0].loc[last_check:ind-1])
                         last_check = ind
-                print("&&&&", dfs)
+                print("DFs :", dfs)
 
                 # AGAIN CONVERSING LIST WITH IN LIST TO SEPARATE THE DFs
                 _index_list = []
@@ -194,7 +192,9 @@ class db_comparison:
                         _index_list.append([i])
                     else:
                         _index_list[-1].append(i)
-                print(_index_list)
+                print("Final list of Data Frames:", _index_list)
+                logger.info("The Total Existing Test Runs in given Data Base : %s" % len(_index_list[0]))
+                logger.info("The min existing test runs in given DB : %s" % min([len(i) - 1 for i in _index_list]))
 
                 first_choice = self.index[0]
                 second_choice = self.index[1]
@@ -239,56 +239,19 @@ class db_comparison:
                 item.rename(columns={'test-tag': 'Radio-Type', 'short-description': 'Short Description - (NSS-Band-Packet-Size)',
                                      'numeric-score_1': 'Values of DB1', 'numeric-score_2': 'Values of DB2'},
                             inplace=True)
-        # logger.info("Percentage values for all dataframes in a list :{}".format(percentage_list))
-        # logger.info("Final Data Frame List: {}".format(query_dict))
 
     def converting_df_to_csv(self, query_df_list):
         if query_df_list:
             for i, df in enumerate(query_df_list):
                 if 'WCT' in df['Radio-Type'][0]:
-                    print("%%%%%%%%%%%%-1", df['Radio-Type'][0])
                     with open(f'./{self.directory}/wct.csv', mode='a', newline='') as f:
                         df.to_csv(f, index=True, header=f'Table{i + 1}')
                 elif 'DP' in df['Radio-Type'][0]:
-                    print("$$$$$$$$$$$-2", df['Radio-Type'][0])
                     with open(f'./{self.directory}/dp.csv', mode='a', newline='') as f1:
                         df.to_csv(f1, index=True, header=f'Table{i + 1}')
                 elif 'AP_AUTO' in df['Radio-Type'][0]:
-                    print("##########-2", df['Radio-Type'][0])
                     with open(f'./{self.directory}/ap_auto.csv',mode='a', newline='') as f2:
                         df.to_csv(f2, index=True, header=f'Table{i + 1}')
-                else:
-                    print("Not ANYTHING")
-        # if query_df_list:
-        #     # converting the dataframes list into a csv file
-        #     for n in range(len(query_df_list)):
-        #         if 'WCT' in query_df_list[n]['Radio-Type'][0]:
-        #             with open(f'./{self.directory}/wct.csv', 'w') as f:
-        #                 for i, df in enumerate(query_df_list):
-        #                     if 'WCT' in df['Radio-Type'][0]:
-        #                         print("$$$$$$$$$$$-1", df['Radio-Type'][0])
-        #                         df.to_csv(f, index=True, header=f'Table{i + 1}')
-        #                     else:
-        #                         print("$$$$$$$$$$$-2", df['Radio-Type'][0])
-        #                         print("NOT wct")
-        #         elif 'DP' in query_df_list[n]['Radio-Type'][0]:
-        #             with open(f'./{self.directory}/dp.csv', 'w') as f:
-        #                 for i, df in enumerate(query_df_list):
-        #                     if 'DP' in df['Radio-Type'][0]:
-        #                         print("!!!!!!!!!!-1", df['Radio-Type'][0])
-        #                         df.to_csv(f, index=True, header=f'Table{i + 1}')
-        #                     else:
-        #                         print("!!!!!!!!!!-2", df['Radio-Type'][0])
-        #                         print("NOT dp")
-        #         elif 'AP_AUTO' in query_df_list[n]['Radio-Type'][0]:
-        #             with open(f'./{self.directory}/ap_auto.csv', 'w') as f:
-        #                 for i, df in enumerate(query_df_list):
-        #                     if 'AP_AUTO' in df['Radio-Type'][0]:
-        #                         print("##########-1", df['Radio-Type'][0])
-        #                         df.to_csv(f, index=True, header=f'Table{i + 1}')
-        #                     else:
-        #                         print("##########-2", df['Radio-Type'][0])
-        #                         print("Not APAUTO")
 
     def excel_placing(self, query_df_list):
         # creating the different Excel-Sheets for wct, ap_auto, dp & placing the tables side-by-side
@@ -408,87 +371,6 @@ class db_comparison:
                                    gui_ver_info_1=result[0]['gui_ver'],
                                    dut_model_info_1=result[0]['dut-model-num'])
         writer_obj.save()
-
-        ###########################################################33
-
-        # for n in range(len(query_df_list)):
-        #     if 'WCT' in query_df_list[n]['Radio-Type'][0]:
-        #         row, column = 9, 0
-        #         for i, df in enumerate(wct_list):
-        #             if i > 0:
-        #                 if i % 2 != 0:
-        #                     column = len(query_df_list[i - 1].columns) + 1
-        #                 else:
-        #                     row += len(query_df_list[i - 1]) + 2
-        #                     column = 0
-        #             # fetching the info about kernel and gui_ver for WifiCapacity
-        #             print("Data Farame wct : ",df)
-        #             df.to_excel(writer_obj, sheet_name='LRQ-WiFi_Capacity', index=False, startrow=row, startcol=column)
-        #             result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
-        #                                                  condition='"test-id" == "WiFi Capacity"', limit='1')
-        #             # print(result)
-        #             if (self.conn1 and self.conn2) is not None:
-        #                 setup_excel_header(sheet_name='LRQ-WiFi_Capacity', sheet_title='WI-FI CAPACITY DATA COMPARISON',
-        #                                    kernel_ver_info_1=result[0]['kernel_1'], gui_ver_info_1=result[0]['gui_ver_1'],
-        #                                    dut_model_info_1=result[0]['dut-model-num_1'],
-        #                                    kernel_ver_info_2=result[1]['kernel_2'],
-        #                                    gui_ver_info_2=result[1]['gui_ver_2'], dut_model_info_2=result[1]['dut-model-num_2'])
-        #             elif self.db_conn:
-        #                 setup_excel_header(sheet_name='LRQ-WiFi_Capacity', sheet_title='WI-FI CAPACITY DATA COMPARISON',
-        #                                    kernel_ver_info_1=result[0]['kernel'],
-        #                                    gui_ver_info_1=result[0]['gui_ver'],
-        #                                    dut_model_info_1=result[0]['dut-model-num'])
-        #     elif 'DP' in query_df_list[n]['Radio-Type'][0]:
-        #         row, column = 9, 0
-        #         for i, df in enumerate(dp_list):
-        #             if i > 0:
-        #                 if i % 2 != 0:
-        #                     column = len(query_df_list[i - 1].columns) + 1
-        #                 else:
-        #                     row += len(query_df_list[i - 1]) + 2
-        #                     column = 0
-        #             # fetching the info about kernel and gui_ver for Data Plane
-        #             print("Data Farame dp : ", df)
-        #             df.to_excel(writer_obj, sheet_name='LRQ-Data_Plane', index=False, startrow=row, startcol=column)
-        #             result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
-        #                                                  condition='"test-id" == "Dataplane"', limit='1')
-        #             if (self.conn1 and self.conn2) is not None:
-        #                 setup_excel_header(sheet_name='LRQ-Data_Plane', sheet_title='Data Plane DATA COMPARISON',
-        #                                    kernel_ver_info_1=result[0]['kernel_1'], gui_ver_info_1=result[0]['gui_ver_1'],
-        #                                    dut_model_info_1=result[0]['dut-model-num_1'],
-        #                                    kernel_ver_info_2=result[1]['kernel_2'],
-        #                                    gui_ver_info_2=result[1]['gui_ver_2'], dut_model_info_2=result[1]['dut-model-num_2'])
-        #             elif self.db_conn:
-        #                 setup_excel_header(sheet_name='LRQ-Data_Plane', sheet_title='Data Plane DATA COMPARISON',
-        #                                    kernel_ver_info_1=result[0]['kernel'],
-        #                                    gui_ver_info_1=result[0]['gui_ver'],
-        #                                    dut_model_info_1=result[0]['dut-model-num'])
-        #     elif 'AP_AUTO' in query_df_list[n]['Radio-Type'][0]:
-        #         row, column = 9, 0
-        #         for i, df in enumerate(ap_autolist):
-        #             if i > 0:
-        #                 if i % 2 != 0:
-        #                     column = len(query_df_list[i - 1].columns) + 1
-        #                 else:
-        #                     row += len(query_df_list[i - 1]) + 2
-        #                     column = 0
-        #             # fetching the info about kernel and gui_ver for Ap Auto
-        #             print("Data Farame ap auto : ", df)
-        #             df.to_excel(writer_obj, sheet_name='LRQ-AP_AUTO', index=False, startrow=row, startcol=column)
-        #             result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
-        #                                                  condition='"test-id" == "AP Auto"', limit='1')
-        #             if (self.conn1 and self.conn2) is not None:
-        #                 setup_excel_header(sheet_name='LRQ-AP_AUTO', sheet_title='AP-AUTO DATA COMPARISON',
-        #                                    kernel_ver_info_1=result[0]['kernel_1'], gui_ver_info_1=result[0]['gui_ver_1'],
-        #                                    dut_model_info_1=result[0]['dut-model-num_1'],
-        #                                    kernel_ver_info_2=result[1]['kernel_2'],
-        #                                    gui_ver_info_2=result[1]['gui_ver_2'], dut_model_info_2=result[1]['dut-model-num_2'])
-        #             elif self.db_conn:
-        #                 setup_excel_header(sheet_name='LRQ-AP_AUTO', sheet_title='AP-AUTO DATA COMPARISON',
-        #                                    kernel_ver_info_1=result[0]['kernel'],
-        #                                    gui_ver_info_1=result[0]['gui_ver'],
-        #                                    dut_model_info_1=result[0]['dut-model-num'])
-        # writer_obj.save()
 
     def excel_styling(self, query_df_list):
         # styling the sheets
@@ -636,7 +518,6 @@ class db_comparison:
                     for column in df.columns:
                         result_dict[f"{column}"] = df[column].values[0]
                     converted_results.append(result_dict)
-
         else:
             logger.info("Query is empty")
         # logger.info("List of the dictionary values of the two databases : %s" % converted_results)
@@ -651,7 +532,6 @@ class db_comparison:
                 wifi_capacity = self.db_querying_with_where_clause(column_names='test-tag',
                                                                    condition='"test-id" == "WiFi Capacity"', distinct=True)
                 list_of_wct_tags = sorted(list(set(wifi_capacity['test-tag_1'].unique()) & set(wifi_capacity['test-tag_2'].unique())))
-                # self.test_tags = list_of_wct_tags
             elif self.database:
                 wifi_capacity = self.db_querying_with_where_clause(column_names='test-tag',
                                                                    condition='"test-id" == "WiFi Capacity"',
@@ -663,7 +543,6 @@ class db_comparison:
                 ap_auto = self.db_querying_with_where_clause(column_names='test-tag',
                                                              condition='"test-id" == "AP Auto"', distinct=True)
                 list_of_ap_auto_tags = sorted(list(set(ap_auto['test-tag_1'].unique()) & set(ap_auto['test-tag_2'].unique())))
-                # self.test_tags = list_of_ap_auto_tags
             elif self.database:
                 ap_auto = self.db_querying_with_where_clause(column_names='test-tag',
                                                              condition='"test-id" == "AP Auto"', distinct=True)
@@ -674,7 +553,6 @@ class db_comparison:
                 dp_test_tags = self.db_querying_with_where_clause(column_names='test-tag',
                                                                   condition='"test-id" == "Dataplane"', distinct=True)
                 list_of_dp_tags = sorted(list(set(dp_test_tags['test-tag_1'].unique()) & set(dp_test_tags['test-tag_2'].unique())))
-                # self.test_tags = list_of_dp_tags
             elif self.database:
                 dp_test_tags = self.db_querying_with_where_clause(column_names='test-tag',
                                                                   condition='"test-id" == "Dataplane"', distinct=True)
@@ -706,7 +584,6 @@ class db_comparison:
                         dp_short_desc = self.db_querying_with_where_clause(column_names='test-tag, short-description',
                                                                            condition='"test-id" == "Dataplane"',
                                                                            distinct=True)
-
                         list_of_short_desc = sorted(list(set(dp_short_desc['short-description_1'].unique()) & set(
                             dp_short_desc['short-description_1'].unique())))
                         slicing_short_description_tag = ['-'.join(str(item).split('-')[0:3]) + '-%' for item in list_of_short_desc]
@@ -727,7 +604,6 @@ class db_comparison:
                         slicing_short_description_tag = ['-'.join(str(item).split('-')[0:3]) + '-%' for item in
                                                          list_of_short_desc]
                         sorted_short_description = list(set(slicing_short_description_tag))
-                        print("%%%%%%%%%%%%", sorted_short_description)
                         # self.short_description = 'TCP-%'
                         for short_desc in sorted_short_description:
                             self.short_description = short_desc
@@ -825,10 +701,6 @@ class db_comparison:
             report_basename = os.path.basename(report_path)
             report_url = './../../' + report_basename
             report.build_link("Current Results Directory", report_url)
-
-            # html_file = report.write_html()
-            # logger.info(html_file)
-            # report.write_pdf()
 
             report.build_footer()
             report.write_html()
