@@ -1,5 +1,5 @@
 {
-    "ct_perf_rvr_007":{
+    "ct_perf_rvr_6g_007":{
         "Notes":[
             "This json file describes tests to be run by LANforge system performance 007, note ssid_idx=0 is for Radio-1, ssid_idx_1 is for Radio-3"
         ]  
@@ -34,14 +34,14 @@
             "RVR_MT7915_6G_W0":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"4000",
+                "timeout":"2000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7915_6G_W0",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan0",
-                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: MTU' ",
+                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_6G_W0' ",
@@ -102,7 +102,7 @@
             "RVR_7915_6G_W1":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"4000",
+                "timeout":"2000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -170,7 +170,7 @@
             "RVR_AX210_6G_W2":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"4000",
+                "timeout":"2000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -238,7 +238,7 @@
             "RVR_AX210_6G_W3":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"4000",
+                "timeout":"2000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -306,7 +306,7 @@
             "RVR_AX210_6G_W4":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"4000",
+                "timeout":"2000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -374,7 +374,7 @@
             "RVR_AX210_6G_W5":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"4000",
+                "timeout":"2000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -442,7 +442,7 @@
             "RVR_MT7921_6G_W6":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"4000",
+                "timeout":"2000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -510,7 +510,7 @@
             "RVR_MT7922_6G_W7":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"4000",
+                "timeout":"2000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
