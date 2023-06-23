@@ -409,6 +409,13 @@ def main():
       --set '6.5.2 AP Coexistence' 0 \\
       --set '6.5.1 Long Term Stability' 0
 
+  ./lf_tr398v2_test.py --mgr 192.168.100.105 --port 8080 --lf_user lanforge\\
+    --lf_password lanforge --instance_name x \\
+    --config_name testing --pull_report \\
+    --local_lf_report_dir /tmp --dut5 'ASUS_70 ASUS_70 f0:2f:74:7c:a5:70 (1)' \\ 
+    --dut2 'ASUS_70 ASUS_70 f0:2f:74:7c:a5:70 (1)' --raw_line "upstream_port: 1.1.eth2"
+    
+
    The contents of the 'raw_lines_file' argument can be obtained by manually configuring the
    TR398 issue 2 test in the LANforge GUI, then selecting 'Show Config' in the Advanced configuration tab, then
    highlighting and pasting that text into file.  That file is the argument to the --raw_lines_file parameter.
@@ -420,6 +427,9 @@ def main():
     2. --raw_lines argument in the command line
     3. upstream port specified in the --raw_lines_file file.txt
     4. upsteam port loaded from the --config argument
+
+
+
       """
                                      )
 
