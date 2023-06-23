@@ -328,7 +328,7 @@ class inspect_sql:
                             elif percent_delta == 0:
                                 # negative logic like Stations Failed IP if zero is a goot thing
                                 if 'Failed' in df_data_1['short-description']:
-                                    if((float(df_data_1['numeric-score']) != 0) or (float(df_data_2['numeric-score']) !=0)):
+                                    if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) !=0.0)):
                                         logger.info("Performance Critical {percent}".format(percent=percent_delta))
                                         background = self.background_red
                                         self.test_result = "Critical"
@@ -512,8 +512,8 @@ class inspect_sql:
                         df_data_2 = df_tmp.iloc[db_index_2]
 
                         percent_delta = 0
-                        if((float(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
-                            percent_delta = round(((df_data_2['numeric-score']/df_data_1['numeric-score']) * 100), 2)
+                        if((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
+                            percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
 
                         if percent_delta >= 90:
                             logger.info("Performance Good {percent}".format(percent=percent_delta))
@@ -530,7 +530,7 @@ class inspect_sql:
                         elif percent_delta == 0:
                             # negative logic like Stations Failed IP if zero is a goot thing
                             if 'Failed' in df_data_1['short-description']:
-                                if((float(df_data_1['numeric-score']) != 0) or (float(df_data_2['numeric-score']) !=0)):
+                                if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) != 0.0)):
                                     logger.info("Performance Critical {percent}".format(percent=percent_delta))
                                     background = self.background_red
                                     self.test_result = "Critical"
@@ -538,6 +538,10 @@ class inspect_sql:
                                     logger.info("Performance Good {percent}".format(percent=percent_delta))
                                     self.test_result = "Good"
                                     background = self.background_green
+                            else:
+                                logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                self.test_result = "Critical"
+                                background = self.background_red
                         else:
                             logger.info("Performance Critical {percent}".format(percent=percent_delta))
                             self.test_result = "Critical"
@@ -771,7 +775,7 @@ class inspect_sql:
                             logger.debug("type: {data} {data2}".format(data=type(df_data_2), data2=df_data_2))
 
                             percent_delta = 0
-                            if((float(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
+                            if((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
                                 percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
 
                             if percent_delta >= 90:
@@ -789,7 +793,7 @@ class inspect_sql:
                             elif percent_delta == 0:
                                 # negative logic like Stations Failed IP if zero is a goot thing
                                 if 'Failed' in df_data_1['short-description']:
-                                    if((float(df_data_1['numeric-score']) != 0) or (float(df_data_2['numeric-score']) !=0)):
+                                    if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) !=0.0)):
                                         logger.info("Performance Critical {percent}".format(percent=percent_delta))
                                         background = self.background_red
                                         self.test_result = "Critical"
@@ -797,7 +801,10 @@ class inspect_sql:
                                         logger.info("Performance Good {percent}".format(percent=percent_delta))
                                         self.test_result = "Good"
                                         background = self.background_green
-
+                                else:             
+                                    logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                    self.test_result = "Critical"
+                                    background = self.background_red
                             else:
                                 logger.info("Performance Critical {percent}".format(percent=percent_delta))
                                 self.test_result = "Critical"
