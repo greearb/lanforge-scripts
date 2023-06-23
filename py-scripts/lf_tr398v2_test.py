@@ -410,10 +410,16 @@ def main():
       --set '6.5.1 Long Term Stability' 0
 
    The contents of the 'raw_lines_file' argument can be obtained by manually configuring the
-   TR398 issue 2 test in the LANforge GUI, then select 'Show Config' on the Advanced configuration tab,
-   select that config text, and paste it into a file.  That file is the argument to the
-   --raw_lines_file argument.
+   TR398 issue 2 test in the LANforge GUI, then selecting 'Show Config' in the Advanced configuration tab, then
+   highlighting and pasting that text into file.  That file is the argument to the --raw_lines_file parameter.
 
+   Each TR398 test's setting values can be specified by the python script in multiple ways.
+   For example, each test needs an upstream port. The python script can specify upstream port in several ways
+   and below is the hierarchy of which upstream port will be the final one in the settings.
+    1. --upstream_port argument
+    2. --raw_lines argument in the command line
+    3. upstream port specified in the --raw_lines_file file.txt
+    4. upsteam port loaded from the --config argument
       """
                                      )
 
