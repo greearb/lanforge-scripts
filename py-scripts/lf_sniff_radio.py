@@ -364,7 +364,7 @@ def main():
     parser.add_argument('--ssid', help='WiFi SSID for script objects to associate to', default='axe11000_5g')
     parser.add_argument('--password', help='WiFi passphrase/password/key', default='[BLANK]')
     parser.add_argument('--mode', help='Used to force mode of stations default: 0 (auto)', default=0)
-    parser.add_argument('--num_stations', type=int, default=0, help='Number of stations to create')
+    parser.add_argument('--num_stations', type=int, default=1, help='Number of stations to create default 1 for AX210 sniffing')
     parser.add_argument('--ax210_scan_time', default='20', help='Time to wait for scan')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
 
