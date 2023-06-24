@@ -16,7 +16,7 @@
         "DUT_MODEL":"TP_AXE21600",
         "DUT_SERIAL":"DUT_SERIAL",
         "wireless_network_dict":{
-			"ssid_idx=0":{"ssid_idx": "0", "SSID_USED": "TP-Link66F8", "SSID_PW_USED": "16480360", "BSSID_TO_USE": "68:7F:f0:01:66:f7", "SECURITY_USED": "wpa2"},
+			"ssid_idx=0":{"ssid_idx": "0", "SSID_USED": "TP-Link66F8", "SSID_PW_USED": "16480360", "BSSID_TO_USE": "68:7f:f0:01:66:f7", "SECURITY_USED": "wpa2"},
 			"ssid_idx=1":{"ssid_idx": "1", "SSID_USED": "TP-Link_66F8_5G_1", "SSID_PW_USED": "16480360", "BSSID_TO_USE": "68:7f:f0:01:66:f6", "SECURITY_USED": "wpa2"},
 			"ssid_idx=2":{"ssid_idx": "2", "SSID_USED": "TP-Link_66F8_5G_2", "SSID_PW_USED": "16480360", "BSSID_TO_USE": "68:7f:f0:01:66:f5", "SECURITY_USED": "wpa2"},
 			"ssid_idx=3":{"ssid_idx": "3", "SSID_USED": "TP-Link_66F8_6G", "SSID_PW_USED": "16480360", "BSSID_TO_USE": "68:7f:f0:01:66:f4", "SECURITY_USED": "wpa3"}
