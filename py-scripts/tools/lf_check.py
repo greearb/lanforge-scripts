@@ -2309,9 +2309,10 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 # generate output reports
                 test_rig = check.get_test_rig()
                 report.set_title(
-                    "LF Check: {test_rig}: {suite} : {ip} ".format(
+                    "LF Test Check: {test_rig}: {suite}: {ip}".format(
                         test_rig=test_rig, suite=test_suite, ip=lanforge_system_ip ))
-                report.build_banner_left()
+                #report.build_banner_left()
+                report.build_banner_left_h2_font()
                 report.start_content_div2()
                 report.set_obj_html("Objective", "Execution of test_suite {suite}".format(suite=test_suite))
                 report.build_objective()
