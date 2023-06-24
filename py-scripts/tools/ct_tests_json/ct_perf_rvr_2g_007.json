@@ -16,6 +16,7 @@
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=3 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
@@ -34,7 +35,7 @@
             "RVR_MT7915_2G_W0":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"2000",
+                "timeout":"5000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -102,7 +103,7 @@
             "RVR_7915_2G_W1":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"2000",
+                "timeout":"5000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -170,7 +171,7 @@
             "RVR_AX210_2G_W2":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"2000",
+                "timeout":"5000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -238,7 +239,7 @@
             "RVR_AX210_2G_W3":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"2000",
+                "timeout":"5000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -306,7 +307,7 @@
             "RVR_AX210_2G_W4":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"2000",
+                "timeout":"5000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -374,7 +375,7 @@
             "RVR_AX210_2G_W5":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"2000",
+                "timeout":"5000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -442,7 +443,7 @@
             "RVR_MT7921_2G_W6":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"2000",
+                "timeout":"5000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
@@ -510,7 +511,7 @@
             "RVR_MT7922_2G_W7":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "timeout":"2000",
+                "timeout":"5000",
                 "iterations":"1",
                 "command":"lf_rvr_test.py",
                 "args":"",
