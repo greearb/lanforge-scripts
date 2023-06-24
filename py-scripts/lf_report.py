@@ -527,6 +527,32 @@ class lf_report:
         )
         self.html += self.banner_html
 
+    def build_banner_left_h2_font(self):
+        # NOTE: {{ }} are the ESCAPED curly braces
+        # JBR suggests rename method to start_html_doc()
+        # This method violates DRY, if the ID of the body/div#BannerBack/div element is actually necessary
+        # to specify, this needs to be made a parameter for build_banner() or start_html_doc()
+        self.banner_html = """<!DOCTYPE html>
+<html lang='en'>
+    {head_tag}
+    <body>
+        <div id='BannerBack'>
+            <div id='BannerLeft'>
+                <img id='BannerLogo' align='right' src="CandelaLogo2-90dpi-200x90-trans.png" border='0'/>
+                <div class='HeaderStyle'>
+                    <h2 class='TitleFontPrint' style='color:darkgreen;'>{title}</h2>
+                    <h4 class='TitleFontPrintSub' style='color:darkgreen;'>{date}</h4>
+                </div>
+            </div>
+        </div>
+                 """.format(
+            head_tag=self.get_html_head(title=self.title),
+            title=self.title,
+            date=self.date,
+        )
+        self.html += self.banner_html
+
+
     def build_table_title(self):
         self.table_title_html = """
                     <!-- Table Title-->
