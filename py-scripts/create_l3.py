@@ -81,6 +81,8 @@ class CreateL3(Realm):
                  endp_b,
                  endp_a,
                  cx_type,
+                 tos=None,
+                 pkts_to_send=None,
                  host="localhost", port=8080,
                  min_rate_a=56, max_rate_a=0,
                  min_rate_b=56, max_rate_b=0,
@@ -102,6 +104,8 @@ class CreateL3(Realm):
         self.endp_b = endp_b
         self.endp_a = endp_a
         self.cx_type = cx_type
+        self.tos = tos
+        self.pkts_to_send = pkts_to_send
         self.name_prefix = name_prefix
         # self.station_profile = self.new_station_profile()
         # self.station_profile.lfclient_url = self.lfclient_url
@@ -135,6 +139,8 @@ class CreateL3(Realm):
                                   side_a=self.endp_a,
                                   side_b=self.endp_b,
                                   sleep_time=0,
+                                  tos=self.tos,
+                                  pkts_to_send=self.pkts_to_send,
                                   ip_port_a=self.min_ip_port_a,
                                   ip_port_b=self.min_ip_port_b,
                                   batch_quantity=self.batch_quantity,
@@ -214,6 +220,8 @@ INCLUDE_IN_README: False
     parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
     parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
     parser.add_argument('--cx_type', help='specify the type of cx', default="lf_udp")
+    parser.add_argument('--tos', help='specify tos for endpoints eg : BK | BE | VI | VO | Voice | Video')
+    parser.add_argument('--pkts_to_send', help='specify the pkts to send to the endpoints eg :One - 1 | Ten - 10 | (100) - 100 | (1000) - 1000')
     parser.add_argument('--multi_conn_a', help='modify multi connection endpoint-a for cx', default=0, type=int)
     parser.add_argument('--multi_conn_b', help='modify multi connection endpoint-b for cx', default=0, type=int)
     parser.add_argument('--min_ip_port_a', help='min ip port range for endp-a', default=-1)
@@ -239,7 +247,9 @@ INCLUDE_IN_README: False
                            name_prefix="VT",
                            endp_a=args.endp_a,
                            endp_b=args.endp_b,
+                           tos=args.tos,
                            cx_type=args.cx_type,
+                           pkts_to_send=args.pkts_to_send,
                            min_rate_a=args.min_rate_a,
                            min_rate_b=args.min_rate_b,
                            _debug_on=args.debug,
