@@ -9,7 +9,7 @@ PURPOSE:
      - create a test group
      - add layer-3 cx's to a test group
      - remove layer-3 cx's from a test group
-     - start and stop a connection test group
+     - start and stop a test connection group
 
 
 EXAMPLE:
@@ -23,28 +23,58 @@ EXAMPLE:
                     "--add_cx","l3_eth_test",
                     "--list_groups"
                     ]
-    
-    Add multiple layer-3 cross-connections to a single connection group:
+
+    * Add multiple layer-3 cross-connections to a single connection group:
         ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --list_groups
 
-    Remove multiple layer-3 cx's from a connection group:
+    * Remove multiple layer-3 cx's from a connection group:
         ./testgroup.py --mgr 192.168.30.12 --group_name group1 --remove_cx l3_test1,l3_test2 --list_groups
 
-    Add a single layer-3 cross connection to a connection group:
-        ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups
+    * Add a single layer-3 cross connection to a connection group:
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test --list_groups
 
-    Remove a layer-3 cx from a specified connection group:
+    * Remove a layer-3 cx from a specified connection group:
         ./testgroup.py --mgr localhost --group_name group1 --remove_cx l3_test1 --list_groups
 
-NOTES:
+    * Add single layer-3 cross-connections to a single connection group and strat group:
 
-    Tested on 03/07/2023:
-         kernel version: 5.19.17+
-         gui version: 5.4.6
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test --start_group CX_GROUP
 
-COPYRIGHT:
-    Copyright 2023 Candela Technologies Inc
-    License: Free to distribute and modify. LANforge systems must be licensed.
+    * Add multiple layer-3 cross-connections to a single connection group and strat group:
+
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test --start_group CX_GROUP
+
+    * Start Selected Group:
+
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --start_group CX_GROUP
+
+    * Stop Selected Group:
+
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --stop_group CX_GROUP
+
+    * Quiesce Selected Group:
+
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --quiesce_group CX_GROUP
+
+    * Delete Selected Group:
+
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP1 --del_group
+
+SCRIPT_CLASSIFICATION:  Creation, Addition, Deletion
+
+SCRIPT_CATEGORIES: Functional
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   23-JUN-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.16+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 '''
 
 import sys
@@ -201,24 +231,58 @@ EXAMPLE:
                     "--add_cx","l3_eth_test",
                     "--list_groups"
                     ]
-    
-    Add multiple layer-3 cross-connections to a single connection group:
+
+    * Add multiple layer-3 cross-connections to a single connection group:
         ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --list_groups
 
-    Remove multiple layer-3 cx's from a connection group:
+    * Remove multiple layer-3 cx's from a connection group:
         ./testgroup.py --mgr 192.168.30.12 --group_name group1 --remove_cx l3_test1,l3_test2 --list_groups
 
-    Add a single layer-3 cross connection to a connection group:
-        ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups
+    * Add a single layer-3 cross connection to a connection group:
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test --list_groups
 
-    Remove a layer-3 cx from a specified connection group:
+    * Remove a layer-3 cx from a specified connection group:
         ./testgroup.py --mgr localhost --group_name group1 --remove_cx l3_test1 --list_groups
 
-NOTES:
+    * Add single layer-3 cross-connections to a single connection group and strat group:
 
-    Tested on 03/07/2023:
-         kernel version: 5.19.17+
-         gui version: 5.4.6
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test --start_group CX_GROUP
+
+    * Add multiple layer-3 cross-connections to a single connection group and strat group:
+
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test --start_group CX_GROUP
+
+    * Start Selected Group:
+
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --start_group CX_GROUP
+
+    * Stop Selected Group:
+
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --stop_group CX_GROUP   
+
+    * Quiesce Selected Group:
+
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --quiesce_group CX_GROUP
+
+    * Delete Selected Group:
+
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP1 --del_group
+
+SCRIPT_CLASSIFICATION:  Creation, Addition, Deletion
+
+SCRIPT_CATEGORIES: Functional
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   23-JUN-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.16+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
     ''')
 
     parser.add_argument(
