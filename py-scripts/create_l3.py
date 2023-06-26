@@ -5,24 +5,29 @@ NAME: create_l3.py
 PURPOSE: This script is used to create the user-specified Layer-3 cross-connection.
 
 EXAMPLE:
+        (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
+
         # For layer-3 cx creation on LANforge:
 
             ./create_l3.py --mgr localhost --endp_a eth1 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000 --no_cleanup
-
-        # For remote layer-3 cx creation:
-
-            ./create_l3.py --mgr localhost --endp_a eth1 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000
-             --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
 
         # For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
 
             ./create_l3.py --mgr localhost --endp_a 1.1.sta0000 --endp_b 1.2.sta0000 --min_rate_a 56000 --min_rate_b 40000 --no_cleanup
 
+        # For remote layer-3 cx creation:
+
+            ./create_l3.py --mgr localhost --endp_a sta0000,sta0001 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000 --cx_type lf_udp
+             --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
+
+        # With tos & pkts_to_send cross-connections
+
+            ./create_l3.py --mgr localhost --endp_a sta00 --endp_b eth2 --min_ip_port_a 1000 --tos VI --pkts_to_send 10 --no_cleanup
+
         # For batch creation functionality:
-        (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
 
             ./create_l3.py --mgr 192.168.200.93 --endp_a 1.1.eth1 --endp_b 1.1.wlan2 --min_rate_a 6200000 --min_rate_b 6200000
-             --batch_quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000 
+             --batch_quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000
              --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
 
 SCRIPT_CLASSIFICATION:  Creation
@@ -49,7 +54,6 @@ LICENSE:
           Copyright 2023 Candela Technologies Inc
 
 INCLUDE_IN_README: False
-
 """
 import sys
 import os
@@ -168,21 +172,26 @@ NAME: create_l3.py
 PURPOSE: This script is used to create the user-specified Layer-3 cross-connection.
 
 EXAMPLE:
+        (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
+        
         # For layer-3 cx creation on LANforge:
 
             ./create_l3.py --mgr localhost --endp_a eth1 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000 --no_cleanup
-
-        # For remote layer-3 cx creation:
-
-            ./create_l3.py --mgr localhost --endp_a eth1 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000
-             --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
-
+        
         # For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
 
             ./create_l3.py --mgr localhost --endp_a 1.1.sta0000 --endp_b 1.2.sta0000 --min_rate_a 56000 --min_rate_b 40000 --no_cleanup
 
+        # For remote layer-3 cx creation:
+
+            ./create_l3.py --mgr localhost --endp_a sta0000,sta0001 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000 --cx_type lf_udp
+             --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
+            
+        # With tos & pkts_to_send cross-connections
+        
+            ./create_l3.py --mgr localhost --endp_a sta00 --endp_b eth2 --min_ip_port_a 1000 --tos VI --pkts_to_send 10 --no_cleanup
+
         # For batch creation functionality:
-        (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
 
             ./create_l3.py --mgr 192.168.200.93 --endp_a 1.1.eth1 --endp_b 1.1.wlan2 --min_rate_a 6200000 --min_rate_b 6200000
              --batch_quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000 
@@ -220,7 +229,7 @@ INCLUDE_IN_README: False
     parser.add_argument('--min_rate_b', help='--min_rate_b bps rate minimum for side_b', default=56000)
     parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
     parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
-    parser.add_argument('--cx_type', help='specify the type of cx', default="lf_udp")
+    parser.add_argument('--cx_type', help='specify the traffic type for cx eg : lf_udp | lf_tcp', default="lf_udp")
     parser.add_argument('--tos', help='specify tos for endpoints eg : BK | BE | VI | VO | Voice | Video')
     parser.add_argument('--pkts_to_send',
                         help='specify the pkts to send to the endpoints eg :One - 1 | Ten - 10 | (100) - 100 | (1000) - 1000')
