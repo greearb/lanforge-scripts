@@ -624,7 +624,7 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
         # get the Fedora platform 
         if (self.email_title_txt != ""):
 
-            self.mail_subject = "QA Rig: {email} Suite: {suite} Tests:{tests} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}   Server IP: {hostname}  DB: {db} Server Ver:{server_ver} Date: {date}".format(
+            self.mail_subject = "QA Rig: {email} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  Suite: {suite} Tests:{tests}   Server IP: {hostname}  DB: {db} Server Ver:{server_ver} Date: {date}".format(
                 email=self.email_title_txt,
                 suite=self.test_suite,
                 tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
@@ -633,7 +633,7 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
                 db=self.database_sqlite, 
                 date=datetime.datetime.now())
         else:
-            self.mail_subject = "QA Suite: {suite} Tests:{tests} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(
+            self.mail_subject = "Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  QA Suite: {suite} Tests:{tests}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(
                 email=self.email_title_txt,
                 suite=self.test_suite, 
                 tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
@@ -681,7 +681,7 @@ DB: {db}
 Date: {date}""".format(
                 email=self.email_title_txt,    
                 suite=self.test_suite,
-                duration=self.duration,
+                duration=self.suite_duration,
                 start=self.suite_start_time,
                 stop=self.suite_end_time, 
                 tests=self.tests_run, 
