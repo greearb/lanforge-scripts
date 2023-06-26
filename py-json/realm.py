@@ -433,6 +433,16 @@ class Realm(LFCliBase):
         }
         self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
+    def set_endp_details(self, ename, pkt_to_send, debug_=False, suppress_related_commands_=True):
+        req_url = "cli-json/set_endp_details"
+        pkt_to_send = pkt_to_send
+
+        data = {
+            "name": ename,
+            "pkts_to_send": pkt_to_send
+        }
+        self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+
     def set_endp_tos(self, ename, _tos, debug_=False, suppress_related_commands_=True):
         req_url = "cli-json/set_endp_tos"
         tos = _tos
