@@ -102,7 +102,8 @@ class CreateL3(Realm):
         self.host = host
         self.port = port
         self.endp_b = endp_b
-        self.endp_a = endp_a
+        if endp_a:
+            self.endp_a = endp_a[0].split(',')
         self.cx_type = cx_type
         self.tos = tos
         self.pkts_to_send = pkts_to_send
@@ -211,7 +212,7 @@ LICENSE:
           Copyright 2023 Candela Technologies Inc
 
 INCLUDE_IN_README: False
-        ''')
+''')
 
     parser.add_argument('--mgr', help='give the host ip')
     parser.add_argument('--mgr_port', default=8080, help='port LANforge GUI HTTP service is running on')
@@ -221,7 +222,8 @@ INCLUDE_IN_README: False
     parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
     parser.add_argument('--cx_type', help='specify the type of cx', default="lf_udp")
     parser.add_argument('--tos', help='specify tos for endpoints eg : BK | BE | VI | VO | Voice | Video')
-    parser.add_argument('--pkts_to_send', help='specify the pkts to send to the endpoints eg :One - 1 | Ten - 10 | (100) - 100 | (1000) - 1000')
+    parser.add_argument('--pkts_to_send',
+                        help='specify the pkts to send to the endpoints eg :One - 1 | Ten - 10 | (100) - 100 | (1000) - 1000')
     parser.add_argument('--multi_conn_a', help='modify multi connection endpoint-a for cx', default=0, type=int)
     parser.add_argument('--multi_conn_b', help='modify multi connection endpoint-b for cx', default=0, type=int)
     parser.add_argument('--min_ip_port_a', help='min ip port range for endp-a', default=-1)
@@ -232,9 +234,11 @@ INCLUDE_IN_README: False
     parser.add_argument('--ip_port_increment_a', help='ip port increment for endp-a', default=1)
     parser.add_argument('--ip_port_increment_b', help='ip port increment for endp-b', default=1)
     parser.add_argument('--no_cleanup', help='Do not cleanup before exit', action='store_true')
-    parser.add_argument('--log_level', default=None,help='Set logging level: debug | info | warning | error | critical')
-    parser.add_argument('--lf_logger_config_json',help="--lf_logger_config_json <json file> , json configuration of logger")
-    parser.add_argument('--debug','-d',default=False,action="store_true",help='Enable debugging')
+    parser.add_argument('--log_level', default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--lf_logger_config_json',
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--debug', '-d', default=False, action="store_true", help='Enable debugging')
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
