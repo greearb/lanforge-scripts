@@ -90,7 +90,6 @@ if sys.version_info[0] != 3:
     logger.critical("This script requires Python 3")
     exit(1)
 
-
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -160,15 +159,14 @@ class TestGroup(Realm):
             if self.tg_profile.check_group_exists():
                 self.tg_profile.rm_group()
             else:
-                logger.info("%s not found, no action taken" %
-                      self.tg_profile.group_name)
+                logger.info("%s not found, no action taken" % self.tg_profile.group_name)
 
     def show_info(self):
         time.sleep(.5)
         if self.list_groups:
             tg_list = self.tg_profile.list_groups()
             if len(tg_list) > 0:
-                logger.info("Current Test Groups: ")
+                logger.info("Current Test Groups: %s" % tg_list)
                 for group in tg_list:
                     logger.info(group)
             else:
@@ -185,7 +183,7 @@ class TestGroup(Realm):
     def update_cxs(self):
         if len(self.add_cx_list) > 0:
             logger.info("Adding cxs %s to %s" %
-                  (', '.join(self.add_cx_list), self.tg_profile.group_name))
+                        (', '.join(self.add_cx_list), self.tg_profile.group_name))
             cx_list = self.add_cx_list[0]
             split_cx_list = cx_list.split(',')
             # for cx in self.add_cx_list:
@@ -194,7 +192,7 @@ class TestGroup(Realm):
                 self.tg_profile.cx_list.append(cx)
         if len(self.rm_cx_list) > 0:
             logger.info("Removing cxs %s from %s" %
-                  (', '.join(self.rm_cx_list), self.tg_profile.group_name))
+                        (', '.join(self.rm_cx_list), self.tg_profile.group_name))
             for cx in self.rm_cx_list:
                 self.tg_profile.rm_cx(cx)
                 if cx in self.tg_profile.cx_list:
@@ -307,7 +305,7 @@ INCLUDE_IN_README: False
         '--quiesce_group', help='quiesce all cxs in chosen test groups', default=None)
 
     parser.add_argument(
-        '--add_cx', help='add cx to chosen test group', nargs='*',  default=[])
+        '--add_cx', help='add cx to chosen test group', nargs='*', default=[])
     parser.add_argument(
         '--remove_cx', help='remove cx from chosen test group', nargs='*', default=[])
 
