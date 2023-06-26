@@ -31,7 +31,6 @@ LICENSE:
           Copyright 2023 Candela Technologies Inc
 
 INCLUDE_IN_README: False
-
 '''
 import sys
 import os
@@ -158,8 +157,7 @@ LICENSE:
           Copyright 2023 Candela Technologies Inc
 
 INCLUDE_IN_README: False
-
-            ''')
+''')
     # if required is not None:
     optional = None
     for agroup in parser._action_groups:
