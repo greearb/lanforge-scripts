@@ -80,6 +80,7 @@ class CreateL3(Realm):
                  name_prefix,
                  endp_b,
                  endp_a,
+                 cx_type,
                  host="localhost", port=8080,
                  min_rate_a=56, max_rate_a=0,
                  min_rate_b=56, max_rate_b=0,
@@ -100,6 +101,7 @@ class CreateL3(Realm):
         self.port = port
         self.endp_b = endp_b
         self.endp_a = endp_a
+        self.cx_type = cx_type
         self.name_prefix = name_prefix
         # self.station_profile = self.new_station_profile()
         # self.station_profile.lfclient_url = self.lfclient_url
@@ -129,7 +131,7 @@ class CreateL3(Realm):
         self.cx_profile.cleanup_prefix()
 
     def build(self):
-        if self.cx_profile.create(endp_type="lf_udp",
+        if self.cx_profile.create(endp_type=self.cx_type,
                                   side_a=self.endp_a,
                                   side_b=self.endp_b,
                                   sleep_time=0,
@@ -211,6 +213,7 @@ INCLUDE_IN_README: False
     parser.add_argument('--min_rate_b', help='--min_rate_b bps rate minimum for side_b', default=56000)
     parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
     parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
+    parser.add_argument('--cx_type', help='specify the type of cx', default="lf_udp")
     parser.add_argument('--multi_conn_a', help='modify multi connection endpoint-a for cx', default=0, type=int)
     parser.add_argument('--multi_conn_b', help='modify multi connection endpoint-b for cx', default=0, type=int)
     parser.add_argument('--min_ip_port_a', help='min ip port range for endp-a', default=-1)
@@ -236,6 +239,7 @@ INCLUDE_IN_README: False
                            name_prefix="VT",
                            endp_a=args.endp_a,
                            endp_b=args.endp_b,
+                           cx_type=args.cx_type,
                            min_rate_a=args.min_rate_a,
                            min_rate_b=args.min_rate_b,
                            _debug_on=args.debug,
