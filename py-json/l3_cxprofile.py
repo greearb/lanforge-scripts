@@ -469,6 +469,7 @@ class L3CXProfile(LFCliBase):
                 sleep_time=0.03,
                 suppress_related_commands=None,
                 debug_=False,
+                pkts_to_send=None,
                 tos=None, timeout=300, ip_port_a=-1, ip_port_b=-1,
                 batch_quantity=1, port_increment_a=None, port_increment_b=None,
                 ip_port_increment_a=0, ip_port_increment_b=0):
@@ -633,6 +634,10 @@ class L3CXProfile(LFCliBase):
                     self.local_realm.set_endp_tos(endp_a_name, tos)
                     self.local_realm.set_endp_tos(endp_b_name, tos)
 
+                if pkts_to_send:
+                    self.local_realm.set_endp_details(endp_a_name, pkts_to_send)
+                    self.local_realm.set_endp_details(endp_b_name, pkts_to_send)
+
                 data = {
                     "alias": cx_name,
                     "test_mgr": "default_tm",
@@ -783,6 +788,15 @@ class L3CXProfile(LFCliBase):
                 }
                 self.local_realm.json_post(url, data, debug_=debug_,
                                            suppress_related_commands_=suppress_related_commands)
+
+                if tos:
+                    self.local_realm.set_endp_tos(endp_a_name, tos)
+                    self.local_realm.set_endp_tos(endp_b_name, tos)
+
+                if pkts_to_send:
+                    self.local_realm.set_endp_details(endp_a_name, pkts_to_send)
+                    self.local_realm.set_endp_details(endp_b_name, pkts_to_send)
+
                 data = {
                     "alias": cx_name,
                     "test_mgr": "default_tm",
