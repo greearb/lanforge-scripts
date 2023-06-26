@@ -9,8 +9,8 @@ EXAMPLE:
     Use './lf_create_vap_cv.py --help' to see command line usage and options
 
     ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-        --delete_old_scenario --scenario_name "Automation" --vap_radio "wiphy0"
-        --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2" --vap_bw 20
+        --delete_old_scenario --scenario_name Automation --vap_radio wiphy0 --set_upstream --False
+        --vap_freq 2437 --vap_ssid routed-AP --vap_passwd something --vap_security wpa2 --vap_bw 20
 
     JSON example:
     "args": ["--mgr","localhost",
@@ -96,7 +96,8 @@ class create_vap_cv(cv_test):
                  lf_password="lanforge",
                  vap_upstream_port="1.1.eth2",
                  vap_bw=None,
-                 vap_mode=None
+                 vap_mode=None,
+                 set_upstream=None
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -112,7 +113,7 @@ class create_vap_cv(cv_test):
         self.profile_name = None
         self.vap_radio = None
         self.freq = None
-        self.set_upstream = True
+        self.set_upstream = set_upstream
         self.vap_bw = vap_bw
         self.vap_mode = vap_mode
 
@@ -173,7 +174,7 @@ class create_vap_cv(cv_test):
 
         vap_shelf, vap_resource, vap_radio_name, *nil = LFUtils.name_to_eid(vap_radio)
         upstream_shelf, upstream_resource, upstream_name, *nil = LFUtils.name_to_eid(vap_upstream_port)
-        if self.set_upstream:
+        if self.set_upstream == "True":
             # TODO VAP needs to have ability to enable dhcp on the vap as compared to the upstream port.
             self.raw_line_l1 = [[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},AUTO {self.freq} NA'],
                                 [f'resource {vap_shelf}.{vap_resource}.0 0'],
@@ -241,8 +242,8 @@ EXAMPLE:
     Use './lf_create_vap_cv.py --help' to see command line usage and options
 
     ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-        --delete_old_scenario --scenario_name "Automation" --vap_radio "wiphy0"
-        --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2" --vap_bw 20
+        --delete_old_scenario --scenario_name Automation --vap_radio wiphy0 --set_upstream True
+        --vap_freq 2437 --vap_ssid routed-AP --vap_passwd something --vap_security wpa2 --vap_bw 20
 
     vs_code launch.json example:
     "args": ["--mgr","localhost",
@@ -328,6 +329,7 @@ INCLUDE_IN_README: False
     parser.add_argument("--vap_mode", type=str, default="AUTO",
                         help="vap mode can be selected from these"
                              '"AUTO", "a", "aAX", "abg", "abgn", "abgnAC", "abgnAX", "an","anAC", "anAX", "b", "bg", "bgn", "bgnAC"", "bgnAX"')
+    parser.add_argument("--set_upstream", default= True, help="Enter True if upstream need to be set else enter False")
 
     args = parser.parse_args()
     cv_base_adjust_parser(args)
@@ -346,7 +348,7 @@ INCLUDE_IN_README: False
 
     lf_create_vap_cv = create_vap_cv(lfclient_host=args.mgr, lf_port=args.port, lf_user=args.lf_user,
                                      lf_password=args.lf_password, vap_upstream_port=args.vap_upstream_port,
-                                     vap_bw=args.vap_bw, vap_mode=args.vap_mode)
+                                     vap_bw=args.vap_bw, vap_mode=args.vap_mode,set_upstream=args.set_upstream)
 
     delete_old_scenario = args.delete_old_scenario
     vap_scenario_name = args.scenario_name
