@@ -455,6 +455,10 @@ class Realm(LFCliBase):
             tos = "128"
         if _tos == "VO":
             tos = "192"
+        if _tos == "Voice":
+            tos = "184"
+        if _tos == "Video":
+            tos = "56"
         data = {
             "name": ename,
             "tos": tos
