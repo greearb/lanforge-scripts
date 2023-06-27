@@ -32,7 +32,7 @@ EXAMPLE:
         * For creating specified number of stations and layer-3 cx creation (Customise the traffic and upstream port):
 
             ./create_l3_stations.py --mgr localhost --station_list sta00  --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
-             --upstream_port eth2 --a_min 6200000 --b_min 6200000
+             --upstream_port eth2 --endp_a_min 6200000 --endp_b_min 6200000
 
       Generic command layout:
 
@@ -43,8 +43,8 @@ EXAMPLE:
             --security {open|wep|wpa|wpa2|wpa3}
             --ssid netgear
             --password admin123
-            --a_min 1000
-            --b_min 1000
+            --endp_a_min 1000
+            --endp_b_min 1000
             --ap "00:0e:8e:78:e1:76"
             --number_template 0000
             --mode   1
@@ -200,7 +200,7 @@ class CreateL3(Realm):
             self._fail("create_l3_stations: could not create all ports, exiting with error.")
         else:
             self._pass("Station creation succeeded.")
-
+            self.start()
             cx_timeout = 300
             # cx_timeout=0 # expect this to fail
             rv = self.cx_profile.create(endp_type="lf_udp",
@@ -275,7 +275,7 @@ EXAMPLE:
         * For creating specified number of stations and layer-3 cx creation (Customise the traffic and upstream port):
         
             ./create_l3_stations.py --mgr localhost --station_list sta00  --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
-             --upstream_port eth2 --a_min 6200000 --b_min 6200000
+             --upstream_port eth2 --endp_a_min 6200000 --endp_b_min 6200000
          
       Generic command layout:
 
@@ -286,8 +286,8 @@ EXAMPLE:
             --security {open|wep|wpa|wpa2|wpa3} 
             --ssid netgear
             --password admin123
-            --a_min 1000
-            --b_min 1000
+            --endp_a_min 1000
+            --endp_b_min 1000
             --ap "00:0e:8e:78:e1:76"
             --number_template 0000 
             --mode   1
@@ -333,12 +333,12 @@ INCLUDE_IN_README: False
 ''')
 
     parser.add_argument(
-        '--a_min',
-        help='--a_min bps rate minimum for side_a',
+        '--endp_a_min',
+        help='--endp_a_min bps rate minimum for side_a',
         default=256000)
     parser.add_argument(
-        '--b_min',
-        help='--b_min bps rate minimum for side_b',
+        '--endp_b_min',
+        help='--endp_b_min bps rate minimum for side_b',
         default=256000)
     parser.add_argument(
         '--mode', help='Used to force mode of stations')
@@ -380,13 +380,12 @@ INCLUDE_IN_README: False
             station_list = args.station_list
     ip_var_test = CreateL3(host=args.mgr, port=args.mgr_port, number_template=str(args.number_template),
                            sta_list=station_list, name_prefix="VT", upstream=args.upstream_port, ssid=args.ssid,
-                           password=args.passwd, radio=args.radio, security=args.security, side_a_min_rate=args.a_min,
-                           side_b_min_rate=args.b_min, mode=args.mode, ap=args.ap, _debug_on=args.debug)
+                           password=args.passwd, radio=args.radio, security=args.security, side_a_min_rate=args.endp_a_min,
+                           side_b_min_rate=args.endp_b_min, mode=args.mode, ap=args.ap, _debug_on=args.debug)
 
     if not args.no_cleanup:
         ip_var_test.pre_cleanup()
     ip_var_test.build()
-    ip_var_test.start()
 
     # TODO:  Do cleanup by default, allow --no_cleanup option to skip cleanup.
 
