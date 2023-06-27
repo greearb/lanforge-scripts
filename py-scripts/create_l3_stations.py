@@ -34,11 +34,11 @@ EXAMPLE:
         * For creating specified number of stations and layer-3 cx creation (Customise the traffic and upstream port):
 
             ./create_l3_stations.py --mgr localhost --station_list sta00  --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
-             --upstream_port eth2 --endp_a_min 6200000 --endp_b_min 6200000
+             --upstream_port eth2 --min_rate_a 6200000 --min_rate_b 6200000
 
         * For Batch-Create :
 
-            ./create_l3_stations.py --mgr 192.168.200.93 --endp_a 1.1.eth2 --endp_b 1.1.sta0002 --endp_a_min 6200000 --endp_b_min 6200000
+            ./create_l3_stations.py --mgr 192.168.200.93 --endp_a 1.1.eth2 --endp_b 1.1.sta0002 --min_rate_a 6200000 --min_rate_b 6200000
             --batch_create --batch_quantity 8 --endp_a_increment 0 --endp_b_increment 0 --min_ip_port_a 1000 --min_ip_port_b 2000
             --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn_a 1 --multi_conn_b 1
 
@@ -51,8 +51,8 @@ EXAMPLE:
             --security {open|wep|wpa|wpa2|wpa3}
             --ssid netgear
             --password admin123
-            --endp_a_min 1000
-            --endp_b_min 1000
+            --min_rate_a 1000
+            --min_rate_b 1000
             --ap "00:0e:8e:78:e1:76"
             --number_template 0000
             --mode   1
@@ -326,11 +326,11 @@ EXAMPLE:
         * For creating specified number of stations and layer-3 cx creation (Customise the traffic and upstream port):
         
             ./create_l3_stations.py --mgr localhost --station_list sta00  --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
-             --upstream_port eth2 --endp_a_min 6200000 --endp_b_min 6200000
+             --upstream_port eth2 --min_rate_a 6200000 --min_rate_b 6200000
              
         * For Batch-Create :
         
-            ./create_l3_stations.py --mgr 192.168.200.93 --endp_a 1.1.eth2 --endp_b 1.1.sta0002 --endp_a_min 6200000 --endp_b_min 6200000 
+            ./create_l3_stations.py --mgr 192.168.200.93 --endp_a 1.1.eth2 --endp_b 1.1.sta0002 --min_rate_a 6200000 --min_rate_b 6200000 
             --batch_create --batch_quantity 8 --endp_a_increment 0 --endp_b_increment 0 --min_ip_port_a 1000 --min_ip_port_b 2000  
             --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn_a 1 --multi_conn_b 1
          
@@ -343,8 +343,8 @@ EXAMPLE:
             --security {open|wep|wpa|wpa2|wpa3} 
             --ssid netgear
             --password admin123
-            --endp_a_min 1000
-            --endp_b_min 1000
+            --min_rate_a 1000
+            --min_rate_b 1000
             --ap "00:0e:8e:78:e1:76"
             --number_template 0000 
             --mode   1
@@ -390,12 +390,12 @@ INCLUDE_IN_README: False
 ''')
 
     parser.add_argument(
-        '--endp_a_min',
-        help='--endp_a_min bps rate minimum for side_a',
+        '--min_rate_a',
+        help='--min_rate_a bps rate minimum for side_a',
         default=256000)
     parser.add_argument(
-        '--endp_b_min',
-        help='--endp_b_min bps rate minimum for side_b',
+        '--min_rate_b',
+        help='--min_rate_b bps rate minimum for side_b',
         default=256000)
     parser.add_argument(
         '--mode', help='Used to force mode of stations')
@@ -451,8 +451,8 @@ INCLUDE_IN_README: False
             station_list = args.station_list
     ip_var_test = CreateL3(host=args.mgr, port=args.mgr_port, number_template=str(args.number_template),
                            sta_list=station_list, name_prefix="VT", upstream=args.upstream_port, ssid=args.ssid,
-                           password=args.passwd, radio=args.radio, security=args.security, side_a_min_rate=args.endp_a_min,
-                           side_b_min_rate=args.endp_b_min, mode=args.mode, ap=args.ap, _debug_on=args.debug,
+                           password=args.passwd, radio=args.radio, security=args.security, side_a_min_rate=args.min_rate_a,
+                           side_b_min_rate=args.min_rate_b, mode=args.mode, ap=args.ap, _debug_on=args.debug,
                            _batch_create=args.batch_create, _endp_a=args.endp_a, _endp_b=args.endp_b, _quantity=args.batch_quantity,
                            _endp_a_increment=args.endp_a_increment,  _endp_b_increment=args.endp_b_increment,
                            _ip_port_increment_a=args.ip_port_increment_a, _ip_port_increment_b=args.ip_port_increment_b,
