@@ -75,7 +75,6 @@ LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-TestGroupProfile = realm.TestGroupProfile
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
@@ -112,11 +111,6 @@ class CreateL3(Realm):
         self.tos = tos
         self.pkts_to_send = pkts_to_send
         self.name_prefix = name_prefix
-        # self.station_profile = self.new_station_profile()
-        # self.station_profile.lfclient_url = self.lfclient_url
-        # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0,
-        # end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user
-        # defined variable from terminal.
         self.cx_profile = self.new_l3_cx_profile()
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
