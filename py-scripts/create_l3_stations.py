@@ -4,8 +4,10 @@
 NAME: create_l3_stations.py
 
 PURPOSE:
-            This script creates variable number of stations with individual cross-connects and endpoints.
-            Stations are set to UP state, but cross-connections remain stopped.
+          ->  This script creates variable number of stations with individual cross-connects and endpoints.
+              Stations are set to UP state, but cross-connections remain stopped.
+
+          ->  This script support Batch-create Functionality.
 
 EXAMPLE:
         Default configuration:
@@ -33,6 +35,12 @@ EXAMPLE:
 
             ./create_l3_stations.py --mgr localhost --station_list sta00  --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
              --upstream_port eth2 --endp_a_min 6200000 --endp_b_min 6200000
+
+        * For Batch-Create :
+
+            ./create_l3_stations.py --mgr 192.168.200.93 --endp_a 1.1.eth2 --endp_b 1.1.sta0002 --endp_a_min 6200000 --endp_b_min 6200000
+            --batch_create --batch_quantity 8 --endp_a_increment 0 --endp_b_increment 0 --min_ip_port_a 1000 --min_ip_port_b 2000
+            --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn_a 1 --multi_conn_b 1
 
       Generic command layout:
 
@@ -288,8 +296,10 @@ def main():
 NAME: create_l3_stations.py
 
 PURPOSE:
-            This script creates variable number of stations with individual cross-connects and endpoints.
-            Stations are set to UP state, but cross-connections remain stopped.
+          ->  This script creates variable number of stations with individual cross-connects and endpoints.
+              Stations are set to UP state, but cross-connections remain stopped.
+              
+          ->  This script support Batch-create Functionality.
 
 EXAMPLE:
         Default configuration:
@@ -317,6 +327,12 @@ EXAMPLE:
         
             ./create_l3_stations.py --mgr localhost --station_list sta00  --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
              --upstream_port eth2 --endp_a_min 6200000 --endp_b_min 6200000
+             
+        * For Batch-Create :
+        
+            ./create_l3_stations.py --mgr 192.168.200.93 --endp_a 1.1.eth2 --endp_b 1.1.sta0002 --endp_a_min 6200000 --endp_b_min 6200000 
+            --batch_create --batch_quantity 8 --endp_a_increment 0 --endp_b_increment 0 --min_ip_port_a 1000 --min_ip_port_b 2000  
+            --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn_a 1 --multi_conn_b 1
          
       Generic command layout:
 
