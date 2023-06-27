@@ -127,10 +127,12 @@ class create_vap_cv(cv_test):
                                  lf_user=self.lf_user,
                                  lf_passwd=self.lf_passwd,
                                  )
-
-        # enables security(like wpa,wpa2,wpa3,wep etc..) along with DHCP_SERVER flags for vap.
-        prof_flag = str(int(profile_flag[vap_security], 16) + int("1", 16))
-
+        
+        if vap_security == "open":
+            prof_flag = None
+        else:
+            # enables security(like wpa,wpa2,wpa3,wep etc..) along with DHCP_SERVER flags for vap.
+            prof_flag = str(int(profile_flag[vap_security], 16) + int("1", 16))
         # for more flags please refer below
         # http://<mgr_ip>:8080/help/add_profile
 
