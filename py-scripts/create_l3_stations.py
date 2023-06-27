@@ -4,39 +4,49 @@
 NAME: create_l3_stations.py
 
 PURPOSE:
-     This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
-     The connections are not started, nor are stations set admin up in this script.
+            This script creates variable number of stations with individual cross-connects and endpoints.
+            Stations are set to UP state, but cross-connections remain stopped.
 
 EXAMPLE:
-    # For creating station and layer-3 cx creation [ Endpoint_A = station Endpoint_B eth1(default)] on LANForge:
-        ./create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2
+        Default configuration:
+            Endpoint A: List of stations (default: 2 stations, unless specified with --num_stations)
+            Endpoint B: eth1
 
-    # For creating two stations with the specified station ID and layer-3 cx creation[ Endpoint_A = station Endpoint_B eth1(default)]
-     on LANforge:
+        * Creating specified number of station names and Layer-3 CX :
 
-        ./create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
+            ./create_l3_stations.py --mgr localhost --num_stations 5 --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
 
-    # For creating two stations with the specified station ID and layer-3 cx creation[ Endpoint_A = station Endpoint_B eth1(default)] on LANforge:
-        ./create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password
-        --security wpa2
+        * Creating stations with specified start ID (--num_template) and Layer-3 CX :
 
-    # For creating two stations with the specified station ID and layer-3 cx creation[ customise the traffic and upstream port] on LANforge:
-        ./create_l3_stations.py --station_list sta00  --radio wiphy0 --ssid lanforge --password password --security psk2
-         -u eth2 --a_min 8 --b_min 1000
+            ./create_l3_stations.py --mgr localhost --number_template 007 --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
 
-    # Remotely create two stations with the specified station ID and layer-3 cx [ customise the traffic and upstream port]:
-        ./create_l3_stations.py --station_list sta00  --radio wiphy0 --ssid lanforge --password password --security psk2
-         -u eth2 --a_min 8 --b_min 1000
+        * Creating stations with specified names and Layer-3 CX :
 
+            ./create_l3_stations.py --mgr localhost --station_list sta00,sta01 --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
 
+        * For creating stations and layer-3 cx creation on particular specified AP mac & mode:
 
-    Generic command layout:
+            ./create_l3_stations.py --mgr localhost --radio wiphy0 --ssid SSID --password Password@123 --security wpa2 --ap "00:0e:8e:78:e1:76"
+            --mode 13
+
+        * For creating specified number of stations and layer-3 cx creation (Customise the traffic and upstream port):
+
+            ./create_l3_stations.py --mgr localhost --station_list sta00  --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
+             --upstream_port eth2 --a_min 6200000 --b_min 6200000
+
+      Generic command layout:
 
         python3 ./create_l3_stations.py
             --upstream_port eth1
             --radio wiphy0
             --num_stations 32
-            --security {open|wep|wpa|wpa2|wpa3} \\
+            --security {open|wep|wpa|wpa2|wpa3}
+            --ssid netgear
+            --password admin123
+            --a_min 1000
+            --b_min 1000
+            --ap "00:0e:8e:78:e1:76"
+            --number_template 0000
             --mode   1
                 {"auto"   : "0",
                 "a"      : "1",
@@ -52,44 +62,7 @@ EXAMPLE:
                 "bgnAC"  : "11",
                 "abgnAX" : "12",
                 "bgnAX"  : "13",
-            --ssid netgear
-            --password admin123
-            --a_min 1000
-            --b_min 1000
-            --ap "00:0e:8e:78:e1:76"
-            --number_template 0000
             --debug
-
-            python3 ./create_l3_stations.py
-            --upstream_port eth1
-            --radio wiphy0
-            --station_list sta00,sta01
-            --security {open|wep|wpa|wpa2|wpa3} \\
-            --mode   1
-                {"auto"   : "0",
-                "a"      : "1",
-                "b"      : "2",
-                "g"      : "3",
-                "abg"    : "4",
-                "abgn"   : "5",
-                "bgn"    : "6",
-                "bg"     : "7",
-                "abgnAC" : "8",
-                "anAC"   : "9",
-                "an"     : "10",
-                "bgnAC"  : "11",
-                "abgnAX" : "12",
-                "bgnAX"  : "13",
-            --ssid netgear
-            --password admin123
-            --a_min 1000
-            --b_min 1000
-            --ap "00:0e:8e:78:e1:76"
-            --number_template 0000
-            --debug
-
-
-
 
 SCRIPT_CLASSIFICATION:  Creation
 
@@ -104,7 +77,7 @@ NOTES:
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   16-MAY-2023,
+VERIFIED_ON:   27-JUN-2023,
              Build Version:  5.4.6
              Kernel Version: 6.2.14+
 
@@ -112,9 +85,7 @@ LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
           Copyright 2023 Candela Technologies Inc
 
-
 INCLUDE_IN_README: False
-
 """
 
 import sys
@@ -276,30 +247,35 @@ def main():
 NAME: create_l3_stations.py
 
 PURPOSE:
-     This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
-     The connections are not started, nor are stations set admin up in this script.
+            This script creates variable number of stations with individual cross-connects and endpoints.
+            Stations are set to UP state, but cross-connections remain stopped.
 
 EXAMPLE:
-    # For creating station and layer-3 cx creation [ Endpoint_A = station Endpoint_B eth1(default)] on LANForge:
-        ./create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2
+        Default configuration:
+            Endpoint A: List of stations (default: 2 stations, unless specified with --num_stations)
+            Endpoint B: eth1 
+                
+        * Creating specified number of station names and Layer-3 CX :
 
-    # For creating two stations with the specified station ID and layer-3 cx creation[ Endpoint_A = station Endpoint_B eth1(default)]
-     on LANforge:
+            ./create_l3_stations.py --mgr localhost --num_stations 5 --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
+            
+        * Creating stations with specified start ID (--num_template) and Layer-3 CX :
+        
+            ./create_l3_stations.py --mgr localhost --number_template 007 --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
+                
+        * Creating stations with specified names and Layer-3 CX :
 
-        ./create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
-    
-    # For creating two stations with the specified station ID and layer-3 cx creation[ Endpoint_A = station Endpoint_B eth1(default)] on LANforge:
-        ./create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password 
-        --security wpa2
-    
-    # For creating two stations with the specified station ID and layer-3 cx creation[ customise the traffic and upstream port] on LANforge:
-        ./create_l3_stations.py --station_list sta00  --radio wiphy0 --ssid lanforge --password password --security psk2
-         -u eth2 --a_min 8 --b_min 1000
-
-    # Remotely create two stations with the specified station ID and layer-3 cx [ customise the traffic and upstream port]:
-        ./create_l3_stations.py --station_list sta00  --radio wiphy0 --ssid lanforge --password password --security psk2
-         -u eth2 --a_min 8 --b_min 1000
+            ./create_l3_stations.py --mgr localhost --station_list sta00,sta01 --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
          
+        * For creating stations and layer-3 cx creation on particular specified AP mac & mode:
+        
+            ./create_l3_stations.py --mgr localhost --radio wiphy0 --ssid SSID --password Password@123 --security wpa2 --ap "00:0e:8e:78:e1:76"
+            --mode 13
+
+        * For creating specified number of stations and layer-3 cx creation (Customise the traffic and upstream port):
+        
+            ./create_l3_stations.py --mgr localhost --station_list sta00  --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
+             --upstream_port eth2 --a_min 6200000 --b_min 6200000
          
       Generic command layout:
 
@@ -307,7 +283,13 @@ EXAMPLE:
             --upstream_port eth1
             --radio wiphy0
             --num_stations 32
-            --security {open|wep|wpa|wpa2|wpa3} \\
+            --security {open|wep|wpa|wpa2|wpa3} 
+            --ssid netgear
+            --password admin123
+            --a_min 1000
+            --b_min 1000
+            --ap "00:0e:8e:78:e1:76"
+            --number_template 0000 
             --mode   1
                 {"auto"   : "0",
                 "a"      : "1",
@@ -323,43 +305,7 @@ EXAMPLE:
                 "bgnAC"  : "11",
                 "abgnAX" : "12",
                 "bgnAX"  : "13",
-            --ssid netgear
-            --password admin123
-            --a_min 1000
-            --b_min 1000
-            --ap "00:0e:8e:78:e1:76"
-            --number_template 0000
             --debug
-
-            python3 ./create_l3_stations.py
-            --upstream_port eth1
-            --radio wiphy0
-            --station_list sta00,sta01
-            --security {open|wep|wpa|wpa2|wpa3} \\
-            --mode   1
-                {"auto"   : "0",
-                "a"      : "1",
-                "b"      : "2",
-                "g"      : "3",
-                "abg"    : "4",
-                "abgn"   : "5",
-                "bgn"    : "6",
-                "bg"     : "7",
-                "abgnAC" : "8",
-                "anAC"   : "9",
-                "an"     : "10",
-                "bgnAC"  : "11",
-                "abgnAX" : "12",
-                "bgnAX"  : "13",
-            --ssid netgear
-            --password admin123
-            --a_min 1000
-            --b_min 1000
-            --ap "00:0e:8e:78:e1:76"
-            --number_template 0000
-            --debug
-
-
 
 SCRIPT_CLASSIFICATION:  Creation
 
@@ -374,14 +320,13 @@ NOTES:
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   16-MAY-2023,
+VERIFIED_ON:   27-JUN-2023,
              Build Version:  5.4.6
              Kernel Version: 6.2.14+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
           Copyright 2023 Candela Technologies Inc
-
 
 INCLUDE_IN_README: False
 
@@ -395,7 +340,6 @@ INCLUDE_IN_README: False
         '--b_min',
         help='--b_min bps rate minimum for side_b',
         default=256000)
-
     parser.add_argument(
         '--mode', help='Used to force mode of stations')
     parser.add_argument(
@@ -442,11 +386,12 @@ INCLUDE_IN_README: False
     if not args.no_cleanup:
         ip_var_test.pre_cleanup()
     ip_var_test.build()
+    ip_var_test.start()
 
     # TODO:  Do cleanup by default, allow --no_cleanup option to skip cleanup.
 
     if ip_var_test.passes():
-        logger.info("Created %s stations and connections" % (num_sta))
+        logger.info("Created %s stations and connections" % num_sta)
         ip_var_test.exit_success()
     else:
         ip_var_test.exit_fail()
