@@ -131,7 +131,19 @@ class CreateL3(Realm):
             use_ht160=False,
             _debug_on=False,
             _exit_on_error=False,
-            _exit_on_fail=False):
+            _exit_on_fail=False,
+            _endp_a=None,
+            _endp_b=None,
+            _batch_create=False,
+            _quantity=None,
+            _endp_a_increment=None,
+            _endp_b_increment=None,
+            _ip_port_increment_a=None,
+            _ip_port_increment_b=None,
+            _min_ip_port_a=None,
+            _min_ip_port_b=None,
+            _multi_conn_a=None,
+            _multi_conn_b=None):
         super().__init__(host, port)
         self.upstream = upstream
         self.host = host
@@ -146,6 +158,8 @@ class CreateL3(Realm):
         self.number_template = number_template
         self.debug = _debug_on
         self.name_prefix = name_prefix
+        self.endp_a = _endp_a
+        self.endp_b = _endp_b
         self.station_profile = self.new_station_profile()
         self.cx_profile = self.new_l3_cx_profile()
         self.station_profile.lfclient_url = self.lfclient_url
@@ -171,6 +185,17 @@ class CreateL3(Realm):
         self.cx_profile.side_a_max_bps = side_a_max_rate
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
+        self.cx_profile.mconn_A = _multi_conn_a
+        self.cx_profile.mconn_B = _multi_conn_b
+        # for batch creation window automation attributes
+        self.batch_create = _batch_create
+        self.batch_quantity = _quantity
+        self.port_increment_a = _endp_a_increment
+        self.port_increment_b = _endp_b_increment
+        self.ip_port_increment_a = _ip_port_increment_a
+        self.ip_port_increment_b = _ip_port_increment_b
+        self.min_ip_port_a = _min_ip_port_a
+        self.min_ip_port_b = _min_ip_port_b
 
     def pre_cleanup(self):
         logger.info('pre_cleanup')
@@ -179,39 +204,55 @@ class CreateL3(Realm):
             self.rm_port(sta, check_exists=True, debug_=False)
 
     def build(self):
-
-        self.station_profile.use_security(security_type=self.security,
-                                          ssid=self.ssid,
-                                          passwd=self.password)
-        self.station_profile.set_number_template(self.number_template)
-        logger.info("Creating stations")
-        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.station_profile.set_command_param(
-            "set_port", "report_timer", 1500)
-        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-
-        sta_timeout = 300
-        # sta_timeout=3 # expect this to fail
-        rv = self.station_profile.create(radio=self.radio,
-                                         sta_names_=self.sta_list,
-                                         debug=self.debug,
-                                         timeout=sta_timeout)
-        if not rv:
-            self._fail("create_l3_stations: could not create all ports, exiting with error.")
-        else:
-            self._pass("Station creation succeeded.")
-            self.start()
-            cx_timeout = 300
-            # cx_timeout=0 # expect this to fail
-            rv = self.cx_profile.create(endp_type="lf_udp",
-                                        side_a=self.station_profile.station_names,
-                                        side_b=self.upstream,
-                                        sleep_time=0,
-                                        timeout=cx_timeout)
-            if rv:
-                self._pass("CX creation finished")
+        if self.batch_create:  # Batch Create Functionality
+            if self.cx_profile.create(endp_type="lf_udp",
+                                      side_a=self.endp_a,
+                                      side_b=self.endp_b,
+                                      sleep_time=0,
+                                      ip_port_a=self.min_ip_port_a,
+                                      ip_port_b=self.min_ip_port_b,
+                                      batch_quantity=self.batch_quantity,
+                                      port_increment_a=self.port_increment_a,
+                                      port_increment_b=self.port_increment_b,
+                                      ip_port_increment_a=self.ip_port_increment_a,
+                                      ip_port_increment_b=self.ip_port_increment_b
+                                      ):
+                self._pass("Cross-connect build finished")
             else:
-                self._fail("create_l3_stations: could not create all cx/endpoints.")
+                self._fail("Cross-connect build did not succeed.")
+        else:  # Creating Stations along with Cross-connects
+            self.station_profile.use_security(security_type=self.security,
+                                              ssid=self.ssid,
+                                              passwd=self.password)
+            self.station_profile.set_number_template(self.number_template)
+            logger.info("Creating stations")
+            self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+            self.station_profile.set_command_param(
+                "set_port", "report_timer", 1500)
+            self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+
+            sta_timeout = 300
+            # sta_timeout=3 # expect this to fail
+            rv = self.station_profile.create(radio=self.radio,
+                                             sta_names_=self.sta_list,
+                                             debug=self.debug,
+                                             timeout=sta_timeout)
+            if not rv:
+                self._fail("create_l3_stations: could not create all ports, exiting with error.")
+            else:
+                self._pass("Station creation succeeded.")
+                self.start()
+                cx_timeout = 300
+                # cx_timeout=0 # expect this to fail
+                rv = self.cx_profile.create(endp_type="lf_udp",
+                                            side_a=self.station_profile.station_names,
+                                            side_b=self.upstream,
+                                            sleep_time=0,
+                                            timeout=cx_timeout)
+                if rv:
+                    self._pass("CX creation finished")
+                else:
+                    self._fail("create_l3_stations: could not create all cx/endpoints.")
 
     def start(self):
         logger.info("Bringing up stations")
@@ -353,6 +394,20 @@ INCLUDE_IN_README: False
         help='Optional: User defined station names, can be a comma or space separated list',
         nargs='+',
         default=None)
+    # For batch_create
+    parser.add_argument('--batch_create', help='To enable batch create functionality', action='store_true')
+
+    parser.add_argument('--batch_quantity', help='No of cx endpoints to batch-create', default=1)
+    parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
+    parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
+    parser.add_argument('--multi_conn_a', help='Modify multi connection endpoint-a for cx', default=0, type=int)
+    parser.add_argument('--multi_conn_b', help='Modify multi connection endpoint-b for cx', default=0, type=int)
+    parser.add_argument('--min_ip_port_a', help='Min ip port range for endp-a', default=-1)
+    parser.add_argument('--min_ip_port_b', help='Min ip port range for endp-b', default=-1)
+    parser.add_argument('--endp_a_increment', help='End point - A port increment', default=0)
+    parser.add_argument('--endp_b_increment', help='End point - B port increment', default=0)
+    parser.add_argument('--ip_port_increment_a', help='Ip port increment for endp-a', default=1)
+    parser.add_argument('--ip_port_increment_b', help='Ip port increment for endp-b', default=1)
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
@@ -381,7 +436,12 @@ INCLUDE_IN_README: False
     ip_var_test = CreateL3(host=args.mgr, port=args.mgr_port, number_template=str(args.number_template),
                            sta_list=station_list, name_prefix="VT", upstream=args.upstream_port, ssid=args.ssid,
                            password=args.passwd, radio=args.radio, security=args.security, side_a_min_rate=args.endp_a_min,
-                           side_b_min_rate=args.endp_b_min, mode=args.mode, ap=args.ap, _debug_on=args.debug)
+                           side_b_min_rate=args.endp_b_min, mode=args.mode, ap=args.ap, _debug_on=args.debug,
+                           _batch_create=args.batch_create, _endp_a=args.endp_a, _endp_b=args.endp_b, _quantity=args.batch_quantity,
+                           _endp_a_increment=args.endp_a_increment,  _endp_b_increment=args.endp_b_increment,
+                           _ip_port_increment_a=args.ip_port_increment_a, _ip_port_increment_b=args.ip_port_increment_b,
+                           _min_ip_port_a=args.min_ip_port_a, _min_ip_port_b=args.min_ip_port_b,
+                           _multi_conn_a=args.multi_conn_a, _multi_conn_b=args.multi_conn_b)
 
     if not args.no_cleanup:
         ip_var_test.pre_cleanup()
