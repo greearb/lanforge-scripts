@@ -610,7 +610,7 @@ class db_comparison:
                             # querying the db for Wi-fi Capacity
                             query_results.append(
                                 'SELECT DISTINCT "test-tag",  "short-description", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
-                                test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\" ORDER BY "Date" DESC;')
+                                test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\" ORDER BY "Date" ASC;')
                         break_flag = False
                 # querying the db for Wi-fi Capacity
                 if break_flag:
@@ -621,7 +621,7 @@ class db_comparison:
                     elif self.database:
                         query_results.append(
                             'SELECT DISTINCT "test-tag",  "short-description", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
-                            test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\" ORDER BY "Date" DESC;')
+                            test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\" ORDER BY "Date" ASC;')
             print("List of Querys :", query_results)
             # sort and merge the data frames
             query_df_dict = self.sort_and_merge_db(querylist=query_results)
