@@ -13,7 +13,9 @@ Example :
 """
 
 import os
+import subprocess
 import sys
+import time
 import importlib
 import sqlite3
 import logging
@@ -22,6 +24,7 @@ import openpyxl
 import pandas as pd
 from datetime import datetime
 import datetime
+import paramiko
 from openpyxl.styles import Alignment, PatternFill
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
@@ -34,8 +37,16 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class db_comparison:
-    def __init__(self, db, data_base1=None, data_base2=None, table_name=None, dp=None, wct=None, ap_auto=None,
+    def __init__(self, host, database, data_base1=None, data_base2=None, table_name=None, dp=None, wct=None, ap_auto=None,
                  index=None):
+        self.lf_mgr_ip = host
+        self.lf_mgr_port = "8080"
+        self.lf_mgr_ssh_port = 22
+        self.lf_mgr_user = "lanforge"
+        self.lf_mgr_pass = "lanforge"
+        self.lanforge_gui_version_full = ""
+        self.lanforge_gui_git_sha = ""
+        self.logger = logging.getLogger(__name__)
         self.conn2 = None
         self.conn1 = None
         self.test_tags = None
@@ -43,7 +54,7 @@ class db_comparison:
         self.sub_lists = None
         self.csv_file_name = None
         self.short_description = None
-        self.database = db
+        self.database = database
         self.db1 = data_base1
         self.db2 = data_base2
         self.index = index
@@ -313,7 +324,10 @@ class db_comparison:
                                    sheet_title='WI-FI CAPACITY DATA COMPARISON',
                                    kernel_ver_info_1=result[0]['kernel'],
                                    gui_ver_info_1=result[0]['gui_ver'],
-                                   dut_model_info_1=result[0]['dut-model-num'])
+                                   dut_model_info_1=result[0]['dut-model-num'],
+                                   kernel_ver_info_2=result[0]['kernel'],
+                                   gui_ver_info_2=result[0]['gui_ver'],
+                                   dut_model_info_2=result[0]['dut-model-num'])
 
         # TABLE ARRANGEMENT FOR DATA PLANE WORK SHEET
         row, column = 9, 0
@@ -343,7 +357,10 @@ class db_comparison:
                 setup_excel_header(sheet_name='LRQ-Data_Plane', sheet_title='Data Plane DATA COMPARISON',
                                    kernel_ver_info_1=result[0]['kernel'],
                                    gui_ver_info_1=result[0]['gui_ver'],
-                                   dut_model_info_1=result[0]['dut-model-num'])
+                                   dut_model_info_1=result[0]['dut-model-num'],
+                                   kernel_ver_info_2=result[0]['kernel'],
+                                   gui_ver_info_2=result[0]['gui_ver'],
+                                   dut_model_info_2=result[0]['dut-model-num'])
 
         # TABLE ARRANGEMENT FOR AP AUTO WORK SHEET
         row, column = 9, 0
@@ -369,7 +386,10 @@ class db_comparison:
                 setup_excel_header(sheet_name='LRQ-AP_AUTO', sheet_title='AP-AUTO DATA COMPARISON',
                                    kernel_ver_info_1=result[0]['kernel'],
                                    gui_ver_info_1=result[0]['gui_ver'],
-                                   dut_model_info_1=result[0]['dut-model-num'])
+                                   dut_model_info_1=result[0]['dut-model-num'],
+                                   kernel_ver_info_2=result[0]['kernel'],
+                                   gui_ver_info_2=result[0]['gui_ver'],
+                                   dut_model_info_2=result[0]['dut-model-num'])
         writer_obj.save()
 
     def excel_styling(self, query_df_list):
@@ -609,7 +629,7 @@ class db_comparison:
                             self.short_description = short_desc
                             # querying the db for Wi-fi Capacity
                             query_results.append(
-                                'SELECT DISTINCT "test-tag",  "short-description", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
+                                'SELECT DISTINCT "test-tag",  "short-description", "Date", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
                                 test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\" ORDER BY "Date" ASC;')
                         break_flag = False
                 # querying the db for Wi-fi Capacity
@@ -620,7 +640,7 @@ class db_comparison:
                             test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\";')
                     elif self.database:
                         query_results.append(
-                            'SELECT DISTINCT "test-tag",  "short-description", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
+                            'SELECT DISTINCT "test-tag",  "short-description", "Date", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
                             test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\" ORDER BY "Date" ASC;')
             print("List of Querys :", query_results)
             # sort and merge the data frames
@@ -643,74 +663,170 @@ class db_comparison:
 
             self.generate_report(dataframes=query_df_dict["merged_df"])
 
+    # Fetching the LANForge Full GUI Version Details & lANForge GUI git stash
+    def get_lanforge_gui_version(self):
+        # creating shh client object we use this object to connect to router
+        ssh = paramiko.SSHClient()
+        # automatically adds the missing host key
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=self.lf_mgr_ip, port=self.lf_mgr_ssh_port, username=self.lf_mgr_user,
+                    password=self.lf_mgr_pass, allow_agent=False, look_for_keys=False, banner_timeout=600)
+        stdin, stdout, stderr = ssh.exec_command(
+            'curl -H "Accept: application/json" http://{lanforge_ip}:8080 | json_pp  | grep -A 7 "VersionInfo"'.format(
+                lanforge_ip=self.lf_mgr_ip))
+        self.lanforge_gui_version_full = stdout.readlines()
+        self.lanforge_gui_version_full = [line.replace('\n', '') for line in self.lanforge_gui_version_full]
+        for element in self.lanforge_gui_version_full:
+            if "GitVersion" in element:
+                git_sha_str = str(element)
+                self.lanforge_gui_git_sha = git_sha_str.split(':', maxsplit=1)[-1].replace(',', '')
+                self.logger.info("GitVersion {}".format(self.lanforge_gui_git_sha))
+        ssh.close()
+        time.sleep(1)
+        return self.lanforge_gui_version_full, self.lanforge_gui_git_sha
+
     def generate_report(self, dataframes):
-            # report = lf_report(_dataframe=dataframe)
-            result_directory = f'./{self.directory}/'
-            date = str(datetime.datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
-            report_info = {
-                "Wifi Capacity": self.wct,
-                "Data Plane": self.dp,
-                "Ap Auto": self.ap_auto,
-            }
+        # report = lf_report(_dataframe=dataframe)
+        result_directory = f'./{self.directory}/'
+        date = str(datetime.datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
+        report_info = {
+            "Wifi Capacity": self.wct,
+            "Data Plane": self.dp,
+            "Ap Auto": self.ap_auto,
+        }
+        # Fetching the Gui Git Sha & Script Git Sha
+        lanforge_gui_git_sha = None
 
-            report = lf_pdf_report.lf_report(result_directory,
-                       _results_dir_name='lf_db_compare_report',
-                       _output_html="lf_db_compare.html",
-                       _output_pdf="lf_db_compare.pdf")
+        try:
+            lanforge_gui_version_full, lanforge_gui_git_sha = self.get_lanforge_gui_version()
+        except Exception as x:
+            logger.error("ERROR: lanforge_gui_version exception, Please check the lanforge ip", x)
+            # exit(1)
 
-            # generate output reports
-            report.set_title("Percentage Compare Results:")
-            report.set_date(date)
-            report.build_banner_cover()
-            report.set_table_title("Report Information")
-            report.build_table_title()
-            report.test_setup_table(value="Database Percentage Results in Report", test_setup_data=report_info)
-            report.set_obj_html("Objective",
-                                "The objective of this report is to provide a detailed comparison between two test runs, "
-                                "with a primary focus on evaluating the performance of the WiFi capacity, AP auto, and "
-                                "data plane functionality. By conducting a comprehensive analysis of these key aspects,"
-                                " this report aims to identify any variations or improvements in the test results, "
-                                "enabling stakeholders to make informed decisions and take necessary actions to optimize"
-                                "the network infrastructure. The report will present a comprehensive assessment of the "
-                                "performance metrics, highlighting the strengths and weaknesses of each test run, "
-                                "ultimately guiding stakeholders in making effective decisions for enhancing the "
-                                "network's overall efficiency and reliability.")
-            report.build_objective()
+        wct_result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
+                                                 condition='"test-id" == "WiFi Capacity"', limit='1')
+        dp_result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
+                                                condition='"test-id" == "Dataplane"', limit='1')
+        ap_auto_result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
+                                                     condition='"test-id" == "AP Auto"', limit='1')
 
-            report.set_table_title("Comparison Tables :")
-            report.build_table_title()
+        gui_info1, gui_info2 = None, None
+        if self.db1 and self.db2:
+            kernel_1, gui_ver_1, dut_model_num_1 = 'kernel_1', 'gui_ver_1', 'dut-model-num_1'
+            kernel_2, gui_ver_2, dut_model_num_2 = 'kernel_2', 'gui_ver_2', 'dut-model-num_2'
+            gui_info1 = pd.DataFrame(
+                {
+                    "Test Run-1 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
+                    "Kernel Version": [wct_result[0][kernel_1], dp_result[0][kernel_1], ap_auto_result[0][kernel_1]],
+                    "GUI Version": [wct_result[0][gui_ver_1], dp_result[0][gui_ver_1], ap_auto_result[0][gui_ver_1]],
+                    "DUT Model": [wct_result[0][dut_model_num_1], dp_result[0][dut_model_num_1],
+                                  ap_auto_result[0][dut_model_num_1]],
+                    "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
+                }
+            )
+            gui_info2 = pd.DataFrame(
+                {
+                    "Test Run-2 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
+                    "Kernel Version": [wct_result[1][kernel_2], dp_result[1][kernel_2], ap_auto_result[1][kernel_2]],
+                    "GUI Version": [wct_result[1][gui_ver_2], dp_result[1][gui_ver_2], ap_auto_result[1][gui_ver_2]],
+                    "DUT Model": [wct_result[1][dut_model_num_2], dp_result[1][dut_model_num_2],
+                                  ap_auto_result[1][dut_model_num_2]],
+                    "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
+                }
+            )
+        elif self.database:
+            kernel, gui_ver, dut_model_num = 'kernel', 'gui_ver', 'dut-model-num'
+            gui_info1 = pd.DataFrame(
+                {
+                    "Test Run-1 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
+                    "Kernel Version": [wct_result[0][kernel], dp_result[0][kernel], ap_auto_result[0][kernel]],
+                    "GUI Version": [wct_result[0][gui_ver], dp_result[0][gui_ver], ap_auto_result[0][gui_ver]],
+                    "DUT Model": [wct_result[0][dut_model_num], dp_result[0][dut_model_num],
+                                  ap_auto_result[0][dut_model_num]],
+                    "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
+                }
+            )
+            gui_info2 = pd.DataFrame(
+                {
+                    "Test Run-2 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
+                    "Kernel Version": [wct_result[0][kernel], dp_result[0][kernel], ap_auto_result[0][kernel]],
+                    "GUI Version": [wct_result[0][gui_ver], dp_result[0][gui_ver], ap_auto_result[0][gui_ver]],
+                    "DUT Model": [wct_result[0][dut_model_num], dp_result[0][dut_model_num],
+                                  ap_auto_result[0][dut_model_num]],
+                    "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
+                }
+            )
 
-            for i, df in enumerate(dataframes):
-                if 'WCT' in df['Radio-Type'][0]:
-                    report.set_table_title("WIFI-CAPACITY")
-                    report.build_table_title()
-                    report.set_table_dataframe(df)
-                    report.build_table()
-                elif 'DP' in df['Radio-Type'][0]:
-                    report.set_table_title("DATA PLANE")
-                    report.build_table_title()
-                    report.set_table_dataframe(df)
-                    report.build_table()
-                elif 'AP_AUTO' in df['Radio-Type'][0]:
-                    report.set_table_title("AP AUTO")
-                    report.build_table_title()
-                    report.set_table_dataframe(df)
-                    report.build_table()
+        report = lf_pdf_report.lf_report(result_directory,
+                                         _results_dir_name='lf_db_compare_report',
+                                         _output_html="lf_db_compare.html",
+                                         _output_pdf="lf_db_compare.pdf")
 
-            report_path = report.get_path()
-            report_basename = os.path.basename(report_path)
-            report_url = './../../' + report_basename
-            report.build_link("Current Results Directory", report_url)
+        # generate output reports
+        report.set_title("Percentage Compare Results:")
+        report.set_date(date)
+        report.build_banner_cover()
+        report.set_table_title("Report Information")
+        report.build_table_title()
+        report.test_setup_table(value="Database Percentage Results in Report", test_setup_data=report_info)
 
-            report.build_footer()
-            report.write_html()
-            report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+        report.set_table_title("GUI Overview :")
+        report.build_table_title()
+        report.set_desc_html("", "The table below displays the First test run values stored in the database.")
+        report.build_description()
+        report.set_table_dataframe(gui_info1)
+        report.build_table()
+        report.set_desc_html("", "The table below displays the Second test run values stored in the database.")
+        report.build_description()
+        report.set_table_dataframe(gui_info2)
+        report.build_table()
 
-            logger.info("report path {}".format(report.get_path()))
+        report.set_obj_html("Objective",
+                            "The objective of this report is to provide a detailed comparison between two test runs, "
+                            "with a primary focus on evaluating the performance of the WiFi capacity, AP auto, and "
+                            "data plane functionality. By conducting a comprehensive analysis of these key aspects,"
+                            " this report aims to identify any variations or improvements in the test results, "
+                            "enabling stakeholders to make informed decisions and take necessary actions to optimize"
+                            "the network infrastructure. The report will present a comprehensive assessment of the "
+                            "performance metrics, highlighting the strengths and weaknesses of each test run, "
+                            "ultimately guiding stakeholders in making effective decisions for enhancing the "
+                            "network's overall efficiency and reliability.")
+        report.build_objective()
+        report.set_table_title("Comparison Tables :")
+        report.build_table_title()
+
+        for i, df in enumerate(dataframes):
+            if 'WCT' in df['Radio-Type'][0]:
+                report.set_table_title("WIFI-CAPACITY")
+                report.build_table_title()
+                report.set_table_dataframe(df)
+                report.build_table()
+            elif 'DP' in df['Radio-Type'][0]:
+                report.set_table_title("DATA PLANE")
+                report.build_table_title()
+                report.set_table_dataframe(df)
+                report.build_table()
+            elif 'AP_AUTO' in df['Radio-Type'][0]:
+                report.set_table_title("AP AUTO")
+                report.build_table_title()
+                report.set_table_dataframe(df)
+                report.build_table()
+
+        report_path = report.get_path()
+        report_basename = os.path.basename(report_path)
+        report_url = './../../' + report_basename
+        report.build_link("Current Results Directory", report_url)
+
+        report.build_footer()
+        report.write_html()
+        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+
+        logger.info("report path {}".format(report.get_path()))
 
 
 def main():
     parser = argparse.ArgumentParser(description='Compare data in two SQLite databases')
+    parser.add_argument('--mgr', help='lanforge ip', default='192.168.200.93')
     parser.add_argument('--database', help='Path to single database file (.db)')
     parser.add_argument('--db1', help='Path to first database file (.db)')
     parser.add_argument('--db2', help='Path to second database file (.db)')
@@ -731,9 +847,11 @@ def main():
                         action='append',
                         default=[])
     # logging configuration:
-    parser.add_argument('--log_level', default=None,  help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--log_level', default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
 
-    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument("--lf_logger_config_json",
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
 
@@ -750,7 +868,8 @@ def main():
 
     logger.debug("Comparing results db1: {db1} db2: {db2} ".format(db1=args.db1,db2=args.db2))
 
-    obj = db_comparison(db=args.database,
+    obj = db_comparison(host=args.mgr,
+                        database=args.database,
                         data_base1=args.db1,
                         data_base2=args.db2,
                         table_name=args.table_name,
