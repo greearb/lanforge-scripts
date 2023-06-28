@@ -81,6 +81,36 @@ NOTES:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
                     --security wpa2 --station_flag power_save_enable
 
+            --country_code 840
+
+                United States   :   840     |       Dominican Rep   :   214     |      Japan (JE2)     :   397     |      Portugal        :   620
+                Albania         :   8       |       Ecuador         :   218     |      Jordan          :   400     |      Pueto Rico      :   630
+                Algeria         :   12      |       Egypt           :   818     |      Kazakhstan      :   398     |      Qatar           :   634
+                Argentina       :   32      |       El Salvador     :   222     |      North Korea     :   408     |      Romania         :   642
+                Bangladesh      :   50      |       Estonia         :   233     |      South Korea     :   410     |      Russia          :   643
+                Armenia         :   51      |       Finland         :   246     |      South Korea     :   411     |      Saudi Arabia    :   682
+                Australia       :   36      |       France          :   250     |      Kuwait          :   414     |      Singapore       :   702
+                Austria         :   40      |       Georgia         :   268     |      Latvia          :   428     |      Slovak Republic :   703
+                Azerbaijan      :   31      |       Germany         :   276     |      Lebanon         :   422     |      Slovenia        :   705
+                Bahrain         :   48      |       Greece          :   300     |      Liechtenstein   :   438     |      South Africa    :   710
+                Barbados        :   52      |       Guatemala       :   320     |      Lithuania       :   440     |      Spain           :   724
+                Belarus         :   112     |       Haiti           :   332     |      Luxembourg      :   442     |      Sweden          :   752
+                Belgium         :   56      |       Honduras        :   340     |      Macau           :   446     |      Switzerland     :   756
+                Belize          :   84      |       Hong Kong       :   344     |      Macedonia       :   807     |      Syria           :   760
+                Bolivia         :   68      |       Hungary         :   348     |      Malaysia        :   458     |      Taiwan          :   158
+                BiH             :   70      |       Iceland         :   352     |      Mexico          :   484     |      Thailand        :   764
+                Brazil          :   76      |       India           :   356     |      Monaco          :   492     |      Trinidad &Tobago:   780   
+                Brunei          :   96      |       Indonesia       :   360     |      Morocco         :   504     |      Tunisia         :   788
+                Bulgaria        :   100     |       Iran            :   364     |      Netherlands     :   528     |      Turkey          :   792
+                Canada          :   124     |       Ireland         :   372     |      Aruba           :   533     |      U.A.E.          :   784
+                Chile           :   152     |       Israel          :   376     |      New Zealand     :   554     |      Ukraine         :   804
+                China           :   156     |       Italy           :   380     |      Norway          :   578     |      United Kingdom  :   826
+                Colombia        :   170     |       Jamaica         :   388     |      Oman            :   512     |      Uruguay         :   858
+                Costa Rica      :   188     |       Japan           :   392     |      Pakistan        :   586     |      Uzbekistan      :   860
+                Croatia         :   191     |       Japan (JP1)     :   393     |      Panama          :   591     |      Venezuela       :   862
+                Cyprus          :   196     |       Japan (JP0)     :   394     |      Peru            :   604     |      Vietnam         :   704
+                Czech Rep       :   203     |       Japan (JP1-1)   :   395     |      Philippines     :   608     |      Yemen           :   887
+                Denmark         :   208     |       Japan (JE1)     :   396     |      Poland          :   616     |      Zimbabwe        :   716
 
 STATUS: BETA RELEASE
 
@@ -219,12 +249,12 @@ class CreateStation(Realm):
         self._pass("PASS: Station build finished")
 
 
-    def modify_radio(self, mgr, radio, antenna, channel, tx_power):
+    def modify_radio(self, mgr, radio, antenna, channel, tx_power, country_code):
         shelf, resource, radio, *nil = LFUtils.name_to_eid(radio)
 
         modify_radio = lf_modify_radio.lf_modify_radio(lf_mgr=mgr)
         modify_radio.set_wifi_radio(_resource=resource, _radio=radio, _shelf=shelf, _antenna=antenna, _channel=channel,
-                                    _txpower=tx_power)
+                                    _txpower=tx_power,_country_code=country_code)
 
 def main():
     parser = LFCliBase.create_basic_argparse(  # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
@@ -317,6 +347,36 @@ NOTES:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
                     --security wpa2 --station_flag power_save_enable
 
+            --country_code 840
+
+                United States   :   840     |       Dominican Rep   :   214     |      Japan (JE2)     :   397     |      Portugal        :   620
+                Albania         :   8       |       Ecuador         :   218     |      Jordan          :   400     |      Pueto Rico      :   630
+                Algeria         :   12      |       Egypt           :   818     |      Kazakhstan      :   398     |      Qatar           :   634
+                Argentina       :   32      |       El Salvador     :   222     |      North Korea     :   408     |      Romania         :   642
+                Bangladesh      :   50      |       Estonia         :   233     |      South Korea     :   410     |      Russia          :   643
+                Armenia         :   51      |       Finland         :   246     |      South Korea     :   411     |      Saudi Arabia    :   682
+                Australia       :   36      |       France          :   250     |      Kuwait          :   414     |      Singapore       :   702
+                Austria         :   40      |       Georgia         :   268     |      Latvia          :   428     |      Slovak Republic :   703
+                Azerbaijan      :   31      |       Germany         :   276     |      Lebanon         :   422     |      Slovenia        :   705
+                Bahrain         :   48      |       Greece          :   300     |      Liechtenstein   :   438     |      South Africa    :   710
+                Barbados        :   52      |       Guatemala       :   320     |      Lithuania       :   440     |      Spain           :   724
+                Belarus         :   112     |       Haiti           :   332     |      Luxembourg      :   442     |      Sweden          :   752
+                Belgium         :   56      |       Honduras        :   340     |      Macau           :   446     |      Switzerland     :   756
+                Belize          :   84      |       Hong Kong       :   344     |      Macedonia       :   807     |      Syria           :   760
+                Bolivia         :   68      |       Hungary         :   348     |      Malaysia        :   458     |      Taiwan          :   158
+                BiH             :   70      |       Iceland         :   352     |      Mexico          :   484     |      Thailand        :   764
+                Brazil          :   76      |       India           :   356     |      Monaco          :   492     |      Trinidad &Tobago:   780   
+                Brunei          :   96      |       Indonesia       :   360     |      Morocco         :   504     |      Tunisia         :   788
+                Bulgaria        :   100     |       Iran            :   364     |      Netherlands     :   528     |      Turkey          :   792
+                Canada          :   124     |       Ireland         :   372     |      Aruba           :   533     |      U.A.E.          :   784
+                Chile           :   152     |       Israel          :   376     |      New Zealand     :   554     |      Ukraine         :   804
+                China           :   156     |       Italy           :   380     |      Norway          :   578     |      United Kingdom  :   826
+                Colombia        :   170     |       Jamaica         :   388     |      Oman            :   512     |      Uruguay         :   858
+                Costa Rica      :   188     |       Japan           :   392     |      Pakistan        :   586     |      Uzbekistan      :   860
+                Croatia         :   191     |       Japan (JP1)     :   393     |      Panama          :   591     |      Venezuela       :   862
+                Cyprus          :   196     |       Japan (JP0)     :   394     |      Peru            :   604     |      Vietnam         :   704
+                Czech Rep       :   203     |       Japan (JP1-1)   :   395     |      Philippines     :   608     |      Yemen           :   887
+                Denmark         :   208     |       Japan (JE1)     :   396     |      Poland          :   616     |      Zimbabwe        :   716
 
 STATUS: BETA RELEASE
 
@@ -371,6 +431,10 @@ INCLUDE_IN_README: False
         help='Radio tx-power \n'
             ' default: AUTO system defaults',
         default='AUTO')
+    optional.add_argument(
+        "--country_code",
+        help='Radio Country Code:\n'
+            'e.g: \t--country_code 840')
 
     args = parser.parse_args()
 
@@ -416,7 +480,7 @@ INCLUDE_IN_README: False
                                    _debug_on=args.debug)
 
     create_station.modify_radio(mgr=args.mgr, radio=args.radio, antenna=args.radio_antenna, channel=args.radio_channel,
-                                tx_power=args.radio_tx_power)
+                                tx_power=args.radio_tx_power, country_code=args.country_code)
     create_station.build()
 
     # TODO:  Add code to clean up the station, unless --no_cleanup was specified.
