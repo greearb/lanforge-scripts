@@ -1,7 +1,38 @@
 #!/usr/bin/env python3
 '''
-File: create lf_rig.json file for --json_rig input to lf_check.py , LANforge traffic generation system
-Usage: lf_create_rig_json.py --lf_mgr <lanforge ip> --lf_mgr_port <lanforge port>
+NAME: lf_create_rig_json.py
+
+PURPOSE:
+     This script will create a lf_rig.json file that is used as a input --json_rig to the lf_check.py script
+     This script helps to store the of the information on LANforge
+EXAMPLE:
+    # For creating dut.json file according to the DUT present:
+    lf_create_rig_json.py --file rig.json --lf_mgr 192.168.200.93 --lf_mgr_port 8080 --lf_user lanforge --lf_passwd lanforge
+    --test_rig lanforge --test_bed lisp_lanforge --test_server 192.168.200.93 --test_db lf_test.db --upstream_port 1.1eth1
+    --test_timeout 500
+
+
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:   Functional
+
+NOTES:
+        This will create a file with the name specified in the CLI  [ --json_rig example_name.json ]
+        * Helps to store the data related to the LANforge
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   23-MAY-2023,
+             Build Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
+
 '''
 
 import argparse
@@ -98,10 +129,39 @@ def main():
 
             ''',
         description='''\
-File: create lf_rig.json file for --json_rig input to lf_check.py , LANforge traffic generation system
-Usage: lf_create_rig_json.py ----lf_mgr <lanforge ip> --lf_mgr_port <lanforge port>
+NAME: lf_create_rig_json.py
 
-        ''')
+PURPOSE:
+     This script will create a lf_rig.json file that is used as a input --json_rig to the lf_check.py script
+     This script helps to store the of the information on LANforge
+EXAMPLE:
+    # For creating dut.json file according to the DUT present:
+    lf_create_rig_json.py --file rig.json --lf_mgr 192.168.200.93 --lf_mgr_port 8080 --lf_user lanforge --lf_passwd lanforge
+    --test_rig lanforge --test_bed lisp_lanforge --test_server 192.168.200.93 --test_db lf_test.db --upstream_port 1.1eth1
+    --test_timeout 500
+
+
+
+SCRIPT_CLASSIFICATION:  Creation
+
+SCRIPT_CATEGORIES:   Functional
+
+NOTES:
+        This will create a file with the name specified in the CLI  [ --json_rig example_name.json ]
+        * Helps to store the data related to the LANforge
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   23-MAY-2023,
+             Build Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
+''')
     parser.add_argument('--file', help='--file lf_rig.json , required', required=True)
     parser.add_argument('--lf_mgr', help='--lf_mgr <lanforge ip> required', required=True)
     parser.add_argument('--lf_mgr_port', help='--lf_mgr_port <lanforge port> ', default='8080')
