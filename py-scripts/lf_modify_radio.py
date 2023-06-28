@@ -77,7 +77,8 @@ class lf_modify_radio():
                         _shelf=None,
                         _antenna=None,
                         _channel=None,
-                        _txpower=None):
+                        _txpower=None,
+                        _country_code=None):
 
         self.command.post_set_wifi_radio(
                                 resource=_resource,
@@ -86,6 +87,7 @@ class lf_modify_radio():
                                 antenna=_antenna,
                                 channel=_channel,
                                 txpower=_txpower,
+                                country=_country_code,
                                 debug=self.debug)
 
 
