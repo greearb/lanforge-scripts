@@ -778,6 +778,19 @@ class db_comparison:
         report.set_title("Percentage Compare Results:")
         report.set_date(date)
         report.build_banner_cover()
+
+        report.set_obj_html("Objective",
+                            "The objective of this report is to provide a detailed comparison between two test runs, "
+                            "with a primary focus on evaluating the performance of the WiFi capacity, AP auto, and "
+                            "data plane functionality. By conducting a comprehensive analysis of these key aspects,"
+                            " this report aims to identify any variations or improvements in the test results, "
+                            "enabling stakeholders to make informed decisions and take necessary actions to optimize"
+                            "the network infrastructure. The report will present a comprehensive assessment of the "
+                            "performance metrics, highlighting the strengths and weaknesses of each test run, "
+                            "ultimately guiding stakeholders in making effective decisions for enhancing the "
+                            "network's overall efficiency and reliability.")
+        report.build_objective()
+
         report.set_table_title("Report Information")
         report.build_table_title()
         report.test_setup_table(value="Database Percentage Results in Report", test_setup_data=report_info)
@@ -793,17 +806,6 @@ class db_comparison:
         report.set_table_dataframe(gui_info2)
         report.build_table()
 
-        report.set_obj_html("Objective",
-                            "The objective of this report is to provide a detailed comparison between two test runs, "
-                            "with a primary focus on evaluating the performance of the WiFi capacity, AP auto, and "
-                            "data plane functionality. By conducting a comprehensive analysis of these key aspects,"
-                            " this report aims to identify any variations or improvements in the test results, "
-                            "enabling stakeholders to make informed decisions and take necessary actions to optimize"
-                            "the network infrastructure. The report will present a comprehensive assessment of the "
-                            "performance metrics, highlighting the strengths and weaknesses of each test run, "
-                            "ultimately guiding stakeholders in making effective decisions for enhancing the "
-                            "network's overall efficiency and reliability.")
-        report.build_objective()
         report.set_table_title("Comparison Tables :")
         report.build_table_title()
 
