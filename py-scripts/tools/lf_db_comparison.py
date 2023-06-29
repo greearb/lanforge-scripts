@@ -869,7 +869,6 @@ EXAMPLE:
 
             ./lf_db_comparison.py --mgr localhost --database <path of the database> --wct --dp --ap_auto  --index 0,1
 
-
 SCRIPT_CLASSIFICATION:  Comparison, Excel & Pdf Reporting
 
 SCRIPT_CATEGORIES:   Functional
@@ -892,24 +891,26 @@ LICENSE:
 INCLUDE_IN_README: False
 
 ''')
-    parser.add_argument('--mgr', help='lanforge ip', default='localhost')
+    parser.add_argument('--mgr', help='LANForge ip (USE Only if you want to GUI git sha id in Final report.)',
+                        default='localhost')
     parser.add_argument('--database', help='Path to single database file (.db)')
     parser.add_argument('--db1', help='Path to first database file (.db)')
     parser.add_argument('--db2', help='Path to second database file (.db)')
     parser.add_argument('--table_name', help='Name of table to compare', default="qa_table")
-    parser.add_argument('--dp', help='To get the WiFi Capacity Comparison', action='store_true')
+    parser.add_argument('--dp', help='To get the DataPlane Comparison', action='store_true')
     parser.add_argument('--wct', help='To get the WiFi Capacity Comparison', action='store_true')
-    parser.add_argument('--ap_auto', help='To get the WiFi Capacity Comparison', action='store_true')
+    parser.add_argument('--ap_auto', help='To get the Ap Auto Comparison', action='store_true')
     parser.add_argument('--index',
-                        help='Use the \'--index\' argument to specify the index of the test run you want to compare within a single database.'
-                             'The available options are: '
-                             'LATEST TEST RUN: 0, '
-                             'LATEST BEFORE TEST RUN: 1, '
-                             'LATEST BEFORE TEST RUN: 2, '
-                             'and so on, up to the earliest test run. '
-                             'Multiple indices can be provided by repeating the "--index" option, '
-                             'Example usage:'
-                             '--index 0, 1 (compares with the latest and the previous test run)',
+                        help='Use the \'--index\' argument to specify the index of the test run you want to compare within a single database.\n'
+                             'The available options are: \n'
+                             '1st TEST RUN : 0, \n'
+                             '2nd TEST RUN : 1, \n'
+                             '3rd TEST RUN : 2, \n'
+                             '.\n'
+                             '.\n'
+                             'and so on, up to the latest test run. \n'
+                             'Example usage:\n'
+                             '--index 0, 1 (compares with the first and second test runs.)\n',
                         action='append',
                         default=[])
     # logging configuration:
