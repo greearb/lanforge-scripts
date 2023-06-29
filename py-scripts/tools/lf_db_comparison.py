@@ -69,11 +69,9 @@ class db_comparison:
             self.conn2 = sqlite3.connect(self.db2)
         if self.index:
             index_items = self.index[0].split(',')
-            print(index_items)
             if len(index_items) != 2:
                 raise argparse.ArgumentTypeError('ERROR : argument --index: expected 2 arguments')
             self.index = [int(item) for item in index_items]
-        print(" Index: ", self.index)
 
     def building_output_directory(self,directory_name="LRQ_Comparison_Report"):
         now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S_")  # %Y-%m-%d-%H-h-%m-m-%S-s
@@ -170,7 +168,6 @@ class db_comparison:
                         short_desc = row["short-description"]
                         if short_desc == short_description_first_item:
                             sub_lists.append(i)
-                print("INDEX_LIST : ", sub_lists)
                 # CONVERTING LIST OF INDEX items into SUB-LISTS
                 _index_list = [[]]
                 for item in sub_lists:
@@ -185,7 +182,6 @@ class db_comparison:
                         average_difference = sum(sublist[i] - sublist[i - 1] for i in range(1, len(sublist))) / (
                                 len(sublist) - 1)
                         sublist.append(sublist[-1] + int(average_difference))
-                print(_index_list)
 
                 # # CONVERTING DF INTO SUB LIST OF DFs BASED ON THE SHORT-DESCRIPTION
                 dfs = []
@@ -194,7 +190,6 @@ class db_comparison:
                     for ind in _index_list[i]:
                         dfs.append(new[i][0].loc[last_check:ind-1])
                         last_check = ind
-                print("DFs :", dfs)
 
                 # AGAIN CONVERSING LIST WITH IN LIST TO SEPARATE THE DFs
                 _index_list = []
@@ -203,7 +198,6 @@ class db_comparison:
                         _index_list.append([i])
                     else:
                         _index_list[-1].append(i)
-                print("Final list of Data Frames:", _index_list)
                 logger.info("The Total Existing Test Runs in given Data Base : %s" % len(_index_list[0]))
                 logger.info("The min existing test runs in given DB : %s" % min([len(i) - 1 for i in _index_list]))
 
@@ -224,8 +218,7 @@ class db_comparison:
                         lambda x: datetime.datetime.fromtimestamp(x / 1000).strftime(date_format))
                     query_df_dict["merged_df"][i]["Date_2"] = query_df_dict["merged_df"][i]["Date_2"].apply(
                         lambda x: datetime.datetime.fromtimestamp(x / 1000).strftime(date_format))
-
-                print("Merged DFs :", query_df_dict["merged_df"])
+            print("Merged DFs :", query_df_dict["merged_df"])
         else:
             logger.info("The List of the query result are empty...")
         return query_df_dict
@@ -251,28 +244,28 @@ class db_comparison:
             item['Comparison'] = temp_list  # adding the comparison column
             # renaming the data frame keys or column names
             if 'WCT' in item['test-tag'][0]:
-                item.rename(columns={'test-tag': 'Radio-Type', 'short-description': 'No of Clients',
-                                     'numeric-score_1': 'Values of DB1', 'numeric-score_2': 'Values of DB2'},
-                            inplace=True)
-            elif 'AP_AUTO' in item['test-tag'][0]:
-                item.rename(columns={'test-tag': 'Radio-Type', 'short-description': 'Short Description Band Ranges',
-                                     'numeric-score_1': 'Values of DB1', 'numeric-score_2': 'Values of DB2'},
+                item.rename(columns={'test-tag': 'Test-Tag', 'short-description': 'Short Description - (No of Clients)',
+                                     'numeric-score_1': 'Test Run-1 Values', 'numeric-score_2': 'Test Run-2 Values'},
                             inplace=True)
             elif 'DP' in item['test-tag'][0]:
-                item.rename(columns={'test-tag': 'Radio-Type', 'short-description': 'Short Description - (NSS-Band-Packet-Size)',
-                                     'numeric-score_1': 'Values of DB1', 'numeric-score_2': 'Values of DB2'},
+                item.rename(columns={'test-tag': 'Test-Tag', 'short-description': 'Short Description - (NSS-Band-Packet-Size)',
+                             'numeric-score_1': 'Test Run-1 Values', 'numeric-score_2': 'Test Run-2 Values'},
+                    inplace=True)
+            elif 'AP_AUTO' in item['test-tag'][0]:
+                item.rename(columns={'test-tag': 'Test-Tag', 'short-description': 'Short Description - (Band Ranges)',
+                                     'numeric-score_1': 'Test Run-1 Values', 'numeric-score_2': 'Test Run-2 Values'},
                             inplace=True)
 
     def converting_df_to_csv(self, query_df_list):
         if query_df_list:
             for i, df in enumerate(query_df_list):
-                if 'WCT' in df['Radio-Type'][0]:
+                if 'WCT' in df['Test-Tag'][0]:
                     with open(f'./{self.directory}/wct.csv', mode='a', newline='') as f:
                         df.to_csv(f, index=True, header=f'Table{i + 1}')
-                elif 'DP' in df['Radio-Type'][0]:
+                elif 'DP' in df['Test-Tag'][0]:
                     with open(f'./{self.directory}/dp.csv', mode='a', newline='') as f1:
                         df.to_csv(f1, index=True, header=f'Table{i + 1}')
-                elif 'AP_AUTO' in df['Radio-Type'][0]:
+                elif 'AP_AUTO' in df['Test-Tag'][0]:
                     with open(f'./{self.directory}/ap_auto.csv',mode='a', newline='') as f2:
                         df.to_csv(f2, index=True, header=f'Table{i + 1}')
 
@@ -284,13 +277,13 @@ class db_comparison:
         wct_list, dp_list, ap_autolist = [], [], []
         # Iterate over each dataframe in the list L
         for df in query_df_list:
-            # Check the condition based on the first value of 'Radio-Type' column
-            if 'WCT' in df['Radio-Type'][0]:
+            # Check the condition based on the first value of 'Test-Tag' column
+            if 'WCT' in df['Test-Tag'][0]:
                 # Append the dataframe to the current sublist
                 wct_list.append(df)
-            elif 'DP' in df['Radio-Type'][0]:
+            elif 'DP' in df['Test-Tag'][0]:
                 dp_list.append(df)
-            elif 'AP_AUTO' in df['Radio-Type'][0]:
+            elif 'AP_AUTO' in df['Test-Tag'][0]:
                 ap_autolist.append(df)
         list_dfs = [wct_list, dp_list, ap_autolist]
 
@@ -311,8 +304,6 @@ class db_comparison:
         # TABLE ARRANGEMENT FOR WIFI CAPACITY WORK SHEET
         row, column = 9, 0
         for i, df in enumerate(wct_list):
-            print("Column length :", len(wct_list[i - 1].columns) + 1)
-            print("Row length :", len(wct_list[i - 1]) + 2)
             if i > 0:
                 if i % 2 != 0:
                     column = len(wct_list[i - 1].columns) + 1
@@ -320,7 +311,6 @@ class db_comparison:
                     row += len(wct_list[i - 1]) + 2
                     column = 0
             # fetching the info about kernel and gui_ver for WifiCapacity
-            print("Data Farame wct : ", df)
             df.to_excel(writer_obj, sheet_name='LRQ-WiFi_Capacity', index=False, startrow=row, startcol=column)
             result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
                                                  condition='"test-id" == "WiFi Capacity"', limit='1')
@@ -344,8 +334,6 @@ class db_comparison:
         # TABLE ARRANGEMENT FOR DATA PLANE WORK SHEET
         row, column = 9, 0
         for i, df in enumerate(dp_list):
-            print("Column length :", len(dp_list[i - 1].columns) + 1)
-            print("Row length :", len(dp_list[i - 1]) + 2)
             if i > 0:
                 if i % 2 != 0:
                     column = len(dp_list[i - 1].columns) + 1
@@ -353,9 +341,6 @@ class db_comparison:
                     row += len(dp_list[i - 1]) + 2
                     column = 0
             # fetching the info about kernel and gui_ver for Data Plane
-            print("Row", row)
-            print("Column ", column)
-            print("Data Farame dp : ", df)
             df.to_excel(writer_obj, sheet_name='LRQ-Data_Plane', index=False, startrow=row, startcol=column)
             result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
                                                  condition='"test-id" == "Dataplane"', limit='1')
@@ -384,7 +369,6 @@ class db_comparison:
                     row += len(ap_autolist[i - 1]) + 2
                     column = 0
             # fetching the info about kernel and gui_ver for Ap Auto
-            print("Data Farame ap auto : ", df)
             df.to_excel(writer_obj, sheet_name='LRQ-AP_AUTO', index=False, startrow=row, startcol=column)
             result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
                                                  condition='"test-id" == "AP Auto"', limit='1')
@@ -408,7 +392,7 @@ class db_comparison:
         # styling the sheets
         wb = openpyxl.load_workbook(f'./{self.directory}/lrq_db_comparison.xlsx')
         for n in range(len(query_df_list)):
-            if 'AP_AUTO' in query_df_list[n]['Radio-Type'][0]:
+            if 'AP_AUTO' in query_df_list[n]['Test-Tag'][0]:
                 # Styling for sheet-LRQ-AP_AUTO
                 ws1 = wb['LRQ-AP_AUTO']
                 ws1.column_dimensions['A'].alignment = Alignment(horizontal='center')
@@ -429,7 +413,7 @@ class db_comparison:
                 ws1.column_dimensions['J'].width = 14
                 ws1.column_dimensions['K'].width = 15
                 ws1.column_dimensions['K'].alignment = Alignment(horizontal='right')
-            elif 'WCT' in query_df_list[n]['Radio-Type'][0]:
+            elif 'WCT' in query_df_list[n]['Test-Tag'][0]:
                 # Styling for sheet-LRQ-WiFi_Capacity
                 ws = wb['LRQ-WiFi_Capacity']
                 ws.column_dimensions['A'].alignment = Alignment(horizontal='center')
@@ -450,7 +434,7 @@ class db_comparison:
                 ws.column_dimensions['J'].width = 14
                 ws.column_dimensions['K'].width = 15
                 ws.column_dimensions['K'].alignment = Alignment(horizontal='right')
-            elif 'DP' in query_df_list[n]['Radio-Type'][0]:
+            elif 'DP' in query_df_list[n]['Test-Tag'][0]:
                 # Styling for sheet-LRQ-WiFi_Capacity
                 ws = wb['LRQ-Data_Plane']
                 ws.column_dimensions['A'].alignment = Alignment(horizontal='center')
@@ -474,7 +458,7 @@ class db_comparison:
 
         wb.save(f'./{self.directory}/lrq_db_comparison.xlsx')
 
-        logger.info(f'Report Path : ./{self.directory}/lrq_db_comparison.xlsx')
+        logger.info(f'Excel Report Path: ./{self.directory}/lrq_db_comparison.xlsx')
         wb.close()
 
     def db_querying_with_where_clause(self, column_names, condition='', distinct=False):
@@ -654,7 +638,6 @@ class db_comparison:
                         query_results.append(
                             'SELECT DISTINCT "test-tag",  "short-description", "Date", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
                             test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\" ORDER BY "Date" ASC;')
-            print("List of Querys :", query_results)
             # sort and merge the data frames
             query_df_dict = self.sort_and_merge_db(querylist=query_results)
 
@@ -692,7 +675,7 @@ class db_comparison:
             if "GitVersion" in element:
                 git_sha_str = str(element)
                 self.lanforge_gui_git_sha = git_sha_str.split(':', maxsplit=1)[-1].replace(',', '')
-                self.logger.info("GitVersion {}".format(self.lanforge_gui_git_sha))
+                self.logger.info("GitVersion: {}".format(self.lanforge_gui_git_sha))
         ssh.close()
         time.sleep(1)
         return self.lanforge_gui_version_full, self.lanforge_gui_git_sha
@@ -711,8 +694,8 @@ class db_comparison:
 
         try:
             lanforge_gui_version_full, lanforge_gui_git_sha = self.get_lanforge_gui_version()
-        except Exception as x:
-            logger.error("ERROR: lanforge_gui_version exception, Please check the lanforge ip", x)
+        except Exception:
+            logger.error("ERROR: LANForge GUI Version INFO Exception, GUI Ver Please check the lanforge ip")
             # exit(1)
 
         wct_result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
@@ -797,30 +780,33 @@ class db_comparison:
 
         report.set_table_title("GUI Overview :")
         report.build_table_title()
-        report.set_desc_html("", "The table below displays the First test run values stored in the database.")
-        report.build_description()
+        report.set_text("The table below displays the First test run values stored in the database.")
+        report.set_text("The table below displays the First test run values stored in the database.")
+        report.build_text_simple()
         report.set_table_dataframe(gui_info1)
         report.build_table()
-        report.set_desc_html("", "The table below displays the Second test run values stored in the database.")
-        report.build_description()
+        report.set_text("The table below displays the Second test run values stored in the database.")
+        report.build_text_simple()
         report.set_table_dataframe(gui_info2)
         report.build_table()
 
         report.set_table_title("Comparison Tables :")
         report.build_table_title()
+        report.set_text("    To calculate percentages, use the formula (Test Run-2 Values / Test Run-1 Values) * 100.")
+        report.build_text_simple()
 
         for i, df in enumerate(dataframes):
-            if 'WCT' in df['Radio-Type'][0]:
+            if 'WCT' in df['Test-Tag'][0]:
                 report.set_table_title("WIFI-CAPACITY")
                 report.build_table_title()
                 report.set_table_dataframe(df)
                 report.build_table()
-            elif 'DP' in df['Radio-Type'][0]:
+            elif 'DP' in df['Test-Tag'][0]:
                 report.set_table_title("DATA PLANE")
                 report.build_table_title()
                 report.set_table_dataframe(df)
                 report.build_table()
-            elif 'AP_AUTO' in df['Radio-Type'][0]:
+            elif 'AP_AUTO' in df['Test-Tag'][0]:
                 report.set_table_title("AP AUTO")
                 report.build_table_title()
                 report.set_table_dataframe(df)
@@ -835,12 +821,9 @@ class db_comparison:
         report.write_html()
         report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
 
-        logger.info("report path {}".format(report.get_path()))
-
-
 def main():
     parser = argparse.ArgumentParser(description='Compare data in two SQLite databases')
-    parser.add_argument('--mgr', help='lanforge ip', default='192.168.200.93')
+    parser.add_argument('--mgr', help='lanforge ip', default='localhost')
     parser.add_argument('--database', help='Path to single database file (.db)')
     parser.add_argument('--db1', help='Path to first database file (.db)')
     parser.add_argument('--db2', help='Path to second database file (.db)')
