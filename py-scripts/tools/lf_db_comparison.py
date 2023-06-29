@@ -1,19 +1,42 @@
 #!/usr/bin/env python3
 """
-Name : lf_db_comparison.py
+NAME: lf_db_comparison.py
 
-Purpose : lf_db_comparison.py used for comparing the two databases and data manipulations using sql query's
+PURPOSE: lf_db_comparison.py used for comparing the two databases and data manipulations using sql query's
 
-Example :
-    lf_db_comparison.py --db1 <path of the database_1> --db2 <path of the database_2> --table_name <table_name>
+EXAMPLE:
+        # Use CLI to compare two different databases:
 
-    python3 lf_db_comparison.py --db1 "/home/tarun/Desktop/qa_LRQ_FULL_1.db" --db2 "/home/tarun/Desktop/qa_LRQ_FULL_2.db" --table_name "qa_table"
+            ./lf_db_comparison.py --mgr localhost --db1 <path of the database-1> --db2 <path of the database-2> --wct --dp --ap_auto
 
-    #Todo : Need to update help
+        # Compare two test runs in a single database using CLI:
+
+            ./lf_db_comparison.py --mgr localhost --database <path of the database> --wct --dp --ap_auto  --index 0,1
+
+
+SCRIPT_CLASSIFICATION:  Comparison, Excel & Pdf Reporting
+
+SCRIPT_CATEGORIES:   Functional
+
+NOTES:
+        * This script can compare the Two different databases which has different test runs in it.
+
+        * This script also have the provision to compare the single database which has multiple test runs in it.
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   29-JUN-2023,
+             Build Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 """
 
 import os
-import subprocess
 import sys
 import time
 import importlib
@@ -32,13 +55,13 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 lf_pdf_report = importlib.import_module("py-scripts.lf_report")
 # lf_report = lf_report.lf_report
 
-logger =logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class db_comparison:
-    def __init__(self, host, database, data_base1=None, data_base2=None, table_name=None, dp=None, wct=None, ap_auto=None,
-                 index=None):
+    def __init__(self, host, database, data_base1=None, data_base2=None, table_name=None, dp=None, wct=None,
+                 ap_auto=None, index=None):
         self.lf_mgr_ip = host
         self.lf_mgr_port = "8080"
         self.lf_mgr_ssh_port = 22
@@ -73,7 +96,7 @@ class db_comparison:
                 raise argparse.ArgumentTypeError('ERROR : argument --index: expected 2 arguments')
             self.index = [int(item) for item in index_items]
 
-    def building_output_directory(self,directory_name="LRQ_Comparison_Report"):
+    def building_output_directory(self, directory_name="LRQ_Comparison_Report"):
         now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S_")  # %Y-%m-%d-%H-h-%m-m-%S-s
         if directory_name:
             self.directory = os.path.join(now + str(directory_name))
@@ -158,7 +181,6 @@ class db_comparison:
                 for i in querylist:
                     query_df_dict['single_db_df'].append(pd.read_sql_query(i, self.db_conn))
                 new = [[query_df_dict['single_db_df'][i]] for i in range(0, len(query_df_dict['single_db_df']))]
-                print("New list of DFs:", new)
                 # FETCHING THE INDEX items INTO A LIST TO BREAK THE DATA FRAMES
                 sub_lists = []
                 for n in range(len(new)):
@@ -188,7 +210,7 @@ class db_comparison:
                 for i in range(len(new)):
                     last_check = 0
                     for ind in _index_list[i]:
-                        dfs.append(new[i][0].loc[last_check:ind-1])
+                        dfs.append(new[i][0].loc[last_check:ind - 1])
                         last_check = ind
 
                 # AGAIN CONVERSING LIST WITH IN LIST TO SEPARATE THE DFs
@@ -218,7 +240,6 @@ class db_comparison:
                         lambda x: datetime.datetime.fromtimestamp(x / 1000).strftime(date_format))
                     query_df_dict["merged_df"][i]["Date_2"] = query_df_dict["merged_df"][i]["Date_2"].apply(
                         lambda x: datetime.datetime.fromtimestamp(x / 1000).strftime(date_format))
-            print("Merged DFs :", query_df_dict["merged_df"])
         else:
             logger.info("The List of the query result are empty...")
         return query_df_dict
@@ -230,7 +251,8 @@ class db_comparison:
             temp_list = []
             for i in range(len(item['numeric-score_1'])):
                 if item['numeric-score_1'][i] != 0:
-                    temp_list.append(str(round(abs(((item['numeric-score_2'][i] / item['numeric-score_1'][i]) * 100)), 1)) + "%")
+                    temp_list.append(
+                        str(round(abs(((item['numeric-score_2'][i] / item['numeric-score_1'][i]) * 100)), 1)) + "%")
                 else:
                     temp_list.append("NaN")
                 # if int(item['numeric-score_1'][i]) > int(item['numeric-score_2'][i]):
@@ -248,7 +270,8 @@ class db_comparison:
                                      'numeric-score_1': 'Test Run-1 Values', 'numeric-score_2': 'Test Run-2 Values'},
                             inplace=True)
             elif 'DP' in item['test-tag'][0]:
-                item.rename(columns={'test-tag': 'Test-Tag', 'short-description': 'Short Description - (NSS-Band-Packet-Size)',
+                item.rename(
+                    columns={'test-tag': 'Test-Tag', 'short-description': 'Short Description - (NSS-Band-Packet-Size)',
                              'numeric-score_1': 'Test Run-1 Values', 'numeric-score_2': 'Test Run-2 Values'},
                     inplace=True)
             elif 'AP_AUTO' in item['test-tag'][0]:
@@ -266,7 +289,7 @@ class db_comparison:
                     with open(f'./{self.directory}/dp.csv', mode='a', newline='') as f1:
                         df.to_csv(f1, index=True, header=f'Table{i + 1}')
                 elif 'AP_AUTO' in df['Test-Tag'][0]:
-                    with open(f'./{self.directory}/ap_auto.csv',mode='a', newline='') as f2:
+                    with open(f'./{self.directory}/ap_auto.csv', mode='a', newline='') as f2:
                         df.to_csv(f2, index=True, header=f'Table{i + 1}')
 
     def excel_placing(self, query_df_list):
@@ -465,7 +488,7 @@ class db_comparison:
         # Querying the databases
         query = None
         db_query = None
-        db1_query , db2_query = None, None
+        db1_query, db2_query = None, None
         split_column_names = column_names.split(', ')
         adding_quotes = ['"' + item + '"' for item in split_column_names]
         column_names = ', '.join(adding_quotes)
@@ -546,8 +569,10 @@ class db_comparison:
             # For Wi-Fi Capacity querying
             if (self.db1 and self.db2) is not None:
                 wifi_capacity = self.db_querying_with_where_clause(column_names='test-tag',
-                                                                   condition='"test-id" == "WiFi Capacity"', distinct=True)
-                list_of_wct_tags = sorted(list(set(wifi_capacity['test-tag_1'].unique()) & set(wifi_capacity['test-tag_2'].unique())))
+                                                                   condition='"test-id" == "WiFi Capacity"',
+                                                                   distinct=True)
+                list_of_wct_tags = sorted(
+                    list(set(wifi_capacity['test-tag_1'].unique()) & set(wifi_capacity['test-tag_2'].unique())))
             elif self.database:
                 wifi_capacity = self.db_querying_with_where_clause(column_names='test-tag',
                                                                    condition='"test-id" == "WiFi Capacity"',
@@ -558,7 +583,8 @@ class db_comparison:
             if (self.db1 and self.db2) is not None:
                 ap_auto = self.db_querying_with_where_clause(column_names='test-tag',
                                                              condition='"test-id" == "AP Auto"', distinct=True)
-                list_of_ap_auto_tags = sorted(list(set(ap_auto['test-tag_1'].unique()) & set(ap_auto['test-tag_2'].unique())))
+                list_of_ap_auto_tags = sorted(
+                    list(set(ap_auto['test-tag_1'].unique()) & set(ap_auto['test-tag_2'].unique())))
             elif self.database:
                 ap_auto = self.db_querying_with_where_clause(column_names='test-tag',
                                                              condition='"test-id" == "AP Auto"', distinct=True)
@@ -568,7 +594,8 @@ class db_comparison:
             if (self.db1 and self.db2) is not None:
                 dp_test_tags = self.db_querying_with_where_clause(column_names='test-tag',
                                                                   condition='"test-id" == "Dataplane"', distinct=True)
-                list_of_dp_tags = sorted(list(set(dp_test_tags['test-tag_1'].unique()) & set(dp_test_tags['test-tag_2'].unique())))
+                list_of_dp_tags = sorted(
+                    list(set(dp_test_tags['test-tag_1'].unique()) & set(dp_test_tags['test-tag_2'].unique())))
             elif self.database:
                 dp_test_tags = self.db_querying_with_where_clause(column_names='test-tag',
                                                                   condition='"test-id" == "Dataplane"', distinct=True)
@@ -602,7 +629,8 @@ class db_comparison:
                                                                            distinct=True)
                         list_of_short_desc = sorted(list(set(dp_short_desc['short-description_1'].unique()) & set(
                             dp_short_desc['short-description_1'].unique())))
-                        slicing_short_description_tag = ['-'.join(str(item).split('-')[0:3]) + '-%' for item in list_of_short_desc]
+                        slicing_short_description_tag = ['-'.join(str(item).split('-')[0:3]) + '-%' for item in
+                                                         list_of_short_desc]
                         sorted_short_description = list(set(slicing_short_description_tag))
                         # self.short_description = 'TCP-%'
                         for short_desc in sorted_short_description:
@@ -821,8 +849,49 @@ class db_comparison:
         report.write_html()
         report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
 
+
 def main():
-    parser = argparse.ArgumentParser(description='Compare data in two SQLite databases')
+    parser = argparse.ArgumentParser(prog="lf_db_comparison.py",
+                                     formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog="""\
+                                     DataBase Comparison Using Sql""",
+                                     description='''
+NAME: lf_db_comparison.py
+
+PURPOSE: lf_db_comparison.py used for comparing the two databases and data manipulations using sql query's
+
+EXAMPLE:
+        # Use CLI to compare two different databases:
+
+            ./lf_db_comparison.py --mgr localhost --db1 <path of the database-1> --db2 <path of the database-2> --wct --dp --ap_auto
+
+        # Compare two test runs in a single database using CLI:
+
+            ./lf_db_comparison.py --mgr localhost --database <path of the database> --wct --dp --ap_auto  --index 0,1
+
+
+SCRIPT_CLASSIFICATION:  Comparison, Excel & Pdf Reporting
+
+SCRIPT_CATEGORIES:   Functional
+
+NOTES:
+        * This script can compare the Two different databases which has different test runs in it.
+
+        * This script also have the provision to compare the single database which has multiple test runs in it.
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:   29-JUN-2023,
+             Build Version:  5.4.6
+             Kernel Version: 6.2.14+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
+
+''')
     parser.add_argument('--mgr', help='lanforge ip', default='localhost')
     parser.add_argument('--database', help='Path to single database file (.db)')
     parser.add_argument('--db1', help='Path to first database file (.db)')
@@ -863,7 +932,7 @@ def main():
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-    logger.debug("Comparing results db1: {db1} db2: {db2} ".format(db1=args.db1,db2=args.db2))
+    logger.debug("Comparing results db1: {db1} db2: {db2} ".format(db1=args.db1, db2=args.db2))
 
     obj = db_comparison(host=args.mgr,
                         database=args.database,
@@ -879,6 +948,7 @@ def main():
         obj.checking_data_bases(db1=args.db1, db2=args.db2)
     # querying
     obj.querying()
+
 
 if __name__ == "__main__":
     main()
