@@ -212,7 +212,19 @@ class db_comparison:
                 # merging the dataframes and placing in a 'merged_df' list
                 for df_length in range(len(_index_list)):
                     query_df_dict["merged_df"].append(_index_list[df_length][first_choice].merge(
-                        _index_list[df_length][second_choice], on=['test-tag', 'short-description'], suffixes=('_1', '_2')))
+                        _index_list[df_length][second_choice], on=['test-tag', 'short-description'],
+                        suffixes=('_1', '_2')))
+
+                # Define the date format
+                date_format = "%d-%b-%Y %H:%M:%S"
+
+                # Convert the Date_1 and Date_2 columns to human-readable date format
+                for i in range(len(query_df_dict["merged_df"])):
+                    query_df_dict["merged_df"][i]["Date_1"] = query_df_dict["merged_df"][i]["Date_1"].apply(
+                        lambda x: datetime.datetime.fromtimestamp(x / 1000).strftime(date_format))
+                    query_df_dict["merged_df"][i]["Date_2"] = query_df_dict["merged_df"][i]["Date_2"].apply(
+                        lambda x: datetime.datetime.fromtimestamp(x / 1000).strftime(date_format))
+
                 print("Merged DFs :", query_df_dict["merged_df"])
         else:
             logger.info("The List of the query result are empty...")
