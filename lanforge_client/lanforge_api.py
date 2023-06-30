@@ -11152,6 +11152,7 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_rfgen
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_rfgen(self, 
+                      p_id: str = None,                         # RF Generator ID (serial-number) [W]
                       resource: int = None,                     # Resource number [W]
                       shelf: int = 1,                           # Shelf number, usually 1 [R][D:1]
                       response_json_list: list = None,
@@ -11166,6 +11167,8 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if p_id is not None:
+            data["id"] = p_id
         if resource is not None:
             data["resource"] = resource
         if shelf is not None:
@@ -11191,7 +11194,8 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_rm_rfgen(resource=param_map.get("resource"),
+        self.post_rm_rfgen(id=param_map.get("id"),
+                           resource=param_map.get("resource"),
                            shelf=param_map.get("shelf"),
                            )
         """
@@ -12679,6 +12683,9 @@ class LFJsonCommand(JsonCommand):
         AutoHelper = "AutoHelper"                          # Automatically run on helper process
         ClearPortOnStart = "ClearPortOnStart"              # clear stats on start
         DoChecksum = "DoChecksum"                          # Enable checksumming
+        DropXthPkt = "DropXthPkt"                          # Drop every Nth packet on a WANpath endpoint. This
+        # +feature is WANlink endpoint based and not WANpath
+        # +based.
         EnableConcurrentSrcIP = "EnableConcurrentSrcIP"    # Concurrent source IPs?
         EnableLinearSrcIP = "EnableLinearSrcIP"            # linearized source IPs
         EnableLinearSrcIPPort = "EnableLinearSrcIPPort"    # linearized IP ports
@@ -12688,9 +12695,7 @@ class LFJsonCommand(JsonCommand):
         QuiesceAfterRange = "QuiesceAfterRange"            # quiesce after range of bytes
         Unmanaged = "Unmanaged"                            # Set endpoint unmanaged
         UseAutoNAT = "UseAutoNAT"                          # NAT friendly behavior
-        dropXthPkt = "dropXthPkt"                          # Drop every Nth packet on a WANpath endpoint. This
-        # +feature is WANlink endpoint based and not WANpath
-        # +based.
+        UseGRO = "UseGRO"                                  # Enable UDP GRO
 
     def post_set_endp_flag(self, 
                            flag: str = None,                         # The name of the flag. [R]
@@ -14753,8 +14758,12 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(SetRfgenRfgenFlags0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        one_burst = 0x8      # Run for about 1 second and stop. Uses 5-sec sweep time for single pulse train.
-        running = 0x2        # Should we start the RF Generator or not?
+        one_burst = 0x8           # Run for about 1 second and stop. Uses 5-sec sweep time for single pulse
+        # +train.
+        running = 0x2             # Should we start the RF Generator or not?
+        trials_center = 0x20      # FCC5 enable trials-center
+        trials_high = 0x40        # FCC5 enable trials-high
+        trials_low = 0x10         # FCC5 enable trials-low
 
         # use to get in value of flag
         @classmethod
@@ -14767,19 +14776,39 @@ class LFJsonCommand(JsonCommand):
 
     def post_set_rfgen(self, 
                        bb_gain: str = None,                      # RX Gain, 0 - 62 in 2dB steps
+                       burst_offset: str = None,                 # FCC5B burst offset in usec. Blank-time for W53-Chirp.
+                       chirp_width_khz: str = None,              # W53 Chirp width in khz.
                        freq_khz: str = None,                     # Center frequency in Khz
+                       freq_modulation: str = None,              # FCC5B setting, 5-20.
                        gain: str = None,                         # Main TX/RX Amp, 0 or 14 (dB), default is 14
-                       p_id: str = None,                         # RF Generator ID, not used at this time, enter 'NA' or 0.
-                       # [D:NA]
+                       p_id: str = None,                         # RF Generator ID (serial number) [W]
                        if_gain: str = None,                      # Fine-tune TX/RX Gain, 0 - 40 dB
-                       pulse_count: str = None,                  # Number of pulses (0-255)
+                       long_pulse_width_us: str = None,          # Requested long pulse width for W53 chirp, units are in
+                       # micro-seconds.
+                       ofdm_duration: str = None,                # OFDM duration in msec
+                       ofdm_header: str = None,                  # OFDM header modulation: 0 BPSK, 1 QPSK.
+                       ofdm_payload: str = None,                 # OFDM payload modulation: 0 BPSK, 1 QPSK, 2 8PSK.
+                       ofdm_t1_off: str = None,                  # OFDM time-period one off duration in usec
+                       ofdm_t1_on: str = None,                   # OFDM time-period one on duration in usec
+                       ofdm_t2_off: str = None,                  # OFDM time-period two off duration in usec
+                       ofdm_t2_on: str = None,                   # OFDM time-period two on duration in usec
+                       ofdm_t3_off: str = None,                  # OFDM time-period three off duration in usec
+                       ofdm_t3_on: str = None,                   # OFDM time-period three on duration in usec
+                       prf1: str = None,                         # ETSI/FCC5/W53 pulse repetition frequency.
+                       prf2: str = None,                         # ETSI/FCC5 pulse repetition frequency.
+                       prf3: str = None,                         # ETSI/FCC5 pulse repetition frequency.
+                       pulse_count: str = None,                  # Number of pulses (0-255). Continuous pairs of pulses for
+                       # W53.
                        pulse_interval_us: str = None,            # Time between pulses, in micro-seconds.
                        pulse_width_us: str = None,               # Requested pulse width, units are in micro-seconds.
+                       # Fractional units (0.5) accepted.
+                       radar_type: str = None,                   # FCC, ETSI and other RF noise patterns.
                        resource: int = None,                     # Resource number. [W]
                        rfgen_flags: str = None,                  # RF Generator flags, see above.
                        rfgen_flags_mask: str = None,             # Mask of what flags to set, see above.
                        shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
                        sweep_time_ms: str = None,                # Time interval between pulse groups in miliseconds
+                       uut_channel: str = None,                  # FCC5 setting, 20, 40, 80 or 160.
                        response_json_list: list = None,
                        debug: bool = False,
                        errors_warnings: list = None,
@@ -14794,20 +14823,54 @@ class LFJsonCommand(JsonCommand):
         data = {}
         if bb_gain is not None:
             data["bb_gain"] = bb_gain
+        if burst_offset is not None:
+            data["burst_offset"] = burst_offset
+        if chirp_width_khz is not None:
+            data["chirp_width_khz"] = chirp_width_khz
         if freq_khz is not None:
             data["freq_khz"] = freq_khz
+        if freq_modulation is not None:
+            data["freq_modulation"] = freq_modulation
         if gain is not None:
             data["gain"] = gain
         if p_id is not None:
             data["id"] = p_id
         if if_gain is not None:
             data["if_gain"] = if_gain
+        if long_pulse_width_us is not None:
+            data["long_pulse_width_us"] = long_pulse_width_us
+        if ofdm_duration is not None:
+            data["ofdm_duration"] = ofdm_duration
+        if ofdm_header is not None:
+            data["ofdm_header"] = ofdm_header
+        if ofdm_payload is not None:
+            data["ofdm_payload"] = ofdm_payload
+        if ofdm_t1_off is not None:
+            data["ofdm_t1_off"] = ofdm_t1_off
+        if ofdm_t1_on is not None:
+            data["ofdm_t1_on"] = ofdm_t1_on
+        if ofdm_t2_off is not None:
+            data["ofdm_t2_off"] = ofdm_t2_off
+        if ofdm_t2_on is not None:
+            data["ofdm_t2_on"] = ofdm_t2_on
+        if ofdm_t3_off is not None:
+            data["ofdm_t3_off"] = ofdm_t3_off
+        if ofdm_t3_on is not None:
+            data["ofdm_t3_on"] = ofdm_t3_on
+        if prf1 is not None:
+            data["prf1"] = prf1
+        if prf2 is not None:
+            data["prf2"] = prf2
+        if prf3 is not None:
+            data["prf3"] = prf3
         if pulse_count is not None:
             data["pulse_count"] = pulse_count
         if pulse_interval_us is not None:
             data["pulse_interval_us"] = pulse_interval_us
         if pulse_width_us is not None:
             data["pulse_width_us"] = pulse_width_us
+        if radar_type is not None:
+            data["radar_type"] = radar_type
         if resource is not None:
             data["resource"] = resource
         if rfgen_flags is not None:
@@ -14818,6 +14881,8 @@ class LFJsonCommand(JsonCommand):
             data["shelf"] = shelf
         if sweep_time_ms is not None:
             data["sweep_time_ms"] = sweep_time_ms
+        if uut_channel is not None:
+            data["uut_channel"] = uut_channel
         if len(data) < 1:
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_rfgen",
@@ -14840,18 +14905,36 @@ class LFJsonCommand(JsonCommand):
         TODO: check for default argument values
         TODO: fix comma counting
         self.post_set_rfgen(bb_gain=param_map.get("bb_gain"),
+                            burst_offset=param_map.get("burst_offset"),
+                            chirp_width_khz=param_map.get("chirp_width_khz"),
                             freq_khz=param_map.get("freq_khz"),
+                            freq_modulation=param_map.get("freq_modulation"),
                             gain=param_map.get("gain"),
                             id=param_map.get("id"),
                             if_gain=param_map.get("if_gain"),
+                            long_pulse_width_us=param_map.get("long_pulse_width_us"),
+                            ofdm_duration=param_map.get("ofdm_duration"),
+                            ofdm_header=param_map.get("ofdm_header"),
+                            ofdm_payload=param_map.get("ofdm_payload"),
+                            ofdm_t1_off=param_map.get("ofdm_t1_off"),
+                            ofdm_t1_on=param_map.get("ofdm_t1_on"),
+                            ofdm_t2_off=param_map.get("ofdm_t2_off"),
+                            ofdm_t2_on=param_map.get("ofdm_t2_on"),
+                            ofdm_t3_off=param_map.get("ofdm_t3_off"),
+                            ofdm_t3_on=param_map.get("ofdm_t3_on"),
+                            prf1=param_map.get("prf1"),
+                            prf2=param_map.get("prf2"),
+                            prf3=param_map.get("prf3"),
                             pulse_count=param_map.get("pulse_count"),
                             pulse_interval_us=param_map.get("pulse_interval_us"),
                             pulse_width_us=param_map.get("pulse_width_us"),
+                            radar_type=param_map.get("radar_type"),
                             resource=param_map.get("resource"),
                             rfgen_flags=param_map.get("rfgen_flags"),
                             rfgen_flags_mask=param_map.get("rfgen_flags_mask"),
                             shelf=param_map.get("shelf"),
                             sweep_time_ms=param_map.get("sweep_time_ms"),
+                            uut_channel=param_map.get("uut_channel"),
                             )
         """
 
@@ -17945,6 +18028,7 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_rfgen
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_rfgen(self, 
+                        p_id: str = None,                         # RF Generator serial number, or 'all'.
                         resource: int = None,                     # Resource number, or 'all'. [W]
                         shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
                         response_json_list: list = None,
@@ -17959,6 +18043,8 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if p_id is not None:
+            data["id"] = p_id
         if resource is not None:
             data["resource"] = resource
         if shelf is not None:
@@ -17984,7 +18070,8 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_show_rfgen(resource=param_map.get("resource"),
+        self.post_show_rfgen(id=param_map.get("id"),
+                             resource=param_map.get("resource"),
                              shelf=param_map.get("shelf"),
                              )
         """
