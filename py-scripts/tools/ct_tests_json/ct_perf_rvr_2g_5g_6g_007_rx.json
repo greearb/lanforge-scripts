@@ -1,0 +1,82 @@
+{
+    "ct_perf_rvr_2g_5g_6g_007_rx":{
+        "Notes":[
+            "This json file describes tests to be run by LANforge system performance 007, note ssid_idx=0 is for Radio-1, ssid_idx_1 is for Radio-1"
+        ]  
+    },
+    "test_suites":{
+        "rvr_perf_2g_5g_6g_ax210_W2_W3_W4_rx":{
+            "CC_DUT":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=3 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+                ]
+            },
+            "CC_AX210_2G_5G_6G_W2_W3_W4":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario RVR_MTK7915_2G_5G_6G",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-1' NA wiphy2,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy3,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-4' NA wiphy4,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                ]
+            },
+            "RVR_AX210_2G_5G_6G_W2_W3_W4_RX":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "timeout":"5000",
+                "iterations":"1",
+                "command":"lf_rvr_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_2G_5G_6G_W2_W3_W4_RX",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan2",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan3",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan4",
+                    " --download_speed 0 --upload_speed 85% --raw_line 'pkts: 60;Custom' ",
+                    " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
+                    " --raw_line 'directions: DUT Receive' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_2G_5G_6G_W2_W3_W4_RX' ",
+                    " --raw_line 'attenuator: 1.1.3360' ",
+                    " --raw_line 'attenuations: 0..+100..700' ",
+                    " --raw_line 'attenuator_mod: 0xf'  ",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                ]
+            },
+            "lf_inspect":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_inspect.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --database DATABASE_SQLITE --db_index 1,0"
+                ]
+            }
+        }
+    }
+}
