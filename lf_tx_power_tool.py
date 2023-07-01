@@ -33,7 +33,7 @@ import importlib
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 def convert_input():
-    value = input("Whate is the numberical value of teh unit of power?:").lower()
+    value = input("What is the numberical value of the unit of power?:").lower()
     unit = ""
     while unit == "":
         unit = input("What unit would you like to convert this too? (dBm/mW): ").lower()
