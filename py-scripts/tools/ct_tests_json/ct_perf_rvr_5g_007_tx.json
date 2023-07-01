@@ -5,7 +5,7 @@
         ]  
     },
     "test_suites":{
-        "rvr_perf_5g_1_mt7915e_W0":{
+        "rvr_perf_5g_1_mt7915e_W0_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -31,7 +31,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_MT7915_5G_1_W0":{
+            "RVR_MT7915_5G_1_W0_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -39,12 +39,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7915_5G_1_W0",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7915_5G_1_W0_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan0",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_1_W0' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_1_W0_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -73,7 +73,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_2_mt7915e_W0":{
+        "rvr_perf_5g_2_mt7915e_W0_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -99,7 +99,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_MT7915_5G_2_W0":{
+            "RVR_MT7915_5G_2_W0_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -107,12 +107,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7915_5G_2_W0",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7915_5G_2_W0_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan0",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_2_W0' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_2_W0_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -141,7 +141,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_1_mt7915e_W1":{
+        "rvr_perf_5g_1_mt7915e_W1_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -167,7 +167,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_7915_5G_1_W1":{
+            "RVR_MT7915_5G_1_W1_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"7000",
@@ -175,12 +175,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_7915_5G_1_W1",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7915_5G_1_W1_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_1_W1' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_1_W1_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -209,7 +209,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_2_mt7915e_W1":{
+        "rvr_perf_5g_2_mt7915e_W1_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -223,7 +223,7 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
-            "CC_7915_5G_2":{
+            "CC_MT7915_5G_2":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
@@ -235,7 +235,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_7915_5G_2_W1":{
+            "RVR_MT7915_5G_2_W1_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -243,12 +243,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_7915_5G_2_W1",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7915_5G_2_W1_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_2_W1' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_2_W1_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -277,7 +277,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_1_ax210_W2":{
+        "rvr_perf_5g_1_ax210_W2_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -303,7 +303,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_AX210_5G_1_W2":{
+            "RVR_AX210_5G_1_W2_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -311,12 +311,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_1_W2",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_1_W2_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan2",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W2' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W2_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -345,7 +345,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_2_ax210_W2":{
+        "rvr_perf_5g_2_ax210_W2_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -371,7 +371,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_AX210_5G_2_W2":{
+            "RVR_AX210_5G_2_W2_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -379,12 +379,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W2",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W2_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan2",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W2' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W2_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -413,7 +413,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_1_ax210_W3":{
+        "rvr_perf_5g_1_ax210_W3_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -439,7 +439,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_AX210_5G_1_W3":{
+            "RVR_AX210_5G_1_W3_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -447,12 +447,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_1_W3",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_1_W3_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan3",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W3' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W3_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -481,7 +481,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_2_ax210_W3":{
+        "rvr_perf_5g_2_ax210_W3_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -507,7 +507,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_AX210_5G_2_W3":{
+            "RVR_AX210_5G_2_W3_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -515,12 +515,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W3",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W3_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan3",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W3' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W3_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -549,7 +549,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_1_ax210_W4":{
+        "rvr_perf_5g_1_ax210_W4_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -575,7 +575,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_AX210_5G_1_W4":{
+            "RVR_AX210_5G_1_W4_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -583,12 +583,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name CC_AX210_5G_W4",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_1_W4_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan4",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W4' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W4_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -617,7 +617,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_2_ax210_W4":{
+        "rvr_perf_5g_2_ax210_W4_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -643,7 +643,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_AX210_5G_2_W4":{
+            "RVR_AX210_5G_2_W4_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -651,12 +651,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W4",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W4_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan4",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W4' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W4_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -685,7 +685,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_1_ax210_W5":{
+        "rvr_perf_5g_1_ax210_W5_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -711,7 +711,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_AX210_5G_1_W5":{
+            "RVR_AX210_5G_1_W5_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -719,12 +719,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_1_W5",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_1_W5_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan5",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W5' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W5_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -753,7 +753,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_2_ax210_W5":{
+        "rvr_perf_5g_2_ax210_W5_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -779,7 +779,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_AX210_5G_2_W5":{
+            "RVR_AX210_5G_2_W5_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -787,12 +787,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W5",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W5_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan5",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W5' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W5_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -821,7 +821,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_1_mt7921_W6":{
+        "rvr_perf_5g_1_mt7921_W6_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -847,7 +847,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_MT7921_5G_1_W6":{
+            "RVR_MT7921_5G_1_W6_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -855,12 +855,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7921_5G_1_W6",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7921_5G_1_W6_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan6",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7921_5G_1_W6' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7921_5G_1_W6_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -889,7 +889,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_2_mt7921_W6":{
+        "rvr_perf_5g_2_mt7921_W6_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -915,7 +915,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_MT7921_5G_2_W6":{
+            "RVR_MT7921_5G_2_W6_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -923,12 +923,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7921_5G_2_W6",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7921_5G_2_W6_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan6",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7921_5G_2_W6' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7921_5G_2_W6_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -957,7 +957,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_1_mt7922_W7":{
+        "rvr_perf_5g_1_mt7922_W7_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -983,7 +983,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_MT7922_5G_1_W7":{
+            "RVR_MT7922_5G_1_W7_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -991,12 +991,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7922_5G_1_W7",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7922_5G_1_W7_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan7",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7922_5G_1_W7' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7922_5G_1_W7_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -1025,7 +1025,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_2_mt7922_W7":{
+        "rvr_perf_5g_2_mt7922_W7_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -1051,7 +1051,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_7922_5G_2_W7":{
+            "RVR_MT7922_5G_2_W7_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -1059,12 +1059,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_7922_5G_2_W7",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7922_5G_2_W7_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan7",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7922_5G_2_W7' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7922_5G_2_W7_TX' ",
                     " --raw_line 'attenuator: 1.1.3360' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
