@@ -5,7 +5,7 @@
         ]  
     },
     "test_suites":{
-        "rvr_perf_5g_1_mt7915e_W0_tx":{
+        "rvr_perf_5g_1_mt7915e_W0_rx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
