@@ -62,6 +62,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 class db_comparison:
     def __init__(self, host, database, data_base1=None, data_base2=None, table_name=None, dp=None, wct=None,
                  ap_auto=None, index=None):
+        self.query_df_dict = None
         self.lf_mgr_ip = host
         self.lf_mgr_port = "8080"
         self.lf_mgr_ssh_port = 22
@@ -148,7 +149,7 @@ class db_comparison:
 
     def sort_and_merge_db(self, querylist):
         # Query dataframe dictionary
-        query_df_dict = {
+        self.query_df_dict = {
             "single_db_df": [],
             "sorted_single_df": [],
             "db1_df": [],
@@ -161,26 +162,26 @@ class db_comparison:
             if (self.db1 and self.db2) is not None:
                 # reading the sql query's from the both databases
                 for i in querylist:
-                    query_df_dict['db1_df'].append(pd.read_sql_query(i, self.conn1))
-                    query_df_dict['db2_df'].append(pd.read_sql_query(i, self.conn2))
+                    self.query_df_dict['db1_df'].append(pd.read_sql_query(i, self.conn1))
+                    self.query_df_dict['db2_df'].append(pd.read_sql_query(i, self.conn2))
                 # sorting the two databases based on test-tags and placing in different list
                 for df in range(
-                    len(query_df_dict['db1_df'])):  #TODO: Need to avoid the length of 'query_df_dict['db1_df']'
-                    query_df_dict["sorted_db1_df"].append(
-                        query_df_dict["db1_df"][df].sort_values(by='test-tag', ascending=True))
-                    query_df_dict["sorted_db2_df"].append(
-                        query_df_dict["db2_df"][df].sort_values(by='test-tag', ascending=True))
+                    len(self.query_df_dict['db1_df'])):  #TODO: Need to avoid the length of 'self.query_df_dict['db1_df']'
+                    self.query_df_dict["sorted_db1_df"].append(
+                        self.query_df_dict["db1_df"][df].sort_values(by='test-tag', ascending=True))
+                    self.query_df_dict["sorted_db2_df"].append(
+                        self.query_df_dict["db2_df"][df].sort_values(by='test-tag', ascending=True))
                 # merging the dataframes and placing in a 'merged_df' list
-                for sorted_df in range(len(query_df_dict[
-                                               'sorted_db1_df'])):  #TODO: Need to avoid the length of 'query_df_dict['sorted_db1_df']'
-                    query_df_dict["merged_df"].append(query_df_dict["sorted_db1_df"][sorted_df].merge(
-                        query_df_dict["sorted_db2_df"][sorted_df], on=['test-tag', 'short-description'],
+                for sorted_df in range(len(self.query_df_dict[
+                                               'sorted_db1_df'])):  #TODO: Need to avoid the length of 'self.query_df_dict['sorted_db1_df']'
+                    self.query_df_dict["merged_df"].append(self.query_df_dict["sorted_db1_df"][sorted_df].merge(
+                        self.query_df_dict["sorted_db2_df"][sorted_df], on=['test-tag', 'short-description'],
                         suffixes=('_1', '_2')))
             elif self.database is not None:
                 # CONVERTING DF INTO SUB LIST OF DFs BASED ON THE 'Date'
                 for i in querylist:
-                    query_df_dict['single_db_df'].append(pd.read_sql_query(i, self.db_conn))
-                new = [[query_df_dict['single_db_df'][i]] for i in range(0, len(query_df_dict['single_db_df']))]
+                    self.query_df_dict['single_db_df'].append(pd.read_sql_query(i, self.db_conn))
+                new = [[self.query_df_dict['single_db_df'][i]] for i in range(0, len(self.query_df_dict['single_db_df']))]
                 # FETCHING THE INDEX items INTO A LIST TO BREAK THE DATA FRAMES
                 sub_lists = []
                 for n in range(len(new)):
@@ -227,7 +228,7 @@ class db_comparison:
                 second_choice = self.index[1]
                 # merging the dataframes and placing in a 'merged_df' list
                 for df_length in range(len(_index_list)):
-                    query_df_dict["merged_df"].append(_index_list[df_length][first_choice].merge(
+                    self.query_df_dict["merged_df"].append(_index_list[df_length][first_choice].merge(
                         _index_list[df_length][second_choice], on=['test-tag', 'short-description'],
                         suffixes=('_1', '_2')))
 
@@ -235,18 +236,19 @@ class db_comparison:
                 date_format = "%d-%b-%Y %H:%M:%S"
 
                 # Convert the Date_1 and Date_2 columns to human-readable date format
-                for i in range(len(query_df_dict["merged_df"])):
-                    query_df_dict["merged_df"][i]["Date_1"] = query_df_dict["merged_df"][i]["Date_1"].apply(
+                for i in range(len(self.query_df_dict["merged_df"])):
+                    self.query_df_dict["merged_df"][i]["Date_1"] = self.query_df_dict["merged_df"][i]["Date_1"].apply(
                         lambda x: datetime.datetime.fromtimestamp(x / 1000).strftime(date_format))
-                    query_df_dict["merged_df"][i]["Date_2"] = query_df_dict["merged_df"][i]["Date_2"].apply(
+                    self.query_df_dict["merged_df"][i]["Date_2"] = self.query_df_dict["merged_df"][i]["Date_2"].apply(
                         lambda x: datetime.datetime.fromtimestamp(x / 1000).strftime(date_format))
         else:
             logger.info("The List of the query result are empty...")
-        return query_df_dict
+        return self.query_df_dict
 
     def percentage_calculation(self, query_dict):
         # Calculating the percentage for the db1-numeric-score & db2-numeric-score and attaching the Comparison (%) values to same dataframe
         percentage_list = []
+        query_dict = [df.dropna() for df in query_dict if not df.empty]
         for item in query_dict:
             temp_list = []
             for i in range(len(item['numeric-score_1'])):
@@ -278,6 +280,7 @@ class db_comparison:
                 item.rename(columns={'test-tag': 'Test-Tag', 'short-description': 'Short Description - (Band Ranges)',
                                      'numeric-score_1': 'Test Run-1 Values', 'numeric-score_2': 'Test Run-2 Values'},
                             inplace=True)
+        self.query_df_dict["merged_df"] = query_dict
 
     def converting_df_to_csv(self, query_df_list):
         if query_df_list:
@@ -613,11 +616,11 @@ class db_comparison:
             for i in range(len(test_tags)):
                 if 'WCT' in test_tags[i]:
                     if 'UL' in test_tags[i]:
-                        self.short_description = 'UL Mbps - % STA'
+                        self.short_description = 'UL % - % STA'
                     elif 'DL' in test_tags[i]:
-                        self.short_description = 'DL Mbps - % STA'
+                        self.short_description = 'DL % - % STA'
                     else:
-                        self.short_description = 'UL+DL Mbps - % STA'
+                        self.short_description = 'UL+DL % - % STA'
                     break_flag = True
                 elif 'AP_AUTO' in test_tags[i]:
                     self.short_description = 'Basic Client Connectivity % %'
@@ -667,24 +670,24 @@ class db_comparison:
                             'SELECT DISTINCT "test-tag",  "short-description", "Date", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
                             test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\" ORDER BY "Date" ASC;')
             # sort and merge the data frames
-            query_df_dict = self.sort_and_merge_db(querylist=query_results)
+            self.query_df_dict = self.sort_and_merge_db(querylist=query_results)
 
             # calculating the percentage
-            self.percentage_calculation(query_dict=query_df_dict["merged_df"])
+            self.percentage_calculation(query_dict=self.query_df_dict["merged_df"])
 
             # building the new output directory
             self.building_output_directory()
 
             # converting the data frames into csv
-            self.converting_df_to_csv(query_df_list=query_df_dict["merged_df"])
+            self.converting_df_to_csv(query_df_list=self.query_df_dict["merged_df"])
 
             # placing the tables in Excel sheet side by side
-            self.excel_placing(query_df_list=query_df_dict["merged_df"])
+            self.excel_placing(query_df_list=self.query_df_dict["merged_df"])
 
             # applying the stying for the Excel sheets
-            self.excel_styling(query_df_list=query_df_dict["merged_df"])
+            self.excel_styling(query_df_list=self.query_df_dict["merged_df"])
 
-            self.generate_report(dataframes=query_df_dict["merged_df"])
+            self.generate_report(dataframes=self.query_df_dict["merged_df"])
 
     # Fetching the LANForge Full GUI Version Details & lANForge GUI git stash
     def get_lanforge_gui_version(self):
