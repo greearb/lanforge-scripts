@@ -274,6 +274,10 @@ class lf_clean(Realm):
             return still_looking_cxs
 
     # removes endpoints that do not have a related Layer-3 cxs from the L3 Endps gui tab.
+    def get_json1(self):
+        response= self.json_get("port/all")
+        return(response)
+
     def layer3_endp_clean(self):
         still_looking_endp = True
         iterations_endp = 0
@@ -712,15 +716,15 @@ NOTES:
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
+    parser.add_argument('--log_level', default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+
     args = parser.parse_args()
 
-    # set up logger
     logger_config = lf_logger_config.lf_logger_config()
-    if args.lf_logger_config_json:
-        # logger_config.lf_logger_config_json = "lf_logger_config.json"
-        logger_config.lf_logger_config_json = args.lf_logger_config_json
-        logger_config.load_lf_logger_config()
-
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
     if args.debug:
         logger_config.set_level("debug")
 
@@ -734,6 +738,17 @@ NOTES:
                          clean_port_mgr=args.port_mgr,
                          clean_misc=args.misc)
         logger.info("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.l3_endp, sta=args.sta))
+
+        response = clean.get_json1()
+        # print(response)
+        logging.debug(response)
+        logging.debug("The objects that are present in the port Manager")
+        for i in range(len(response["interfaces"])):
+            response2 = list(response["interfaces"][i].keys())
+            # print(response2)
+            logging.debug(response2)
+
+
         if args.cxs:
             logger.info("cleaning cxs will also clean endp")
             clean.cxs_clean()
