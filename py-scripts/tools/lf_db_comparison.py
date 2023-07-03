@@ -826,22 +826,23 @@ class db_comparison:
         report.set_text("    To calculate percentages, use the formula (Test Run-2 Values / Test Run-1 Values) * 100.")
         report.build_text_simple()
 
+        # create a dictionary to map keywords to table titles
+        title_dict = {'WCT': 'WIFI-CAPACITY', 'DP': 'DATA PLANE', 'AP_AUTO': 'AP AUTO'}
+
         for i, df in enumerate(dataframes):
+            # get the keyword from the Test-Tag column
+            print("test-tag", df['Test-Tag'][0].split('_')[0])
+            keyword = df['Test-Tag'][0].split('_')[0]
+
+            # set the table title based on the keyword
+            title = title_dict.get(keyword, 'UNKNOWN')
             if 'WCT' in df['Test-Tag'][0]:
-                report.set_table_title("WIFI-CAPACITY")
+                # set the table title and dataframe, and build the table
+                report.set_table_title(title)
                 report.build_table_title()
-                report.set_table_dataframe(df)
-                report.build_table()
-            elif 'DP' in df['Test-Tag'][0]:
-                report.set_table_title("DATA PLANE")
-                report.build_table_title()
-                report.set_table_dataframe(df)
-                report.build_table()
-            elif 'AP_AUTO' in df['Test-Tag'][0]:
-                report.set_table_title("AP AUTO")
-                report.build_table_title()
-                report.set_table_dataframe(df)
-                report.build_table()
+
+            report.set_table_dataframe(df)
+            report.build_table()
 
         report_path = report.get_path()
         report_basename = os.path.basename(report_path)
