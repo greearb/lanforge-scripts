@@ -245,8 +245,13 @@ class CreateStation(Realm):
                                                      timeout=10):
                 self._fail("Unable to bring all stations up")
                 return
-
-        self._pass("PASS: Station build finished")
+            if self.wait_for_ip(station_list=self.station_profile.station_names, timeout_sec=-1):
+                self._pass("All stations got IPs", print_=True)
+                self._pass("Station build finished", print_=True)
+            else:
+                self._fail("Stations failed to get IPs", print_=True)
+                self._fail("FAIL: Station build failed", print_=True)
+                logger.info("Please re-check the configuration applied")
 
 
     def modify_radio(self, mgr, radio, antenna, channel, tx_power, country_code):
