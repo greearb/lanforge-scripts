@@ -48,7 +48,9 @@ import pandas as pd
 from datetime import datetime
 import datetime
 import paramiko
-from openpyxl.styles import Alignment, PatternFill
+from string import ascii_uppercase
+from openpyxl.styles import Alignment, Font, Color
+from IPython.display import display
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
@@ -320,12 +322,12 @@ class db_comparison:
             writer_obj.sheets[sheet_name].write(2, 5, sheet_title)
             writer_obj.sheets[sheet_name].write(4, 0, "The Value's of DB1 :")
             writer_obj.sheets[sheet_name].write(4, 1, f"Kernel : {kernel_ver_info_1}")
-            writer_obj.sheets[sheet_name].write(4, 3, f"Gui-Ver : {gui_ver_info_1}")
-            writer_obj.sheets[sheet_name].write(4, 5, f"DUT Model : {dut_model_info_1}")
+            writer_obj.sheets[sheet_name].write(4, 2, f"Gui-Ver : {gui_ver_info_1}")
+            writer_obj.sheets[sheet_name].write(4, 3, f"DUT Model : {dut_model_info_1}")
             writer_obj.sheets[sheet_name].write(6, 0, "The Value's of DB2 :")
             writer_obj.sheets[sheet_name].write(6, 1, f"Kernel : {kernel_ver_info_2}")
-            writer_obj.sheets[sheet_name].write(6, 3, f"Gui-Ver : {gui_ver_info_2}")
-            writer_obj.sheets[sheet_name].write(6, 5, f"DUT Model : {dut_model_info_2}")
+            writer_obj.sheets[sheet_name].write(6, 2, f"Gui-Ver : {gui_ver_info_2}")
+            writer_obj.sheets[sheet_name].write(6, 3, f"DUT Model : {dut_model_info_2}")
 
         # TABLE ARRANGEMENT FOR WIFI CAPACITY WORK SHEET
         row, column = 9, 0
@@ -414,78 +416,70 @@ class db_comparison:
                                    dut_model_info_2=result[0]['dut-model-num'])
         writer_obj.save()
 
+    def excel_adjusting(self, file_name, sheet_name):
+        wb = openpyxl.load_workbook(file_name)
+        ws = wb[sheet_name]
+
+        for letter in ascii_uppercase:  # ascii_uppercase : A, B, C, D, E, F,......,Z
+            max_width = 0
+            column_length_list = []
+            for row_number in range(1, ws.max_row + 1):
+                length = ws[f'{letter}{row_number}'].value
+                if length is not None:
+                    if len(str(length)) > max_width:
+                        column_length_list.append(len(str(length)))
+                else:
+                    column_length_list.append(10)
+            # print("column :", letter)
+            # print("width", max(column_length_list))
+            ws.column_dimensions[letter].alignment = Alignment(horizontal='center', vertical='center')
+            ws.column_dimensions[letter].width = max(column_length_list) + 1
+
+        wb.save(file_name)
+        wb.close()
+
+    def merge_cells(self, file_name, sheet_name, start_column, start_row, end_column, end_row, msg):
+        # merge cells
+        wb = openpyxl.load_workbook(f'./{self.directory}/lrq_db_comparison.xlsx')
+        ws = wb[sheet_name]
+
+        ws.merge_cells(f'{start_column}{start_row}:{end_column}{end_row}')
+
+        font_style = Font(name="DejaVu Serif", size=32, bold=True, color="0A9B22")
+
+        ws.cell(row=2, column=1).value = msg
+
+        ws.cell(row=2, column=1).font = font_style
+
+        ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
+
+        # ws.merge_cells("F10:F121")    # Column 'F' cells merging
+
+        wb.save(file_name)
+
+        wb.close()
+
     def excel_styling(self, query_df_list):
         # styling the sheets
-        wb = openpyxl.load_workbook(f'./{self.directory}/lrq_db_comparison.xlsx')
-        for n in range(len(query_df_list)):
-            if 'AP_AUTO' in query_df_list[n]['Test-Tag'][0]:
-                # Styling for sheet-LRQ-AP_AUTO
-                ws1 = wb['LRQ-AP_AUTO']
-                ws1.column_dimensions['A'].alignment = Alignment(horizontal='center')
-                ws1.column_dimensions['A'].width = 22
-                ws1.column_dimensions['B'].width = 35
-                ws1.column_dimensions['C'].width = 14
-                ws1.column_dimensions['D'].width = 14
-                ws1.column_dimensions['E'].width = 15
-                ws1.column_dimensions['F'].width = 30
-                ws1.column_dimensions['F'].alignment = Alignment(horizontal='center')
-                ws1.column_dimensions['E'].alignment = Alignment(horizontal='right')
-                fill_cell1 = PatternFill(patternType='solid', fgColor='FEE135')
-                ws1['F3'].fill = fill_cell1
-                ws1.column_dimensions['G'].alignment = Alignment(horizontal='center')
-                ws1.column_dimensions['G'].width = 30
-                ws1.column_dimensions['H'].width = 17
-                ws1.column_dimensions['I'].width = 14
-                ws1.column_dimensions['J'].width = 14
-                ws1.column_dimensions['K'].width = 15
-                ws1.column_dimensions['K'].alignment = Alignment(horizontal='right')
-            elif 'WCT' in query_df_list[n]['Test-Tag'][0]:
-                # Styling for sheet-LRQ-WiFi_Capacity
-                ws = wb['LRQ-WiFi_Capacity']
-                ws.column_dimensions['A'].alignment = Alignment(horizontal='center')
-                ws.column_dimensions['A'].width = 30
-                ws.column_dimensions['B'].width = 17
-                ws.column_dimensions['C'].width = 14
-                ws.column_dimensions['D'].width = 14
-                ws.column_dimensions['E'].width = 15
-                ws.column_dimensions['F'].width = 27
-                ws.column_dimensions['F'].alignment = Alignment(horizontal='center')
-                ws.column_dimensions['E'].alignment = Alignment(horizontal='right')
-                fill_cell1 = PatternFill(patternType='solid', fgColor='FEE135')
-                ws['F3'].fill = fill_cell1
-                ws.column_dimensions['G'].alignment = Alignment(horizontal='center')
-                ws.column_dimensions['G'].width = 30
-                ws.column_dimensions['H'].width = 17
-                ws.column_dimensions['I'].width = 14
-                ws.column_dimensions['J'].width = 14
-                ws.column_dimensions['K'].width = 15
-                ws.column_dimensions['K'].alignment = Alignment(horizontal='right')
-            elif 'DP' in query_df_list[n]['Test-Tag'][0]:
-                # Styling for sheet-LRQ-WiFi_Capacity
-                ws = wb['LRQ-Data_Plane']
-                ws.column_dimensions['A'].alignment = Alignment(horizontal='center')
-                ws.column_dimensions['A'].width = 30
-                ws.column_dimensions['B'].width = 47
-                ws.column_dimensions['C'].width = 16
-                ws.column_dimensions['D'].width = 16
-                ws.column_dimensions['E'].width = 15
-                ws.column_dimensions['F'].width = 27
-                ws.column_dimensions['F'].alignment = Alignment(horizontal='center')
-                ws.column_dimensions['E'].alignment = Alignment(horizontal='right')
-                fill_cell1 = PatternFill(patternType='solid', fgColor='FEE135')
-                ws['F3'].fill = fill_cell1
-                ws.column_dimensions['G'].alignment = Alignment(horizontal='center')
-                ws.column_dimensions['G'].width = 30
-                ws.column_dimensions['H'].width = 47
-                ws.column_dimensions['I'].width = 16
-                ws.column_dimensions['J'].width = 16
-                ws.column_dimensions['K'].width = 15
-                ws.column_dimensions['K'].alignment = Alignment(horizontal='right')
+        self.excel_adjusting(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-WiFi_Capacity')
 
-        wb.save(f'./{self.directory}/lrq_db_comparison.xlsx')
+        self.excel_adjusting(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-Data_Plane')
+
+        self.excel_adjusting(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-AP_AUTO')
+
+        self.merge_cells(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-WiFi_Capacity',
+                         start_column='A', start_row='2', end_column='K', end_row='3',
+                         msg="WI-FI CAPACITY DATA COMPARISON")
+
+        self.merge_cells(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-Data_Plane',
+                         start_column='A', start_row='2', end_column='K', end_row='3',
+                         msg="Data Plane DATA COMPARISON")
+
+        self.merge_cells(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-AP_AUTO',
+                         start_column='A', start_row='2', end_column='K', end_row='3',
+                         msg="AP-AUTO DATA COMPARISON")
 
         logger.info(f'Excel Report Path: ./{self.directory}/lrq_db_comparison.xlsx')
-        wb.close()
 
     def db_querying_with_where_clause(self, column_names, condition='', distinct=False):
         # Querying the databases
@@ -831,16 +825,13 @@ class db_comparison:
 
         for i, df in enumerate(dataframes):
             # get the keyword from the Test-Tag column
-            print("test-tag", df['Test-Tag'][0].split('_')[0])
             keyword = df['Test-Tag'][0].split('_')[0]
 
             # set the table title based on the keyword
             title = title_dict.get(keyword, 'UNKNOWN')
-            if 'WCT' in df['Test-Tag'][0]:
-                # set the table title and dataframe, and build the table
-                report.set_table_title(title)
-                report.build_table_title()
-
+            # set the table title and dataframe, and build the table
+            report.set_table_title(title)
+            report.build_table_title()
             report.set_table_dataframe(df)
             report.build_table()
 
