@@ -97,7 +97,8 @@ class create_vap_cv(cv_test):
                  vap_upstream_port="1.1.eth2",
                  vap_bw=None,
                  vap_mode=None,
-                 set_upstream=None
+                 set_upstream=None,
+                 vap=""
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -116,6 +117,7 @@ class create_vap_cv(cv_test):
         self.set_upstream = set_upstream
         self.vap_bw = vap_bw
         self.vap_mode = vap_mode
+        self.vap=vap
 
     def setup_vap(self, scenario_name="Automation", radio="wiphy0", frequency="-1", name=None, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
 
@@ -129,7 +131,7 @@ class create_vap_cv(cv_test):
                                  )
         
         if vap_security == "open":
-            prof_flag = None
+            prof_flag = "1"
         else:
             # enables security(like wpa,wpa2,wpa3,wep etc..) along with DHCP_SERVER flags for vap.
             prof_flag = str(int(profile_flag[vap_security], 16) + int("1", 16))
@@ -196,7 +198,7 @@ class create_vap_cv(cv_test):
     def build_chamberview(self, chamber, scenario_name):
         chamber.build(scenario_name)        # self.apply_and_build_scenario("Sushant1")
 
-    def build_and_setup_vap(self, args, delete_old_scenario=True, scenario_name="Automation", radio="wiphy0", vap_upstream_port="1.1.eth2",
+    def build_and_setup_vap(self,delete_old_scenario=True, scenario_name="Automation", radio="wiphy0", vap_upstream_port="1.1.eth2",
                             frequency=-1, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
         self.setup_vap(scenario_name=scenario_name,
                        radio=radio,
@@ -215,18 +217,16 @@ class create_vap_cv(cv_test):
                                          line=None)
 
         self.build_chamberview(chamber=chamber, scenario_name=scenario_name)
-        c = args.vap_radio
-        eid = self.name_to_eid(c)
-        k=str(eid[0])+'.'+str(eid[1])+'.'
-        m = requests.get("http://" + self.lfclient_host + ":" + str(self.lf_port) + "/port/all")
-        n = m.json()
-        for i in n["interfaces"]:
-            for a, b in i.items():
-                if k in b["port"]:
-                    if eid[2] in b["parent dev"]:
-                        if "vap" in b["alias"]:
-                            vap = b["alias"]
-        self.wait_for_ip(station_list=[k+vap])
+        eid = self.name_to_eid(radio)
+        eid1=str(eid[0])+'.'+str(eid[1])+'.'
+        response=self.json_get("/port/all")
+        for i in response["interfaces"]:
+            for key, value in i.items():
+                if eid1 in value["port"]:
+                    if eid[2] in value["parent dev"]:
+                        if "vap" in value["alias"]:
+                            self.vap = value["alias"]
+        self.wait_for_ip(station_list=[eid1+self.vap])
 
 
 def main():
@@ -361,7 +361,7 @@ INCLUDE_IN_README: False
     vap_passwd = args.vap_passwd
     vap_security = args.vap_security
 
-    lf_create_vap_cv.build_and_setup_vap(args, delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
+    lf_create_vap_cv.build_and_setup_vap(delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
                                          vap_upstream_port=vap_upstream_port, frequency=vap_freq, vap_ssid=vap_ssid, vap_pawd=vap_passwd, vap_security=vap_security)
 
 
