@@ -433,6 +433,27 @@ class Realm(LFCliBase):
         }
         self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
+    def add_vrcx_(self, vr_name, local_dev, dhcp_min, dhcp_max, debug_=False, suppress_related_commands_=True):
+        req_url = "/cli-json/add_vrcx"
+        data = {
+            "shelf": 1,
+            "resource": 1,
+            "vr_name": vr_name,
+            "local_dev": local_dev,
+            "dhcp_min": dhcp_min,
+            "dhcp_max": dhcp_max}
+        logger.info("Modifying Connection...")
+        self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+
+    def netsmith_apply(self, resource, debug_=False, suppress_related_commands_=True):
+        data = {
+            "shelf": 1,
+            "resource": resource}
+        logger.info("Applying the Netsmith Config")
+        self.json_post("/cli-json/apply_vr_cfg", data, debug_=debug_,
+                       suppress_related_commands_=suppress_related_commands_)
+        time.sleep(1)
+
     def set_endp_details(self, ename, pkt_to_send, debug_=False, suppress_related_commands_=True):
         req_url = "cli-json/set_endp_details"
         pkt_to_send = pkt_to_send
