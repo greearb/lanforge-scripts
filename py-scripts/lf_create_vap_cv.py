@@ -228,6 +228,13 @@ class create_vap_cv(cv_test):
                             self.vap = value["alias"]
         self.wait_for_ip(station_list=[eid1+self.vap])
 
+    def modify_vr_cfg(self, resource=1, vr_name="Router-0", local_dev="vap0000", dhcp_min="",
+                      dhcp_max=""):  # modify & apply the net-smith vr(virtual router) config settings
+        logger.info("Modifying Netsmith Connection...")
+        cv_test.add_vrcx_(self, vr_name=vr_name, local_dev=local_dev, dhcp_min=dhcp_min,
+                          dhcp_max=dhcp_max)  # enabling dhcp min & max values
+        cv_test.netsmith_apply(self, resource=resource)  # applying net-smith config
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -332,6 +339,8 @@ INCLUDE_IN_README: False
                         help="vap mode can be selected from these"
                              '"AUTO", "a", "aAX", "abg", "abgn", "abgnAC", "abgnAX", "an","anAC", "anAX", "b", "bg", "bgn", "bgnAC"", "bgnAX"')
     parser.add_argument("--set_upstream", default= True, help="Enter True if upstream need to be set else enter False")
+    parser.add_argument("--dhcp_min_range", help='Modify the VAP DHCP min range', default=None)
+    parser.add_argument("--dhcp_max_range", help='Modify the VAP DHCP max range', default=None)
 
     args = parser.parse_args()
     cv_base_adjust_parser(args)
@@ -341,7 +350,6 @@ INCLUDE_IN_README: False
 
     if args.log_level:
         logger_config.set_level(level=args.log_level)
-
 
     # lf_logger_config_json will take presidence to changing debug levels
     if args.lf_logger_config_json:
@@ -363,6 +371,8 @@ INCLUDE_IN_README: False
 
     lf_create_vap_cv.build_and_setup_vap(delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
                                          vap_upstream_port=vap_upstream_port, frequency=vap_freq, vap_ssid=vap_ssid, vap_pawd=vap_passwd, vap_security=vap_security)
+    if args.dhcp_min_range and args.dhcp_max_range:
+        lf_create_vap_cv.modify_vr_cfg(dhcp_min=args.dhcp_min_range, dhcp_max=args.dhcp_max_range)
 
 
 if __name__ == "__main__":
