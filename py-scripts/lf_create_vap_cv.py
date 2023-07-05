@@ -9,41 +9,63 @@ EXAMPLE:
     Use './lf_create_vap_cv.py --help' to see command line usage and options
 
     ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-        --delete_old_scenario --scenario_name Automation --vap_radio wiphy0 --set_upstream --False
+        --delete_old_scenario --scenario_name Automation --vap_radio wiphy0 --set_upstream True
         --vap_freq 2437 --vap_ssid routed-AP --vap_passwd something --vap_security wpa2 --vap_bw 20
 
-    JSON example:
+    # For modify the net-smith dhcp min and max range
+    ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge --delete_old_scenario
+     --scenario_name Automation --vap_radio wiphy0 --set_upstream True --vap_freq 2437 --vap_ssid routed-AP
+     --vap_passwd something --vap_security wpa2 --vap_bw 20 --dhcp_min_range 172.18.0.6 --dhcp_max_range 172.18.255.200
+
+    vs_code launch.json example:
     "args": ["--mgr","localhost",
              "--port","8080",
              "--lf_user","lanforge",
              "--lf_password","lanforge",
-             "--vap_radio","1.1.wiphy0",
-             "--vap_freq","2437",
+             "--vap_radio","wiphy0",
+             "--vap_freq","36",
              "--vap_ssid","test_vap",
              "--vap_passwd","password",
              "--vap_security","wpa2",
              "--vap_upstream_port","1.1.eth1"
             ]
+
+            "args": ["--mgr","192.168.0.104",
+            "--port","8080",
+            "--lf_user","lanforge",
+            "--lf_password","lanforge",
+            "--delete_old_scenario",
+            "--scenario_name","dfs",
+            "--vap_radio","wiphy3",
+            "--vap_freq","5660",
+            "--vap_ssid","mtk7915_5g",
+            "--vap_passwd","lf_mtk7915_5g",
+            "--vap_security","wpa2",
+            "--vap_bw","20",
+            "--vap_upstream_port","1.1.eth2"
+            ]
+
 SCRIPT_CLASSIFICATION:  Creation
 
 SCRIPT_CATEGORIES: Functional
 
+
 NOTES:
+
 This script creates
 1. Chamber view scenario for vap
 2. Vap profile with given parameters
 
-STATUS:  BETA RELEASE
+STATUS:   BETA RELEASE
 
 VERIFIED_ON:
-Working date : 16/05/2023
+Working date : 05-July-2023
 Build version: 5.4.6
-Kernel version: 6.2.14+
+Kernel version: 6.2.16+
 
 LICENSE:
-
-        Copyright 2023 Candela Technologies Inc
-        License: Free to distribute and modify. LANforge systems must be licensed.
+    Free to distribute and modify. LANforge systems must be licensed.
+    Copyright 2023 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 
@@ -253,6 +275,11 @@ EXAMPLE:
     ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
         --delete_old_scenario --scenario_name Automation --vap_radio wiphy0 --set_upstream True
         --vap_freq 2437 --vap_ssid routed-AP --vap_passwd something --vap_security wpa2 --vap_bw 20
+        
+    # For modify the net-smith dhcp min and max range
+    ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge --delete_old_scenario
+     --scenario_name Automation --vap_radio wiphy0 --set_upstream True --vap_freq 2437 --vap_ssid routed-AP 
+     --vap_passwd something --vap_security wpa2 --vap_bw 20 --dhcp_min_range 172.18.0.6 --dhcp_max_range 172.18.255.200
 
     vs_code launch.json example:
     "args": ["--mgr","localhost",
@@ -296,9 +323,9 @@ This script creates
 STATUS:   BETA RELEASE
 
 VERIFIED_ON:
-Working date : 16/05/2023
+Working date : 05-July-2023
 Build version: 5.4.6
-Kernel version: 6.2.14+
+Kernel version: 6.2.16+
 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
