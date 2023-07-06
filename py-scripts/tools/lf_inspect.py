@@ -353,7 +353,7 @@ class inspect_sql:
                                     self.test_result = "Critical"
                                     background = self.background_red
                             else:
-                                logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,descriptoin=df_data_2['short-description']))
+                                logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Critical"
                                 background = self.background_red
 
@@ -568,7 +568,7 @@ class inspect_sql:
                                 self.test_result = "Critical"
                                 background = self.background_red
                         else:
-                            logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,descriptoin=df_data_2['short-description']))
+                            logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                             self.test_result = "Critical"
                             background = self.background_red
 
@@ -844,7 +844,7 @@ class inspect_sql:
                                     self.test_result = "Critical"
                                     background = self.background_red
                             else:
-                                logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,descriptoin=df_data_2['short-description']))
+                                logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Critical"
                                 background = self.background_red
 
