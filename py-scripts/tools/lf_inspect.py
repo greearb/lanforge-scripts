@@ -1349,28 +1349,44 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     report.set_text("Good: % > 90, Fair: % > 70, Poor: % > 50, Critical: % < 50 ")
     report.build_text_simple()
 
-    report.set_table_title("Test Summary")
+    report.set_table_title("LF Inspect Suite Summary Total Tests Run: {tests}".format(tests=inspect_db.performance_total))
     report.build_table_title()
 
-    report.set_text("Number: Good: {good} Fair: {fair} Poor: {poor} Critical: {critical}".format(good=inspect_db.performance_good,fair=inspect_db.performance_fair,poor=inspect_db.performance_poor,critical=inspect_db.performance_critical))
-    report.build_text_simple()
+    
+    # report.set_text("Total Tests: {total} Good: {good} Fair: {fair} Poor: {poor} Critical: {critical}".format(total=inspect_db.performance_total,good=inspect_db.performance_good,fair=inspect_db.performance_fair,poor=inspect_db.performance_poor,critical=inspect_db.performance_critical))
+    # report.build_text_simple()
 
     percent_good = 0
     percent_fair = 0 
     percent_poor = 0
     percent_critical = 0
+
+    performance_good = inspect_db.performance_good
+    performance_fair = inspect_db.performance_fair
+    performance_poor = inspect_db.performance_poor
+    performance_critical = inspect_db.performance_critical
+
     if inspect_db.performance_good != 0:
-        percent_good = round((((float(inspect_db.performance_good))/float(inspect_db.performance_total)) * 100), 2)
+        percent_good = round(((float(inspect_db.performance_good)/float(inspect_db.performance_total)) * 100), 2)
     if inspect_db.performance_fair != 0:
-        percent_good = round((((float(inspect_db.performance_fair))/float(inspect_db.performance_total)) * 100), 2)
+        percent_fair = round(((float(inspect_db.performance_fair)/float(inspect_db.performance_total)) * 100), 2)
     if inspect_db.performance_poor != 0:
-        percent_good = round((((float(inspect_db.performance_poor))/float(inspect_db.performance_total)) * 100), 2)
+        percent_poor = round(((float(inspect_db.performance_poor)/float(inspect_db.performance_total)) * 100), 2)
     if inspect_db.performance_critical != 0:
-        percent_good = round((((float(inspect_db.performance_critical))/float(inspect_db.performance_total)) * 100), 2)
+        percent_critical = round(((float(inspect_db.performance_critical)/float(inspect_db.performance_total)) * 100), 2)
 
-    report.set_text("Percent: Good: {good} Fair: {fair} Poor: {poor} Critical: {critical}".format(good=percent_good,fair=percent_fair,poor=percent_poor,critical=percent_critical))
-    report.build_text_simple()
+    # report.set_text("Percent: Good: {good} Fair: {fair} Poor: {poor} Critical: {critical}".format(good=percent_good,fair=percent_fair,poor=percent_poor,critical=percent_critical))
+    # report.build_text_simple()
 
+    dict = {'Heading':['Tests','Percent'],
+    'Good':[performance_good,percent_good],
+    'Fair':[performance_fair,percent_fair],
+    'Poor':[performance_poor,percent_poor],
+    'Critical':[performance_critical,percent_critical]}
+
+    lf_inspect_summary_df = pd.DataFrame(dict)
+    report.set_table_dataframe(lf_inspect_summary_df)
+    report.build_table()
 
 
 
