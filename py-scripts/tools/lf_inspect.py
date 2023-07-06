@@ -557,7 +557,7 @@ class inspect_sql:
                         if((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
                             percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
 
-                        self.perfornance_total += 1                            
+                        self.performance_total += 1                            
 
                         # AP auto basic connectivity the failure is if the connection took longer then 500 ms
                         if 'Basic Client Connectivity' in df_data_2['short-description']:
