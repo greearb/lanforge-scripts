@@ -1353,6 +1353,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     report.build_table_title()
 
     report.set_text("Number: Good: {good} Fair: {fair} Poor: {poor} Critical: {critical}".format(good=inspect_db.performance_good,fair=inspect_db.performance_fair,poor=inspect_db.performance_poor,critical=inspect_db.performance_critical))
+    report.build_text_simple()
+
     percent_good = 0
     percent_fair = 0 
     percent_poor = 0
@@ -1367,6 +1369,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
         percent_good = round((((float(inspect_db.performance_critical))/float(inspect_db.performance_total)) * 100), 2)
 
     report.set_text("Percent: Good: {good} Fair: {fair} Poor: {poor} Critical: {critical}".format(good=percent_good,fair=percent_fair,poor=percent_poor,critical=percent_critical))
+    report.build_text_simple()
+
 
 
 
