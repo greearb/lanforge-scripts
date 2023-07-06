@@ -318,9 +318,11 @@ class inspect_sql:
                                 # currently AP auto is a failure if greater then 500 ms
                                 if float(df_data_2['numeric-score']) > 500:
                                     self.test_result = "Critical"
+                                    background = self.background_red
                                     logger.info("Basic Client Connectivity {connect_time} > 500 ms so failed".format(connect_time=float(df_data_2['numeric-score'])))
                                 else:
                                     self.test_result = "Good"
+                                    background = self.background_green
                                     logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
 
                             elif percent_delta >= 90:
@@ -530,9 +532,11 @@ class inspect_sql:
                             # currently AP auto is a failure if greater then 500 ms
                             if float(df_data_2['numeric-score']) > 500:
                                 self.test_result = "Critical"
+                                background = self.background_red
                                 logger.info("Basic Client Connectivity {connect_time} > 500 ms so failed".format(connect_time=float(df_data_2['numeric-score'])))
                             else:
                                 self.test_result = "Good"
+                                background = self.background_green
                                 logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
 
 
@@ -804,9 +808,11 @@ class inspect_sql:
                                 # currently AP auto is a failure if greater then 500 ms
                                 if float(df_data_2['numeric-score']) > 500:
                                     self.test_result = "Critical"
+                                    background = self.background_red
                                     logger.info("Basic Client Connectivity {connect_time} > 500 ms so failed".format(connect_time=float(df_data_2['numeric-score'])))
                                 else:
                                     self.test_result = "Good"
+                                    background = self.background_green
                                     logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
 
 
