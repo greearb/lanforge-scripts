@@ -107,6 +107,7 @@ class inspect_sql:
         self.performance_fair = 0
         self.performance_poor = 0
         self.performance_critical = 0
+        self.performance_total = 0
 
         # Allure information
         self.junit_results = ""
@@ -317,6 +318,8 @@ class inspect_sql:
                             percent_delta = 0
                             if((float(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
                                 percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
+
+                            self.performance_total += 1
 
                             # AP auto basic connectivity the failure is if the connection took longer then 500 ms
                             if 'Basic Client Connectivity' in df_data_2['short-description']:
@@ -553,6 +556,8 @@ class inspect_sql:
                         percent_delta = 0
                         if((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
                             percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
+
+                        self.performance.total += 1                            
 
                         # AP auto basic connectivity the failure is if the connection took longer then 500 ms
                         if 'Basic Client Connectivity' in df_data_2['short-description']:
@@ -853,6 +858,8 @@ class inspect_sql:
                             percent_delta = 0
                             if((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
                                 percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
+
+                            self.performance_total += 1                                
 
                             # AP auto basic connectivity the failure is if the connection took longer then 500 ms
                             if 'Basic Client Connectivity' in df_data_2['short-description']:
@@ -1341,6 +1348,27 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     report.build_text_simple()
     report.set_text("Good: % > 90, Fair: % > 70, Poor: % > 50, Critical: % < 50 ")
     report.build_text_simple()
+
+    report.set_table_title("Test Summary")
+    report.build_table_title()
+
+    report.set_text("Number: Good: {good} Fair: {fair} Poor: {poor} Critical: {critical}".format(good=inspect_db.performance_good,fair=inspect_db.performance_fair,poor=inspect_db.performance_poor,critical=inspect_db.performance_critical))
+    percent_good = 0
+    percent_fair = 0 
+    percent_poor = 0
+    percent_critical = 0
+    if inspect_db.performance_good != 0:
+        percent_good = round((((float(inspect_db.performance_good))/float(inspect_db.performance_total)) * 100), 2)
+    if inspect_db.performance_fair != 0:
+        percent_good = round((((float(inspect_db.performance_fair))/float(inspect_db.performance_total)) * 100), 2)
+    if inspect_db.performance_poor != 0:
+        percent_good = round((((float(inspect_db.performance_poor))/float(inspect_db.performance_total)) * 100), 2)
+    if inspect_db.performance_critical != 0:
+        percent_good = round((((float(inspect_db.performance_critical))/float(inspect_db.performance_total)) * 100), 2)
+
+    report.set_text("Percent: Good: {good} Fair: {fair} Poor: {poor} Critical: {critical}".format(good=percent_good,fair=percent_fair,poor=percent_poor,critical=percent_critical))
+
+
 
     report.set_table_title("Test Compare")
     report.build_table_title()
