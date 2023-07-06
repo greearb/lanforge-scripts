@@ -103,6 +103,11 @@ class inspect_sql:
         self.background_purple = "background-color:purple"
         self.background_blue = "background-color:blue"
 
+        self.performance_good = 0
+        self.performance_fair = 0
+        self.performance_poor = 0
+        self.performance_critical = 0
+
         # Allure information
         self.junit_results = ""
         self.junit_path_only = ""
@@ -319,43 +324,65 @@ class inspect_sql:
                                 if float(df_data_2['numeric-score']) > 500:
                                     self.test_result = "Critical"
                                     background = self.background_red
+                                    self.performance_critical += 1
                                     logger.info("Basic Client Connectivity {connect_time} > 500 ms so failed".format(connect_time=float(df_data_2['numeric-score'])))
                                 else:
                                     self.test_result = "Good"
                                     background = self.background_green
+                                    self.performance_good += 1
                                     logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
 
                             elif percent_delta >= 90:
                                 logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Good"
                                 background = self.background_green
+                                self.performance_good += 1
                             elif percent_delta >= 70:
                                 logger.info("Performance Fair {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Fair"
                                 background = self.background_purple
+                                self.performance_fair += 1
                             elif percent_delta >= 50:
                                 logger.info("Performance Poor {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Poor"
                                 background = self.background_orange
+                                self.performance_poor += 1
                             elif percent_delta == 0:
+                                # for UL in test-tag and DL 0 or DL in test-tag and UL 0 this case should not be a failure
+                                if 'DL' in df_data_1['short-description'] and 'UL' in df_data_1['test-tag']:
+                                    logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
+                                    background = self.background_green
+                                    self.performance_good += 1
+                                    self.test_result = "Good"
+                                elif 'UL' in df_data_1['short-description'] and 'DL' in df_data_1['test-tag']:
+                                    logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
+                                    background = self.background_green
+                                    self.performance_good += 1
+                                    self.test_result = "Good"
+
                                 # negative logic like Stations Failed IP if zero is a goot thing
-                                if 'Failed' in df_data_1['short-description']:
+                                elif 'Failed' in df_data_1['short-description']:
                                     if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) !=0.0)):
                                         logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                         background = self.background_red
+                                        self.performance_critical += 1
                                         self.test_result = "Critical"
                                     else:
                                         logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                         self.test_result = "Good"
                                         background = self.background_green
+                                        self.performance_good += 1
                                 else:
                                     logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                     self.test_result = "Critical"
                                     background = self.background_red
+                                    self.performance_critical += 1
                             else:
                                 logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Critical"
                                 background = self.background_red
+                                self.performance_critical += 1
+
 
                             # we can get most anything from the dataframe
                             # TODO use the dataframe export line to CSV?
@@ -533,10 +560,12 @@ class inspect_sql:
                             if float(df_data_2['numeric-score']) > 500:
                                 self.test_result = "Critical"
                                 background = self.background_red
+                                self.performance_critical += 1
                                 logger.info("Basic Client Connectivity {connect_time} > 500 ms so failed".format(connect_time=float(df_data_2['numeric-score'])))
                             else:
                                 self.test_result = "Good"
                                 background = self.background_green
+                                self.performance_good += 1
                                 logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
 
 
@@ -544,25 +573,45 @@ class inspect_sql:
                             logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                             self.test_result = "Good"
                             background = self.background_green
+                            self.performance_good += 1
+
                         elif percent_delta >= 70:
                             logger.info("Performance Fair {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                             self.test_result = "Fair"
                             background = self.background_purple
+                            self.performance_fair += 1
+
                         elif percent_delta >= 50:
                             logger.info("Performance Poor {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                             self.test_result = "Poor"
                             background = self.background_orange
+                            self.performance_poor += 1
+
                         elif percent_delta == 0:
+                            # for UL in test-tag and DL 0 or DL in test-tag and UL 0 this case should not be a failure
+                            if 'DL' in df_data_1['short-description'] and 'UL' in df_data_1['test-tag']:
+                                logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
+                                background = self.background_green
+                                self.performance_good += 1
+                                self.test_result = "Good"
+                            elif 'UL' in df_data_1['short-description'] and 'DL' in df_data_1['test-tag']:
+                                logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
+                                background = self.background_green
+                                self.performance_good += 1
+                                self.test_result = "Good"
+
                             # negative logic like Stations Failed IP if zero is a goot thing
-                            if 'Failed' in df_data_1['short-description']:
+                            elif 'Failed' in df_data_1['short-description']:
                                 if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) != 0.0)):
                                     logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                     background = self.background_red
+                                    self.performance_critical += 1
                                     self.test_result = "Critical"
                                 else:
                                     logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                     self.test_result = "Good"
                                     background = self.background_green
+                                    self.performance_good += 1
                             else:
                                 logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Critical"
@@ -571,6 +620,8 @@ class inspect_sql:
                             logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                             self.test_result = "Critical"
                             background = self.background_red
+                            self.performance_critical += 1
+
 
                         # we can get most anything from the dataframe
                         # TODO use the dataframe export line to CSV?
@@ -809,10 +860,12 @@ class inspect_sql:
                                 if float(df_data_2['numeric-score']) > 500:
                                     self.test_result = "Critical"
                                     background = self.background_red
+                                    self.performance_critical += 1
                                     logger.info("Basic Client Connectivity {connect_time} > 500 ms so failed".format(connect_time=float(df_data_2['numeric-score'])))
                                 else:
                                     self.test_result = "Good"
                                     background = self.background_green
+                                    self.performance_good += 1
                                     logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
 
 
@@ -820,33 +873,52 @@ class inspect_sql:
                                 logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Good"
                                 background = self.background_green
+                                self.performance_good += 1
                             elif percent_delta >= 70:
                                 logger.info("Performance Fair {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Fair"
                                 background = self.background_purple
+                                self.performance_fair += 1
                             elif percent_delta >= 50:
                                 logger.info("Performance Poor {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Poor"
                                 background = self.background_orange
+                                self.performance_poor += 1
                             elif percent_delta == 0:
+                                # for UL in test-tag and DL 0 or DL in test-tag and UL 0 this case should not be a failure
+                                if 'DL' in df_data_1['short-description'] and 'UL' in df_data_1['test-tag']:
+                                    logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
+                                    background = self.background_green
+                                    self.performance_good += 1
+                                    self.test_result = "Good"
+                                elif 'UL' in df_data_1['short-description'] and 'DL' in df_data_1['test-tag']:
+                                    logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
+                                    background = self.background_green
+                                    self.performance_good += 1
+                                    self.test_result = "Good"
+
                                 # negative logic like Stations Failed IP if zero is a goot thing
-                                if 'Failed' in df_data_1['short-description']:
+                                elif 'Failed' in df_data_1['short-description']:
                                     if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) !=0.0)):
                                         logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                         background = self.background_red
+                                        self.performance_critical += 1
                                         self.test_result = "Critical"
                                     else:
                                         logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                         self.test_result = "Good"
                                         background = self.background_green
+                                        self.performance_good += 1
                                 else:             
                                     logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                     self.test_result = "Critical"
                                     background = self.background_red
+                                    self.performance_critical += 1
                             else:
                                 logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Critical"
                                 background = self.background_red
+                                self.performance_critical += 1
 
                             # we can get most anything from the dataframe
                             # TODO use the dataframe export line to CSV?
