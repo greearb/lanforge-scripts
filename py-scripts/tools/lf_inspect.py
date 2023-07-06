@@ -332,7 +332,7 @@ class inspect_sql:
                                 self.test_result = "Fair"
                                 background = self.background_purple
                             elif percent_delta >= 50:
-                                logger.info("Performance Poor {percent}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                logger.info("Performance Poor {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Poor"
                                 background = self.background_orange
                             elif percent_delta == 0:
@@ -525,35 +525,46 @@ class inspect_sql:
                         if((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
                             percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
 
-                        if percent_delta >= 90:
-                            logger.info("Performance Good {percent}".format(percent=percent_delta))
+                        # AP auto basic connectivity the failure is if the connection took longer then 500 ms
+                        if 'Basic Client Connectivity' in df_data_2['short-description']:
+                            # currently AP auto is a failure if greater then 500 ms
+                            if float(df_data_2['numeric-score']) > 500:
+                                self.test_result = "Critical"
+                                logger.info("Basic Client Connectivity {connect_time} > 500 ms so failed".format(connect_time=float(df_data_2['numeric-score'])))
+                            else:
+                                self.test_result = "Good"
+                                logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
+
+
+                        elif percent_delta >= 90:
+                            logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                             self.test_result = "Good"
                             background = self.background_green
                         elif percent_delta >= 70:
-                            logger.info("Performance Fair {percent}".format(percent=percent_delta))
+                            logger.info("Performance Fair {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                             self.test_result = "Fair"
                             background = self.background_purple
                         elif percent_delta >= 50:
-                            logger.info("Performance Poor {percent}".format(percent=percent_delta))
+                            logger.info("Performance Poor {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                             self.test_result = "Poor"
                             background = self.background_orange
                         elif percent_delta == 0:
                             # negative logic like Stations Failed IP if zero is a goot thing
                             if 'Failed' in df_data_1['short-description']:
                                 if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) != 0.0)):
-                                    logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                    logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                     background = self.background_red
                                     self.test_result = "Critical"
                                 else:
-                                    logger.info("Performance Good {percent}".format(percent=percent_delta))
+                                    logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                     self.test_result = "Good"
                                     background = self.background_green
                             else:
-                                logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Critical"
                                 background = self.background_red
                         else:
-                            logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                            logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,descriptoin=df_data_2['short-description']))
                             self.test_result = "Critical"
                             background = self.background_red
 
@@ -788,35 +799,46 @@ class inspect_sql:
                             if((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
                                 percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
 
-                            if percent_delta >= 90:
-                                logger.info("Performance Good {percent}".format(percent=percent_delta))
+                            # AP auto basic connectivity the failure is if the connection took longer then 500 ms
+                            if 'Basic Client Connectivity' in df_data_2['short-description']:
+                                # currently AP auto is a failure if greater then 500 ms
+                                if float(df_data_2['numeric-score']) > 500:
+                                    self.test_result = "Critical"
+                                    logger.info("Basic Client Connectivity {connect_time} > 500 ms so failed".format(connect_time=float(df_data_2['numeric-score'])))
+                                else:
+                                    self.test_result = "Good"
+                                    logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
+
+
+                            elif percent_delta >= 90:
+                                logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Good"
                                 background = self.background_green
                             elif percent_delta >= 70:
-                                logger.info("Performance Fair {percent}".format(percent=percent_delta))
+                                logger.info("Performance Fair {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Fair"
                                 background = self.background_purple
                             elif percent_delta >= 50:
-                                logger.info("Performance Poor {percent}".format(percent=percent_delta))
+                                logger.info("Performance Poor {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Poor"
                                 background = self.background_orange
                             elif percent_delta == 0:
                                 # negative logic like Stations Failed IP if zero is a goot thing
                                 if 'Failed' in df_data_1['short-description']:
                                     if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) !=0.0)):
-                                        logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                         background = self.background_red
                                         self.test_result = "Critical"
                                     else:
-                                        logger.info("Performance Good {percent}".format(percent=percent_delta))
+                                        logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                         self.test_result = "Good"
                                         background = self.background_green
                                 else:             
-                                    logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                    logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                     self.test_result = "Critical"
                                     background = self.background_red
                             else:
-                                logger.info("Performance Critical {percent}".format(percent=percent_delta))
+                                logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,descriptoin=df_data_2['short-description']))
                                 self.test_result = "Critical"
                                 background = self.background_red
 
