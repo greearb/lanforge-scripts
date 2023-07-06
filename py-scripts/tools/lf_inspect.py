@@ -313,7 +313,17 @@ class inspect_sql:
                             if((float(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
                                 percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
 
-                            if percent_delta >= 90:
+                            # AP auto basic connectivity the failure is if the connection took longer then 500 ms
+                            if 'Basic Client Connectivity' in df_data_2['short-description']:
+                                # currently AP auto is a failure if greater then 500 ms
+                                if float(df_data_2['numeric-score']) > 500:
+                                    self.test_result = "Critical"
+                                    logger.info("Basic Client Connectivity {connect_time} > 500 ms so failed".format(connect_time=float(df_data_2['numeric-score'])))
+                                else:
+                                    self.test_result = "Good"
+                                    logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
+
+                            elif percent_delta >= 90:
                                 logger.info("Performance Good {percent}".format(percent=percent_delta))
                                 self.test_result = "Good"
                                 background = self.background_green
