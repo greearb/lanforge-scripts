@@ -621,6 +621,7 @@ class inspect_sql:
                                 logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Critical"
                                 background = self.background_red
+                                self.performance_critical += 1
                         else:
                             logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                             self.test_result = "Critical"
