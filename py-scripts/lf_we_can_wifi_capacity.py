@@ -7,9 +7,10 @@ PURPOSE:
     This program is used for running Wi-Fi capacity test on real clients (Phones).
     The class will generate an output directory based on date and time in the /home/lanforge/html-reports/ .
 
-example: python3 lf_we_can_wifi_capacity.py --mgr 192.168.200.232 --port 8080 --upstream 1.1.eth1 --batch_size 2
---duration 300000 --download_rate 210Mbps --upload_rate 210Mbps --protocol UDP-IPv4 --dut_model NETGEAR1287
---ssid_dut_2g NETGEAR_2.4G  --ssid_dut_5g NETGEAR_5G --lf_user lanforge --lf_password lanforge
+example: python3 lf_we_can_wifi_capacity.py --mgr 192.168.209.223 --port 8080 --upstream 1.1.eth1 --duration 30000
+--download_rate 210Mbps --upload_rate 210Mbps --protocol UDP-IPv4 --dut_model NETGEAR1287 --ssid_dut_2g NETGEAR_2.4G
+--ssid_dut_5g NETGEAR_5G --lf_user lanforge --lf_password orangeunit --batch_size 3 --station 1.24.wlan0,1.19.wlan0,1.11.wlan0
+
 
 Note: To Run this script gui should be opened with
 
@@ -125,6 +126,7 @@ class LfInteropWifiCapacity(Realm):
         dataframe = pd.read_csv(folder_directory + "/csv-data/data-Combined_Mbps__60_second_running_average-1.csv",
                                 header=1)
         print(dataframe)
+        rx_tx_df = None
         udp_download_rate = []
         tcp_download_rate = []
         udp_upload_rate = []
@@ -182,10 +184,10 @@ class LfInteropWifiCapacity(Realm):
                 if not math.isnan(dataframe[column].loc[0]):
                     download_rate.append(float("{:.2f}".format(dataframe[column].loc[0])))
                     upload_rate.append(float("{:.2f}".format(dataframe[column].loc[1])))
-            rx_tx_df = pd.DataFrame({
-                "upload": upload_rate,
-                "download": download_rate,
-            }, index=[i for i in phone_name])
+            # rx_tx_df = pd.DataFrame({
+            #     "upload": upload_rate,
+            #     "download": download_rate,
+            # }, index=[i for i in phone_name])
 
             print("rx_rate: ", rx_rate, "tx_rate: ",  tx_rate)
 
@@ -529,6 +531,8 @@ def main():
     parser.add_argument("--influx_host", type=str, default="localhost", help="NA")
     parser.add_argument("--local_lf_report_dir", default="",
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from")
+    parser.add_argument("-s", "--stations", type=str, default="",
+                        help="If specified, these stations will be used.  If not specified, all available stations will be selected.  Example: 1.1.sta001,1.1.wlan0,...")
 
     args = parser.parse_args()
 
@@ -546,6 +550,7 @@ def main():
                                 upload_rate=args.upload_rate,
                                 influx_host=args.mgr,
                                 influx_port=8086,
+                                stations=args.stations,
                                 local_lf_report_dir=args.local_lf_report_dir,
                                 )
     WFC_Test.setup()
