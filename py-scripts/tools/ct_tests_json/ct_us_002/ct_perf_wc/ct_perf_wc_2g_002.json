@@ -130,7 +130,7 @@
                 ]
             }
         },
-        "dp_perf_2g_ax200_W4":{
+        "wc_perf_2g_ax200_W4":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
