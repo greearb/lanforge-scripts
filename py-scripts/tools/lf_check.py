@@ -916,8 +916,8 @@ junit.xml path: allure serve {junit_path}
                     "EXITING test_suite {suite} Not Present in json test_suites: {suites}".format(
                         suite=self.test_suite, suites=self.json_test["test_suites"]))
                 self.logger.info(
-                    "EXITING ERROR test_suite {suite} Not Present in json tests {json_file}".format(
-                        suite=self.test_suite,json_file=self.json_test_file))
+                    "EXITING ERROR test_suite {suite} Not Present in json tests {json_test_name}".format(
+                        suite=self.test_suite,json_test_name=self.json_test_name))
                 exit(1)
         else:
             self.logger.info(
