@@ -909,17 +909,17 @@ junit.xml path: allure serve {junit_path}
                 # self.logger.info("self.test_dict {}".format(self.test_dict))
             else:
                 self.logger.info(
-                    "EXITING test_suite {} Not Present in json test_suites: {}".format(
-                        self.test_suite, self.json_test["test_suites"]))
+                    "EXITING test_suite {suite} Not Present in json test_suites: {suites}".format(
+                        suite=self.test_suite, suites=self.json_test["test_suites"]))
                 self.logger.info(
-                    "EXITING ERROR test_suite {} Not Present in json test_suites".format(
-                        self.test_suite))
+                    "EXITING ERROR test_suite {suite} Not Present in json tests {json_file}".format(
+                        suite=self.test_suite,json_file=self.json_test_file))
                 exit(1)
         else:
             self.logger.info(
                 "EXITING test_suites not in json {}".format(
                     self.json_test))
-            self.logger.info("EXITING ERROR test_suites not in json test")
+            self.logger.info("EXITING ERROR test_suites not in json test {json_test}".format(json_test=self.json_test))
             exit(1)
 
     def read_test_rig_parameters(self):
