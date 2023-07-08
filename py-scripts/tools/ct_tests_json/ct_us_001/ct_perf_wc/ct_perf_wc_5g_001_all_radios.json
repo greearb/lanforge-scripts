@@ -8,7 +8,7 @@
         ]  
     },
     "test_suites":{
-        "wc_perf_5g_ath10K_9984_W1":{
+        "wc_perf_5g_W0_W2_W4_W5_W7":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
