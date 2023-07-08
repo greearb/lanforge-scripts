@@ -8,7 +8,7 @@
         ]  
     },
     "test_suites":{
-        "wc_perf_2g_ath10K_9984_W1":{
+        "wc_perf_2g_ath10K_9984_W0":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -21,19 +21,19 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
-            "CC_ATH10K_9984_2G_W1":{
+            "CC_ATH10K_9984_2G_W0":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario WC_ATH10K_9984_2G_W1 ",
+                    " --create_scenario WC_ATH10K_9984_2G_W0 ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 32 'DUT: USE_DUT_NAME Radio-1' NA wiphy1,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "WC_ATH10K_9984_2G_W1":{
+            "WC_ATH10K_9984_2G_W0":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "iterations":"1",
@@ -41,9 +41,9 @@
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name WC_ATH10K_9984_2G_W1",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name WC_ATH10K_9984_2G_W0",
                     " --upstream UPSTREAM_PORT --batch_size 1,8,16,32 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
-                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_ATH10K_9984_2G_W1'",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_ATH10K_9984_2G_W0'",
                     " --test_rig TEST_RIG ",
                     " --set DUT_SET_NAME"
                 ]
@@ -130,7 +130,7 @@
                 ]
             }
         },
-        "dp_perf_2g_ax200_W4":{
+        "wc_perf_2g_ax200_W4":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
