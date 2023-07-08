@@ -177,7 +177,8 @@ class lf_check():
                  _outfile,
                  _outfile_name,
                  _report_path,
-                 _log_path):
+                 _log_path,
+                 _json_test_name):
 
         # test configuration
         self.json_rig = _json_rig
@@ -186,6 +187,7 @@ class lf_check():
         self.json_rig_file = _json_rig_file
         self.json_dut_file = _json_dut_file
         self.json_test_file = _json_test_file
+        self.json_test_name = _json_test_name
         self.test_suite = _test_suite
         self.use_test_list = _use_test_list
         self.test_list = _test_list
@@ -673,6 +675,7 @@ Test Script Input Files:
 json_dut: {dut_json}
 json_rig: {rig_json}
 json_test: {test_json}
+json_test_name : {json_test_name}
 
 
 Server / DB Infomation
@@ -694,6 +697,7 @@ Date: {date}""".format(
                 dut_json=self.json_dut_file,
                 rig_json=self.json_rig_file,
                 test_json=self.json_test_file,
+                json_test_name=self.json_test_name,
                 hostname=self.hostname,
                 server_ver=server_version,
                 db=self.database_sqlite, 
@@ -2111,7 +2115,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                                 _outfile=outfile,
                                 _outfile_name=outfile_name,
                                 _report_path=report_path,
-                                _log_path=log_path)
+                                _log_path=log_path,
+                                _json_test_name=json_test_name)
 
                 # set up logging
                 logfile = args.logfile[:-4]
