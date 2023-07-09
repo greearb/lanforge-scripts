@@ -3,9 +3,11 @@
 NAME: lf_modify_radio.py
 
 PURPOSE: Set the spatial streams and channel of a radio
+        To Modify eth interface such as enabling/disabling dhcp
 
 EXAMPLE:
 $ ./lf_modify_radio.py --host 192.168.100.205 --radio "1.1.wiphy0" --channel 36 --antenna 7 --debug
+./ python3 lf_modify_radio.py --mgr 192.168.200.105 --radio 1.1.eth2 --enable_dhcp True
 
 NOTES:
 
@@ -27,6 +29,8 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 from lanforge_client.lanforge_api import LFSession
 from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
@@ -43,7 +47,7 @@ logger = logging.getLogger(__name__)
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 
 #http://www.candelatech.com/lfcli_ug.php#set_wifi_radio
-class lf_modify_radio():
+class lf_modify_radio(Realm):
     def __init__(self,
                 lf_mgr=None,
                 lf_port=None,
@@ -56,6 +60,7 @@ class lf_modify_radio():
         self.lf_user = lf_user
         self.lf_passwd = lf_passwd
         self.debug = debug
+        self.local_realm = realm.Realm(lfclient_host=self.lf_mgr, lfclient_port=self.lf_port)
 
         self.session = LFSession(lfclient_url="http://%s:8080" % self.lf_mgr,
                                     debug=debug,
@@ -90,6 +95,25 @@ class lf_modify_radio():
                                 country=_country_code,
                                 debug=self.debug)
 
+    def enable_dhcp_eth(self, interface="1.1.eth2"):
+        port_ = interface.split(".")
+        set_port = {
+            "shelf": port_[0],
+            "resource": port_[1],
+            "port": port_[2],
+            "ip_addr": "NA",
+            "netmask": "NA",
+            "gateway": "NA",
+            "cmd_flags": "NA",
+            "current_flags": "2147483648",
+            "mac": "NA",
+            "mtu": "NA",
+            "tx_queue_len": "NA",
+            "alias": "NA",
+            "interest": "8552366080"
+        }
+        self.local_realm.json_post("/cli-json/set_port", set_port)
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -111,6 +135,7 @@ def main():
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--debug', help='Legacy debug flag, turnn on legacy debug ', action='store_true')
+    parser.add_argument("--enable_dhcp", default=False, help="set to True if wanted to enbale DHCP-IPv4 on eth interface")
 
     args = parser.parse_args()
 
@@ -137,15 +162,20 @@ def main():
                             lf_user=args.lf_user,
                             lf_passwd=args.lf_passwd,
                             debug=args.debug)
+    if args.enable_dhcp == "True":
+        modify_radio.enable_dhcp_eth(interface=args.radio)
+    else:
 
-    shelf, resource, radio, *nil = LFUtils.name_to_eid(args.radio)
-    
-    modify_radio.set_wifi_radio(_resource=resource,
-                                _radio=radio,
-                                _shelf=shelf,
-                                _antenna=args.antenna,
-                                _channel=args.channel,
-                                _txpower=args.txpower)
+        shelf, resource, radio, *nil = LFUtils.name_to_eid(args.radio)
+
+        modify_radio.set_wifi_radio(_resource=resource,
+                                    _radio=radio,
+                                    _shelf=shelf,
+                                    _antenna=args.antenna,
+                                    _channel=args.channel,
+                                    _txpower=args.txpower)
+
+
 
     '''
     session = LFSession(lfclient_url="http://%s:8080" % args.host,
