@@ -5,7 +5,7 @@
         ]  
     },
     "test_suites":{
-        "dp_perf_5g_W0_W2_W4_W5_W7_rx":{
+        "dp_perf_5g_W1_W2_W4_W5_W7_rx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
