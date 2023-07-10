@@ -18,7 +18,7 @@
                     " "
                 ]
             },            
-            "sta_connect2": {
+            "funct_5g_mt7951e_sta_connect2": {
                 "enabled": "FALSE",
                 "load_db": "skip",
                 "command": "sta_connect2.py",
