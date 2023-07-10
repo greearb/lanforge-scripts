@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 class lf_modify_radio(Realm):
     def __init__(self,
                 lf_mgr=None,
-                lf_port=None,
+                lf_port=8080,
                 lf_user=None,
                 lf_passwd=None,
                 debug=False,
