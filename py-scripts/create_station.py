@@ -112,6 +112,21 @@ NOTES:
                 Czech Rep       :   203     |       Japan (JP1-1)   :   395     |      Philippines     :   608     |      Yemen           :   887
                 Denmark         :   208     |       Japan (JE1)     :   396     |      Poland          :   616     |      Zimbabwe        :   716
 
+            --no_pre_cleanup
+                    Disables station cleanup before creation of stations
+
+            example:
+                    create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
+                    --security wpa2 --no_pre_cleanup
+
+
+            --no_cleanup
+                    Disables station cleanup after creation of stations
+
+            example:
+                    create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
+                    --security wpa2 --no_cleanup
+
 STATUS: BETA RELEASE
 
 VERIFIED_ON:   9-JUN-2023,
@@ -204,6 +219,15 @@ class CreateStation(Realm):
             print("----- Station List ----- ----- ----- ----- ----- ----- \n")
             pprint.pprint(self.sta_list)
             print("---- ~Station List ----- ----- ----- ----- ----- ----- \n")
+
+    def cleanup(self):
+        for station in self.sta_list:
+            print('Removing the station {} if exists'.format(station))
+            self.rm_port(station, check_exists=True)
+        if (not LFUtils.wait_until_ports_disappear(base_url=self.station_profile.lfclient_url, port_list=self.sta_list, debug=self.debug)):
+            print('All stations are not removed or a timeout occurred.')
+            print('Aborting the test.')
+            exit(1)
 
     def build(self):
         # Build stations
@@ -383,6 +407,21 @@ NOTES:
                 Czech Rep       :   203     |       Japan (JP1-1)   :   395     |      Philippines     :   608     |      Yemen           :   887
                 Denmark         :   208     |       Japan (JE1)     :   396     |      Poland          :   616     |      Zimbabwe        :   716
 
+            --no_pre_cleanup
+                    Disables station cleanup before creation of stations
+
+            example:
+                    create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
+                    --security wpa2 --no_pre_cleanup
+
+
+            --no_cleanup
+                    Disables station cleanup after creation of stations
+
+            example:
+                    create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
+                    --security wpa2 --no_cleanup
+
 STATUS: BETA RELEASE
 
 VERIFIED_ON:   9-JUN-2023,
@@ -440,6 +479,11 @@ INCLUDE_IN_README: False
         "--country_code",
         help='Radio Country Code:\n'
             'e.g: \t--country_code 840')
+    optional.add_argument(
+        "--no_pre_cleanup",
+        help='Add this flag to stop cleaning up before station creation',
+        action='store_true'
+    )
 
     args = parser.parse_args()
 
@@ -483,12 +527,16 @@ INCLUDE_IN_README: False
                                    _set_txo_data=None,
                                    _proxy_str=args.proxy,
                                    _debug_on=args.debug)
+    
+    if(not args.no_pre_cleanup):
+        create_station.cleanup()
 
     create_station.modify_radio(mgr=args.mgr, radio=args.radio, antenna=args.radio_antenna, channel=args.radio_channel,
                                 tx_power=args.radio_tx_power, country_code=args.country_code)
     create_station.build()
 
-    # TODO:  Add code to clean up the station, unless --no_cleanup was specified.
+    if(not args.no_cleanup):
+        create_station.cleanup()
 
     if create_station.passes():
         print('Created %s stations' % num_sta)
