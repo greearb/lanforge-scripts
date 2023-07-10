@@ -17,7 +17,17 @@
                 "args_list":[
                     " "
                 ]
-            },            
+            },
+            "CREATE_STATION_MT7915_5G_W7": {
+                "enabled": "FALSE",
+                "load_db": "skip",
+                "command": "create_station.py",
+                "args": "",
+                "args_list": ["--mgr LF_MGR_IP --radio wiphy7 start_id 2 --num_stations 1",
+                    " --ssid asus11ax-5 --passwd hello123 --security wpa2"
+                ]
+            },
+
             "funct_5g_mt7951e_sta_connect2": {
                 "enabled": "FALSE",
                 "load_db": "skip",
