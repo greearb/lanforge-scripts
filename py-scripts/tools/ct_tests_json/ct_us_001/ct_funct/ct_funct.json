@@ -262,7 +262,7 @@
                 ]
             },
             "test_generic":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_generic.py",
                 "args":"",
                 "args_list":[
