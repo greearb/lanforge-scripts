@@ -28,7 +28,7 @@
                 ]
             },
 
-            "funct_5g_mt7951e_sta_connect2": {
+            "STA_CONNECT2_MT7915_5G_W1": {
                 "enabled": "FALSE",
                 "load_db": "skip",
                 "command": "sta_connect2.py",
