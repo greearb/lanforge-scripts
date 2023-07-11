@@ -13,7 +13,7 @@ speed, upload speed, and ping time, generic will test for successful generic com
 SETUP:
 Enable the generic tab in LANforge GUI
 
-STATUS: BROKEN
+STATUS: UNDER DEVELOPMENT
 
 EXAMPLE:
 
