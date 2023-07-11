@@ -19749,7 +19749,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -19838,7 +19843,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20109,7 +20119,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20224,7 +20239,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20415,7 +20435,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20478,7 +20503,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20599,7 +20629,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20738,7 +20773,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20924,7 +20964,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20987,7 +21032,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21076,7 +21126,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21194,7 +21249,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21297,7 +21357,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21360,7 +21425,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21518,7 +21588,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21581,7 +21656,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21852,7 +21932,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21940,7 +22025,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22026,7 +22116,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22089,7 +22184,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22478,7 +22578,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22547,7 +22652,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22698,7 +22808,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22776,7 +22891,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22887,7 +23007,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -23007,7 +23132,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -23672,7 +23802,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -23802,7 +23937,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -23866,7 +24006,12 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += f"/{ ','.join(eid_list)}"
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
