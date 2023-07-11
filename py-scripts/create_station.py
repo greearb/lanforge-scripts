@@ -120,12 +120,12 @@ NOTES:
                     --security wpa2 --no_pre_cleanup
 
 
-            --no_cleanup
+            --cleanup
                     Disables station cleanup after creation of stations
 
             example:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
-                    --security wpa2 --no_cleanup
+                    --security wpa2 --cleanup
 
 STATUS: BETA RELEASE
 
@@ -284,6 +284,16 @@ class CreateStation(Realm):
         modify_radio = lf_modify_radio.lf_modify_radio(lf_mgr=mgr)
         modify_radio.set_wifi_radio(_resource=resource, _radio=radio, _shelf=shelf, _antenna=antenna, _channel=channel,
                                     _txpower=tx_power,_country_code=country_code)
+        
+    def get_station_list(self):
+        response = super().json_get("/port/list?fields=_links,alias,device,port+type")
+        available_stations = []
+        for interface_name in response['interfaces']:
+            # print('sta' in list(interface_name.keys())[0])
+            if('sta' in list(interface_name.keys())[0]):
+                available_stations.append(list(interface_name.keys())[0])
+        return(available_stations)
+        
 
 def main():
     parser = LFCliBase.create_basic_argparse(  # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
@@ -415,12 +425,12 @@ NOTES:
                     --security wpa2 --no_pre_cleanup
 
 
-            --no_cleanup
+            --cleanup
                     Disables station cleanup after creation of stations
 
             example:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
-                    --security wpa2 --no_cleanup
+                    --security wpa2 --cleanup
 
 STATUS: BETA RELEASE
 
@@ -484,6 +494,11 @@ INCLUDE_IN_README: False
         help='Add this flag to stop cleaning up before station creation',
         action='store_true'
     )
+    optional.add_argument(
+        "--cleanup",
+        help='Add this flag to clean up stations after creation',
+        action='store_true'
+    )
 
     args = parser.parse_args()
 
@@ -531,11 +546,22 @@ INCLUDE_IN_README: False
     if(not args.no_pre_cleanup):
         create_station.cleanup()
 
+    else:
+        already_available_stations = create_station.get_station_list()
+        if(len(already_available_stations) > 0):
+            used_indices = [int(station_id.split('sta')[1]) for station_id in already_available_stations]
+            for new_station in station_list:
+                if(new_station in already_available_stations):
+                    print('Some stations are already existing in the LANforge from the given start id.')
+                    print('You can create stations from the start id {}'.format(max(used_indices) + 1))
+                    exit(1)
+
+
     create_station.modify_radio(mgr=args.mgr, radio=args.radio, antenna=args.radio_antenna, channel=args.radio_channel,
                                 tx_power=args.radio_tx_power, country_code=args.country_code)
     create_station.build()
 
-    if(not args.no_cleanup):
+    if(args.cleanup):
         create_station.cleanup()
 
     if create_station.passes():
