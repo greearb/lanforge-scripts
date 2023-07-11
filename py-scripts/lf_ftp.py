@@ -10,24 +10,33 @@ EXAMPLE:
     Use './lf_ftp.py --help' to see command line usage and options
 
     ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101
-        --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
+        --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload --num_stations 2
 
     test command that includes kpi.csv features on resource-1:
-    ./lf_ftp.py --ssid SSID --passwd PASSWRD  --file_sizes 2MB --fiveg_duration 1 --mgr 192.168.1.101
+    ./lf_ftp.py --ssid SSID --passwd PASSWRD  --file_sizes 2MB --fiveg_duration 1 --mgr 192.168.1.101 --num_stations 2
      --upstream_port eth2 --traffic_duration 1 --security wpa2  --bands 5G --fiveg_radio wiphy0 --directions Download Upload
      --csv_outfile FTP_CSV.csv --test_rig LF-LAB --test_tag LF_FTP --dut_hw_version Linux --dut_model_num 1
      --dut_sw_version 5.4.4 --dut_serial_num 1234
+
+SCRIPT_CLASSIFICATION : Test
+
+SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation
 
 NOTES:
 
     Currently, the test must run with both directions enabled for kpi.csv results: '--directions Download Upload'
 
-    Tested on 03/23/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
+STATUS : Not Functional (not working for single station)
 
-Copyright 2021 Candela Technologies Inc
-License: Free to distribute and modify. LANforge systems must be licensed.
+VERIFIED_ON: 10-JULY-2023,
+            GUI Version:  5.4.6
+            Kernel Version: 6.2.16+
+
+LICENSE : 
+        Copyright 2023 Candela Technologies Inc
+        Free to distribute and modify. LANforge systems must be licensed.
+
+INCLUDE_IN_README: False
 
 """
 import sys
@@ -978,6 +987,7 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='''\
 ---------------------------
+
 NAME: lf_ftp.py
 
 PURPOSE:
@@ -988,21 +998,33 @@ EXAMPLE:
     Use './lf_ftp.py --help' to see command line usage and options
 
     ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101
-        --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
+        --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload --num_stations 2
 
     test command that includes kpi.csv features on resource-1:
-    ./lf_ftp.py --ssid SSID --passwd PASSWRD  --file_sizes 2MB --fiveg_duration 1 --mgr 192.168.1.101
+    ./lf_ftp.py --ssid SSID --passwd PASSWRD  --file_sizes 2MB --fiveg_duration 1 --mgr 192.168.1.101 --num_stations 2
      --upstream_port eth2 --traffic_duration 1 --security wpa2  --bands 5G --fiveg_radio wiphy0 --directions Download Upload
      --csv_outfile FTP_CSV.csv --test_rig LF-LAB --test_tag LF_FTP --dut_hw_version Linux --dut_model_num 1
      --dut_sw_version 5.4.4 --dut_serial_num 1234
+
+SCRIPT_CLASSIFICATION : Test
+
+SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation
 
 NOTES:
 
     Currently, the test must run with both directions enabled for kpi.csv results: '--directions Download Upload'
 
-    Tested on 03/23/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
+STATUS : Not Functional (not working for single station)
+
+VERIFIED_ON: 10-JULY-2023,
+            GUI Version:  5.4.6
+            Kernel Version: 6.2.16+
+
+LICENSE : 
+        Copyright 2023 Candela Technologies Inc
+        Free to distribute and modify. LANforge systems must be licensed.
+
+INCLUDE_IN_README: False
 
                     ''')
     parser.add_argument('--mgr', help='hostname for where LANforge GUI is running [default = localhost]', default='localhost')
