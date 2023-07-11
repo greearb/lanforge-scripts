@@ -82,8 +82,10 @@ EXAMPLE (ftp bytes-rd):
                  --report_file test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
                  --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
+STATUS: UNDER DEVELOPMENT
+
 COPYRIGHT:
-    Copyright 2021 Candela Technologies Inc
+    Copyright 2023 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 """
 

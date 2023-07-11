@@ -227,15 +227,18 @@ class lf_create_wanlink():
                _wait_sec: float = 0.01,
                _timeout_sec: float = 5.0,
                _errors_warnings: list = None):
-
+        result = None
         ewarn_list = []
-        result = self.query.get_wl(eid_list=_eid_list,
-                                   requested_col_names=_requested_col_names,
-                                   wait_sec=_wait_sec,
-                                   timeout_sec=_timeout_sec,
-                                   errors_warnings=ewarn_list,
-                                   debug=self.debug)
-        logger.debug(pformat(result))
+        try:
+            result = self.query.get_wl(eid_list=_eid_list,
+                                       requested_col_names=_requested_col_names,
+                                       wait_sec=_wait_sec,
+                                       timeout_sec=_timeout_sec,
+                                       errors_warnings=ewarn_list,
+                                       debug=self.debug)
+            logger.debug(pformat(result))
+        except:
+            logger.warning(pformat(ewarn_list))
         return result
 
     def get_wl_endp(self,
@@ -453,6 +456,41 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
 
     # Comment out some parameters like 'max_jitter', 'drop_freq' and 'wanlink'
     # in order to view the X-Errors headers
+    logger.info(f"drop_freq_A:{drop_freq_A}, drop_freq_B:{drop_freq_B}, min_drop_amt_A:{min_drop_amt_A}, min_drop_amt_B:{min_drop_amt_B},"
+    f" drop_nth_pkt_A:{drop_nth_pkt_A}, drop_nth_pkt_B:{drop_nth_pkt_B}");
+
+    # have to determine if the wanlink exists and is running or not
+    wl_exists = False
+    wl_running = False
+    result = None
+    ewarns = []
+    try:
+        result = wanlink.query.get_wl(eid_list=args.wl_name,
+                                      requested_col_names=("name", "eid"),
+                                      debug=args.debug,
+                                      _errors_warnings=ewarns)
+    except:
+        logger.warning(ewarns)
+    wl_exists = (False, True) [ result is not None ]
+    if wl_exists:
+        logger.debug(pformat(result))
+        wl_running = (False, True) [ result["state"] == "Run"]
+        logger.warning(f"running? {wl_running}")
+
+    if wl_running:
+        wanlink.command.post_set_cx_state(cx_name=args.wl_name,
+                                          cx_state='STOPPED',
+                                          test_mgr='all',
+                                          debug=args.debug)
+        for n in range(1,60):
+            result = wanlink.query.get_wl(eid_list=args.wl_name,
+                                          requested_col_names=("name", "eid", "running"),
+                                          debug=False)
+            if result["state"] == "Stopped":
+                break
+            time.sleep(1)
+        if result["state"] == "Running":
+            raise ValueError("WANLink is still running, does not respond to set_cx_state STOPPED")
 
     # create side A
     wanlink.add_wl_endp(_alias=endp_A,                        # Name of endpoint. [R]
@@ -478,14 +516,22 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
                         _wle_flags=args.wle_flags,            # WanLink Endpoint specific flags, see above.
                         _suppress_related_commands=args.suppress_related_commands)
 
-    result = wanlink.add_cx(_alias=args.wl_name,
-                            _rx_endp=endp_A,
-                            _tx_endp=endp_B,
-                            _test_mgr="default_tm")
+    # we cannot do an add_cx on top of an existing wanlink
+    if wl_exists:
+        print(f"found wanlink {args.wl_name}, so endpoints are updated")
+
+    else:
+        result = wanlink.add_cx(_alias=args.wl_name,
+                                _rx_endp=endp_A,
+                                _tx_endp=endp_B,
+                                _test_mgr="default_tm")
+        logger.info(f"updated wanlink {args.wl_name}")
 
     logger.debug(pformat(result))
 
     # set_wanlink_info A
+    if drop_nth_pkt_A:
+        drop_freq_A = drop_nth_pkt_A
     wanlink.set_wanlink_info(_drop_freq=drop_freq_A,                    # How often, out of 1,000,000 packets, should we
                              # purposefully drop a packet.
                              _dup_freq=dup_freq_A,                     # How often, out of 1,000,000 packets, should we
@@ -518,12 +564,12 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
                              _suppress_related_commands=args.suppress_related_commands)
     if drop_nth_pkt_A:
         wanlink.set_endp_flag(_name=endp_A,
-                              _flag=wanlink.command.SetEndpFlagFlag.dropXthPkt.value,
+                              _flag=wanlink.command.SetEndpFlagFlag.DropXthPkt.value,
                               _val=1,
                               _suppress_related_commands=args.suppress_related_commands)
     if drop_nth_pkt_B:
         wanlink.set_endp_flag(_name=endp_B,
-                              _flag=wanlink.command.SetEndpFlagFlag.dropXthPkt.value,
+                              _flag=wanlink.command.SetEndpFlagFlag.DropXthPkt.value,
                               _val=1,
                               _suppress_related_commands=args.suppress_related_commands)
     if args.kernel_mode:
@@ -551,7 +597,10 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
                               _suppress_related_commands=args.suppress_related_commands)
 
     # set_wanlink_info B
-    wanlink.set_wanlink_info(_drop_freq=drop_freq_B,                    # How often, out of 1,000,000 packets, should we
+    if drop_nth_pkt_B:
+        drop_freq_B = drop_nth_pkt_B
+
+    wanlink.set_wanlink_info(_drop_freq=drop_freq_B,              # How often, out of 1,000,000 packets, should we
                              # purposefully drop a packet.
                              _dup_freq=dup_freq_B,                     # How often, out of 1,000,000 packets, should we
                              # purposefully duplicate a packet.
@@ -605,12 +654,18 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
                               _val=0,
                               _suppress_related_commands=args.suppress_related_commands)
 
+    if wl_running:
+        wanlink.command.post_set_cx_state(cx_name=args.wl_name,
+                                          cx_state='RUNNING',
+                                          test_mgr='all',
+                                          debug=args.debug)
     wanlink.command.post_nc_show_endpoints(endpoint=endp_A,
-                                        debug=args.debug,
-                                        suppress_related_commands=args.suppress_related_commands)
+                                           debug=args.debug,
+                                           suppress_related_commands=args.suppress_related_commands)
     wanlink.command.post_nc_show_endpoints(endpoint=endp_B,
-                                        debug=args.debug,
-                                        suppress_related_commands=args.suppress_related_commands)
+                                           debug=args.debug,
+                                           suppress_related_commands=args.suppress_related_commands)
+
     eid_list = [args.wl_name]
     ewarn_list = []
     result = wanlink.get_wl(_eid_list=eid_list,

@@ -177,7 +177,8 @@ class lf_check():
                  _outfile,
                  _outfile_name,
                  _report_path,
-                 _log_path):
+                 _log_path,
+                 _json_test_name):
 
         # test configuration
         self.json_rig = _json_rig
@@ -186,6 +187,7 @@ class lf_check():
         self.json_rig_file = _json_rig_file
         self.json_dut_file = _json_dut_file
         self.json_test_file = _json_test_file
+        self.json_test_name = _json_test_name
         self.test_suite = _test_suite
         self.use_test_list = _use_test_list
         self.test_list = _test_list
@@ -624,7 +626,7 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
         # get the Fedora platform 
         if (self.email_title_txt != ""):
 
-            self.mail_subject = "QA Rig: {email} Duration: {duration} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  Suite: {suite} Tests:{tests}   Server IP: {hostname}  DB: {db} Server Ver:{server_ver} Date: {date}".format(
+            self.mail_subject = "QA Rig: {email} Suite: {suite} Duration: {duration} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  Tests:{tests}   Server IP: {hostname}  DB: {db} Server Ver:{server_ver} Date: {date}".format(
                 email=self.email_title_txt,
                 duration=self.suite_duration,
                 suite=self.test_suite,
@@ -634,7 +636,7 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
                 db=self.database_sqlite, 
                 date=datetime.datetime.now())
         else:
-            self.mail_subject = "Duration: {duration} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  QA Suite: {suite} Tests:{tests}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(
+            self.mail_subject = "Suite: {suite} Duration: {duration} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial} Suite: {suite} Tests:{tests}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(
                 # email=self.email_title_txt,
                 duration=self.suite_duration,
                 suite=self.test_suite, 
@@ -673,6 +675,7 @@ Test Script Input Files:
 json_dut: {dut_json}
 json_rig: {rig_json}
 json_test: {test_json}
+json_test_name : {json_test_name}
 
 
 Server / DB Infomation
@@ -694,6 +697,7 @@ Date: {date}""".format(
                 dut_json=self.json_dut_file,
                 rig_json=self.json_rig_file,
                 test_json=self.json_test_file,
+                json_test_name=self.json_test_name,
                 hostname=self.hostname,
                 server_ver=server_version,
                 db=self.database_sqlite, 
@@ -909,17 +913,17 @@ junit.xml path: allure serve {junit_path}
                 # self.logger.info("self.test_dict {}".format(self.test_dict))
             else:
                 self.logger.info(
-                    "EXITING test_suite {} Not Present in json test_suites: {}".format(
-                        self.test_suite, self.json_test["test_suites"]))
+                    "EXITING test_suite {suite} Not Present in json test_suites: {suites}".format(
+                        suite=self.test_suite, suites=self.json_test["test_suites"]))
                 self.logger.info(
-                    "EXITING ERROR test_suite {} Not Present in json test_suites".format(
-                        self.test_suite))
+                    "EXITING ERROR test_suite {suite} Not Present in json tests {json_test_name}".format(
+                        suite=self.test_suite,json_test_name=self.json_test_name))
                 exit(1)
         else:
             self.logger.info(
                 "EXITING test_suites not in json {}".format(
                     self.json_test))
-            self.logger.info("EXITING ERROR test_suites not in json test")
+            self.logger.info("EXITING ERROR test_suites not in json test {json_test}".format(json_test=self.json_test))
             exit(1)
 
     def read_test_rig_parameters(self):
@@ -2111,7 +2115,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                                 _outfile=outfile,
                                 _outfile_name=outfile_name,
                                 _report_path=report_path,
-                                _log_path=log_path)
+                                _log_path=log_path,
+                                _json_test_name=json_test_name)
 
                 # set up logging
                 logfile = args.logfile[:-4]

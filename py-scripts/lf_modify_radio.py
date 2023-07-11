@@ -3,9 +3,16 @@
 NAME: lf_modify_radio.py
 
 PURPOSE: Set the spatial streams and channel of a radio
+        To Modify eth interface such as enabling/disabling dhcp
 
 EXAMPLE:
 $ ./lf_modify_radio.py --host 192.168.100.205 --radio "1.1.wiphy0" --channel 36 --antenna 7 --debug
+
+to enable dhcp-ipv4 on eth interface :
+    ./ python3 lf_modify_radio.py --mgr 192.168.200.105 --radio 1.1.eth2 --enable_dhcp True
+
+to disable dhcp-ipv4 on eth interface and provide static ip from arguement parsers
+ ./ python3 lf_modify_radio.py --mgr 192.168.200.105 --radio 1.1.eth2 --static True
 
 NOTES:
 
@@ -27,6 +34,8 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 from lanforge_client.lanforge_api import LFSession
 from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
@@ -43,19 +52,26 @@ logger = logging.getLogger(__name__)
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 
 #http://www.candelatech.com/lfcli_ug.php#set_wifi_radio
-class lf_modify_radio():
+class lf_modify_radio(Realm):
     def __init__(self,
                 lf_mgr=None,
-                lf_port=None,
+                lf_port=8080,
                 lf_user=None,
                 lf_passwd=None,
                 debug=False,
+                static_ip=None,
+                ip_mask = None,
+                gateway_ip=None
                 ):
         self.lf_mgr = lf_mgr
         self.lf_port = lf_port
         self.lf_user = lf_user
         self.lf_passwd = lf_passwd
         self.debug = debug
+        self.local_realm = realm.Realm(lfclient_host=self.lf_mgr, lfclient_port=self.lf_port)
+        self.static_ip = static_ip
+        self.ip_mask = ip_mask
+        self.gateway_ip = gateway_ip
 
         self.session = LFSession(lfclient_url="http://%s:8080" % self.lf_mgr,
                                     debug=debug,
@@ -90,6 +106,44 @@ class lf_modify_radio():
                                 country=_country_code,
                                 debug=self.debug)
 
+    def enable_dhcp_eth(self, interface="1.1.eth2"):
+        port_ = interface.split(".")
+        set_port = {
+            "shelf": port_[0],
+            "resource": port_[1],
+            "port": port_[2],
+            "ip_addr": "NA",
+            "netmask": "NA",
+            "gateway": "NA",
+            "cmd_flags": "NA",
+            "current_flags": "2147483648",
+            "mac": "NA",
+            "mtu": "NA",
+            "tx_queue_len": "NA",
+            "alias": "NA",
+            "interest": "8552366080"
+        }
+        self.local_realm.json_post("/cli-json/set_port", set_port)
+
+    def disable_dhcp_static(self, interface):
+        port_ = interface.split(".")
+        set_port = {
+            "shelf": port_[0],
+            "resource": port_[1],
+            "port": port_[2],
+            "ip_addr": self.static_ip,
+            "netmask": self.ip_mask,
+            "gateway": self.gateway_ip,
+            "cmd_flags": "NA",
+            "current_flags": "NA",
+            "mac": "NA",
+            "mtu": "NA",
+            "tx_queue_len": "NA",
+            "alias": "NA",
+            "interest": "8552366108"
+        }
+        self.local_realm.json_post("/cli-json/set_port", set_port)
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -111,6 +165,15 @@ def main():
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--debug', help='Legacy debug flag, turnn on legacy debug ', action='store_true')
+    parser.add_argument("--enable_dhcp", default=False, help="set to True if wanted to enbale DHCP-IPv4 on eth interface")
+    parser.add_argument("--static", default=False, help="True if client will be created with static ip")
+
+    parser.add_argument("--static_ip", default="192.168.2.100",
+                        help="if static option is True provide static ip to client")
+
+    parser.add_argument("--ip_mask", default="255.255.255.0", help="if static is true provide ip mask to client")
+
+    parser.add_argument("--gateway_ip", default="192.168.2.50", help="if static is true provide gateway ip")
 
     args = parser.parse_args()
 
@@ -136,16 +199,27 @@ def main():
                             lf_port=args.mgr_port,
                             lf_user=args.lf_user,
                             lf_passwd=args.lf_passwd,
-                            debug=args.debug)
+                            debug=args.debug,
+                            static_ip=args.static_ip,
+                            ip_mask=args.ip_mask,
+                            gateway_ip=args.gateway_ip
+                                   )
+    if args.enable_dhcp == "True":
+        modify_radio.enable_dhcp_eth(interface=args.radio)
+    elif args.static == "True":
+        modify_radio.disable_dhcp_static(interface=args.radio)
+    else:
 
-    shelf, resource, radio, *nil = LFUtils.name_to_eid(args.radio)
-    
-    modify_radio.set_wifi_radio(_resource=resource,
-                                _radio=radio,
-                                _shelf=shelf,
-                                _antenna=args.antenna,
-                                _channel=args.channel,
-                                _txpower=args.txpower)
+        shelf, resource, radio, *nil = LFUtils.name_to_eid(args.radio)
+
+        modify_radio.set_wifi_radio(_resource=resource,
+                                    _radio=radio,
+                                    _shelf=shelf,
+                                    _antenna=args.antenna,
+                                    _channel=args.channel,
+                                    _txpower=args.txpower)
+
+
 
     '''
     session = LFSession(lfclient_url="http://%s:8080" % args.host,
