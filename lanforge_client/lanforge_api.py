@@ -1458,7 +1458,8 @@ class LFJsonCommand(JsonCommand):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-        USE_SCRCPY = 1      # Use scrcpy instead of MonkeyRemote
+        NO_AUDIO_SCRCPY = 2      # Disable scrcpy audio forwarding
+        USE_SCRCPY = 1           # Use scrcpy instead of MonkeyRemote
 
     def post_adb_gui(self, 
                      adb_id: str = None,                       # Android device identifier.
@@ -12681,21 +12682,61 @@ class LFJsonCommand(JsonCommand):
             Example Usage: 
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         AutoHelper = "AutoHelper"                          # Automatically run on helper process
+        BindSIP = "BindSIP"                                # if SIP is in DUT, true. Default is false.
         ClearPortOnStart = "ClearPortOnStart"              # clear stats on start
+        CoupledMode = "CoupledMode"                        # Reduces config on a specific endpoint on WANlink
         DoChecksum = "DoChecksum"                          # Enable checksumming
+        DoNotAnswer = "DoNotAnswer"                        # Do not pick up
+        DoNotRegister = "DoNotRegister"                    # Used for peer-to-peer calling. If set, consider
+        # +setting
         DropXthPkt = "DropXthPkt"                          # Drop every Nth packet on a WANpath endpoint. This
-        # +feature is WANlink endpoint based and not WANpath
-        # +based.
         EnableConcurrentSrcIP = "EnableConcurrentSrcIP"    # Concurrent source IPs?
         EnableLinearSrcIP = "EnableLinearSrcIP"            # linearized source IPs
         EnableLinearSrcIPPort = "EnableLinearSrcIPPort"    # linearized IP ports
         EnableRndSrcIP = "EnableRndSrcIP"                  # randomize source IP
+        EnableTcpNodelay = "EnableTcpNodelay"              # Enable no delay with TCP.
+        ForcePktGap = "ForcePktGap"                        # Force packet gap. Used by WANlinks currently.
+        GetUrlsFromFile = "GetUrlsFromFile"                # Get URL's from file
+        HWPassthroughMode = "HWPassthroughMode"            # Uses hardware pass through similar to
+        # +PassthroughMode
+        IgnoreBandwidth = "IgnoreBandwidth"                # WANLink behavior replay
+        IgnoreDup = "IgnoreDup"                            # Ignore replay dup
+        IgnoreLatency = "IgnoreLatency"                    # Ignore replay latency
+        IgnoreLoss = "IgnoreLoss"                          # Ignore replay loss
         KernelMode = "KernelMode"                          # Enable kernel mode
+        L4Enable404 = "L4Enable404"                        # Enable L4 Endpoint JSON return status 404
+        Mobile = "Mobile"                                  # Set to represent endpoint as cellular-call, hands
+        # +free API
+        NoBluetooth = "NoBluetooth"                        # If set, record and play audio options will be
+        # +through a
+        NoFastStart = "NoFastStart"                        # Set to disable h323 fast start
+        NoSendRtp = "NoSendRtp"                            # Set to not send RTP
+        NoTunneling = "NoTunneling"                        # Set to disable h323 tunneling
+        OverrideSdp = "OverrideSdp"                        # Set to override conneciton info in SDP
+        PESQ = "PESQ"                                      # Enable PESQ
+        PassthroughMode = "PassthroughMode"                # Disable and pass packets through one side of WANlink
+        PeerNotAuto = "PeerNotAuto"                        # Set if peer phone number is not auto
+        PlayAudio = "PlayAudio"                            # Enable to play sound to audio card
         QuiesceAfterDuration = "QuiesceAfterDuration"      # quiesce after time period
         QuiesceAfterRange = "QuiesceAfterRange"            # quiesce after range of bytes
+        RcvCallOnly = "RcvCallOnly"                        # Enable to receive calls only, do not originate calls
+        ReplayLoop = "ReplayLoop"                          # Replay loop.
+        ReplayOverwriteDstMac = "ReplayOverwriteDstMac"    # Overwrite the Destination MAC when replaying packets
+        ReplayWlCapture = "ReplayWlCapture"                # Use Replay Capture
+        ReuseSocket = "ReuseSocket"                        # Reuse current socket
+        SavePCM = "SavePCM"                                # Enable to save received bits to file
+        SingleCodec = "SingleCodec"                        # Set to only use specified Codec
+        SipPortAuto = "SipPortAuto"                        # Set local SIP port to auto
+        SyncAfterWrite = "SyncAfterWrite"                  # Sync after writing to a file
+        SyncBeforeClose = "SyncBeforeClose"                # Sync before closing a file
+        UdpBurst = "UdpBurst"                              # Use UDP Bursting
         Unmanaged = "Unmanaged"                            # Set endpoint unmanaged
         UseAutoNAT = "UseAutoNAT"                          # NAT friendly behavior
         UseGRO = "UseGRO"                                  # Enable UDP GRO
+        UseMulticastSSM = "UseMulticastSSM"                # Use Source Specific Multicast.
+        UseProxy = "UseProxy"                              # Use Proxy IP if L4 Endpoint
+        VAD = "VAD"                                        # Enable VAD
+        VerifySSLServer = "VerifySSLServer"                # Veify the SSL sever
 
     def post_set_endp_flag(self, 
                            flag: str = None,                         # The name of the flag. [R]
@@ -14778,6 +14819,7 @@ class LFJsonCommand(JsonCommand):
                        bb_gain: str = None,                      # RX Gain, 0 - 62 in 2dB steps
                        burst_offset: str = None,                 # FCC5B burst offset in usec. Blank-time for W53-Chirp.
                        chirp_width_khz: str = None,              # W53 Chirp width in khz.
+                       display: str = None,                      # Display to use when launching pulse-detect GUI.
                        freq_khz: str = None,                     # Center frequency in Khz
                        freq_modulation: str = None,              # FCC5B setting, 5-20.
                        gain: str = None,                         # Main TX/RX Amp, 0 or 14 (dB), default is 14
@@ -14808,6 +14850,10 @@ class LFJsonCommand(JsonCommand):
                        rfgen_flags_mask: str = None,             # Mask of what flags to set, see above.
                        shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
                        sweep_time_ms: str = None,                # Time interval between pulse groups in miliseconds
+                       trigger_amp: str = None,                  # Set the trigger amplitude in 1/100 of amp, for the RF
+                       # analyzer feature (PULSE_DETECT type)
+                       trigger_dbm: str = None,                  # Set the trigger in dBm for the RF analyzer feature
+                       # (PULSE_DETECT type)
                        uut_channel: str = None,                  # FCC5 setting, 20, 40, 80 or 160.
                        response_json_list: list = None,
                        debug: bool = False,
@@ -14827,6 +14873,8 @@ class LFJsonCommand(JsonCommand):
             data["burst_offset"] = burst_offset
         if chirp_width_khz is not None:
             data["chirp_width_khz"] = chirp_width_khz
+        if display is not None:
+            data["display"] = display
         if freq_khz is not None:
             data["freq_khz"] = freq_khz
         if freq_modulation is not None:
@@ -14881,6 +14929,10 @@ class LFJsonCommand(JsonCommand):
             data["shelf"] = shelf
         if sweep_time_ms is not None:
             data["sweep_time_ms"] = sweep_time_ms
+        if trigger_amp is not None:
+            data["trigger_amp"] = trigger_amp
+        if trigger_dbm is not None:
+            data["trigger_dbm"] = trigger_dbm
         if uut_channel is not None:
             data["uut_channel"] = uut_channel
         if len(data) < 1:
@@ -14907,6 +14959,7 @@ class LFJsonCommand(JsonCommand):
         self.post_set_rfgen(bb_gain=param_map.get("bb_gain"),
                             burst_offset=param_map.get("burst_offset"),
                             chirp_width_khz=param_map.get("chirp_width_khz"),
+                            display=param_map.get("display"),
                             freq_khz=param_map.get("freq_khz"),
                             freq_modulation=param_map.get("freq_modulation"),
                             gain=param_map.get("gain"),
@@ -14934,6 +14987,8 @@ class LFJsonCommand(JsonCommand):
                             rfgen_flags_mask=param_map.get("rfgen_flags_mask"),
                             shelf=param_map.get("shelf"),
                             sweep_time_ms=param_map.get("sweep_time_ms"),
+                            trigger_amp=param_map.get("trigger_amp"),
+                            trigger_dbm=param_map.get("trigger_dbm"),
                             uut_channel=param_map.get("uut_channel"),
                             )
         """
@@ -19694,7 +19749,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -19783,7 +19838,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20054,7 +20109,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20169,7 +20224,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20360,7 +20415,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20423,7 +20478,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20544,7 +20599,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20683,7 +20738,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20869,7 +20924,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -20932,7 +20987,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21021,7 +21076,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21139,7 +21194,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21242,7 +21297,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21305,7 +21360,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21463,7 +21518,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21526,7 +21581,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21797,7 +21852,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21885,7 +21940,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -21971,7 +22026,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22034,7 +22089,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22423,7 +22478,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22492,7 +22547,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22643,7 +22698,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22721,7 +22776,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22832,7 +22887,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -22952,7 +23007,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -23617,7 +23672,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -23747,7 +23802,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
@@ -23811,7 +23866,7 @@ class LFJsonQuery(JsonQuery):
                 if field.find(" ") > -1:
                     raise ValueError("field should be URL encoded: [%s]" % field)
                 trimmed_fields.append(field)
-        url += self.create_port_eid_url(eid_list=eid_list)
+        url += f"/{ ','.join(eid_list)}"
 
         if len(trimmed_fields) > 0:
             url += "?fields=%s" % (",".join(trimmed_fields))
