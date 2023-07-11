@@ -416,8 +416,8 @@ INCLUDE_IN_README: False
     parser.add_argument('--batch_create', help='To enable batch create functionality', action='store_true')
 
     parser.add_argument('--batch_quantity', help='No of cx endpoints to batch-create', default=1)
-    parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
-    parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
+    parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append")
+    parser.add_argument('--endp_b', help='--upstream port', default="eth2")
     parser.add_argument('--multi_conn_a', help='Modify multi connection endpoint-a for cx', default=0, type=int)
     parser.add_argument('--multi_conn_b', help='Modify multi connection endpoint-b for cx', default=0, type=int)
     parser.add_argument('--min_ip_port_a', help='Min ip port range for endp-a', default=-1)
