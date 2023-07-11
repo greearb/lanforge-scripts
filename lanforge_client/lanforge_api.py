@@ -445,7 +445,8 @@ class BaseLFJsonRequest:
         """
         debug |= self.debug_on
         die_on_error |= self.die_on_error
-
+        if not self.session_instance:
+            self.logger.warning("json_post: no session_instance!")
         if self.session_id != self.session_instance.get_session_id():
             self.logger.error("BaseLFJsonRequest.session_id[%s] != session.get_session_id: [%s]"
                               % (self.session_id, self.session_instance.get_session_id()))
@@ -534,14 +535,16 @@ class BaseLFJsonRequest:
 
         myrequest.headers['Content-type'] = 'application/json'
         sess_id = self.session_instance.get_session_id()
+        self.logger.debug(f"json_post: sess_id:{sess_id}, session_id_:{session_id_}")
+
         if iss(sess_id):
             myrequest.headers[SESSION_HEADER] = str(sess_id)
         elif iss(session_id_):
             myrequest.headers[SESSION_HEADER] = str(session_id_)
         elif not url.endswith("/newsession"):
-            self.logger.warning(f"Request ({url}) sent without X-LFJson-ID header")
-        if debug:
-            self.logger.warning(f"Request ({url}) sent without X-LFJson-ID header\n{pformat(myrequest.headers)}")
+            self.logger.warning(f"Request lacks {SESSION_HEADER}: {url}")
+            if debug:
+                self.logger.warning(f"     headers:\n{pformat(myrequest.headers)}")
 
         # https://stackoverflow.com/a/59635684/11014343
 
