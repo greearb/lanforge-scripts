@@ -244,6 +244,17 @@
                         " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
                     ]
             },
+            "CREATE_L3_ATH10K_W1":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "command":"create_l3.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --endp_a 1.1.wlan30 --endp_b 1.1.wlan50 ",
+                    " --min_rate_a 1000000 --min_rate_b 1000000  "
+                ]
+            },
+
             "LF_TEST_REPORT":{
                 "enabled":"TRUE",
                 "load_db":"NONE",
