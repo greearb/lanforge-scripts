@@ -108,41 +108,23 @@ class lf_modify_radio(Realm):
 
     def enable_dhcp_eth(self, interface="1.1.eth2"):
         port_ = interface.split(".")
-        set_port = {
-            "shelf": port_[0],
-            "resource": port_[1],
-            "port": port_[2],
-            "ip_addr": "NA",
-            "netmask": "NA",
-            "gateway": "NA",
-            "cmd_flags": "NA",
-            "current_flags": "2147483648",
-            "mac": "NA",
-            "mtu": "NA",
-            "tx_queue_len": "NA",
-            "alias": "NA",
-            "interest": "8552366080"
-        }
-        self.local_realm.json_post("/cli-json/set_port", set_port)
+        self.command.post_set_port(shelf=port_[0],
+                                   resource= port_[1],
+                                   port=port_[2],
+                                   current_flags="2147483648",
+                                   interest="8552366080",
+                                   debug=self.debug)
 
     def disable_dhcp_static(self, interface):
         port_ = interface.split(".")
-        set_port = {
-            "shelf": port_[0],
-            "resource": port_[1],
-            "port": port_[2],
-            "ip_addr": self.static_ip,
-            "netmask": self.ip_mask,
-            "gateway": self.gateway_ip,
-            "cmd_flags": "NA",
-            "current_flags": "NA",
-            "mac": "NA",
-            "mtu": "NA",
-            "tx_queue_len": "NA",
-            "alias": "NA",
-            "interest": "8552366108"
-        }
-        self.local_realm.json_post("/cli-json/set_port", set_port)
+        self.command.post_set_port(shelf=port_[0],
+                                   resource=port_[1],
+                                   port=port_[2],
+                                   ip_addr =  self.static_ip,
+                                   netmask = self.ip_mask,
+                                   gateway = self.gateway_ip,
+                                   interest="8552366108",
+                                   debug=self.debug)
 
 
 def main():
