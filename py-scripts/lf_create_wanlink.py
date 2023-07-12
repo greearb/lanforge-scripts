@@ -300,9 +300,9 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
     parser.add_argument("--latency", help="(add wl endp) The latency (ms) that will be added to each packet entering this WanLink. Default = 'NA' both ports", default='NA')
     parser.add_argument("--latency_A", help="(add wl endp) The latency (ms) that will be added to each packet entering this WanLink. Default = None port a", default=None)
     parser.add_argument("--latency_B", help="(add wl endp) The latency (ms) that will be added to each packet entering this WanLink. Default = None port b", default=None)
-    parser.add_argument("--max_rate", help="(add wl endp) Maximum transmit rate (bps) for this WanLink. Default = 1024000 ", default='1024000')
-    parser.add_argument("--max_rate_A", help="(add wl endp) Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
-    parser.add_argument("--max_rate_B", help="(add wl endp) Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
+    parser.add_argument("--max_rate", help="(add wl endp) Use --speed parameter instead. Maximum transmit rate (bps) for this WanLink. Default = 1024000 ", default='1024000')
+    parser.add_argument("--max_rate_A", help="(add wl endp) Use --speed_A parameter instead. Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
+    parser.add_argument("--max_rate_B", help="(add wl endp) Use --speed_B parameter instead. Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
     parser.add_argument('--port_A', help='(add wl endp) Endpoint A', default="eth1")
     parser.add_argument('--port_B', help='(add wl endp) Endpoint B', default="eth2")
     parser.add_argument("--resource", help='(add wl endp) LANforge resource Default', default=1)
@@ -347,16 +347,16 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
     parser.add_argument('--reorder_freq', help='(set wanlink info) How often, out of 1,000,000 packets, should we make a packet out of order. both ports Default = None', default=None)
     parser.add_argument('--reorder_freq_A', help='(set wanlink info) How often, out of 1,000,000 packets, should we make a packet out of order. port A Default = None', default=None)
     parser.add_argument('--reorder_freq_B', help='(set wanlink info) How often, out of 1,000,000 packets, should we make a packet out of order. port B Default = None', default=None)
-    parser.add_argument('--speed', help='(set wanlink info) The maximum speed of traffic this endpoint will accept (bps). both ports', default=1000000)
-    parser.add_argument('--speed_A', help='(set wanlink info) The maximum speed of traffic this endpoint will accept (bps). port A', default=None)
-    parser.add_argument('--speed_B', help='(set wanlink info) The maximum speed of traffic this endpoint will accept (bps). port B', default=None)
+    parser.add_argument('--speed', help='(set wanlink info) Use this instead of max_rate. The maximum speed of traffic this endpoint will accept (bps). both ports', default=1000000)
+    parser.add_argument('--speed_A', help='(set wanlink info) Use this instead of max_rate_A. The maximum speed of traffic this endpoint will accept (bps). port A', default=None)
+    parser.add_argument('--speed_B', help='(set wanlink info) Use this instead of max_rate_B. The maximum speed of traffic this endpoint will accept (bps). port B', default=None)
     parser.add_argument('--drop_nth_pkt', help='(set wanlink info) drop packets at every Nth received packet', default=None)
     parser.add_argument('--drop_nth_pkt_A', help='(set wanlink info) drop packets at every Nth received packet, port A', default=None)
     parser.add_argument('--drop_nth_pkt_B', help='(set wanlink info) drop packets at every Nth received packet, port B', default=None)
     parser.add_argument('--suppress_related_commands', help='(set wanlink info) Used by lanforge_api Default False if set store true', action='store_true')
 
     # Set Endp Flags enable KernelMode
-    parser.add_argument('--kernel_mode', help='(set endp flag) Select  kernel-mode Wanlinks , must be the same for both endpoint sets both ports, Default = False', action='store_true')
+    parser.add_argument('--kernel_mode', help='(set endp flag) Select  kernel-mode Wanlinks, must be the same for both endpoint sets both ports, Default = False', action='store_true')
     parser.add_argument('--pass_through_mode', help='''
         (set endp flag) pass-through means disable all impairments and slow-downs, without having to manually zero out all of the impairments.  Good way to turn it on/off without stopping traffic.,
         Default = False', action='store_true'
