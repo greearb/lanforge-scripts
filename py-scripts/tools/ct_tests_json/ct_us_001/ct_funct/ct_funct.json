@@ -254,6 +254,17 @@
                     " --min_rate_a 1000000 --min_rate_b 1000000  "
                 ]
             },
+            "CREATE_STATION_5G_ATH10K_W1":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "command":"create_station.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio 1.1.wiphy0 --start_id 200 --num_station 3 ",
+                    " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
+                    " --no_pre_cleanup --clean "
+                ]
+            },
 
             "LF_TEST_REPORT":{
                 "enabled":"TRUE",
