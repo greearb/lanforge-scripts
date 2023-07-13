@@ -20,7 +20,7 @@ NOTES:
         * This python script creates a specified number of stations using with specified configuration.
         * This verifies that the most basic form of security works with the LANforge device.
 
-STATUS: BETA RELEASE
+STATUS: Functional [Redundant Functionality ]
 
 VERIFIED_ON:   20-JUN-2023,
              GUI Version:  5.4.6
@@ -146,7 +146,7 @@ NOTES:
         * This python script creates a specified number of stations using with specified configuration.
         * This verifies that the most basic form of security works with the LANforge device.
 
-STATUS: BETA RELEASE
+STATUS: Functional [Redundant Functionality ]
 
 VERIFIED_ON:   20-JUN-2023,
              GUI Version:  5.4.6
