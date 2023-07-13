@@ -121,7 +121,7 @@ NOTES:
 
 
             --cleanup
-                    Disables station cleanup after creation of stations
+                    Add this flag to clean up stations after creation
 
             example:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
@@ -426,7 +426,7 @@ NOTES:
 
 
             --cleanup
-                    Disables station cleanup after creation of stations
+                    Add this flag to clean up stations after creation
 
             example:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
