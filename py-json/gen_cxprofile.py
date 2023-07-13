@@ -137,15 +137,19 @@ class GenCXProfile(LFCliBase):
             else:
                 logger.critical("Please ensure dest and interval have been set correctly")
                 raise ValueError("Please ensure dest and interval have been set correctly")
+
         elif self.type == "generic":
             if self.cmd == "":
                 logger.critical("Please ensure cmd has been set correctly")
                 raise ValueError("Please ensure cmd has been set correctly")
+
         elif self.type == "speedtest":
             self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % sta_name
+
         elif self.type == "iperf3" and self.dest:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_test.pid" % (self.dest, sta_name)
+
         elif self.type == "lfcurl":
             if self.file_output:
                 self.cmd = "./scripts/lf_curl.sh  -p %s -i AUTO -o %s -n %s -d %s" % \
