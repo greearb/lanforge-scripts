@@ -25,7 +25,7 @@ NOTES:
         - create BLANK db and arrange port coordinates.
         - create FACTORY_DFLT db and arrange port coordinates.
 
-STATUS: BETA RELEASE
+STATUS: Non-Functional
 
 VERIFIED_ON:   28-MAY-2023,
              GUI Version:  5.4.6
@@ -273,7 +273,7 @@ NOTES:
         - create BLANK db and arrange port coordinates.
         - create FACTORY_DFLT db and arrange port coordinates.
 
-STATUS: BETA RELEASE
+STATUS: Non-Functional
 
 VERIFIED_ON:   28-MAY-2023,
              GUI Version:  5.4.6
