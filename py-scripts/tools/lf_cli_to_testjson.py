@@ -1,7 +1,7 @@
 """ 
 NAME: lf_cli_to_testjson.py
 
-PURPOSE:
+PURPOSE: To convert cli command into test.json format
     
 EXAMPLE:
     Use './lf_cli_to_testjson.py --help' to see command line usage and options
@@ -97,7 +97,7 @@ def main():
 
 NAME: lf_cli_to_testjson.py
 
-PURPOSE:
+PURPOSE: To convert cli command into test.json format
     
 EXAMPLE:
     Use './lf_cli_to_testjson.py --help' to see command line usage and options
