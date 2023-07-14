@@ -49,6 +49,7 @@ import os
 import importlib
 import argparse
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,10 @@ class CreateMacVlan(Realm):
         self.mvlan_profile.gateway = gateway
 
         self.created_ports = []
+
+    def cleanup(self):
+        print("Cleaning up")
+        self.mvlan_profile.cleanup()
 
     def build(self):
         # Build MACVLANs
@@ -203,6 +208,10 @@ INCLUDE_IN_README: False
         '--gateway',
         help='specifies default gateway to be used with static addressing',
         default=None)
+    parser.add_argument(
+        '--cleanup',
+        help='Cleaning Up the created MAC VLANs if we want to cleanup.',
+        action='store_true')
 
     args = parser.parse_args()
 
@@ -284,6 +293,10 @@ INCLUDE_IN_README: False
                             )
 
     ip_test.build()
+
+    if args.cleanup:
+        time.sleep(5)
+        ip_test.cleanup()
 
     # TODO:  Cleanup by default, add --no_cleanup option to not do cleanup.
 
