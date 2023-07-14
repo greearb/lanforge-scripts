@@ -1,7 +1,7 @@
 """ 
 NAME: lf_cli_to_launchjson.py
 
-PURPOSE:
+PURPOSE: To convert cli command into launch.json format
     
 EXAMPLE:
     Use './lf_cli_to_launchjson.py --help' to see command line usage and options
@@ -92,7 +92,7 @@ def main():
 
 NAME: lf_cli_to_launchjson.py
 
-PURPOSE:
+PURPOSE: To convert cli command into launch.json format
     
 EXAMPLE:
     Use './lf_cli_to_launchjson.py --help' to see command line usage and options
