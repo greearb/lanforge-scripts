@@ -1997,6 +1997,33 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     current_working_directory = os.getcwd()
     logger.debug("current working directory {cwd}".format(cwd=current_working_directory))
 
+    # Validate the the test suites are in the tests json
+    # for test json and suite
+    test_suite_validation_error = 0
+    for (json_test_name,suite_name) in zip(json_test_list,suite_list):
+        try:
+            logger.info("Validating suite: {suite_name} json_test: {json_test}".format(suite_name=suite_name,json_test=json_test_name))
+            with open(json_test_name, 'r') as json_test_config:
+                json_test = json.load(json_test_config)
+        except json.JSONDecodeError as err:
+            logger.error("In Validating tests ERROR reading {json}, ERROR: {error} ".format(json=json_test_name, error=err))
+            exit(1)
+
+        if "test_suites" in json_test:
+            logger.debug("Validating read test_suites looking for: {}".format(suite_name))
+            # self.logger.info("test_suites {}".format(self.json_test["test_suites"]))
+            if suite_name in json_test["test_suites"]:
+                logger.info("Validating test suite {suite} found in {json_test}".format(suite=suite_name,json_test=json_test["test_suites"]))
+            else:
+                logger.error("ERROR test_suite {suite} Not Present in json test_suites: {suites} ".format(
+                        suite=suite_name, suites=json_test["test_suites"]))
+                logger.error("EXITING ERROR test_suite {suite} Not Present in json tests {json_test_name}".format(
+                        suite=suite_name,json_test_name=json_test_name))
+                exit(1)
+        else:
+            logger.info("EXITING test_suites KEY not in json {}".format(json_test_name))
+            exit(1)
+
     # for rig json (lanforge)
     for json_rig_name in json_rig_list:
 
