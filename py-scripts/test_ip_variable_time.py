@@ -3,25 +3,259 @@
 NAME: test_ip_variable_time.py
 
 PURPOSE:
-test_ip_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic over ipv4 or ipv6.
-This script replaces the functionality of test_ipv4_variable_time.py and test_ipv6_variable_time.py
-This Script has two working modes:
-    Mode 1:
-        When station is not available,
+          ->  This script creates variable number of stations with individual cross-connects and endpoints.
+              Stations are set to UP state, but cross-connections remain stopped.
 
-        This script will create a variable number of stations each with their own set of cross-connects and endpoints.
-        It will then create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
-        This test will pass if all stations increase traffic over the full test duration.
+          ->  This script create variable number of stations and endpoints to generate and verify layer-3 traffic over ipv4 or ipv6.
 
-    Mode 2:
+          ->  Create stations to test connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open)
+              over ipv4 or ipv6
 
-        When station is already available This script will create layer3 cross-connects and endpoints It will then
-        create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
-        This test will pass if all stations increase traffic over the full test duration.
+EXAMPLE:
+    1. Use Existing station ,  Note: put the shelf.resource.wifi-sta  (below is 1.1.wlan4),
+        The station needs to configured with the ssid, passwd, security and mode in the LANforge GUI
+    ./test_ip_variable_time.py  --mgr 192.168.0.100  --radio wiphy4 --ssid ssid_5g --passwd pass_5g
+        --security wpa2 --test_duration 60s --output_format csv  --traffic_type lf_tcp
+        --a_min 600000000 --b_min 600000000  --upstream_port eth2 --mode '5'
+        --layer3_cols 'name','tx rate','rx rate'  --port_mgr_cols 'alias','channel','activity','mode'
+        --use_existing_sta --sta_names 1.1.wlan4
 
-Use './test_ip_variable_time.py --help' to see command line usage and options
-Copyright 2021 Candela Technologies Inc
-License: Free to distribute and modify. LANforge systems must be licensed.
+    2. Create a one station (script default is 1 if --num_stations not entered)
+    ./test_ip_variable_time.py  --mgr 192.168.0.100    --radio wiphy6 --ssid ssid_5g --passwd pass_5g
+        --security wpa2 --test_duration 60s --output_format csv  --traffic_type lf_tcp
+        --a_min 600000000 --b_min 600000000  --upstream_port eth2 --mode '5'
+        --layer3_cols 'name','tx rate','rx rate'  --port_mgr_cols 'alias','channel','activity','mode'
+
+    3. Create two stations
+    ./test_ip_variable_time.py  --mgr 192.168.0.100    --radio wiphy1 --ssid ssid_5g --passwd pass_5g
+        --security wpa2 --test_duration 60s --output_format csv  --traffic_type lf_tcp
+        --a_min 600000000 --b_min 600000000  --upstream_port eth2 --mode '5'
+        --layer3_cols 'name','tx rate','rx rate'  `--port_mgr_cols 'alias','channel','activity','mode'
+        --num_stations 2
+
+    4. Create Multiple stations and run traffic with different upstream port
+    ./test_ip_variable_time.py --mgr 192.168.200.37  --radio wiphy0 wiphy0 --ssid ssid_2g ssid_5g
+        --test_duration 60s --output_format csv  --traffic_type lf_tcp --a_min 600000000 --b_min 600000000
+        --upstream_port eth2 eth1 --mode '5' --num_stations 1 --passwd pass_2g pass_5g --security wpa2 wpa2
+
+SCRIPT_CLASSIFICATION:  Creation & Runs Traffic
+
+SCRIPT_CATEGORIES:  Performance, Functional,  KPI Generation,  Report Generation
+
+NOTES:
+      * This Script has two working modes:
+
+        Mode 1:
+            When station is not available,
+
+            This script will create a variable number of stations each with their own set of cross-connects and endpoints.
+            It will then create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
+            This test  will pass if all stations increase traffic over the full test duration.
+
+        Mode 2:
+            When station is already available,
+
+            This script will create layer3 cross-connects and endpoints It will then
+            create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
+            This test will pass if all stations increase traffic over the full test duration.
+
+        Generic command layout:
+
+        python3 ./test_ip_variable_time.py
+            --upstream_port eth1
+            --radio wiphy0
+            --num_stations 32
+            --security {open|wep|wpa|wpa2|wpa3}
+            --mode   1
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13"}
+            --ssid <ssid>
+            --password admin123
+            --test_duration 2m (default)
+            --monitor_interval_ms
+            --a_min 3000
+            --b_min 1000
+            --ap "00:0e:8e:78:e1:76"
+            --output_format csv
+            --traffic_type lf_udp
+            --report_file ~/Documents/results.csv               (Example of csv file output  - please use another extension for other file formats)
+            --compared_report ~/Documents/results_prev.csv      (Example of csv file retrieval - please use another extension for other file formats) - UNDER CONSTRUCTION
+            --layer3_cols 'name','tx bytes','rx bytes','dropped'(column names from the GUI to print on report -  please read below to know what to put here according to preferences)
+            --port_mgr_cols 'ap','ip'                           (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
+            --debug
+
+        ===============================================================================
+        ** FURTHER INFORMATION **
+            Using the layer3_cols flag:
+
+            Currently the output function does not support inputting the columns in layer3_cols the way they are displayed in the GUI.
+            This quirk is under construction. To output certain columns in the GUI in your final report, please match the according
+            GUI column displayed to it's counterpart to have the additional columns correctly displayed in your report.
+            Note that the report will prepend "l3-" to the supplied layer3_col flags.
+
+            GUI Column Display       Layer3_cols argument to type in (to print in report)
+
+            Name                |  'name'
+            EID                 |  'eid'
+            Run                 |  'run'
+            Mng                 |  'mng'
+            Script              |  'script'
+            Tx Rate             |  'tx rate'
+            Tx Rate (1 min)     |  'tx rate (1&nbsp;min)'
+            Tx Rate (last)      |  'tx rate (last)'
+            Tx Rate LL          |  'tx rate ll'
+            Rx Rate             |  'rx rate'
+            Rx Rate (1 min)     |  'rx rate (1&nbsp;min)'
+            Rx Rate (last)      |  'rx rate (last)'
+            Rx Rate LL          |  'rx rate ll'
+            Rx Drop %           |  'rx drop %'
+            Tx PDUs             |  'tx pdus'
+            Tx Pkts LL          |  'tx pkts ll'
+            PDU/s TX            |  'pdu/s tx'
+            Pps TX LL           |  'pps tx ll'
+            Rx PDUs             |  'rx pdus'
+            Rx Pkts LL          |  'pps rx ll'
+            PDU/s RX            |  'pdu/s tx'
+            Pps RX LL           |  'pps rx ll'
+            Delay               |  'delay'
+            Dropped             |  'dropped'
+            Jitter              |  'jitter'
+            Tx Bytes            |  'tx bytes'
+            Rx Bytes            |  'rx bytes'
+            Replays             |  'replays'
+            TCP Rtx             |  'tcp rtx'
+            Dup Pkts            |  'dup pkts'
+            Rx Dup %            |  'rx dup %'
+            OOO Pkts            |  'ooo pkts'
+            Rx OOO %            |  'rx ooo %'
+            RX Wrong Dev        |  'rx wrong dev'
+            CRC Fail            |  'crc fail'
+            RX BER              |  'rx ber'
+            CX Active           |  'cx active'
+            CX Estab/s          |  'cx estab/s'
+            1st RX              |  '1st rx'
+            CX TO               |  'cx to'
+            Pattern             |  'pattern'
+            Min PDU             |  'min pdu'
+            Max PDU             |  'max pdu'
+            Min Rate            |  'min rate'
+            Max Rate            |  'max rate'
+            Send Buf            |  'send buf'
+            Rcv Buf             |  'rcv buf'
+            CWND                |  'cwnd'
+            TCP MSS             |  'tcp mss'
+            Bursty              |  'bursty'
+            A/B                 |  'a/b'
+            Elapsed             |  'elapsed'
+            Destination Addr    |  'destination addr'
+            Source Addr         |  'source addr'
+
+            Using the port_mgr_cols flag:
+                '4way time (us)'
+                'activity'
+                'alias'
+                'anqp time (us)'
+                'ap'
+                'beacon'
+                'bps rx'
+                'bps rx ll'
+                'bps tx'
+                'bps tx ll'
+                'bytes rx ll'
+                'bytes tx ll'
+                'channel'
+                'collisions'
+                'connections'
+                'crypt'
+                'cx ago'
+                'cx time (us)'
+                'device'
+                'dhcp (ms)'
+                'down'
+                'entity id'
+                'gateway ip'
+                'ip'
+                'ipv6 address'
+                'ipv6 gateway'
+                'key/phrase'
+                'login-fail'
+                'login-ok'
+                'logout-fail'
+                'logout-ok'
+                'mac'
+                'mask'
+                'misc'
+                'mode'
+                'mtu'
+                'no cx (us)'
+                'noise'
+                'parent dev'
+                'phantom'
+                'port'
+                'port type'
+                'pps rx'
+                'pps tx'
+                'qlen'
+                'reset'
+                'retry failed'
+                'rx bytes'
+                'rx crc'
+                'rx drop'
+                'rx errors'
+                'rx fifo'
+                'rx frame'
+                'rx length'
+                'rx miss'
+                'rx over'
+                'rx pkts'
+                'rx-rate'
+                'sec'
+                'signal'
+                'ssid'
+                'status'
+                'time-stamp'
+                'tx abort'
+                'tx bytes'
+                'tx crr'
+                'tx errors'
+                'tx fifo'
+                'tx hb'
+                'tx pkts'
+                'tx wind'
+                'tx-failed %'
+                'tx-rate'
+                'wifi retries'
+
+            Can't decide what columns to use? You can just use 'all' to select all available columns from both tables.
+
+            This script uses two args parsers one in the script the second is Realm args parser
+            Realm args parser is one directory up then traverse into /py-json/LANforge/lfcli_base.py
+            search for create_basic_argsparse
+            --mgr --mgr_port --upstream_port --num_stations --radio --security --ssid --passwd
+
+STATUS: Functional
+
+VERIFIED_ON:   15-JULY-2023,
+             Build Version:  5.4.6
+             Kernel Version: 6.2.16+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 """
 import sys
 import os
@@ -835,213 +1069,18 @@ def main():
             over ipv4 or ipv6
             ''',
         description='''\
-test_ip_variable_time.py:
---------------------
-Report:
-The report will be in /home/lanforge/report-data/<timestamp>_test_ip_variable_time .
-if the directory it not present it "should" place it in the local directory from where the script was run.
+NAME: test_ip_variable_time.py
 
-Generic command layout:
+PURPOSE:
+          ->  This script creates variable number of stations with individual cross-connects and endpoints.
+              Stations are set to UP state, but cross-connections remain stopped.
 
-python3 ./test_ip_variable_time.py
-    --upstream_port eth1
-    --radio wiphy0
-    --num_stations 32
-    --security {open|wep|wpa|wpa2|wpa3}
-    --mode   1
-        {"auto"   : "0",
-        "a"      : "1",
-        "b"      : "2",
-        "g"      : "3",
-        "abg"    : "4",
-        "abgn"   : "5",
-        "bgn"    : "6",
-        "bg"     : "7",
-        "abgnAC" : "8",
-        "anAC"   : "9",
-        "an"     : "10",
-        "bgnAC"  : "11",
-        "abgnAX" : "12",
-        "bgnAX"  : "13"}
-    --ssid <ssid>
-    --password admin123
-    --test_duration 2m (default)
-    --monitor_interval_ms
-    --a_min 3000
-    --b_min 1000
-    --ap "00:0e:8e:78:e1:76"
-    --output_format csv
-    --traffic_type lf_udp
-    --report_file ~/Documents/results.csv                       (Example of csv file output  - please use another extension for other file formats)
-    --compared_report ~/Documents/results_prev.csv              (Example of csv file retrieval - please use another extension for other file formats) - UNDER CONSTRUCTION
-    --layer3_cols 'name','tx bytes','rx bytes','dropped'          (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
-    --port_mgr_cols 'ap','ip'                                    (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
-    --debug
+          ->  This script create variable number of stations and endpoints to generate and verify layer-3 traffic over ipv4 or ipv6.
 
-    python3 ./test_ip_variable_time.py
-    --upstream_port eth1        (upstream Port)
-    --traffic_type lf_udp       (traffic type, lf_udp | lf_tcp)
-    --test_duration 5m          (duration to run traffic 5m --> 5 Minutes)
-    --create_sta False          (False, means it will not create stations and use the sta_names specified below)
-    --sta_names sta000,sta001,sta002 (used if --create_sta False, comma separated names of stations)
+          ->  Create stations to test connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open)
+              over ipv4 or ipv6
 
-    Example Command:
-    python3  ./test_ip_variable_time.py  --mgr 192.168.100.116 --radio wiphy1
-        --ssid asus11ax-5 --passwd hello123 --security wpa2 --test_duration 60s
-        --output_format excel  --traffic_type lf_tcp --a_min 1000000 --b_min 1000000
-        --upstream_port eth2  --mode "5" --layer3_cols 'name','tx rate','rx rate'
-        --port_mgr_cols 'alias','channel','activity','mode'
-
-===============================================================================
- ** FURTHER INFORMATION **
-    Using the layer3_cols flag:
-
-    Currently the output function does not support inputting the columns in layer3_cols the way they are displayed in the GUI. This quirk is under construction. To output
-    certain columns in the GUI in your final report, please match the according GUI column displayed to it's counterpart to have the additional columns correctly displayed
-    in your report. Note that the report will prepend "l3-" to the supplied layer3_col flags.
-
-    GUI Column Display       Layer3_cols argument to type in (to print in report)
-
-    Name                |  'name'
-    EID                 |  'eid'
-    Run                 |  'run'
-    Mng                 |  'mng'
-    Script              |  'script'
-    Tx Rate             |  'tx rate'
-    Tx Rate (1 min)     |  'tx rate (1&nbsp;min)'
-    Tx Rate (last)      |  'tx rate (last)'
-    Tx Rate LL          |  'tx rate ll'
-    Rx Rate             |  'rx rate'
-    Rx Rate (1 min)     |  'rx rate (1&nbsp;min)'
-    Rx Rate (last)      |  'rx rate (last)'
-    Rx Rate LL          |  'rx rate ll'
-    Rx Drop %           |  'rx drop %'
-    Tx PDUs             |  'tx pdus'
-    Tx Pkts LL          |  'tx pkts ll'
-    PDU/s TX            |  'pdu/s tx'
-    Pps TX LL           |  'pps tx ll'
-    Rx PDUs             |  'rx pdus'
-    Rx Pkts LL          |  'pps rx ll'
-    PDU/s RX            |  'pdu/s tx'
-    Pps RX LL           |  'pps rx ll'
-    Delay               |  'delay'
-    Dropped             |  'dropped'
-    Jitter              |  'jitter'
-    Tx Bytes            |  'tx bytes'
-    Rx Bytes            |  'rx bytes'
-    Replays             |  'replays'
-    TCP Rtx             |  'tcp rtx'
-    Dup Pkts            |  'dup pkts'
-    Rx Dup %            |  'rx dup %'
-    OOO Pkts            |  'ooo pkts'
-    Rx OOO %            |  'rx ooo %'
-    RX Wrong Dev        |  'rx wrong dev'
-    CRC Fail            |  'crc fail'
-    RX BER              |  'rx ber'
-    CX Active           |  'cx active'
-    CX Estab/s          |  'cx estab/s'
-    1st RX              |  '1st rx'
-    CX TO               |  'cx to'
-    Pattern             |  'pattern'
-    Min PDU             |  'min pdu'
-    Max PDU             |  'max pdu'
-    Min Rate            |  'min rate'
-    Max Rate            |  'max rate'
-    Send Buf            |  'send buf'
-    Rcv Buf             |  'rcv buf'
-    CWND                |  'cwnd'
-    TCP MSS             |  'tcp mss'
-    Bursty              |  'bursty'
-    A/B                 |  'a/b'
-    Elapsed             |  'elapsed'
-    Destination Addr    |  'destination addr'
-    Source Addr         |  'source addr'
-
-    Using the port_mgr_cols flag:
-         '4way time (us)'
-         'activity'
-         'alias'
-         'anqp time (us)'
-         'ap'
-         'beacon'
-         'bps rx'
-         'bps rx ll'
-         'bps tx'
-         'bps tx ll'
-         'bytes rx ll'
-         'bytes tx ll'
-         'channel'
-         'collisions'
-         'connections'
-         'crypt'
-         'cx ago'
-         'cx time (us)'
-         'device'
-         'dhcp (ms)'
-         'down'
-         'entity id'
-         'gateway ip'
-         'ip'
-         'ipv6 address'
-         'ipv6 gateway'
-         'key/phrase'
-         'login-fail'
-         'login-ok'
-         'logout-fail'
-         'logout-ok'
-         'mac'
-         'mask'
-         'misc'
-         'mode'
-         'mtu'
-         'no cx (us)'
-         'noise'
-         'parent dev'
-         'phantom'
-         'port'
-         'port type'
-         'pps rx'
-         'pps tx'
-         'qlen'
-         'reset'
-         'retry failed'
-         'rx bytes'
-         'rx crc'
-         'rx drop'
-         'rx errors'
-         'rx fifo'
-         'rx frame'
-         'rx length'
-         'rx miss'
-         'rx over'
-         'rx pkts'
-         'rx-rate'
-         'sec'
-         'signal'
-         'ssid'
-         'status'
-         'time-stamp'
-         'tx abort'
-         'tx bytes'
-         'tx crr'
-         'tx errors'
-         'tx fifo'
-         'tx hb'
-         'tx pkts'
-         'tx wind'
-         'tx-failed %'
-         'tx-rate'
-         'wifi retries'
-
-    Can't decide what columns to use? You can just use 'all' to select all available columns from both tables.
-
-    This script uses two args parsers one in the script the second is Realm args parser
-    Realm args parser is one directory up then traverse into /py-json/LANforge/lfcli_base.py
-    search for create_basic_argsparse
-     --mgr --mgr_port --upstream_port --num_stations --radio --security --ssid --passwd
-
-
-    Example command:
+EXAMPLE:
     1. Use Existing station ,  Note: put the shelf.resource.wifi-sta  (below is 1.1.wlan4),
         The station needs to configured with the ssid, passwd, security and mode in the LANforge GUI
     ./test_ip_variable_time.py  --mgr 192.168.0.100  --radio wiphy4 --ssid ssid_5g --passwd pass_5g
@@ -1060,7 +1099,7 @@ python3 ./test_ip_variable_time.py
     ./test_ip_variable_time.py  --mgr 192.168.0.100    --radio wiphy1 --ssid ssid_5g --passwd pass_5g
         --security wpa2 --test_duration 60s --output_format csv  --traffic_type lf_tcp
         --a_min 600000000 --b_min 600000000  --upstream_port eth2 --mode '5'
-        --layer3_cols 'name','tx rate','rx rate'  --port_mgr_cols 'alias','channel','activity','mode'
+        --layer3_cols 'name','tx rate','rx rate'  `--port_mgr_cols 'alias','channel','activity','mode'
         --num_stations 2
     
     4. Create Multiple stations and run traffic with different upstream port
@@ -1068,6 +1107,224 @@ python3 ./test_ip_variable_time.py
         --test_duration 60s --output_format csv  --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  
         --upstream_port eth2 eth1 --mode '5' --num_stations 1 --passwd pass_2g pass_5g --security wpa2 wpa2
 
+SCRIPT_CLASSIFICATION:  Creation & Runs Traffic
+
+SCRIPT_CATEGORIES:  Performance, Functional,  KPI Generation,  Report Generation
+
+NOTES:
+      * This Script has two working modes:
+
+        Mode 1:
+            When station is not available,
+
+            This script will create a variable number of stations each with their own set of cross-connects and endpoints.
+            It will then create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
+            This test  will pass if all stations increase traffic over the full test duration.
+
+        Mode 2:
+            When station is already available,
+            
+            This script will create layer3 cross-connects and endpoints It will then
+            create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
+            This test will pass if all stations increase traffic over the full test duration.
+
+        Generic command layout:
+
+        python3 ./test_ip_variable_time.py
+            --upstream_port eth1
+            --radio wiphy0
+            --num_stations 32
+            --security {open|wep|wpa|wpa2|wpa3}
+            --mode   1
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13"}
+            --ssid <ssid>
+            --password admin123
+            --test_duration 2m (default)
+            --monitor_interval_ms
+            --a_min 3000
+            --b_min 1000
+            --ap "00:0e:8e:78:e1:76"
+            --output_format csv
+            --traffic_type lf_udp
+            --report_file ~/Documents/results.csv               (Example of csv file output  - please use another extension for other file formats)
+            --compared_report ~/Documents/results_prev.csv      (Example of csv file retrieval - please use another extension for other file formats) - UNDER CONSTRUCTION
+            --layer3_cols 'name','tx bytes','rx bytes','dropped'(column names from the GUI to print on report -  please read below to know what to put here according to preferences)
+            --port_mgr_cols 'ap','ip'                           (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
+            --debug
+
+        ===============================================================================
+        ** FURTHER INFORMATION **
+            Using the layer3_cols flag:
+
+            Currently the output function does not support inputting the columns in layer3_cols the way they are displayed in the GUI.
+            This quirk is under construction. To output certain columns in the GUI in your final report, please match the according 
+            GUI column displayed to it's counterpart to have the additional columns correctly displayed in your report. 
+            Note that the report will prepend "l3-" to the supplied layer3_col flags.
+
+            GUI Column Display       Layer3_cols argument to type in (to print in report)
+
+            Name                |  'name'
+            EID                 |  'eid'
+            Run                 |  'run'
+            Mng                 |  'mng'
+            Script              |  'script'
+            Tx Rate             |  'tx rate'
+            Tx Rate (1 min)     |  'tx rate (1&nbsp;min)'
+            Tx Rate (last)      |  'tx rate (last)'
+            Tx Rate LL          |  'tx rate ll'
+            Rx Rate             |  'rx rate'
+            Rx Rate (1 min)     |  'rx rate (1&nbsp;min)'
+            Rx Rate (last)      |  'rx rate (last)'
+            Rx Rate LL          |  'rx rate ll'
+            Rx Drop %           |  'rx drop %'
+            Tx PDUs             |  'tx pdus'
+            Tx Pkts LL          |  'tx pkts ll'
+            PDU/s TX            |  'pdu/s tx'
+            Pps TX LL           |  'pps tx ll'
+            Rx PDUs             |  'rx pdus'
+            Rx Pkts LL          |  'pps rx ll'
+            PDU/s RX            |  'pdu/s tx'
+            Pps RX LL           |  'pps rx ll'
+            Delay               |  'delay'
+            Dropped             |  'dropped'
+            Jitter              |  'jitter'
+            Tx Bytes            |  'tx bytes'
+            Rx Bytes            |  'rx bytes'
+            Replays             |  'replays'
+            TCP Rtx             |  'tcp rtx'
+            Dup Pkts            |  'dup pkts'
+            Rx Dup %            |  'rx dup %'
+            OOO Pkts            |  'ooo pkts'
+            Rx OOO %            |  'rx ooo %'
+            RX Wrong Dev        |  'rx wrong dev'
+            CRC Fail            |  'crc fail'
+            RX BER              |  'rx ber'
+            CX Active           |  'cx active'
+            CX Estab/s          |  'cx estab/s'
+            1st RX              |  '1st rx'
+            CX TO               |  'cx to'
+            Pattern             |  'pattern'
+            Min PDU             |  'min pdu'
+            Max PDU             |  'max pdu'
+            Min Rate            |  'min rate'
+            Max Rate            |  'max rate'
+            Send Buf            |  'send buf'
+            Rcv Buf             |  'rcv buf'
+            CWND                |  'cwnd'
+            TCP MSS             |  'tcp mss'
+            Bursty              |  'bursty'
+            A/B                 |  'a/b'
+            Elapsed             |  'elapsed'
+            Destination Addr    |  'destination addr'
+            Source Addr         |  'source addr'
+
+            Using the port_mgr_cols flag:
+                '4way time (us)'
+                'activity'
+                'alias'
+                'anqp time (us)'
+                'ap'
+                'beacon'
+                'bps rx'
+                'bps rx ll'
+                'bps tx'
+                'bps tx ll'
+                'bytes rx ll'
+                'bytes tx ll'
+                'channel'
+                'collisions'
+                'connections'
+                'crypt'
+                'cx ago'
+                'cx time (us)'
+                'device'
+                'dhcp (ms)'
+                'down'
+                'entity id'
+                'gateway ip'
+                'ip'
+                'ipv6 address'
+                'ipv6 gateway'
+                'key/phrase'
+                'login-fail'
+                'login-ok'
+                'logout-fail'
+                'logout-ok'
+                'mac'
+                'mask'
+                'misc'
+                'mode'
+                'mtu'
+                'no cx (us)'
+                'noise'
+                'parent dev'
+                'phantom'
+                'port'
+                'port type'
+                'pps rx'
+                'pps tx'
+                'qlen'
+                'reset'
+                'retry failed'
+                'rx bytes'
+                'rx crc'
+                'rx drop'
+                'rx errors'
+                'rx fifo'
+                'rx frame'
+                'rx length'
+                'rx miss'
+                'rx over'
+                'rx pkts'
+                'rx-rate'
+                'sec'
+                'signal'
+                'ssid'
+                'status'
+                'time-stamp'
+                'tx abort'
+                'tx bytes'
+                'tx crr'
+                'tx errors'
+                'tx fifo'
+                'tx hb'
+                'tx pkts'
+                'tx wind'
+                'tx-failed %'
+                'tx-rate'
+                'wifi retries'
+
+            Can't decide what columns to use? You can just use 'all' to select all available columns from both tables.
+
+            This script uses two args parsers one in the script the second is Realm args parser
+            Realm args parser is one directory up then traverse into /py-json/LANforge/lfcli_base.py
+            search for create_basic_argsparse
+            --mgr --mgr_port --upstream_port --num_stations --radio --security --ssid --passwd
+
+STATUS: Functional 
+
+VERIFIED_ON:   15-JULY-2023,
+             Build Version:  5.4.6
+             Kernel Version: 6.2.16+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
             ''')
     optional = parser.add_argument_group('optional arguments')
