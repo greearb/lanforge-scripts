@@ -806,7 +806,6 @@ class db_comparison:
         report.set_table_title("GUI Overview :")
         report.build_table_title()
         report.set_text("The table below displays the First test run values stored in the database.")
-        report.set_text("The table below displays the First test run values stored in the database.")
         report.build_text_simple()
         report.set_table_dataframe(gui_info1)
         report.build_table()
