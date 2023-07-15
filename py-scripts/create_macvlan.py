@@ -8,7 +8,7 @@ EXAMPLE:
         # Sample CLI Formate:
 
             ./create_macvlan.py --mgr localhost --macvlan_parent <port> --num_ports <num ports>
-            --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
+            --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr> --cleanup
 
         # For creating the variable number of macvlan's
 
@@ -142,7 +142,7 @@ EXAMPLE:
         # Sample CLI Formate:
 
             ./create_macvlan.py --mgr localhost --macvlan_parent <port> --num_ports <num ports>
-            --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
+            --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr> --cleanup
 
         # For creating the variable number of macvlan's
 
