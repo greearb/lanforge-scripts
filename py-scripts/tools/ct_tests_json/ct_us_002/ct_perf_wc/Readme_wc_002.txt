@@ -7,6 +7,11 @@ The format for the command is
 
 For a production run ad --production to email to a wider audiance 
 
+Single run
+
+./lf_check.py --json_rig ./ct_rig_json/ct_us_002_rig.json --json_dut ./ct_dut_json/ct_002_AX12_dut.json --json_test ./ct_tests_json/ct_us_002/ct_perf_wc/ct_perf_wc_5g_002.json:wc_perf_5g_mtk7915_W7  --path /home/lanforge/html-reports/ct_us_002 --log_level debug
+
+
 
 ########################
 TESTBED 002 WC test runs
