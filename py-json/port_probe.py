@@ -68,13 +68,15 @@ class ProbePort(LFCliBase):
             logger.debug("probepath (eid): {probepath}".format(probepath=self.probepath))
             logger.debug(pformat("Probe response: {response}".format(response=self.response)))
         text = self.response['probe-results'][0][self.eid_str]['probe results'].split('\n')
-        signals = [x.strip('\t').split('\t') for x in text if 'signal' in x]
-        keys = [x[0].strip(' ').strip(':') for x in signals]
-        values = [x[1].strip('dBm').strip(' ') for x in signals]
+        signals = [x.strip('\t').split(':') for x in text if 'signal' in x]
+        updated_s = [[sublist[0], sublist[1].replace('\t', '')] for sublist in signals]
+        keys = [x[0].strip(' ').strip(':') for x in updated_s]
+        values = [x[1].strip('dBm').strip(' ') for x in updated_s]
         if self.debug:
             logger.debug("signals keys: {keys}".format(keys=keys))
             logger.debug("signals values: {values}".format(values=values))
         self.signals = dict(zip(keys, values))
+        print(self.signals)
 
         try:
             tx_bitrate = [x for x in text if 'tx bitrate' in x][0].replace('\t', ' ')
