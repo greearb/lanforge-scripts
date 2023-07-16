@@ -9,7 +9,7 @@
     },
     "test_suites":{
         "funct_tests":{
-            "lf_help_check":{
+            "LF_CHECK_HELP":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"lf_help_check.bash",
