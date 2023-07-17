@@ -337,7 +337,11 @@ class lf_check():
 
         # Allure information
         self.junit_results = ""
-        self.junit_path_only = ""        
+        self.junit_path_only = ""
+
+        # Iterations
+        self.total_iterations = 0
+        self.interation = 0
 
 
     def set_junit_results(self, junit_results):
@@ -626,7 +630,9 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
         # get the Fedora platform 
         if (self.email_title_txt != ""):
 
-            self.mail_subject = "QA Rig: {email} Suite: {suite} Duration: {duration} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  Tests:{tests}   Server IP: {hostname}  DB: {db} Server Ver:{server_ver} Date: {date}".format(
+            self.mail_subject = "{iteration} of {total_iterations} QA Rig: {email} Suite: {suite} Duration: {duration} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  Tests:{tests}   Server IP: {hostname}  DB: {db} Server Ver:{server_ver} Date: {date}".format(
+                iteration=self.iteration,
+                total_iterations=self.total_iterations,
                 email=self.email_title_txt,
                 duration=self.suite_duration,
                 suite=self.test_suite,
@@ -2024,6 +2030,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
             logger.info("EXITING test_suites KEY not in json {}".format(json_test_name))
             exit(1)
 
+    # Determine the number of iterations
+    total_iterations = 0
     # for rig json (lanforge)
     for json_rig_name in json_rig_list:
 
@@ -2032,6 +2040,19 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
             # for dut json 
             for (json_dut_name) in json_dut_list:
+                total_iterations += 1
+
+    iteration = 0
+
+    # for rig json (lanforge)
+    for json_rig_name in json_rig_list:
+
+        # for test json and suite
+        for (json_test_name,suite_name) in zip(json_test_list,suite_list):
+
+            # for dut json 
+            for (json_dut_name) in json_dut_list:
+                iteration += 1
 
                 # change back to the original working directory
                 os.chdir(current_working_directory)
@@ -2446,6 +2467,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 if args.no_send_email or check.email_list_test == "":
                     logger.info("send email not set or email_list_test not set")
                 else:
+                    check.total_iterations = total_iterations
+                    check.iteration = iteration
                     check.send_results_email(report_file=html_report)
 
                 # print later so shows up last
