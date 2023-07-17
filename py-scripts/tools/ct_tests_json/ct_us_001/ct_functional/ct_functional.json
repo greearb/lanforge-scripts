@@ -456,7 +456,17 @@
                     " "
                 ]
             }
+        },
+        "suite_quicker":{
+            "LF_CHECK_HELP":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_graph.py",
+                "args":"",
+                "args_list":[
+                    " "
+                ]
+            }
         }         
-
     }
 }
