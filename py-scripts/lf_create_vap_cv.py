@@ -120,7 +120,6 @@ class create_vap_cv(cv_test):
                  vap_bw=None,
                  vap_mode=None,
                  set_upstream=None,
-                 vap=""
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -139,7 +138,7 @@ class create_vap_cv(cv_test):
         self.set_upstream = set_upstream
         self.vap_bw = vap_bw
         self.vap_mode = vap_mode
-        self.vap=vap
+        self.vaps_list= []
 
     def setup_vap(self, scenario_name="Automation", radio="wiphy0", frequency="-1", name=None, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
 
@@ -206,8 +205,8 @@ class create_vap_cv(cv_test):
                                 [f'resource {vap_shelf}.{vap_resource}.0 0'],
                                 [f'profile_link {upstream_shelf}.{upstream_resource} upstream-dhcp 1 NA NA {upstream_name},AUTO -1 NA']]
         else:
-            self.raw_line_l1 = [[f'profile_link 1.1 {self.profile_name} 1 NA NA {self.vap_radio},AUTO {self.freq} NA'],
-                                ["resource 1.1.0 0"]]
+            self.raw_line_l1 = [[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},AUTO {self.freq} NA'],
+                                [f'resource {vap_shelf}.{vap_resource}.0 0']]
 
         logger.info(self.raw_line_l1)
 
@@ -239,16 +238,8 @@ class create_vap_cv(cv_test):
                                          line=None)
 
         self.build_chamberview(chamber=chamber, scenario_name=scenario_name)
-        eid = self.name_to_eid(radio)
-        eid1=str(eid[0])+'.'+str(eid[1])+'.'
-        response=self.json_get("/port/all")
-        for i in response["interfaces"]:
-            for key, value in i.items():
-                if eid1 in value["port"]:
-                    if eid[2] in value["parent dev"]:
-                        if "vap" in value["alias"]:
-                            self.vap = value["alias"]
-        self.wait_for_ip(station_list=[eid1+self.vap])
+        self.vaps_list=list(self.vap_list()[0].keys())
+        self.wait_for_ip(station_list=self.vaps_list)
 
     def modify_vr_cfg(self, resource=1, vr_name="Router-0", local_dev="vap0000", dhcp_min="",
                       dhcp_max=""):  # modify & apply the net-smith vr(virtual router) config settings
