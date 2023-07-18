@@ -683,8 +683,8 @@ class LFCliBase:
                                              description=description)
         else:
             parser = argparse.ArgumentParser()
-        optional = parser.add_argument_group('arguments defined by create_bare_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
-        required = parser.add_argument_group('arguments defined by create_bare_argparse found in  /lanforge-scripts/py-json/LANforge/lfcli_base.py')
+        optional = parser.add_argument_group('optional arguments defined by create_bare_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
+        required = parser.add_argument_group('required arguments defined by create_bare_argparse found in  /lanforge-scripts/py-json/LANforge/lfcli_base.py')
         optional.add_argument('--mgr',
                               default='localhost',
                               help='hostname for where LANforge GUI is running')
@@ -708,7 +708,7 @@ class LFCliBase:
 
         return parser
 
-    # Create argparse with radio, securiy, ssid and passwd required
+    # Create argparse with radio, security, ssid and passwd required
     # TODO: show example of how to add required or optional arguments from calling class
     @staticmethod
     def create_basic_argparse(prog=None,
@@ -724,8 +724,8 @@ class LFCliBase:
                                              description=description)
         else:
             parser = argparse.ArgumentParser()
-        optional = parser.add_argument_group('arguments defined by create_basic_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
-        required = parser.add_argument_group('arguments defined by create_basic_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
+        optional = parser.add_argument_group('arguments with PRE-DEFINED DEFAULTS, arguments & defaults defined by create_basic_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
+        required = parser.add_argument_group('arguments with NO PRE-DEFINED DEFAULTS, arguments defined by create_basic_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
 
         # Optional Args
         optional.add_argument('--mgr',
