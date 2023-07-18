@@ -76,7 +76,7 @@ class ProbePort(LFCliBase):
             logger.debug("signals keys: {keys}".format(keys=keys))
             logger.debug("signals values: {values}".format(values=values))
         self.signals = dict(zip(keys, values))
-        print(self.signals)
+        logger.debug(self.signals)
 
         try:
             tx_bitrate = [x for x in text if 'tx bitrate' in x][0].replace('\t', ' ')
