@@ -2,101 +2,468 @@
 """
 NAME: test_l3.py
 
-Host AP reference : https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf
+PURPOSE: The Layer 3 Traffic Generation Test is designed to test the performance of the Access Point by running layer-3
+         Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream of data flowing through the system under test.
+         A Cross-Connect (CX) is composed of two Endpoints, each of which is associated with a particular Port (physical or virtual interface).
 
+         The test will create stations, create cx traffic between upstream port and stations,  run traffic. Verify
+         the traffic is being transmitted and received
 
-PURPOSE:
+         * Supports creating user-specified amount stations on multiple radios
+         * Supports configuring upload and download requested rates and PDU sizes.
+         * Supports generating connections with different ToS values.
+         * Supports generating tcp and/or UDP traffic types.
+         * Supports iterating over different PDU sizes
+         * Supports iterating over different requested tx rates (configurable as total or per-connection value)
+         * Supports iterating over attenuation values.
+         * Supports testing connection between two ethernet connection - L3 dataplane
 
- Supports creating user-specified amount stations on multiple radios
- Supports configuring upload and download requested rates and PDU sizes.
- Supports generating connections with different ToS values.
- Supports generating tcp and/or UDP traffic types.
- Supports iterating over different PDU sizes
- Supports iterating over different requested tx rates
-    (configurable as total or per-connection value)
- Supports iterating over attenuation values.
- Supports testing connection between two ethernet connection - L3 dataplane
+         Generic command layout:
+         -----------------------
+         ./test_l3.py --mgr <ip_address> --test_duration <duration> --endp_type <traffic types> --upstream_port <port>
+         --radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password>
+         security==<security type: wpa2, open, wpa3>" --debug
 
 EXAMPLE:
 
- 10 stations on wiphy0, 1 station on wiphy2.  open-auth to ASUS_70 SSID
- Configured to submit KPI
-./test_l3.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
-  --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-  --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-  --test_duration 5s
+#########################################
+# Examples
+#########################################
+Example running traffic with two radios
+1. Test duration 30 minutes
+2. Traffic IPv4 TCP, UDP
+3. Upstream-port eth2
+4. Radio #0 wiphy0 has 1 station, ssid = ssid_2g, ssid password = ssid_pw_2g  security = wpa2
+5. Radio #1 wiphy1 has 2 stations, ssid = ssid_5g, ssid password = BLANK security = open
+6. Create connections with TOS of BK and VI
 
-Example command using attenuator
-./test_l3.py --test_duration 5m --polling_interval 1s --upstream_port eth2 \
-    --radio 'radio==wiphy1,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
-    --radio 'radio==wiphy2,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
-    --radio 'radio==wiphy3,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
-    --radio 'radio==wiphy4,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
-    --endp_type lf_udp --side_a_min_bps=20000 --side_b_min_bps=400000000 \
-    --attenuators 1.1.<serial number>.1 \
-    --atten_vals 20,21,40,41
+         # The script now supports multiple radios, each specified with an individual --radio switch.
 
-Example using upsteam eth1 downstream eth2
-    ./test_l3.py --test_duration 20s --polling_interval 1s --upstream_port eth1 --downstream_port eth2
-    --endp_type lf --rates_are_totals --side_a_min_bps=10000000,0 --side_a_min_pdu=1000 --side_b_min_bps=0,300000000 --side_b_min_pdu=1000
+           * UDP and TCP bi-directional test, no use of controller.
+             ./test_l3.py --mgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --upstream_port 1.1.eth1
+             --radio "radio==1.1.wiphy0 stations==5 ssid==Netgear2g ssid_pw==lanforge security==wpa2"
+             --radio "radio==1.1.wiphy1 stations==1 ssid==Netgear5g ssid_pw==lanforge security==wpa2"
+             --test_duration 60s
 
-Example using wifi_settings
-    ./test_l3.py  --lfmgr 192.168.100.116 --local_lf_report_dir
-     /home/lanforge/html-reports/ --test_duration 15s --polling_interval 5s
-     --upstream_port eth2
-     --radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2
-     wifi_mode==0 wifi_settings==wifi_settings
-     enable_flags==('ht160_enable'|'wpa2_enable'|'80211u_enable'|'create_admin_down')"
-     --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000
-     --test_rig CT-US-001 --test_tag 'test_L3'
+           * Port resets, chooses random value between min and max
+             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 90s --polling_interval 10s --upstream_port eth1
+             --radio 'radio==wiphy0,stations==4,ssid==Netgear2g,ssid_pw==lanforge,security==wpa2,reset_port_enable==TRUE,
+             reset_port_time_min==10s,reset_port_time_max==20s' --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000
+             --side_b_min_bps=300000000
 
-Example : Have the stations continue to run after the completion of the script
-    ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
-        --radio 'radio==wiphy1 stations==2 ssid==asus_2g ssid_pw==lf_asus_2g security==wpa2'
-        --test_duration 30s --polling_interval 5s
-        --side_a_min_bps 256000 --side_b_min_bps 102400000
-        --no_stop_traffic
+         # Command: (remove carriage returns)
+             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 30s --endp_type "lf_tcp,lf_udp" --tos "BK VI" --upstream_port 1.1.eth1
+             --radio "radio==1.1.wiphy0 stations==1 ssid==Netgear2g ssid_pw==lanforge security==wpa2"
 
-Example : Have script use existing stations from previous run where traffic was not stopped and also create new stations and
-        leave traffic running
-        ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
-        --radio 'radio==wiphy0 stations==2 ssid==asus_5g ssid_pw==lf_asus_5g security==wpa2'
-        --sta_start_offset 1000
-        --test_duration 30s --polling_interval 5s
-        --side_a_min_bps 256000 --side_b_min_bps 102400000
-        --use_existing_station_list
-        --existing_station_list 1.1.sta0000,1.1.sta0001
-        --no_stop_traffic
+         # Have the stations continue to run after the completion of the script
+             ./test_l3.py --lfmgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth1
+             --radio 'radio==wiphy0 stations==2 ssid==Netgear2g ssid_pw==lanforge security==wpa2' --test_duration 30s
+             --polling_interval 5s --side_a_min_bps 256000 --side_b_min_bps 102400000 --no_stop_traffic
+
+         #  Have script use existing stations from previous run where traffic was not stopped and also create new stations and leave traffic running [ NOT WORKING AS EXPECTED ]
+             ./test_l3.py --lfmgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth1
+             --radio 'radio==wiphy0 stations==2 ssid==Netgear2g ssid_pw==lanforge security==wpa2' --sta_start_offset 1000
+             --test_duration 30s --polling_interval 5s --side_a_min_bps 256000 --side_b_min_bps 102400000 --use_existing_station_list
+             --existing_station_list '1.1.sta0000,1.1.sta0001,1.1.sta0002' --no_stop_traffic
+
+         # Have script use wifi_settings enable flages  ::  wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)
+             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 20s --polling_interval 5s --upstream_port 1.1.eth1
+             --radio 'radio==1.1.wiphy0,stations==1,ssid==Netgear2g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+             --radio 'radio==1.1.wiphy1,stations==1,ssid==Netgear5g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+             --radio 'radio==1.1.wiphy2,stations==1,ssid==Netgear2g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+             --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --test_rig ID_003 --test_tag 'l3_longevity' --dut_model_num GT-AXE11000 --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0 --dut_serial_num 12345678 --log_level debug
+
+         # Setting wifi_settings per radio
+            ./test_l3.py
+            --lfmgr 192.168.100.116
+            --local_lf_report_dir /home/lanforge/html-reports/
+            --test_duration 15s
+            --polling_interval 5s
+            --upstream_port eth2
+            --radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2  mode==0 wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down&&ht160_enable) "
+            --endp_type lf_udp
+            --rates_are_totals
+            --side_a_min_bps=20000
+            --side_b_min_bps=300000000
+            --test_rig CT-US-001
+            --test_tag 'test_l3'
+
+         # Example : LAN-1927  WPA2-TLS-Configuration
+            ./test_l3.py
+             --lfmgr 192.168.0.103
+             --test_duration 20s
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa2,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Disabled'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=256000
+             --side_b_min_bps=300000000
+             --test_rig ID_003
+             --test_tag 'test_l3'
+             --dut_model_num GT-AXE11000
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+
+        # Example : LAN-1927  WPA2-TTLS-Configuration
+            ./test_l3.py
+             --lfmgr 192.168.0.103
+             --test_duration 20s
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa2,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra==key_mgmt&&WPA-EAP!!eap&&TTLS!!identity&&testuser!!passwd&&testpasswd!!ieee80211w&&Disabled'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=256000
+             --side_b_min_bps=300000000
+             --test_rig ID_003
+             --test_tag 'test_l3'
+             --dut_model_num GT-AXE11000
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
 
 
+        # Example : LAN-1927  WPA3-TTLS-Configuration
+            ./test_l3.py
+             --lfmgr 192.168.0.103
+             --test_duration 20s
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TTLS!!identity&&testuser!!passwd&&testpasswd!!ieee80211w&&Required'
+             --endp_type lf_ud
+             --rates_are_totals
+             --side_a_min_bps=256000
+             --side_b_min_bps=300000000
+             --test_rig ID_003
+             --test_tag 'test_l3'
+             --dut_model_num GT-AXE11000
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+
+        # Example : LAN-1927  WPA3-TLS-Configuration
+            ./test_l3.py
+             --lfmgr 192.168.0.103
+             --test_duration 20s
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Required'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=256000
+             --side_b_min_bps=300000000
+             --test_rig ID_003
+             --test_tag 'test_l3'
+             --dut_model_num GT-AXE11000
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+
+SCRIPT_CLASSIFICATION:  Creation & Runs Traffic
+
+SCRIPT_CATEGORIES:  Performance, Functional,  KPI Generation,  Report Generation
 
 NOTES:
-command composer : <lanforge ip>:8080/help
 
-Drop RX - in port manager is not the same are layer 3 cx Rx Drop %
-Notes from Ben Greear
+#################################
+# Command switches
+#################################
 
-Port Mgr Drop Rx
-unlikely you will see rx drop on port mgr
-layer-3 rx drop is related to gaps in rx sequence numbers,
-which means network under test dropped frames somehow and/or re-ordered them.
+--mgr <hostname for where LANforge GUI is running>',default='localhost'
+-d  / --test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m'
+--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE"
+--debug:  Enable debugging',default=False
+-t  / --endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
+                        default='lf_udp', type=valid_endp_types
+-u / --upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
+-o / --outfile <Output file for csv data>", default='longevity_results'
 
-Layer 3 cx Rx Drop %
-cx mgr drop% is based on number peer inpoint transmitted vs what we received.
-It would ignore reodering problem, and also detect complete path loss
-(where rx drop based on seq numbers would not since there is no gap).
-But, packets in-flight through network under test may be counted as dropped
-when really they are probably not dropped.
+<duration>: number followed by one of the following
+d - days
+h - hours
+m - minutes
+s - seconds
 
-you can quiesce a test at the end, which means stop transmitter
-but leave received going to drain packets from the network and get better drop% calculations.
-Stopping a test would record packets in flight at the moment it is stopped as dropped.
+<traffic type>:
+lf_udp  : IPv4 UDP traffic
+lf_tcp  : IPv4 TCP traffic
+lf_udp6 : IPv6 UDP traffic
+lf_tcp6 : IPv6 TCP traffic
+mc_udp  : IPv4 multi cast UDP traffic
+mc_udp6 : IPv6 multi cast UDP traffic
 
+<tos>:
+BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred numeric values. Cross connects type of service
 
-COPYRIGHT:
-Copyright 2021 Candela Technologies Inc
+    * Data 0 (Best Effort, BE): Medium priority queue, medium throughput and delay.
+             Most traditional IP data is sent to this queue.
+    * Data 1 (Background, BK): Lowest priority queue, high throughput. Bulk data that requires maximum throughput and
+             is not time-sensitive is sent to this queue (FTP data, for example).
+    * Data 2 (Video, VI): High priority queue, minimum delay. Time-sensitive data such as Video and other streaming
+             media are automatically sent to this queue.
+    * Data 3 (Voice, VO): Highest priority queue, minimum delay. Time-sensitive data such as Voice over IP (VoIP)
+             is automatically sent to this Queue.
 
-INCLUDE_IN_README
+<wifi_mode>:
+    Input       : Enum Val  : Shown by nc_show_ports
+
+    AUTO        |  0        #  802.11
+    802.11a     |  1        #  802.11a
+    b           |  2        #  802.11b
+    g           |  3        #  802.11g
+    abg         |  4        #  802.11abg
+    abgn        |  5        #  802.11abgn
+    bgn         |  6        #  802.11bgn
+    bg          |  7        #  802.11bg
+    abgnAC      |  8        #  802.11abgn-AC
+    anAC        |  9        #  802.11an-AC
+    an          | 10        #  802.11an
+    bgnAC       | 11        #  802.11bgn-AC
+    abgnAX      | 12        #  802.11abgn-AX
+                            #     a/b/g/n/AC/AX (dual-band AX) support
+    bgnAX       | 13        #  802.11bgn-AX
+    anAX        | 14        #  802.11an-AX
+    aAX         | 15        #  802.11a-AX (6E disables /n and /ac)
+
+wifi_settings flags are currently defined as:
+    wpa_enable           | 0x10         # Enable WPA
+    custom_conf          | 0x20         # Use Custom wpa_supplicant config file.
+    wep_enable           | 0x200        # Use wpa_supplicant configured for WEP encryption.
+    wpa2_enable          | 0x400        # Use wpa_supplicant configured for WPA2 encryption.
+    ht40_disable         | 0x800        # Disable HT-40 even if hardware and AP support it.
+    scan_ssid            | 0x1000       # Enable SCAN-SSID flag in wpa_supplicant.
+    passive_scan         | 0x2000       # Use passive scanning (don't send probe requests).
+    disable_sgi          | 0x4000       # Disable SGI (Short Guard Interval).
+    lf_sta_migrate       | 0x8000       # OK-To-Migrate (Allow station migration between LANforge radios)
+    verbose              | 0x10000      # Verbose-Debug:  Increase debug info in wpa-supplicant and hostapd logs.
+    80211u_enable        | 0x20000      # Enable 802.11u (Interworking) feature.
+    80211u_auto          | 0x40000      # Enable 802.11u (Interworking) Auto-internetworking feature.  Always enabled currently.
+    80211u_gw            | 0x80000      # AP Provides access to internet (802.11u Interworking)
+    80211u_additional    | 0x100000     # AP requires additional step for access (802.11u Interworking)
+    80211u_e911          | 0x200000     # AP claims emergency services reachable (802.11u Interworking)
+    80211u_e911_unauth   | 0x400000     # AP provides Unauthenticated emergency services (802.11u Interworking)
+    hs20_enable          | 0x800000     # Enable Hotspot 2.0 (HS20) feature.  Requires WPA-2.
+    disable_gdaf         | 0x1000000    # AP:  Disable DGAF (used by HotSpot 2.0).
+    8021x_radius         | 0x2000000    # Use 802.1x (RADIUS for AP).
+    80211r_pmska_cache   | 0x4000000    # Enable oportunistic PMSKA caching for WPA2 (Related to 802.11r).
+    disable_ht80         | 0x8000000    # Disable HT80 (for AC chipset NICs only)
+    ibss_mode            | 0x20000000   # Station should be in IBSS mode.
+    osen_enable          | 0x40000000   # Enable OSEN protocol (OSU Server-only Authentication)
+    disable_roam         | 0x80000000   # Disable automatic station roaming based on scan results.
+    ht160_enable         | 0x100000000  # Enable HT160 mode.
+    disable_fast_reauth  | 0x200000000  # Disable fast_reauth option for virtual stations.
+    mesh_mode            | 0x400000000  # Station should be in MESH mode.
+    power_save_enable    | 0x800000000  # Station should enable power-save.  May not work in all drivers/configurations.
+    create_admin_down    | 0x1000000000 # Station should be created admin-down.
+    wds-mode             | 0x2000000000 # WDS station (sort of like a lame mesh), not supported on ath10k
+    no-supp-op-class-ie  | 0x4000000000 # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
+    txo-enable           | 0x8000000000 # Enable/disable tx-offloads, typically managed by set_wifi_txo command
+    use-wpa3             | 0x10000000000 # Enable WPA-3 (SAE Personal) mode.
+    use-bss-transition   | 0x80000000000 # Enable BSS transition.
+    disable-twt          | 0x100000000000 # Disable TWT mode
+
+For wifi_extra_keys syntax :
+    telnet <lanforge ip> 4001
+    type: help set_wifi_extra
+wifi_extra keys:
+                key_mgmt  (Key Mangement)
+                pairwise  (Pairwise Ciphers)
+                group   (Group Ciphers)
+                psk     (WPA PSK)
+                wep_key
+                ca_cert (CA Cert File)
+                eap     (EAP Methods) EAP method: MD5, MSCHAPV2, OTP, GTC, TLS, PEAP, TTLS. (note different the GUI no appended EAP-)
+                identity    (EAP Identity)
+                anonymous_identity  (EAP Anon Identity)
+                phase1  (Phase-1)
+                phase2  (Phase-2)
+                passwd  (EAP Password)
+                pin (EAP Pin)
+                pac_file    (PAC file)
+                private_key (Private Key)
+                pk_password (PK Password)
+                hessid="00:00:00:00:00:00"
+                realm   (Realm)
+                client_cert (Client Cert)
+                imsi    (IMSI)
+                milenage    (Milenage)
+                domain  (Domain)
+                roaming_consortium  (Consortium)
+                venue_group ()
+                network_type    (Network Auth)
+                ipaddr_type_avail   ()
+                network_auth_type ()
+                anqp_3gpp_cell_net ()
+
+                ieee80211w :   0,1,2
+
+Multicast traffic :
+        Multicast traffic default IGMP Address in the range of 224.0.0.0 to 239.255.255.255,
+        so I have provided 224.9.9.9 as IGMP address and IGMP Dest port as 9999 and MIN-IP PORT as 9999.
+        these values must be same on the eth1(server side) and client side, then the traffic will run.
+
+===============================================================================
+ ** FURTHER INFORMATION **
+    Using the layer3_cols flag:
+
+    Currently the output function does not support inputting the columns in layer3_cols the way they are displayed in the GUI. This quirk is under construction. To output
+    certain columns in the GUI in your final report, please match the according GUI column display to it's counterpart to have the columns correctly displayed in
+    your report.
+
+    GUI Column Display       Layer3_cols argument to type in (to print in report)
+
+    Name                |  'name'
+    EID                 |  'eid'
+    Run                 |  'run'
+    Mng                 |  'mng'
+    Script              |  'script'
+    Tx Rate             |  'tx rate'
+    Tx Rate (1 min)     |  'tx rate (1&nbsp;min)'
+    Tx Rate (last)      |  'tx rate (last)'
+    Tx Rate LL          |  'tx rate ll'
+    Rx Rate             |  'rx rate'
+    Rx Rate (1 min)     |  'rx rate (1&nbsp;min)'
+    Rx Rate (last)      |  'rx rate (last)'
+    Rx Rate LL          |  'rx rate ll'
+    Rx Drop %           |  'rx drop %'
+    Tx PDUs             |  'tx pdus'
+    Tx Pkts LL          |  'tx pkts ll'
+    PDU/s TX            |  'pdu/s tx'
+    Pps TX LL           |  'pps tx ll'
+    Rx PDUs             |  'rx pdus'
+    Rx Pkts LL          |  'pps rx ll'
+    PDU/s RX            |  'pdu/s tx'
+    Pps RX LL           |  'pps rx ll'
+    Delay               |  'delay'
+    Dropped             |  'dropped'
+    Jitter              |  'jitter'
+    Tx Bytes            |  'tx bytes'
+    Rx Bytes            |  'rx bytes'
+    Replays             |  'replays'
+    TCP Rtx             |  'tcp rtx'
+    Dup Pkts            |  'dup pkts'
+    Rx Dup %            |  'rx dup %'
+    OOO Pkts            |  'ooo pkts'
+    Rx OOO %            |  'rx ooo %'
+    RX Wrong Dev        |  'rx wrong dev'
+    CRC Fail            |  'crc fail'
+    RX BER              |  'rx ber'
+    CX Active           |  'cx active'
+    CX Estab/s          |  'cx estab/s'
+    1st RX              |  '1st rx'
+    CX TO               |  'cx to'
+    Pattern             |  'pattern'
+    Min PDU             |  'min pdu'
+    Max PDU             |  'max pdu'
+    Min Rate            |  'min rate'
+    Max Rate            |  'max rate'
+    Send Buf            |  'send buf'
+    Rcv Buf             |  'rcv buf'
+    CWND                |  'cwnd'
+    TCP MSS             |  'tcp mss'
+    Bursty              |  'bursty'
+    A/B                 |  'a/b'
+    Elapsed             |  'elapsed'
+    Destination Addr    |  'destination addr'
+    Source Addr         |  'source addr'
+
+    Using the port_mgr_cols flag:
+         '4way time (us)'
+         'activity'
+         'alias'
+         'anqp time (us)'
+         'ap'
+         'beacon'
+         'bps rx'
+         'bps rx ll'
+         'bps tx'
+         'bps tx ll'
+         'bytes rx ll'
+         'bytes tx ll'
+         'channel'
+         'collisions'
+         'connections'
+         'crypt'
+         'cx ago'
+         'cx time (us)'
+         'device'
+         'dhcp (ms)'
+         'down'
+         'entity id'
+         'gateway ip'
+         'ip'
+         'ipv6 address'
+         'ipv6 gateway'
+         'key/phrase'
+         'login-fail'
+         'login-ok'
+         'logout-fail'
+         'logout-ok'
+         'mac'
+         'mask'
+         'misc'
+         'mode'
+         'mtu'
+         'no cx (us)'
+         'noise'
+         'parent dev'
+         'phantom'
+         'port'
+         'port type'
+         'pps rx'
+         'pps tx'
+         'qlen'
+         'reset'
+         'retry failed'
+         'rx bytes'
+         'rx crc'
+         'rx drop'
+         'rx errors'
+         'rx fifo'
+         'rx frame'
+         'rx length'
+         'rx miss'
+         'rx over'
+         'rx pkts'
+         'rx-rate'
+         'sec'
+         'signal'
+         'ssid'
+         'status'
+         'time-stamp'
+         'tx abort'
+         'tx bytes'
+         'tx crr'
+         'tx errors'
+         'tx fifo'
+         'tx hb'
+         'tx pkts'
+         'tx wind'
+         'tx-failed %'
+         'tx-rate'
+         'wifi retries'
+
+    Can't decide what columns to use? You can just use 'all' to select all available columns from both tables.
+
+STATUS: Functional
+
+VERIFIED_ON:   18-JULY-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 5.19.17+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
+
 """
 import argparse
 import csv
@@ -1966,39 +2333,191 @@ def main():
             ''',
 
         description='''\
-test_l3.py:
---------------------
+                
+NAME: test_l3.py
 
-Summary :
-----------
-The Layer 3 Traffic Generation Test is designed to test the performance of the
-Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream
-of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints,
-each of which is associated with a particular Port (physical or virtual interface).
+PURPOSE: The Layer 3 Traffic Generation Test is designed to test the performance of the Access Point by running layer-3
+         Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream of data flowing through the system under test.
+         A Cross-Connect (CX) is composed of two Endpoints, each of which is associated with a particular Port (physical or virtual interface).
 
-The test will create stations, create cx traffic between upstream port and stations,  run traffic.
-Verify the traffic is being transmitted and received
+         The test will create stations, create cx traffic between upstream port and stations,  run traffic. Verify 
+         the traffic is being transmitted and received
+            
+         * Supports creating user-specified amount stations on multiple radios
+         * Supports configuring upload and download requested rates and PDU sizes.
+         * Supports generating connections with different ToS values.
+         * Supports generating tcp and/or UDP traffic types.
+         * Supports iterating over different PDU sizes
+         * Supports iterating over different requested tx rates (configurable as total or per-connection value)
+         * Supports iterating over attenuation values.
+         * Supports testing connection between two ethernet connection - L3 dataplane
+         
+         Generic command layout:
+         -----------------------
+         ./test_l3.py --mgr <ip_address> --test_duration <duration> --endp_type <traffic types> --upstream_port <port>
+         --radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password>
+         security==<security type: wpa2, open, wpa3>" --debug
 
-Generic command layout:
------------------------
-./test_l3.py --mgr <ip_address> --test_duration <duration> --endp_type <traffic types> --upstream_port <port>
---radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password>
-security==<security type: wpa2, open, wpa3>" --debug
+EXAMPLE:
 
-Multiple radios may be entered with individual --radio switches
+#########################################
+# Examples
+#########################################
+Example running traffic with two radios
+1. Test duration 30 minutes
+2. Traffic IPv4 TCP, UDP
+3. Upstream-port eth2
+4. Radio #0 wiphy0 has 1 station, ssid = ssid_2g, ssid password = ssid_pw_2g  security = wpa2
+5. Radio #1 wiphy1 has 2 stations, ssid = ssid_5g, ssid password = BLANK security = open
+6. Create connections with TOS of BK and VI
 
-# UDP bi-directional test, no use of controller.
-/test_l3.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
-  --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-  --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-  --test_duration 30s
+         # The script now supports multiple radios, each specified with an individual --radio switch.
+         
+           * UDP and TCP bi-directional test, no use of controller.
+             ./test_l3.py --mgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --upstream_port 1.1.eth1 
+             --radio "radio==1.1.wiphy0 stations==5 ssid==Netgear2g ssid_pw==lanforge security==wpa2" 
+             --radio "radio==1.1.wiphy1 stations==1 ssid==Netgear5g ssid_pw==lanforge security==wpa2" 
+             --test_duration 60s
 
-# Port resets, chooses random value between min and max
-test_l3.py --lfmgr LF_MGR_IP --test_duration 90s --polling_interval 10s --upstream_port eth2 \
-                     --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED, \
-                        reset_port_enable==TRUE,reset_port_time_min==10s,reset_port_time_max==20s'
-                     --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"
+           * Port resets, chooses random value between min and max
+             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 90s --polling_interval 10s --upstream_port eth1 
+             --radio 'radio==wiphy0,stations==4,ssid==Netgear2g,ssid_pw==lanforge,security==wpa2,reset_port_enable==TRUE,
+             reset_port_time_min==10s,reset_port_time_max==20s' --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 
+             --side_b_min_bps=300000000
+             
+         # Command: (remove carriage returns)
+             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 30s --endp_type "lf_tcp,lf_udp" --tos "BK VI" --upstream_port 1.1.eth1 
+             --radio "radio==1.1.wiphy0 stations==1 ssid==Netgear2g ssid_pw==lanforge security==wpa2"
 
+         # Have the stations continue to run after the completion of the script
+             ./test_l3.py --lfmgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth1 
+             --radio 'radio==wiphy0 stations==2 ssid==Netgear2g ssid_pw==lanforge security==wpa2' --test_duration 30s 
+             --polling_interval 5s --side_a_min_bps 256000 --side_b_min_bps 102400000 --no_stop_traffic
+     
+         #  Have script use existing stations from previous run where traffic was not stopped and also create new stations and leave traffic running	
+             ./test_l3.py --lfmgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth1 
+             --radio 'radio==wiphy0 stations==2 ssid==Netgear2g ssid_pw==lanforge security==wpa2' --sta_start_offset 1000 
+             --test_duration 30s --polling_interval 5s --side_a_min_bps 256000 --side_b_min_bps 102400000 --use_existing_station_list 
+             --existing_station_list '1.1.sta0000,1.1.sta0001,1.1.sta0002' --no_stop_traffic
+             
+         # Have script use wifi_settings enable flages  ::  wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)
+             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 20s --polling_interval 5s --upstream_port 1.1.eth1 
+             --radio 'radio==1.1.wiphy0,stations==1,ssid==Netgear2g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)' 
+             --radio 'radio==1.1.wiphy1,stations==1,ssid==Netgear5g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)' 
+             --radio 'radio==1.1.wiphy2,stations==1,ssid==Netgear2g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)' 
+             --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --test_rig ID_003 --test_tag 'l3_longevity' --dut_model_num GT-AXE11000 --dut_sw_version 3.0.0.4.386_44266 
+             --dut_hw_version 1.0 --dut_serial_num 12345678 --log_level debug  
+             
+         # Setting wifi_settings per radio
+            ./test_l3.py 
+            --lfmgr 192.168.100.116 
+            --local_lf_report_dir /home/lanforge/html-reports/ 
+            --test_duration 15s 
+            --polling_interval 5s 
+            --upstream_port eth2
+            --radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2  mode==0 wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down&&ht160_enable) "
+            --endp_type lf_udp 
+            --rates_are_totals 
+            --side_a_min_bps=20000 
+            --side_b_min_bps=300000000 
+            --test_rig CT-US-001 
+            --test_tag 'test_l3'
+             
+         # Example : LAN-1927  WPA2-TLS-Configuration
+            ./test_l3.py
+             --lfmgr 192.168.0.103
+             --test_duration 20s
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa2,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Disabled'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=256000
+             --side_b_min_bps=300000000
+             --test_rig ID_003
+             --test_tag 'test_l3'
+             --dut_model_num GT-AXE11000
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+                
+        # Example : LAN-1927  WPA2-TTLS-Configuration
+            ./test_l3.py
+             --lfmgr 192.168.0.103
+             --test_duration 20s
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa2,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra==key_mgmt&&WPA-EAP!!eap&&TTLS!!identity&&testuser!!passwd&&testpasswd!!ieee80211w&&Disabled' 
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=256000
+             --side_b_min_bps=300000000
+             --test_rig ID_003
+             --test_tag 'test_l3'
+             --dut_model_num GT-AXE11000
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+        
+        
+        # Example : LAN-1927  WPA3-TTLS-Configuration
+            ./test_l3.py
+             --lfmgr 192.168.0.103
+             --test_duration 20s
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TTLS!!identity&&testuser!!passwd&&testpasswd!!ieee80211w&&Required' 
+             --endp_type lf_ud
+             --rates_are_totals
+             --side_a_min_bps=256000
+             --side_b_min_bps=300000000
+             --test_rig ID_003
+             --test_tag 'test_l3'
+             --dut_model_num GT-AXE11000
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+        
+        # Example : LAN-1927  WPA3-TLS-Configuration
+            ./test_l3.py
+             --lfmgr 192.168.0.103
+             --test_duration 20s
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Required' 
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=256000
+             --side_b_min_bps=300000000
+             --test_rig ID_003
+             --test_tag 'test_l3'
+             --dut_model_num GT-AXE11000
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug      
+
+SCRIPT_CLASSIFICATION:  Creation & Runs Traffic
+
+SCRIPT_CATEGORIES:  Performance, Functional,  KPI Generation,  Report Generation
+
+NOTES: 
+
+#################################
+# Command switches
+#################################
+
+--mgr <hostname for where LANforge GUI is running>',default='localhost'
+-d  / --test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m'
+--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE"
+--debug:  Enable debugging',default=False
+-t  / --endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
+                        default='lf_udp', type=valid_endp_types
+-u / --upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
+-o / --outfile <Output file for csv data>", default='longevity_results'
 
 <duration>: number followed by one of the following
 d - days
@@ -2017,179 +2536,76 @@ mc_udp6 : IPv6 multi cast UDP traffic
 <tos>:
 BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred numeric values. Cross connects type of service
 
-    Data 0 (Best Effort, BE): Medium priority queue, medium throughput and
-    delay. Most traditional IP data is sent to this queue.
-    Data 1 (Background, BK): Lowest priority queue, high throughput. Bulk
-    data that requires maximum throughput and is not time-sensitive is sent
-    to this queue (FTP data, for example):
-    Data 2 (Video, VI): High priority queue, minimum delay. Time-sensitive
-    data such as Video and other streaming media are automatically sent
-    to this queue.
-    Data 3 (Voice, VO): Highest priority queue, minimum delay.
-    Time-sensitive data such as Voice over IP (VoIP) is automatically sent to this Queue
+    * Data 0 (Best Effort, BE): Medium priority queue, medium throughput and delay. 
+             Most traditional IP data is sent to this queue.
+    * Data 1 (Background, BK): Lowest priority queue, high throughput. Bulk data that requires maximum throughput and 
+             is not time-sensitive is sent to this queue (FTP data, for example).
+    * Data 2 (Video, VI): High priority queue, minimum delay. Time-sensitive data such as Video and other streaming 
+             media are automatically sent to this queue.
+    * Data 3 (Voice, VO): Highest priority queue, minimum delay. Time-sensitive data such as Voice over IP (VoIP) 
+             is automatically sent to this Queue.
 
-#################################
-#Command switches
-#################################
+<wifi_mode>:
+    Input       : Enum Val  : Shown by nc_show_ports
+    
+    AUTO        |  0        #  802.11
+    802.11a     |  1        #  802.11a
+    b           |  2        #  802.11b
+    g           |  3        #  802.11g
+    abg         |  4        #  802.11abg
+    abgn        |  5        #  802.11abgn
+    bgn         |  6        #  802.11bgn
+    bg          |  7        #  802.11bg
+    abgnAC      |  8        #  802.11abgn-AC
+    anAC        |  9        #  802.11an-AC
+    an          | 10        #  802.11an
+    bgnAC       | 11        #  802.11bgn-AC
+    abgnAX      | 12        #  802.11abgn-AX
+                            #     a/b/g/n/AC/AX (dual-band AX) support
+    bgnAX       | 13        #  802.11bgn-AX
+    anAX        | 14        #  802.11an-AX
+    aAX         | 15        #  802.11a-AX (6E disables /n and /ac)
 
---mgr <hostname for where LANforge GUI is running>',default='localhost'
--d  / --test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m'
---tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE"
---debug:  Enable debugging',default=False
--t  / --endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
-                        default='lf_udp', type=valid_endp_types
--u / --upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
--o / --outfile <Output file for csv data>", default='longevity_results'
-
-#########################################
-# Examples
-# #######################################
-Example #1  running traffic with two radios
-1. Test duration 30 minutes
-2. Traffic IPv4 TCP, UDP
-3. Upstream-port eth2
-4. Radio #0 wiphy0 has 1 station, ssid = ssid_2g, ssid password = ssid_pw_2g  security = wpa2
-5. Radio #1 wiphy1 has 2 stations, ssid = ssid_5g, ssid password = BLANK security = open
-6. Create connections with TOS of BK and VI
-
-Command: (remove carriage returns)
-python3 ./test_l3.py --lfmgr 192.168.0.102 --test_duration 30s --endp_type "lf_tcp lf_udp" --tos "BK VI" --upstream_port 1.1.eth2
---radio "radio==1.1.wiphy0 stations==1 ssid==ssid_2g ssid_pw==ssid_pw_2g security==wpa2"
---radio "radio==1.1.wiphy1 stations==2 ssid==ssid_5g ssid_pw==BLANK security==open" \
-
-Example : Have the stations continue to run after the completion of the script
-    ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
-        --radio 'radio==wiphy1 stations==2 ssid==asus_2g ssid_pw==lf_asus_2g security==wpa2'
-        --test_duration 30s --polling_interval 5s
-        --side_a_min_bps 256000 --side_b_min_bps 102400000
-        --no_stop_traffic
-
-Example : Have script use existing stations from previous run where traffic was not stopped and also create new stations and
-        leave traffic running
-        ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
-        --radio 'radio==wiphy0 stations==2 ssid==asus_5g ssid_pw==lf_asus_5g security==wpa2'
-        --sta_start_offset 1000
-        --test_duration 30s --polling_interval 5s
-        --side_a_min_bps 256000 --side_b_min_bps 102400000
-        --use_existing_station_list
-        --existing_station_list '1.1.sta0000,1.1.sta0001'
-        --no_stop_traffic
-
-
-Example : Have script use wifi_settings enable flages  ::  wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)
-            // test_l3.py - ID - cookbook
-            ./test_l3.py 
-            --lfmgr 192.168.0.103 
-            --test_duration 20s
-            --polling_interval 5s
-            --upstream_port 1.1.eth2
-            --radio 'radio==1.1.wiphy1,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
-            --radio 'radio==1.1.wiphy2,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
-            --radio 'radio==1.1.wiphy3,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
-            --radio 'radio==1.1.wiphy4,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
-            --radio 'radio==1.1.wiphy5,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
-            --radio 'radio==1.1.wiphy6,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
-            --radio 'radio==1.1.wiphy7,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
-            --endp_type lf_udp 
-            --rates_are_totals
-            --side_a_min_bps=20000 
-            --side_b_min_bps=300000000 
-            --test_rig ID_003
-            --test_tag 'l3_longevity'
-            --dut_model_num GT-AXE11000
-            --dut_sw_version 3.0.0.4.386_44266
-            --dut_hw_version 1.0
-            --dut_serial_num 12345678
-            --log_level debug 
-
-Example : for setting the wifi_extra  ,  wifi_extra==key_mgmt&&WPA-EAP-SHA256!!passwd&&lf_ax88u_5g
-
-Example : LAN-1927  WPA2-TLS-Configuration
-
-./test_l3.py\
- --lfmgr 192.168.0.103\
- --test_duration 20s\
- --polling_interval 5s\
- --upstream_port 1.1.eth2\
- --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa2,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Disabled' \
- --endp_type lf_udp\
- --rates_are_totals\
- --side_a_min_bps=256000\
- --side_b_min_bps=300000000\
- --test_rig ID_003\
- --test_tag 'test_l3'\
- --dut_model_num GT-AXE11000\
- --dut_sw_version 3.0.0.4.386_44266\
- --dut_hw_version 1.0\
- --dut_serial_num 12345678\
- --log_level debug
-
-
-Example : LAN-1927  WPA2-TTLS-Configuration
-
-./test_l3.py\
- --lfmgr 192.168.0.103\
- --test_duration 20s\
- --polling_interval 5s\
- --upstream_port 1.1.eth2\
- --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa2,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra==key_mgmt&&WPA-EAP!!eap&&TTLS!!identity&&testuser!!passwd&&testpasswd!!ieee80211w&&Disabled' \
- --endp_type lf_udp\
- --rates_are_totals\
- --side_a_min_bps=256000\
- --side_b_min_bps=300000000\
- --test_rig ID_003\
- --test_tag 'test_l3'\
- --dut_model_num GT-AXE11000\
- --dut_sw_version 3.0.0.4.386_44266\
- --dut_hw_version 1.0\
- --dut_serial_num 12345678\
- --log_level debug
-
-
-Example : LAN-1927  WPA3-TTLS-Configuration
-
-./test_l3.py\
- --lfmgr 192.168.0.103\
- --test_duration 20s\
- --polling_interval 5s\
- --upstream_port 1.1.eth2\
- --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TTLS!!identity&&testuser!!passwd&&testpasswd!!ieee80211w&&Required' \
- --endp_type lf_udp\
- --rates_are_totals\
- --side_a_min_bps=256000\
- --side_b_min_bps=300000000\
- --test_rig ID_003\
- --test_tag 'test_l3'\
- --dut_model_num GT-AXE11000\
- --dut_sw_version 3.0.0.4.386_44266\
- --dut_hw_version 1.0\
- --dut_serial_num 12345678\
- --log_level debug
-
-Example : LAN-1927  WPA3-TLS-Configuration
-
-./test_l3.py\
- --lfmgr 192.168.0.103\
- --test_duration 20s\
- --polling_interval 5s\
- --upstream_port 1.1.eth2\
- --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Required' \
- --endp_type lf_udp\
- --rates_are_totals\
- --side_a_min_bps=256000\
- --side_b_min_bps=300000000\
- --test_rig ID_003\
- --test_tag 'test_l3'\
- --dut_model_num GT-AXE11000\
- --dut_sw_version 3.0.0.4.386_44266\
- --dut_hw_version 1.0\
- --dut_serial_num 12345678\
- --log_level debug
-
-
-For wifi_extra_keys syntax 
-telnet <lanforge ip> 4001 
-type: help set_wifi_extra 
+wifi_settings flags are currently defined as:
+    wpa_enable           | 0x10         # Enable WPA
+    custom_conf          | 0x20         # Use Custom wpa_supplicant config file.
+    wep_enable           | 0x200        # Use wpa_supplicant configured for WEP encryption.
+    wpa2_enable          | 0x400        # Use wpa_supplicant configured for WPA2 encryption.
+    ht40_disable         | 0x800        # Disable HT-40 even if hardware and AP support it.
+    scan_ssid            | 0x1000       # Enable SCAN-SSID flag in wpa_supplicant.
+    passive_scan         | 0x2000       # Use passive scanning (don't send probe requests).
+    disable_sgi          | 0x4000       # Disable SGI (Short Guard Interval).
+    lf_sta_migrate       | 0x8000       # OK-To-Migrate (Allow station migration between LANforge radios)
+    verbose              | 0x10000      # Verbose-Debug:  Increase debug info in wpa-supplicant and hostapd logs.
+    80211u_enable        | 0x20000      # Enable 802.11u (Interworking) feature.
+    80211u_auto          | 0x40000      # Enable 802.11u (Interworking) Auto-internetworking feature.  Always enabled currently.
+    80211u_gw            | 0x80000      # AP Provides access to internet (802.11u Interworking)
+    80211u_additional    | 0x100000     # AP requires additional step for access (802.11u Interworking)
+    80211u_e911          | 0x200000     # AP claims emergency services reachable (802.11u Interworking)
+    80211u_e911_unauth   | 0x400000     # AP provides Unauthenticated emergency services (802.11u Interworking)
+    hs20_enable          | 0x800000     # Enable Hotspot 2.0 (HS20) feature.  Requires WPA-2.
+    disable_gdaf         | 0x1000000    # AP:  Disable DGAF (used by HotSpot 2.0).
+    8021x_radius         | 0x2000000    # Use 802.1x (RADIUS for AP).
+    80211r_pmska_cache   | 0x4000000    # Enable oportunistic PMSKA caching for WPA2 (Related to 802.11r).
+    disable_ht80         | 0x8000000    # Disable HT80 (for AC chipset NICs only)
+    ibss_mode            | 0x20000000   # Station should be in IBSS mode.
+    osen_enable          | 0x40000000   # Enable OSEN protocol (OSU Server-only Authentication)
+    disable_roam         | 0x80000000   # Disable automatic station roaming based on scan results.
+    ht160_enable         | 0x100000000  # Enable HT160 mode.
+    disable_fast_reauth  | 0x200000000  # Disable fast_reauth option for virtual stations.
+    mesh_mode            | 0x400000000  # Station should be in MESH mode.
+    power_save_enable    | 0x800000000  # Station should enable power-save.  May not work in all drivers/configurations.
+    create_admin_down    | 0x1000000000 # Station should be created admin-down.
+    wds-mode             | 0x2000000000 # WDS station (sort of like a lame mesh), not supported on ath10k
+    no-supp-op-class-ie  | 0x4000000000 # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
+    txo-enable           | 0x8000000000 # Enable/disable tx-offloads, typically managed by set_wifi_txo command
+    use-wpa3             | 0x10000000000 # Enable WPA-3 (SAE Personal) mode.
+    use-bss-transition   | 0x80000000000 # Enable BSS transition.
+    disable-twt          | 0x100000000000 # Disable TWT mode
+        
+For wifi_extra_keys syntax :
+    telnet <lanforge ip> 4001 
+    type: help set_wifi_extra 
 wifi_extra keys:
                 key_mgmt  (Key Mangement)
                 pairwise  (Pairwise Ciphers)
@@ -2222,75 +2638,10 @@ wifi_extra keys:
 
                 ieee80211w :   0,1,2
         
-
-
-
-
-Setting wifi_settings per radio
-./test_l3.py --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s
---polling_interval 5s --upstream_port eth2
---radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2  mode==0 wifi_settings==wifi_settings
-    enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down&&ht160_enable) "
---endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --test_rig CT-US-001 --test_tag 'test_l3'
-
-        wifi_mode
-        Input       : Enum Val  : Shown by nc_show_ports
-
-        AUTO        |  0        #  802.11
-        802.11a     |  1        #  802.11a
-        b           |  2        #  802.11b
-        g           |  3        #  802.11g
-        abg         |  4        #  802.11abg
-        abgn        |  5        #  802.11abgn
-        bgn         |  6        #  802.11bgn
-        bg          |  7        #  802.11bg
-        abgnAC      |  8        #  802.11abgn-AC
-        anAC        |  9        #  802.11an-AC
-        an          | 10        #  802.11an
-        bgnAC       | 11        #  802.11bgn-AC
-        abgnAX      | 12        #  802.11abgn-AX
-                                #     a/b/g/n/AC/AX (dual-band AX) support
-        bgnAX       | 13        #  802.11bgn-AX
-        anAX        | 14        #  802.11an-AX
-        aAX         | 15        #  802.11a-AX (6E disables /n and /ac)
-
-
-        wifi_settings flags are currently defined as:
-        wpa_enable           | 0x10         # Enable WPA
-        custom_conf          | 0x20         # Use Custom wpa_supplicant config file.
-        wep_enable           | 0x200        # Use wpa_supplicant configured for WEP encryption.
-        wpa2_enable          | 0x400        # Use wpa_supplicant configured for WPA2 encryption.
-        ht40_disable         | 0x800        # Disable HT-40 even if hardware and AP support it.
-        scan_ssid            | 0x1000       # Enable SCAN-SSID flag in wpa_supplicant.
-        passive_scan         | 0x2000       # Use passive scanning (don't send probe requests).
-        disable_sgi          | 0x4000       # Disable SGI (Short Guard Interval).
-        lf_sta_migrate       | 0x8000       # OK-To-Migrate (Allow station migration between LANforge radios)
-        verbose              | 0x10000      # Verbose-Debug:  Increase debug info in wpa-supplicant and hostapd logs.
-        80211u_enable        | 0x20000      # Enable 802.11u (Interworking) feature.
-        80211u_auto          | 0x40000      # Enable 802.11u (Interworking) Auto-internetworking feature.  Always enabled currently.
-        80211u_gw            | 0x80000      # AP Provides access to internet (802.11u Interworking)
-        80211u_additional    | 0x100000     # AP requires additional step for access (802.11u Interworking)
-        80211u_e911          | 0x200000     # AP claims emergency services reachable (802.11u Interworking)
-        80211u_e911_unauth   | 0x400000     # AP provides Unauthenticated emergency services (802.11u Interworking)
-        hs20_enable          | 0x800000     # Enable Hotspot 2.0 (HS20) feature.  Requires WPA-2.
-        disable_gdaf         | 0x1000000    # AP:  Disable DGAF (used by HotSpot 2.0).
-        8021x_radius         | 0x2000000    # Use 802.1x (RADIUS for AP).
-        80211r_pmska_cache   | 0x4000000    # Enable oportunistic PMSKA caching for WPA2 (Related to 802.11r).
-        disable_ht80         | 0x8000000    # Disable HT80 (for AC chipset NICs only)
-        ibss_mode            | 0x20000000   # Station should be in IBSS mode.
-        osen_enable          | 0x40000000   # Enable OSEN protocol (OSU Server-only Authentication)
-        disable_roam         | 0x80000000   # Disable automatic station roaming based on scan results.
-        ht160_enable         | 0x100000000  # Enable HT160 mode.
-        disable_fast_reauth  | 0x200000000  # Disable fast_reauth option for virtual stations.
-        mesh_mode            | 0x400000000  # Station should be in MESH mode.
-        power_save_enable    | 0x800000000  # Station should enable power-save.  May not work in all drivers/configurations.
-        create_admin_down    | 0x1000000000 # Station should be created admin-down.
-        wds-mode             | 0x2000000000 # WDS station (sort of like a lame mesh), not supported on ath10k
-        no-supp-op-class-ie  | 0x4000000000 # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
-        txo-enable           | 0x8000000000 # Enable/disable tx-offloads, typically managed by set_wifi_txo command
-        use-wpa3             | 0x10000000000 # Enable WPA-3 (SAE Personal) mode.
-        use-bss-transition   | 0x80000000000 # Enable BSS transition.
-        disable-twt          | 0x100000000000 # Disable TWT mode
+Multicast traffic :
+        Multicast traffic default IGMP Address in the range of 224.0.0.0 to 239.255.255.255, 
+        so I have provided 224.9.9.9 as IGMP address and IGMP Dest port as 9999 and MIN-IP PORT as 9999. 
+        these values must be same on the eth1(server side) and client side, then the traffic will run.  
 
 ===============================================================================
  ** FURTHER INFORMATION **
@@ -2435,12 +2786,17 @@ Setting wifi_settings per radio
 
     Can't decide what columns to use? You can just use 'all' to select all available columns from both tables.
 
+STATUS: Functional
 
-    Multicast traffic :
+VERIFIED_ON:   18-JULY-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 5.19.17+
 
-    Multicast traffic default IGMP Address in the range of 224.0.0.0 to 239.255.255.255, 
-        so I have provided 224.9.9.9 as IGMP address and IGMP Dest port as 9999 and MIN-IP PORT as 9999. 
-        these values must be same on the eth1(server side) and client side, then the traffic will run.    
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
         ''')
     test_l3_parser = parser.add_argument_group(
