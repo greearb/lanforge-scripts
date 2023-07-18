@@ -286,7 +286,8 @@ class ThroughputQOS(Realm):
                 if i >= len(endps) // 2:
                     rx_endps.update(endps[i])
             for sta in self.cx_profile.created_cx.keys():
-                temp = int(sta[12:])
+                temp = sta.rsplit('-', 1)
+                temp = int(temp[1])
                 if temp in range(0, self.num_stations):
                     if int(self.cx_profile.side_b_min_bps) != 0:
                         tos_download['bk'].append(connections[sta])
@@ -796,7 +797,7 @@ python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num
     parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
     parser.add_argument('--download', help='--download traffic load per connection (download rate)', default=256000)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-    parser.add_argument('--create_sta', help='Used to force a connection to a particular AP', default=True)
+    parser.add_argument('--create_sta', help='Used to force a connection to a particular AP', action='store_true')
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
     parser.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
     parser.add_argument('--bands', help='used to run on multiple radio bands,can be used with multiple stations',
