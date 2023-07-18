@@ -433,7 +433,8 @@ class Realm(LFCliBase):
         }
         self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
-    def add_vrcx_(self, resource, vr_name, local_dev, dhcp_min, dhcp_max, debug_=False, suppress_related_commands_=True):
+    def add_vrcx_(self, vr_name, local_dev, dhcp_min, dhcp_max, resource=1, debug_=False,
+                  suppress_related_commands_=True):
         req_url = "/cli-json/add_vrcx"
         data = {
             "shelf": 1,
