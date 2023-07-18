@@ -107,6 +107,8 @@ LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 ipvt = importlib.import_module("py-scripts.test_ip_variable_time")
 IPVariableTime = ipvt.IPVariableTime
 
+radio_modify = importlib.import_module("py-scripts.lf_modify_radio")
+
 logger = logging.getLogger(__name__)
 
 
@@ -117,6 +119,9 @@ class create_vap_cv(cv_test):
                  lf_user="lanforge",
                  lf_password="lanforge",
                  vap_upstream_port="1.1.eth2",
+                 vap_ip=None,
+                 vap_ip_mask=None,
+                 gateway_ip=None,
                  vap_bw=None,
                  vap_mode=None,
                  set_upstream=None,
@@ -132,6 +137,14 @@ class create_vap_cv(cv_test):
         self.desired_set_port_current_flags = ["use_dhcp", "dhcp"]  # do not default down, "if_down"
         self.desired_set_port_interest_flags = ["current_flags"]  # do not default down, "ifdown"
         # set_port 1 1 NA NA NA NA NA 2147483648 NA NA NA vap0000
+        self.lf_modify_radio = radio_modify.lf_modify_radio(lf_mgr=lfclient_host,
+                                                            lf_port=lf_port,
+                                                            lf_user=lf_user,
+                                                            lf_passwd=lf_password,
+                                                            debug=False,
+                                                            static_ip=vap_ip,
+                                                            ip_mask = vap_ip_mask,
+                                                            gateway_ip=gateway_ip)
         self.profile_name = None
         self.vap_radio = None
         self.freq = None
@@ -241,12 +254,14 @@ class create_vap_cv(cv_test):
         self.vaps_list=list(self.vap_list()[0].keys())
         self.wait_for_ip(station_list=self.vaps_list)
 
-    def modify_vr_cfg(self, resource=1, vr_name="Router-0", local_dev="vap0000", dhcp_min="",
-                      dhcp_max=""):  # modify & apply the net-smith vr(virtual router) config settings
+    def modify_vr_cfg(self, dhcp_min="", dhcp_max=""):  # modify & apply the net-smith vr(virtual router) config settings
         logger.info("Modifying Netsmith Connection...")
-        cv_test.add_vrcx_(self, vr_name=vr_name, local_dev=local_dev, dhcp_min=dhcp_min,
-                          dhcp_max=dhcp_max)  # enabling dhcp min & max values
-        cv_test.netsmith_apply(self, resource=resource)  # applying net-smith config
+        vaps_list = list(self.vap_list()[0].keys())
+        self.vaps_list = vaps_list[0].split('.')
+        self.lf_modify_radio.disable_dhcp_static(interface=vaps_list[0])
+        cv_test.add_vrcx_(self, resource=self.vaps_list[1], vr_name="Router-0", local_dev=self.vaps_list[2],
+                          dhcp_min=dhcp_min, dhcp_max=dhcp_max)  # enabling dhcp min & max values
+        cv_test.netsmith_apply(self, resource=self.vaps_list[1])  # applying net-smith config
 
 
 def main():
@@ -357,6 +372,9 @@ INCLUDE_IN_README: False
                         help="vap mode can be selected from these"
                              '"AUTO", "a", "aAX", "abg", "abgn", "abgnAC", "abgnAX", "an","anAC", "anAX", "b", "bg", "bgn", "bgnAC"", "bgnAX"')
     parser.add_argument("--set_upstream", default= True, help="Enter True if upstream need to be set else enter False")
+    parser.add_argument("--vap_ip", help='Modify the VAP DHCP ip address', default=None)
+    parser.add_argument("--vap_ip_mask", help='Modify the VAP ip mask', default=None)
+    parser.add_argument("--gateway", help="Modify the VAP Gateway ip")
     parser.add_argument("--dhcp_min_range", help='Modify the VAP DHCP min range', default=None)
     parser.add_argument("--dhcp_max_range", help='Modify the VAP DHCP max range', default=None)
 
@@ -376,6 +394,7 @@ INCLUDE_IN_README: False
 
     lf_create_vap_cv = create_vap_cv(lfclient_host=args.mgr, lf_port=args.port, lf_user=args.lf_user,
                                      lf_password=args.lf_password, vap_upstream_port=args.vap_upstream_port,
+                                     vap_ip=args.vap_ip, vap_ip_mask=args.vap_ip_mask, gateway_ip=args.gateway,
                                      vap_bw=args.vap_bw, vap_mode=args.vap_mode,set_upstream=args.set_upstream)
 
     delete_old_scenario = args.delete_old_scenario
