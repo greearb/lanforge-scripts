@@ -13,9 +13,9 @@ EXAMPLE:
         --vap_freq 2437 --vap_ssid routed-AP --vap_passwd something --vap_security wpa2 --vap_bw 20
 
     # For modify the net-smith dhcp min and max range
-    ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge --delete_old_scenario
-     --scenario_name Automation --vap_radio wiphy0 --set_upstream True --vap_freq 2437 --vap_ssid routed-AP
-     --vap_passwd something --vap_security wpa2 --vap_bw 20 --dhcp_min_range 172.18.0.6 --dhcp_max_range 172.18.255.200
+    python3 ./lf_create_vap_cv.py --mgr 192.168.200.138 --port 8080 --delete_old_scenario --scenario_name hello
+    --vap_radio 1.1.wiphy0 --vap_freq 2437 --vap_ssid testings --vap_passwd Password@123 --vap_security wpa2
+    --vap_bw 20 --vap_ip 192.168.0.16 --vap_ip_mask 255.255.0.0 --dhcp_min_range 192.168.0.5 --dhcp_max_range 192.168.0.200
 
     vs_code launch.json example:
     "args": ["--mgr","localhost",
@@ -283,9 +283,9 @@ EXAMPLE:
         --vap_freq 2437 --vap_ssid routed-AP --vap_passwd something --vap_security wpa2 --vap_bw 20
         
     # For modify the net-smith dhcp min and max range
-    ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge --delete_old_scenario
-     --scenario_name Automation --vap_radio wiphy0 --set_upstream True --vap_freq 2437 --vap_ssid routed-AP 
-     --vap_passwd something --vap_security wpa2 --vap_bw 20 --dhcp_min_range 172.18.0.6 --dhcp_max_range 172.18.255.200
+    python3 ./lf_create_vap_cv.py --mgr 192.168.200.138 --port 8080 --delete_old_scenario --scenario_name hello 
+    --vap_radio 1.1.wiphy0 --vap_freq 2437 --vap_ssid testings --vap_passwd Password@123 --vap_security wpa2 
+    --vap_bw 20 --vap_ip 192.168.0.16 --vap_ip_mask 255.255.0.0 --dhcp_min_range 192.168.0.5 --dhcp_max_range 192.168.0.200
 
     vs_code launch.json example:
     "args": ["--mgr","localhost",
