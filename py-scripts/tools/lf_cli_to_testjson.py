@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """ 
 NAME: lf_cli_to_testjson.py
 
@@ -128,13 +129,11 @@ INCLUDE_IN_README: False
      """
     )
 
-    parser.add_argument("--cli",type=str,
-                        help="enter the csv file path")
+    parser.add_argument("--cli",type=str, help="enter the csv file path", required=True)
     
     args = parser.parse_args() 
 
-    conversion=clitojson(cli_list= args.cli
-                        )
+    conversion=clitojson(cli_list= args.cli)
     
     conversion.split_cli()
 
