@@ -342,6 +342,7 @@ class lf_check():
         # Iterations
         self.total_iterations = 0
         self.interation = 0
+        self.lf_check_link = ''
 
 
     def set_junit_results(self, junit_results):
@@ -595,6 +596,10 @@ http://{hostname}/{report}
 """.format(hostname=self.server_ip, suite=self.test_suite, db=self.database_sqlite, report=report_url,
     dut_model=self.use_dut_name,dut_hw=self.dut_hw,dut_sw=self.dut_sw,dut_sn=self.dut_serial)
 
+
+        # For Multiple Suites save the link for multiple lf_check results  lf_qa and lf_inspect alread keep the aggragate
+        # TODO maybe have an aggragate result emailed out after 
+        self.lf_check_link = "http://{hostname/{report}}".format(hostname=self.server_ip, report=report_url)
 
         # Put in report information current two methods supported,
         if "NA" not in self.qa_report_html:
