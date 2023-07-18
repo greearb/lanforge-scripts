@@ -599,7 +599,7 @@ http://{hostname}/{report}
 
         # For Multiple Suites save the link for multiple lf_check results  lf_qa and lf_inspect alread keep the aggragate
         # TODO maybe have an aggragate result emailed out after 
-        self.lf_check_link = "http://{hostname/{report}}".format(hostname=self.server_ip, report=report_url)
+        self.lf_check_link = "http://{hostname}/{report}".format(hostname=self.server_ip, report=report_url)
 
         # Put in report information current two methods supported,
         if "NA" not in self.qa_report_html:
