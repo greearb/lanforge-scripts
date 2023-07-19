@@ -8,12 +8,12 @@ The format for the command is
 For a production run ad --production to email to a wider audiance 
 
 Quick verification of the script (suite quick)
-./lf_check.py --json_rig ./ct_rig_json/ct_us_001_rig.json --json_dut ./ct_dut_json/ct_001_AX88U_dut.json --json_test ./ct_tests_json/ct_us_001/ct_funct/ct_funct.json:suite_quick  --path /home/lanforge/html-reports/ct_us_001 --log_level debug
+./lf_check.py --json_rig ./ct_rig_json/ct_us_001_rig.json --json_dut ./ct_dut_json/ct_001_AX88U_dut.json --json_test ./ct_tests_json/ct_us_001/ct_funtional/ct_funtional.json:suite_quick  --path /home/lanforge/html-reports/ct_us_001 --log_level debug
 
 
 ###########################
 TESTBED 001 funct test runs
 ###########################
 
-./lf_check.py --json_rig ./ct_rig_json/ct_us_001_rig.json --json_dut ./ct_dut_json/ct_001_AX88U_dut.json --json_test ./ct_tests_json/ct_us_001/ct_funct/ct_funct.json:funct_tests  --path /home/lanforge/html-reports/ct_us_001 --log_level debug
+./lf_check.py --json_rig ./ct_rig_json/ct_us_001_rig.json --json_dut ./ct_dut_json/ct_001_AX88U_dut.json --json_test ./ct_tests_json/ct_us_001/ct_functional/ct_functional.json:funct_tests  --path /home/lanforge/html-reports/ct_us_001 --log_level debug
 
