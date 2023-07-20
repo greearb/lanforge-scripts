@@ -49,8 +49,7 @@ from datetime import datetime
 import datetime
 import paramiko
 from string import ascii_uppercase
-from openpyxl.styles import Alignment, Font, Color
-from IPython.display import display
+from openpyxl.styles import Alignment, Font, PatternFill
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
@@ -170,10 +169,9 @@ class db_comparison:
                 for df in range(
                     len(self.query_df_dict['db1_df'])):  #TODO: Need to avoid the length of 'self.query_df_dict['db1_df']'
                     self.query_df_dict["sorted_db1_df"].append(
-                        self.query_df_dict["db1_df"][df].sort_values(by='test-tag', ascending=True))
+                        self.query_df_dict["db1_df"][df].replace('\n', '', regex=True).sort_values(by='test-tag', ascending=True))
                     self.query_df_dict["sorted_db2_df"].append(
-                        self.query_df_dict["db2_df"][df].sort_values(by='test-tag', ascending=True))
-                # merging the dataframes and placing in a 'merged_df' list
+                        self.query_df_dict["db2_df"][df].replace('\n', '', regex=True).sort_values(by='test-tag', ascending=True))
                 for sorted_df in range(len(self.query_df_dict[
                                                'sorted_db1_df'])):  #TODO: Need to avoid the length of 'self.query_df_dict['sorted_db1_df']'
                     self.query_df_dict["merged_df"].append(self.query_df_dict["sorted_db1_df"][sorted_df].merge(
@@ -183,7 +181,7 @@ class db_comparison:
                 # CONVERTING DF INTO SUB LIST OF DFs BASED ON THE 'Date'
                 for i in querylist:
                     self.query_df_dict['single_db_df'].append(pd.read_sql_query(i, self.db_conn))
-                new = [[self.query_df_dict['single_db_df'][i]] for i in range(0, len(self.query_df_dict['single_db_df']))]
+                new = [[self.query_df_dict['single_db_df'][i].replace('\n', '', regex=True)] for i in range(0, len(self.query_df_dict['single_db_df']))]
                 # FETCHING THE INDEX items INTO A LIST TO BREAK THE DATA FRAMES
                 sub_lists = []
                 for n in range(len(new)):
@@ -315,110 +313,46 @@ class db_comparison:
                 ap_autolist.append(df)
         list_dfs = [wct_list, dp_list, ap_autolist]
 
-        # setting up the Excel sheet header part with kernel, gui_ver and dut_model from both databases.
-        def setup_excel_header(sheet_name=None, sheet_title=None, kernel_ver_info_1=None, gui_ver_info_1=None,
-                               dut_model_info_1=None, kernel_ver_info_2=None, gui_ver_info_2=None,
-                               dut_model_info_2=None):
-            writer_obj.sheets[sheet_name].write(2, 5, sheet_title)
-            writer_obj.sheets[sheet_name].write(4, 0, "The Value's of DB1 :")
-            writer_obj.sheets[sheet_name].write(4, 1, f"Kernel : {kernel_ver_info_1}")
-            writer_obj.sheets[sheet_name].write(4, 2, f"Gui-Ver : {gui_ver_info_1}")
-            writer_obj.sheets[sheet_name].write(4, 3, f"DUT Model : {dut_model_info_1}")
-            writer_obj.sheets[sheet_name].write(6, 0, "The Value's of DB2 :")
-            writer_obj.sheets[sheet_name].write(6, 1, f"Kernel : {kernel_ver_info_2}")
-            writer_obj.sheets[sheet_name].write(6, 2, f"Gui-Ver : {gui_ver_info_2}")
-            writer_obj.sheets[sheet_name].write(6, 3, f"DUT Model : {dut_model_info_2}")
-
         # TABLE ARRANGEMENT FOR WIFI CAPACITY WORK SHEET
         row, column = 9, 0
         for i, df in enumerate(wct_list):
             if i > 0:
-                if i % 2 != 0:
-                    column = len(wct_list[i - 1].columns) + 1
-                else:
-                    row += len(wct_list[i - 1]) + 2
-                    column = 0
-            # fetching the info about kernel and gui_ver for WifiCapacity
+                row += len(wct_list[i - 1]) + 2
+                column = 0
             df.to_excel(writer_obj, sheet_name='LRQ-WiFi_Capacity', index=False, startrow=row, startcol=column)
-            result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
-                                                 condition='"test-id" == "WiFi Capacity"', limit='1')
-            if (self.conn1 and self.conn2) is not None:
-                setup_excel_header(sheet_name='LRQ-WiFi_Capacity',
-                                   sheet_title='WI-FI CAPACITY DATA COMPARISON',
-                                   kernel_ver_info_1=result[0]['kernel_1'], gui_ver_info_1=result[0]['gui_ver_1'],
-                                   dut_model_info_1=result[0]['dut-model-num_1'],
-                                   kernel_ver_info_2=result[1]['kernel_2'],
-                                   gui_ver_info_2=result[1]['gui_ver_2'], dut_model_info_2=result[1]['dut-model-num_2'])
-            elif self.db_conn:
-                setup_excel_header(sheet_name='LRQ-WiFi_Capacity',
-                                   sheet_title='WI-FI CAPACITY DATA COMPARISON',
-                                   kernel_ver_info_1=result[0]['kernel'],
-                                   gui_ver_info_1=result[0]['gui_ver'],
-                                   dut_model_info_1=result[0]['dut-model-num'],
-                                   kernel_ver_info_2=result[0]['kernel'],
-                                   gui_ver_info_2=result[0]['gui_ver'],
-                                   dut_model_info_2=result[0]['dut-model-num'])
 
         # TABLE ARRANGEMENT FOR DATA PLANE WORK SHEET
         row, column = 9, 0
         for i, df in enumerate(dp_list):
             if i > 0:
-                if i % 2 != 0:
-                    column = len(dp_list[i - 1].columns) + 1
-                else:
-                    row += len(dp_list[i - 1]) + 2
-                    column = 0
-            # fetching the info about kernel and gui_ver for Data Plane
+                row += len(dp_list[i - 1]) + 2
+                column = 0
             df.to_excel(writer_obj, sheet_name='LRQ-Data_Plane', index=False, startrow=row, startcol=column)
-            result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
-                                                 condition='"test-id" == "Dataplane"', limit='1')
-            if (self.conn1 and self.conn2) is not None:
-                setup_excel_header(sheet_name='LRQ-Data_Plane', sheet_title='Data Plane DATA COMPARISON',
-                                   kernel_ver_info_1=result[0]['kernel_1'], gui_ver_info_1=result[0]['gui_ver_1'],
-                                   dut_model_info_1=result[0]['dut-model-num_1'],
-                                   kernel_ver_info_2=result[1]['kernel_2'],
-                                   gui_ver_info_2=result[1]['gui_ver_2'], dut_model_info_2=result[1]['dut-model-num_2'])
-            elif self.db_conn:
-                setup_excel_header(sheet_name='LRQ-Data_Plane', sheet_title='Data Plane DATA COMPARISON',
-                                   kernel_ver_info_1=result[0]['kernel'],
-                                   gui_ver_info_1=result[0]['gui_ver'],
-                                   dut_model_info_1=result[0]['dut-model-num'],
-                                   kernel_ver_info_2=result[0]['kernel'],
-                                   gui_ver_info_2=result[0]['gui_ver'],
-                                   dut_model_info_2=result[0]['dut-model-num'])
 
         # TABLE ARRANGEMENT FOR AP AUTO WORK SHEET
         row, column = 9, 0
         for i, df in enumerate(ap_autolist):
             if i > 0:
-                if i % 2 != 0:
-                    column = len(ap_autolist[i - 1].columns) + 1
-                else:
-                    row += len(ap_autolist[i - 1]) + 2
-                    column = 0
-            # fetching the info about kernel and gui_ver for Ap Auto
+                row += len(ap_autolist[i - 1]) + 2
+                column = 0
             df.to_excel(writer_obj, sheet_name='LRQ-AP_AUTO', index=False, startrow=row, startcol=column)
-            result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
-                                                 condition='"test-id" == "AP Auto"', limit='1')
-            if (self.conn1 and self.conn2) is not None:
-                setup_excel_header(sheet_name='LRQ-AP_AUTO', sheet_title='AP-AUTO DATA COMPARISON',
-                                   kernel_ver_info_1=result[0]['kernel_1'], gui_ver_info_1=result[0]['gui_ver_1'],
-                                   dut_model_info_1=result[0]['dut-model-num_1'],
-                                   kernel_ver_info_2=result[1]['kernel_2'],
-                                   gui_ver_info_2=result[1]['gui_ver_2'], dut_model_info_2=result[1]['dut-model-num_2'])
-            elif self.db_conn:
-                setup_excel_header(sheet_name='LRQ-AP_AUTO', sheet_title='AP-AUTO DATA COMPARISON',
-                                   kernel_ver_info_1=result[0]['kernel'],
-                                   gui_ver_info_1=result[0]['gui_ver'],
-                                   dut_model_info_1=result[0]['dut-model-num'],
-                                   kernel_ver_info_2=result[0]['kernel'],
-                                   gui_ver_info_2=result[0]['gui_ver'],
-                                   dut_model_info_2=result[0]['dut-model-num'])
+
         writer_obj.save()
 
     def excel_adjusting(self, file_name, sheet_name):
         wb = openpyxl.load_workbook(file_name)
         ws = wb[sheet_name]
+
+        # Assuming the percentage values start from column B, adjust the range as needed
+        for row in ws.iter_rows(min_row=11, max_row=ws.max_row, min_col=11, max_col=11):
+            cell = row[0]
+            if cell.value is None:
+                pass
+            elif cell.value == 'Comparison':
+                pass
+            else:
+                percentage = float(cell.value.strip('%'))  # Assuming the percentage values have '%' in them
+                self.set_background_color(cell, percentage)
 
         for letter in ascii_uppercase:  # ascii_uppercase : A, B, C, D, E, F,......,Z
             max_width = 0
@@ -438,18 +372,19 @@ class db_comparison:
         wb.save(file_name)
         wb.close()
 
-    def merge_cells(self, file_name, sheet_name, start_column, start_row, end_column, end_row, msg):
+    def merge_cells_with_msg(self, file_name, sheet_name, start_column, start_row, end_column, end_row, msg,
+                             font_style="DejaVu Serif", font_size=32, font_color="0A9B22"):
         # merge cells
         wb = openpyxl.load_workbook(f'./{self.directory}/lrq_db_comparison.xlsx')
         ws = wb[sheet_name]
 
         ws.merge_cells(f'{start_column}{start_row}:{end_column}{end_row}')
 
-        font_style = Font(name="DejaVu Serif", size=32, bold=True, color="0A9B22")
+        font_style = Font(name=font_style, size=font_size, bold=True, color=font_color)
 
-        ws.cell(row=2, column=1).value = msg
+        ws.cell(row=int(start_row), column=1).value = msg
 
-        ws.cell(row=2, column=1).font = font_style
+        ws.cell(row=int(start_row), column=1).font = font_style
 
         ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
 
@@ -459,6 +394,19 @@ class db_comparison:
 
         wb.close()
 
+    def set_background_color(self, cell, percentage):
+        if percentage >= 90:  # You can define your own conditions here
+            cell.fill = PatternFill(start_color="00FF00", end_color="00FF00",
+                                    fill_type="solid")  # Green color for >= 80%
+        elif percentage >= 70:
+            cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00",
+                                    fill_type="solid")  # Yellow color for >= 60%
+        elif percentage >= 50:
+            cell.fill = PatternFill(start_color="E39957", end_color="E39957",
+                                    fill_type="solid")  # Orange color for >= 60%
+        else:
+            cell.fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")  # Red color for others
+
     def excel_styling(self, query_df_list):
         # styling the sheets
         self.excel_adjusting(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-WiFi_Capacity')
@@ -467,17 +415,34 @@ class db_comparison:
 
         self.excel_adjusting(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-AP_AUTO')
 
-        self.merge_cells(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-WiFi_Capacity',
-                         start_column='A', start_row='2', end_column='K', end_row='3',
-                         msg="WI-FI CAPACITY DATA COMPARISON")
+        self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-WiFi_Capacity',
+                                  start_column='A', start_row='2', end_column='K', end_row='3',
+                                  msg="WI-FI CAPACITY DATA COMPARISON")
+        self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-WiFi_Capacity',
+                                  start_column='A', start_row='5', end_column='K', end_row='8',
+                                  msg="Percentage Calculation Formula : ( Test Run-2 Values / Test Run-1 Values ) * 100 \n"
+                                      "Color Indication : GREEN  - % >=  90 YELLOW - % >= 70 ORANGE - % >= 50 RED - % < 50",
+                                  font_size=22)
 
-        self.merge_cells(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-Data_Plane',
-                         start_column='A', start_row='2', end_column='K', end_row='3',
-                         msg="Data Plane DATA COMPARISON")
+        self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-Data_Plane',
+                                  start_column='A', start_row='2', end_column='K', end_row='3',
+                                  msg="Data Plane DATA COMPARISON")
+        self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx',
+                                  sheet_name='LRQ-Data_Plane',
+                                  start_column='A', start_row='5', end_column='K', end_row='8',
+                                  msg="Percentage Calculation Formula : ( Test Run-2 Values / Test Run-1 Values ) * 100 \n"
+                                      "Color Indication : GREEN  - % >=  90 YELLOW - % >= 70 ORANGE - % >= 50 RED - % <= 50",
+                                  font_size=22)
 
-        self.merge_cells(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-AP_AUTO',
-                         start_column='A', start_row='2', end_column='K', end_row='3',
-                         msg="AP-AUTO DATA COMPARISON")
+        self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-AP_AUTO',
+                                  start_column='A', start_row='2', end_column='K', end_row='3',
+                                  msg="AP-AUTO DATA COMPARISON")
+        self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx',
+                                  sheet_name='LRQ-AP_AUTO',
+                                  start_column='A', start_row='5', end_column='K', end_row='8',
+                                  msg="Percentage Calculation Formula : ( Test Run-2 Values / Test Run-1 Values ) * 100 \n"
+                                      "Color Indication : GREEN  - % >=  90 YELLOW - % >= 70 ORANGE - % >= 50 RED - % <= 50",
+                                  font_size=22)
 
         logger.info(f'Excel Report Path: ./{self.directory}/lrq_db_comparison.xlsx')
 
@@ -634,7 +599,7 @@ class db_comparison:
                             self.short_description = short_desc
                             # querying the db for Wi-fi Capacity
                             query_results.append(
-                                'SELECT DISTINCT "test-tag",  "short-description", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
+                                'SELECT DISTINCT "test-tag",  "short-description", "kernel", "gui_ver", "gui_build_date", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
                                 test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\";')
                         break_flag = False
                     elif self.database:
@@ -650,18 +615,18 @@ class db_comparison:
                             self.short_description = short_desc
                             # querying the db for Wi-fi Capacity
                             query_results.append(
-                                'SELECT DISTINCT "test-tag",  "short-description", "Date", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
+                                'SELECT DISTINCT "test-tag",  "short-description", "Date", "kernel", "gui_ver", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
                                 test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\" ORDER BY "Date" ASC;')
                         break_flag = False
                 # querying the db for Wi-fi Capacity
                 if break_flag:
                     if (self.db1 and self.db2) is not None:
                         query_results.append(
-                            'SELECT DISTINCT "test-tag",  "short-description", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
+                            'SELECT DISTINCT "test-tag",  "short-description", "kernel", "gui_ver", "gui_build_date",  "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
                             test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\";')
                     elif self.database:
                         query_results.append(
-                            'SELECT DISTINCT "test-tag",  "short-description", "Date", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
+                            'SELECT DISTINCT "test-tag",  "short-description", "Date", "kernel", "gui_ver", "numeric-score" FROM ' + self.table_name + ' WHERE "test-tag" LIKE \"' +
                             test_tags[i] + '\" and "short-description" LIKE \"' + self.short_description + '\" ORDER BY "Date" ASC;')
             # sort and merge the data frames
             self.query_df_dict = self.sort_and_merge_db(querylist=query_results)
