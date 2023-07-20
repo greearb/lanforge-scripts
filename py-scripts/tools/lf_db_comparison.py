@@ -703,8 +703,8 @@ class db_comparison:
             gui_info1 = pd.DataFrame(
                 {
                     "Test Run-1 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
-                    "Kernel Version": [wct_result[0][kernel_1], dp_result[0][kernel_1], ap_auto_result[0][kernel_1]],
-                    "GUI Version": [wct_result[0][gui_ver_1], dp_result[0][gui_ver_1], ap_auto_result[0][gui_ver_1]],
+                    # "Kernel Version": [wct_result[0][kernel_1], dp_result[0][kernel_1], ap_auto_result[0][kernel_1]],
+                    # "GUI Version": [wct_result[0][gui_ver_1], dp_result[0][gui_ver_1], ap_auto_result[0][gui_ver_1]],
                     "DUT Model": [wct_result[0][dut_model_num_1], dp_result[0][dut_model_num_1],
                                   ap_auto_result[0][dut_model_num_1]],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
@@ -713,8 +713,8 @@ class db_comparison:
             gui_info2 = pd.DataFrame(
                 {
                     "Test Run-2 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
-                    "Kernel Version": [wct_result[1][kernel_2], dp_result[1][kernel_2], ap_auto_result[1][kernel_2]],
-                    "GUI Version": [wct_result[1][gui_ver_2], dp_result[1][gui_ver_2], ap_auto_result[1][gui_ver_2]],
+                    # "Kernel Version": [wct_result[1][kernel_2], dp_result[1][kernel_2], ap_auto_result[1][kernel_2]],
+                    # "GUI Version": [wct_result[1][gui_ver_2], dp_result[1][gui_ver_2], ap_auto_result[1][gui_ver_2]],
                     "DUT Model": [wct_result[1][dut_model_num_2], dp_result[1][dut_model_num_2],
                                   ap_auto_result[1][dut_model_num_2]],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
@@ -725,8 +725,8 @@ class db_comparison:
             gui_info1 = pd.DataFrame(
                 {
                     "Test Run-1 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
-                    "Kernel Version": [wct_result[0][kernel], dp_result[0][kernel], ap_auto_result[0][kernel]],
-                    "GUI Version": [wct_result[0][gui_ver], dp_result[0][gui_ver], ap_auto_result[0][gui_ver]],
+                    # "Kernel Version": [wct_result[0][kernel], dp_result[0][kernel], ap_auto_result[0][kernel]],
+                    # "GUI Version": [wct_result[0][gui_ver], dp_result[0][gui_ver], ap_auto_result[0][gui_ver]],
                     "DUT Model": [wct_result[0][dut_model_num], dp_result[0][dut_model_num],
                                   ap_auto_result[0][dut_model_num]],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
@@ -735,8 +735,8 @@ class db_comparison:
             gui_info2 = pd.DataFrame(
                 {
                     "Test Run-2 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
-                    "Kernel Version": [wct_result[0][kernel], dp_result[0][kernel], ap_auto_result[0][kernel]],
-                    "GUI Version": [wct_result[0][gui_ver], dp_result[0][gui_ver], ap_auto_result[0][gui_ver]],
+                    # "Kernel Version": [wct_result[0][kernel], dp_result[0][kernel], ap_auto_result[0][kernel]],
+                    # "GUI Version": [wct_result[0][gui_ver], dp_result[0][gui_ver], ap_auto_result[0][gui_ver]],
                     "DUT Model": [wct_result[0][dut_model_num], dp_result[0][dut_model_num],
                                   ap_auto_result[0][dut_model_num]],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
@@ -782,7 +782,14 @@ class db_comparison:
 
         report.set_table_title("Comparison Tables :")
         report.build_table_title()
-        report.set_text("    To calculate percentages, use the formula (Test Run-2 Values / Test Run-1 Values) * 100.")
+        report.set_text(
+            "To calculate percentages, use the formula (Test Run-2 Values / Test Run-1 Values) * 100. <div><br>"
+            "<u><b>Color Indication</u> :-</b><div><br>"
+            " * <font color="'#00FF00'">GREEN</font>  -  % >=  90,  <div><br>"
+            " * <font color="'#FFFF00'">YELLOW</font>  -  % >=  70,  <div><br>"
+            " * <font color="'#E39957'">ORANGE</font>  -  % >=  50,  <div><br>"
+            " * <font color="'#FF0000'">RED</font>     -  % <   50"
+        )
         report.build_text_simple()
 
         # create a dictionary to map keywords to table titles
