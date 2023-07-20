@@ -73,6 +73,7 @@ class lf_bar_graph:
                  _xaxis_step=1,
                  _xticks_font=None,
                  _xaxis_value_location=0,
+                 _xticks_rotation=None,
                  _text_font=None,
                  _text_rotation=None,
                  _grp_title="",
@@ -84,7 +85,7 @@ class lf_bar_graph:
                  _dpi=96,
                  _enable_csv=False,
                  _remove_border=None,
-                 _alignment=None,
+                 _alignment=None
                  ):
 
         if _data_set is None:
@@ -128,6 +129,7 @@ class lf_bar_graph:
         self.legend_fontsize = _legend_fontsize
         self.remove_border = _remove_border
         self.alignment = _alignment
+        self.xticks_rotation = _xticks_rotation
 
     def build_bar_graph(self):
         if self.color is None:
@@ -178,10 +180,10 @@ class lf_bar_graph:
             plt.xticks(np.arange(0,
                                  len(self.xaxis_categories),
                                  step=self.xaxis_step),
-                       fontsize=self.xticks_font)
+                       fontsize=self.xticks_font,rotation=self.xticks_rotation)
         else:
             plt.xticks([i + self._xaxis_value_location for i in np.arange(0, len(self.data_set[0]), step=self.xaxis_step)],
-                       self.xaxis_categories, fontsize=self.xticks_font)
+                       self.xaxis_categories, fontsize=self.xticks_font,rotation=self.xticks_rotation)
         plt.legend(
             handles=self.legend_handles,
             loc=self.legend_loc,
