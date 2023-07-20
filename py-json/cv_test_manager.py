@@ -397,12 +397,12 @@ class cv_test(Realm):
     def check_influx_kpi(self, args):
         if self.lf_report_dir is None:
             # Nothing to report on.
-            logger.info("Not submitting to influx, no report-dir.\n")
+            logger.info("If using influx, no report-dir present.\n")
             return
 
         if args.influx_host is None:
             # No influx configured, return.
-            logger.info("Not submitting to influx, influx_host not configured.\n")
+            logger.info("If using influx, influx_host not configured.\n")
             return
 
         logger.info("Creating influxdb connection, host: %s:%s org: %s  token: %s  bucket: %s\n" %
