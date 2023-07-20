@@ -48,6 +48,7 @@ import pandas as pd
 from datetime import datetime
 import datetime
 import paramiko
+import seaborn as sns
 from string import ascii_uppercase
 from openpyxl.styles import Alignment, Font, PatternFill
 
@@ -421,8 +422,8 @@ class db_comparison:
         self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-WiFi_Capacity',
                                   start_column='A', start_row='5', end_column='K', end_row='8',
                                   msg="Percentage Calculation Formula : ( Test Run-2 Values / Test Run-1 Values ) * 100 \n"
-                                      "Color Indication : GREEN  - % >=  90 YELLOW - % >= 70 ORANGE - % >= 50 RED - % < 50",
-                                  font_size=22)
+                                      "Color Indication : GREEN  - % >=  90, YELLOW - % >= 70, ORANGE - % >= 50, RED - % < 50",
+                                  font_size=15, font_color="050505")
 
         self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-Data_Plane',
                                   start_column='A', start_row='2', end_column='K', end_row='3',
@@ -431,8 +432,8 @@ class db_comparison:
                                   sheet_name='LRQ-Data_Plane',
                                   start_column='A', start_row='5', end_column='K', end_row='8',
                                   msg="Percentage Calculation Formula : ( Test Run-2 Values / Test Run-1 Values ) * 100 \n"
-                                      "Color Indication : GREEN  - % >=  90 YELLOW - % >= 70 ORANGE - % >= 50 RED - % <= 50",
-                                  font_size=22)
+                                      "Color Indication : GREEN  - % >=  90, YELLOW - % >= 70, ORANGE - % >= 50, RED - % < 50",
+                                  font_size=15, font_color="050505")
 
         self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-AP_AUTO',
                                   start_column='A', start_row='2', end_column='K', end_row='3',
@@ -441,8 +442,8 @@ class db_comparison:
                                   sheet_name='LRQ-AP_AUTO',
                                   start_column='A', start_row='5', end_column='K', end_row='8',
                                   msg="Percentage Calculation Formula : ( Test Run-2 Values / Test Run-1 Values ) * 100 \n"
-                                      "Color Indication : GREEN  - % >=  90 YELLOW - % >= 70 ORANGE - % >= 50 RED - % <= 50",
-                                  font_size=22)
+                                      "Color Indication : GREEN  - % >=  90, YELLOW - % >= 70, ORANGE - % >= 50, RED - % < 50",
+                                  font_size=15, font_color="050505")
 
         logger.info(f'Excel Report Path: ./{self.directory}/lrq_db_comparison.xlsx')
 
@@ -796,7 +797,21 @@ class db_comparison:
             # set the table title and dataframe, and build the table
             report.set_table_title(title)
             report.build_table_title()
-            report.set_table_dataframe(df)
+
+            def set_pdf_column_color(value):
+                x = float(value.strip('%'))
+                if x >= 90:
+                    color = '#00FF00'  # green
+                elif x >= 70:
+                    color = '#FFFF00'  # yellow
+                elif x >= 50:
+                    color = '#E39957'  # orange
+                else:
+                    color = '#FF0000'  # red
+                return f'background:{color}'
+
+            colored_df = df.style.applymap(set_pdf_column_color, subset=['Comparison'])
+            report.set_table_dataframe(colored_df)
             report.build_table()
 
         report_path = report.get_path()
