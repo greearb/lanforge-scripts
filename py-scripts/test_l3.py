@@ -3873,6 +3873,17 @@ INCLUDE_IN_README: False
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
+
+    # empty dictionarys evaluate to false
+    if bool(ip_var_test.dl_port_csv_files ):
+        for key, value in ip_var_test.dl_port_csv_files.items():
+            # read the csv file 
+            report.set_table_title("Layer 3 Cx Traffic  {key}".format(key=key))
+            report.build_table_title()
+            report.set_table_dataframe_from_csv(value.name)
+            report.build_table()
+
+
     report.write_html_with_timestamp()
     report.write_index_html()
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
