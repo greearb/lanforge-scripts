@@ -717,8 +717,8 @@ class L3VariableTime(Realm):
         self.cx_profile.side_b_max_bps = side_b_max_rate[0]
 
         # Lookup key is port-eid name
-        self.port_csv_files = {}
-        self.port_csv_writers = {}
+        self.dl_port_csv_files = {}
+        self.dl_port_csv_writers = {}
 
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
@@ -1580,7 +1580,7 @@ class L3VariableTime(Realm):
 
                                     ap_row_tx_dl.append(ap_row_chanim)
 
-                                    self.write_port_csv(
+                                    self.write_dl_port_csv(
                                         len(temp_stations_list),
                                         ul,
                                         dl,
@@ -1606,8 +1606,8 @@ class L3VariableTime(Realm):
                                 if rx_ul_mac_found:
                                     # Find latency, jitter for connections
                                     # using this port.
-                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_tx_drop_percent = self.get_endp_stats_for_port(
-                                        port_data["port"], endps)
+                                    #latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_tx_drop_percent = self.get_endp_stats_for_port(
+                                    #    port_data["port"], endps)
                                     self.write_ul_port_csv(
                                         len(temp_stations_list),
                                         ul,
@@ -1655,7 +1655,7 @@ class L3VariableTime(Realm):
                                     port_data = response['interface']
                                     latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
-                                    self.write_port_csv(
+                                    self.write_dl_port_csv(
                                         len(temp_stations_list),
                                         ul,
                                         dl,
@@ -1686,8 +1686,8 @@ class L3VariableTime(Realm):
 
                     for port_eid in port_eids:
                         logger.debug("port files: {port_file}".format(
-                            port_file=self.port_csv_files[port_eid]))
-                        name = self.port_csv_files[port_eid].name
+                            port_file=self.dl_port_csv_files[port_eid]))
+                        name = self.dl_port_csv_files[port_eid].name
                         logger.debug("name : {name}".format(name=name))
                         df_dl_tmp = pd.read_csv(name)
                         all_dl_ports_df = pd.concat(
@@ -1861,7 +1861,7 @@ class L3VariableTime(Realm):
                             "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
                             (ul, dl, ul_pdu, dl_pdu), print_pass)
 
-    def write_port_csv(
+    def write_dl_port_csv(
             self,
             sta_count,
             ul,
@@ -1913,9 +1913,9 @@ class L3VariableTime(Realm):
                     # print("col {}".format(col))
                     row.append(col)
 
-        writer = self.port_csv_writers[port_eid]
+        writer = self.dl_port_csv_writers[port_eid]
         writer.writerow(row)
-        self.port_csv_files[port_eid].flush()
+        self.dl_port_csv_files[port_eid].flush()
 
     def write_ul_port_csv(
             self,
@@ -2100,10 +2100,15 @@ class L3VariableTime(Realm):
             for station_name in station_list:
                 self.admin_down(station_name)
 
+    # clean up cx
+    def cleanup_cx(self):
+        cleanup = lf_cleanup.lf_clean(host=self.lfclient_host, port=self.lfclient_port, resource='all')
+        cleanup.cxs_clean()
+            
+
     # Remove traffic connections and stations.
     def cleanup(self):
-        cleanup = lf_cleanup.lf_clean(
-            host=self.lfclient_host, port=self.lfclient_port, resource='all')
+        cleanup = lf_cleanup.lf_clean(host=self.lfclient_host, port=self.lfclient_port, resource='all')
         cleanup.sanitize_all()
 
         # Make sure they are gone
@@ -2257,8 +2262,8 @@ class L3VariableTime(Realm):
         fname = fname + "-dl-" + port_eid + ".csv"
         pfile = open(fname, "w")
         port_csv_writer = csv.writer(pfile, delimiter=",")
-        self.port_csv_files[port_eid] = pfile
-        self.port_csv_writers[port_eid] = port_csv_writer
+        self.dl_port_csv_files[port_eid] = pfile
+        self.dl_port_csv_writers[port_eid] = port_csv_writer
 
         port_csv_writer.writerow(headers)
         pfile.flush()
@@ -2980,6 +2985,8 @@ INCLUDE_IN_README: False
 
     test_l3_parser.add_argument('--no_cleanup', help='Do not cleanup before exit',
                                 action='store_true')
+
+    test_l3_parser.add_argument('--cleanup_cx', help='cleanup cx before exit', action='store_true')
 
     test_l3_parser.add_argument('--no_stop_traffic', help='leave traffic running',
                                 action='store_true')
@@ -3761,6 +3768,10 @@ INCLUDE_IN_README: False
             "--no_cleanup or --no_stop_traffic set stations will be left intack")
     else:
         ip_var_test.cleanup()
+
+    if args.cleanup_cx:
+        logger.info("cleaning layer 3 cx")
+        ip_var_test.cleanup_cx()
 
     if ip_var_test.passes():
         test_passed = True
