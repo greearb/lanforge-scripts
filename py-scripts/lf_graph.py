@@ -216,6 +216,172 @@ class lf_bar_graph:
         return "%s.png" % self.graph_image_name
 
 
+
+class lf_bar_graph_horizontal:
+    def __init__(self, _data_set=None,
+                 _xaxis_name="x-axis",
+                 _yaxis_name="y-axis",
+                 _yaxis_categories=None,
+                 _yaxis_label=None,
+                 _graph_title="",
+                 _title_size=16,
+                 _graph_image_name="image_name",
+                 _label=None,
+                 _color=None,
+                 _bar_height=0.25,
+                 _color_edge='grey',
+                 _font_weight='bold',
+                 _color_name=None,
+                 _figsize=(10, 5),
+                 _show_bar_value=False,
+                 _yaxis_step=1,
+                 _yticks_font=None,
+                 _yaxis_value_location=0,
+                 _yticks_rotation=None,
+                 _text_font=None,
+                 _text_rotation=None,
+                 _grp_title="",
+                 _legend_handles=None,
+                 _legend_loc="best",
+                 _legend_box=None,
+                 _legend_ncol=1,
+                 _legend_fontsize=None,
+                 _dpi=96,
+                 _enable_csv=False,
+                 _remove_border=None,
+                 _alignment=None
+                 ):
+
+        if _data_set is None:
+            _data_set = [[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]]
+        if _yaxis_categories is None:
+            _yaxis_categories = [1, 2, 3, 4]
+        if _yaxis_label is None:
+            _yaxis_label = ["a", "b", "c", "d"]
+        if _label is None:
+            _label = ["bi-downlink", "bi-uplink", 'uplink']
+        if _color_name is None:
+            _color_name = ['lightcoral', 'darkgrey', 'r', 'g', 'b', 'y']
+        self.data_set = _data_set
+        self.xaxis_name = _xaxis_name
+        self.yaxis_name = _yaxis_name
+        self.yaxis_categories = _yaxis_categories
+        self.yaxis_label = _yaxis_label
+        self.title = _graph_title
+        self.title_size = _title_size
+        self.graph_image_name = _graph_image_name
+        self.label = _label
+        self.color = _color
+        self.bar_height = _bar_height
+        self.color_edge = _color_edge
+        self.font_weight = _font_weight
+        self.color_name = _color_name
+        self.figsize = _figsize
+        self.show_bar_value = _show_bar_value
+        self.yaxis_step = _yaxis_step
+        self.yticks_font = _yticks_font
+        self._yaxis_value_location = _yaxis_value_location
+        self.text_font = _text_font
+        self.text_rotation = _text_rotation
+        self.grp_title = _grp_title
+        self.enable_csv = _enable_csv
+        self.lf_csv = lf_csv()
+        self.legend_handles = _legend_handles
+        self.legend_loc = _legend_loc
+        self.legend_box = _legend_box
+        self.legend_ncol = _legend_ncol
+        self.legend_fontsize = _legend_fontsize
+        self.remove_border = _remove_border
+        self.alignment = _alignment
+        self.yticks_rotation = _yticks_rotation
+
+    def build_bar_graph_horizontal(self):
+        if self.color is None:
+            i = 0
+            self.color = []
+            for _ in self.data_set:
+                self.color.append(self.color_name[i])
+                i = i + 1
+
+        fig_size, ax = plt.subplots(figsize=self.figsize, gridspec_kw=self.alignment)
+        i = 0
+        # to remove the borders
+        if self.remove_border is not None:
+            for border in self.remove_border:
+                ax.spines[border].set_color(None)
+                if 'left' in self.remove_border:    # to remove the y-axis labeling
+                    yaxis_visable =False
+                else:
+                    yaxis_visable=True
+                ax.yaxis.set_visible(yaxis_visable)
+
+        def show_value(rectangles):
+            for rect in rectangles:
+                h = rect.get_height()
+                plt.text(rect.get_x() + rect.get_width() / 2., h, h,
+                         ha='center', va='bottom', rotation=self.text_rotation, fontsize=self.text_font)
+
+        for _ in self.data_set:
+            if i > 0:
+                br = br1
+                br2 = [y + self.bar_height for y in br]
+                rects = plt.barh(br2, self.data_set[i], color=self.color[i], height=self.bar_height,
+                                edgecolor=self.color_edge, label=self.label[i])
+                if self.show_bar_value:
+                    show_value(rects)
+                br1 = br2
+                i = i + 1
+            else:
+                br1 = np.arange(len(self.data_set[i]))
+                rects = plt.barh(br1, self.data_set[i], color=self.color[i], height=self.bar_height,
+                                edgecolor=self.color_edge, label=self.label[i])
+                if self.show_bar_value:
+                    show_value(rects)
+                i = i + 1
+        plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
+        plt.ylabel(self.yaxis_name, fontweight='bold', fontsize=15)
+        if self.yaxis_categories[0] == 0:
+            plt.yticks(np.arange(0,
+                                 len(self.yaxis_categories),
+                                 step=self.yaxis_step),
+                       fontsize=self.yticks_font,rotation=self.yticks_rotation)
+        else:
+            plt.yticks([i + self._yaxis_value_location for i in np.arange(0, len(self.data_set[0]), step=self.yaxis_step)],
+                       self.yaxis_categories, fontsize=self.yticks_font,rotation=self.yticks_rotation)
+        plt.legend(
+            handles=self.legend_handles,
+            loc=self.legend_loc,
+            bbox_to_anchor=self.legend_box,
+            ncol=self.legend_ncol,
+            fontsize=self.legend_fontsize)
+        plt.suptitle(self.title, fontsize=self.title_size)
+        plt.title(self.grp_title)
+        plt.gcf()
+        plt.savefig("%s.png" % self.graph_image_name, dpi=96)
+        plt.close()
+        logger.debug("{}.png".format(self.graph_image_name))
+        if self.enable_csv:
+            if self.data_set is not None and self.yaxis_categories is not None:
+                if len(self.yaxis_categories) == len(self.data_set[0]):
+                    self.lf_csv.columns = []
+                    self.lf_csv.rows = []
+                    self.lf_csv.columns.append(self.yaxis_name)
+                    self.lf_csv.columns.extend(self.label)
+                    self.lf_csv.rows.append(self.yaxis_categories)
+                    self.lf_csv.rows.extend(self.data_set)
+                    self.lf_csv.filename = f"{self.graph_image_name}.csv"
+                    self.lf_csv.generate_csv()
+                else:
+                    raise ValueError(
+                        "Length and x-axis values and y-axis values should be same.")
+            else:
+                 logger.debug("No Dataset Found")
+        logger.debug("{}.csv".format(self.graph_image_name))
+        return "%s.png" % self.graph_image_name
+
+
+
+
 class lf_scatter_graph:
     def __init__(self,
                  _x_data_set=None,
@@ -997,6 +1163,40 @@ INCLUDE_IN_README
     # prevent eerror Blocked access to file
     options = {"enable-local-file-access": None}
     pdfkit.from_file(output_html_2, output_pdf_2, options=options)
+
+    # test build_bar_graph_horizontal with defaults
+    dataset = [[45, 67, 34, 22, 31, 52], [22, 45, 12, 34, 70, 80], [30, 55, 69, 37, 77, 24]] 
+    y_axis_values = [1, 2, 3, 4, 5, 6]
+
+    output_html_3 = "graph_3.html"
+    output_pdf_3 = "graph_3.pdf"
+
+    graph = lf_bar_graph_horizontal(_data_set=dataset,
+                         _xaxis_name="Throughput 2 (Mbps)",
+                         _yaxis_name="stations",
+                         _yaxis_categories=y_axis_values,
+                         _graph_image_name="Bi-single_radio_2.4GHz",
+                         _label=["bi-downlink", "bi-uplink", 'uplink'],
+                         _color=None,
+                         _color_edge='red',
+                         _enable_csv=True)
+    graph_html_obj = """
+        <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (graph.build_bar_graph_horizontal()) + """ border='1' />
+        <br><br>
+        """
+    #
+    test_file = open(output_html_3, "w")
+    test_file.write(graph_html_obj)
+    test_file.close()
+
+    # write to pdf
+    # write logic to generate pdf here
+    # wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
+    # sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
+    # prevent eerror Blocked access to file
+    options = {"enable-local-file-access": None}
+    pdfkit.from_file(output_html_3, output_pdf_3, options=options)
+
 
 
 # Unit Test
