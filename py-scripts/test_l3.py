@@ -720,6 +720,9 @@ class L3VariableTime(Realm):
         self.dl_port_csv_files = {}
         self.dl_port_csv_writers = {}
 
+        self.dl_port_total_csv_files = {}
+        self.dl_port_total_csv_writers = {}
+
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
@@ -1677,6 +1680,10 @@ class L3VariableTime(Realm):
 
                             # TODO add collect layer 3 data
 
+                    # Write out download totals for each station
+                    # port_eids= self.gather_port_eids()
+                    # for port_eid in port_eids
+                    # Collecting Totals of all stations for all intervals for each collection period
                     # TODO make all port csv files into one concatinated csv files
                     # Create empty dataframe
                     all_dl_ports_df = pd.DataFrame()
@@ -1831,7 +1838,7 @@ class L3VariableTime(Realm):
                         total_ul_ll_bps)
 
                     # At end of test step, record results information. This is
-                    self.record_results(
+                    self.record_results_total(
                         len(temp_stations_list),
                         ul,
                         dl,
@@ -2045,7 +2052,7 @@ class L3VariableTime(Realm):
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
     # Results csv
-    def record_results(
+    def record_results_total(
             self,
             sta_count,
             ul,
@@ -2988,6 +2995,8 @@ INCLUDE_IN_README: False
 
     test_l3_parser.add_argument('--cleanup_cx', help='cleanup cx before exit', action='store_true')
 
+    test_l3_parser.add_argument('--csv_data_to_report', help='collected interval data in csv for each cx will be put in report', action='store_true')
+
     test_l3_parser.add_argument('--no_stop_traffic', help='leave traffic running',
                                 action='store_true')
 
@@ -3868,21 +3877,30 @@ INCLUDE_IN_README: False
         }
         report.test_setup_table(value=radio_, test_setup_data=radio_info)
 
+    # L3 total traffic
     report.set_table_title(
         "Total Layer 3 Cross-Connect Traffic across all Stations")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
 
-    # empty dictionarys evaluate to false
+    # empty dictionarys evaluate to false , placing tables in output
     if bool(ip_var_test.dl_port_csv_files ):
         for key, value in ip_var_test.dl_port_csv_files.items():
-            # read the csv file 
-            report.set_table_title("Layer 3 Cx Traffic  {key}".format(key=key))
-            report.build_table_title()
-            report.set_table_dataframe_from_csv(value.name)
-            report.build_table()
+            if args.csv_data_to_report:
+                # read the csv file 
+                report.set_table_title("Layer 3 Cx Traffic  {key}".format(key=key))
+                report.build_table_title()
+                report.set_table_dataframe_from_csv(value.name)
+                report.build_table()
 
+            # read in column heading and last line 
+            df = pd.read_csv(value.name)
+            last_row = df.tail(1)
+            report.set_table_title("Layer 3 Cx Traffic Last Reporting Interval {key}".format(key=key))
+            report.build_table_title()
+            report.set_table_dataframe(last_row)
+            report.build_table()
 
     report.write_html_with_timestamp()
     report.write_index_html()
