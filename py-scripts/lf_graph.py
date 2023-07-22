@@ -1165,11 +1165,17 @@ INCLUDE_IN_README
     pdfkit.from_file(output_html_2, output_pdf_2, options=options)
 
     # test build_bar_graph_horizontal with defaults
-    dataset = [[45, 67, 34, 22, 31, 52], [22, 45, 12, 34, 70, 80], [30, 55, 69, 37, 77, 24]] 
-    y_axis_values = [1, 2, 3, 4, 5, 6]
+    dataset = [[45, 67, 34, 22, 31, 52, 60, 71], [22, 45, 12, 34, 70, 80, 14, 35], [30, 55, 69, 37, 77, 24, 25, 77]] 
+    y_axis_values = [1, 2, 3, 4, 5, 6, 7, 8]
+
+    # calculate the height of the y-axis .25 * number of values
+    y_fig_size = len(y_axis_values) * len(dataset) * .35
+    x_fig_size = 10
 
     output_html_3 = "graph_3.html"
     output_pdf_3 = "graph_3.pdf"
+
+
 
     graph = lf_bar_graph_horizontal(_data_set=dataset,
                          _xaxis_name="Throughput 2 (Mbps)",
@@ -1179,6 +1185,7 @@ INCLUDE_IN_README
                          _label=["bi-downlink", "bi-uplink", 'uplink'],
                          _color=None,
                          _color_edge='red',
+                         _figsize=(x_fig_size, y_fig_size),
                          _enable_csv=True)
     graph_html_obj = """
         <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (graph.build_bar_graph_horizontal()) + """ border='1' />
