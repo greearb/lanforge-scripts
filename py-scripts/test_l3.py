@@ -3908,7 +3908,7 @@ INCLUDE_IN_README: False
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
     if platform.system() == 'Linux':
         report.write_pdf_with_timestamp(
-            _page_size='A4', _orientation='Landscape')
+            _page_size='A3', _orientation='Landscape')
 
     if test_passed:
         ip_var_test.exit_success()
