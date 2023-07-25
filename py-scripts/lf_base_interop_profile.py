@@ -44,7 +44,7 @@ class BaseInteropWifi(Realm):
                  ssid=None,
                  passwd=None,
                  encryption=None,
-                 release=["11", "12"],
+                 release=None,
                  screen_size_prcnt=0.4,
                  log_dur=0,
                  log_destination=None,
@@ -52,6 +52,8 @@ class BaseInteropWifi(Realm):
                  _exit_on_error=False, ):
         super().__init__(lfclient_host=manager_ip,
                          debug_=_debug_on)
+        if release is None:
+            release = ["11", "12"]
         self.manager_ip = manager_ip
         self.manager_port = port
         self.ssid = ssid
@@ -152,9 +154,9 @@ class BaseInteropWifi(Realm):
                 if release_ver == j:
                     # check if the release is supported in supported sdk  version
                     if release_ver in self.supported_sdk:
-                        print("this release is supported in available sdk version")
+                        print("This release is supported in available sdk version", self.supported_sdk)
                         logging.info("this release is supported in available sdk version")
-                        print("device " + str(i) + " has " + j + " sdk release")
+                        print("Device " + str(i) + " has " + j + " sdk release")
                         logging.info("device " + str(i) + " has " + j + " sdk release")
                         rel_dev.append(i)
                 else:
@@ -191,6 +193,7 @@ class BaseInteropWifi(Realm):
         adb_key = self.session.get_session_based_key()
         self.session.logger.error("adb_key: " + adb_key)
         eid = self.name_to_eid(device)
+        print("ADB POST....")
         self.command.post_adb(shelf=eid[0],
                               resource=eid[1],
                               adb_id=eid[2],
@@ -217,13 +220,13 @@ class BaseInteropWifi(Realm):
             raise ValueError("wifi arg value must either be enable or disable")
         cmd = "shell svc wifi " + wifi
         for i in devices:
-            print(wifi + " wifi  " + i)
+            print(wifi + " wifi for " + i)
             logging.info(wifi + " wifi  " + i)
             self.post_adb_(device=i, cmd=cmd)
 
     # set username
     def set_user_name(self, device=None, user_name=None):
-        print("device", device)
+        print("Name of the device:", device)
         logging.info("device " + str(device))
         user_name_ = []
         if device is None:
@@ -238,19 +241,18 @@ class BaseInteropWifi(Realm):
             if user_name is None:
                 for i in range(len(devices)):
                     user_name = "device_" + str(i)
-                    print(user_name)
+                    # print(user_name)
                     logging.info(user_name)
                     user_name_.append(user_name)
-                print(user_name)
+                print("Modified adb device user-name:", user_name)
                 logging.info(user_name)
 
             else:
                 user_name_.append(user_name)
-        print("devices", devices)
+        print("Available Devices List:", devices)
         logging.info("devices " + str(devices))
-        print(user_name_)
+        print("Modified USER-NAME List:", user_name_)
         logging.info(user_name_)
-
 
         for i, x in zip(devices, range(len(devices))):
             eid = self.name_to_eid(i)
@@ -262,7 +264,6 @@ class BaseInteropWifi(Realm):
                                       resource=eid[1],
                                       shelf=eid[0],
                                       debug=True)
-
 
     # apk apply
     def batch_modify_apply(self, device=None, manager_ip=None):
@@ -302,6 +303,7 @@ class BaseInteropWifi(Realm):
                 cmd += " --es password " + self.passwd
             if self.encryp:
                 cmd += " --es encryption " + self.encryp
+            print("ADB BATCH MODIFY CMD :", cmd)
             self.post_adb_(device=x, cmd=cmd)
 
     # start
@@ -452,17 +454,18 @@ class UtilityInteropWifi(BaseInteropWifi):
 
     def get_device_state(self, device=None):
         cmd = 'shell dumpsys wifi | grep "mWifiInfo SSID"'
+        print("Get device Status CMD :", cmd)
         x = self.post_adb_(device=device, cmd=cmd)
         y = x[0]['LAST']['callback_message']
         z = y.split(" ")
         # print(z)
-        state = None
+        # state = None
         if 'state:' in z:
-            print("yes")
+            # print("yes")
             ind = z.index("state:")
-            print(ind)
+            # print(ind)
             st = z[(int(ind) + 1)]
-            print("state", st)
+            # print("state", st)
             logging.info("state" + st)
             state = st
 
@@ -478,15 +481,15 @@ class UtilityInteropWifi(BaseInteropWifi):
         y = x[0]['LAST']['callback_message']
         z = y.split(" ")
         print(z)
-        ssid = None
+        # ssid = None
         if 'SSID:' in z:
-            print("yes")
+            # print("yes")
             ind = z.index("SSID:")
             ssid = z[(int(ind) + 1)]
             ssid_ = ssid.strip()
             ssid_1 = ssid_.replace('"', "")
             ssid_2 = ssid_1.replace(",", "")
-            print("ssid", ssid_2)
+            # print("ssid", ssid_2)
             logging.info("ssid " + ssid_2)
             ssid = ssid_2
         else:
@@ -497,6 +500,7 @@ class UtilityInteropWifi(BaseInteropWifi):
 
     def get_wifi_health_monitor(self, device=None, ssid=None):
         cmd = "shell dumpsys wifi | sed -n '/^WifiHealthMonitor - Log Begin ----$/,/^WifiHealthMonitor - Log End ----$/{/^WifiHealthMonitor - Log End ----$/!p;}'"
+        print("Wifi Health monitor CMD:", cmd)
         x = self.post_adb_(device=device, cmd=cmd)
         y = x[0]["LAST"]["callback_message"]
         z = y.split(" ")
@@ -504,7 +508,7 @@ class UtilityInteropWifi(BaseInteropWifi):
         value = ["ConnectAttempt", "ConnectFailure", "AssocRej", "AssocTimeout"]
         return_dict = dict.fromkeys(value)
         if '"' + ssid + '"' + "\n" in z:
-            print("yes")
+            # print("yes")
             logging.info("yes")
             ind = z.index('"' + ssid + '"' + "\n")
             # print(z[271])
@@ -536,7 +540,7 @@ class UtilityInteropWifi(BaseInteropWifi):
                 logging.info("association timeout " +  asso_timeout)
                 return_dict["AssocTimeout"] = asso_timeout
         else:
-            print("ssid is not present")
+            print("SSID is not present in the 'ConnectAttempt', 'ConnectFailure', 'AssocRej', 'AssocTimeout' States")
             logging.info("ssid is not present")
         print(return_dict)
         return return_dict
@@ -553,6 +557,7 @@ class UtilityInteropWifi(BaseInteropWifi):
             print("CMD", cmd)
             self.post_adb_(device=device, cmd=cmd)
 
+    # list out the existing network id, ssid, security
     def list_networks_info(self, device_name):
         cmd = f'-s {device_name} shell cmd -w wifi list-networks'
         print("List of Networks CMD:", cmd)
