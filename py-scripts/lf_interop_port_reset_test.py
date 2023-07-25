@@ -73,7 +73,6 @@ class InteropPortReset(Realm):
         self.supported_release = suporrted_release
         self.device_name = []
 
-
         self.interop = base.BaseInteropWifi(manager_ip=self.host,
                                             port=8080,
                                             ssid=self.ssid,
@@ -87,14 +86,12 @@ class InteropPortReset(Realm):
         self.utility = base.UtilityInteropWifi(host_ip=self.host)
         logging.basicConfig(filename='reset.log', filemode='w', level=logging.INFO, force=True)
 
-
-
     def get_last_wifi_msg(self):
         a = self.json_get("/wifi-msgs/last/1", debug_=True)
         last = a['wifi-messages']['time-stamp']
-        print(a)
+        print("Wifi Message resonance:", a)
         logging.info(str(a))
-        print(last)
+        print("Time Stamp:", last)
         logging.info(str(last))
         return last
 
@@ -114,11 +111,10 @@ class InteropPortReset(Realm):
                     # print("y", y)
                     if filter in y:
                         count_.append("yes")
-
-        print(count_)
+        print("Count:", count_)
         logging.info(str(count_))
         counting = count_.count("yes")
-        print(counting)
+        print("Counting:", counting)
         logging.info(str(counting))
         return counting
 
@@ -126,16 +122,15 @@ class InteropPortReset(Realm):
         time.sleep(20)
         a = self.json_get("/wifi-msgs/since=time/" + str(timee), debug_=True)
         values = a['wifi-messages']
-        print("values", values)
+        print("Wifi msg values:", values)
         logging.info("values" + str(values))
         keys_list = []
-
 
         for i in range(len(values)):
             keys_list.append(list(values[i].keys())[0])
 
         disconnect_count = self.get_count(value=values, keys_list=keys_list, filter="Terminating...")
-        print(disconnect_count)
+        print("Disconnect count:", disconnect_count)
 
         print(local_dict[phn_name])
         local_dict[phn_name]["Disconnected"] = disconnect_count
@@ -159,7 +154,6 @@ class InteropPortReset(Realm):
 
         return local_dict
 
-
     @property
     def run(self):
         try:
@@ -170,122 +164,149 @@ class InteropPortReset(Realm):
             logging.info("Test started at " + str(test_time))
             # get the list of adb devices
             self.adb_device_list = self.interop.check_sdk_release()
-            print(self.adb_device_list)
+            print("ADB Device List Which support SDK & not in phantom : ", self.adb_device_list)
             logging.info(self.adb_device_list)
-            if len(self.adb_device_list) == self.clients:
+            # Checking and selecting the number of available clients are equal to given clients
+            if len(self.adb_device_list) == self.clients:  #TODO: NEED TO MODIFY THIS CHECKING LOGIC
                 print("No of available clients is equal to provided clients")
                 logging.info("No of available clients is equal to provided clients")
-                print("now choosing no of clients provided from available list randomly")
+                print("*** Now choosing no of clients provided from available list randomly ***")
                 logging.info("now choosing no of clients provided from available list randomly")
                 new_device = []
                 for i, x in zip(self.adb_device_list, range(int(self.clients))):
                     if x < self.clients:
                         new_device.append(i)
-                print(new_device)
+                print("New Device List", new_device)
                 logging.info(new_device)
                 self.adb_device_list = new_device
-
             else:
-                print("no of available clients is less then provided clients to be tested, Please check it!")
+                print("No of available clients is less then provided clients to be tested, Please check it!")
                 logging.info("no of available clients is less then provided clients to be tested, Please check it!")
                 exit(1)
-
-            print("new device list", self.adb_device_list)
+            # Fetching Name of the devices in a list if the active devices are available
+            print("New device list, after chosen from random list", self.adb_device_list)
             logging.info("new device list " + str(self.adb_device_list))
             if len(self.adb_device_list) == 0:
-                print("there is no active adb devices please check system")
+                print("There is no active adb devices please check system")
                 logging.warning("there is no active adb devices please check system")
                 exit(1)
             else:
                 for i in range(len(self.adb_device_list)):
                     self.phn_name.append(self.adb_device_list[i].split(".")[2])
-                    print("phn_name", self.phn_name)
+                    print("Name of the Device:", self.phn_name)
                     logging.info("phn_name" + str(self.phn_name))
 
             # check status of devices
             phantom = []
             for i in self.adb_device_list:
                 phantom.append(self.interop.get_device_details(device=i, query="phantom"))
-            print(phantom)
+            print("Device Phantom State List", phantom)
             logging.info(phantom)
             state = None
             for i in phantom:
                 if str(i) == "False":
-                    print("device are up")
+                    print("Devices are up")
                     logging.info("device are up")
                     state = "up"
                 else:
-                    print("all devices are not up")
+                    print("Devices are not up")
                     logging.info("all devices are not up")
                     exit(1)
             if state == "up":
+                # setting / modify user name
                 self.interop.set_user_name(device=self.adb_device_list)
                 for i in self.adb_device_list:
                     self.device_name.append(self.interop.get_device_details(device=i, query="user-name"))
-                print("device name", self.device_name)
+                print("Updated Device Name", self.device_name)
                 logging.info("device name " + str(self.device_name))
+                print("waiting for 5 sec...")
+                time.sleep(5)
 
-                print("forget all previous connected networks")
-                logging.info("forget all previous connected networks")
+                print("List out the network id's")
+                Network_Id, Connected_ssid, Security = [], [], []
+                for i in self.phn_name:
+                    connected_network_info = self.utility.list_networks_info(device_name=i)
+                    print(connected_network_info)
+                    if connected_network_info == 'No networks':
+                        print("No exiting networks found for %s device" % i)
+                    else:
+                        # Forget already existing network base on the network id
+                        print("The %s device is already connected to %s SSID" % (i, connected_network_info['SSID']))
+                        Network_Id.append(connected_network_info['Network Id'])
+                        Connected_ssid.append(connected_network_info['SSID'])
+                        Security.append(connected_network_info['Security type'])
+                        print("Existing network id:", Network_Id)
+                        print("Existing connected ssid:", Connected_ssid)
+                        print("Existing connected network:", Security)
+                        print("Forgetting already connected network")
+                        logging.info("forget all previous connected networks")
+                        for j in self.adb_device_list:
+                            self.utility.forget_netwrk(device=j, network_id=Network_Id)
+                        print("Waiting for 2 sec")
+                        time.sleep(2)
+
+                print("Stopping the APP")
                 for i in self.adb_device_list:
-                    self.utility.forget_netwrk(device=i)
+                    self.interop.stop(device=i)
 
-                print("connect all phones to a particular ssid")
-                logging.info("connect all phones to a particular ssid")
-                print("apply ssid using batch modify")
+                print("Apply SSID configuring using batch modify")
                 logging.info("apply ssid using batch modify")
                 self.interop.batch_modify_apply(device=self.adb_device_list, manager_ip=self.mgr_ip)
-                print("check heath data")
+                print("Check heath data")
                 logging.info("check heath data")
                 health = dict.fromkeys(self.adb_device_list)
-                print(health)
+                print("Health Data:", health)
                 logging.info(str(health))
 
                 for i in self.adb_device_list:
                     dev_state = self.utility.get_device_state(device=i)
-                    print("device state", dev_state)
+                    print("State of the Device:", dev_state)
                     logging.info("device state" + dev_state)
                     if dev_state == "COMPLETED,":
-                        print("phone is in connected state")
+                        print("Phone is in connected state")
                         logging.info("phone is in connected state")
                         ssid = self.utility.get_device_ssid(device=i)
                         if ssid == self.ssid:
-                            print("device is connected to expected ssid")
+                            print("The Device is connected to expected ssid")
                             logging.info("device is connected to expected ssid")
                             health[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
+                        else:
+                            print("**** The Device is not connected to the expected ssid ****")
                     else:
-                        print("wait for some time and check again")
-                        logging.info("wait for some time and check again")
+                        print(f"Waiting for {self.wait_time} sec & Checking again the status of the device")
+                        logging.info(f"Waiting for {self.wait_time} & Checking again")
                         time.sleep(int(self.wait_time))
                         dev_state = self.utility.get_device_state(device=i)
-                        print("device state", dev_state)
+                        print("Device state", dev_state)
                         logging.info("device state" + str(dev_state))
                         if dev_state == "COMPLETED,":
-                            print("phone is in connected state")
+                            print("Phone is in connected state")
                             logging.info("phone is in connected state")
                             ssid = self.utility.get_device_ssid(device=i)
                             if ssid == self.ssid:
-                                print("device is connected to expected ssid")
+                                print("Device is connected to expected ssid")
                                 logging.info("device is connected to expected ssid")
                                 health[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
                         else:
                             print("device state", dev_state)
                             logging.info("device state" + str(dev_state))
                             health[i] = {'ConnectAttempt': '0', 'ConnectFailure': '0', 'AssocRej': '0', 'AssocTimeout': '0'}
-                print("health", health)
+                print("Health Status for the Device:", health)
                 logging.info("health" + str(health))
 
+                # Resting Starts from here
                 reset_list = []
                 for i in range(self.reset):
                     reset_list.append(i)
-                print("reset list", reset_list)
+                print("Given No.of iterations for Reset :", len(reset_list))
                 logging.info("reset list" + str(reset_list))
                 reset_dict = dict.fromkeys(reset_list)
                 for r, final in zip(range(self.reset), reset_dict):
-                    time.sleep(int(self.time_int))
+                    time.sleep(int(self.time_int))  # sleeping until time interval finish
                     print("r", r)
                     logging.info("r " + str(r))
                     local_dict = dict.fromkeys(self.adb_device_list)
+                    print("local dict", local_dict)
 
                     list_ = ["ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected"]
                     sec_dict = dict.fromkeys(list_)
@@ -297,12 +318,12 @@ class InteropPortReset(Realm):
                         # note last  log time
                         timee = self.get_last_wifi_msg()
                         # enable and disable Wi-Fi
-                        print("disable wifi")
+                        print("**** Disable wifi")
                         logging.info("disable wifi")
                         self.interop.enable_or_disable_wifi(device=i, wifi="disable")
                         time.sleep(5)
 
-                        print("enable wifi")
+                        print("*** Enable wifi")
                         logging.info("enable wifi")
                         self.interop.enable_or_disable_wifi(device=i, wifi="enable")
                         time.sleep(int(self.wait_time))
@@ -324,9 +345,7 @@ class InteropPortReset(Realm):
         except Exception as e:
             print(e)
 
-
     def generate_per_station_graph(self, device_names=None, dataset=None, labels=None):
-
         # device_names = ['1.1.RZ8N70TVABP', '1.1.RZ8RA1053HJ']
         print("dataset", dataset)
         print(labels)
@@ -406,7 +425,6 @@ class InteropPortReset(Realm):
             for m in asso_rej[i]:
                 assorej = assorej + m
 
-
         print("scan", scan)
         print(ass_atmpt)
         print(conects)
@@ -467,6 +485,7 @@ class InteropPortReset(Realm):
     def generate_report(self, reset_dict=None, test_dur=None):
         try:
             print("reset dict", reset_dict)
+            print("Test Duration", test_dur)
             logging.info("reset dict " + str(reset_dict))
             report = lf_report_pdf.lf_report(_path="", _results_dir_name="Interop_port_reset_test",
                                              _output_html="port_reset_test.html",
@@ -513,7 +532,6 @@ class InteropPortReset(Realm):
             report.move_graph_image()
             report.build_graph()
 
-
             for y, z in zip(self.adb_device_list, range(len(self.adb_device_list))):
                 reset_count_ = list(reset_dict.keys())
                 reset_count = []
@@ -527,7 +545,6 @@ class InteropPortReset(Realm):
                     scanning.append(reset_dict[i][y]["Scanning"])
                     connected.append(reset_dict[i][y]["Connected"])
                     assorej.append(reset_dict[i][y]["Association Rejection"])
-
 
                 # graph calculation
                 dict_ = ['Port Resets', 'Disconnected', 'Scans', 'Assoc Attempts', "Association Rejection", 'Connected']
@@ -563,13 +580,13 @@ class InteropPortReset(Realm):
                 report.set_obj_html("Per Client Graph for client " + str(y.split(".")[2]),
                                     "The below graph provides information regarding per station behaviour for every reset count"
                                     " where"
-                                "Port resets=Total resets provided as test input, Disconnected=It is the total number "
-                                "of disconnects happened for a client  during every reset when WiFi was disabled , Scans=It is the"
-                                "total number of scanning state achieved by a client during the test when network is enabled back for "
+                                    "Port resets=Total resets provided as test input, Disconnected=It is the total number "
+                                    "of disconnects happened for a client  during every reset when WiFi was disabled , Scans=It is the"
+                                    "total number of scanning state achieved by a client during the test when network is enabled back for "
                                     "every reset"
-                                " again, Association attempts=It is the total number of association attempts(Associating state) achieved  by"
-                                " a client after the WiFi is enabled back again in full test, Connected=It is the total number"
-                                "of connection(Associated state) achieved by a client during the test when Wifi is enabled back again.")
+                                    " again, Association attempts=It is the total number of association attempts(Associating state) achieved  by"
+                                    " a client after the WiFi is enabled back again in full test, Connected=It is the total number"
+                                    "of connection(Associated state) achieved by a client during the test when Wifi is enabled back again.")
                 report.build_objective()
                 graph1 = self.per_client_graph(data=data, name="per_client_" + str(z))
                 # graph1 = self.generate_per_station_graph()
@@ -611,7 +628,6 @@ class InteropPortReset(Realm):
             for i in range(len(d_name)):
                 s_no.append(i + 1)
 
-
             # self.clients = len(self.adb_device_list)
 
             table_2 = {
@@ -643,7 +659,7 @@ class InteropPortReset(Realm):
 
             report.build_footer()
             report.write_html()
-            report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+            report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
         except Exception as e:
             print(str(e))
             logging.warning(str(e))
