@@ -228,7 +228,7 @@ Generic ipv4 command example:
             optional = agroup
 
     if optional is not None:
-        optional.add_argument("--ipv6", help="Use ipv6 connections instead of ipv4", action="store_true", default=False)
+        optional.add_argument("--ipv6", help="Use ipv6 connections instead of ipv4", action="store_true")
         optional.add_argument("--ap", help="Add BSSID of access point to connect to")
         optional.add_argument('--mode', help=Realm.Help_Mode)
         optional.add_argument('--timeout',
