@@ -541,11 +541,39 @@ class UtilityInteropWifi(BaseInteropWifi):
         print(return_dict)
         return return_dict
 
-    # forget network id upto 20
-    def forget_netwrk(self, device=None):
-        for ntwk_id in range(20):
-            cmd = cmd = "shell cmd -w wifi forget-network " + str(ntwk_id)
+    # forget network based on the network id
+    def forget_netwrk(self, device=None, network_id=None):
+        if network_id is None:
+            network_id = ['0']
+        else:
+            network_id = network_id
+        for ntwk_id in network_id:
+            print(f"Forgetting network for {device} with network id :{ntwk_id}")
+            cmd = "shell cmd -w wifi forget-network " + ntwk_id
+            print("CMD", cmd)
             self.post_adb_(device=device, cmd=cmd)
+
+    def list_networks_info(self, device_name):
+        cmd = f'-s {device_name} shell cmd -w wifi list-networks'
+        print("List of Networks CMD:", cmd)
+        resp = self.post_adb_(device=device_name, cmd=cmd)
+        print(resp)
+        network_details = resp[0]['LAST']['callback_message']
+        print(resp[0]['LAST']['callback_message'])
+        if 'No networks' in network_details:
+            network_info_dict = "No networks"
+        else:
+            values = resp[0]['LAST']['callback_message'].split('\n')[1:]
+            network_info = values[0].split()
+            network_id, ssid, security_type = network_info
+            # Creating a dictionary 'network_info_dict' with the extracted values
+            network_info_dict = {
+                'Network Id': network_id,
+                'SSID': ssid,
+                'Security type': security_type
+            }
+            print("network_info", network_info_dict)
+        return network_info_dict
 
 
 def main():
