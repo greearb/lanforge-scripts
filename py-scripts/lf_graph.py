@@ -317,8 +317,12 @@ class lf_bar_graph_horizontal:
 
         def show_value(rectangles):
             for rect in rectangles:
+                w = rect.get_width()
+                y = rect.get_y()
                 h = rect.get_height()
-                plt.text(rect.get_x() + rect.get_width() / 2., h, h,
+                x = rect.get_x()
+                # adding 1 may not always work based on the x axis scale may need to be configurable
+                plt.text(w + 1 , rect.get_y() + rect.get_height() / 4., w,
                          ha='center', va='bottom', rotation=self.text_rotation, fontsize=self.text_font)
 
         for _ in self.data_set:
@@ -1146,6 +1150,9 @@ INCLUDE_IN_README
                          _label=["bi-downlink", "bi-uplink", 'uplink'],
                          _color=None,
                          _color_edge='red',
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=None,
                          _enable_csv=True)
     graph_html_obj = """
         <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (graph.build_bar_graph()) + """ border='1' />
@@ -1186,7 +1193,10 @@ INCLUDE_IN_README
                          _color=None,
                          _color_edge='red',
                          _figsize=(x_fig_size, y_fig_size),
-                         _enable_csv=True)
+                         _show_bar_value= True,
+                        _text_font=6,
+                        _text_rotation=True,
+                        _enable_csv=True)
     graph_html_obj = """
         <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (graph.build_bar_graph_horizontal()) + """ border='1' />
         <br><br>
