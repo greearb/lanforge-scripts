@@ -12,6 +12,14 @@ import random
 import logging
 import argparse
 
+#########################################################################
+# this script was functional is talking to a CISCO AP when detecting 
+# DFS signals and reading the CAC timers 
+#  
+# the script is moving to scripts deprecated as there is lf_hackrf_dfs.py 
+# script that is used for DFS testing
+#########################################################################
+
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
