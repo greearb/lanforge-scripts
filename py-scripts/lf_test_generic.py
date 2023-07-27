@@ -506,10 +506,10 @@ python3 ./test_generic.py
     logger.info(generic_cols)
     logger.info("Port Manager column names are...")
     logger.info(port_mgr_cols)
-    try:
-        monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
-    except ValueError as error:
-        raise ValueError("The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. %s" % error)
+    # try:
+    #     monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
+    # except ValueError as error:
+    #     raise ValueError("The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. %s" % error)
 
     logger.info("Starting connections with 5 second settle time.")
     generic_test.start()
@@ -525,21 +525,21 @@ python3 ./test_generic.py
                                dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                                dut_serial_num=args.dut_serial_num, test_id=args.test_id, csv_outfile=args.csv_outfile,
                                monitor_endps=mon_endp, generic_cols=generic_cols)
-    generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
-                                               must_increase_cols=must_increase_cols,
-                                               sta_list=station_list,
-                                               resource_id=resource_id,
-                                               # port_mgr_cols=port_mgr_cols,
-                                               report_file=report_f,
-                                               systeminfopath=systeminfopath,
-                                               duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
-                                               monitor_interval=monitor_interval,
-                                               monitor_endps=mon_endp,
-                                               output_format=output,
-                                               compared_report=compared_rept,
-                                               script_name='test_generic',
-                                               arguments=args,
-                                               debug=args.debug)
+    # generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
+    #                                            must_increase_cols=must_increase_cols,
+    #                                            sta_list=station_list,
+    #                                            resource_id=resource_id,
+    #                                            # port_mgr_cols=port_mgr_cols,
+    #                                            report_file=report_f,
+    #                                            systeminfopath=systeminfopath,
+    #                                            duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
+    #                                            monitor_interval=monitor_interval,
+    #                                            monitor_endps=mon_endp,
+    #                                            output_format=output,
+    #                                            compared_report=compared_rept,
+    #                                            script_name='test_generic',
+    #                                            arguments=args,
+    #                                            debug=args.debug)
 
     logger.info("Done with connection monitoring")
     generic_test.stop()
