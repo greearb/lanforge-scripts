@@ -64,7 +64,7 @@ SCRIPT_CLASSIFICATION:  Creation, Addition, Deletion
 
 SCRIPT_CATEGORIES: Functional
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   23-JUN-2023,
              GUI Version:  5.4.6
@@ -270,7 +270,7 @@ SCRIPT_CLASSIFICATION:  Creation, Addition, Deletion
 
 SCRIPT_CATEGORIES: Functional
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   23-JUN-2023,
              GUI Version:  5.4.6
