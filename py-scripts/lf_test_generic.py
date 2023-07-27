@@ -69,9 +69,6 @@ lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 
 
-realm = importlib.import_module("py-json.realm")
-Realm = realm.Realm
-
 logger = logging.getLogger(__name__)
 
 
@@ -79,14 +76,11 @@ if sys.version_info[0] != 3:
     logger.critical("This script requires Python 3")
     exit(1)
 
-class GenTest(Realm):
-    def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, host="localhost", port=8080,
+class GenTest():
+    def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, debug_=True, host="localhost", port=8080,
                  number_template="000", test_duration="5m", test_type="lfping", dest=None, cmd=None,
                  interval=1, radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
                  file_output=None, loop_count=None, _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
-        super().__init__(host, port, 
-                         debug_=_debug_on, 
-                         _exit_on_fail=_exit_on_fail)
         self.ssid = ssid
         self.radio = radio
         self.upstream = upstream
@@ -294,8 +288,8 @@ def main():
                      'help': 'how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
                      'default': '2s'})
     # definition of create_basic_argparse  in lanforge-scripts/py-json/LANforge/lfcli_base.py around line 700
-    parser = Realm.create_basic_argparse(
-        prog='test_generic.py',
+    parser = argparse.ArgumentParser(
+        prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''Create generic endpoints and test for their ability to execute chosen commands\n''',
         description='''
