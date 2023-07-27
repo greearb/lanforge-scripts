@@ -1,8 +1,76 @@
 #!/usr/bin/env python3
 """
-    This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
+NAME: testgroup2.py
 
-    Use './testgroup2.py --help' to see command line usage and options
+PURPOSE:
+         This script will create stations and l3 cross-connections with a test connection group in the LANforge GUI ('Connection Group' GUI-tab).
+         Create stations to test connection and traffic on Ethernet/VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open) and then add them to a test group.
+         Test Groups are also referred to as Connection Groups.
+
+         The script can preform the following tasks:
+         - create specified number of stations and l3 connections for each station.
+         - create the test-group for all created cross-connections.
+         - start and stop a test connection group.
+
+
+EXAMPLE:
+
+        Generic command layout:
+        ----------------------
+        python3 ./testgroup2.py
+            --upstream_port eth1
+            --radio wiphy0
+            --num_stations 32
+            --security {open|wep|wpa|wpa2|wpa3} \\
+            --mode   1
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13",
+            --ssid netgear
+            --password admin123
+            --a_min 1000
+            --b_min 1000
+            --ap "00:0e:8e:78:e1:76"
+            --group_name group0
+            --add_group
+            --debug
+
+        * To create given number of stations and l3 cross-connections along with add them in a test-group.
+
+             ./testgroup2.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2
+             --radio wiphy0 --group_name group0 --add_group --upstream_port eth2 --a_min 6000 --b_min 6000
+
+        * To create given number of stations and l3 cross-connections along with add them in a test-group & Start Selected Group:
+
+            ./testgroup2.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2
+            --radio wiphy0 --group_name group0 --start_group group0
+
+SCRIPT_CLASSIFICATION:  Creation stations & test-groups, Addition, Deletion
+
+SCRIPT_CATEGORIES: Functional
+
+STATUS: Functional
+
+VERIFIED_ON:   23-JUN-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.16+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 """
 import sys
 import os
@@ -194,44 +262,81 @@ def main():
         prog='testgroup2.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            Create stations to test connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open) and then add them to a test group
+            Create stations to test connection and traffic on Ethernet/VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open) and then add them to a test group.
             ''',
 
         description='''\
-testgroup2.py:
---------------------
-Generic command layout:
+NAME: testgroup2.py
 
-python3 ./testgroup2.py
-    --upstream_port eth1
-    --radio wiphy0
-    --num_stations 32
-    --security {open|wep|wpa|wpa2|wpa3} \\
-    --mode   1
-        {"auto"   : "0",
-        "a"      : "1",
-        "b"      : "2",
-        "g"      : "3",
-        "abg"    : "4",
-        "abgn"   : "5",
-        "bgn"    : "6",
-        "bg"     : "7",
-        "abgnAC" : "8",
-        "anAC"   : "9",
-        "an"     : "10",
-        "bgnAC"  : "11",
-        "abgnAX" : "12",
-        "bgnAX"  : "13",
-    --ssid netgear
-    --password admin123
-    --a_min 1000
-    --b_min 1000
-    --ap "00:0e:8e:78:e1:76"
-    --group_name group0
-    --add_group
-    --debug
+PURPOSE: 
+         This script will create stations and l3 cross-connections with a test connection group in the LANforge GUI ('Connection Group' GUI-tab).
+         Create stations to test connection and traffic on Ethernet/VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open) and then add them to a test group.
+         Test Groups are also referred to as Connection Groups.
+         
+         The script can preform the following tasks:
+         - create specified number of stations and l3 connections for each station.
+         - create the test-group for all created cross-connections.
+         - start and stop a test connection group.
+
+
+EXAMPLE:
+
+        Generic command layout:
+        ----------------------
+        python3 ./testgroup2.py
+            --upstream_port eth1
+            --radio wiphy0
+            --num_stations 32
+            --security {open|wep|wpa|wpa2|wpa3} \\
+            --mode   1
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13",
+            --ssid netgear
+            --password admin123
+            --a_min 1000
+            --b_min 1000
+            --ap "00:0e:8e:78:e1:76"
+            --group_name group0
+            --add_group
+            --debug
+            
+        * To create given number of stations and l3 cross-connections along with add them in a test-group.
+                
+             ./testgroup2.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2 
+             --radio wiphy0 --group_name group0 --add_group --upstream_port eth2 --a_min 6000 --b_min 6000
     
-    ./testgroup2.py --num_stations 4 --ssid lanforge --passwd password --security wpa2 --radio wiphy0 --group_name group0 --add_group
+        * To create given number of stations and l3 cross-connections along with add them in a test-group & Start Selected Group:
+    
+            ./testgroup2.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2 
+            --radio wiphy0 --group_name group0 --start_group group0
+
+SCRIPT_CLASSIFICATION:  Creation stations & test-groups, Addition, Deletion
+
+SCRIPT_CATEGORIES: Functional
+
+STATUS: Functional
+
+VERIFIED_ON:   23-JUN-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 6.2.16+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
             ''')
 
