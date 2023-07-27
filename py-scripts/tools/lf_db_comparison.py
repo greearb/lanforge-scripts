@@ -342,58 +342,60 @@ class db_comparison:
 
     def excel_adjusting(self, file_name, sheet_name):
         wb = openpyxl.load_workbook(file_name)
-        ws = wb[sheet_name]
-
-        # Assuming the percentage values start from column B, adjust the range as needed
-        for row in ws.iter_rows(min_row=11, max_row=ws.max_row, min_col=11, max_col=11):
-            cell = row[0]
-            if cell.value is None:
-                pass
-            elif cell.value == 'Comparison':
-                pass
-            else:
-                percentage = float(cell.value.strip('%'))  # Assuming the percentage values have '%' in them
-                self.set_background_color(cell, percentage)
-
-        for letter in ascii_uppercase:  # ascii_uppercase : A, B, C, D, E, F,......,Z
-            max_width = 0
-            column_length_list = []
-            for row_number in range(1, ws.max_row + 1):
-                length = ws[f'{letter}{row_number}'].value
-                if length is not None:
-                    if len(str(length)) > max_width:
-                        column_length_list.append(len(str(length)))
+        if sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            # Assuming the percentage values start from column B, adjust the range as needed
+            for row in ws.iter_rows(min_row=11, max_row=ws.max_row, min_col=11, max_col=11):
+                cell = row[0]
+                if cell.value is None:
+                    pass
+                elif cell.value == 'Comparison':
+                    pass
                 else:
-                    column_length_list.append(10)
-            # print("column :", letter)
-            # print("width", max(column_length_list))
-            ws.column_dimensions[letter].alignment = Alignment(horizontal='center', vertical='center')
-            ws.column_dimensions[letter].width = max(column_length_list) + 1
+                    percentage = float(cell.value.strip('%'))  # Assuming the percentage values have '%' in them
+                    self.set_background_color(cell, percentage)
 
-        wb.save(file_name)
-        wb.close()
+            for letter in ascii_uppercase:  # ascii_uppercase : A, B, C, D, E, F,......,Z
+                max_width = 0
+                column_length_list = []
+                for row_number in range(1, ws.max_row + 1):
+                    length = ws[f'{letter}{row_number}'].value
+                    if length is not None:
+                        if len(str(length)) > max_width:
+                            column_length_list.append(len(str(length)))
+                    else:
+                        column_length_list.append(10)
+                # print("column :", letter)
+                # print("width", max(column_length_list))
+                ws.column_dimensions[letter].alignment = Alignment(horizontal='center', vertical='center')
+                ws.column_dimensions[letter].width = max(column_length_list) + 1
+
+            wb.save(file_name)
+            wb.close()
+        else:
+            print(f"None of the sheet {sheet_name} are available for wct, dp, ap_auto...")
 
     def merge_cells_with_msg(self, file_name, sheet_name, start_column, start_row, end_column, end_row, msg,
                              font_style="DejaVu Serif", font_size=32, font_color="0A9B22"):
         # merge cells
         wb = openpyxl.load_workbook(f'./{self.directory}/lrq_db_comparison.xlsx')
-        ws = wb[sheet_name]
+        if sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            ws.merge_cells(f'{start_column}{start_row}:{end_column}{end_row}')
 
-        ws.merge_cells(f'{start_column}{start_row}:{end_column}{end_row}')
+            font_style = Font(name=font_style, size=font_size, bold=True, color=font_color)
 
-        font_style = Font(name=font_style, size=font_size, bold=True, color=font_color)
+            ws.cell(row=int(start_row), column=1).value = msg
 
-        ws.cell(row=int(start_row), column=1).value = msg
+            ws.cell(row=int(start_row), column=1).font = font_style
 
-        ws.cell(row=int(start_row), column=1).font = font_style
+            ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
 
-        ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
+            wb.save(file_name)
 
-        # ws.merge_cells("F10:F121")    # Column 'F' cells merging
-
-        wb.save(file_name)
-
-        wb.close()
+            wb.close()
+        else:
+            print(f"None of the sheet {sheet_name} are available for wct, dp, ap_auto...")
 
     def set_background_color(self, cell, percentage):
         if percentage >= 90:  # You can define your own conditions here
@@ -420,7 +422,7 @@ class db_comparison:
                                   start_column='A', start_row='2', end_column='K', end_row='3',
                                   msg="WI-FI CAPACITY DATA COMPARISON")
         self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx', sheet_name='LRQ-WiFi_Capacity',
-                                  start_column='A', start_row='5', end_column='K', end_row='8',
+                                  start_column='A', start_row='6', end_column='K', end_row='8',
                                   msg="Percentage Calculation Formula : ( Test Run-2 Values / Test Run-1 Values ) * 100 \n"
                                       "Color Indication : GREEN  - % >=  90, YELLOW - % >= 70, ORANGE - % >= 50, RED - % < 50",
                                   font_size=15, font_color="050505")
@@ -430,7 +432,7 @@ class db_comparison:
                                   msg="Data Plane DATA COMPARISON")
         self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx',
                                   sheet_name='LRQ-Data_Plane',
-                                  start_column='A', start_row='5', end_column='K', end_row='8',
+                                  start_column='A', start_row='6', end_column='K', end_row='8',
                                   msg="Percentage Calculation Formula : ( Test Run-2 Values / Test Run-1 Values ) * 100 \n"
                                       "Color Indication : GREEN  - % >=  90, YELLOW - % >= 70, ORANGE - % >= 50, RED - % < 50",
                                   font_size=15, font_color="050505")
@@ -440,7 +442,7 @@ class db_comparison:
                                   msg="AP-AUTO DATA COMPARISON")
         self.merge_cells_with_msg(file_name=f'./{self.directory}/lrq_db_comparison.xlsx',
                                   sheet_name='LRQ-AP_AUTO',
-                                  start_column='A', start_row='5', end_column='K', end_row='8',
+                                  start_column='A', start_row='6', end_column='K', end_row='8',
                                   msg="Percentage Calculation Formula : ( Test Run-2 Values / Test Run-1 Values ) * 100 \n"
                                       "Color Indication : GREEN  - % >=  90, YELLOW - % >= 70, ORANGE - % >= 50, RED - % < 50",
                                   font_size=15, font_color="050505")
@@ -494,32 +496,28 @@ class db_comparison:
                     db2_query = pd.read_sql_query(i, self.conn2)
                 df1 = pd.DataFrame(db1_query)
                 df2 = pd.DataFrame(db2_query)
-                query_result = [df1.replace(r'\s+', '', regex=True), df2.replace(r'\s+', '', regex=True)]
-                # checking the selected columns data are identical or not
-                if str(df1) == str(df2):
-                    # logger.info("The values of %s columns are same in db1 & db2" % column_names)
-                    pass
-                    # TODO : Need to sort and merge the dataframes are identical in db1 & db2
+                if df1.empty and df2.empty:
+                    converted_results = []
                 else:
-                    # logger.info("The values of %s columns are not same in db1 & db2" % column_names)
-                    pass
-                    # TODO : Need to sort and merge the dataframes if the data are not identical in db1 & db2
-                for i, df in enumerate(query_result):
-                    result_dict = {}
-                    for column in df.columns:
-                        result_dict[f"{column}_{i + 1}"] = df[column].values[0]
-                    converted_results.append(result_dict)
+                    query_result = [df1.replace(r'\s+', '', regex=True), df2.replace(r'\s+', '', regex=True)]
+                    for i, df in enumerate(query_result):
+                        result_dict = {}
+                        for column in df.columns:
+                            result_dict[f"{column}_{i + 1}"] = df[column].values[0]
+                        converted_results.append(result_dict)
             elif self.db_conn:
                 for i in query:
                     db_query = pd.read_sql_query(i, self.db_conn)
                 df = pd.DataFrame(db_query)
-                query_result = [df.replace(r'\s+', '', regex=True)]
-
-                for i, df in enumerate(query_result):
-                    result_dict = {}
-                    for column in df.columns:
-                        result_dict[f"{column}"] = df[column].values[0]
-                    converted_results.append(result_dict)
+                if df.empty:
+                    converted_results = []
+                else:
+                    query_result = [df.replace(r'\s+', '', regex=True)]
+                    for i, df in enumerate(query_result):
+                        result_dict = {}
+                        for column in df.columns:
+                            result_dict[f"{column}"] = df[column].values[0]
+                        converted_results.append(result_dict)
         else:
             logger.info("Query is empty")
         # logger.info("List of the dictionary values of the two databases : %s" % converted_results)
@@ -696,17 +694,31 @@ class db_comparison:
         ap_auto_result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
                                                      condition='"test-id" == "AP Auto"', limit='1')
 
+        def get_result(result, model_num_1=None, model_num_2=None, model_num=None):
+            if result:
+                if model_num is None:
+                    return result[0][model_num_1], result[1][model_num_2]
+                else:
+                    return result[0][model_num]
+            else:
+                if model_num is None:
+                    return 'None', 'None'
+                else:
+                    return 'None'
+
         gui_info1, gui_info2 = None, None
         if self.db1 and self.db2:
             kernel_1, gui_ver_1, dut_model_num_1 = 'kernel_1', 'gui_ver_1', 'dut-model-num_1'
             kernel_2, gui_ver_2, dut_model_num_2 = 'kernel_2', 'gui_ver_2', 'dut-model-num_2'
+            wct_dut1, wct_dut2 = get_result(wct_result, dut_model_num_1, dut_model_num_2)
+            dp_dut1, dp_dut2 = get_result(dp_result, dut_model_num_1, dut_model_num_2)
+            ap_auto1, ap_auto2 = get_result(ap_auto_result, dut_model_num_1, dut_model_num_2)
             gui_info1 = pd.DataFrame(
                 {
                     "Test Run-1 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
                     # "Kernel Version": [wct_result[0][kernel_1], dp_result[0][kernel_1], ap_auto_result[0][kernel_1]],
                     # "GUI Version": [wct_result[0][gui_ver_1], dp_result[0][gui_ver_1], ap_auto_result[0][gui_ver_1]],
-                    "DUT Model": [wct_result[0][dut_model_num_1], dp_result[0][dut_model_num_1],
-                                  ap_auto_result[0][dut_model_num_1]],
+                    "DUT Model": [wct_dut1, dp_dut1, ap_auto1],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
                 }
             )
@@ -715,20 +727,21 @@ class db_comparison:
                     "Test Run-2 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
                     # "Kernel Version": [wct_result[1][kernel_2], dp_result[1][kernel_2], ap_auto_result[1][kernel_2]],
                     # "GUI Version": [wct_result[1][gui_ver_2], dp_result[1][gui_ver_2], ap_auto_result[1][gui_ver_2]],
-                    "DUT Model": [wct_result[1][dut_model_num_2], dp_result[1][dut_model_num_2],
-                                  ap_auto_result[1][dut_model_num_2]],
+                    "DUT Model": [wct_dut2, dp_dut2, ap_auto2],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
                 }
             )
         elif self.database:
             kernel, gui_ver, dut_model_num = 'kernel', 'gui_ver', 'dut-model-num'
+            wct_dut = get_result(wct_result, model_num=dut_model_num)
+            dp_dut = get_result(dp_result, model_num=dut_model_num)
+            ap_auto = get_result(ap_auto_result, model_num=dut_model_num)
             gui_info1 = pd.DataFrame(
                 {
                     "Test Run-1 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
                     # "Kernel Version": [wct_result[0][kernel], dp_result[0][kernel], ap_auto_result[0][kernel]],
                     # "GUI Version": [wct_result[0][gui_ver], dp_result[0][gui_ver], ap_auto_result[0][gui_ver]],
-                    "DUT Model": [wct_result[0][dut_model_num], dp_result[0][dut_model_num],
-                                  ap_auto_result[0][dut_model_num]],
+                    "DUT Model": [wct_dut, dp_dut, ap_auto],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
                 }
             )
@@ -737,8 +750,7 @@ class db_comparison:
                     "Test Run-2 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
                     # "Kernel Version": [wct_result[0][kernel], dp_result[0][kernel], ap_auto_result[0][kernel]],
                     # "GUI Version": [wct_result[0][gui_ver], dp_result[0][gui_ver], ap_auto_result[0][gui_ver]],
-                    "DUT Model": [wct_result[0][dut_model_num], dp_result[0][dut_model_num],
-                                  ap_auto_result[0][dut_model_num]],
+                    "DUT Model": [wct_dut, dp_dut, ap_auto],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
                 }
             )
