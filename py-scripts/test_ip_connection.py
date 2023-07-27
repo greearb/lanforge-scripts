@@ -222,18 +222,12 @@ Generic ipv4 command example:
     --passwd BLANK
     --debug''')
 
-    optional = None
-    for agroup in parser._action_groups:
-        if agroup.title == "optional arguments":
-            optional = agroup
-
-    if optional is not None:
-        optional.add_argument("--ipv6", help="Use ipv6 connections instead of ipv4", action="store_true")
-        optional.add_argument("--ap", help="Add BSSID of access point to connect to")
-        optional.add_argument('--mode', help=Realm.Help_Mode)
-        optional.add_argument('--timeout',
-                              help='--timeout sets the length of time to wait until a connection is successful',
-                              default=30)
+    parser.add_argument("--ipv6", help="Use ipv6 connections instead of ipv4", action="store_true")
+    parser.add_argument("--ap", help="Add BSSID of access point to connect to")
+    parser.add_argument('--mode', help=Realm.Help_Mode)
+    parser.add_argument('--timeout',
+                            help='--timeout sets the length of time to wait until a connection is successful',
+                            default=30)
     parser.add_argument('--use_existing_sta', help='Used an existing stationsto a particular AP', action='store_true')
 
     args = parser.parse_args()
