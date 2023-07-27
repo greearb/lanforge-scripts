@@ -34,8 +34,6 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-realm = importlib.import_module("py-json.realm")
-Realm = realm.Realm
 from lanforge_client.lanforge_api import LFSession
 from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
@@ -44,7 +42,6 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 logger = logging.getLogger(__name__)
-
 
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
@@ -68,7 +65,6 @@ class lf_modify_radio():
         self.lf_user = lf_user
         self.lf_passwd = lf_passwd
         self.debug = debug
-        self.local_realm = realm.Realm(lfclient_host=self.lf_mgr, lfclient_port=self.lf_port)
         self.static_ip = static_ip
         self.ip_mask = ip_mask
         self.gateway_ip = gateway_ip
