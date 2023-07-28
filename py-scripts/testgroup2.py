@@ -62,7 +62,7 @@ SCRIPT_CATEGORIES: Functional
 
 STATUS: Functional
 
-VERIFIED_ON:   23-JUN-2023,
+VERIFIED_ON:   25-JULY-2023,
              GUI Version:  5.4.6
              Kernel Version: 6.2.16+
 
@@ -328,7 +328,7 @@ SCRIPT_CATEGORIES: Functional
 
 STATUS: Functional
 
-VERIFIED_ON:   23-JUN-2023,
+VERIFIED_ON:   25-JULY-2023,
              GUI Version:  5.4.6
              Kernel Version: 6.2.16+
 
