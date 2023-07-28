@@ -25,7 +25,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
-    logger.info("This script requires Python 3")
+    print("This script requires Python 3")
     exit(1)
 
 if 'py-json' not in sys.path:
@@ -40,7 +40,6 @@ from lf_report import lf_report
 from lf_graph import lf_bar_graph
 from lf_graph import lf_bar_graph_horizontal
 from datetime import datetime, timedelta
-
 
 class ThroughputQOS(Realm):
     def __init__(self,
@@ -174,7 +173,6 @@ class ThroughputQOS(Realm):
         #All the available resources are fetched from resource mgr tab ----
 
         response_port = self.json_get("/port/all")
-        mac_id1_list=[]
         for interface in response_port['interfaces']:
             for port,port_data in interface.items():
                 if(not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0"):
@@ -189,7 +187,7 @@ class ThroughputQOS(Realm):
                 if self.eid_list[i] == port_eid_list[j]:
                     same_eid_list.append(self.eid_list[i])
         same_eid_list = [_eid + ' ' for _eid in same_eid_list]
-        logger.info("same eid list",same_eid_list)  
+        print("same eid list",same_eid_list)  
         # print("mac_id list",self.mac_id_list)
         #All the available ports from port manager are fetched from port manager tab ---
 
@@ -198,7 +196,7 @@ class ThroughputQOS(Realm):
                 if eid in device:
                     print(eid + ' ' + device)
                     self.user_list.append(device)
-        logger.info("Available resources to run test : ",self.user_list)
+        print("Available resources to run test : ",self.user_list)
 
         devices_list = input("Enter the desired resources to run the test:")
         #print("devices list",devices_list)
@@ -221,8 +219,16 @@ class ThroughputQOS(Realm):
             for j in range(len(self.devices_available)):
                 if i in self.devices_available[j]:
                     self.real_client_list.append(self.devices_available[j])
-        logger.info("real client list", self.real_client_list)
+        print("real client list", self.real_client_list)
         self.num_stations = len(self.real_client_list)
+
+        for eid in resource_eid_list2:
+            for i in self.mac_id1_list:
+                if eid in i:
+                    self.mac_id_list.append(i.strip(eid+' '))
+        print("mac_id_list",self.mac_id_list)
+
+    #user desired real client list 1.1 OnePlus, 1.1 Apple for report generation ---
 
     def start(self, print_pass=False, print_fail=False):
         if len(self.cx_profile.created_cx) > 0:
@@ -249,21 +255,21 @@ class ThroughputQOS(Realm):
         
     def build(self):
         self.create_cx()
-        logger.info("cx build finished")
+        print("cx build finished")
 
     def create_cx(self):
-        logger.info("tos: {}".format(self.tos))
+        print("tos: {}".format(self.tos))
         for ip_tos in self.tos:
-            logger.info("## ip_tos: {}".format(ip_tos))
-            logger.info("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (
+            print("## ip_tos: {}".format(ip_tos))
+            print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (
                 self.traffic_type, ip_tos, self.cx_profile.get_cx_count()))
             self.cx_profile.create(endp_type=self.traffic_type, side_a=self.input_devices_list,
                                    side_b=self.upstream,
                                    sleep_time=0, tos=ip_tos)
-        logger.info("cross connections with TOS type created.")
+        print("cross connections with TOS type created.")
 
     def monitor(self):
-        logger.info("Monitoring CXs... & Endpoints...")
+        print("Monitoring CXs... & Endpoints...")
         download, throughput, bps_rx_a = {}, [], []
         if (self.test_duration is None) or (int(self.test_duration) <= 1):
             raise ValueError("Monitor test duration should be > 1 second")
@@ -288,7 +294,7 @@ class ThroughputQOS(Realm):
         for index, key in enumerate(download):
             for i in range(len(download[key])):
                 bps_rx_a[i].append(download[key][i][0])
-        logger.info("overall download throughput values:", bps_rx_a)
+        print("overall download throughput values:", bps_rx_a)
         throughput = [float(f"{sum(i) / len(i)}") for i in bps_rx_a]
         keys = list(connections.keys())
         for i in range(len(throughput)):
@@ -374,7 +380,7 @@ class ThroughputQOS(Realm):
             tos_download.update({'rx_a': rx_a})
 
         else:
-            logger.info("no RX values available to evaluate QOS")
+            print("no RX values available to evaluate QOS")
         key = case + " " + "Mbps"
         return {key: tos_download}
 
@@ -383,7 +389,7 @@ class ThroughputQOS(Realm):
         if data is not None:
             res.update(data)
         else:
-            logger.info("No Data found to generate report!")
+            print("No Data found to generate report!")
             exit(1)
         table_df = {}
         graph_df = {}
@@ -416,8 +422,8 @@ class ThroughputQOS(Realm):
         report = lf_report(_output_pdf="throughput_qos.pdf", _output_html="throughput_qos.html")
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
-        logger.info("path: {}".format(report_path))
-        logger.info("path_date_time: {}".format(report_path_date_time))
+        print("path: {}".format(report_path))
+        print("path_date_time: {}".format(report_path_date_time))
         report.set_title("Throughput QOS")
         report.build_banner()
         # objective title and description
@@ -479,7 +485,7 @@ class ThroughputQOS(Realm):
                                  _color_name=['orange', 'olivedrab', 'steelblue', 'blueviolet'])
             graph_png = graph.build_bar_graph()
 
-            logger.info("graph name {}".format(graph_png))
+            print("graph name {}".format(graph_png))
 
             report.set_graph_image(graph_png)
             # need to move the graph image to the results directory
@@ -552,7 +558,7 @@ class ThroughputQOS(Realm):
                                             _graph_image_name="bk_{}".format(load), _color_edge=['black'],
                                             _color=['orange'])
                     graph_png = graph.build_bar_graph_horizontal()
-                    logger.info("graph name {}".format(graph_png))
+                    print("graph name {}".format(graph_png))
                     report.set_graph_image(graph_png)
                     # need to move the graph image to the results
                     report.move_graph_image()
@@ -561,6 +567,7 @@ class ThroughputQOS(Realm):
                     report.build_graph()
                     bk_dataframe = {
                         " Client Name " : self.real_client_list,
+                        " MAC " : self.mac_id_list,
                         " Type of traffic " : bk_tos_list,
                         " Traffic Direction " : traffic_direction_list,
                         " Traffic Protocol " : traffic_type_list,
@@ -571,7 +578,7 @@ class ThroughputQOS(Realm):
                     dataframe1 = pd.DataFrame(bk_dataframe)
                     report.set_table_dataframe(dataframe1)
                     report.build_table()
-                logger.info("Graph and table for BK tos are built")
+                print("Graph and table for BK tos are built")
                 if "BE" in self.tos:
                     report.set_obj_html(
                         _obj_title=f"Individual download throughput with intended load {load}/station for traffic BE(WiFi).",
@@ -598,7 +605,7 @@ class ThroughputQOS(Realm):
                                             _graph_image_name="be_{}".format(load), _color_edge=['black'],
                                             _color=['olivedrab'])
                     graph_png = graph.build_bar_graph_horizontal()
-                    logger.info("graph name {}".format(graph_png))
+                    print("graph name {}".format(graph_png))
                     report.set_graph_image(graph_png)
                     # need to move the graph image to the results
                     report.move_graph_image()
@@ -607,6 +614,7 @@ class ThroughputQOS(Realm):
                     report.build_graph()
                     be_dataframe = {
                         " Client Name " : self.real_client_list,
+                        " MAC " : self.mac_id_list,
                         " Type of traffic " : be_tos_list,
                         " Tra_xaxis_categories=[i for i in self.real_client_list],ffic Direction " : traffic_direction_list,
                         " Traffic Protocol " : traffic_type_list,
@@ -617,7 +625,7 @@ class ThroughputQOS(Realm):
                     dataframe2 = pd.DataFrame(be_dataframe)
                     report.set_table_dataframe(dataframe2)
                     report.build_table()
-                logger.info("Graph and table for BE tos are built")
+                print("Graph and table for BE tos are built")
                 if "VI" in self.tos:
                     report.set_obj_html(
                         _obj_title=f"Individual download throughput with intended load {load}/station for traffic VI(WiFi).",
@@ -645,7 +653,7 @@ class ThroughputQOS(Realm):
                                             _color_edge=['black'],
                                             _color=['steelblue'])
                     graph_png = graph.build_bar_graph_horizontal()
-                    logger.info("graph name {}".format(graph_png))
+                    print("graph name {}".format(graph_png))
                     report.set_graph_image(graph_png)
                     # need to move the graph image to the results
                     report.move_graph_image()
@@ -654,6 +662,7 @@ class ThroughputQOS(Realm):
                     report.build_graph()
                     vi_dataframe = {
                         " Client Name " : self.real_client_list,
+                        " MAC " : self.mac_id_list,
                         " Type of traffic " : vi_tos_list,
                         " Traffic Direction " : traffic_direction_list,
                         " Traffic Protocol " : traffic_type_list,
@@ -664,7 +673,7 @@ class ThroughputQOS(Realm):
                     dataframe3 = pd.DataFrame(vi_dataframe)
                     report.set_table_dataframe(dataframe3)
                     report.build_table()
-                logger.info("Graph and table for VI tos are built")
+                print("Graph and table for VI tos are built")
                 if "VO" in self.tos:
                     report.set_obj_html(
                         _obj_title=f"Individual download throughput with intended load {load}/station for traffic VO(WiFi).",
@@ -692,7 +701,7 @@ class ThroughputQOS(Realm):
                                             _color_edge=['black'],
                                             _color=['blueviolet'])
                     graph_png = graph.build_bar_graph_horizontal()
-                    logger.info("graph name {}".format(graph_png))
+                    print("graph name {}".format(graph_png))
                     report.set_graph_image(graph_png)
                     # need to move the graph image to the results
                     report.move_graph_image()
@@ -701,6 +710,7 @@ class ThroughputQOS(Realm):
                     report.build_graph()   
                     vo_dataframe = {
                         " Client Name " : self.real_client_list,
+                        " MAC " : self.mac_id_list,
                         " Type of traffic " : vo_tos_list,
                         " Traffic Direction " : traffic_direction_list,
                         " Traffic Protocol " : traffic_type_list,
@@ -711,9 +721,9 @@ class ThroughputQOS(Realm):
                     dataframe4 = pd.DataFrame(vo_dataframe)
                     report.set_table_dataframe(dataframe4)
                     report.build_table() 
-                logger.info("Graph and table for VO tos are built")
+                print("Graph and table for VO tos are built")
         else:
-            logger.info("No individual graph to generate.")
+            print("No individual graph to generate.")
 
 
 def main():
@@ -765,7 +775,7 @@ python3 lf_interop_qos.py --ap_name TIP_EAP_101 --mgr 192.168.209.223 --mgr_port
         args.test_duration = int(args.test_duration)
 
     test_start_time = datetime.now().strftime("%b %d %H:%M:%S")
-    logger.info("Test started at: ", test_start_time)
+    print("Test started at: ", test_start_time)
 
     for index in range(len(loads["download"])):
         throughput_qos = ThroughputQOS(host=args.mgr,
@@ -797,7 +807,7 @@ python3 lf_interop_qos.py --ap_name TIP_EAP_101 --mgr 192.168.209.223 --mgr_port
         data.update(test_results)
 
     test_end_time = datetime.now().strftime("%b %d %H:%M:%S")
-    logger.info("Test ended at: ", test_end_time)
+    print("Test ended at: ", test_end_time)
     
     input_setup_info = {
         "contact": "support@candelatech.com"
