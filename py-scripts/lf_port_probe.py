@@ -18,7 +18,7 @@ NOTES:
         Radio information, Regulatory information.
 
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   28-MAY-2023,
              GUI Version:  5.4.6
@@ -109,7 +109,7 @@ NOTES:
         Radio information, Regulatory information.
 
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   28-MAY-2023,
              GUI Version:  5.4.6
@@ -121,7 +121,7 @@ LICENSE:
 
 INCLUDE_IN_README: False
 
-        ''')
+''')
 
     parser.add_argument('--port_eid', help='EID of station to be used', default="1.1.eth0")
 
