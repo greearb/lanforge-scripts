@@ -30,7 +30,7 @@ SCRIPT_CATEGORIES:  Functional
 NOTES:
         You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   09-JUN-2023,
              GUI Version:  5.4.6
@@ -164,7 +164,7 @@ SCRIPT_CATEGORIES:  Functional
 NOTES:
         You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   09-JUN-2023,
              GUI Version:  5.4.6
@@ -176,8 +176,7 @@ LICENSE:
 
 INCLUDE_IN_README: False
 
-        ''')
-        
+''')
     parser.add_argument(
         '--macvlan_parent',
         help='specifies parent port for macvlan creation',
