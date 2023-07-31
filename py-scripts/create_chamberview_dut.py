@@ -5,68 +5,67 @@ NAME: create_chamberview_dut.py
 PURPOSE: This script creates a dut with given parameters like dut name,ssid,security,bssid in chamber view.
 
 EXAMPLE:
-./create_chamberview_dut --lfmgr localhost --mgr_port 8080 --dut_name dut_name
-                --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP|open bssid=78:d2:94:bf:16:41"
-                --ssid "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
+        ./create_chamberview_dut --lfmgr localhost --mgr_port 8080 --dut_name dut_name
+        --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP|open bssid=78:d2:94:bf:16:41"
+        --ssid "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
 
 SCRIPT_CLASSIFICATION :  Creation
+
 SCRIPT_CATEGORIES:   Functional
 
 NOTES:
-To Run this script gui should be opened with
+        To Run this script gui should be opened with
 
-    path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
-          pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
-          ./lfclient.bash -cli-socket 3990
+            path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
+                  pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
+                  ./lfclient.bash -cli-socket 3990
 
-This script is used to create a DUT in chamber view.
-        Manual steps:
-            1. open GUI
-            2. click Chamber View
-            3. right click on empty space in Scenario configuration  select "New DUT"
-            4. Enter Name (DUT Name), SSID , Security type, BSsid (if available)
-            5. click on apply and OK
-            6. you will see a DUT created in chamber view under scenario configuration
+        This script is used to create a DUT in chamber view.
+                Manual steps:
+                    1. open GUI
+                    2. click Chamber View
+                    3. right click on empty space in Scenario configuration  select "New DUT"
+                    4. Enter Name (DUT Name), SSID , Security type, BSsid (if available)
+                    5. click on apply and OK
+                    6. you will see a DUT created in chamber view under scenario configuration
 
-If entered DUT name is already created in lanforge,
-it will overwrite on to that DUT ( All information will be overwritten )
-Which means it will "Update the DUT".
+        If entered DUT name is already created in lanforge,
+        it will overwrite on to that DUT ( All information will be overwritten )
+        Which means it will "Update the DUT".
 
-If entered DUT name is not already in lanforge,
-then new DUT will be created will all the provided information
+        If entered DUT name is not already in lanforge,
+        then new DUT will be created will all the provided information
 
-The contents of '--ssid' argument are split with shlex, so you can do commands like this as well:
-./create_chamberview_dut.py --lfmgr localhost --dut_name regression_dut
-    --ssid "ssid_idx=0 ssid='j-wpa2-153 space' security='wpa2' password=j-wpa2-153 bssid=04:f0:21:cb:01:8b"
+        The contents of '--ssid' argument are split with shlex, so you can do commands like this as well:
+        ./create_chamberview_dut.py --lfmgr localhost --dut_name regression_dut
+            --ssid "ssid_idx=0 ssid='j-wpa2-153 space' security='wpa2' password=j-wpa2-153 bssid=04:f0:21:cb:01:8b"
 
---lfmgr = IP of lanforge
---mgr_port = Default 8080
---dut_name = Enter name of DUT ( to update DUT enter same DUT name )
-                            ( enter new DUT name to create a new DUT)
---ssid = "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41"
+        --lfmgr = IP of lanforge
+        --mgr_port = Default 8080
+        --dut_name = Enter name of DUT ( to update DUT enter same DUT name )
+                                    ( enter new DUT name to create a new DUT)
+        --ssid = "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41"
 
-        --ssid will take = ssid_idx (from 0 to 7) : we can add upto 7 ssids to a DUT
-                            = ssid : Name of SSID
-                            = security : Security type WPA|WEP|11r|EAP-PEAP ( in case of multiple security add "|"
-                                    after each type ex. WPA|WEP (this will select WPA and WEP both)
-                            = bssid : Enter BSSID
-                            (if you dont want to give bssid
-                            --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP"
-                            )
+                --ssid will take = ssid_idx (from 0 to 7) : we can add upto 7 ssids to a DUT
+                                    = ssid : Name of SSID
+                                    = security : Security type WPA|WEP|11r|EAP-PEAP ( in case of multiple security add "|"
+                                            after each type ex. WPA|WEP (this will select WPA and WEP both)
+                                    = bssid : Enter BSSID
+                                    (if you dont want to give bssid
+                                    --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP"
+                                    )
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
-VERIFIED_ON:
-Working date - 11/05/2023
-Build version - 5.4.6
-kernel version - 6.2.14+
+VERIFIED_ON: 31-JULY-2023
+            Build version - 5.4.6
+            kernel version - 6.2.16+
 
 LICENSE:
-    Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2023 Candela Technologies Inc
+        Free to distribute and modify. LANforge systems must be licensed.
+        Copyright 2023 Candela Technologies Inc
 
 INCLUDE_IN_README: False
-
 
 """
 import sys
@@ -191,70 +190,70 @@ NAME: create_chamberview_dut.py
 
 PURPOSE: This script creates a dut with given parameters like dut name,ssid,security,bssid in chamber view.
 
-EXAMPLE1:
-./create_chamberview_dut --lfmgr localhost --mgr_port 8080 --dut_name dut_name
-                --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP|open bssid=78:d2:94:bf:16:41"
-                --ssid "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
+EXAMPLE:
+        ./create_chamberview_dut --lfmgr localhost --mgr_port 8080 --dut_name dut_name
+        --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP|open bssid=78:d2:94:bf:16:41"
+        --ssid "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
 
 SCRIPT_CLASSIFICATION :  Creation
+
 SCRIPT_CATEGORIES:   Functional
 
 NOTES:
-To Run this script gui should be opened with
+        To Run this script gui should be opened with
+        
+            path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
+                  pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
+                  ./lfclient.bash -cli-socket 3990
+        
+        This script is used to create a DUT in chamber view.
+                Manual steps:
+                    1. open GUI
+                    2. click Chamber View
+                    3. right click on empty space in Scenario configuration  select "New DUT"
+                    4. Enter Name (DUT Name), SSID , Security type, BSsid (if available)
+                    5. click on apply and OK
+                    6. you will see a DUT created in chamber view under scenario configuration
+        
+        If entered DUT name is already created in lanforge,
+        it will overwrite on to that DUT ( All information will be overwritten )
+        Which means it will "Update the DUT".
+        
+        If entered DUT name is not already in lanforge,
+        then new DUT will be created will all the provided information
+        
+        The contents of '--ssid' argument are split with shlex, so you can do commands like this as well:
+        ./create_chamberview_dut.py --lfmgr localhost --dut_name regression_dut
+            --ssid "ssid_idx=0 ssid='j-wpa2-153 space' security='wpa2' password=j-wpa2-153 bssid=04:f0:21:cb:01:8b"
+        
+        --lfmgr = IP of lanforge
+        --mgr_port = Default 8080
+        --dut_name = Enter name of DUT ( to update DUT enter same DUT name )
+                                    ( enter new DUT name to create a new DUT)
+        --ssid = "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41"
+        
+                --ssid will take = ssid_idx (from 0 to 7) : we can add upto 7 ssids to a DUT
+                                    = ssid : Name of SSID
+                                    = security : Security type WPA|WEP|11r|EAP-PEAP ( in case of multiple security add "|"
+                                            after each type ex. WPA|WEP (this will select WPA and WEP both)
+                                    = bssid : Enter BSSID
+                                    (if you dont want to give bssid
+                                    --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP"
+                                    )
 
-    path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
-          pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
-          ./lfclient.bash -cli-socket 3990
+STATUS: Functional
 
-This script is used to create a DUT in chamber view.
-        Manual steps:
-            1. open GUI
-            2. click Chamber View
-            3. right click on empty space in Scenario configuration  select "New DUT"
-            4. Enter Name (DUT Name), SSID , Security type, BSsid (if available)
-            5. click on apply and OK
-            6. you will see a DUT created in chamber view under scenario configuration
-
-If entered DUT name is already created in lanforge,
-it will overwrite on to that DUT ( All information will be overwritten )
-Which means it will "Update the DUT".
-
-If entered DUT name is not already in lanforge,
-then new DUT will be created will all the provided information
-
-The contents of '--ssid' argument are split with shlex, so you can do commands like this as well:
-./create_chamberview_dut.py --lfmgr localhost --dut_name regression_dut
-    --ssid "ssid_idx=0 ssid='j-wpa2-153 space' security='wpa2' password=j-wpa2-153 bssid=04:f0:21:cb:01:8b"
-
---lfmgr = IP of lanforge
---mgr_port = Default 8080
---dut_name = Enter name of DUT ( to update DUT enter same DUT name )
-                            ( enter new DUT name to create a new DUT)
---ssid = "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41"
-
-        --ssid will take = ssid_idx (from 0 to 7) : we can add upto 7 ssids to a DUT
-                            = ssid : Name of SSID
-                            = security : Security type WPA|WEP|11r|EAP-PEAP ( in case of multiple security add "|"
-                                    after each type ex. WPA|WEP (this will select WPA and WEP both)
-                            = bssid : Enter BSSID
-                            (if you dont want to give bssid
-                            --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP"
-                            )
-
-STATUS: BETA RELEASE
-
-VERIFIED_ON:
-Working date - 11/05/2023
-Build version - 5.4.6
-kernel version - 6.2.14+
+VERIFIED_ON: 31-JULY-2023
+            Build version - 5.4.6
+            kernel version - 6.2.16+
 
 LICENSE:
-    Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2023 Candela Technologies Inc
+        Free to distribute and modify. LANforge systems must be licensed.
+        Copyright 2023 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 
-               """)
+""")
     parser.add_argument(
         "-m",
         "--lfmgr",
