@@ -332,7 +332,7 @@ class max_associate(Realm):
     def cleanup(self):
         logger.info("Cleaning pre-existing l3-cx's, endps, and stations...")
         self.clean_profile.cxs_clean()
-        self.clean_profile.endp_clean()
+        self.clean_profile.layer3_endp_clean()
         self.clean_profile.sta_clean()
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
                                            debug=self.debug)
@@ -356,7 +356,8 @@ class max_associate(Realm):
         end_num_stations = 0
         for wiphy_radio in wiphy_radio_list:
             # build stations for wiphy0 radio:
-            if wiphy_radio in self.radio_name_list[0]:
+            radio_name = wiphy_radio.split('.')
+            if radio_name[2] in self.radio_name_list[0]:
                 num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
                 radio_driver = self.wiphy_info.get_radio_driver(wiphy_radio)
                 end_num_stations += int(num_stations)
@@ -1210,7 +1211,7 @@ For an overnight test with a ct523c system and a 6e network:
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
     if platform.system() == 'Linux':
-        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
 
     max_association.stop()
 
