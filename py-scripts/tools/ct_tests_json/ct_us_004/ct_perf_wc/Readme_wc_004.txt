@@ -19,7 +19,11 @@ TESTBED 004 WC test runs
 ./lf_check.py --json_rig ./ct_rig_json/ct_us_004_rig.json --json_dut ./ct_dut_json/ct_004_AX88U_dut.json --json_test ./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_ath10K_9984_W1,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_ath9K_W2,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_ax200_W4,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_mtk7921_W5,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_ax210_W6,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_mtk7915_W7  --path /home/lanforge/html-reports/ct_us_004 --log_level debug
 
 
-#ALL
+#ALL individually
 ./lf_check.py --db_override ./tools/CT_004_WC_PERF.db --json_rig ./ct_rig_json/ct_us_004_rig.json --json_dut ./ct_dut_json/ct_004_AX88U_dut.json --json_test ./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_ath10K_9984_W1,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_ath9K_W2,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_ax200_W4,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_mtk7921_W5,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_ax210_W6,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_mtk7915_W7,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_2g_004.json:wc_perf_2g_ath10K_9984_W0,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_2g_004.json:wc_perf_2g_ath9K_W2,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_2g_004.json:wc_perf_2g_ax200_W4,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004.json:wc_perf_5g_mtk7921_W5,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_2g_004.json:wc_perf_2g_ax210_W6,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_2g_004.json:wc_perf_2g_mtk7915_W7  --path /home/lanforge/html-reports/ct_us_004 --log_level debug
 
+##############################
+# ALL at Once time 5G then 2G
+##############################
 
+./lf_check.py --db_override ./tools/CT_004_WC_PERF.db --json_rig ./ct_rig_json/ct_us_004_rig.json --json_dut ./ct_dut_json/ct_004_AX88U_dut.json --json_test ./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_5g_004_W1_W2_W4_W5_W6_W7.json:wc_perf_5g_W1_W2_W4_W5_W6_W7,./ct_tests_json/ct_us_004/ct_perf_wc/ct_perf_wc_2g_004_W0_W2_W4_W5_W6_W7.json:wc_perf_2g_W0_W2_W4_W5_W6_W7: --path /home/lanforge/html-reports/ct_us_004 --log_level debug
