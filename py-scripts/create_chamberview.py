@@ -1,48 +1,43 @@
 #!/usr/bin/env python3
 """
-NOTES: DUT_Radio is really the last part of the 'maps to' component of the scenario,
-so it can also be LAN when using and Upstream profile, for instance.
-
-If scenario with same name already exists as given in 'create_scenario' argument, --delete_scenario flag
-must be used to overwrite scenario with same name. If --delete_scenario isn't given, script will append lines
-to scenario that exists with same name.
 
 NAME: create_chamberview.py
 
-PURPOSE: This script creates a scenario in which stations,bridged-AP,vap,etc can be created and
-upstream, upstream-dhcp, uplink-nat can be configured in chamber view.
+PURPOSE: This script creates a scenario in which stations,bridged-AP,vap,etc can be created and upstream, upstream-dhcp,
+         uplink-nat can be configured in chamber view.
 
 EXAMPLE:
-EXAMPLE1
-python create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
-    --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
-        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
-    --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
-        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
+        EXAMPLE1:
+        python create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+            --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
+                DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
+            --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
+                DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
 
-EXAMPLE2:
-create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
-    --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
-    --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
+        EXAMPLE2:
+        create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+            --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
+            --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
 
 SCRIPT_CLASSIFICATION :  Creation
 SCRIPT_CATEGORIES:   Functional
 
 NOTES:
-To Run this script gui should be opened with
+        To Run this script gui should be opened with
 
-    path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
-          pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
-          ./lfclient.bash -cli-socket 3990
+            path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
+                  pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
+                  ./lfclient.bash -cli-socket 3990
 
-Scenario names should be different, for each run of this script.
-    in case of same scenario name scenario will be appended to the same name.
+        Scenario names should be different, for each run of this script.
+            in case of same scenario name scenario will be appended to the same name.
 
-You should see build scenario with the given arguments at the end of this script.
-    To verify this:
-        open Chamber View -> Manage scenario
+        You should see build scenario with the given arguments at the end of this script.
+            To verify this:
+                open Chamber View -> Manage scenario
 
-STATUS: BETA RELEASE
+
+STATUS: Functional
 
 VERIFIED_ON:
 Working date - 11/05/2023
@@ -214,41 +209,41 @@ def main():
 
 NAME: create_chamberview.py
 
-PURPOSE: This script creates a scenario in which stations,bridged-AP,vap,etc can be created and
-upstream, upstream-dhcp, uplink-nat can be configured in chamber view.
+PURPOSE: This script creates a scenario in which stations,bridged-AP,vap,etc can be created and upstream, upstream-dhcp,
+         uplink-nat can be configured in chamber view.
 
 EXAMPLE:
-EXAMPLE1:
-python create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
-    --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
-        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
-    --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
-        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
-
-EXAMPLE2:
-create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
-    --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
-    --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
+        EXAMPLE1:
+        python create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+            --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
+                DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
+            --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
+                DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=NA"
+        
+        EXAMPLE2:
+        create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+            --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
+            --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
 
 SCRIPT_CLASSIFICATION :  Creation
 SCRIPT_CATEGORIES:   Functional
 
 NOTES:
-To Run this script gui should be opened with
+        To Run this script gui should be opened with
+        
+            path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
+                  pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
+                  ./lfclient.bash -cli-socket 3990
+        
+        Scenario names should be different, for each run of this script.
+            in case of same scenario name scenario will be appended to the same name.
+        
+        You should see build scenario with the given arguments at the end of this script.
+            To verify this:
+                open Chamber View -> Manage scenario
 
-    path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
-          pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
-          ./lfclient.bash -cli-socket 3990
 
-Scenario names should be different, for each run of this script.
-    in case of same scenario name scenario will be appended to the same name.
-
-You should see build scenario with the given arguments at the end of this script.
-    To verify this:
-        open Chamber View -> Manage scenario
-
-
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:
 Working date - 11/05/2023
