@@ -83,7 +83,7 @@ NOTES:
         * Supports creating of stations and creates Layer-3 cross-connection with the endpoint_A as stations created and endpoint_B as upstream port.
         * Supports regression testing for QA
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   27-JUN-2023,
              Build Version:  5.4.6
@@ -300,55 +300,55 @@ NAME: create_l3_stations.py
 PURPOSE:
           ->  This script creates variable number of stations with individual cross-connects and endpoints.
               Stations are set to UP state, but cross-connections remain stopped.
-              
+
           ->  This script support Batch-create Functionality.
 
 EXAMPLE:
         Default configuration:
             Endpoint A: List of stations (default: 2 stations, unless specified with --num_stations)
-            Endpoint B: eth1 
-                
+            Endpoint B: eth1
+
         * Creating specified number of station names and Layer-3 CX :
 
             ./create_l3_stations.py --mgr localhost --num_stations 5 --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
-            
+
         * Creating stations with specified start ID (--num_template) and Layer-3 CX :
-        
+
             ./create_l3_stations.py --mgr localhost --number_template 007 --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
-                
+
         * Creating stations with specified names and Layer-3 CX :
 
             ./create_l3_stations.py --mgr localhost --station_list sta00,sta01 --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
-         
+
         * For creating stations and layer-3 cx creation on particular specified AP mac & mode:
-        
+
             ./create_l3_stations.py --mgr localhost --radio wiphy0 --ssid SSID --password Password@123 --security wpa2 --ap "00:0e:8e:78:e1:76"
             --mode 13
 
         * For creating specified number of stations and layer-3 cx creation (Customise the traffic and upstream port):
-        
+
             ./create_l3_stations.py --mgr localhost --station_list sta00  --radio wiphy0 --ssid SSID --password Password@123 --security wpa2
              --upstream_port eth2 --min_rate_a 6200000 --min_rate_b 6200000
-             
+
         * For Batch-Create :
-        
-            ./create_l3_stations.py --mgr 192.168.200.93 --endp_a 1.1.eth2 --endp_b 1.1.sta0002 --min_rate_a 6200000 --min_rate_b 6200000 
-            --batch_create --batch_quantity 8 --endp_a_increment 0 --endp_b_increment 0 --min_ip_port_a 1000 --min_ip_port_b 2000  
+
+            ./create_l3_stations.py --mgr 192.168.200.93 --endp_a 1.1.eth2 --endp_b 1.1.sta0002 --min_rate_a 6200000 --min_rate_b 6200000
+            --batch_create --batch_quantity 8 --endp_a_increment 0 --endp_b_increment 0 --min_ip_port_a 1000 --min_ip_port_b 2000
             --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn_a 1 --multi_conn_b 1
-         
+
       Generic command layout:
 
         python3 ./create_l3_stations.py
             --upstream_port eth1
             --radio wiphy0
             --num_stations 32
-            --security {open|wep|wpa|wpa2|wpa3} 
+            --security {open|wep|wpa|wpa2|wpa3}
             --ssid netgear
             --password admin123
             --min_rate_a 1000
             --min_rate_b 1000
             --ap "00:0e:8e:78:e1:76"
-            --number_template 0000 
+            --number_template 0000
             --mode   1
                 {"auto"   : "0",
                 "a"      : "1",
@@ -377,7 +377,7 @@ NOTES:
         * Supports creating of stations and creates Layer-3 cross-connection with the endpoint_A as stations created and endpoint_B as upstream port.
         * Supports regression testing for QA
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   27-JUN-2023,
              Build Version:  5.4.6
