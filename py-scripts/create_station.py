@@ -127,7 +127,7 @@ NOTES:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
                     --security wpa2 --cleanup
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   9-JUN-2023,
              GUI Version:  5.4.6
@@ -432,7 +432,7 @@ NOTES:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
                     --security wpa2 --cleanup
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   9-JUN-2023,
              GUI Version:  5.4.6
@@ -444,7 +444,7 @@ LICENSE:
 
 INCLUDE_IN_README: False
 
-            ''')
+''')
     required = parser.add_argument_group('required arguments')
     required.add_argument(
         '--start_id',
