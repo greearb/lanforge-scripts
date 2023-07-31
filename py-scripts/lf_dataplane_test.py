@@ -8,7 +8,7 @@ EXAMPLE:
         # Sample cli to test Dataplane Test :
 
         ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-        --instance_name dataplane-instance --config_name test_con --upstream 1.1eth1 --dut LISP_VAP_DUT
+        --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth1 --dut LISP_VAP_DUT
         --duration 30s --station 1.1.wlan0 --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60'
         --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP'
         --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2' --raw_line 'modes: 802.11bgn-AX' --pull_report
@@ -165,7 +165,7 @@ NOTES:
     loop_iterations: 1
 
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   11-MAY-2023,
              GUI Version:  5.4.6
@@ -336,7 +336,7 @@ EXAMPLE:
         # Sample cli to test Dataplane Test :
 
         ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-        --instance_name dataplane-instance --config_name test_con --upstream 1.1eth1 --dut LISP_VAP_DUT
+        --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth1 --dut LISP_VAP_DUT
         --duration 30s --station 1.1.wlan0 --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60'
         --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP'
         --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2' --raw_line 'modes: 802.11bgn-AX' --pull_report
@@ -493,7 +493,7 @@ NOTES:
     loop_iterations: 1
 
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   11-MAY-2023,
              GUI Version:  5.4.6
