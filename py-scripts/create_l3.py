@@ -43,7 +43,7 @@ NOTES:
 
         * If the specified ports used for creating endpoints are not present in the port manager, the cross-connects will be in a PHANTOM state.
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   20-JUN-2023,
              Build Version:  5.4.6
@@ -204,7 +204,7 @@ NOTES:
 
         * If the specified ports used for creating endpoints are not present in the port manager, the cross-connects will be in a PHANTOM state.
 
-STATUS: BETA RELEASE
+STATUS: Functional
 
 VERIFIED_ON:   20-JUN-2023,
              Build Version:  5.4.6
