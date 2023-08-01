@@ -325,6 +325,8 @@ class ThroughputQOS(Realm):
             raise ValueError("Monitor needs a list of Layer 3 connections")
         # monitor columns
         start_time = datetime.now()
+        test_start_time = datetime.now().strftime("%b %d %H:%M:%S")
+        print("Test started at: ", test_start_time)
         print("Monitoring cx and endpoints")
         end_time = start_time + timedelta(seconds=int(self.test_duration))
         index = -1
@@ -1025,9 +1027,6 @@ def main():
         args.test_duration = int(args.test_duration[0:-1]) * 60 * 60
     elif args.test_duration.endswith(''):
         args.test_duration = int(args.test_duration)
-
-    test_start_time = datetime.now().strftime("%b %d %H:%M:%S")
-    print("Test started at: ", test_start_time)
 
     for index in range(len(loads["download"])):
         throughput_qos = ThroughputQOS(host=args.mgr,
