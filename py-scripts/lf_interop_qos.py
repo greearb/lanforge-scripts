@@ -3,37 +3,51 @@
 """
 NAME: lf_interop_qos.py
 
-PURPOSE: lf_interop_qos.py will provide the available devices and allows user to run the qos traffic
-with particular tos on particular devices in upload, download directions.
+        PURPOSE: lf_interop_qos.py will provide the available devices and allows user to run the qos traffic
+        with particular tos on particular devices in upload, download directions.
 
-EXAMPLE-1:
-Command Line Interface to run download scenario with tos Background and Voice
-python3 lf_interop_qos.py --ap_name TIP_EAP_101 --mgr 192.168.209.223 --mgr_port 8080 --ssid ssid_wpa2 --passwd OpenWifi --security wpa2 
---upstream eth1 --test_duration 1m --download 1000000 --upload 0 --traffic_type lf_udp --tos "BK,VO"
+        EXAMPLE-1:
+        Command Line Interface to run download scenario with tos : Voice
+        python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco 
+        --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0 
+        --traffic_type lf_udp --tos "VO"
 
-EXAMPLE-2:
-Command Line Interface to run upload scenario with tos Background,Besteffort,Video and Voice
-python3 lf_interop_qos.py --ap_name TIP_EAP_101 --mgr 192.168.209.223 --mgr_port 8080 --ssid ssid_wpa2 --passwd OpenWifi --security wpa2 
---upstream eth1 --test_duration 1m --download 1000000 --upload 0 --traffic_type lf_udp --tos "BK,BE,VI,VO"
+        EXAMPLE-2:
+        Command Line Interface to run download scenario with tos : Voice and Video
+        python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco 
+        --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0 
+        --traffic_type lf_udp --tos "VO,VI"
 
-SCRIPT_CLASSIFICATION :  Test
+        EXAMPLE-3:
+        Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice
+        python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco 
+        --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+        --traffic_type lf_udp --tos "BK,BE,VI,VO"
 
-SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
+        SCRIPT_CLASSIFICATION :  Test
 
-NOTES:
-Use './lf_interop_qos.py --help' to see command line usage and options
-Please pass tos in CAPITALS as shown below:
-"BK,VI,BE,VO"
+        SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
 
-STATUS: BETA RELEASE
+        NOTES:
+        1.Use './lf_interop_qos.py --help' to see command line usage and options
+        2.Please pass tos in CAPITALS as shown :"BK,VI,BE,VO"
+        3.Please enter the download or upload rate in bps
+        4.After passing cli, a list will be displayed on terminal which contains available resources to run test.
+        The following sentence will be displayed
+        Enter the desired resources to run the test:
+        Please enter the port numbers seperated by commas ','.
+        Example: 
+        Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.303
 
-VERIFIED_ON:
-Working date - 01/07/2023
-Build version - 5.4.6
-kernel version - 6.2.16+
+        STATUS: BETA RELEASE
 
-License: Free to distribute and modify. LANforge systems must be licensed.
-Copyright 2023 Candela Technologies Inc
+        VERIFIED_ON:
+        Working date - 01/07/2023
+        Build version - 5.4.6
+        kernel version - 6.2.16+
+
+        License: Free to distribute and modify. LANforge systems must be licensed.
+        Copyright 2023 Candela Technologies Inc.
 
 """
 
