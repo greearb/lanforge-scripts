@@ -38,11 +38,15 @@ import logging
 import importlib
 
 from matplotlib import pyplot as plt
+import platform
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+os_name = platform.system()
+# Replace 'path_to_wkhtmltopdf' with the actual path to the wkhtmltopdf executable on your system
+
 
 # internal candela references included during intial phases, to be deleted at future date
 # https://candelatech.atlassian.net/wiki/spaces/LANFORGE/pages/372703360/Scripting+Data+Collection+March+2021
@@ -408,7 +412,12 @@ class lf_report:
                    'orientation': _orientation,
                    'page-size': _page_size}  # prevent error Blocked access to file
         self.write_output_pdf = str(self.path_date_time) + '/' + str(self.output_pdf)
-        pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
+        if (os_name == "Windows"):
+            path_to_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+            config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
+            pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options, configuration=config)
+        else:
+            pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
 
     # https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
     # page_size A4, A3, Letter, Legal
