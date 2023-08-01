@@ -3,15 +3,37 @@
 """
 NAME: lf_interop_qos.py
 
-PURPOSE: lf_interop_qos.py will create stations and endpoints which evaluates  l3 traffic for a particular type of service.
+PURPOSE: lf_interop_qos.py will provide the available devices and allows user to run the qos traffic
+with particular tos on particular devices in upload, download directions.
 
-EXAMPLE:
+EXAMPLE-1:
+Command Line Interface to run download scenario with tos Background and Voice
 python3 lf_interop_qos.py --ap_name TIP_EAP_101 --mgr 192.168.209.223 --mgr_port 8080 --ssid ssid_wpa2 --passwd OpenWifi --security wpa2 
---upstream eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp --tos "BK,VO"
+--upstream eth1 --test_duration 1m --download 1000000 --upload 0 --traffic_type lf_udp --tos "BK,VO"
 
+EXAMPLE-2:
+Command Line Interface to run upload scenario with tos Background,Besteffort,Video and Voice
+python3 lf_interop_qos.py --ap_name TIP_EAP_101 --mgr 192.168.209.223 --mgr_port 8080 --ssid ssid_wpa2 --passwd OpenWifi --security wpa2 
+--upstream eth1 --test_duration 1m --download 1000000 --upload 0 --traffic_type lf_udp --tos "BK,BE,VI,VO"
+
+SCRIPT_CLASSIFICATION :  Test
+
+SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
+
+NOTES:
 Use './lf_interop_qos.py --help' to see command line usage and options
-Copyright 2023 Candela Technologies Inc
+Please pass tos in CAPITALS as shown below:
+"BK,VI,BE,VO"
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:
+Working date - 01/07/2023
+Build version - 5.4.6
+kernel version - 6.2.16+
+
 License: Free to distribute and modify. LANforge systems must be licensed.
+Copyright 2023 Candela Technologies Inc
 
 """
 
@@ -289,6 +311,7 @@ class ThroughputQOS(Realm):
             raise ValueError("Monitor needs a list of Layer 3 connections")
         # monitor columns
         start_time = datetime.now()
+        print("Monitoring cx and endpoints")
         end_time = start_time + timedelta(seconds=int(self.test_duration))
         index = -1
         connections_upload = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
@@ -863,29 +886,99 @@ class ThroughputQOS(Realm):
 
 
 def main():
-    parser = Realm.create_basic_argparse(
+    parser = argparse.ArgumentParser(
         prog='throughput_QOS.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            Create stations and endpoints and runs L3 traffic with various IP type of service(BK |  BE | Video | Voice)
+            Provides the available devices list and allows user to run the qos traffic
+            with particular tos on particular devices in upload, download directions.
             ''',
         description='''\
-throughput_QOS.py:
---------------------
-Generic command layout:
------------------------
-To run the test use the following example cli :
+        
+        NAME: lf_interop_qos.py
 
-python3 lf_interop_qos.py --ap_name TIP_EAP_101 --mgr 192.168.209.223 --mgr_port 8080 --ssid ssid_wpa2 --passwd OpenWifi 
---security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp 
+        PURPOSE: lf_interop_qos.py will provide the available devices and allows user to run the qos traffic
+        with particular tos on particular devices in upload, download directions.
+
+        EXAMPLE-1:
+        Command Line Interface to run download scenario with tos : Voice
+        python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco 
+        --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0 
+        --traffic_type lf_udp --tos "VO"
+
+        EXAMPLE-2:
+        Command Line Interface to run download scenario with tos : Voice and Video
+        python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco 
+        --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0 
+        --traffic_type lf_udp --tos "VO,VI"
+
+        EXAMPLE-3:
+        Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice
+        python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco 
+        --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+        --traffic_type lf_udp --tos "BK,BE,VI,VO"
+
+        SCRIPT_CLASSIFICATION :  Test
+
+        SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
+
+        NOTES:
+        1.Use './lf_interop_qos.py --help' to see command line usage and options
+        2.Please pass tos in CAPITALS as shown :"BK,VI,BE,VO"
+        3.Please enter the download or upload rate in bps
+        4.After passing cli, a list will be displayed on terminal which contains available resources to run test.
+        The following sentence will be displayed
+        Enter the desired resources to run the test:
+        Please enter the port numbers seperated by commas ','.
+        Example: 
+        Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.303
+
+        STATUS: BETA RELEASE
+
+        VERIFIED_ON:
+        Working date - 01/07/2023
+        Build version - 5.4.6
+        kernel version - 6.2.16+
+
+        License: Free to distribute and modify. LANforge systems must be licensed.
+        Copyright 2023 Candela Technologies Inc.
 
 ''')
-    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
-    parser.add_argument('--upload', help='--upload traffic load per connection (upload rate)')
-    parser.add_argument('--download', help='--download traffic load per connection (download rate)')
-    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-    parser.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
-    parser.add_argument('--tos', help='Enter the tos. Example1 : "BK,BE,VI,VO" , Example2 : "BK,VO", Example3 : "VI" ')
+    
+    required = parser.add_argument_group('Required arguments to run lf_interop_qos.py')
+    optional = parser.add_argument_group('Optional arguments to run lf_interop_qos.py')
+    required.add_argument('--mgr',
+                              '--lfmgr',
+                              default='localhost',
+                              help='hostname for where LANforge GUI is running')
+    required.add_argument('--mgr_port',
+                            '--port',
+                            default=8080,
+                            help='port LANforge GUI HTTP service is running on')
+    required.add_argument('--upstream_port',
+                          '-u',
+                            default='eth1',
+                            help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1')
+    required.add_argument('--security',
+                            default="open",
+                            help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
+    required.add_argument('--ssid',
+                            help='WiFi SSID for script objects to associate to')
+    required.add_argument('--passwd',
+                            '--password',
+                            '--key',
+                            default="[BLANK]",
+                            help='WiFi passphrase/password/key')
+    required.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
+    required.add_argument('--upload', help='--upload traffic load per connection (upload rate)')
+    required.add_argument('--download', help='--download traffic load per connection (download rate)')
+    required.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
+    required.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
+    required.add_argument('--tos', help='Enter the tos. Example1 : "BK,BE,VI,VO" , Example2 : "BK,VO", Example3 : "VI" ')
+    optional.add_argument('-d',
+                              '--debug',
+                              action="store_true",
+                              help='Enable debugging')
     args = parser.parse_args()
     print("--------------------------------------------")
     print(args)
