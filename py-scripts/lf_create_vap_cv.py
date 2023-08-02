@@ -45,6 +45,9 @@ EXAMPLE:
             "--vap_upstream_port","1.1.eth2"
             ]
 
+    # for loading existing scenario use
+    python3 ./lf_create_vap_cv.py --mgr 192.168.200.222 --port 8080  --load_existing_scenario --old_scenario_name hello --instance_name oldscenario
+
 SCRIPT_CLASSIFICATION:  Creation
 
 SCRIPT_CATEGORIES: Functional
@@ -125,6 +128,8 @@ class create_vap_cv(cv_test):
                  vap_bw=None,
                  vap_mode=None,
                  set_upstream=None,
+                 old_scenario_name=None,
+                 instance_name=None
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -136,6 +141,8 @@ class create_vap_cv(cv_test):
         self.desired_set_port_cmd_flags = []
         self.desired_set_port_current_flags = ["use_dhcp", "dhcp"]  # do not default down, "if_down"
         self.desired_set_port_interest_flags = ["current_flags"]  # do not default down, "ifdown"
+        self.old_scenario_name = old_scenario_name
+        self.instance_name = instance_name
         # set_port 1 1 NA NA NA NA NA 2147483648 NA NA NA vap0000
         self.lf_modify_radio = radio_modify.lf_modify_radio(lf_mgr=lfclient_host,
                                                             lf_port=lf_port,
@@ -263,6 +270,12 @@ class create_vap_cv(cv_test):
                           dhcp_min=dhcp_min, dhcp_max=dhcp_max)  # enabling dhcp min & max values
         cv_test.netsmith_apply(self, resource=self.vaps_list[1])  # applying net-smith config
 
+    # load existing scenarios
+    def load_old_scenario(self):
+        self.load_test_scenario(instance=self.instance_name, scenario=self.old_scenario_name)
+        self.apply_cv_scenario(cv_scenario=self.old_scenario_name)  # Apply scenario
+        self.build_cv_scenario()
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -377,6 +390,10 @@ INCLUDE_IN_README: False
     parser.add_argument("--gateway", help="Modify the VAP Gateway ip")
     parser.add_argument("--dhcp_min_range", help='Modify the VAP DHCP min range', default=None)
     parser.add_argument("--dhcp_max_range", help='Modify the VAP DHCP max range', default=None)
+    parser.add_argument("--load_existing_scenario",  default=False,
+                        action='store_true', help="select if you want to load existing scenario")
+    parser.add_argument("--old_scenario_name", help="provide old scenario name to be loaded")
+
 
     args = parser.parse_args()
     cv_base_adjust_parser(args)
@@ -395,7 +412,8 @@ INCLUDE_IN_README: False
     lf_create_vap_cv = create_vap_cv(lfclient_host=args.mgr, lf_port=args.port, lf_user=args.lf_user,
                                      lf_password=args.lf_password, vap_upstream_port=args.vap_upstream_port,
                                      vap_ip=args.vap_ip, vap_ip_mask=args.vap_ip_mask, gateway_ip=args.gateway,
-                                     vap_bw=args.vap_bw, vap_mode=args.vap_mode,set_upstream=args.set_upstream)
+                                     vap_bw=args.vap_bw, vap_mode=args.vap_mode,set_upstream=args.set_upstream,
+                                     old_scenario_name=args.old_scenario_name, instance_name=args.instance_name)
 
     delete_old_scenario = args.delete_old_scenario
     vap_scenario_name = args.scenario_name
@@ -405,11 +423,13 @@ INCLUDE_IN_README: False
     vap_ssid = args.vap_ssid
     vap_passwd = args.vap_passwd
     vap_security = args.vap_security
-
-    lf_create_vap_cv.build_and_setup_vap(delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
-                                         vap_upstream_port=vap_upstream_port, frequency=vap_freq, vap_ssid=vap_ssid, vap_pawd=vap_passwd, vap_security=vap_security)
-    if args.dhcp_min_range and args.dhcp_max_range:
-        lf_create_vap_cv.modify_vr_cfg(dhcp_min=args.dhcp_min_range, dhcp_max=args.dhcp_max_range)
+    if args.load_existing_scenario is True:
+        lf_create_vap_cv.load_old_scenario()
+    else:
+        lf_create_vap_cv.build_and_setup_vap(delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
+                                             vap_upstream_port=vap_upstream_port, frequency=vap_freq, vap_ssid=vap_ssid, vap_pawd=vap_passwd, vap_security=vap_security)
+        if args.dhcp_min_range and args.dhcp_max_range:
+            lf_create_vap_cv.modify_vr_cfg(dhcp_min=args.dhcp_min_range, dhcp_max=args.dhcp_max_range)
 
 
 if __name__ == "__main__":
