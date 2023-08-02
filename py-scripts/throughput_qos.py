@@ -30,6 +30,7 @@ import sys
 import os
 import pandas as pd
 import importlib
+import copy
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -240,6 +241,7 @@ class ThroughputQOS(Realm):
         print("cross connections with TOS type created.")
 
     def monitor(self):
+        throughput, upload,download,upload_throughput,download_throughput,connections_upload, connections_download = {}, [], [],[],[],{},{}
         if (int(self.cx_profile.side_b_min_bps))!=0 and (int(self.cx_profile.side_a_min_bps))!=0:
             self.direction = "Bi-direction"
         elif int(self.cx_profile.side_b_min_bps) != 0:
@@ -248,171 +250,269 @@ class ThroughputQOS(Realm):
             if int(self.cx_profile.side_a_min_bps) != 0:
                 self.direction = "Upload"
         print("direction",self.direction)
-        print("Monitoring CXs... & Endpoints...")
-        download, throughput, bps_rx_a = {}, [], []
         if (self.test_duration is None) or (int(self.test_duration) <= 1):
             raise ValueError("Monitor test duration should be > 1 second")
         if self.cx_profile.created_cx is None:
             raise ValueError("Monitor needs a list of Layer 3 connections")
         # monitor columns
         start_time = datetime.now()
+        test_start_time = datetime.now().strftime("%b %d %H:%M:%S")
+        print("Test started at: ", test_start_time)
+        print("Monitoring cx and endpoints")
         end_time = start_time + timedelta(seconds=int(self.test_duration))
         index = -1
-        connections = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
-        [(bps_rx_a.append([])) for i in range(len(self.cx_profile.created_cx))]
+        connections_upload = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+        connections_download = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+        [(upload.append([]), download.append([])) for i in range(len(self.cx_profile.created_cx))]
         while datetime.now() < end_time:
             index += 1
             response = list(
                 self.json_get('/cx/%s?fields=%s' % (
-                    ','.join(self.cx_profile.created_cx.keys()), ",".join(['bps rx a']))).values())[2:]
-            download[index] = list(
+                    ','.join(self.cx_profile.created_cx.keys()), ",".join(['bps rx a', 'bps rx b']))).values())[2:]
+            throughput[index] = list(
                 map(lambda i: [x for x in i.values()], response))
             time.sleep(1)
-        # rx_values captured into a list
-        print("rx values are: ", download)
-        for index, key in enumerate(download):
-            for i in range(len(download[key])):
-                bps_rx_a[i].append(download[key][i][0])
-        print("overall download throughput values:", bps_rx_a)
-        throughput = [float(f"{sum(i) / len(i)}") for i in bps_rx_a]
-        keys = list(connections.keys())
-        for i in range(len(throughput)):
-            connections.update({keys[i]: float(f"{(throughput[i] / 1000000):.2f}")})
-        return connections, throughput
+        print("throughput", throughput)
+        # # rx_rate list is calculated
+        for index, key in enumerate(throughput):
+            for i in range(len(throughput[key])):
+                upload[i].append(throughput[key][i][1])
+                download[i].append(throughput[key][i][0])
+        print("Upload values", upload)
+        print("Download Values", download)
+        upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
+        download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
+        keys = list(connections_upload.keys())
+        keys = list(connections_download.keys())
 
-    def evaluate_qos(self, connections, throughput):
-        case = ""
+        for i in range(len(download_throughput)):
+            connections_download.update({keys[i]: float(f"{(download_throughput[i] ):.2f}")})
+        for i in range(len(upload_throughput)):
+            connections_upload.update({keys[i]: float(f"{(upload_throughput[i] ):.2f}")})
+        print("upload: ", upload_throughput)
+        print("download: ", download_throughput)
+        print("connections download",connections_download)
+        print("connections",connections_upload)
+
+        return connections_download,connections_upload
+        
+    def evaluate_qos(self, connections_download,connections_upload):
+        case_upload = ""
+        case_download = ""
         tos_download = {'VI': [], 'VO': [], 'BK': [], 'BE': []}
-        tx_b = {'BK': [], 'BE': [], 'VI': [], 'VO': []}
-        rx_a = {'BK': [], 'BE': [], 'VI': [], 'VO': []}
+        tx_b_download = {'BK': [], 'BE': [], 'VI': [], 'VO': []}
+        rx_a_download = {'BK': [], 'BE': [], 'VI': [], 'VO': []}
+        tx_endps_download = {}
+        rx_endps_download = {}
         delay = {'BK': [], 'BE': [], 'VI': [], 'VO': []}
         tx_endps = {}
         rx_endps = {}
+        tos_upload = {'VI': [], 'VO': [], 'BK': [], 'BE': []}
+        tx_b_upload = {'BK': [], 'BE': [], 'VI': [], 'VO': []}
+        rx_a_upload = {'BK': [], 'BE': [], 'VI': [], 'VO': []}
+        tx_endps_upload = {}
+        rx_endps_upload = {}
         if int(self.cx_profile.side_b_min_bps) != 0:
-            case = str(int(self.cx_profile.side_b_min_bps) / 1000000)
+            case_download = str(int(self.cx_profile.side_b_min_bps) / 1000000)
         elif int(self.cx_profile.side_a_min_bps) != 0:
-            case = str(int(self.cx_profile.side_a_min_bps) / 1000000)
+            case_upload = str(int(self.cx_profile.side_a_min_bps) / 1000000)
         if len(self.cx_profile.created_cx.keys()) > 0:
             endp_data = self.json_get('endp/all?fields=name,tx+pkts+ll,rx+pkts+ll,delay')
             endp_data.pop("handler")
             endp_data.pop("uri")
             endps = endp_data['endpoint']
-            for i in range(len(endps)):
-                if i < len(endps) // 2:
-                    tx_endps.update(endps[i])
-                if i >= len(endps) // 2:
-                    rx_endps.update(endps[i])
-            for sta in self.cx_profile.created_cx.keys():
-                temp = sta.rsplit('-', 1)
-                temp = int(temp[1])
-                if temp in range(0, self.num_stations):
-                    if int(self.cx_profile.side_b_min_bps) != 0:
-                        tos_download[self.tos[0]].append(connections[sta])
-                        tx_b[self.tos[0]].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
-                        rx_a[self.tos[0]].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
-                        delay[self.tos[0]].append(rx_endps['%s-A' % sta]['delay'])
-                    else:
-                        tos_download[self.tos[0]].append(float(0))
-                        tx_b[self.tos[0]].append(int(0))
-                        rx_a[self.tos[0]].append(int(0))
-                        delay[self.tos[0]].append(int(0))
-                elif temp in range(self.num_stations, 2 * self.num_stations):
-                    if len(self.tos) < 2:
-                            break
-                    else:
+            if int(self.cx_profile.side_b_min_bps) != 0:
+                for i in range(len(endps)):
+                    if i < len(endps) // 2:
+                        tx_endps_download.update(endps[i])
+                    if i >= len(endps) // 2:
+                        rx_endps_download.update(endps[i])
+                for sta in self.cx_profile.created_cx.keys():
+                    temp = sta.rsplit('-', 1)
+                    temp = int(temp[1])
+                    if temp in range(0, self.num_stations):
                         if int(self.cx_profile.side_b_min_bps) != 0:
-                            tos_download[self.tos[1]].append(connections[sta])
-                            tx_b[self.tos[1]].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
-                            rx_a[self.tos[1]].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
-                            delay[self.tos[1]].append(rx_endps['%s-A' % sta]['delay'])
+                            tos_download[self.tos[0]].append(connections_download[sta])
+                            tx_b_download[self.tos[0]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                            rx_a_download[self.tos[0]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                            delay[self.tos[0]].append(rx_endps_download['%s-A' % sta]['delay'])
                         else:
-                            tos_download[self.tos[1]].append(float(0))
-                            tx_b[self.tos[1]].append(int(0))
-                            rx_a[self.tos[1]].append(int(0))
-                            delay[self.tos[1]].append(int(0))
-                elif temp in range(2 * self.num_stations, 3 * self.num_stations):
-                    if len(self.tos) < 3:
-                            break
-                    else:
-                        if int(self.cx_profile.side_b_min_bps) != 0:
-                            tos_download[self.tos[2]].append(connections[sta])
-                            tx_b[self.tos[2]].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
-                            rx_a[self.tos[2]].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
-                            delay[self.tos[2]].append(rx_endps['%s-A' % sta]['delay'])
+                            tos_download[self.tos[0]].append(float(0))
+                            tx_b_download[self.tos[0]].append(int(0))
+                            rx_a_download[self.tos[0]].append(int(0))
+                            delay[self.tos[0]].append(int(0))
+                    elif temp in range(self.num_stations, 2 * self.num_stations):
+                        if len(self.tos) < 2:
+                                break
                         else:
-                            tos_download[self.tos[2]].append(float(0))
-                            tx_b[self.tos[2]].append(int(0))
-                            rx_a[self.tos[2]].append(int(0))
-                            delay[self.tos[2]].append(int(0))
-                elif temp in range(3 * self.num_stations, 4 * self.num_stations):
-                    if len(self.tos) < 4:
-                            break
-                    else:
-                        if int(self.cx_profile.side_b_min_bps) != 0:
-                            tos_download[self.tos[3]].append(connections[sta])
-                            tx_b[self.tos[3]].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
-                            rx_a[self.tos[3]].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
-                            delay[self.tos[3]].append(rx_endps['%s-A' % sta]['delay'])
+                            if int(self.cx_profile.side_b_min_bps) != 0:
+                                tos_download[self.tos[1]].append(connections_download[sta])
+                                tx_b_download[self.tos[1]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_download[self.tos[1]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                delay[self.tos[1]].append(rx_endps_download['%s-A' % sta]['delay'])
+                            else:
+                                tos_download[self.tos[1]].append(float(0))
+                                tx_b_download[self.tos[1]].append(int(0))
+                                rx_a_download[self.tos[1]].append(int(0))
+                                delay[self.tos[1]].append(int(0))
+                    elif temp in range(2 * self.num_stations, 3 * self.num_stations):
+                        if len(self.tos) < 3:
+                                break
                         else:
-                            tos_download[self.tos[3]].append(float(0))
-                            tx_b[self.tos[3]].append(int(0))
-                            rx_a[self.tos[3]].append(int(0))
-                            delay[self.tos[3]].append(int(0))
-            tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
-            tos_download.update({"beQOS": float(f"{sum(tos_download['BE']):.2f}")})
-            tos_download.update({"videoQOS": float(f"{sum(tos_download['VI']):.2f}")})
-            tos_download.update({"voiceQOS": float(f"{sum(tos_download['VO']):.2f}")})
-            tos_download.update({"bkDELAY": sum(delay['BK'])})
-            tos_download.update({"beDELAY": sum(delay['BE'])})
-            tos_download.update({"videoDELAY": sum(delay['VI'])})
-            tos_download.update({"voiceDELAY": sum(delay['VO'])})
-            if sum(tx_b['BK']) != 0 or sum(tx_b['BE']) != 0 or sum(tx_b['VI']) != 0 or sum(tx_b['VO']) != 0:
-                if sum(tx_b['BK']) > sum(rx_a['BK']):
-                    tos_download.update(
-                        {"bkLOSS": float(f"{((sum(tx_b['BK']) - sum(rx_a['BK'])) / sum(tx_b['BK'])) * 100:.2f}")})
-                else:
-                    if sum(rx_a['BK']) != 0:
-                        tos_download.update({"bkLOSS": float(f"{((sum(rx_a['BK']) - sum(tx_b['BK'])) / sum(rx_a['BK'])) * 100:.2f}")})
-                    else:
-                        tos_download.update({"bkLOSS": float(0)})
-                if sum(tx_b['BE']) > sum(rx_a['BE']):
-                    tos_download.update(
-                        {"beLOSS": float(f"{((sum(tx_b['BE']) - sum(rx_a['BE'])) / sum(tx_b['BE'])) * 100:.2f}")})
-                else:
-                    if sum(rx_a['BE']) != 0:
+                            if int(self.cx_profile.side_b_min_bps) != 0:
+                                tos_download[self.tos[2]].append(connections_download[sta])
+                                tx_b_download[self.tos[2]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_download[self.tos[2]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                delay[self.tos[2]].append(rx_endps_download['%s-A' % sta]['delay'])
+                            else:
+                                tos_download[self.tos[2]].append(float(0))
+                                tx_b_download[self.tos[2]].append(int(0))
+                                rx_a_download[self.tos[2]].append(int(0))
+                                delay[self.tos[2]].append(int(0))
+                    elif temp in range(3 * self.num_stations, 4 * self.num_stations):
+                        if len(self.tos) < 4:
+                                break
+                        else:
+                            if int(self.cx_profile.side_b_min_bps) != 0:
+                                tos_download[self.tos[3]].append(connections_download[sta])
+                                tx_b_download[self.tos[3]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_download[self.tos[3]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                delay[self.tos[3]].append(rx_endps_download['%s-A' % sta]['delay'])
+                            else:
+                                tos_download[self.tos[3]].append(float(0))
+                                tx_b_download[self.tos[3]].append(int(0))
+                                rx_a_download[self.tos[3]].append(int(0))
+                                delay[self.tos[3]].append(int(0))
+                tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
+                tos_download.update({"beQOS": float(f"{sum(tos_download['BE']):.2f}")})
+                tos_download.update({"videoQOS": float(f"{sum(tos_download['VI']):.2f}")})
+                tos_download.update({"voiceQOS": float(f"{sum(tos_download['VO']):.2f}")})
+                tos_download.update({"bkDELAY": sum(delay['BK'])})
+                tos_download.update({"beDELAY": sum(delay['BE'])})
+                tos_download.update({"videoDELAY": sum(delay['VI'])})
+                tos_download.update({"voiceDELAY": sum(delay['VO'])})
+                if sum(tx_b_download['BK']) != 0 or sum(tx_b_download['BE']) != 0 or sum(tx_b_download['VI']) != 0 or sum(tx_b_download['VO']) != 0:
+                    if sum(tx_b_download['BK']) > sum(rx_a_download['BK']):
                         tos_download.update(
-                            {"beLOSS": float(f"{((sum(rx_a['BE']) - sum(tx_b['BE'])) / sum(rx_a['BE'])) * 100:.2f}")})
+                            {"bkLOSS": float(f"{((sum(tx_b_download['BK']) - sum(rx_a_download['BK'])) / sum(tx_b_download['BK'])) * 100:.2f}")})
                     else:
-                        tos_download.update({"beLOSS": float(0)})
-                if sum(tx_b['VI']) > sum(rx_a['VI']):
-                    tos_download.update(
-                        {"videoLOSS": float(f"{((sum(tx_b['VI']) - sum(rx_a['VI'])) / sum(tx_b['VI'])) * 100:.2f}")})
-                else:
-                    if sum(rx_a['VI']) != 0:
+                        if sum(rx_a_download['BK']) != 0:
+                            tos_download.update({"bkLOSS": float(f"{((sum(rx_a_download['BK']) - sum(tx_b_download['BK'])) / sum(rx_a_download['BK'])) * 100:.2f}")})
+                        else:
+                            tos_download.update({"bkLOSS": float(0)})
+                    if sum(tx_b_download['BE']) > sum(rx_a_download['BE']):
                         tos_download.update(
-                            {"videoLOSS": float(f"{((sum(rx_a['VI']) - sum(tx_b['VI'])) / sum(rx_a['VI'])) * 100:.2f}")})
+                            {"beLOSS": float(f"{((sum(tx_b_download['BE']) - sum(rx_a_download['BE'])) / sum(tx_b_download['BE'])) * 100:.2f}")})
                     else:
-                        tos_download.update({"videoLOSS": float(0)})
-                if sum(tx_b['VO']) > sum(rx_a['VO']):
-                    tos_download.update(
-                        {"voiceLOSS": float(f"{((sum(tx_b['VO']) - sum(rx_a['VO'])) / sum(tx_b['VO'])) * 100:.2f}")})
-                else:
-                    if sum(rx_a['VO']) != 0:
+                        if sum(rx_a_download['BE']) != 0:
+                            tos_download.update(
+                                {"beLOSS": float(f"{((sum(rx_a_download['BE']) - sum(tx_b_download['BE'])) / sum(rx_a_download['BE'])) * 100:.2f}")})
+                        else:
+                            tos_download.update({"beLOSS": float(0)})
+                    if sum(tx_b_download['VI']) > sum(rx_a_download['VI']):
                         tos_download.update(
-                            {"voiceLOSS": float(
-                                f"{((sum(rx_a['VO']) - sum(tx_b['VO'])) / sum(rx_a['VO'])) * 100:.2f}")})
+                            {"videoLOSS": float(f"{((sum(tx_b_download['VI']) - sum(rx_a_download['VI'])) / sum(tx_b_download['VI'])) * 100:.2f}")})
                     else:
-                        tos_download.update({"voiceLOSS": float(0)})
-            tos_download.update({'tx_b': tx_b})
-            tos_download.update({'rx_a': rx_a})
-            tos_download.update({'delay': delay})
+                        if sum(rx_a_download['VI']) != 0:
+                            tos_download.update(
+                                {"videoLOSS": float(f"{((sum(rx_a_download['VI']) - sum(tx_b_download['VI'])) / sum(rx_a_download['VI'])) * 100:.2f}")})
+                        else:
+                            tos_download.update({"videoLOSS": float(0)})
+                    if sum(tx_b_download['VO']) > sum(rx_a_download['VO']):
+                        tos_download.update(
+                            {"voiceLOSS": float(f"{((sum(tx_b_download['VO']) - sum(rx_a_download['VO'])) / sum(tx_b_download['VO'])) * 100:.2f}")})
+                    else:
+                        if sum(rx_a_download['VO']) != 0:
+                            tos_download.update(
+                                {"voiceLOSS": float(
+                                    f"{((sum(rx_a_download['VO']) - sum(tx_b_download['VO'])) / sum(rx_a_download['VO'])) * 100:.2f}")})
+                        else:
+                            tos_download.update({"voiceLOSS": float(0)})
+                tos_download.update({'tx_b': tx_b_download})
+                tos_download.update({'rx_a': rx_a_download})
+                tos_download.update({'delay': delay})
+            if int(self.cx_profile.side_a_min_bps) != 0:
+                for i in range(len(endps)):
+                    if i < len(endps) // 2:
+                        tx_endps_upload.update(endps[i])
+                    if i >= len(endps) // 2:
+                        rx_endps_upload.update(endps[i])
+                for sta in self.cx_profile.created_cx.keys():
+                    temp = sta.rsplit('-', 1)
+                    temp = int(temp[1])
+                    if temp in range(0, self.num_stations):
+                        if int(self.cx_profile.side_a_min_bps) != 0:
+                            tos_upload[self.tos[0]].append(connections_upload[sta])
+                            tx_b_upload[self.tos[0]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                            rx_a_upload[self.tos[0]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                            delay[self.tos[0]].append(rx_endps_upload['%s-A' % sta]['delay'])
+                        else:
+                            tos_upload[self.tos[0]].append(float(0))
+                            tx_b_upload[self.tos[0]].append(int(0))
+                            rx_a_upload[self.tos[0]].append(int(0))
+                            delay[self.tos[0]].append(int(0))
+                    elif temp in range(self.num_stations, 2 * self.num_stations):
+                        if len(self.tos) < 2:
+                                break
+                        else:
+                            if int(self.cx_profile.side_a_min_bps) != 0:
+                                tos_upload[self.tos[1]].append(connections_upload[sta])
+                                tx_b_upload[self.tos[1]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_upload[self.tos[1]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                delay[self.tos[1]].append(rx_endps_upload['%s-A' % sta]['delay'])
+                            else:
+                                tos_upload[self.tos[1]].append(float(0))
+                                tx_b_upload[self.tos[1]].append(int(0))
+                                rx_a_upload[self.tos[1]].append(int(0))
+                                delay[self.tos[1]].append(int(0))
+                    elif temp in range(2 * self.num_stations, 3 * self.num_stations):
+                        if len(self.tos) < 3:
+                                break
+                        else:
+                            if int(self.cx_profile.side_a_min_bps) != 0:
+                                tos_upload[self.tos[2]].append(connections_upload[sta])
+                                tx_b_upload[self.tos[2]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_upload[self.tos[2]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                delay[self.tos[2]].append(rx_endps_upload['%s-A' % sta]['delay'])
+                            else:
+                                tos_upload[self.tos[2]].append(float(0))
+                                tx_b_upload[self.tos[2]].append(int(0))
+                                rx_a_upload[self.tos[2]].append(int(0))
+                                delay[self.tos[2]].append(int(0))
+                    elif temp in range(3 * self.num_stations, 4 * self.num_stations):
+                        if len(self.tos) < 4:
+                                break
+                        else:
+                            if int(self.cx_profile.side_a_min_bps) != 0:
+                                tos_upload[self.tos[3]].append(connections_upload[sta])
+                                tx_b_upload[self.tos[3]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_upload[self.tos[3]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                delay[self.tos[3]].append(rx_endps_upload['%s-A' % sta]['delay'])
+                            else:
+                                tos_upload[self.tos[3]].append(float(0))
+                                tx_b_upload[self.tos[3]].append(int(0))
+                                rx_a_upload[self.tos[3]].append(int(0))
+                                delay[self.tos[3]].append(int(0))
+                tos_upload.update({"bkQOS": float(f"{sum(tos_upload['BK']):.2f}")})
+                tos_upload.update({"beQOS": float(f"{sum(tos_upload['BE']):.2f}")})
+                tos_upload.update({"videoQOS": float(f"{sum(tos_upload['VI']):.2f}")})
+                tos_upload.update({"voiceQOS": float(f"{sum(tos_upload['VO']):.2f}")})
+                tos_upload.update({"bkDELAY": sum(delay['BK'])})
+                tos_upload.update({"beDELAY": sum(delay['BE'])})
+                tos_upload.update({"videoDELAY": sum(delay['VI'])})
+                tos_upload.update({"voiceDELAY": sum(delay['VO'])})
+                tos_upload.update({'tx_b': tx_b_upload})
+                tos_upload.update({'rx_a': rx_a_upload})
         else:
             print("no RX values available to evaluate QOS")
-        key = case + " " + "Mbps"
-        return {key: tos_download}
+        key_upload = case_upload + " " + "Mbps"
+        key_download = case_download + " " + "Mbps"
+        return {key_download: tos_download},{key_upload: tos_upload}
 
     def set_report_data(self, data):
         print(data)
+        rate_down= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
+        rate_up= str(str(int(self.cx_profile.side_a_min_bps) / 1000000) +' '+'Mbps')
         res = {}
         if data is not None:
             res.update(data)
@@ -438,43 +538,70 @@ class ThroughputQOS(Realm):
                 elif case == "both" or case == "BOTH":
                     num_stations.append("{} + {}".format(str(len(self.sta_list) // 2), str(len(self.sta_list) // 2)))
                     mode.append("bgn-AX + an-AX")
-                for key in res[case]:
+                for key in res[case]['test_results'][0][1]:
                     # if case == "both" or case == "BOTH":
                     #     key
-                    throughput.append(
-                        "BK : {}, BE : {}, VI: {}, VO: {}".format(res[case][key]["bkQOS"],
-                                                                  res[case][key]["beQOS"],
-                                                                  res[case][key][
-                                                                      "videoQOS"],
-                                                                  res[case][key][
-                                                                      "voiceQOS"]))
-                    throughput_df[0].append(res[case][key]['bkQOS'])
-                    throughput_df[1].append(res[case][key]['beQOS'])
-                    throughput_df[2].append(res[case][key]['videoQOS'])
-                    throughput_df[3].append(res[case][key]['voiceQOS'])
-                    pkt_loss_df[0].append(res[case][key]['bkLOSS'])
-                    pkt_loss_df[1].append(res[case][key]['beLOSS'])
-                    pkt_loss_df[2].append(res[case][key]['videoLOSS'])
-                    pkt_loss_df[3].append(res[case][key]['voiceLOSS'])
-                    latency_df[0].append(res[case][key]['bkDELAY'])
-                    latency_df[1].append(res[case][key]['beDELAY'])
-                    latency_df[2].append(res[case][key]['videoDELAY'])
-                    latency_df[3].append(res[case][key]['voiceDELAY'])
-                    table_df.update({"No of Stations": []})
-                    table_df.update({"Mode": []})
-                    table_df.update({"Throughput for Load {}".format(key): []})
-                graph_df.update({case: [throughput_df, pkt_loss_df, latency_df]})
-            print(throughput)
-            table_df.update({"No of Stations": num_stations})
-            table_df.update({"Mode": mode})
-            for i in self.test_case:
-                count = 0
-                for key in res[i]:
-                    table_df["Throughput for Load {}".format(key)].append(throughput[count])
-                    count += 1
-            res.update({"throughput_table_df": table_df})
-            res.update({"graph_df": graph_df})
-        return res
+                    if int(self.cx_profile.side_a_min_bps) != 0:
+                        print(res[case]['test_results'][0][1])
+                        throughput.append(
+                            "BK : {}, BE : {}, VI: {}, VO: {}".format(res[case]['test_results'][0][1][rate_up]["bkQOS"],
+                                                                    res[case]['test_results'][0][1][rate_up]["beQOS"],
+                                                                    res[case]['test_results'][0][1][rate_up][
+                                                                        "videoQOS"],
+                                                                    res[case]['test_results'][0][1][rate_up][
+                                                                        "voiceQOS"]))
+                        throughput_df[0].append(res[case]['test_results'][0][1][rate_up]['bkQOS'])
+                        throughput_df[1].append(res[case]['test_results'][0][1][rate_up]['beQOS'])
+                        throughput_df[2].append(res[case]['test_results'][0][1][rate_up]['videoQOS'])
+                        throughput_df[3].append(res[case]['test_results'][0][1][rate_up]['voiceQOS'])
+                        
+                        table_df.update({"No of Stations": []})
+                        #table_df.update({"Mode": []})
+                        table_df.update({"Throughput for Load {}".format(rate_up): []})
+                        graph_df.update({case: [throughput_df, pkt_loss_df, latency_df]})
+                        print(throughput)
+                        table_df.update({"No of Stations": num_stations})
+                        #table_df.update({"Mode": mode})
+                        for i in self.test_case:
+                            count = 0
+                            for key in res[i]:
+                                table_df["Throughput for Load {}".format(rate_up)].append(throughput[count])
+                                count += 1
+                        res_copy=copy.copy(res)
+                        res_copy.update({"throughput_table_df": table_df})
+                        res_copy.update({"graph_df": graph_df})
+                for key in res[case]['test_results'][0][0]:
+                    if int(self.cx_profile.side_b_min_bps) != 0:
+                        print(res[case]['test_results'][0][0])
+                        throughput.append(
+                                "BK : {}, BE : {}, VI: {}, VO: {}".format(res[case]['test_results'][0][0][rate_down]["bkQOS"],
+                                                                        res[case]['test_results'][0][0][rate_down]["beQOS"],
+                                                                        res[case]['test_results'][0][0][rate_down][
+                                                                            "videoQOS"],
+                                                                        res[case]['test_results'][0][0][rate_down][
+                                                                            "voiceQOS"]))
+                        throughput_df[0].append(res[case]['test_results'][0][0][rate_down]['bkQOS'])
+                        throughput_df[1].append(res[case]['test_results'][0][0][rate_down]['beQOS'])
+                        throughput_df[2].append(res[case]['test_results'][0][0][rate_down]['videoQOS'])
+                        throughput_df[3].append(res[case]['test_results'][0][0][rate_down]['voiceQOS'])
+                    
+                        table_df.update({"No of Stations": []})
+                        #table_df.update({"Mode": []})
+                        table_df.update({"Throughput for Load {}".format(rate_down): []})
+                        graph_df.update({case: [throughput_df, pkt_loss_df, latency_df]})
+                        print(throughput)
+                        table_df.update({"No of Stations": num_stations})
+                        #table_df.update({"Mode": mode})
+                        for i in self.test_case:
+                            count = 0
+                            for key in res[i]:
+                                table_df["Throughput for Load {}".format(rate_down)].append(throughput[count])
+                                count += 1
+                        res_copy=copy.copy(res)
+                        res_copy.update({"throughput_table_df": table_df})
+                        res_copy.update({"graph_df": graph_df})
+                        print("table_df",table_df)
+        return res_copy
 
     def generate_report(self, data, input_setup_info):
         load=''
@@ -517,29 +644,32 @@ class ThroughputQOS(Realm):
         }
         report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
         report.set_table_title(
-            "Overall download Throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
+            f"Overall {self.direction} throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
         report.build_table_title()
         df_throughput = pd.DataFrame(res["throughput_table_df"])
         report.set_table_dataframe(df_throughput)
         report.build_table()
         for key in res["graph_df"]:
             report.set_obj_html(
-                _obj_title=f"Overall Download throughput for {len(self.sta_list)} clients for {key} band with different TOS.",
-                _obj="The below graph represents overall download throughput for all "
+                _obj_title=f"Overall {self.direction} throughput for {len(self.sta_list)} clients for {key} band with different TOS.",
+                _obj=f"The below graph represents overall {self.direction} throughput for all "
                      "connected stations running BK, BE, VO, VI traffic with different "
                      "intended loads per station – {}".format(
-                    "".join(str(key) for key in res[key].keys())))
+                    "".join(str(key))))
             report.build_objective()
+            print("data set",res["graph_df"][key][0])
+            xaxis_list=list(res["graph_df"].keys())
+            print("keys",xaxis_list)
 
             graph = lf_bar_graph(_data_set=res["graph_df"][key][0],
                                  _xaxis_name="Load per Type of Service",
                                  _yaxis_name="Throughput (Mbps)",
-                                 _xaxis_categories=[str(key) for key in res[key].keys()],
+                                 _xaxis_categories=xaxis_list,
                                  _xaxis_label=['1 Mbps', '2 Mbps', '3 Mbps', '4 Mbps', '5 Mbps'],
-                                 _graph_image_name=f"tos_download_{key}Hz",
+                                 _graph_image_name=f"tos_{self.direction}_{key}Hz",
                                  _label=["BK", "BE", "VI", "VO"],
                                  _xaxis_step=1,
-                                 _graph_title="Overall download throughput – BK,BE,VO,VI traffic streams",
+                                 _graph_title=f"Overall {self.direction} throughput – BK,BE,VO,VI traffic streams",
                                  _title_size=16,
                                  _color=['orange', 'olivedrab', 'steelblue', 'blueviolet'],
                                  _color_edge='black',
@@ -570,55 +700,61 @@ class ThroughputQOS(Realm):
 
     def generate_individual_graph(self, res, report):
         load=""
+        data_set={}
         rate_down= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
         rate_up= str(str(int(self.cx_profile.side_a_min_bps) / 1000000) +' '+'Mbps')
-        if self.direction == 'Upload':
-            load=rate_up
-        else:
-            if self.direction =="Download":
-                load=rate_down
-        tos_type = ['Background','Besteffort','Video','Voice']
-        load_list = []
-        traffic_type_list = []
-        traffic_direction_list = []
-        bk_tos_list = [] 
-        be_tos_list = []
-        vi_tos_list = [] 
-        vo_tos_list = []
-        traffic_type=(self.traffic_type.strip("lf_")).upper()
-        for client in range(len(self.sta_list)):
-            traffic_type_list.append(traffic_type.upper())
-            bk_tos_list.append(tos_type[0])
-            be_tos_list.append(tos_type[1])
-            vi_tos_list.append(tos_type[2])
-            vo_tos_list.append(tos_type[3])
-            load_list.append(load)
-            traffic_direction_list.append(self.direction)
-        print(traffic_type_list,traffic_direction_list,bk_tos_list,be_tos_list,vi_tos_list,vo_tos_list)
-        if len(res.keys()) > 0:
-            if "throughput_table_df" in res:
-                res.pop("throughput_table_df")
-            if "graph_df" in res:
-                res.pop("graph_df")
-            for key in res:
-                for load in res[key]:
+        for case in self.test_case:
+            if self.direction == 'Upload':
+                load=rate_up
+                data_set=res[case]['test_results'][0][1]
+            else:
+                if self.direction =="Download":
+                    load=rate_down
+                    data_set=res[case]['test_results'][0][0]
+            tos_type = ['Background','Besteffort','Video','Voice']
+            load_list = []
+            traffic_type_list = []
+            traffic_direction_list = []
+            bk_tos_list = [] 
+            be_tos_list = []
+            vi_tos_list = [] 
+            vo_tos_list = []
+            traffic_type=(self.traffic_type.strip("lf_")).upper()
+            for client in range(len(self.sta_list)):
+                traffic_type_list.append(traffic_type.upper())
+                bk_tos_list.append(tos_type[0])
+                be_tos_list.append(tos_type[1])
+                vi_tos_list.append(tos_type[2])
+                vo_tos_list.append(tos_type[3])
+                load_list.append(load)
+                traffic_direction_list.append(self.direction)
+            print(traffic_type_list,traffic_direction_list,bk_tos_list,be_tos_list,vi_tos_list,vo_tos_list)
+            if len(res.keys()) > 0:
+                if "throughput_table_df" in res:
+                    res.pop("throughput_table_df")
+                if "graph_df" in res:
+                    res.pop("graph_df")
+                    print("res",res)
+                    print("load",load)
+                    print("data set",data_set[load]['BE'])
+                for key in res:
                     if "BK" in self.tos:
                         report.set_obj_html(
-                            _obj_title=f"Individual download throughput with intended load {load}/station for traffic BK(WiFi).",
+                            _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic BK(WiFi).",
                             _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running BK "
                                 f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
                                 f"Throughput in Mbps”.")
                         report.build_objective()
-                        graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['BK']], _xaxis_name="Throughput in Mbps",
-                                            _yaxis_name="Clients",
+                        graph = lf_bar_graph_horizontal(_data_set=[data_set[load]['BK']], _xaxis_name="Throughput in Mbps",
+                                            _yaxis_name="Client names",
                                             _yaxis_categories=[i for i in self.sta_list],
                                             _yaxis_label=[i for i in self.sta_list],
                                             _label=["BK"],
                                             _yaxis_step=1,
                                             _yticks_font=8,
                                             _yticks_rotation=None,
-                                            _graph_title="Individual download throughput for BK(WIFI) traffic - {} clients".format(
-                                                key),
+                                            _graph_title="Individual {} throughput for BK(WIFI) traffic - {} clients".format(
+                                                self.direction,key),
                                             _title_size=16,
                                             _figsize= (18, 12),
                                             _legend_loc="best",
@@ -644,7 +780,7 @@ class ThroughputQOS(Realm):
                             " Traffic Direction " : traffic_direction_list,
                             " Traffic Protocol " : traffic_type_list,
                             " Intended Load (Mbps) " : load_list,
-                            " Throughput (Mbps) " : res[key][load]['BK']
+                            " Throughput (Mbps) " : data_set[load]['BK']
                         }
 
                         dataframe1 = pd.DataFrame(bk_dataframe)
@@ -652,20 +788,20 @@ class ThroughputQOS(Realm):
                         report.build_table()
                     if "BE" in self.tos:
                         report.set_obj_html(
-                            _obj_title=f"Individual download throughput with intended load {load}/station for traffic BE(WiFi).",
+                            _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic BE(WiFi).",
                             _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running BE "
                                 f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
                                 f"Throughput in Mbps”.")
                         report.build_objective()
-                        graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['BE']], _xaxis_name="Throughput in Mbps",
-                                            _yaxis_name="Clients",
+                        graph = lf_bar_graph_horizontal(_data_set=[data_set[load]['BE']], _xaxis_name="Throughput in Mbps",
+                                            _yaxis_name="Client names",
                                             _yaxis_categories=[i for i in self.sta_list],
                                             _yaxis_label=[i for i in self.sta_list],
                                             _label=["BE"],
                                             _yaxis_step=1,
                                             _yticks_font=8,
-                                            _graph_title="Individual download throughput for BE(WIFI) traffic - {} clients".format(
-                                                key),
+                                            _graph_title="Individual {} throughput for BE(WIFI) traffic - {} clients".format(
+                                                self.direction,key),
                                             _title_size=16, 
                                             _yticks_rotation=None,
                                             _figsize=(18, 12),
@@ -688,11 +824,11 @@ class ThroughputQOS(Realm):
                         report.build_table_title()
                         be_dataframe = {
                             " Client Name " : self.sta_list,
-                            " Type of traffic " : bk_tos_list,
+                            " Type of traffic " : be_tos_list,
                             " Traffic Direction " : traffic_direction_list,
                             " Traffic Protocol " : traffic_type_list,
                             " Intended Load (Mbps) " : load_list,
-                            " Throughput (Mbps) " : res[key][load]['BE']
+                            " Throughput (Mbps) " : data_set[load]['BE']
                         }
 
                         dataframe2 = pd.DataFrame(be_dataframe)
@@ -700,20 +836,20 @@ class ThroughputQOS(Realm):
                         report.build_table()
                     if "VI" in self.tos:
                         report.set_obj_html(
-                            _obj_title=f"Individual download throughput with intended load {load}/station for traffic VI(WiFi).",
+                            _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic VI(WiFi).",
                             _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running VI "
                                 f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
                                 f"Throughput in Mbps”.")
                         report.build_objective()
-                        graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['VI']], _xaxis_name="Throughput in Mbps",
-                                            _yaxis_name="Clients",
+                        graph = lf_bar_graph_horizontal(_data_set=[data_set[load]['VI']], _xaxis_name="Throughput in Mbps",
+                                            _yaxis_name="Client names",
                                             _yaxis_categories=[i for i in self.sta_list],
                                             _yaxis_label=[i for i in self.sta_list],
                                             _label=["Video"],
                                             _yaxis_step=1,
                                             _yticks_font=8,
-                                            _graph_title="Individual download throughput for VI(WIFI) traffic - {} clients".format(
-                                                key),
+                                            _graph_title="Individual {} throughput for VI(WIFI) traffic - {} clients".format(
+                                                self.direction,key),
                                             _title_size=16,
                                             _yticks_rotation=None,
                                             _figsize=(18, 12),
@@ -737,11 +873,11 @@ class ThroughputQOS(Realm):
                         report.build_table_title()
                         video_dataframe = {
                             " Client Name " : self.sta_list,
-                            " Type of traffic " : bk_tos_list,
+                            " Type of traffic " : vi_tos_list,
                             " Traffic Direction " : traffic_direction_list,
                             " Traffic Protocol " : traffic_type_list,
                             " Intended Load (Mbps) " : load_list,
-                            " Throughput (Mbps) " : res[key][load]['VI']
+                            " Throughput (Mbps) " : data_set[load]['VI']
                         }
 
                         dataframe3 = pd.DataFrame(video_dataframe)
@@ -749,21 +885,21 @@ class ThroughputQOS(Realm):
                         report.build_table()
                     if "VO" in self.tos:
                         report.set_obj_html(
-                            _obj_title=f"Individual download throughput with intended load {load}/station for traffic VO(WiFi).",
+                            _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic VO(WiFi).",
                             _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running VO "
                                 f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
                                 f"Throughput in Mbps”.")
                         report.build_objective()
-                        graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['VO']], _xaxis_name="Throughput in Mbps",
-                                            _yaxis_name="Clients",
+                        graph = lf_bar_graph_horizontal(_data_set=[data_set[load]['VO']], _xaxis_name="Throughput in Mbps",
+                                            _yaxis_name="Client names",
                                             _yaxis_categories=[i for i in self.sta_list],
                                             _yaxis_label=[i for i in self.sta_list],
                                             _label=['Voice'],
                                             _yaxis_step=1,
                                             _yticks_font=8,
                                             _yticks_rotation=None,
-                                            _graph_title="Individual download throughput for VO(WIFI) traffic - {} clients".format(
-                                                key),
+                                            _graph_title="Individual {} throughput for VO(WIFI) traffic - {} clients".format(
+                                                self.direction,key),
                                             _title_size=16,
                                             _figsize=(18, 12),
                                             _legend_loc="best",
@@ -786,19 +922,19 @@ class ThroughputQOS(Realm):
                         report.build_table_title()
                         voice_dataframe = {
                             " Client Name " : self.sta_list,
-                            " Type of traffic " : bk_tos_list,
+                            " Type of traffic " : vo_tos_list,
                             " Traffic Direction " : traffic_direction_list,
                             " Traffic Protocol " : traffic_type_list,
                             " Intended Load (Mbps) " : load_list,
-                            " Throughput (Mbps) " : res[key][load]['VO']
+                            " Throughput (Mbps) " : data_set[load]['VO']
                         }
 
                         dataframe4 = pd.DataFrame(voice_dataframe)
                         report.set_table_dataframe(dataframe4)
                         report.build_table()
                    
-        else:
-            print("No individual graph to generate.")
+            else:
+                print("No individual graph to generate.")
 
 
 def main():
@@ -824,7 +960,8 @@ python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num
 ''')
     parser.add_argument('--mode', help='Used to force mode of stations', default="0")
     parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
-    parser.add_argument('--download', help='--download traffic load per connection (download rate)', default=256000)
+    parser.add_argument('--download', help='--download traffic load per connection (download rate)')
+    parser.add_argument('--upload', help='--upload traffic load per connection (upload rate)')
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
     parser.add_argument('--create_sta', help='Used to force a connection to a particular AP', action='store_true')
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
@@ -845,18 +982,25 @@ python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num
     print(args)
     print("--------------------------------------------")
     args.test_case = args.bands.split(',')
-    test_results = {}
+    test_results = {'test_results':[]}
     loads = {}
     bands = []
     station_list = []
     data = {}
 
-    if args.download is not None:
+    if args.download and args.upload:
+        loads = {'upload': str(args.upload).split(","), 'download': str(args.download).split(",")}
+
+    elif args.download:
         loads = {'upload': [], 'download': str(args.download).split(",")}
         for i in range(len(args.download)):
             loads['upload'].append(0)
     else:
-        raise "Download traffic is required."
+        if args.upload:
+            loads = {'upload': str(args.upload).split(","), 'download': []}
+            for i in range(len(args.upload)):
+                loads['download'].append(0)
+    print(loads)
 
     if args.bands is not None:
         bands = args.bands.split(',')
@@ -953,10 +1097,12 @@ python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num
 
             throughput_qos.start(False, False)
             time.sleep(10)
-            connections, throughput = throughput_qos.monitor()
+            connections_download,connections_upload = throughput_qos.monitor()
+            print("connections download",connections_download)
+            print("connections upload",connections_upload)
             throughput_qos.stop()
             time.sleep(5)
-            test_results.update(throughput_qos.evaluate_qos(connections, throughput))
+            test_results['test_results'].append(throughput_qos.evaluate_qos(connections_download,connections_upload))
             data.update({bands[i]: test_results})
             if args.create_sta:
                 if not throughput_qos.passes():
