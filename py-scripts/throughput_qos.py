@@ -282,10 +282,10 @@ class ThroughputQOS(Realm):
 
     def evaluate_qos(self, connections, throughput):
         case = ""
-        tos_download = {'video': [], 'voice': [], 'bk': [], 'be': []}
-        tx_b = {'bk': [], 'be': [], 'video': [], 'voice': []}
-        rx_a = {'bk': [], 'be': [], 'video': [], 'voice': []}
-        delay = {'bk': [], 'be': [], 'video': [], 'voice': []}
+        tos_download = {'VI': [], 'VO': [], 'BK': [], 'BE': []}
+        tx_b = {'BK': [], 'BE': [], 'VI': [], 'VO': []}
+        rx_a = {'BK': [], 'BE': [], 'VI': [], 'VO': []}
+        delay = {'BK': [], 'BE': [], 'VI': [], 'VO': []}
         tx_endps = {}
         rx_endps = {}
         if int(self.cx_profile.side_b_min_bps) != 0:
@@ -307,91 +307,100 @@ class ThroughputQOS(Realm):
                 temp = int(temp[1])
                 if temp in range(0, self.num_stations):
                     if int(self.cx_profile.side_b_min_bps) != 0:
-                        tos_download['bk'].append(connections[sta])
-                        tx_b['bk'].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
-                        rx_a['bk'].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
-                        delay['bk'].append(rx_endps['%s-A' % sta]['delay'])
+                        tos_download[self.tos[0]].append(connections[sta])
+                        tx_b[self.tos[0]].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
+                        rx_a[self.tos[0]].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
+                        delay[self.tos[0]].append(rx_endps['%s-A' % sta]['delay'])
                     else:
-                        tos_download['bk'].append(float(0))
-                        tx_b['bk'].append(int(0))
-                        rx_a['bk'].append(int(0))
-                        delay['bk'].append(int(0))
+                        tos_download[self.tos[0]].append(float(0))
+                        tx_b[self.tos[0]].append(int(0))
+                        rx_a[self.tos[0]].append(int(0))
+                        delay[self.tos[0]].append(int(0))
                 elif temp in range(self.num_stations, 2 * self.num_stations):
-                    if int(self.cx_profile.side_b_min_bps) != 0:
-                        tos_download['be'].append(connections[sta])
-                        tx_b['be'].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
-                        rx_a['be'].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
-                        delay['be'].append(rx_endps['%s-A' % sta]['delay'])
+                    if len(self.tos) < 2:
+                            break
                     else:
-                        tos_download['be'].append(float(0))
-                        tx_b['be'].append(int(0))
-                        rx_a['be'].append(int(0))
-                        delay['be'].append(int(0))
+                        if int(self.cx_profile.side_b_min_bps) != 0:
+                            tos_download[self.tos[1]].append(connections[sta])
+                            tx_b[self.tos[1]].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
+                            rx_a[self.tos[1]].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
+                            delay[self.tos[1]].append(rx_endps['%s-A' % sta]['delay'])
+                        else:
+                            tos_download[self.tos[1]].append(float(0))
+                            tx_b[self.tos[1]].append(int(0))
+                            rx_a[self.tos[1]].append(int(0))
+                            delay[self.tos[1]].append(int(0))
                 elif temp in range(2 * self.num_stations, 3 * self.num_stations):
-                    if int(self.cx_profile.side_b_min_bps) != 0:
-                        tos_download['video'].append(connections[sta])
-                        tx_b['video'].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
-                        rx_a['video'].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
-                        delay['video'].append(rx_endps['%s-A' % sta]['delay'])
+                    if len(self.tos) < 3:
+                            break
                     else:
-                        tos_download['video'].append(float(0))
-                        tx_b['video'].append(int(0))
-                        rx_a['video'].append(int(0))
-                        delay['video'].append(int(0))
+                        if int(self.cx_profile.side_b_min_bps) != 0:
+                            tos_download[self.tos[2]].append(connections[sta])
+                            tx_b[self.tos[2]].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
+                            rx_a[self.tos[2]].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
+                            delay[self.tos[2]].append(rx_endps['%s-A' % sta]['delay'])
+                        else:
+                            tos_download[self.tos[2]].append(float(0))
+                            tx_b[self.tos[2]].append(int(0))
+                            rx_a[self.tos[2]].append(int(0))
+                            delay[self.tos[2]].append(int(0))
                 elif temp in range(3 * self.num_stations, 4 * self.num_stations):
-                    if int(self.cx_profile.side_b_min_bps) != 0:
-                        tos_download['voice'].append(connections[sta])
-                        tx_b['voice'].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
-                        rx_a['voice'].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
-                        delay['voice'].append(rx_endps['%s-A' % sta]['delay'])
+                    if len(self.tos) < 4:
+                            break
                     else:
-                        tos_download['voice'].append(float(0))
-                        tx_b['voice'].append(int(0))
-                        rx_a['voice'].append(int(0))
-                        delay['voice'].append(int(0))
-            tos_download.update({"bkQOS": float(f"{sum(tos_download['bk']):.2f}")})
-            tos_download.update({"beQOS": float(f"{sum(tos_download['be']):.2f}")})
-            tos_download.update({"videoQOS": float(f"{sum(tos_download['video']):.2f}")})
-            tos_download.update({"voiceQOS": float(f"{sum(tos_download['voice']):.2f}")})
-            tos_download.update({"bkDELAY": sum(delay['bk'])})
-            tos_download.update({"beDELAY": sum(delay['be'])})
-            tos_download.update({"videoDELAY": sum(delay['video'])})
-            tos_download.update({"voiceDELAY": sum(delay['voice'])})
-            if sum(tx_b['bk']) != 0 or sum(tx_b['be']) != 0 or sum(tx_b['video']) != 0 or sum(tx_b['voice']) != 0:
-                if sum(tx_b['bk']) > sum(rx_a['bk']):
+                        if int(self.cx_profile.side_b_min_bps) != 0:
+                            tos_download[self.tos[3]].append(connections[sta])
+                            tx_b[self.tos[3]].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
+                            rx_a[self.tos[3]].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
+                            delay[self.tos[3]].append(rx_endps['%s-A' % sta]['delay'])
+                        else:
+                            tos_download[self.tos[3]].append(float(0))
+                            tx_b[self.tos[3]].append(int(0))
+                            rx_a[self.tos[3]].append(int(0))
+                            delay[self.tos[3]].append(int(0))
+            tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
+            tos_download.update({"beQOS": float(f"{sum(tos_download['BE']):.2f}")})
+            tos_download.update({"videoQOS": float(f"{sum(tos_download['VI']):.2f}")})
+            tos_download.update({"voiceQOS": float(f"{sum(tos_download['VO']):.2f}")})
+            tos_download.update({"bkDELAY": sum(delay['BK'])})
+            tos_download.update({"beDELAY": sum(delay['BE'])})
+            tos_download.update({"videoDELAY": sum(delay['VI'])})
+            tos_download.update({"voiceDELAY": sum(delay['VO'])})
+            if sum(tx_b['BK']) != 0 or sum(tx_b['BE']) != 0 or sum(tx_b['VI']) != 0 or sum(tx_b['VO']) != 0:
+                if sum(tx_b['BK']) > sum(rx_a['BK']):
                     tos_download.update(
-                        {"bkLOSS": float(f"{((sum(tx_b['bk']) - sum(rx_a['bk'])) / sum(tx_b['bk'])) * 100:.2f}")})
+                        {"bkLOSS": float(f"{((sum(tx_b['BK']) - sum(rx_a['BK'])) / sum(tx_b['BK'])) * 100:.2f}")})
                 else:
-                    if sum(rx_a['bk']) != 0:
-                        tos_download.update({"bkLOSS": float(f"{((sum(rx_a['bk']) - sum(tx_b['bk'])) / sum(rx_a['bk'])) * 100:.2f}")})
+                    if sum(rx_a['BK']) != 0:
+                        tos_download.update({"bkLOSS": float(f"{((sum(rx_a['BK']) - sum(tx_b['BK'])) / sum(rx_a['BK'])) * 100:.2f}")})
                     else:
                         tos_download.update({"bkLOSS": float(0)})
-                if sum(tx_b['be']) > sum(rx_a['be']):
+                if sum(tx_b['BE']) > sum(rx_a['BE']):
                     tos_download.update(
-                        {"beLOSS": float(f"{((sum(tx_b['be']) - sum(rx_a['be'])) / sum(tx_b['be'])) * 100:.2f}")})
+                        {"beLOSS": float(f"{((sum(tx_b['BE']) - sum(rx_a['BE'])) / sum(tx_b['BE'])) * 100:.2f}")})
                 else:
-                    if sum(rx_a['be']) != 0:
+                    if sum(rx_a['BE']) != 0:
                         tos_download.update(
-                            {"beLOSS": float(f"{((sum(rx_a['be']) - sum(tx_b['be'])) / sum(rx_a['be'])) * 100:.2f}")})
+                            {"beLOSS": float(f"{((sum(rx_a['BE']) - sum(tx_b['BE'])) / sum(rx_a['BE'])) * 100:.2f}")})
                     else:
                         tos_download.update({"beLOSS": float(0)})
-                if sum(tx_b['video']) > sum(rx_a['video']):
+                if sum(tx_b['VI']) > sum(rx_a['VI']):
                     tos_download.update(
-                        {"videoLOSS": float(f"{((sum(tx_b['video']) - sum(rx_a['video'])) / sum(tx_b['video'])) * 100:.2f}")})
+                        {"videoLOSS": float(f"{((sum(tx_b['VI']) - sum(rx_a['VI'])) / sum(tx_b['VI'])) * 100:.2f}")})
                 else:
-                    if sum(rx_a['video']) != 0:
+                    if sum(rx_a['VI']) != 0:
                         tos_download.update(
-                            {"videoLOSS": float(f"{((sum(rx_a['video']) - sum(tx_b['video'])) / sum(rx_a['video'])) * 100:.2f}")})
+                            {"videoLOSS": float(f"{((sum(rx_a['VI']) - sum(tx_b['VI'])) / sum(rx_a['VI'])) * 100:.2f}")})
                     else:
                         tos_download.update({"videoLOSS": float(0)})
-                if sum(tx_b['voice']) > sum(rx_a['voice']):
+                if sum(tx_b['VO']) > sum(rx_a['VO']):
                     tos_download.update(
-                        {"voiceLOSS": float(f"{((sum(tx_b['voice']) - sum(rx_a['voice'])) / sum(tx_b['voice'])) * 100:.2f}")})
+                        {"voiceLOSS": float(f"{((sum(tx_b['VO']) - sum(rx_a['VO'])) / sum(tx_b['VO'])) * 100:.2f}")})
                 else:
-                    if sum(rx_a['voice']) != 0:
+                    if sum(rx_a['VO']) != 0:
                         tos_download.update(
                             {"voiceLOSS": float(
-                                f"{((sum(rx_a['voice']) - sum(tx_b['voice'])) / sum(rx_a['voice'])) * 100:.2f}")})
+                                f"{((sum(rx_a['VO']) - sum(tx_b['VO'])) / sum(rx_a['VO'])) * 100:.2f}")})
                     else:
                         tos_download.update({"voiceLOSS": float(0)})
             tos_download.update({'tx_b': tx_b})
@@ -467,7 +476,15 @@ class ThroughputQOS(Realm):
             res.update({"graph_df": graph_df})
         return res
 
-    def generate_report(self, data, test_setup_info, input_setup_info):
+    def generate_report(self, data, input_setup_info):
+        load=''
+        rate_down= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
+        rate_up= str(str(int(self.cx_profile.side_a_min_bps) / 1000000) +' '+'Mbps')
+        if self.direction == 'Upload':
+            load=rate_up
+        else:
+            if self.direction =="Download":
+                load=rate_down
         res = self.set_report_data(data)
         report = lf_report(_output_pdf="throughput_qos.pdf", _output_html="throughput_qos.html")
         report_path = report.get_path()
@@ -478,10 +495,27 @@ class ThroughputQOS(Realm):
         report.build_banner()
         # objective title and description
         report.set_obj_html(_obj_title="Objective",
-                            _obj="Through this test we can evaluate the throughput for given number of clients which"
-                                 " runs the traffic with a particular Type of Service i.e BK,BE,VI,VO")
+                            _obj="The objective of the QoS (Quality of Service) traffic throughput test is to measure the maximum"
+                                " achievable throughput of a network under specific QoS settings and conditions.By conducting"
+                                " this test, we aim to assess the capacity of network to handle high volumes of traffic while"
+                                " maintaining acceptable performance levels,ensuring that the network meets the required QoS"
+                                " standards and can adequately support the expected user demands.")
         report.build_objective()
-        report.test_setup_table(test_setup_data=test_setup_info, value="Device Under Test")
+
+        test_setup_info = {
+        "Number of Stations" : self.num_stations,
+        "AP Model": self.ap_name,
+        "SSID_2.4GHz": self.ssid_2g,
+        "SSID_5GHz": self.ssid_5g,
+        "Traffic Duration in hours" : round(int(self.test_duration)/3600,2),
+        "Security_2.4GHz" : self.security_2g,
+        "Security_5GHz" : self.security_5g,
+        "Protocol" : (self.traffic_type.strip("lf_")).upper(),
+        "Traffic Direction" : self.direction,
+        "TOS" : self.tos,
+        "Per TOS Load in Mbps" : load
+        }
+        report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
         report.set_table_title(
             "Overall download Throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
         report.build_table_title()
@@ -493,7 +527,7 @@ class ThroughputQOS(Realm):
                 _obj_title=f"Overall Download throughput for {len(self.sta_list)} clients for {key} band with different TOS.",
                 _obj="The below graph represents overall download throughput for all "
                      "connected stations running BK, BE, VO, VI traffic with different "
-                     "intended loads per station ? {}".format(
+                     "intended loads per station – {}".format(
                     "".join(str(key) for key in res[key].keys())))
             report.build_objective()
 
@@ -505,7 +539,7 @@ class ThroughputQOS(Realm):
                                  _graph_image_name=f"tos_download_{key}Hz",
                                  _label=["BK", "BE", "VI", "VO"],
                                  _xaxis_step=1,
-                                 _graph_title="Overall download throughput ? BK,BE,VO,VI traffic streams",
+                                 _graph_title="Overall download throughput – BK,BE,VO,VI traffic streams",
                                  _title_size=16,
                                  _color=['orange', 'olivedrab', 'steelblue', 'blueviolet'],
                                  _color_edge='black',
@@ -568,188 +602,200 @@ class ThroughputQOS(Realm):
                 res.pop("graph_df")
             for key in res:
                 for load in res[key]:
-                    report.set_obj_html(
-                        _obj_title=f"Individual download throughput with intended load {load}/station for traffic BK(WiFi).",
-                        _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running BK "
-                             f"(WiFi) traffic.  X- axis shows ?number of clients? and Y-axis shows ?"
-                             f"Throughput in Mbps?.")
-                    report.build_objective()
-                    graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['bk']], _xaxis_name="Throughput in Mbps",
-                                         _yaxis_name="Clients",
-                                         _yaxis_categories=[i for i in self.sta_list],
-                                         _yaxis_label=[i for i in self.sta_list],
-                                         _label=["BK"],
-                                         _yaxis_step=1,
-                                         _yticks_font=8,
-                                         _yticks_rotation=None,
-                                         _graph_title="Individual download throughput for BK(WIFI) traffic - {} clients".format(
-                                             key),
-                                         _title_size=16,
-                                         _figsize= (18, 12),
-                                         _legend_loc="best",
-                                         _legend_box=(1.0, 1.0),
-                                         _color_name=['orange'],
-                                         _show_bar_value=True,
-                                         _enable_csv=True,
-                                         _graph_image_name="{}_bk_{}".format(key, load), _color_edge=['black'],
-                                         _color=['orange'])
-                    graph_png = graph.build_bar_graph_horizontal()
-                    print("graph name {}".format(graph_png))
-                    report.set_graph_image(graph_png)
-                    # need to move the graph image to the results
-                    report.move_graph_image()
-                    report.set_csv_filename(graph_png)
-                    report.move_csv_file()
-                    report.build_graph()
-                    bk_dataframe = {
-                        " Client Name " : self.sta_list,
-                        " Type of traffic " : bk_tos_list,
-                        " Traffic Direction " : traffic_direction_list,
-                        " Traffic Protocol " : traffic_type_list,
-                        " Intended Load (Mbps) " : load_list,
-                        " Throughput (Mbps) " : res[key][load]['bk']
-                    }
+                    if "BK" in self.tos:
+                        report.set_obj_html(
+                            _obj_title=f"Individual download throughput with intended load {load}/station for traffic BK(WiFi).",
+                            _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running BK "
+                                f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
+                                f"Throughput in Mbps”.")
+                        report.build_objective()
+                        graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['BK']], _xaxis_name="Throughput in Mbps",
+                                            _yaxis_name="Clients",
+                                            _yaxis_categories=[i for i in self.sta_list],
+                                            _yaxis_label=[i for i in self.sta_list],
+                                            _label=["BK"],
+                                            _yaxis_step=1,
+                                            _yticks_font=8,
+                                            _yticks_rotation=None,
+                                            _graph_title="Individual download throughput for BK(WIFI) traffic - {} clients".format(
+                                                key),
+                                            _title_size=16,
+                                            _figsize= (18, 12),
+                                            _legend_loc="best",
+                                            _legend_box=(1.0, 1.0),
+                                            _color_name=['orange'],
+                                            _show_bar_value=True,
+                                            _enable_csv=True,
+                                            _graph_image_name="{}_bk_{}".format(key, load), _color_edge=['black'],
+                                            _color=['orange'])
+                        graph_png = graph.build_bar_graph_horizontal()
+                        print("graph name {}".format(graph_png))
+                        report.set_graph_image(graph_png)
+                        # need to move the graph image to the results
+                        report.move_graph_image()
+                        report.set_csv_filename(graph_png)
+                        report.move_csv_file()
+                        report.build_graph()
+                        report.set_table_title(" TOS : Background ")
+                        report.build_table_title()
+                        bk_dataframe = {
+                            " Client Name " : self.sta_list,
+                            " Type of traffic " : bk_tos_list,
+                            " Traffic Direction " : traffic_direction_list,
+                            " Traffic Protocol " : traffic_type_list,
+                            " Intended Load (Mbps) " : load_list,
+                            " Throughput (Mbps) " : res[key][load]['BK']
+                        }
 
-                    dataframe1 = pd.DataFrame(bk_dataframe)
-                    report.set_table_dataframe(dataframe1)
-                    report.build_table()
-                    report.set_obj_html(
-                        _obj_title=f"Individual download throughput with intended load {load}/station for traffic BE(WiFi).",
-                        _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running BE "
-                             f"(WiFi) traffic.  X- axis shows ?number of clients? and Y-axis shows "
-                             f"?Throughput in Mbps?.")
-                    report.build_objective()
-                    graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['be']], _xaxis_name="Throughput in Mbps",
-                                         _yaxis_name="Clients",
-                                         _yaxis_categories=[i for i in self.sta_list],
-                                         _yaxis_label=[i for i in self.sta_list],
-                                         _label=["BE"],
-                                         _yaxis_step=1,
-                                         _yticks_font=8,
-                                         _graph_title="Individual download throughput for BE(WIFI) traffic - {} clients".format(
-                                             key),
-                                         _title_size=16, 
-                                         _yticks_rotation=None,
-                                         _figsize=(18, 12),
-                                         _legend_loc="best",
-                                         _legend_box=(1.0, 1.0),
-                                         _color_name=['olivedrab'],
-                                         _show_bar_value=True,
-                                         _enable_csv=True,
-                                         _graph_image_name="{}_be_{}".format(key, load), _color_edge=['black'],
-                                         _color=['olivedrab'])
-                    graph_png = graph.build_bar_graph_horizontal()
-                    print("graph name {}".format(graph_png))
-                    report.set_graph_image(graph_png)
-                    # need to move the graph image to the results
-                    report.move_graph_image()
-                    report.set_csv_filename(graph_png)
-                    report.move_csv_file()
-                    report.build_graph()
-                    be_dataframe = {
-                        " Client Name " : self.sta_list,
-                        " Type of traffic " : bk_tos_list,
-                        " Traffic Direction " : traffic_direction_list,
-                        " Traffic Protocol " : traffic_type_list,
-                        " Intended Load (Mbps) " : load_list,
-                        " Throughput (Mbps) " : res[key][load]['be']
-                    }
+                        dataframe1 = pd.DataFrame(bk_dataframe)
+                        report.set_table_dataframe(dataframe1)
+                        report.build_table()
+                    if "BE" in self.tos:
+                        report.set_obj_html(
+                            _obj_title=f"Individual download throughput with intended load {load}/station for traffic BE(WiFi).",
+                            _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running BE "
+                                f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
+                                f"Throughput in Mbps”.")
+                        report.build_objective()
+                        graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['BE']], _xaxis_name="Throughput in Mbps",
+                                            _yaxis_name="Clients",
+                                            _yaxis_categories=[i for i in self.sta_list],
+                                            _yaxis_label=[i for i in self.sta_list],
+                                            _label=["BE"],
+                                            _yaxis_step=1,
+                                            _yticks_font=8,
+                                            _graph_title="Individual download throughput for BE(WIFI) traffic - {} clients".format(
+                                                key),
+                                            _title_size=16, 
+                                            _yticks_rotation=None,
+                                            _figsize=(18, 12),
+                                            _legend_loc="best",
+                                            _legend_box=(1.0, 1.0),
+                                            _color_name=['olivedrab'],
+                                            _show_bar_value=True,
+                                            _enable_csv=True,
+                                            _graph_image_name="{}_be_{}".format(key, load), _color_edge=['black'],
+                                            _color=['olivedrab'])
+                        graph_png = graph.build_bar_graph_horizontal()
+                        print("graph name {}".format(graph_png))
+                        report.set_graph_image(graph_png)
+                        # need to move the graph image to the results
+                        report.move_graph_image()
+                        report.set_csv_filename(graph_png)
+                        report.move_csv_file()
+                        report.build_graph()
+                        report.set_table_title(" TOS : Besteffort ")
+                        report.build_table_title()
+                        be_dataframe = {
+                            " Client Name " : self.sta_list,
+                            " Type of traffic " : bk_tos_list,
+                            " Traffic Direction " : traffic_direction_list,
+                            " Traffic Protocol " : traffic_type_list,
+                            " Intended Load (Mbps) " : load_list,
+                            " Throughput (Mbps) " : res[key][load]['BE']
+                        }
 
-                    dataframe2 = pd.DataFrame(be_dataframe)
-                    report.set_table_dataframe(dataframe2)
-                    report.build_table()
-                    report.set_obj_html(
-                        _obj_title=f"Individual download throughput with intended load {load}/station for traffic VI(WiFi).",
-                        _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running VI "
-                             f"(WiFi) traffic.  X- axis shows ?number of clients? and Y-axis shows "
-                             f"?Throughput in Mbps?.")
-                    report.build_objective()
-                    graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['video']], _xaxis_name="Throughput in Mbps",
-                                         _yaxis_name="Clients",
-                                         _yaxis_categories=[i for i in self.sta_list],
-                                         _yaxis_label=[i for i in self.sta_list],
-                                         _label=["Video"],
-                                         _yaxis_step=1,
-                                         _yticks_font=8,
-                                         _graph_title="Individual download throughput for VI(WIFI) traffic - {} clients".format(
-                                             key),
-                                         _title_size=16,
-                                         _yticks_rotation=None,
-                                         _figsize=(18, 12),
-                                         _legend_loc="best",
-                                         _legend_box=(1.0, 1.0),
-                                         _show_bar_value=True,
-                                         _color_name=['steelblue'],
-                                         _enable_csv=True,
-                                         _graph_image_name="{}_video_{}".format(key, load),
-                                         _color_edge=['black'],
-                                         _color=['steelblue'])
-                    graph_png = graph.build_bar_graph_horizontal()
-                    print("graph name {}".format(graph_png))
-                    report.set_graph_image(graph_png)
-                    # need to move the graph image to the results
-                    report.move_graph_image()
-                    report.set_csv_filename(graph_png)
-                    report.move_csv_file()
-                    report.build_graph()
-                    video_dataframe = {
-                        " Client Name " : self.sta_list,
-                        " Type of traffic " : bk_tos_list,
-                        " Traffic Direction " : traffic_direction_list,
-                        " Traffic Protocol " : traffic_type_list,
-                        " Intended Load (Mbps) " : load_list,
-                        " Throughput (Mbps) " : res[key][load]['video']
-                    }
+                        dataframe2 = pd.DataFrame(be_dataframe)
+                        report.set_table_dataframe(dataframe2)
+                        report.build_table()
+                    if "VI" in self.tos:
+                        report.set_obj_html(
+                            _obj_title=f"Individual download throughput with intended load {load}/station for traffic VI(WiFi).",
+                            _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running VI "
+                                f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
+                                f"Throughput in Mbps”.")
+                        report.build_objective()
+                        graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['VI']], _xaxis_name="Throughput in Mbps",
+                                            _yaxis_name="Clients",
+                                            _yaxis_categories=[i for i in self.sta_list],
+                                            _yaxis_label=[i for i in self.sta_list],
+                                            _label=["Video"],
+                                            _yaxis_step=1,
+                                            _yticks_font=8,
+                                            _graph_title="Individual download throughput for VI(WIFI) traffic - {} clients".format(
+                                                key),
+                                            _title_size=16,
+                                            _yticks_rotation=None,
+                                            _figsize=(18, 12),
+                                            _legend_loc="best",
+                                            _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
+                                            _color_name=['steelblue'],
+                                            _enable_csv=True,
+                                            _graph_image_name="{}_video_{}".format(key, load),
+                                            _color_edge=['black'],
+                                            _color=['steelblue'])
+                        graph_png = graph.build_bar_graph_horizontal()
+                        print("graph name {}".format(graph_png))
+                        report.set_graph_image(graph_png)
+                        # need to move the graph image to the results
+                        report.move_graph_image()
+                        report.set_csv_filename(graph_png)
+                        report.move_csv_file()
+                        report.build_graph()
+                        report.set_table_title(" TOS : Video ")
+                        report.build_table_title()
+                        video_dataframe = {
+                            " Client Name " : self.sta_list,
+                            " Type of traffic " : bk_tos_list,
+                            " Traffic Direction " : traffic_direction_list,
+                            " Traffic Protocol " : traffic_type_list,
+                            " Intended Load (Mbps) " : load_list,
+                            " Throughput (Mbps) " : res[key][load]['VI']
+                        }
 
-                    dataframe3 = pd.DataFrame(video_dataframe)
-                    report.set_table_dataframe(dataframe3)
-                    report.build_table()
-                    report.set_obj_html(
-                        _obj_title=f"Individual download throughput with intended load {load}/station for traffic VO(WiFi).",
-                        _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running VO "
-                             f"(WiFi) traffic.  X- axis shows ?number of clients? and Y-axis shows "
-                             f"?Throughput in Mbps?.")
-                    report.build_objective()
-                    graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['voice']], _xaxis_name="Throughput in Mbps",
-                                         _yaxis_name="Clients",
-                                         _yaxis_categories=[i for i in self.sta_list],
-                                         _yaxis_label=[i for i in self.sta_list],
-                                         _label=['Voice'],
-                                         _yaxis_step=1,
-                                         _yticks_font=8,
-                                         _yticks_rotation=None,
-                                         _graph_title="Individual download throughput for VO(WIFI) traffic - {} clients".format(
-                                             key),
-                                         _title_size=16,
-                                         _figsize=(18, 12),
-                                         _legend_loc="best",
-                                         _legend_box=(1.0, 1.0),
-                                         _show_bar_value=True,
-                                         _color_name=['blueviolet'],
-                                         _enable_csv=True,
-                                         _graph_image_name="{}_voice_{}".format(key, load),
-                                         _color_edge=['black'],
-                                         _color=['blueviolet'])
-                    graph_png = graph.build_bar_graph_horizontal()
-                    print("graph name {}".format(graph_png))
-                    report.set_graph_image(graph_png)
-                    # need to move the graph image to the results
-                    report.move_graph_image()
-                    report.set_csv_filename(graph_png)
-                    report.move_csv_file()
-                    report.build_graph()
-                    voice_dataframe = {
-                        " Client Name " : self.sta_list,
-                        " Type of traffic " : bk_tos_list,
-                        " Traffic Direction " : traffic_direction_list,
-                        " Traffic Protocol " : traffic_type_list,
-                        " Intended Load (Mbps) " : load_list,
-                        " Throughput (Mbps) " : res[key][load]['voice']
-                    }
+                        dataframe3 = pd.DataFrame(video_dataframe)
+                        report.set_table_dataframe(dataframe3)
+                        report.build_table()
+                    if "VO" in self.tos:
+                        report.set_obj_html(
+                            _obj_title=f"Individual download throughput with intended load {load}/station for traffic VO(WiFi).",
+                            _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running VO "
+                                f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
+                                f"Throughput in Mbps”.")
+                        report.build_objective()
+                        graph = lf_bar_graph_horizontal(_data_set=[res[key][load]['VO']], _xaxis_name="Throughput in Mbps",
+                                            _yaxis_name="Clients",
+                                            _yaxis_categories=[i for i in self.sta_list],
+                                            _yaxis_label=[i for i in self.sta_list],
+                                            _label=['Voice'],
+                                            _yaxis_step=1,
+                                            _yticks_font=8,
+                                            _yticks_rotation=None,
+                                            _graph_title="Individual download throughput for VO(WIFI) traffic - {} clients".format(
+                                                key),
+                                            _title_size=16,
+                                            _figsize=(18, 12),
+                                            _legend_loc="best",
+                                            _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
+                                            _color_name=['blueviolet'],
+                                            _enable_csv=True,
+                                            _graph_image_name="{}_voice_{}".format(key, load),
+                                            _color_edge=['black'],
+                                            _color=['blueviolet'])
+                        graph_png = graph.build_bar_graph_horizontal()
+                        print("graph name {}".format(graph_png))
+                        report.set_graph_image(graph_png)
+                        # need to move the graph image to the results
+                        report.move_graph_image()
+                        report.set_csv_filename(graph_png)
+                        report.move_csv_file()
+                        report.build_graph()
+                        report.set_table_title(" TOS : Voice ")
+                        report.build_table_title()
+                        voice_dataframe = {
+                            " Client Name " : self.sta_list,
+                            " Type of traffic " : bk_tos_list,
+                            " Traffic Direction " : traffic_direction_list,
+                            " Traffic Protocol " : traffic_type_list,
+                            " Intended Load (Mbps) " : load_list,
+                            " Throughput (Mbps) " : res[key][load]['VO']
+                        }
 
-                    dataframe4 = pd.DataFrame(voice_dataframe)
-                    report.set_table_dataframe(dataframe4)
-                    report.build_table()
+                        dataframe4 = pd.DataFrame(voice_dataframe)
+                        report.set_table_dataframe(dataframe4)
+                        report.build_table()
                    
         else:
             print("No individual graph to generate.")
@@ -774,7 +820,7 @@ To Test with 5GHz clients, use:
 python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_5g wiphy0 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --upstream eth1 --test_duration 1m --download 1000000 --bands 5g 
 
 To Test with 2.4GHz & 5GHz clients (BOTH), use:
-python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_2g wiphy0 --ssid_2g testqos --passwd_2g [BLANK] --security_2g open --radio_5g wiphy0 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --radio_5g wiphy1 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open ?upstream eth1 --test_duration 1m --download 1000000 --bands both 
+python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_2g wiphy0 --ssid_2g testqos --passwd_2g [BLANK] --security_2g open --radio_5g wiphy0 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --radio_5g wiphy1 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --upstream eth1 --test_duration 1m --download 1000000 --bands both 
 ''')
     parser.add_argument('--mode', help='Used to force mode of stations', default="0")
     parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
@@ -785,6 +831,7 @@ python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num
     parser.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
     parser.add_argument('--bands', help='used to run on multiple radio bands,can be used with multiple stations',
                         default="2.4G, 5G, BOTH", required=True)
+    parser.add_argument('--tos', help='Enter the tos. Example1 : "BK,BE,VI,VO" , Example2 : "BK,VO", Example3 : "VI" ')
     parser.add_argument('--ssid_2g', help="ssid for  2.4Ghz band")
     parser.add_argument('--security_2g', help="security type for  2.4Ghz band")
     parser.add_argument('--passwd_2g', help="password for 2.4Ghz band")
@@ -893,7 +940,7 @@ python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num
                                            mode=args.mode,
                                            bands=args.bands,
                                            traffic_type=args.traffic_type,
-                                           tos="BK,BE,VI,VO",
+                                           tos=args.tos,
                                            test_case=args.test_case,
                                            _debug_on=args.debug)
             throughput_qos.pre_cleanup()
@@ -922,25 +969,11 @@ python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num
 
     test_end_time = datetime.now().strftime("%b %d %H:%M:%S")
     print("Test ended at: ", test_end_time)
-    test_setup_info = {
-        "AP Model": throughput_qos.ap_name,
-        "SSID": throughput_qos.ssid,
-        "SSID - 2.4 Ghz": throughput_qos.ssid_2g,
-        "SSID - 5 Ghz": throughput_qos.ssid_5g,
-        "Test Duration": datetime.strptime(test_end_time, "%b %d %H:%M:%S") - datetime.strptime(
-            test_start_time, "%b %d %H:%M:%S")
-    }
-    if throughput_qos.ssid is None:
-        test_setup_info.pop("SSID")
-    else:
-        if throughput_qos.ssid_2g is None:
-            test_setup_info.pop("SSID - 2.4 Ghz")
-        if throughput_qos.ssid_5g is None:
-            test_setup_info.pop("SSID - 5 Ghz")
+   
     input_setup_info = {
         "contact": "support@candelatech.com"
     }
-    throughput_qos.generate_report(data=data, test_setup_info=test_setup_info, input_setup_info=input_setup_info)
+    throughput_qos.generate_report(data=data, input_setup_info=input_setup_info)
 
 
 if __name__ == "__main__":
