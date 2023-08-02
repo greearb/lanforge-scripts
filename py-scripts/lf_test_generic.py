@@ -270,23 +270,7 @@ class GenTest():
 
 
 def main():
-    optional = []
-    optional.append({'name': '--mode', 'help': 'Used to force mode of stations'})
-    optional.append({'name': '--ap', 'help': 'Used to force a connection to a particular AP'})
-    optional.append({'name': '--output_format', 'default': 'csv', 'help': 'choose either csv or xlsx'})
-    optional.append({'name': '--report_file', 'help': 'where you want to store results', 'default': None})
-    optional.append({'name': '--a_min', 'help': '--a_min bps rate minimum for side_a', 'default': 256000})
-    optional.append({'name': '--b_min', 'help': '--b_min bps rate minimum for side_b', 'default': 256000})
-    optional.append({'name': '--gen_cols', 'help': 'Columns wished to be monitored from layer 3 endpoint tab',
-                     'default': ['name', 'tx bytes', 'rx bytes']})
-    optional.append({'name': '--port_mgr_cols', 'help': 'Columns wished to be monitored from port manager tab',
-                     'default': ['ap', 'ip', 'parent dev']})
-    optional.append(
-        {'name': '--compared_report', 'help': 'report path and file which is wished to be compared with new report',
-         'default': None})
-    optional.append({'name': '--monitor_interval',
-                     'help': 'how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
-                     'default': '2s'})
+
     # definition of create_basic_argparse  in lanforge-scripts/py-json/LANforge/lfcli_base.py around line 700
     parser = argparse.ArgumentParser(
         prog=__file__,
@@ -329,44 +313,56 @@ python3 ./test_generic.py
     IPERF3 (under construction):
         ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
 ''',
-        more_optional=optional)
+    )
+    required = parser.add_argument_group('Arguments that must be defined by user:')
+    optional = parser.add_argument_group('Arguements that do not need to be defined by user:')
 
-    parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl',
-                        default="lfping")
-    parser.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
-    parser.add_argument('--dest', help='destination IP for command', default=None)
-    parser.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
-    parser.add_argument('--interval', help='interval to use when running lfping (1s, 1m)', default=1)
-    parser.add_argument('--speedtest_min_up', help='sets the minimum upload threshold for the speedtest type',
-                        default=None)
-    parser.add_argument('--speedtest_min_dl', help='sets the minimum download threshold for the speedtest type',
-                        default=None)
-    parser.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type',
-                        default=None)
-    parser.add_argument('--client', help='client to the iperf3 server', default=None)
-    parser.add_argument('--file_output', help='location to output results of lf_curl, absolute path preferred',
-                        default=None)
-    parser.add_argument('--loop_count', help='determines the number of loops to use in lf_curl', default=None)
+    required.add_argument('--type', type=str, help='type of command to run: generic, lfping, iperf3-client, iperf3-server, iperf, lfcurl. Iperf option will create both iperf client and server.', required=True)
+    required.add_argument("--lf_user", type=str, help="user: lanforge", required=True)
+    required.add_argument("--lf_passwd", type=str, help="passwd: lanforge", required=True)
 
-    parser.add_argument("--lf_user", type=str, help="user: lanforge")
-    parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge")
+
+    optional.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
+    optional.add_argument('--csv_outfile', help="output file for csv data", default="test_generic_kpi")
+    optional.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
+    optional.add_argument('--interval', help='interval to use when running lfping (1s, 1m)', default=1)
+    optional.add_argument('--speedtest_min_up', help='sets the minimum upload threshold for the speedtest type', default=None)
+    optional.add_argument('--speedtest_min_dl', help='sets the minimum download threshold for the speedtest type', default=None)
+    optional.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type', default=None)
+    optional.add_argument('--client', help='client (sta alias) to the iperf3 server', default=None)
+    optional.add_argument('--file_output', help='location to output results of lf_curl, absolute path preferred', default=None)
+    optional.add_argument('--loop_count', help='determines the number of loops to use in lf_curl', default=None)
+    optional.add_argument("--test_rig", help="test rig for kpi.csv, testbed that the tests are run on", default="")
+    optional.add_argument("--test_tag", help="test tag for kpi.csv,  test specific information to differentiate the test", default="")
+    optional.add_argument("--dut_hw_version", help="dut hw version for kpi.csv, hardware version of the device under test", default="")
+    optional.add_argument("--dut_sw_version", help="dut sw version for kpi.csv, software version of the device under test", default="")
+    optional.add_argument("--dut_model_num", help="dut model for kpi.csv,  model number / name of the device under test", default="")
+    optional.add_argument("--dut_serial_num", help="dut serial for kpi.csv, serial number of the device under test", default="")
+    optional.add_argument("--test_priority", help="dut model for kpi.csv,  test-priority is arbitrary number", default="")
+    optional.add_argument('--dest', help='destination IP for command', default=None)
+    optional.add_argument('--client_port', help="the port number of the iperf client endpoint",default=None)
+    optional.add_argument('--server_port', help="the port number of the iperf server endpoint",default=None)
+    optional.add_argument('--server_client_port', help="the port number o iperf server endpoint",default=None)
+    optional.add_argument('--use_existing_eid', help="EID of port we want to use",default=None)
+   
+    optional.add_argument('--mode', help='Used to force mode of stations')
+    optional.add_argument('--ap', help='Used to force a connection to a particular AP')
+    optional.add_argument('--output_format', help= 'choose either csv or xlsx',default='csv')
+    optional.add_argument('--report_file', help='where you want to store results', default=None)
+    optional.add_argument( '--a_min', help= '--a_min bps rate minimum for side_a', default=256000)
+    optional.add_argument('--b_min', help= '--b_min bps rate minimum for side_b', default= 256000)
+    optional.add_argument( '--gen_cols', help='Columns wished to be monitored from layer 3 endpoint tab',default= ['name', 'tx bytes', 'rx bytes'])
+    optional.add_argument( '--port_mgr_cols', help='Columns wished to be monitored from port manager tab',default= ['ap', 'ip', 'parent dev'])
+    optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',default= None)
+    optional.add_argument('--monitor_interval',help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',default='2s')
+    #optional.add_argument('--num_stations', help="number of stations and clients to create",default=None)
     
-    parser.add_argument("--test_rig", default="", help="test rig for kpi.csv, testbed that the tests are run on")
-    parser.add_argument("--test_tag", default="",
-                        help="test tag for kpi.csv,  test specific information to differentiate the test")
-    parser.add_argument("--dut_hw_version", default="",
-                        help="dut hw version for kpi.csv, hardware version of the device under test")
-    parser.add_argument("--dut_sw_version", default="",
-                        help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument("--dut_model_num", default="",
-                        help="dut model for kpi.csv,  model number / name of the device under test")
-    parser.add_argument("--dut_serial_num", default="",
-                        help="dut serial for kpi.csv, serial number / serial number of the device under test")
-    parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
-    parser.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="test_generic_kpi")
-
+    if not sys.argv:
+        print("This python file needs the minimum required args. See add the --help flag to check out required arguments.")
+        exit(1)
+        
     args = parser.parse_args()
-
+    print(args)
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
