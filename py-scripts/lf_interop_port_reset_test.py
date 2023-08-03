@@ -699,7 +699,7 @@ class InteropPortReset(Realm):
         return "%s.png" % self.graph_image_name
 
     def generate_report(self, reset_dict=None, test_dur=None):
-        # try:
+        try:
             print("reset dict", reset_dict)
             print("Test Duration", test_dur)
             logging.info("reset dict " + str(reset_dict))
@@ -940,16 +940,19 @@ class InteropPortReset(Realm):
             self.lf_report.build_footer()
             self.lf_report.write_html()
             self.lf_report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
-        # except Exception as e:
-        #     print(str(e))
-        #     logging.warning(str(e))
+        except Exception as e:
+            print(str(e))
+            logging.warning(str(e))
 
 
 def main():
     desc = """ port reset test 
     run: 
-    python3 lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.83 --dut TestDut --ssid Netgear5g 
-    --passwd lanforge --encryp psk2 --band 5G --reset 2 --time_int 10 --wait_time 10 --release 11 --clients 1
+    python3 ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.109  --dut TestDut --ssid Netgear5g
+     --passwd lanforge --encryp psk2 --reset 10 --time_int 5 --wait_time 5 --release 11 --clients 1
+                                            OR
+    python3 ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.109  --dut TestDut --ssid Netgear5g
+     --passwd lanforge --encryp psk2 --reset 10 --time_int 5 --wait_time 5 --release 11
     """
     parser = argparse.ArgumentParser(
         prog=__file__,
