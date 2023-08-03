@@ -3,27 +3,56 @@
 """
 NAME: throughput_qos.py
 
-PURPOSE: throughput_qos.py will create stations and endpoints which evaluates  l3 traffic for a particular type of service.
+PURPOSE: throughput_qos.py will create stations, layer3 cross connections and allows user to run the qos traffic
+with particular tos on 2.4GHz and 5GHz bands in upload, download directions.
 
-EXAMPLE:
-To Test with 2.4GHz clients, use:
-python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_2g wiphy0 --ssid_2g testqos 
---passwd_2g [BLANK] --security_2g open --upstream eth1 --test_duration 1m --download 1000000 --bands 2.4g --traffic_type lf_tcp
---create_sta
+EXAMPLE-1:
+Command Line Interface to run download scenario with tos : Voice , bands : 2.4GHz
+python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
+--ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m 
+--download 1000000 --upload 0 --traffic_type lf_udp --tos "VO"
 
-To Test with 5GHz clients, use:
-python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_5g wiphy0 --ssid_5g testqos 
---passwd_5g [BLANK] --security_5g open --upstream eth1 --test_duration 1m --download 1000000 --bands 5g --traffic_type lf_udp
---create_sta
+EXAMPLE-2:
+Command Line Interface to run download scenario with tos : Voice and Video , bands : 5GHz
+python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1 
+--ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m 
+--download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI"
 
-To Test with 2.4GHz & 5GHz clients (BOTH), use:
-python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_2g wiphy0 --ssid_2g testqos 
---passwd_2g [BLANK] --security_2g open --radio_5g wiphy0 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --upstream eth1 
---test_duration 1m --download 1000000 --bands both --traffic_type lf_tcp --create_sta
+EXAMPLE-3:
+Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz
+python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
+--ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123 
+--security_5g wpa2 --bands both --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+--traffic_type lf_udp --tos "BK,BE,VI,VO"
 
-Use './throughput_qos.py --help' to see command line usage and options
-Copyright 2022 Candela Technologies Inc
+EXAMPLE-4:
+Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz , security : open
+python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
+--ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK] 
+--security_5g open --bands both --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+--traffic_type lf_udp --tos "BK,BE,VI,VO"
+
+SCRIPT_CLASSIFICATION :  Test
+
+SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
+
+NOTES:
+1.Use './throughput_qos.py --help' to see command line usage and options
+2.Please pass tos in CAPITALS as shown :"BK,VI,BE,VO" Eg : --tos "BK,BE,VO,VI"
+3.Please enter the download or upload intended rate in bps
+4.For running the test with --bands both, the number of stations created on each band will be based on entered --num_stations 
+Eg: if --num_stations 64 is given then 32 stations will be created on 2.4GHz and 32 stations will be created on 5GHz band.
+
+STATUS: BETA RELEASE
+
+VERIFIED_ON:
+Working date - 03/08/2023
+Build version - 5.4.6
+kernel version - 6.2.16+
+
 License: Free to distribute and modify. LANforge systems must be licensed.
+Copyright 2023 Candela Technologies Inc.
+
 """
 
 import sys
@@ -945,23 +974,64 @@ def main():
             Create stations and endpoints and runs L3 traffic with various IP type of service(BK |  BE | Video | Voice)
             ''',
         description='''\
-throughput_QOS.py:
---------------------
-Generic command layout:
------------------------
-To Test with 2.4GHz clients, use: 
-python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_2g wiphy0 --ssid_2g testqos --passwd_2g [BLANK] --security_2g open --upstream eth1 --test_duration 1m --download 1000000 --bands 2.4g 
+        
+        NAME: throughput_qos.py
 
-To Test with 5GHz clients, use:
-python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_5g wiphy0 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --upstream eth1 --test_duration 1m --download 1000000 --bands 5g 
+        PURPOSE: throughput_qos.py will create stations, layer3 cross connections and allows user to run the qos traffic
+        with particular tos on 2.4GHz and 5GHz bands in upload, download directions.
 
-To Test with 2.4GHz & 5GHz clients (BOTH), use:
-python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num_stations 32 --radio_2g wiphy0 --ssid_2g testqos --passwd_2g [BLANK] --security_2g open --radio_5g wiphy0 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --radio_5g wiphy1 --ssid_5g testqos --passwd_5g [BLANK] --security_5g open --upstream eth1 --test_duration 1m --download 1000000 --bands both 
+        EXAMPLE-1:
+        Command Line Interface to run download scenario with tos : Voice , bands : 2.4GHz
+        python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
+        --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m 
+        --download 1000000 --upload 0 --traffic_type lf_udp --tos "VO"
+
+        EXAMPLE-2:
+        Command Line Interface to run download scenario with tos : Voice and Video , bands : 5GHz
+        python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1 
+        --ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m 
+        --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI"
+
+        EXAMPLE-3:
+        Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz
+        python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
+        --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123 
+        --security_5g wpa2 --bands both --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+        --traffic_type lf_udp --tos "BK,BE,VI,VO"
+
+        EXAMPLE-4:
+        Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz , security : open
+        python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
+        --ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK] 
+        --security_5g open --bands both --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+        --traffic_type lf_udp --tos "BK,BE,VI,VO"
+
+        SCRIPT_CLASSIFICATION :  Test
+
+        SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
+
+        NOTES:
+        1.Use './throughput_qos.py --help' to see command line usage and options
+        2.Please pass tos in CAPITALS as shown :"BK,VI,BE,VO" Eg : --tos "BK,BE,VO,VI"
+        3.Please enter the download or upload intended rate in bps
+        4.For running the test with --bands both, the number of stations created on each band will be based on entered --num_stations 
+        Eg: if --num_stations 64 is given then 32 stations will be created on 2.4GHz and 32 stations will be created on 5GHz band.
+
+        STATUS: BETA RELEASE
+
+        VERIFIED_ON:
+        Working date - 03/08/2023
+        Build version - 5.4.6
+        kernel version - 6.2.16+
+
+        License: Free to distribute and modify. LANforge systems must be licensed.
+        Copyright 2023 Candela Technologies Inc.
+
 ''')
     parser.add_argument('--mode', help='Used to force mode of stations', default="0")
     parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
-    parser.add_argument('--download', help='--download traffic load per connection (download rate)')
-    parser.add_argument('--upload', help='--upload traffic load per connection (upload rate)')
+    parser.add_argument('--download', help='--download traffic load per connection (download rate)',default="0")
+    parser.add_argument('--upload', help='--upload traffic load per connection (upload rate)',default="0")
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
     parser.add_argument('--create_sta', help='Used to force a connection to a particular AP', action='store_true')
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
@@ -988,6 +1058,7 @@ python3 throughput_qos.py --ap_name WAX610 --mgr localhost --mgr_port 8080 --num
     station_list = []
     data = {}
 
+    print(args.upload)
     if args.download and args.upload:
         loads = {'upload': str(args.upload).split(","), 'download': str(args.download).split(",")}
 
