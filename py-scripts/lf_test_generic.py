@@ -77,10 +77,15 @@ if sys.version_info[0] != 3:
     exit(1)
 
 class GenTest():
-    def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, debug_=True, host="localhost", port=8080,
-                 number_template="000", test_duration="5m", test_type="lfping", dest=None, cmd=None,
-                 interval=1, radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
-                 file_output=None, loop_count=None, _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
+    def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, 
+                 debug_=True, host="localhost", port=8080, number_template="000", 
+                 test_duration="5m",test_type="lfping", dest=None, cmd=None, interval=1, 
+                 radio=None, speedtest_min_up=None, speedtest_min_dl=None, 
+                 speedtest_max_ping=None, file_output=None, loop_count=None, 
+                 _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
+        self.host=host
+        self.port=port
+
         self.ssid = ssid
         self.radio = radio
         self.upstream = upstream
@@ -318,10 +323,11 @@ python3 ./test_generic.py
     optional = parser.add_argument_group('Arguements that do not need to be defined by user:')
 
     required.add_argument('--type', type=str, help='type of command to run: generic, lfping, iperf3-client, iperf3-server, iperf, lfcurl. Iperf option will create both iperf client and server.', required=True)
-    required.add_argument("--lf_user", type=str, help="user: lanforge", required=True)
-    required.add_argument("--lf_passwd", type=str, help="passwd: lanforge", required=True)
+    required.add_argument("--lf_user", type=str, help="user: lanforge", default=None)
+    required.add_argument("--lf_passwd", type=str, help="passwd: lanforge", default=None)
 
-
+    optional.add_argument('--mgr', help='specifies command to be run by generic type endp', default=None)
+    optional.add_argument('--mgr_port', help='specifies command to be run by generic type endp', default=8080)
     optional.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
     optional.add_argument('--csv_outfile', help="output file for csv data", default="test_generic_kpi")
     optional.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
@@ -343,8 +349,12 @@ python3 ./test_generic.py
     optional.add_argument('--client_port', help="the port number of the iperf client endpoint",default=None)
     optional.add_argument('--server_port', help="the port number of the iperf server endpoint",default=None)
     optional.add_argument('--server_client_port', help="the port number o iperf server endpoint",default=None)
+
     optional.add_argument('--use_existing_eid', help="EID of port we want to use",default=None)
-   
+    optional.add_argument('--radio', help="radio that stations should be created on",default=None)
+    optional.add_argument('--num_stations', help="number of stations that are to be made, defaults to 2",default=2)
+    optional.add_argument('--ssid', help="ssid for stations to connect to",default=None)
+    optional.add_argument('--passwd', help="password to ssid for stations to connect to",default=None)
     optional.add_argument('--mode', help='Used to force mode of stations')
     optional.add_argument('--ap', help='Used to force a connection to a particular AP')
     optional.add_argument('--output_format', help= 'choose either csv or xlsx',default='csv')
@@ -355,7 +365,7 @@ python3 ./test_generic.py
     optional.add_argument( '--port_mgr_cols', help='Columns wished to be monitored from port manager tab',default= ['ap', 'ip', 'parent dev'])
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',default= None)
     optional.add_argument('--monitor_interval',help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',default='2s')
-    #optional.add_argument('--num_stations', help="number of stations and clients to create",default=None)
+
     
     if not sys.argv:
         print("This python file needs the minimum required args. See add the --help flag to check out required arguments.")
@@ -392,11 +402,6 @@ python3 ./test_generic.py
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
 
-
-    num_sta = 2
-    if (args.num_stations is not None) and (int(args.num_stations) > 0):
-        num_stations_converted = int(args.num_stations)
-        num_sta = num_stations_converted
 
         # Create directory
 
@@ -445,22 +450,25 @@ python3 ./test_generic.py
             raise ValueError("Cannot process this file type. Please select a different file and re-run script.")
         else:
             compared_rept = args.compared_report
-
-    station_list = LFUtils.portNameSeries(radio=args.radio,
+    if (int(args.num_stations) > 0): 
+        station_list = LFUtils.portNameSeries(radio=args.radio,
                                           prefix_="sta",
                                           start_id_=0,
-                                          end_id_=num_sta - 1,
+                                          end_id_= int(args.num_stations) - 1,
                                           padding_number_=100)
+    else:
+        station_list = []
 
     generic_test = GenTest(host=args.mgr, port=args.mgr_port,
                            number_template="00",
                            radio=args.radio,
                            sta_list=station_list,
+                           use_existing_eid=args.use_existing_eid,
                            name_prefix="GT",
                            test_type=args.type,
                            dest=args.dest,
                            cmd=args.cmd,
-                           interval=1,
+                           interval=args.interval,
                            ssid=args.ssid,
                            upstream=args.upstream_port,
                            passwd=args.passwd,
@@ -470,6 +478,7 @@ python3 ./test_generic.py
                            speedtest_min_dl=args.speedtest_min_dl,
                            speedtest_max_ping=args.speedtest_max_ping,
                            file_output=args.file_output,
+                           csv_outfile=args.csv_outfile,
                            loop_count=args.loop_count,
                            client=args.client,
                            _debug_on=args.debug)
