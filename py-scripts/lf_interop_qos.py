@@ -187,24 +187,24 @@ class ThroughputQOS(Realm):
                             if "Win" in b['hw version']:
                                 self.eid_list.append(b['eid'])
                                 self.windows_list.append(b['hw version'])
-                                self.hostname_list.append(b['eid']+ " " +b['hostname'])
-                                self.devices_available.append(b['eid'] +" "+ b['hw version'] +" " +'Windows')
+                                #self.hostname_list.append(b['eid']+ " " +b['hostname'])
+                                self.devices_available.append(b['eid'] +" "+ b['hostname'] +" " +'Windows')
                             elif "Linux" in b['hw version']:
                                 if ('ct' or 'lf') not in b['hostname']:
                                     self.eid_list.append(b['eid'])
                                     self.linux_list.append(b['hw version'])
-                                    self.hostname_list.append(b['eid']+ " " +b['hostname'])
-                                    self.devices_available.append(b['eid'] +" "+ b['hw version'] +" " +'Linux')
+                                    #self.hostname_list.append(b['eid']+ " " +b['hostname'])
+                                    self.devices_available.append(b['eid'] +" "+ b['hostname'] +" " +'Linux')
                             elif "Apple" in b['hw version']:
                                 self.eid_list.append(b['eid'])
                                 self.mac_list.append(b['hw version'])
-                                self.hostname_list.append(b['eid']+ " " +b['hostname'])
-                                self.devices_available.append(b['eid'] +" "+ b['hw version'] +" " +'Apple')
+                                #self.hostname_list.append(b['eid']+ " " +b['hostname'])
+                                self.devices_available.append(b['eid'] +" "+ b['hostname'] +" " +'Apple')
                             else:
                                 self.eid_list.append(b['eid'])
                                 self.android_list.append(b['hw version'])  
-                                self.username_list.append(b['eid']+ " " +b['user'])
-                                self.devices_available.append(b['eid'] +" "+ b['hw version'] +" " +'android')
+                                #self.username_list.append(b['eid']+ " " +b['user'])
+                                self.devices_available.append(b['eid'] +" "+ b['user'] +" " +'android')
         #print("hostname list :",self.hostname_list)
         #print("username list :", self.username_list)
         #print("Available resources in resource tab :", self.devices_available)
@@ -228,7 +228,7 @@ class ThroughputQOS(Realm):
                 if self.eid_list[i] == port_eid_list[j]:
                     same_eid_list.append(self.eid_list[i])
         same_eid_list = [_eid + ' ' for _eid in same_eid_list]
-        print("same eid list",same_eid_list)  
+        #print("same eid list",same_eid_list)  
         #print("mac_id list",self.mac_id_list)
         #All the available ports from port manager are fetched from port manager tab ---
 
@@ -237,7 +237,7 @@ class ThroughputQOS(Realm):
                 if eid in device:
                     print(eid + ' ' + device)
                     self.user_list.append(device)
-        print("Available resources to run test : ",self.user_list)
+        print("AVAILABLE DEVICES TO RUN TEST : ",self.user_list)
 
         devices_list = input("Enter the desired resources to run the test:")
         #print("devices list",devices_list)
@@ -252,7 +252,7 @@ class ThroughputQOS(Realm):
             for ports_m in original_port_list:
                 if eid in ports_m:
                     self.input_devices_list.append(ports_m)
-        print("input devices list",self.input_devices_list)
+        print("INPUT DEVICES LIST",self.input_devices_list)
         
         # user desired real client list 1.1 wlan0 ---
         
@@ -260,14 +260,14 @@ class ThroughputQOS(Realm):
             for j in range(len(self.devices_available)):
                 if i in self.devices_available[j]:
                     self.real_client_list.append(self.devices_available[j])
-        print("real client list", self.real_client_list)
+        print("REAL CLIENT LIST", self.real_client_list)
         self.num_stations = len(self.real_client_list)
 
         for eid in resource_eid_list2:
             for i in self.mac_id1_list:
                 if eid in i:
                     self.mac_id_list.append(i.strip(eid+' '))
-        print("mac_id_list",self.mac_id_list)
+        print("MAC ID LIST",self.mac_id_list)
 
         # user desired real client list 1.1 OnePlus, 1.1 Apple for report generation ---
 
@@ -414,7 +414,7 @@ class ThroughputQOS(Realm):
                                 tx_b_download[self.tos[1]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
                                 rx_a_download[self.tos[1]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
                             else:
-                                tos_download[self.tos[i+1]].append(float(0))
+                                tos_download[self.tos[1]].append(float(0))
                                 tx_b_download[self.tos[1]].append(int(0))
                                 rx_a_download[self.tos[1]].append(int(0))
                     elif temp in range(2 * len(self.input_devices_list), 3 * len(self.input_devices_list)):
