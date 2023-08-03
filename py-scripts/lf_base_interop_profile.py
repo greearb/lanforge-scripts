@@ -99,7 +99,7 @@ class BaseInteropWifi(Realm):
             #  only one device is present
             value.append(final["name"])
         self.supported_devices_names = value
-        print(self.supported_devices_names)
+        print("List of all Available Devices Serial Numbers in Interop Tab:", self.supported_devices_names)
         logging.info(self.supported_devices_names)
 
     def get_device_details(self, query="name", device="1.1.RZ8N70TVABP"):
@@ -121,8 +121,8 @@ class BaseInteropWifi(Realm):
             # print(keys_lst)
             for i, j in zip(range(len(keys_lst)), keys_lst):
                 if j == device:
-                    print("getting " + str(query) + " details for device " + str(device))
-                    logging.info("getting " + str(query) + " details for device " + str(device))
+                    print("Getting " + str(query) + " details for " + str(device) + " device.")
+                    logging.info("Getting " + str(query) + " details for " + str(device) + " device.")
                     value = final[i][j][query]
         else:
             #  only one device is present
@@ -135,12 +135,12 @@ class BaseInteropWifi(Realm):
         for i in self.supported_devices_names:
             phantom = self.get_device_details(query="phantom", device=i)
             if not phantom:
-                print("device " + str(i) + " is active")
-                logging.info("device " + str(i) + " is active")
+                print("Device " + str(i) + " is active")
+                logging.info("Device " + str(i) + " is active")
                 active_device.append(i)
             else:
-                print("device " + str(i) + " is in phantom state")
-                logging.info("device " + str(i) + " is in phantom state")
+                print("Device " + str(i) + " is in phantom state")
+                logging.info("Device " + str(i) + " is in phantom state")
         self.supported_devices_names = active_device
         return self.supported_devices_names
 
@@ -148,20 +148,21 @@ class BaseInteropWifi(Realm):
     def check_sdk_release(self):
         devices = self.check_phantom()
         rel_dev = []
+        print("Active Device list:", devices)
         for i in devices:
             release_ver = self.get_device_details(query="release", device=i)
             for j in self.release:
                 if release_ver == j:
                     # check if the release is supported in supported sdk  version
                     if release_ver in self.supported_sdk:
-                        print("This release is supported in available sdk version", self.supported_sdk)
-                        logging.info("this release is supported in available sdk version")
-                        print("Device " + str(i) + " has " + j + " sdk release")
-                        logging.info("device " + str(i) + " has " + j + " sdk release")
+                        print("The Device " + str(
+                            i) + " has " + j + " sdk release, which is in available sdk versions list: %s" % self.supported_sdk)
+                        # logging.info("device " + str(i) + " has " + j + " sdk release")
                         rel_dev.append(i)
                 else:
-                    print("device " + str(i) + " has different sdk release")
-                    logging.info("device " + str(i) + " has different sdk release")
+                    print("The Device " + str(
+                        i) + " has different sdk release, which is not in available sdk versions list: %s" % self.supported_sdk)
+                    # logging.info("Device " + str(i) + " has different sdk release")
         self.supported_devices_names = rel_dev
         return self.supported_devices_names
 
@@ -203,8 +204,8 @@ class BaseInteropWifi(Realm):
                               response_json_list=response_list,
                               errors_warnings=errors_warnings,
                               suppress_related_commands=True)
-        print(["Response", response_list])
-        logging.info("Response " + str(response_list))
+        # print(["Response", response_list])
+        # logging.info("Response " + str(response_list))
         return response_list
 
     # enable Wi-Fi or disable Wi-Fi
@@ -246,7 +247,6 @@ class BaseInteropWifi(Realm):
                     user_name_.append(user_name)
                 print("Modified adb device user-name:", user_name)
                 logging.info(user_name)
-
             else:
                 user_name_.append(user_name)
         print("Available Devices List:", devices)
@@ -480,7 +480,7 @@ class UtilityInteropWifi(BaseInteropWifi):
         x = self.post_adb_(device=device, cmd=cmd)
         y = x[0]['LAST']['callback_message']
         z = y.split(" ")
-        print(z)
+        # print(z)
         # ssid = None
         if 'SSID:' in z:
             # print("yes")
@@ -542,7 +542,7 @@ class UtilityInteropWifi(BaseInteropWifi):
         else:
             print("SSID is not present in the 'ConnectAttempt', 'ConnectFailure', 'AssocRej', 'AssocTimeout' States")
             logging.info("ssid is not present")
-        print(return_dict)
+        # print(return_dict)
         return return_dict
 
     # forget network based on the network id
@@ -553,31 +553,39 @@ class UtilityInteropWifi(BaseInteropWifi):
             network_id = network_id
         for ntwk_id in network_id:
             print(f"Forgetting network for {device} with network id :{ntwk_id}")
-            cmd = "shell cmd -w wifi forget-network " + ntwk_id
+            cmd = f"-s {device} shell cmd -w wifi forget-network " + ntwk_id
             print("CMD", cmd)
             self.post_adb_(device=device, cmd=cmd)
 
-    # list out the existing network id, ssid, security
-    def list_networks_info(self, device_name):
+    # list out the saved/already connected network id, ssid, security
+    def list_networks_info(self, device_name="RZ8NB1JNGDT"):
+        # device_name should not have the self, resource
         cmd = f'-s {device_name} shell cmd -w wifi list-networks'
-        print("List of Networks CMD:", cmd)
+        print("CMD for fetching the saved network pofile ids:", cmd)
         resp = self.post_adb_(device=device_name, cmd=cmd)
-        print(resp)
         network_details = resp[0]['LAST']['callback_message']
+        print("List of the saved profiles for %s device:" % device_name)
         print(resp[0]['LAST']['callback_message'])
         if 'No networks' in network_details:
             network_info_dict = "No networks"
         else:
             values = resp[0]['LAST']['callback_message'].split('\n')[1:]
-            network_info = values[0].split()
-            network_id, ssid, security_type = network_info
+            print("The Saved Profiles List:", values)
+            print("Number of saved profiles:", len(values))
+            network_ids, saved_ssid, saved_security = [], [], []
+            for i in range(len(values)):
+                network_info = values[i].split()
+                network_id, ssid, security_type = network_info
+                network_ids.append(network_id)
+                saved_ssid.append(ssid)
+                saved_security.append(security_type)
             # Creating a dictionary 'network_info_dict' with the extracted values
             network_info_dict = {
-                'Network Id': network_id,
-                'SSID': ssid,
-                'Security type': security_type
+                'Network Id': network_ids,
+                'SSID': saved_ssid,
+                'Security type': saved_security
             }
-            print("network_info", network_info_dict)
+            print("Network info:", network_info_dict)
         return network_info_dict
 
 
