@@ -105,7 +105,7 @@
                     " --download_speed 0 --upload_speed 85% --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Receive' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_AX210_2G_W4_RX' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_AX200_2G_W4_RX' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
