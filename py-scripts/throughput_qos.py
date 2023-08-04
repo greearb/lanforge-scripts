@@ -9,28 +9,28 @@ with particular tos on 2.4GHz and 5GHz bands in upload, download directions.
 EXAMPLE-1:
 Command Line Interface to run download scenario with tos : Voice , bands : 2.4GHz
 python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
---ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m 
---download 1000000 --upload 0 --traffic_type lf_udp --tos "VO"
+--ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m
+--download 1000000 --upload 0 --traffic_type lf_udp --tos "VO" --create_sta
 
 EXAMPLE-2:
 Command Line Interface to run download scenario with tos : Voice and Video , bands : 5GHz
-python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1 
---ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m 
---download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI"
+python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1
+--ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m
+--download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
 
 EXAMPLE-3:
 Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz
 python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
---ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123 
+--ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123
 --security_5g wpa2 --bands both --upstream eth1 --test_duration 1m --download 0 --upload 1000000
---traffic_type lf_udp --tos "BK,BE,VI,VO"
+--traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
 
 EXAMPLE-4:
 Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz , security : open
 python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
---ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK] 
+--ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK]
 --security_5g open --bands both --upstream eth1 --test_duration 1m --download 0 --upload 1000000
---traffic_type lf_udp --tos "BK,BE,VI,VO"
+--traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
 
 SCRIPT_CLASSIFICATION :  Test
 
@@ -984,27 +984,27 @@ def main():
         Command Line Interface to run download scenario with tos : Voice , bands : 2.4GHz
         python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
         --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m 
-        --download 1000000 --upload 0 --traffic_type lf_udp --tos "VO"
+        --download 1000000 --upload 0 --traffic_type lf_udp --tos "VO" --create_sta
 
         EXAMPLE-2:
         Command Line Interface to run download scenario with tos : Voice and Video , bands : 5GHz
         python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1 
         --ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m 
-        --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI"
+        --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
 
         EXAMPLE-3:
         Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz
         python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
         --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123 
         --security_5g wpa2 --bands both --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-        --traffic_type lf_udp --tos "BK,BE,VI,VO"
+        --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
 
         EXAMPLE-4:
         Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz , security : open
         python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
         --ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK] 
         --security_5g open --bands both --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-        --traffic_type lf_udp --tos "BK,BE,VI,VO"
+        --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
 
         SCRIPT_CLASSIFICATION :  Test
 
