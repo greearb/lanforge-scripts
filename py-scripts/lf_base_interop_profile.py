@@ -121,7 +121,7 @@ class BaseInteropWifi(Realm):
             # print(keys_lst)
             for i, j in zip(range(len(keys_lst)), keys_lst):
                 if j == device:
-                    print("Getting " + str(query) + " details for " + str(device) + " device.")
+                    # print("Getting " + str(query) + " details for " + str(device) + " device.")
                     logging.info("Getting " + str(query) + " details for " + str(device) + " device.")
                     value = final[i][j][query]
         else:
@@ -194,7 +194,7 @@ class BaseInteropWifi(Realm):
         adb_key = self.session.get_session_based_key()
         self.session.logger.error("adb_key: " + adb_key)
         eid = self.name_to_eid(device)
-        print("ADB POST....")
+        # print("ADB POST....")
         self.command.post_adb(shelf=eid[0],
                               resource=eid[1],
                               adb_id=eid[2],
@@ -303,7 +303,7 @@ class BaseInteropWifi(Realm):
                 cmd += " --es password " + self.passwd
             if self.encryp:
                 cmd += " --es encryption " + self.encryp
-            print("ADB BATCH MODIFY CMD :", cmd)
+            # print("ADB BATCH MODIFY CMD :", cmd)
             self.post_adb_(device=x, cmd=cmd)
 
     # start
@@ -454,7 +454,7 @@ class UtilityInteropWifi(BaseInteropWifi):
 
     def get_device_state(self, device=None):
         cmd = 'shell dumpsys wifi | grep "mWifiInfo SSID"'
-        print("Get device Status CMD :", cmd)
+        # print("Get device Status CMD :", cmd)
         x = self.post_adb_(device=device, cmd=cmd)
         y = x[0]['LAST']['callback_message']
         z = y.split(" ")
@@ -500,7 +500,7 @@ class UtilityInteropWifi(BaseInteropWifi):
 
     def get_wifi_health_monitor(self, device=None, ssid=None):
         cmd = "shell dumpsys wifi | sed -n '/^WifiHealthMonitor - Log Begin ----$/,/^WifiHealthMonitor - Log End ----$/{/^WifiHealthMonitor - Log End ----$/!p;}'"
-        print("Wifi Health monitor CMD:", cmd)
+        # print("Wifi Health monitor CMD:", cmd)
         x = self.post_adb_(device=device, cmd=cmd)
         y = x[0]["LAST"]["callback_message"]
         z = y.split(" ")
@@ -540,7 +540,7 @@ class UtilityInteropWifi(BaseInteropWifi):
                 logging.info("association timeout " +  asso_timeout)
                 return_dict["AssocTimeout"] = asso_timeout
         else:
-            print("SSID is not present in the 'ConnectAttempt', 'ConnectFailure', 'AssocRej', 'AssocTimeout' States")
+            print(f"Given {ssid} ssid is not present in the 'ConnectAttempt', 'ConnectFailure', 'AssocRej', 'AssocTimeout' States")
             logging.info("ssid is not present")
         # print(return_dict)
         return return_dict
@@ -554,23 +554,23 @@ class UtilityInteropWifi(BaseInteropWifi):
         for ntwk_id in network_id:
             print(f"Forgetting network for {device} with network id :{ntwk_id}")
             cmd = f"-s {device} shell cmd -w wifi forget-network " + ntwk_id
-            print("CMD", cmd)
+            # print("CMD", cmd)
             self.post_adb_(device=device, cmd=cmd)
 
     # list out the saved/already connected network id, ssid, security
     def list_networks_info(self, device_name="RZ8NB1JNGDT"):
         # device_name should not have the self, resource
         cmd = f'-s {device_name} shell cmd -w wifi list-networks'
-        print("CMD for fetching the saved network pofile ids:", cmd)
+        # print("CMD for fetching the saved network pofile ids:", cmd)
         resp = self.post_adb_(device=device_name, cmd=cmd)
         network_details = resp[0]['LAST']['callback_message']
-        print("List of the saved profiles for %s device:" % device_name)
-        print(resp[0]['LAST']['callback_message'])
+        # print("List of the saved profiles for %s device:" % device_name)
+        # print(resp[0]['LAST']['callback_message'])
         if 'No networks' in network_details:
             network_info_dict = "No networks"
         else:
             values = resp[0]['LAST']['callback_message'].split('\n')[1:]
-            print("The Saved Profiles List:", values)
+            # print("The Saved Profiles List:", values)
             print("Number of saved profiles:", len(values))
             network_ids, saved_ssid, saved_security = [], [], []
             for i in range(len(values)):
@@ -585,7 +585,7 @@ class UtilityInteropWifi(BaseInteropWifi):
                 'SSID': saved_ssid,
                 'Security type': saved_security
             }
-            print("Network info:", network_info_dict)
+            # print("Network info:", network_info_dict)
         return network_info_dict
 
 
