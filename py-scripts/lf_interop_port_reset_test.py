@@ -75,7 +75,6 @@ class InteropPortReset(Realm):
                                                  _output_html="port_reset_test.html",
                                                  _output_pdf="port_reset_test.pdf")
         self.report_path = self.lf_report.get_report_path()
-        print("Report Path:", self.report_path)
 
         # self.hw_list = []
         # self.windows_list = []
@@ -103,7 +102,7 @@ class InteropPortReset(Realm):
                                             _exit_on_error=False)
 
         self.utility = base.UtilityInteropWifi(host_ip=self.host)
-        logging.basicConfig(filename='reset.log', filemode='w', level=logging.INFO, force=True)
+        logging.basicConfig(filename='overall_reset_test.log', filemode='w', level=logging.INFO, force=True)
 
     # def list_out_resource(self):
     #     response = self.json_get("/resource/all")
@@ -223,11 +222,11 @@ class InteropPortReset(Realm):
         if os.path.exists(new_folder) and os.path.isdir(new_folder):
             print(f"The folder 'Wifi_Messages' exists in '{self.report_path}' report folder.")
         else:
-            print(f"The folder 'Wifi_Messages' does not exist in '{self.report_path}' report folder.")
+            # print(f"The folder 'Wifi_Messages' does not exist in '{self.report_path}' report folder.")
             os.makedirs(new_folder)
 
         file_path = f"{self.report_path}/Wifi_Messages/{file_name}"
-        print("File path:", file_path)
+        print("log file saved in Wifi_Message directory path:", file_path)
 
         # Write the JSON-formatted string to the .json file
         with open(file_path, 'w') as file:
@@ -245,7 +244,7 @@ class InteropPortReset(Realm):
         count_ = []
         device = device.split(".")[2]
         for i, y in zip(keys_list, range(len(keys_list))):
-            print("Time stamp :-", i)
+            # print("Time stamp :-", i)
             wifi_msg_text = value[y][i]['text']
             if type(wifi_msg_text) == str:
                 wifi_msg_text_keyword_list = value[y][i]['text'].split(" ")
@@ -256,11 +255,12 @@ class InteropPortReset(Realm):
                     # print("#Device", device)
                     if device in wifi_msg_text_keyword_list:
                         if filter in wifi_msg_text_keyword_list:
-                            print(f"The filter {filter} is present in the wifi message test list.")
+                            print(f"The filter {filter} is present in the wifi message for device {device}.")
                             count_.append("YES")
                     else:
-                        print(f"$$$$$$$$$$$$$$$$$$ The device {device} not present in wifi_msg, so Skipping",
-                              wifi_msg_text_keyword_list)
+                        pass
+                        # print(f"The device {device} not present in wifi_msg, so Skipping",
+                        #       wifi_msg_text_keyword_list)
             else:
                 for item in wifi_msg_text:
                     wifi_msg_text_keyword_list = item.split(" ")
@@ -274,34 +274,35 @@ class InteropPortReset(Realm):
                                 print(f"The filter {filter} is present in the wifi message test list.")
                                 count_.append("YES")
                         else:
-                            print(f"$$$$$$$$$$$$$$$$$$ The device {device} not present in wifi_msg, so Skipping",
-                                  wifi_msg_text_keyword_list)
-        print("Filter Present Count list:", count_)
+                            pass
+                            # print(f"The device {device} not present in wifi_msg, so Skipping",
+                            #       wifi_msg_text_keyword_list)
+        # print("Filter Present Count list:", count_)
         logging.info(str(count_))
         counting = count_.count("YES")
-        print("Total Counting:", counting)
+        # print("Total Counting:", counting)
         logging.info(str(counting))
         return counting
 
     def get_time_from_wifi_msgs(self, local_dict=None, phn_name=None, timee=None, file_name="dummy.json"):
-        print("Waiting for 10 sec to fetch the logs...")
-        time.sleep(10)
+        # print("Waiting for 20 sec to fetch the logs...")
+        # time.sleep(20)
         a = self.json_get("/wifi-msgs/since=time/" + str(timee), debug_=True)
         values = a['wifi-messages']
-        print("Wifi msgs Response : ", values)
+        # print("Wifi msgs Response : ", values)
         print("##phn_name", phn_name)
         self.create_log_file(json_list=values, file_name=file_name)
-        logging.info("values" + str(values))
+        # logging.info("values" + str(values))
         keys_list = []
 
         for i in range(len(values)):
             keys_list.append(list(values[i].keys())[0])
-        print("Key list", keys_list)
+        # print("Key list", keys_list)
 
         print("Before updating the disconnect count:", local_dict[phn_name])
 
         disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                          filter="Terminating...") #Todo: need to rename the method
+                                          filter="Terminating...")  #Todo: need to rename the method
         print("Disconnect count:", disconnect_count)
         local_dict[phn_name]["Disconnected"] = disconnect_count
         scan_count = self.get_count(value=values, keys_list=keys_list, device=phn_name, filter="SCAN_STARTED")
@@ -347,7 +348,7 @@ class InteropPortReset(Realm):
                     for i, x in zip(self.adb_device_list, range(int(self.clients))):
                         if x < self.clients:
                             new_device.append(i)
-                    print("Selected Device List: ", new_device)
+                    print("Selected Devices List: ", new_device)
                     logging.info(new_device)
                     self.adb_device_list = new_device
                 else:
@@ -381,8 +382,8 @@ class InteropPortReset(Realm):
             phantom = []
             for i in self.adb_device_list:
                 phantom.append(self.interop.get_device_details(device=i, query="phantom"))
-            print("Device Phantom State List", phantom)
-            logging.info(phantom)
+            # print("Device Phantom State List", phantom)
+            # logging.info(phantom)
             state = None
             for i, j in zip(phantom, self.adb_device_list):
                 if str(i) == "False":
@@ -492,23 +493,31 @@ class InteropPortReset(Realm):
                     print("Final Outcome", local_dict)
                     logging.info(str(local_dict))
 
+                    # note last  log time
+                    timee = self.get_last_wifi_msg()  # Todo : need to rename the method
+
                     for i in self.adb_device_list:
-                        # note last  log time
-                        timee = self.get_last_wifi_msg()  #Todo : need to rename the method
                         self.interop.stop(device=i)
-                        # enable and disable Wi-Fi
+                    for i in self.adb_device_list:
                         print("**** Disable wifi")
                         logging.info("disable wifi")
                         self.interop.enable_or_disable_wifi(device=i, wifi="disable")
                         # time.sleep(5)
-
+                    for i in self.adb_device_list:
                         print("*** Enable wifi")
                         logging.info("enable wifi")
                         self.interop.enable_or_disable_wifi(device=i, wifi="enable")
+                    for i in self.adb_device_list:
+                        print("Starting APP for ", i)
                         self.interop.start(device=i)
-                        print("Waiting until given %s sec waiting time to finish..." % self.wait_time)
-                        time.sleep(int(self.wait_time))
-                        # log reading
+                    print("Waiting until given %s sec waiting time to finish..." % self.wait_time)
+                    time.sleep(int(self.wait_time))
+                    print("START Time stamp", timee)
+                    timee2 = self.get_last_wifi_msg()
+                    print("END Time stamp", timee2)
+
+                    # log reading
+                    for i in self.adb_device_list:
                         get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee,
                                                                  file_name=f"{i}_reset_{r}_log.json")  #Todo : need to rename the method
                         reset_dict[r] = get_dicct
@@ -523,28 +532,29 @@ class InteropPortReset(Realm):
                 FMT = '%b %d %H:%M:%S'
                 test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
                 print("Total Test Duration:", test_duration)
+                print("Name of the Report Folder : ", self.report_path)
                 return reset_dict, test_duration
         except Exception as e:
             print(e)
 
-    def generate_per_station_graph(self, device_names=None, dataset=None, labels=None):
-        # device_names = ['1.1.RZ8N70TVABP', '1.1.RZ8RA1053HJ']
-        print("dataset", dataset)
-        print(labels)
-        print(device_names)
-        # dataset = [[1, 1], [1, 1]]
-        labels = ["Connected", "Disconnected"]
-        graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Device Name",
-                                      _yaxis_name="Reset = " + str(self.reset), _xaxis_categories=device_names,
-                                      _label=labels, _xticks_font=8, _graph_image_name="per_station_graph",
-                                      _color=['forestgreen', 'red'], _color_edge='black', _figsize=(13, 5),
-                                      _grp_title="Per station graph ", _xaxis_step=1, _show_bar_value=True,
-                                      _text_font=12, _text_rotation=45, _enable_csv=True, _legend_loc="upper right",
-                                      _legend_fontsize=12, _legend_box=(1.12, 1.01),
-                                      _remove_border=['top', 'right', 'left'], _alignment={"left": 0.011})
-        graph_png = graph.build_bar_graph()
-        print("graph name {}".format(graph_png))
-        return graph_png
+    # def generate_per_station_graph(self, device_names=None, dataset=None, labels=None):
+    #     # device_names = ['1.1.RZ8N70TVABP', '1.1.RZ8RA1053HJ']
+    #     print("dataset", dataset)
+    #     print(labels)
+    #     print(device_names)
+    #     # dataset = [[1, 1], [1, 1]]
+    #     labels = ["Connected", "Disconnected"]
+    #     graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Device Name",
+    #                                   _yaxis_name="Reset = " + str(self.reset), _xaxis_categories=device_names,
+    #                                   _label=labels, _xticks_font=8, _graph_image_name="per_station_graph",
+    #                                   _color=['forestgreen', 'red'], _color_edge='black', _figsize=(13, 5),
+    #                                   _grp_title="Per station graph ", _xaxis_step=1, _show_bar_value=True,
+    #                                   _text_font=12, _text_rotation=45, _enable_csv=True, _legend_loc="upper right",
+    #                                   _legend_fontsize=12, _legend_box=(1.12, 1.01),
+    #                                   _remove_border=['top', 'right', 'left'], _alignment={"left": 0.011})
+    #     graph_png = graph.build_bar_graph()
+    #     print("graph name {}".format(graph_png))
+    #     return graph_png
 
     def generate_overall_graph(self, reset_dict=None, figsize=(13, 5), _alignmen=None, remove_border=None,
                                bar_width=0.7, _legend_handles=None, _legend_loc="best", _legend_box=None, _legend_ncol=1,
@@ -563,11 +573,11 @@ class InteropPortReset(Realm):
         # self.adb_device_list = ['1.1.RZ8RA1053HJ']
 
         for j in self.adb_device_list:
-            print(j)
+            # print(j)
             local = []
             local_2, local_3, local_4, local_5, local_6 = [], [], [], [], []
             for i in reset_dict:
-                print(i)
+                # print(i)
                 if j in list(reset_dict[i].keys()):
                     local.append(reset_dict[i][j]['Connected'])
                     local_2.append(reset_dict[i][j]['Disconnected'])
@@ -581,7 +591,7 @@ class InteropPortReset(Realm):
             asso_attempt.append(local_4)
             asso_rej.append(local_5)
 
-        print("list ", conected_list, disconnected_list, scan_state, asso_attempt, asso_rej)
+        # print("list ", conected_list, disconnected_list, scan_state, asso_attempt, asso_rej)
 
         # count connects and disconnects
         scan, ass_atmpt = 0, 0
@@ -603,27 +613,26 @@ class InteropPortReset(Realm):
             for m in asso_rej[i]:
                 assorej = assorej + m
 
-        print("scan", scan)
-        print(ass_atmpt)
-        print(conects)
-        print(disconnects)
-        print(assorej)
+        # print("scan", scan)
+        # print(ass_atmpt)
+        # print(conects)
+        # print(disconnects)
+        # print(assorej)
 
-        # print("hi")
-        print(data)
+        # print("Before count the dictionary data for overall data: ", data)
         data['Disconnected'] = disconnects
         data['Scans'] = scan
         data['Assoc Attempts'] = ass_atmpt
         data['Connected'] = conects
         data["Association Rejection"] = assorej
-        print(data)
+        print("Final data for overall graph: ", data)
 
         # creating the dataset
-        self.graph_image_name = "overall"
+        self.graph_image_name = "overall_graph"
         courses = list(data.keys())
         values = list(data.values())
-        print(courses)
-        print(values)
+        # print(courses)
+        # print(values)
 
         # fig = plt.figure(figsize=(12, 4))
 
@@ -700,20 +709,20 @@ class InteropPortReset(Realm):
 
     def generate_report(self, reset_dict=None, test_dur=None):
         try:
-            print("reset dict", reset_dict)
-            print("Test Duration", test_dur)
-            logging.info("reset dict " + str(reset_dict))
+            # print("reset dict", reset_dict)
+            # print("Test Duration", test_dur)
+            # logging.info("reset dict " + str(reset_dict))
 
             date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
-            self.lf_report.move_data(_file_name="reset.log")
+            self.lf_report.move_data(_file_name="overall_reset_test.log")
             test_setup_info = {
                 "DUT Name": self.dut_name,
                 "LANforge ip": self.host,
                 "SSID": self.ssid,
                 "Total Reset Count": self.reset,
                 "No of Clients": self.clients,
-                "Wait Time": str(self.wait_time) + "sec",
-                "Time intervel between resets": str(self.time_int) + "sec",
+                "Wait Time": str(self.wait_time) + " sec",
+                "Time intervel between resets": str(self.time_int) + " sec",
                 "Test Duration": test_dur,
             }
             self.lf_report.set_title("Port Reset Test")
@@ -801,7 +810,7 @@ class InteropPortReset(Realm):
                     con = con + i
                 data['Connects'] = con
 
-                print("Final data for per client graph:", data)
+                print(f"Final data for per client graph for {y}: {data}")
                 adb_user_name = self.interop.get_device_details(device=y, query="user-name")
 
                 # setting the title for per client graph and table represent title.
@@ -865,8 +874,8 @@ class InteropPortReset(Realm):
             self.lf_report.build_objective()
             d_name, device_type, model, user_name, release = [], [], [], [], []
             for y in self.adb_device_list:
-                print("ins", y)
-                print(self.adb_device_list)
+                # print(self.adb_device_list)
+                print("Device :", y)
                 d_name.append(self.interop.get_device_details(device=y, query="name"))
                 device_type.append(self.interop.get_device_details(device=y, query="device-type"))
                 model.append(self.interop.get_device_details(device=y, query="model"))
