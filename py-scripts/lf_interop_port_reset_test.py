@@ -220,17 +220,35 @@ class InteropPortReset(Realm):
         json_string = json.dumps(json_list)
         new_folder = os.path.join(self.report_path, "Wifi_Messages")
         if os.path.exists(new_folder) and os.path.isdir(new_folder):
-            print(f"The folder 'Wifi_Messages' exists in '{self.report_path}' report folder.")
+            pass
+            # print(f"The folder 'Wifi_Messages' is already existed in '{self.report_path}' report folder.")
         else:
             # print(f"The folder 'Wifi_Messages' does not exist in '{self.report_path}' report folder.")
             os.makedirs(new_folder)
 
         file_path = f"{self.report_path}/Wifi_Messages/{file_name}"
-        print("log file saved in Wifi_Message directory path:", file_path)
+        # print("log file saved in Wifi_Message directory path:", file_path)
 
         # Write the JSON-formatted string to the .json file
         with open(file_path, 'w') as file:
             file.write(json_string)
+
+    def remove_files_with_duplicate_names(self, folder_path):
+        # Create a dictionary to store filenames and their paths
+        file_names = {}
+
+        # Walk through the folder and its subdirectories
+        for root, _, files in os.walk(folder_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                file_name = os.path.basename(file_path)
+                if file_name in file_names:
+                    # Remove the duplicate file
+                    os.remove(file_path)
+                    print(f"Removed duplicate file: {file_path}")
+                else:
+                    # Add the file name to the dictionary
+                    file_names[file_name] = file_path
 
     def get_last_wifi_msg(self):
         a = self.json_get("/wifi-msgs/last/1", debug_=True)
@@ -290,8 +308,9 @@ class InteropPortReset(Realm):
         a = self.json_get("/wifi-msgs/since=time/" + str(timee), debug_=True)
         values = a['wifi-messages']
         # print("Wifi msgs Response : ", values)
-        print("##phn_name", phn_name)
+        print(f"Counting the DISCONNECTIONS, SCANNING, ASSOC ATTEMPTS, ASSOC RECJECTIONS, CONNECTS for device {phn_name}")
         self.create_log_file(json_list=values, file_name=file_name)
+        self.remove_files_with_duplicate_names(folder_path=f"{self.report_path}/Wifi_Messages/")
         # logging.info("values" + str(values))
         keys_list = []
 
@@ -299,7 +318,7 @@ class InteropPortReset(Realm):
             keys_list.append(list(values[i].keys())[0])
         # print("Key list", keys_list)
 
-        print("Before updating the disconnect count:", local_dict[phn_name])
+        # print("Before updating the disconnect count:", local_dict[phn_name])
 
         disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
                                           filter="Terminating...")  #Todo: need to rename the method
@@ -316,9 +335,19 @@ class InteropPortReset(Realm):
         local_dict[str(phn_name)]["Association Rejection"] = association_rejection
         connected_count = self.get_count(value=values, keys_list=keys_list, device=phn_name, filter="CTRL-EVENT-CONNECTED")
         print("Connected Count", connected_count)
+        if connected_count > 1 or connected_count == 0:
+            ssid = self.utility.get_device_ssid(device=phn_name)
+            if ssid == self.ssid:
+                print("ssid:", ssid)
+                print("The Device %s is connected to expected ssid" % phn_name)
+                connected_count = 1
+            else:
+                print("**** The Device is not connected to the expected ssid ****")
+                connected_count = 0
+            print("Connected Count", connected_count)
         local_dict[str(phn_name)]["Connected"] = connected_count
 
-        print("Final dictionary for phones with updated CONNECTIONS,DISCONNECTIONS,SCANNING,ASSOCIATE ATTEMPTS,REJECTION count :", local_dict)
+        # print("Final dictionary for phones with updated CONNECTIONS,DISCONNECTIONS,SCANNING,ASSOCIATE ATTEMPTS,REJECTION count :", local_dict)
         logging.info("local_dict " + str(local_dict))
 
         return local_dict
@@ -436,10 +465,10 @@ class InteropPortReset(Realm):
 
                 for i in self.adb_device_list:
                     dev_state = self.utility.get_device_state(device=i)
-                    print("State of the Device:", dev_state)
-                    logging.info("device state" + dev_state)
+                    # print("State of the Device:", dev_state)
+                    # logging.info("device state" + dev_state)
                     if dev_state == "COMPLETED,":
-                        print("Phone %s is in connected state", i)
+                        print("Phone %s is in connected state" % i)
                         logging.info("phone is in connected state")
                         ssid = self.utility.get_device_ssid(device=i)
                         if ssid == self.ssid:
@@ -467,7 +496,7 @@ class InteropPortReset(Realm):
                             print("device state", dev_state)
                             logging.info("device state" + str(dev_state))
                             health[i] = {'ConnectAttempt': '0', 'ConnectFailure': '0', 'AssocRej': '0', 'AssocTimeout': '0'}
-                print("Health Status for the Device:", health)
+                # print("Health Status for the Devices:", health)
                 logging.info("health" + str(health))
 
                 # Resting Starts from here
@@ -483,14 +512,14 @@ class InteropPortReset(Realm):
                     print("Iteration :-", r)
                     logging.info("r " + str(r))
                     local_dict = dict.fromkeys(self.adb_device_list)
-                    print("local dict", local_dict)
+                    # print("local dict", local_dict)
 
                     list_ = ["ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected"]
                     sec_dict = dict.fromkeys(list_)
-                    print("sec_dict", sec_dict)
+                    # print("sec_dict", sec_dict)
                     for i in self.adb_device_list:
                         local_dict[i] = sec_dict.copy()
-                    print("Final Outcome", local_dict)
+                    # print("Final Outcome", local_dict)
                     logging.info(str(local_dict))
 
                     # note last  log time
@@ -512,14 +541,11 @@ class InteropPortReset(Realm):
                         self.interop.start(device=i)
                     print("Waiting until given %s sec waiting time to finish..." % self.wait_time)
                     time.sleep(int(self.wait_time))
-                    print("START Time stamp", timee)
-                    timee2 = self.get_last_wifi_msg()
-                    print("END Time stamp", timee2)
 
                     # log reading
                     for i in self.adb_device_list:
                         get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee,
-                                                                 file_name=f"{i}_reset_{r}_log.json")  #Todo : need to rename the method
+                                                                 file_name=f"reset_{r}_log.json")  #Todo : need to rename the method
                         reset_dict[r] = get_dicct
                 print("Final Reset Count Dictionary for all clients: ", reset_dict)
                 logging.info("reset dict " + str(reset_dict))
@@ -625,7 +651,7 @@ class InteropPortReset(Realm):
         data['Assoc Attempts'] = ass_atmpt
         data['Connected'] = conects
         data["Association Rejection"] = assorej
-        print("Final data for overall graph: ", data)
+        # print("Final data for overall graph: ", data)
 
         # creating the dataset
         self.graph_image_name = "overall_graph"
@@ -758,8 +784,8 @@ class InteropPortReset(Realm):
                                         )
             self.lf_report.build_objective()
             graph1 = self.generate_overall_graph(reset_dict=reset_dict, figsize=(13, 5), _alignmen=None, bar_width=0.5,
-                                                _legend_handles=None, _legend_loc="best", _legend_ncol=1, _legend_fontsize=None,
-                                                _legend_box=(1.9, 1.0), text_font=12)
+                                                 _legend_handles=None, _legend_loc="best", _legend_ncol=1, _legend_fontsize=None,
+                                                 _legend_box=(1.9, 1.0), text_font=12)
             # graph1 = self.generate_per_station_graph()
             self.lf_report.set_graph_image(graph1)
             self.lf_report.move_graph_image()
@@ -810,7 +836,7 @@ class InteropPortReset(Realm):
                     con = con + i
                 data['Connects'] = con
 
-                print(f"Final data for per client graph for {y}: {data}")
+                # print(f"Final data for per client graph for {y}: {data}")
                 adb_user_name = self.interop.get_device_details(device=y, query="user-name")
 
                 # setting the title for per client graph and table represent title.
@@ -875,7 +901,7 @@ class InteropPortReset(Realm):
             d_name, device_type, model, user_name, release = [], [], [], [], []
             for y in self.adb_device_list:
                 # print(self.adb_device_list)
-                print("Device :", y)
+                # print("Device :", y)
                 d_name.append(self.interop.get_device_details(device=y, query="name"))
                 device_type.append(self.interop.get_device_details(device=y, query="device-type"))
                 model.append(self.interop.get_device_details(device=y, query="model"))
