@@ -2,18 +2,45 @@
 """
 NAME: lf_interop_port_reset_test.py
 
-PURPOSE:The LANforge interop port reset test allows user to use lots of real Wi-Fi stations and connect them the AP
- under test and then disconnect and reconnect a random number of
-stations at random intervals
+PURPOSE:
+         The LANforge interop port reset test enables users to use numerous real Wi-Fi stations and connect them to the
+         Access Point (AP) being tested. It then randomly disconnects and reconnects a variable number of stations at
+         different time intervals. This test helps evaluate how well the AP handles a dynamic and busy network environment
+         with devices joining and leaving the network at random times.
 
 EXAMPLE:
-$ ./ python3 lf_interop_port_reset_test.py  --host 192.168.1.31 --mgr_ip 192.168.1.31  --dut TestDut --ssid Airtel_9755718444_5GHz
---passwd air29723 --encryp psk2 --band 5G --reset 1 --time_int 60 --wait_time 60 --release 11 12 --clients 1
+        # To run port-reset test on all active devices with specified number of WIFI resets.
+
+            ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.156  --dut TestDut --ssid Netgear5g
+            --passwd lanforge --encryp psk2 --reset 5 --time_int 5 --wait_time 5 --release 11
+
+        # To run port-reset test on specified number of devices with specified number of WIFI resets.
+
+            ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.156  --dut TestDut --ssid Netgear5g
+            --passwd lanforge --encryp psk2 --reset 2 --time_int 5 --wait_time 5 --release 11 --clients 1
+
+SCRIPT_CLASSIFICATION:  Toggling, Report Generation
+
+SCRIPT_CATEGORIES: Interop Port-Reset Test
 
 NOTES:
-#Currently this script will forget all network and then apply batch modify on real devices connected to LANforge
-and in the end generates report
+       The primary objective of this script is to automate the process of toggling WiFi on real devices with the
+      InterOp Application, evaluating their performance with an access point. It achieves this by simulating multiple
+      WiFi resets as specified by the user.
 
+      * Currently the script will work for the android devices with version 11.
+
+STATUS: Functional
+
+VERIFIED_ON:   23-AUG-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 5.19.17+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 """
 import json
 import sys
@@ -547,7 +574,7 @@ class InteropPortReset(Realm):
                         get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee,
                                                                  file_name=f"reset_{r}_log.json")  #Todo : need to rename the method
                         reset_dict[r] = get_dicct
-                print("Final Reset Count Dictionary for all clients: ", reset_dict)
+                # print("Final Reset Count Dictionary for all clients: ", reset_dict)
                 logging.info("reset dict " + str(reset_dict))
                 test_end = datetime.now()
                 test_end_time = test_end.strftime("%b %d %H:%M:%S")
@@ -559,6 +586,7 @@ class InteropPortReset(Realm):
                 test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
                 print("Total Test Duration:", test_duration)
                 print("Name of the Report Folder : ", self.report_path)
+                print("Generating the Report...")
                 return reset_dict, test_duration
         except Exception as e:
             print(e)
@@ -981,54 +1009,89 @@ class InteropPortReset(Realm):
 
 
 def main():
-    desc = """ port reset test 
-    run: 
-    python3 ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.109  --dut TestDut --ssid Netgear5g
-     --passwd lanforge --encryp psk2 --reset 10 --time_int 5 --wait_time 5 --release 11 --clients 1
-                                            OR
-    python3 ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.109  --dut TestDut --ssid Netgear5g
-     --passwd lanforge --encryp psk2 --reset 10 --time_int 5 --wait_time 5 --release 11
-    """
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
-        description=desc)
+        description=
+        '''
+NAME: lf_interop_port_reset_test.py
 
-    parser.add_argument("--host", "--mgr", default='192.168.1.31',
-                        help='specify the GUI to connect to, assumes port 8080')
+PURPOSE:
+         The LANforge interop port reset test enables users to use numerous real Wi-Fi stations and connect them to the 
+         Access Point (AP) being tested. It then randomly disconnects and reconnects a variable number of stations at 
+         different time intervals. This test helps evaluate how well the AP handles a dynamic and busy network environment 
+         with devices joining and leaving the network at random times.
+
+EXAMPLE:
+        # To run port-reset test on all active devices with specified number of WIFI resets.
+
+            ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.156  --dut TestDut --ssid Netgear5g
+            --passwd lanforge --encryp psk2 --reset 5 --time_int 5 --wait_time 10 --release 11
+
+        # To run port-reset test on specified number of devices with specified number of WIFI resets.
+
+            ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.156  --dut TestDut --ssid Netgear5g
+            --passwd lanforge --encryp psk2 --reset 2 --time_int 5 --wait_time 10 --release 11 --clients 1
+
+SCRIPT_CLASSIFICATION:  Toggling, Report Generation
+
+SCRIPT_CATEGORIES: Interop Port-Reset Test
+
+NOTES:      
+       The primary objective of this script is to automate the process of toggling WiFi on real devices with the
+      InterOp Application, evaluating their performance with an access point. It achieves this by simulating multiple
+      WiFi resets as specified by the user.
+     
+      * Currently the script will work for the android devices with version 11.
+ 
+STATUS: Functional
+
+VERIFIED_ON:   23-AUG-2023,
+             GUI Version:  5.4.6
+             Kernel Version: 5.19.17+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
+''')
+
+    parser.add_argument("--host", default='192.168.1.31',
+                        help='Specify the GUI to connect to, assumes port 8080')
 
     parser.add_argument("--mgr_ip", default='192.168.1.31',
-                        help='specify the interop manager ip')
+                        help='Specify the interop manager ip')
 
     parser.add_argument("--dut", default="TestDut",
-                        help='specify DUT name on which the test will be running')
+                        help='Specify DUT name on which the test will be running.')
 
-    parser.add_argument("--ssid", default="Airtel_9755718444_5GHz",
-                        help='specify ssid on which the test will be running')
+    parser.add_argument("--ssid", default="Netgear2g",
+                        help='Specify ssid on which the test will be running.')
 
-    parser.add_argument("--passwd", default="air29723",
-                        help='specify encryption password  on which the test will be running')
+    parser.add_argument("--passwd", default="Password@123",
+                        help='Specify encryption password  on which the test will be running.')
 
     parser.add_argument("--encryp", default="psk2",
-                        help='specify the encryption type  on which the test will be running eg :open|psk|psk2|sae|psk2jsae')
+                        help='Specify the encryption type  on which the test will be running eg :open|psk|psk2|sae|psk2jsae')
 
     # parser.add_argument("--band", default="5G",
     #                     help='specify the type of band you want to perform testing eg 5G|2G|Dual')
 
     parser.add_argument("--clients", type=int, default=2,
-                        help='specify no of clients you want to perform test on')
+                        help='Specify no of clients you want to perform test on.')
 
     parser.add_argument("--reset", type=int, default=2,
-                        help='specify the number of time you want to reset eg 2')
+                        help='Specify the number of time you want to reset. eg: 2')
 
     parser.add_argument("--time_int", type=int, default=2,
-                        help='specify the time interval in secs after which reset should happen')
+                        help='Specify the time interval in seconds after which reset should happen.')
 
     parser.add_argument("--wait_time", type=int, default=60,
-                        help='specify the time interval or wait time in secs after enabling wifi')
+                        help='Specify the time interval or wait time in seconds after enabling WIFI.')
 
     parser.add_argument("--release", nargs='+', default=["12"],
-                        help='specify the sdk release version of real clients to be supported in test')
+                        help='Specify the SDK release version (Android Version) of real clients to be supported in test.')
 
     args = parser.parse_args()
     obj = InteropPortReset(host=args.host,
