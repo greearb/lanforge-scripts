@@ -299,18 +299,6 @@ class ThroughputQOS(Realm):
         print("cx build finished")
 
     def create_cx(self):
-        print("tos: {}".format(self.tos))
-        for ip_tos in self.tos:
-            print("## ip_tos: {}".format(ip_tos))
-            print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (
-                self.traffic_type, ip_tos, self.cx_profile.get_cx_count()))
-            self.cx_profile.create(endp_type=self.traffic_type, side_a=self.input_devices_list,
-                                   side_b=self.upstream,
-                                   sleep_time=0, tos=ip_tos)
-        print("cross connections with TOS type created.")
-
-    def monitor(self):
-        throughput, upload,download,upload_throughput,download_throughput,connections_upload, connections_download = {}, [], [],[],[],{},{}
         if (int(self.cx_profile.side_b_min_bps))!=0 and (int(self.cx_profile.side_a_min_bps))!=0:
             self.direction = "Bi-direction"
         elif int(self.cx_profile.side_b_min_bps) != 0:
@@ -319,6 +307,32 @@ class ThroughputQOS(Realm):
             if int(self.cx_profile.side_a_min_bps) != 0:
                 self.direction = "Upload"
         print("direction",self.direction)
+        traffic_type=(self.traffic_type.strip("lf_")).upper()
+        traffic_direction_list,cx_list,traffic_type_list = [],[],[]
+        for client in range(len(self.real_client_list)):
+            traffic_direction_list.append(self.direction)
+            traffic_type_list.append(traffic_type)
+        print("tos: {}".format(self.tos))
+        for ip_tos in self.tos:
+            for i in self.real_client_list:
+                for j in traffic_direction_list:
+                    for k in traffic_type_list:
+                        cxs="%s_%s_%s_%s" % (i,k,j,ip_tos)
+                        cx_names=cxs.replace(" ","")
+                        #print(cx_names)
+                        cx_list.append(cx_names)
+            print("## ip_tos: {}".format(ip_tos))
+            print('cx_list',cx_list)
+            print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (
+                self.traffic_type, ip_tos, self.cx_profile.get_cx_count()))
+            for cx in cx_list:
+                self.cx_profile.create(endp_type=self.traffic_type, side_a=self.input_devices_list,
+                                   side_b=self.upstream,
+                                   sleep_time=0, tos=ip_tos,cx_name="%s-%i" % (cx, len(self.cx_profile.created_cx)))
+        print("cross connections with TOS type created.")
+
+    def monitor(self):
+        throughput, upload,download,upload_throughput,download_throughput,connections_upload, connections_download = {}, [], [],[],[],{},{}
         if (self.test_duration is None) or (int(self.test_duration) <= 1):
             raise ValueError("Monitor test duration should be > 1 second")
         if self.cx_profile.created_cx is None:
