@@ -472,7 +472,7 @@ class L3CXProfile(LFCliBase):
                 pkts_to_send=None,
                 tos=None, timeout=300, ip_port_a=-1, ip_port_b=-1,
                 batch_quantity=1, port_increment_a=None, port_increment_b=None,
-                ip_port_increment_a=0, ip_port_increment_b=0):
+                ip_port_increment_a=0, ip_port_increment_b=0, cx_name=None):
         # Returns a 2-member array, list of cx, list of endp on success.
         # If endpoints creation fails, returns False, False
         # if Endpoints creation is OK, but CX creation fails, returns False, list of endp
@@ -564,8 +564,10 @@ class L3CXProfile(LFCliBase):
                     side_a_info = self.local_realm.name_to_eid(port_name, debug=debug_)
                     side_a_shelf = side_a_info[0]
                     side_a_resource = side_a_info[1]
-
-                cx_name = "%s%s-%i" % (self.name_prefix, side_a_info[2], len(self.created_cx))
+                if cx_name is None:
+                    cx_name = "%s%s-%i" % (self.name_prefix, side_a_info[2], len(self.created_cx))
+                else:
+                    cx_name = cx_name
 
                 endp_a_name = cx_name + "-A"
                 endp_b_name = cx_name + "-B"
