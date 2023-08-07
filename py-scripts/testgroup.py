@@ -25,48 +25,61 @@ EXAMPLE:
                     ]
 
     * Add multiple layer-3 cross-connections to a single connection group:
-        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --list_groups
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --list_groups --use_existing
 
     * Remove multiple layer-3 cx's from a connection group:
-        ./testgroup.py --mgr 192.168.30.12 --group_name group1 --remove_cx l3_test1,l3_test2 --list_groups
+        ./testgroup.py --mgr 192.168.30.12 --group_name group1 --remove_cx l3_test1,l3_test2 --list_groups --use_existing
 
     * Add a single layer-3 cross connection to a connection group:
-        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test --list_groups
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test --list_groups --use_existing
 
     * Remove a layer-3 cx from a specified connection group:
-        ./testgroup.py --mgr localhost --group_name group1 --remove_cx l3_test1 --list_groups
+        ./testgroup.py --mgr localhost --group_name group1 --remove_cx l3_test1 --list_groups --use_existing
 
     * Add single layer-3 cross-connections to a single connection group and strat group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test --start_group CX_GROUP
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test --start_group CX_GROUP --use_existing
 
     * Add multiple layer-3 cross-connections to a single connection group and strat group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test --start_group CX_GROUP
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test,l3_test1 --start_group CX_GROUP --use_existing
 
     * Start Selected Group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --start_group CX_GROUP
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --start_group CX_GROUP --use_existing
 
     * Stop Selected Group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --stop_group CX_GROUP
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --stop_group CX_GROUP --use_existing
 
     * Quiesce Selected Group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --quiesce_group CX_GROUP
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --quiesce_group CX_GROUP --use_existing
 
     * Delete Selected Group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP1 --del_group
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP1 --del_group --use_existing
 
-SCRIPT_CLASSIFICATION:  Creation, Addition, Deletion
+
+    * To create given number of stations and l3 cross-connections along with add them in a test-group.
+
+         ./testgroup.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2
+         --radio wiphy0 --group_name group0 --add_group --upstream_port eth2 --a_min 6000 --b_min 6000
+
+
+    * To create given number of stations and l3 cross-connections along with add them in a test-group & Start Selected Group:
+
+        ./testgroup.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2
+        --radio wiphy0 --group_name group0 --start_group group0
+
+
+SCRIPT_CLASSIFICATION:  Creation, Addition, Deletion, Creation stations & test-groups
 
 SCRIPT_CATEGORIES: Functional
 
 STATUS: Functional
 
-VERIFIED_ON:   23-JUN-2023,
+VERIFIED_ON:   7-AUG-2023,
              GUI Version:  5.4.6
              Kernel Version: 6.2.16+
 
@@ -316,7 +329,6 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''Control and query test groups\n''',
         description='''
-
 NAME: testgroup.py
 
 PURPOSE:
@@ -342,48 +354,61 @@ EXAMPLE:
                     ]
 
     * Add multiple layer-3 cross-connections to a single connection group:
-        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --list_groups
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --list_groups --use_existing
 
     * Remove multiple layer-3 cx's from a connection group:
-        ./testgroup.py --mgr 192.168.30.12 --group_name group1 --remove_cx l3_test1,l3_test2 --list_groups
+        ./testgroup.py --mgr 192.168.30.12 --group_name group1 --remove_cx l3_test1,l3_test2 --list_groups --use_existing
 
     * Add a single layer-3 cross connection to a connection group:
-        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test --list_groups
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test --list_groups --use_existing
 
     * Remove a layer-3 cx from a specified connection group:
-        ./testgroup.py --mgr localhost --group_name group1 --remove_cx l3_test1 --list_groups
+        ./testgroup.py --mgr localhost --group_name group1 --remove_cx l3_test1 --list_groups --use_existing
 
     * Add single layer-3 cross-connections to a single connection group and strat group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test --start_group CX_GROUP
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test --start_group CX_GROUP --use_existing
 
     * Add multiple layer-3 cross-connections to a single connection group and strat group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test --start_group CX_GROUP
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --add_group --add_cx l3_test,l3_test1 --start_group CX_GROUP --use_existing
 
     * Start Selected Group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --start_group CX_GROUP
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --start_group CX_GROUP --use_existing
 
     * Stop Selected Group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --stop_group CX_GROUP   
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --stop_group CX_GROUP --use_existing
 
     * Quiesce Selected Group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --quiesce_group CX_GROUP
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP --quiesce_group CX_GROUP --use_existing
 
     * Delete Selected Group:
 
-        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP1 --del_group
+        ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP1 --del_group --use_existing
+        
+        
+    * To create given number of stations and l3 cross-connections along with add them in a test-group.
+                
+         ./testgroup.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2 
+         --radio wiphy0 --group_name group0 --add_group --upstream_port eth2 --a_min 6000 --b_min 6000
 
-SCRIPT_CLASSIFICATION:  Creation, Addition, Deletion
+    
+    * To create given number of stations and l3 cross-connections along with add them in a test-group & Start Selected Group:
+
+        ./testgroup.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2 
+        --radio wiphy0 --group_name group0 --start_group group0
+
+
+SCRIPT_CLASSIFICATION:  Creation, Addition, Deletion, Creation stations & test-groups
 
 SCRIPT_CATEGORIES: Functional
 
 STATUS: Functional
 
-VERIFIED_ON:   23-JUN-2023,
+VERIFIED_ON:   7-AUG-2023,
              GUI Version:  5.4.6
              Kernel Version: 6.2.16+
 
