@@ -350,6 +350,15 @@ class InteropPortReset(Realm):
         disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
                                           filter="Terminating...")  #Todo: need to rename the method
         print("Disconnect count:", disconnect_count)
+        if disconnect_count > 1 or disconnect_count == 0:
+            disconnection = self.utility.get_device_state(device=phn_name)
+            if disconnection == 'COMPLETED':
+                print("The Device %s is in connected state." % phn_name)
+                disconnect_count = 0
+            else:
+                print("The Device %s is not in connected state." % phn_name)
+                disconnect_count = 1
+            print("Disconnect Count", disconnect_count)
         local_dict[phn_name]["Disconnected"] = disconnect_count
         scan_count = self.get_count(value=values, keys_list=keys_list, device=phn_name, filter="SCAN_STARTED")
         print("Scanning Count:", scan_count)
@@ -365,7 +374,6 @@ class InteropPortReset(Realm):
         if connected_count > 1 or connected_count == 0:
             ssid = self.utility.get_device_ssid(device=phn_name)
             if ssid == self.ssid:
-                print("ssid:", ssid)
                 print("The Device %s is connected to expected ssid" % phn_name)
                 connected_count = 1
             else:
@@ -394,7 +402,7 @@ class InteropPortReset(Realm):
             logging.info(self.adb_device_list)
             print("The total number of available active devices are: ", len(self.adb_device_list))
             # Checking and selecting the number of available clients are grater than or equal to given number of clients
-            if self.clients:
+            if self.clients is not None:
                 if len(self.adb_device_list) >= self.clients:
                     print("No of available clients is greater than or equal to provided clients")
                     logging.info("No of available clients is greater than or equal to provided clients")
@@ -1078,16 +1086,16 @@ INCLUDE_IN_README: False
     # parser.add_argument("--band", default="5G",
     #                     help='specify the type of band you want to perform testing eg 5G|2G|Dual')
 
-    parser.add_argument("--clients", type=int, default=2,
+    parser.add_argument("--clients", type=int, default=None,
                         help='Specify no of clients you want to perform test on.')
 
     parser.add_argument("--reset", type=int, default=2,
                         help='Specify the number of time you want to reset. eg: 2')
 
-    parser.add_argument("--time_int", type=int, default=2,
+    parser.add_argument("--time_int", type=int, default=5,
                         help='Specify the time interval in seconds after which reset should happen.')
 
-    parser.add_argument("--wait_time", type=int, default=60,
+    parser.add_argument("--wait_time", type=int, default=10,
                         help='Specify the time interval or wait time in seconds after enabling WIFI.')
 
     parser.add_argument("--release", nargs='+', default=["12"],
