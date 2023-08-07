@@ -59,14 +59,14 @@ from lanforge_client.lanforge_api import LFSession
 from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
 from lanforge_client.logg import Logg
-LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
-
+#stand-alone (not dependent on realm)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 lf_json_api = importlib.import_module("py-scripts.lf_json_api")
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+# create name_to_eid
 
 
 logger = logging.getLogger(__name__)
@@ -102,71 +102,15 @@ class GenTest():
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
         if client:
             self.client_name = client
-
-
-        #--------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-        
-        self.station_profile = self.new_station_profile()
-        self.generic_endps_profile = self.new_generic_endp_profile()
-
-        self.station_profile.lfclient_url = self.lfclient_url
-        self.station_profile.ssid = self.ssid
-        self.station_profile.ssid_pass = self.passwd,
-        self.station_profile.security = self.security
-        self.station_profile.number_template_ = self.number_template
-        self.station_profile.mode = 0
-
-        self.generic_endps_profile.name = name_prefix
-        self.generic_endps_profile.type = test_type
-        self.generic_endps_profile.dest = dest
-        self.generic_endps_profile.cmd = cmd
-        self.generic_endps_profile.interval = interval
-        self.generic_endps_profile.file_output = file_output
-        self.generic_endps_profile.loop_count = loop_count
-        if speedtest_min_up is not None:
-            self.generic_endps_profile.speedtest_min_up = float(speedtest_min_up)
-        if speedtest_min_dl is not None:
-            self.generic_endps_profile.speedtest_min_dl = float(speedtest_min_dl)
-        if speedtest_max_ping is not None:
-            self.generic_endps_profile.speedtest_max_ping = float(speedtest_max_ping)
-
         # create api_json
-        self.json_vap_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
-                                                    lf_port=self.lf_port,
-                                                    lf_user=self.lf_user,
-                                                    lf_passwd=self.lf_passwd)
-
-        self.json_rad_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
+        self.json_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
                                                     lf_port=self.lf_port,
                                                     lf_user=self.lf_user,
                                                     lf_passwd=self.lf_passwd)
 
         # create a session
         # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
+        # session to use lanforge_api
         self.session = LFSession(lfclient_url="http://%s:8080" % self.lf_mgr,
                                  debug=_debug_on,
                                  connection_timeout_sec=4.0,
@@ -192,7 +136,7 @@ class GenTest():
         else:
             return True
 
-    def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version, 
+""" def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version, 
                         dut_model_num, dut_serial_num, test_id, csv_outfile,
                         monitor_endps, generic_cols):
         report = lf_report.lf_report(_results_dir_name="test_generic_test")
@@ -249,8 +193,8 @@ class GenTest():
             csv_outfile = "{}_{}-sta_connect.csv".format(
                 csv_outfile, current_time)
             csv_outfile = report.file_add_path(csv_outfile)
-        print("csv output file : {}".format(csv_outfile))        
-
+        print("csv output file : {}".format(csv_outfile))
+ """
     def start(self):
         self.station_profile.admin_up()
         temp_stas = []
@@ -298,8 +242,9 @@ class GenTest():
             self._fail("Generic endpoints NOT completed.")
 
     def cleanup(self, sta_list):
-        self.generic_endps_profile.cleanup()
-        self.station_profile.cleanup(sta_list)
+        #self.generic_endps_profile.cleanup()
+        #self.station_profile.cleanup(sta_list)
+
         if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug):
             self._pass("Ports successfully cleaned up.")
         else:
