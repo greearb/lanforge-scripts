@@ -77,15 +77,17 @@ if sys.version_info[0] != 3:
     exit(1)
 
 class GenTest():
-    def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, 
-                 debug_=True, host="localhost", port=8080, number_template="000", 
-                 test_duration="5m",test_type="lfping", dest=None, cmd=None, interval=1, 
+    def __init__(self, lf_user, lf_passwd, ssid, security, passwd, sta_list, 
+                name_prefix, upstream, client=None, _client_port = None,_server_port=None,
+                 host="localhost", port=8080, number_template="000", csv_outfile=None,
+                 use_existing_eid=None, test_duration="5m",test_type="lfping", dest=None, cmd=None, interval=1, 
                  radio=None, speedtest_min_up=None, speedtest_min_dl=None, 
-                 speedtest_max_ping=None, file_output=None, loop_count=None, 
+                 speedtest_max_ping=None, file_output_lfcurl=None, loop_count=None, 
                  _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
         self.host=host
         self.port=port
-
+        self.lf_user=lf_user
+        self.lf_passwd=lf_passwd
         self.ssid = ssid
         self.radio = radio
         self.upstream = upstream
@@ -96,8 +98,38 @@ class GenTest():
         self.name_prefix = name_prefix
         self.test_duration = test_duration
         self.debug = _debug_on
+        self.csv_outfile = csv_outfile
+        self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
         if client:
             self.client_name = client
+
+
+        #--------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+        
         self.station_profile = self.new_station_profile()
         self.generic_endps_profile = self.new_generic_endp_profile()
 
@@ -336,7 +368,7 @@ python3 ./test_generic.py
     optional.add_argument('--speedtest_min_dl', help='sets the minimum download threshold for the speedtest type', default=None)
     optional.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type', default=None)
     optional.add_argument('--client', help='client (sta alias) to the iperf3 server', default=None)
-    optional.add_argument('--file_output', help='location to output results of lf_curl, absolute path preferred', default=None)
+    optional.add_argument('--file_output_lfcurl', help='location to output results of lf_curl, absolute path preferred', default=None)
     optional.add_argument('--loop_count', help='determines the number of loops to use in lf_curl', default=None)
     optional.add_argument("--test_rig", help="test rig for kpi.csv, testbed that the tests are run on", default="")
     optional.add_argument("--test_tag", help="test tag for kpi.csv,  test specific information to differentiate the test", default="")
@@ -344,15 +376,13 @@ python3 ./test_generic.py
     optional.add_argument("--dut_sw_version", help="dut sw version for kpi.csv, software version of the device under test", default="")
     optional.add_argument("--dut_model_num", help="dut model for kpi.csv,  model number / name of the device under test", default="")
     optional.add_argument("--dut_serial_num", help="dut serial for kpi.csv, serial number of the device under test", default="")
-    optional.add_argument("--test_priority", help="dut model for kpi.csv,  test-priority is arbitrary number", default="")
     optional.add_argument('--dest', help='destination IP for command', default=None)
     optional.add_argument('--client_port', help="the port number of the iperf client endpoint",default=None)
     optional.add_argument('--server_port', help="the port number of the iperf server endpoint",default=None)
-    optional.add_argument('--server_client_port', help="the port number o iperf server endpoint",default=None)
 
     optional.add_argument('--use_existing_eid', help="EID of port we want to use",default=None)
     optional.add_argument('--radio', help="radio that stations should be created on",default=None)
-    optional.add_argument('--num_stations', help="number of stations that are to be made, defaults to 2",default=2)
+    optional.add_argument('--num_stations', help="number of stations that are to be made, defaults to 1",default=1)
     optional.add_argument('--ssid', help="ssid for stations to connect to",default=None)
     optional.add_argument('--passwd', help="password to ssid for stations to connect to",default=None)
     optional.add_argument('--mode', help='Used to force mode of stations')
@@ -460,6 +490,7 @@ python3 ./test_generic.py
         station_list = []
 
     generic_test = GenTest(host=args.mgr, port=args.mgr_port,
+                           lf_user=args.lf_user, lf_passwd=args.lf_passwd,
                            number_template="00",
                            radio=args.radio,
                            sta_list=station_list,
@@ -477,10 +508,12 @@ python3 ./test_generic.py
                            speedtest_min_up=args.speedtest_min_up,
                            speedtest_min_dl=args.speedtest_min_dl,
                            speedtest_max_ping=args.speedtest_max_ping,
-                           file_output=args.file_output,
+                           file_output_lfcurl=args.file_output_lfcurl,
                            csv_outfile=args.csv_outfile,
                            loop_count=args.loop_count,
                            client=args.client,
+                           _client_port=args.client_port,
+                           _server_port=args.server_port,
                            _debug_on=args.debug)
 
     if not generic_test.check_tab_exists():
