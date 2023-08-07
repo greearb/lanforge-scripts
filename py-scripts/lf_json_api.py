@@ -6,6 +6,8 @@ PURPOSE:
 
  This script will is an example of using LANforge JSON API to use GET Requests to LANforge.
 
+ The methods are attempted to be grouped together by tabs in the LANforge GUI.
+
 ADDITION INFORMATION:
 
 https://www.w3schools.com/python/module_requests.asp
@@ -86,6 +88,9 @@ class lf_json_api():
         # convert write to w and append to a
         self.update_csv_mode()
 
+
+    """ Reporting, json, and general use functions: """
+
     def update_csv_mode(self):
         if self.csv_mode == 'append' or self.csv_mode == 'a':
             self.csv_mode = 'a'
@@ -93,18 +98,6 @@ class lf_json_api():
         else:
             self.csv_mode = 'w'
             self.csv_header = True
-
-    def update_port_info(self):
-        # TODO add support for non-port
-        # TODO add support for qvan or attenuator
-        # rv short for return value
-        if not self.port:
-            return
-
-        #logger.error("update-port-info, port: %s  non-port: %s"%(self.port, self.non_port));
-        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.port)
-        logger.debug("shelf : {shelf} , resource : {resource}, port_name : {port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name))
-        # the request can change
 
     def update_endpoint_info(self):
         # TODO add support for non-endpoint
@@ -130,221 +123,67 @@ class lf_json_api():
                 inner_data = i[list(i.keys())[0]]  # getting the data under each device/port/object name in list
                 lines.append(pandas.json_normalize(inner_data))
             return pandas.concat(lines, ignore_index=True)
+  
+    # TODO this is a generic one.
 
-    def get_request_port_information(self, port=None):
+    def get_request_information(self, port=None
+                                ):
         # port passed in with command
         # this is needed for backward compatibility
         if port is not None:
             self.port = port
             logger.info("self.port updated to : {port}".format(port=self.port))
             self.update_port_info()
-
-        # https://docs.python-requests.org/en/latest/
-        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
-        # station command
-        # curl -H 'Accept: application/json' 'http://localhost:8080/port/1/1/wlan3' | json_pp
-        # a radio command
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
-        # http://192.168.100.116:8080/port/1/1/wlan3 | json_pp  , where --user
-        # "USERNAME:PASSWORD"
-        request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
-            lfmgr=self.lf_mgr, lfport=self.lf_port, resource=self.resource, port_name=self.port_name)
-        request = requests.get(
-            request_command, auth=(
-                self.lf_user, self.lf_passwd))
-        logger.info(
-            "port request command: {request_command}".format(
-                request_command=request_command))
-        logger.info(
-            "port request status_code {status}".format(
-                status=request.status_code))
-        lanforge_json = request.json()
-        logger.debug("port request.json: {json}".format(json=lanforge_json))
-        lanforge_text = request.text
-        logger.debug("port request.text: {text}".format(text=lanforge_text))
-        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
-        logger.debug("port request lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
-
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
-            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
-        ))
-
-        csv_file_port = "{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request)
-        try:
-            # TODO re-evalute this if port
-            if self.request == "port":
-                key = "interface"
-            else:
-                key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
-            if key in lanforge_json:
-                df = json_normalize(lanforge_json[key])
-                # TODO defaulting to the normal behavior
-                df.to_csv(csv_file_port.format(shelf=self.shelf, resource=self.resource, port_name=self.port_name,
-                                               request=self.request),
-                          mode=self.csv_mode, header=self.csv_header, index=False)
-        except Exception as x:
-            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.info("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
-
-        logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
-        return lanforge_json, csv_file_port, lanforge_text, lanforge_json_formatted
-
-    def get_request_wifi_stats_information(self, port=None):
-        # port passed in with command
-        # this is needed for backward compatibility
-        if port is not None:
-            self.port = port
-            logger.info("self.port updated to : {port}".format(port=self.port))
-            self.update_port_info()
-
-        # https://docs.python-requests.org/en/latest/
-        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
-        # station command
-        # curl -H 'Accept: application/json' 'http://localhost:8080/wifi-stats/1/1/wlan4' | json_pp
-        # a radio command
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
-        # http://192.168.100.116:8080/wifi-stats/1/1/wlan4 | json_pp  , where --user
-        # "USERNAME:PASSWORD"
-        request_command = 'http://{lfmgr}:{lfport}/wifi-stats/1/{resource}/{port_name}'.format(
-            lfmgr=self.lf_mgr, lfport=self.lf_port, resource=self.resource, port_name=self.port_name)
-        request = requests.get(
-            request_command, auth=(
-                self.lf_user, self.lf_passwd))
-
-        logger.info(
-            "wifi-stats request command: {request_command}".format(
-                request_command=request_command))
-        logger.info(
-            "wifi-stats request status_code {status}".format(
-                status=request.status_code))
-
-        lanforge_json = request.json()
-        logger.debug("wifi-stats request.json: {json}".format(json=lanforge_json))
-        lanforge_text = request.text
-        logger.debug("wifi-stats request.text: {text}".format(text=lanforge_text))
-        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
-        logger.info("wifi-stats lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
-
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
-            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
-        ))
-
-        try:
-            key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
-            df = json_normalize(lanforge_json[key])
-            csv_file_wifi_stats = "{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request)
-            df.to_csv(csv_file_wifi_stats, mode=self.csv_mode, header=self.csv_header, index=False)
-        except Exception as x:
-            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
-
-        # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
-        return lanforge_json, csv_file_wifi_stats, lanforge_text, lanforge_json_formatted
-
-    def get_request_layer4_information(self, endpoint=None):
-        # endpoint passed in with command
-        # this is needed for backward compatibility
-        if endpoint is not None:
-            self.endpoint = endpoint
-            logger.info("self.endpoint updated to : {endpoint}".format(endpoint=self.endpoint))
-            self.update_endpoint_info()
-
-        # https://docs.python-requests.org/en/latest/
-        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
-        # station command
-        # curl -H 'Accept: application/json' 'http://localhost:8080/layer4/1178' | json_pp
-        # a radio command
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
-        # http://192.168.100.116:8080/layer4/1178 | json_pp  , where --user
-        # "USERNAME:PASSWORD"
-        request_command = 'http://{lfmgr}:{lfport}/layer4/{endpoint_name}'.format(
-            lfmgr=self.lf_mgr, lfport=self.lf_port, endpoint_name=self.endpoint)
-        request = requests.get(
-            request_command, auth=(
-                self.lf_user, self.lf_passwd))
-
-        logger.info(
-            "layer4 request command: {request_command}".format(
-                request_command=request_command))
-        logger.info(
-            "layer4 request status_code {status}".format(
-                status=request.status_code))
-
-        lanforge_json = request.json()
-        logger.debug("layer4 request.json: {json}".format(json=lanforge_json))
-        lanforge_text = request.text
-        logger.debug("layer4 request.text: {text}".format(text=lanforge_text))
-        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
-        logger.info("layer4 lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
-
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{endpoint_name} | json_pp  ".format(
-            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, endpoint_name=self.endpoint_name
-        ))
-
-        csv_file_layer4 = ""
-        try:
-            # key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
-            key = 'endpoint'
-            df = json_normalize(lanforge_json[key])
-            csv_file_layer4 = "{shelf}.{resource}.{port_name}.{endpoint_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, endpoint_name=self.endpoint_name, request=self.request)
-            # TODO: self.csv_mode & self.csv_header have not been instantiated:
-            # df.to_csv(csv_file_layer4, mode = self.csv_mode, header = self.csv_header, index=False)
-        except Exception as x:
-            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
-
-        # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
-        return lanforge_json, lanforge_text, lanforge_json_formatted, csv_file_layer4
-
-    # give information on a single station if the mac is entered.
-    def get_request_generic_information(self, endpoint=None):
-        # port passed in with command
-        # this is needed for backward compatibility
-        if endpoint is not None:
-            self.endpoint = endpoint
-            logger.info("updated to : {endpoint}".format(endpoint=self.endpoint))
-            self.update_endpoint_info()
-
-        self.update_csv_mode()
 
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
         #
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/generic/generic-sta00?fields=name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type | json_pp
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/generic/{name}?fields=fields=name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type | json_pp
+        # curl -H 'Accept: application/json' http://localhost:8080/{request}/{shelf}/{resourse}/{port_name} | json_pp
+        # request  command,  to see commands <lanforge ip>:8080
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/{request}/1/1/wlan4 | json_pp
         # where --user "USERNAME:PASSWORD"
-
-        # generic fields
-        fields = 'name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type'
-        request_command = 'http://{lfmgr}:{lfport}/{request}/{endpoint_name}?fields={fields}'.format(
-            lfmgr=self.lf_mgr, lfport=self.lf_port, request=self.request, endpoint_name=self.endpoint_name, fields=fields)
-        logger.debug("request_command: {request_command}".format(request_command=request_command))
-        request = requests.get(request_command, auth=(self.lf_user, self.lf_passwd))
-
-        logger.info("{request} request command: {request_command}".format(request=self.request, request_command=request_command))
-        logger.info("{request} request status_code {status}".format(request=self.request, status=request.status_code))
-
+        request_command = 'http://{lfmgr}:{lfport}/{request}/1/{resource}/{port_name}'.format(
+            lfmgr=self.lf_mgr, lfport=self.lf_port, request=self.request, resource=self.resource, port_name=self.port_name)
+        request = requests.get(
+            request_command, auth=(
+                self.lf_user, self.lf_passwd))
+        logger.info(
+            "{request} request command: {request_command}".format(request=self.request,
+                                                                  request_command=request_command))
+        logger.info(
+            "{request} request status_code {status}".format(request=self.request,
+                                                            status=request.status_code))
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
+        ))
         lanforge_json = request.json()
         logger.debug("{request} request.json: {json}".format(request=self.request, json=lanforge_json))
         lanforge_text = request.text
         logger.debug("{request} request.text: {text}".format(request=self.request, text=lanforge_text))
         lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
-        logger.info("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
-
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{endpoint_name}/{fields} | json_pp  ".format(
-            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, endpoint_name=self.endpoint_name, fields=fields))
+        logger.debug("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+        # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
+        # TODO check for "status": "NOT_FOUND"
 
         try:
-            key = "endpoint"
+            if self.request == "port":
+                key = "interface"
+            else:
+                key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
             df = json_normalize(lanforge_json[key])
-            df.to_csv("{request}_{endpoint}.csv".format(request=self.request, endpoint=self.endpoint), mode=self.csv_mode, header=self.csv_header, index=False)
+            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".
+                      format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request),
+                      mode=self.csv_mode, header=self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
 
-        logger.info("csv output: {request}_{endpoint}.csv".format(endpoint=self.endpoint, request=self.request))
+        logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
 
         return lanforge_json, lanforge_text, lanforge_json_formatted
+
+
+    """ Port Manager tab and station functions:  """
 
     # give information on a single station if the mac is entered.
     def get_request_single_station_information(self, port=None):
@@ -469,7 +308,19 @@ class lf_json_api():
 
         return lanforge_json, lanforge_text, lanforge_json_formatted
 
-    def get_request_adb_information(self, port=None):
+    def update_port_info(self):
+        # TODO add support for non-port
+        # TODO add support for qvan or attenuator
+        # rv short for return value
+        if not self.port:
+            return
+
+        #logger.error("update-port-info, port: %s  non-port: %s"%(self.port, self.non_port));
+        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.port)
+        logger.debug("shelf : {shelf} , resource : {resource}, port_name : {port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name))
+        # the request can change
+
+    def get_request_port_information(self, port=None):
         # port passed in with command
         # this is needed for backward compatibility
         if port is not None:
@@ -479,103 +330,106 @@ class lf_json_api():
 
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
-        #
-        # curl -H 'Accept: application/json' http://localhost:8080/adb/1/1/0123456789ABCDEF | json_pp
-        # request  command,  to see commands <lanforge ip>:8080
+        # station command
+        # curl -H 'Accept: application/json' 'http://localhost:8080/port/1/1/wlan3' | json_pp
+        # a radio command
         # curl --user "lanforge:lanforge" -H 'Accept: application/json'
-        # http://192.168.100.116:8080/{request}/1/1/wlan4 | json_pp
-        # where --user "USERNAME:PASSWORD"
-        request_command = 'http://{lfmgr}:{lfport}/adb/1/{resource}/{port_name}'.format(
-            lfmgr=self.lf_mgr, lfport=self.lf_port, request=self.request, resource=self.resource, port_name=self.port_name)
+        # http://192.168.100.116:8080/port/1/1/wlan3 | json_pp  , where --user
+        # "USERNAME:PASSWORD"
+        request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
+            lfmgr=self.lf_mgr, lfport=self.lf_port, resource=self.resource, port_name=self.port_name)
         request = requests.get(
             request_command, auth=(
                 self.lf_user, self.lf_passwd))
         logger.info(
-            "{request} request command: {request_command}".format(request=self.request,
-                                                                  request_command=request_command))
+            "port request command: {request_command}".format(
+                request_command=request_command))
         logger.info(
-            "{request} request status_code {status}".format(request=self.request,
-                                                            status=request.status_code))
+            "port request status_code {status}".format(
+                status=request.status_code))
+        lanforge_json = request.json()
+        logger.debug("port request.json: {json}".format(json=lanforge_json))
+        lanforge_text = request.text
+        logger.debug("port request.text: {text}".format(text=lanforge_text))
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+        logger.debug("port request lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+
         logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
             lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
         ))
-        lanforge_json = request.json()
-        logger.debug("{request} request.json: {json}".format(request=self.request, json=lanforge_json))
-        lanforge_text = request.text
-        logger.debug("{request} request.text: {text}".format(request=self.request, text=lanforge_text))
-        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
-        logger.debug("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
 
+        csv_file_port = "{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request)
         try:
-            df = self.reformat_json(lanforge_json)
-            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".
-                      format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request),
-                      mode=self.csv_mode, header=self.csv_header, index=False)
-        except Exception as x:
-            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
-
-        logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
-
-        return lanforge_json, lanforge_text, lanforge_json_formatted
-
-    # TODO this is a generic one.
-
-    def get_request_information(self, port=None
-                                ):
-        # port passed in with command
-        # this is needed for backward compatibility
-        if port is not None:
-            self.port = port
-            logger.info("self.port updated to : {port}".format(port=self.port))
-            self.update_port_info()
-
-        # https://docs.python-requests.org/en/latest/
-        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
-        #
-        # curl -H 'Accept: application/json' http://localhost:8080/{request}/{shelf}/{resourse}/{port_name} | json_pp
-        # request  command,  to see commands <lanforge ip>:8080
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/{request}/1/1/wlan4 | json_pp
-        # where --user "USERNAME:PASSWORD"
-        request_command = 'http://{lfmgr}:{lfport}/{request}/1/{resource}/{port_name}'.format(
-            lfmgr=self.lf_mgr, lfport=self.lf_port, request=self.request, resource=self.resource, port_name=self.port_name)
-        request = requests.get(
-            request_command, auth=(
-                self.lf_user, self.lf_passwd))
-        logger.info(
-            "{request} request command: {request_command}".format(request=self.request,
-                                                                  request_command=request_command))
-        logger.info(
-            "{request} request status_code {status}".format(request=self.request,
-                                                            status=request.status_code))
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
-            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
-        ))
-        lanforge_json = request.json()
-        logger.debug("{request} request.json: {json}".format(request=self.request, json=lanforge_json))
-        lanforge_text = request.text
-        logger.debug("{request} request.text: {text}".format(request=self.request, text=lanforge_text))
-        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
-        logger.debug("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
-        # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
-        # TODO check for "status": "NOT_FOUND"
-
-        try:
+            # TODO re-evalute this if port
             if self.request == "port":
                 key = "interface"
             else:
                 key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
+            if key in lanforge_json:
+                df = json_normalize(lanforge_json[key])
+                # TODO defaulting to the normal behavior
+                df.to_csv(csv_file_port.format(shelf=self.shelf, resource=self.resource, port_name=self.port_name,
+                                               request=self.request),
+                          mode=self.csv_mode, header=self.csv_header, index=False)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.info("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+
+        logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
+        return lanforge_json, csv_file_port, lanforge_text, lanforge_json_formatted
+
+    def get_request_wifi_stats_information(self, port=None):
+        # port passed in with command
+        # this is needed for backward compatibility
+        if port is not None:
+            self.port = port
+            logger.info("self.port updated to : {port}".format(port=self.port))
+            self.update_port_info()
+
+        # https://docs.python-requests.org/en/latest/
+        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
+        # station command
+        # curl -H 'Accept: application/json' 'http://localhost:8080/wifi-stats/1/1/wlan4' | json_pp
+        # a radio command
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
+        # http://192.168.100.116:8080/wifi-stats/1/1/wlan4 | json_pp  , where --user
+        # "USERNAME:PASSWORD"
+        request_command = 'http://{lfmgr}:{lfport}/wifi-stats/1/{resource}/{port_name}'.format(
+            lfmgr=self.lf_mgr, lfport=self.lf_port, resource=self.resource, port_name=self.port_name)
+        request = requests.get(
+            request_command, auth=(
+                self.lf_user, self.lf_passwd))
+
+        logger.info(
+            "wifi-stats request command: {request_command}".format(
+                request_command=request_command))
+        logger.info(
+            "wifi-stats request status_code {status}".format(
+                status=request.status_code))
+
+        lanforge_json = request.json()
+        logger.debug("wifi-stats request.json: {json}".format(json=lanforge_json))
+        lanforge_text = request.text
+        logger.debug("wifi-stats request.text: {text}".format(text=lanforge_text))
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+        logger.info("wifi-stats lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
+        ))
+
+        try:
+            key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
             df = json_normalize(lanforge_json[key])
-            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".
-                      format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request),
-                      mode=self.csv_mode, header=self.csv_header, index=False)
+            csv_file_wifi_stats = "{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request)
+            df.to_csv(csv_file_wifi_stats, mode=self.csv_mode, header=self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
 
-        logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
-
-        return lanforge_json, lanforge_text, lanforge_json_formatted
+        # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
+        return lanforge_json, csv_file_wifi_stats, lanforge_text, lanforge_json_formatted
+    
 
     # TODO This method is left in for an example it was taken from
 
@@ -653,6 +507,168 @@ class lf_json_api():
         lanforge_wifi_cli_cmd_json = request.json()
         logger.info("radio request.json: {json}".format(json=lanforge_wifi_cli_cmd_json))
 
+    """ Layer 4 tab functions: """
+
+    def get_request_layer4_information(self, endpoint=None):
+        # endpoint passed in with command
+        # this is needed for backward compatibility
+        if endpoint is not None:
+            self.endpoint = endpoint
+            logger.info("self.endpoint updated to : {endpoint}".format(endpoint=self.endpoint))
+            self.update_endpoint_info()
+
+        # https://docs.python-requests.org/en/latest/
+        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
+        # station command
+        # curl -H 'Accept: application/json' 'http://localhost:8080/layer4/1178' | json_pp
+        # a radio command
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
+        # http://192.168.100.116:8080/layer4/1178 | json_pp  , where --user
+        # "USERNAME:PASSWORD"
+        request_command = 'http://{lfmgr}:{lfport}/layer4/{endpoint_name}'.format(
+            lfmgr=self.lf_mgr, lfport=self.lf_port, endpoint_name=self.endpoint)
+        request = requests.get(
+            request_command, auth=(
+                self.lf_user, self.lf_passwd))
+
+        logger.info(
+            "layer4 request command: {request_command}".format(
+                request_command=request_command))
+        logger.info(
+            "layer4 request status_code {status}".format(
+                status=request.status_code))
+
+        lanforge_json = request.json()
+        logger.debug("layer4 request.json: {json}".format(json=lanforge_json))
+        lanforge_text = request.text
+        logger.debug("layer4 request.text: {text}".format(text=lanforge_text))
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+        logger.info("layer4 lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{endpoint_name} | json_pp  ".format(
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, endpoint_name=self.endpoint_name
+        ))
+
+        csv_file_layer4 = ""
+        try:
+            # key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
+            key = 'endpoint'
+            df = json_normalize(lanforge_json[key])
+            csv_file_layer4 = "{shelf}.{resource}.{port_name}.{endpoint_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, endpoint_name=self.endpoint_name, request=self.request)
+            # TODO: self.csv_mode & self.csv_header have not been instantiated:
+            # df.to_csv(csv_file_layer4, mode = self.csv_mode, header = self.csv_header, index=False)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+
+        # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
+        return lanforge_json, lanforge_text, lanforge_json_formatted, csv_file_layer4
+
+
+    """Generic tab functions:"""
+
+    # give information on a single station if the mac is entered.
+    def get_request_generic_information(self, endpoint=None):
+        # port passed in with command
+        # this is needed for backward compatibility
+        if endpoint is not None:
+            self.endpoint = endpoint
+            logger.info("updated to : {endpoint}".format(endpoint=self.endpoint))
+            self.update_endpoint_info()
+
+        self.update_csv_mode()
+
+        # https://docs.python-requests.org/en/latest/
+        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
+        #
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/generic/generic-sta00?fields=name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type | json_pp
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/generic/{name}?fields=fields=name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type | json_pp
+        # where --user "USERNAME:PASSWORD"
+
+        # generic fields
+        #fields = 'name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type'
+        fields='all'
+        request_command = 'http://{lfmgr}:{lfport}/{request}/{endpoint_name}?fields={fields}'.format(
+            lfmgr=self.lf_mgr, lfport=self.lf_port, request=self.request, endpoint_name=self.endpoint_name, fields=fields)
+        logger.debug("request_command: {request_command}".format(request_command=request_command))
+        request = requests.get(request_command, auth=(self.lf_user, self.lf_passwd))
+
+        logger.info("{request} request command: {request_command}".format(request=self.request, request_command=request_command))
+        logger.info("{request} request status_code {status}".format(request=self.request, status=request.status_code))
+
+        lanforge_json = request.json()
+        logger.debug("{request} request.json: {json}".format(request=self.request, json=lanforge_json))
+        lanforge_text = request.text
+        logger.debug("{request} request.text: {text}".format(request=self.request, text=lanforge_text))
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+        logger.info("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{endpoint_name}/{fields} | json_pp  ".format(
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, endpoint_name=self.endpoint_name, fields=fields))
+
+        try:
+            key = "endpoint"
+            df = json_normalize(lanforge_json[key])
+            df.to_csv("{request}_{endpoint}.csv".format(request=self.request, endpoint=self.endpoint), mode=self.csv_mode, header=self.csv_header, index=False)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+
+        logger.info("csv output: {request}_{endpoint}.csv".format(endpoint=self.endpoint, request=self.request))
+
+        return lanforge_json, lanforge_text, lanforge_json_formatted
+
+     """Adb tab functions:"""
+
+    def get_request_adb_information(self, port=None):
+        # port passed in with command
+        # this is needed for backward compatibility
+        if port is not None:
+            self.port = port
+            logger.info("self.port updated to : {port}".format(port=self.port))
+            self.update_port_info()
+
+        # https://docs.python-requests.org/en/latest/
+        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
+        #
+        # curl -H 'Accept: application/json' http://localhost:8080/adb/1/1/0123456789ABCDEF | json_pp
+        # request  command,  to see commands <lanforge ip>:8080
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
+        # http://192.168.100.116:8080/{request}/1/1/wlan4 | json_pp
+        # where --user "USERNAME:PASSWORD"
+        request_command = 'http://{lfmgr}:{lfport}/adb/1/{resource}/{port_name}'.format(
+            lfmgr=self.lf_mgr, lfport=self.lf_port, request=self.request, resource=self.resource, port_name=self.port_name)
+        request = requests.get(
+            request_command, auth=(
+                self.lf_user, self.lf_passwd))
+        logger.info(
+            "{request} request command: {request_command}".format(request=self.request,
+                                                                  request_command=request_command))
+        logger.info(
+            "{request} request status_code {status}".format(request=self.request,
+                                                            status=request.status_code))
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
+        ))
+        lanforge_json = request.json()
+        logger.debug("{request} request.json: {json}".format(request=self.request, json=lanforge_json))
+        lanforge_text = request.text
+        logger.debug("{request} request.text: {text}".format(request=self.request, text=lanforge_text))
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+        logger.debug("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+
+        try:
+            df = self.reformat_json(lanforge_json)
+            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".
+                      format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request),
+                      mode=self.csv_mode, header=self.csv_header, index=False)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+
+        logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
+
+        return lanforge_json, lanforge_text, lanforge_json_formatted
 
 # unit test
 def main():
