@@ -92,6 +92,8 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
+# lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+# LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
@@ -100,13 +102,33 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class TestGroup(Realm):
     def __init__(self, host, port,
+                 ssid=None,
+                 security=None,
+                 password=None,
+                 sta_list=None,
+                 name_prefix=None,
+                 upstream=None,
+                 radio=None,
+                 mode=0,
+                 ap=None,
+                 _up=True,
+                 number_template="00000",
+                 use_ht160=False,
+                 side_a_min_rate=56,
+                 side_a_max_rate=0,
+                 side_b_min_rate=56,
+                 side_b_max_rate=0,
                  group_name=None,
                  add_cx_list=None,
                  rm_cx_list=None,
                  tg_action=None,
                  cx_action=None,
                  list_groups=None,
-                 show_group=None):
+                 show_group=None,
+                 _debug_on=False,
+                 _exit_on_error=False,
+                 _exit_on_fail=False
+                 ):
         super().__init__(lfclient_host=host, lfclient_port=port)
 
         if add_cx_list is None:
@@ -122,10 +144,6 @@ class TestGroup(Realm):
         else:
             self.tg_profile.group_name = group_name
 
-        self.tg_action = tg_action
-        self.cx_action = cx_action
-        self.list_groups = list_groups
-        self.show_group = show_group
         if add_cx_list:
             if len(add_cx_list) == 1 and ',' in add_cx_list[0]:
                 self.add_cx_list = add_cx_list[0].split(',')
@@ -138,6 +156,97 @@ class TestGroup(Realm):
                 self.rm_cx_list = rm_cx_list[0].split(',')
         else:
             self.rm_cx_list = rm_cx_list
+
+        self.upstream = upstream
+        self.host = host
+        self.port = port
+        self.ssid = ssid
+        self.sta_list = sta_list
+        self.security = security
+        self.password = password
+        self.radio = radio
+        self.mode = mode
+        self.ap = ap
+        self.up = _up
+        self.number_template = number_template
+        self.debug = _debug_on
+        self.name_prefix = name_prefix
+        self.station_profile = self.new_station_profile()
+        self.cx_profile = self.new_l3_cx_profile()
+        self.station_profile.lfclient_url = self.lfclient_url
+        self.station_profile.ssid = self.ssid
+        self.station_profile.ssid_pass = self.password
+        self.station_profile.security = self.security
+        self.station_profile.number_template_ = self.number_template
+        self.station_profile.debug = self.debug
+        self.station_profile.use_ht160 = use_ht160
+        if self.station_profile.use_ht160:
+            self.station_profile.mode = 9
+        self.station_profile.mode = mode
+        if self.ap is not None:
+            self.station_profile.set_command_param("add_sta", "ap", self.ap)
+        # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user defined variable from terminal.
+
+        self.cx_profile.host = self.host
+        self.cx_profile.port = self.port
+        self.cx_profile.name_prefix = self.name_prefix
+        self.cx_profile.side_a_min_bps = side_a_min_rate
+        self.cx_profile.side_a_max_bps = side_a_max_rate
+        self.cx_profile.side_b_min_bps = side_b_min_rate
+        self.cx_profile.side_b_max_bps = side_b_max_rate
+
+        self.tg_action = tg_action
+        self.cx_action = cx_action
+        self.list_groups = list_groups
+        self.show_group = show_group
+
+    def pre_cleanup(self):
+        self.cx_profile.cleanup_prefix()
+        for sta in self.sta_list:
+            self.rm_port(sta, check_exists=True)
+
+    def build(self):
+
+        self.station_profile.use_security(self.security,
+                                          self.ssid,
+                                          self.password)
+        self.station_profile.set_number_template(self.number_template)
+        print("Creating stations")
+        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+        # self.station_profile.create(radio=self.radio,
+        #                             sta_names_=self.sta_list,
+        #                             debug=self.debug)
+        if self.station_profile.create(
+            radio=self.radio,
+            sta_names_=self.sta_list,
+            debug=self.debug):
+            self._pass("Stations created.")
+        else:
+            self._fail("Stations not properly created.")
+
+        if self.up:
+            self.station_profile.admin_up()
+            if not LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
+                                                     port_list=self.station_profile.station_names,
+                                                     debug_=self.debug,
+                                                     timeout=10):
+                self._fail("Unable to bring all stations up")
+                return
+            if self.wait_for_ip(station_list=self.station_profile.station_names, timeout_sec=-1):
+                self._pass("All stations got IPs", print_=True)
+                self._pass("Station build finished", print_=True)
+            else:
+                self._fail("Stations failed to get IPs", print_=True)
+                self._fail("FAIL: Station build failed", print_=True)
+                logger.info("Please re-check the configuration applied")
+        self.cx_profile.create(endp_type="lf_udp",
+                               side_a=self.station_profile.station_names,
+                               side_b=self.upstream,
+                               sleep_time=0)
+        self.add_cx_list = self.cx_profile.get_cx_names()
+        self._pass("PASS: Cross Connection build finished")
 
     def do_cx_action(self):
         if self.cx_action == 'start':
@@ -182,17 +291,19 @@ class TestGroup(Realm):
 
     def update_cxs(self):
         if len(self.add_cx_list) > 0:
-            logger.info("Adding cxs %s to %s" %
-                        (', '.join(self.add_cx_list), self.tg_profile.group_name))
-            cx_list = self.add_cx_list[0]
-            split_cx_list = cx_list.split(',')
+            logger.info("Adding cxs %s to %s" % (', '.join(self.add_cx_list), self.tg_profile.group_name))
+            print("CX LIST", self.add_cx_list)
+            if type(self.add_cx_list) is list:
+                cx_list = self.add_cx_list[0]
+                split_cx_list = cx_list.split(',')
+            else:
+                split_cx_list = self.add_cx_list
             # for cx in self.add_cx_list:
             for cx in split_cx_list:
                 self.tg_profile.add_cx(cx)
                 self.tg_profile.cx_list.append(cx)
         if len(self.rm_cx_list) > 0:
-            logger.info("Removing cxs %s from %s" %
-                        (', '.join(self.rm_cx_list), self.tg_profile.group_name))
+            logger.info("Removing cxs %s from %s" % (', '.join(self.rm_cx_list), self.tg_profile.group_name))
             for cx in self.rm_cx_list:
                 self.tg_profile.rm_cx(cx)
                 if cx in self.tg_profile.cx_list:
@@ -200,7 +311,7 @@ class TestGroup(Realm):
 
 
 def main():
-    parser = Realm.create_bare_argparse(
+    parser = Realm.create_basic_argparse(
         prog='testgroup.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''Control and query test groups\n''',
@@ -283,9 +394,23 @@ LICENSE:
 INCLUDE_IN_README: False
     ''')
 
+    parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
+    parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
+
+    parser.add_argument('--mode', help='Used to force mode of stations')
+    parser.add_argument('--ap', help='Used to force a connection to a particular AP')
+
     parser.add_argument(
         '--group_name', help='specify the name of the test group to use', default=None)
-    parser.add_argument('--list_groups', help='list all existing test groups',
+    parser.add_argument(
+        '--list_groups', help='list all existing test groups', action='store_true', default=False)
+    parser.add_argument(
+        '--show_group', help='show connections in current test group', action='store_true', default=False)
+    parser.add_argument(
+        '--add_cx', help='add cx to chosen test group', nargs='*', default=[])
+    parser.add_argument(
+        '--remove_cx', help='remove cx from chosen test group', nargs='*', default=[])
+    parser.add_argument('--use_existing', help='specify this to use already existed cx for connection group.',
                         action='store_true', default=False)
 
     tg_group = parser.add_mutually_exclusive_group()
@@ -293,8 +418,6 @@ INCLUDE_IN_README: False
         '--add_group', help='add new test group', action='store_true', default=False)
     tg_group.add_argument(
         '--del_group', help='delete test group', action='store_true', default=False)
-    parser.add_argument('--show_group', help='show connections in current test group',
-                        action='store_true', default=False)
 
     cx_group = parser.add_mutually_exclusive_group()
     cx_group.add_argument(
@@ -304,17 +427,19 @@ INCLUDE_IN_README: False
     cx_group.add_argument(
         '--quiesce_group', help='quiesce all cxs in chosen test groups', default=None)
 
-    parser.add_argument(
-        '--add_cx', help='add cx to chosen test group', nargs='*', default=[])
-    parser.add_argument(
-        '--remove_cx', help='remove cx from chosen test group', nargs='*', default=[])
-
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
+
+    num_sta = 2
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_sta = int(args.num_stations)
+
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
+                                          radio=args.radio)
 
     tg_action = None
     cx_action = None
@@ -331,20 +456,52 @@ INCLUDE_IN_README: False
     elif args.quiesce_group:
         cx_action = 'quiesce'
 
-    tg = TestGroup(host=args.mgr, port=args.mgr_port,
-                   group_name=args.group_name,
-                   add_cx_list=args.add_cx,
-                   rm_cx_list=args.remove_cx,
-                   cx_action=cx_action,
-                   tg_action=tg_action,
-                   list_groups=args.list_groups,
-                   show_group=args.show_group)
-
-    tg.do_tg_action()
-    tg.update_cxs()
-    tg.do_cx_action()
-    time.sleep(5)
-    tg.show_info()
+    print("use_existing value:", args.use_existing)
+    if not args.use_existing:
+        ip_var_test = TestGroup(host=args.mgr,
+                                port=args.mgr_port,
+                                number_template="0000",
+                                sta_list=station_list,
+                                name_prefix="VT-",
+                                upstream=args.upstream_port,
+                                ssid=args.ssid,
+                                password=args.passwd,
+                                radio=args.radio,
+                                security=args.security,
+                                use_ht160=False,
+                                side_a_min_rate=args.a_min,
+                                side_b_min_rate=args.b_min,
+                                mode=args.mode,
+                                ap=args.ap,
+                                group_name=args.group_name,
+                                tg_action=tg_action,
+                                cx_action=cx_action,
+                                _debug_on=args.debug)
+        ip_var_test.pre_cleanup()
+        ip_var_test.build()
+        if not ip_var_test.passes():
+            print(ip_var_test.get_fail_message())
+            ip_var_test.exit_fail()
+        ip_var_test.do_tg_action()
+        ip_var_test.update_cxs()
+        ip_var_test.do_cx_action()
+        time.sleep(5)
+        ip_var_test.show_info()
+        print('Creates %s stations and connections' % num_sta)
+    else:
+        tg = TestGroup(host=args.mgr, port=args.mgr_port,
+                       group_name=args.group_name,
+                       add_cx_list=args.add_cx,
+                       rm_cx_list=args.remove_cx,
+                       cx_action=cx_action,
+                       tg_action=tg_action,
+                       list_groups=args.list_groups,
+                       show_group=args.show_group)
+        tg.do_tg_action()
+        tg.update_cxs()
+        tg.do_cx_action()
+        time.sleep(5)
+        tg.show_info()
 
 
 if __name__ == "__main__":
