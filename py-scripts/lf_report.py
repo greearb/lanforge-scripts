@@ -93,6 +93,7 @@ class lf_report:
         if _output_html.lower().endswith(".pdf"):
             raise ValueError("HTML output file cannot end with suffix '.pdf'")
         self.path_date_time = _path_date_time
+        self.report_location = ""  # used by lf_check.py to know where to write the meta data "Report Location:::/home/lanforge/html-reports/wifi-capacity-2021-08-17-04-02-56"
         self.write_output_html = ""
         self.write_output_index_html = ""
         self.output_pdf = _output_pdf
@@ -326,6 +327,11 @@ class lf_report:
         output_file = str(self.path_date_time) + '/' + str(file)
         logger.info("output file {}".format(output_file))
         return output_file
+    # Report Location:::/<locaton> as a key in lf_check.py
+    def write_report_location(self):
+        self.report_location = self.path_date_time
+        logger.info("Report Location:::{report_location}".format(report_location=self.report_location))
+
 
     def write_html(self):
         if not self.output_html:
