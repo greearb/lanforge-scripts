@@ -547,19 +547,20 @@ class UtilityInteropWifi(BaseInteropWifi):
 
     # forget network based on the network id
     def forget_netwrk(self, device=None, network_id=None):
+        separating_device_name = device.split(".")
         if network_id is None:
             network_id = ['0']
         else:
             network_id = network_id
         for ntwk_id in network_id:
-            print(f"Forgetting network for {device} with network id :{ntwk_id}")
-            cmd = f"-s {device} shell cmd -w wifi forget-network " + ntwk_id
+            print(f"Forgetting network for {device} with network id : {ntwk_id}")
+            cmd = f"-s {separating_device_name[2]} shell cmd -w wifi forget-network " + ntwk_id
             # print("CMD", cmd)
             self.post_adb_(device=device, cmd=cmd)
 
     # list out the saved/already connected network id, ssid, security
     def list_networks_info(self, device_name="1.1.RZ8NB1JNGDT"):
-        # device_name should not have the self, resource
+        # device_name should have the self, resource
         separating_device_name = device_name.split(".")
 
         cmd = f'-s {separating_device_name[2]} shell cmd -w wifi list-networks'
