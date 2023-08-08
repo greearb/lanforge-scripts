@@ -469,7 +469,7 @@ class InteropPortReset(Realm):
                 # time.sleep(5)
 
                 print("List out the network id's")
-                for i in self.phn_name:
+                for i in self.adb_device_list:
                     connected_network_info = self.utility.list_networks_info(device_name=i)
                     if connected_network_info == 'No networks':
                         print("No exiting networks found for %s device" % i)
@@ -777,6 +777,8 @@ class InteropPortReset(Realm):
 
             date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
             self.lf_report.move_data(_file_name="overall_reset_test.log")
+            if self.clients is None:
+                self.clients = len(self.adb_device_list)
             test_setup_info = {
                 "DUT Name": self.dut_name,
                 "LANforge ip": self.host,
@@ -792,13 +794,13 @@ class InteropPortReset(Realm):
             self.lf_report.build_banner_cover()
 
             self.lf_report.set_obj_html("Objective",
-                                    "The Port Reset Test simulates a scenario where multiple WiFi stations are created "
-                                    "and connected to the Access Point (AP) under test. These stations are then randomly "
-                                    "disconnected and reconnected at varying intervals, mimicking a busy enterprise or "
-                                    "large public venue environment with frequent station arrivals and departures. "
-                                    "The primary objective of this test is to thoroughly assess the core Access Point "
-                                    "functions' control and management aspects under stress.<br><br>"
-                                    )
+                                        "The Port Reset Test simulates a scenario where multiple WiFi stations are created "
+                                        "and connected to the Access Point (AP) under test. These stations are then randomly "
+                                        "disconnected and reconnected at varying intervals, mimicking a busy enterprise or "
+                                        "large public venue environment with frequent station arrivals and departures. "
+                                        "The primary objective of this test is to thoroughly assess the core Access Point "
+                                        "functions' control and management aspects under stress.<br><br>"
+                                        )
             self.lf_report.build_objective()
 
             self.lf_report.set_table_title("Test Setup Information")
