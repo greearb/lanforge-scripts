@@ -3824,6 +3824,7 @@ Note: for enable flags can us && as separator in vscode
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
+    report.write_report_location()
     report.write_html_with_timestamp()
     report.write_index_html()
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
