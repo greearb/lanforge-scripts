@@ -3901,7 +3901,7 @@ INCLUDE_IN_README: False
             report.build_table_title()
             report.set_table_dataframe(last_row)
             report.build_table()
-
+    report.write_report_location()
     report.write_html_with_timestamp()
     report.write_index_html()
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
