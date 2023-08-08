@@ -558,9 +558,11 @@ class UtilityInteropWifi(BaseInteropWifi):
             self.post_adb_(device=device, cmd=cmd)
 
     # list out the saved/already connected network id, ssid, security
-    def list_networks_info(self, device_name="RZ8NB1JNGDT"):
+    def list_networks_info(self, device_name="1.1.RZ8NB1JNGDT"):
         # device_name should not have the self, resource
-        cmd = f'-s {device_name} shell cmd -w wifi list-networks'
+        separating_device_name = device_name.split(".")
+
+        cmd = f'-s {separating_device_name[2]} shell cmd -w wifi list-networks'
         # print("CMD for fetching the saved network pofile ids:", cmd)
         resp = self.post_adb_(device=device_name, cmd=cmd)
         network_details = resp[0]['LAST']['callback_message']
