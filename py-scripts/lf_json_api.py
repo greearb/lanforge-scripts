@@ -618,7 +618,7 @@ class lf_json_api():
 
         return lanforge_json, lanforge_text, lanforge_json_formatted
 
-     """Adb tab functions:"""
+    """Adb tab functions:"""
 
     def get_request_adb_information(self, port=None):
         # port passed in with command
