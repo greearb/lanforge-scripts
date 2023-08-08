@@ -258,6 +258,9 @@ class lf_check():
         self.lf_mgr_pass = "lanforge"
         self.upstream_port = ""
         self.upstream_alias = ""
+        self.attenuator_1 = ""
+        self.attenuator_2 = ""
+        self.attenuator_3 = ""
 
         # results
         self.test_server = ""
@@ -990,6 +993,18 @@ junit.xml path: allure serve {junit_path}
         else:
             self.logger.info("TEST_TIMEOUT not in test_rig_parameters json")
             exit(1)
+        if "ATTENUATOR_1" in self.json_rig["test_rig_parameters"]:
+            self.attenuator_1 = self.json_rig["test_rig_parameters"]["ATTENUATOR_1"]
+        else:
+            self.logger.info("ATTENUATOR_1 not in test_rig_parameters json")
+        if "ATTENUATOR_2" in self.json_rig["test_rig_parameters"]:
+            self.attenuator_2 = self.json_rig["test_rig_parameters"]["ATTENUATOR_2"]
+        else:
+            self.logger.info("ATTENUATOR_2 not in test_rig_parameters json")
+        if "ATTENUATOR_3" in self.json_rig["test_rig_parameters"]:
+            self.attenuator_3 = self.json_rig["test_rig_parameters"]["ATTENUATOR_3"]
+        else:
+            self.logger.info("ATTENUATOR_3 not in test_rig_parameters json")
         # EMAIL is optional
         if "EMAIL_LIST_PRODUCTION" in self.json_rig["test_rig_parameters"]:
             self.email_list_production = self.json_rig["test_rig_parameters"]["EMAIL_LIST_PRODUCTION"]
@@ -1177,6 +1192,15 @@ junit.xml path: allure serve {junit_path}
         if 'LF_MGR_PORT' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'LF_MGR_PORT', self.lf_mgr_port)
+        if 'ATTENUATOR_1' in self.test_dict[self.test]['args']:
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'ATTENUATOR_1', self.attenuator_1)
+        if 'ATTENUATOR_2' in self.test_dict[self.test]['args']:
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'ATTENUATOR_2', self.attenuator_2)
+        if 'ATTENUATOR_3' in self.test_dict[self.test]['args']:
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'ATTENUATOR_3', self.attenuator_2)
         # DUT Configuration
         if 'USE_DUT_NAME' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
