@@ -50,7 +50,7 @@
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_2G_5G_6G_W2_W3_W4_TX' ",
-                    " --raw_line 'attenuator: 1.1.3360' ",
+                    " --raw_line 'attenuator: ATTENUATOR_1' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
