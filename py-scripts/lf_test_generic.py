@@ -60,7 +60,7 @@ from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
 from lanforge_client.logg import Logg
 
-LFUtils = importlib.import_module("py-json.LANforge.LFUtils") #to be deleted
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils") #to be deleted after using name_to_eid
 
 #stand-alone (not dependent on realm)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -68,7 +68,6 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
-# create name_to_eid
 
 
 logger = logging.getLogger(__name__)
@@ -221,14 +220,15 @@ class GenTest():
 
         self.generic_endps_profile.start_cx()
 
-def stop(self):
+    def stop(self):
         logger.info("Stopping Test...")
         self.generic_endps_profile.stop_cx()
         self.station_profile.admin_down()
 
-def build(self):
+    def build(self):
         self.station_profile.use_security(self.security, self.ssid, self.passwd)
-        self.station_profile.set_number_template(self.number_template)
+        #self.station_profile.set_number_template(self.number_template)
+
         logger.info("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
@@ -243,7 +243,6 @@ def build(self):
             self._pass("Generic endpoints creation completed.")
         else:
             self._fail("Generic endpoints NOT completed.")
-
     def port_exists(self, port_eid, debug=None):
         if port_eid:
             current_stations = self.query.get_port(list(port_eid), debug=debug)
