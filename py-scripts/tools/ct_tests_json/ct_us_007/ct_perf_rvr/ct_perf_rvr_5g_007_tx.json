@@ -46,7 +46,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_1_W0_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -114,7 +114,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_2_W0_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -182,7 +182,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_1_W1_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -250,7 +250,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7915_5G_2_W1_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -318,7 +318,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W2_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -386,7 +386,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W2_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -454,7 +454,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W3_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -522,7 +522,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W3_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -590,7 +590,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W4_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -658,7 +658,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W4_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -726,7 +726,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_1_W5_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -794,7 +794,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_5G_2_W5_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -862,7 +862,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7921_5G_1_W6_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -930,7 +930,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7921_5G_2_W6_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -998,7 +998,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7922_5G_1_W7_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -1066,7 +1066,7 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7922_5G_2_W7_TX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 0,100,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
+                    " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
