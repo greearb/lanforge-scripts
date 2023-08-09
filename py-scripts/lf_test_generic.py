@@ -195,7 +195,7 @@ class GenTest():
             csv_outfile = report.file_add_path(csv_outfile)
         print("csv output file : {}".format(csv_outfile))
  """
-    def start(self):
+def start(self):
         self.station_profile.admin_up()
         temp_stas = []
         for station in self.sta_list.copy():
@@ -218,12 +218,12 @@ class GenTest():
 
         self.generic_endps_profile.start_cx()
 
-    def stop(self):
+def stop(self):
         logger.info("Stopping Test...")
         self.generic_endps_profile.stop_cx()
         self.station_profile.admin_down()
 
-    def build(self):
+def build(self):
         self.station_profile.use_security(self.security, self.ssid, self.passwd)
         self.station_profile.set_number_template(self.number_template)
         logger.info("Creating stations")
@@ -241,7 +241,7 @@ class GenTest():
         else:
             self._fail("Generic endpoints NOT completed.")
 
-    def cleanup(self, sta_list):
+def cleanup(self, sta_list):
         #self.generic_endps_profile.cleanup()
         #self.station_profile.cleanup(sta_list)
 
