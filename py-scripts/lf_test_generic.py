@@ -60,9 +60,11 @@ from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
 from lanforge_client.logg import Logg
 
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils") #to be deleted
+
 #stand-alone (not dependent on realm)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
-lf_json_api = importlib.import_module("py-scripts.lf_json_api")
+
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
@@ -102,11 +104,6 @@ class GenTest():
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
         if client:
             self.client_name = client
-        # create api_json
-        self.json_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
-                                                    lf_port=self.lf_port,
-                                                    lf_user=self.lf_user,
-                                                    lf_passwd=self.lf_passwd)
 
         # create a session
         # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
@@ -129,6 +126,10 @@ class GenTest():
         self.query: LFJsonQuery
         self.query = self.session.get_query()
 
+        created_cx = []
+        created_sta = []
+        created_endp = []
+
     def check_tab_exists(self):
         response = self.json_get("generic")
         if response is None:
@@ -136,7 +137,8 @@ class GenTest():
         else:
             return True
 
-""" def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version, 
+    """ 
+    def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version, 
                         dut_model_num, dut_serial_num, test_id, csv_outfile,
                         monitor_endps, generic_cols):
         report = lf_report.lf_report(_results_dir_name="test_generic_test")
@@ -194,8 +196,9 @@ class GenTest():
                 csv_outfile, current_time)
             csv_outfile = report.file_add_path(csv_outfile)
         print("csv output file : {}".format(csv_outfile))
- """
-def start(self):
+    """
+
+    def start(self):
         self.station_profile.admin_up()
         temp_stas = []
         for station in self.sta_list.copy():
@@ -241,9 +244,26 @@ def build(self):
         else:
             self._fail("Generic endpoints NOT completed.")
 
-def cleanup(self, sta_list):
-        #self.generic_endps_profile.cleanup()
-        #self.station_profile.cleanup(sta_list)
+    def port_exists(self, port_eid, debug=None):
+        if port_eid:
+            current_stations = self.query.get_port(list(port_eid), debug=debug)
+        if current_stations:
+            return True
+        return False
+
+    def cleanup(self, sta_list):
+        logger.info("Cleaning up all cxs and endpoints.")
+        if created_cx:
+            for cx_name in created_cx:
+                self.command.post_rm_cx(cx_name=cx_name, test_mgr="default_tm", debug=self.debug)
+        if created_endp:
+            for endp_name in created_endp:
+                self.command.post_rm_endp(endp_name=endp_name, debug=self.debug)
+        if self.sta_list:
+            for sta_name in self.sta_list:
+                eid = LFUtils.name_to_eid(sta_name)
+                if port_exists(self, eid, self.debug):
+                    self.command.post_rm_vlan(port=sta_name, debug=self.debug)
 
         if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug):
             self._pass("Ports successfully cleaned up.")
@@ -341,13 +361,12 @@ python3 ./test_generic.py
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',default= None)
     optional.add_argument('--monitor_interval',help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',default='2s')
 
-    
-    if not sys.argv:
-        print("This python file needs the minimum required args. See add the --help flag to check out required arguments.")
-        exit(1)
+    #check if the arguments are empty?
+    if (len(sys.argv) <= 2 and not sys.argv[1]):
+        print("This python file needs the minimum required args. See add the --help flag to check out all possible arguments.")
+        sys.exit(1)
         
     args = parser.parse_args()
-    print(args)
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
@@ -463,7 +482,9 @@ python3 ./test_generic.py
 
     if not generic_test.check_tab_exists():
         raise ValueError("Error received from GUI, please ensure generic tab is enabled")
+
     generic_test.cleanup(station_list)
+
     generic_test.build()
     if not generic_test.passes():
         logger.error(generic_test.get_fail_message())
