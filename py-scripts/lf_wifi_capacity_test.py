@@ -25,6 +25,12 @@ example 2:
 --influx_bucket ben \
 --influx_tag testbed Ferndale-01
 
+example 3:
+./lf_wifi_capacity_test.py --mgr 192.168.200.165 --upstream 1.1.eth1 --batch_size 1,5 --protocol UDP-IPv4 --duration 30000
+ --upload_rate 1Gbps --download_rate 1Gbps --raw_line 'ip_tos: 128' --raw_line 'do_pf: 1' --raw_line 'pf_min_period_dl: 100'
+  --raw_line 'pf_min_period_ul: 300' --raw_line 'pf_max_reconnects: 3' --num_stations 5 --start_id 333 --create_stations
+  --radio wiphy0 --ssid Netgear-5g --security wpa2 --paswd sharedsecret --test_rig Testbed-01 --set DUT_NAME linksys-8450
+  --pull_report
 SCRIPT_CLASSIFICATION :  Test
 SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation
 
@@ -571,6 +577,13 @@ example 2:
 --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
 --influx_bucket ben \
 --influx_tag testbed Ferndale-01
+
+example 3:
+./lf_wifi_capacity_test.py --mgr 192.168.200.165 --upstream 1.1.eth1 --batch_size 1,5 --protocol UDP-IPv4 --duration 30000
+ --upload_rate 1Gbps --download_rate 1Gbps --raw_line 'ip_tos: 128' --raw_line 'do_pf: 1' --raw_line 'pf_min_period_dl: 100'
+  --raw_line 'pf_min_period_ul: 300' --raw_line 'pf_max_reconnects: 3' --num_stations 5 --start_id 333 --create_stations 
+  --radio wiphy0 --ssid Netgear-5g --security wpa2 --paswd sharedsecret --test_rig Testbed-01 --set DUT_NAME linksys-8450 
+  --pull_report
 
 SCRIPT_CLASSIFICATION :  Test
 SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation
