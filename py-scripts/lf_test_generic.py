@@ -80,7 +80,7 @@ if sys.version_info[0] != 3:
 class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd, sta_list, 
                 name_prefix, upstream, client=None, _client_port = None,_server_port=None,
-                 host="localhost", port=8080, number_template="000", csv_outfile=None,
+                 host="localhost", port=8080, csv_outfile=None,
                  use_existing_eid=None, test_duration="5m",test_type="lfping", dest=None, cmd=None, interval=1, 
                  radio=None, speedtest_min_up=None, speedtest_min_dl=None, 
                  speedtest_max_ping=None, file_output_lfcurl=None, loop_count=None, 
@@ -95,7 +95,6 @@ class GenTest():
         self.sta_list = sta_list
         self.security = security
         self.passwd = passwd
-        self.number_template = number_template
         self.name_prefix = name_prefix
         self.test_duration = test_duration
         self.debug = _debug_on
@@ -125,9 +124,9 @@ class GenTest():
         self.query: LFJsonQuery
         self.query = self.session.get_query()
 
-        created_cx = []
-        created_sta = []
-        created_endp = []
+        self.created_cx = []
+        self.created_sta = []
+        self.created_endp = []
 
     def check_tab_exists(self):
         response = self.json_get("generic")
@@ -226,42 +225,51 @@ class GenTest():
         self.station_profile.admin_down()
 
     def build(self):
-        self.station_profile.use_security(self.security, self.ssid, self.passwd)
-        #self.station_profile.set_number_template(self.number_template)
+        #TODO move arg validation to validate_sort_args
+        if self.sta_list:
+            
+            logger.info("Creating stations")
+            types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
+            if self.security in types.keys():
+                security_flag = ""
+                if (self.passwd is None) or (self.passwd == ""):
+                    raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
+                if self.security != "open":
+                    security_flag = types[security_flag]
+                    for sta_to_create in self.sta_list:
 
-        logger.info("Creating stations")
-        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.station_profile.set_command_param("set_port", "report_timer", 1500)
-        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+                        #self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+                        #self.station_profile.set_command_param("set_port", "report_timer", 1500)
+                        #self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
 
-        if self.station_profile.create(radio=self.radio, sleep_time=0, sta_names_=self.sta_list, debug=self.debug):
-            self._pass("Station creation completed.")
+                        if self.station_profile.create(radio=self.radio, sleep_time=0, sta_names_=self.sta_list, debug=self.debug):
+                            self._pass("Station creation completed.")
+                        else:
+                            self._fail("Station creation failed.")
+                    #check if stations are created with wait_until_ports_appear
         else:
-            self._fail("Station creation failed.")
+            raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
 
+        #create endpoints
         if self.generic_endps_profile.create(ports=self.station_profile.station_names, sleep_time=.5):
             self._pass("Generic endpoints creation completed.")
         else:
-            self._fail("Generic endpoints NOT completed.")
-    def port_exists(self, port_eid, debug=None):
-        if port_eid:
-            current_stations = self.query.get_port(list(port_eid), debug=debug)
-        if current_stations:
-            return True
-        return False
+            self._fail("Generic endpoints NOT completed.")        
+                    
+
 
     def cleanup(self, sta_list):
         logger.info("Cleaning up all cxs and endpoints.")
-        if created_cx:
-            for cx_name in created_cx:
+        if self.created_cx:
+            for cx_name in self.created_cx:
                 self.command.post_rm_cx(cx_name=cx_name, test_mgr="default_tm", debug=self.debug)
-        if created_endp:
-            for endp_name in created_endp:
+        if self.created_endp:
+            for endp_name in self.created_endp:
                 self.command.post_rm_endp(endp_name=endp_name, debug=self.debug)
         if self.sta_list:
             for sta_name in self.sta_list:
                 eid = LFUtils.name_to_eid(sta_name)
-                if port_exists(self, eid, self.debug):
+                if self.port_exists(self, eid, self.debug):
                     self.command.post_rm_vlan(port=sta_name, debug=self.debug)
 
         if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug):
@@ -269,6 +277,81 @@ class GenTest():
         else:
             self._fail("Ports NOT successfully cleaned up.")
 
+
+    def port_exists(self, port_eid, debug=None):
+        if port_eid:
+            current_stations = self.query.get_port(list(port_eid), debug=debug)
+        if current_stations:
+            return True
+        return False
+
+    def validate_sort_args(self, args):
+        print(args)
+        #TODO check if ssid is none or empty, check if passwd is none or empty.
+        if args.dest is None:
+            # get ip upstream port
+            rv = LFUtils.name_to_eid(args.upstream_port)
+            shelf = rv[0]
+            resource = rv[1]
+            port_name = rv[2]
+            request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
+            lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
+            logger.info("port request command: {request_command}".format(request_command=request_command))
+
+            request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
+            logger.info("port request status_code {status}".format(status=request.status_code))
+
+            lanforge_json = request.json()
+            lanforge_json_formatted = json.dumps(lanforge_json, indent=4)        
+            try: 
+                key = 'interface'
+                df = json_normalize(lanforge_json[key])
+                args.dest = df['ip'].iloc[0]
+            except Exception as x:
+                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+
+            # if file path with output file extension is not given...
+            # check if home/lanforge/report-data exists. if not, save
+            # in new folder based in current file's directory
+
+        systeminfopath = None
+        if args.report_file is None:
+            new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-') + '-test_generic'  # create path name
+            if os.path.exists('/home/lanforge/report-data/'):
+                path = os.path.join('/home/lanforge/report-data/', new_file_path)
+                os.mkdir(path)
+            else:
+                curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                path = os.path.join(curr_dir_path, new_file_path)
+                os.mkdir(path)
+            systeminfopath = str(path) + '/systeminfo.txt'
+
+            if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'xlsx']:
+                report_f = str(path) + '/data.' + args.output_format
+                output = args.output_format
+            else:
+                logger.info('Not supporting report format: %s. Defaulting to csv data file output type, naming it data.csv.' % args.output_format)
+                report_f = str(path) + '/data.csv'
+                output = 'csv'
+        else:
+            systeminfopath = str(args.report_file).split('/')[-1]
+            report_f = args.report_file
+            if args.output_format is None:
+                output = str(args.report_file).split('.')[-1]
+            else:
+                output = args.output_format
+        logger.warning("Saving final report data in: " + report_f)
+
+        # Retrieve last data file
+        compared_rept = None
+        if args.compared_report:
+            compared_report_format = args.compared_report.split('.')[-1]
+            # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','h5']:
+            if compared_report_format != 'csv':
+                raise ValueError("Cannot process this file type. Please select a different file and re-run script.")
+            else:
+                compared_rept = args.compared_report
 
 def main():
 
@@ -278,42 +361,41 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''Create generic endpoints and test for their ability to execute chosen commands\n''',
         description='''
-test_generic.py
---------------------
-Generic command example:
-python3 ./test_generic.py 
-    --mgr localhost (optional)
-    --mgr_port 4122 (optional)
-    --upstream_port eth1 (optional)
-    --radio wiphy0 (required)
-    --num_stations 3 (optional)
-    --security {open | wep | wpa | wpa2 | wpa3} (required)
-    --ssid netgear (required)
-    --passwd admin123 (required)
-    --type lfping  {generic | lfping | iperf3-client | speedtest | lf_curl} (required)
-    --dest 10.40.0.1 (required - also target for iperf3)
-    --test_duration 2m 
-    --interval 1s 
-    --debug 
+        test_generic.py
+        --------------------
+        Generic command example:
+        python3 ./test_generic.py 
+            --mgr localhost (optional)
+            --mgr_port 4122 (optional)
+            --upstream_port eth1 (optional)
+            --radio wiphy0 (required)
+            --num_stations 3 (optional)lahaina fire
+            --security {open | wep | wpa | wpa2 | wpa3} (required)
+            --ssid netgear (required)
+            --passwd admin123 (required)
+            --type lfping  {generic | lfping | iperf3-client | speedtest | lf_curl} (required)
+            --dest 10.40.0.1 (required - also target for iperf3)
+            --test_duration 2m 
+            --interval 1s 
+            --debug 
 
 
-    Example commands: 
-    LFPING:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
-        --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info 
-        --report_file /home/lanforge/reports/LFPING.csv --test_duration 20s --upstream_port 1.1.eth2
-    LFCURL:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
-        --num_stations 2 --ssid Logan-Test-Net --passwd Logan-Test-Net --security wpa2 --type lfcurl --dest 192.168.1.1
-    GENERIC:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --num_stations 2 --ssid Logan-Test-Net 
-        --report_file /home/lanforge/reports/GENERIC.csv --passwd Logan-Test-Net --security wpa2 --type generic
-    SPEEDTEST:
-        ./test_generic.py --radio 1.1.wiphy0 --num_stations 2 --report_file /home/lanforge/reports/SPEEDTEST.csv 
-        --ssid Logan-Test-Net --passwd Logan-Test-Net --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
-    IPERF3 (under construction):
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
-''',
+            Example commands: 
+            LFPING:
+                ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
+                --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info 
+                --report_file /home/lanforge/reports/LFPING.csv --test_duration 20s --upstream_port 1.1.eth2
+            LFCURL:
+                ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
+                --num_stations 2 --ssid Logan-Test-Net --passwd Log
+                sta_names_ = LFUtils.portNameSeries(prefix_="sta",
+                                                start_id_=int(self.number_template),
+                                                end_id_=num_stations + int(self.number_template) - 1,
+                                                padding_number_=10000,
+                                                radio=radio)e speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
+            IPERF3 (under construction):
+                ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
+        ''',
     )
     required = parser.add_argument_group('Arguments that must be defined by user:')
     optional = parser.add_argument_group('Arguements that do not need to be defined by user:')
@@ -371,90 +453,19 @@ python3 ./test_generic.py
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    # TODO either use Realm or create a port to IP method in realm
-    if args.dest is None:
-        # get ip upstream port
-        rv = LFUtils.name_to_eid(args.upstream_port)
-        shelf = rv[0]
-        resource = rv[1]
-        port_name = rv[2]
-        request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
-        lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
-        logger.info("port request command: {request_command}".format(request_command=request_command))
-
-        request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
-        logger.info("port request status_code {status}".format(status=request.status_code))
-
-        lanforge_json = request.json()
-        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)        
-        try: 
-            key = 'interface'
-            df = json_normalize(lanforge_json[key])
-            args.dest = df['ip'].iloc[0]
-        except Exception as x:
-            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
-
-
-        # Create directory
-
-        # if file path with output file extension is not given...
-        # check if home/lanforge/report-data exists. if not, save
-        # in new folder based in current file's directory
-
-
-    systeminfopath = None
-    if args.report_file is None:
-        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
-                                                                                                 '-') + '-test_generic'  # create path name
-        if os.path.exists('/home/lanforge/report-data/'):
-            path = os.path.join('/home/lanforge/report-data/', new_file_path)
-            os.mkdir(path)
-        else:
-            curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            path = os.path.join(curr_dir_path, new_file_path)
-            os.mkdir(path)
-        systeminfopath = str(path) + '/systeminfo.txt'
-
-        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'xlsx']:
-            report_f = str(path) + '/data.' + args.output_format
-            output = args.output_format
-        else:
-            logger.info('Not supporting report format: %s. Defaulting to csv data file output type, naming it data.csv.' % args.output_format)
-            report_f = str(path) + '/data.csv'
-            output = 'csv'
-
-    else:
-        systeminfopath = str(args.report_file).split('/')[-1]
-        report_f = args.report_file
-        if args.output_format is None:
-            output = str(args.report_file).split('.')[-1]
-        else:
-            output = args.output_format
-
-    logger.warning("Saving final report data in: " + report_f)
-
-    # Retrieve last data file
-    compared_rept = None
-    if args.compared_report:
-        compared_report_format = args.compared_report.split('.')[-1]
-        # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','h5']:
-        if compared_report_format != 'csv':
-            raise ValueError("Cannot process this file type. Please select a different file and re-run script.")
-        else:
-            compared_rept = args.compared_report
+    number_template = "000"
     if (int(args.num_stations) > 0): 
-        station_list = LFUtils.portNameSeries(radio=args.radio,
-                                          prefix_="sta",
-                                          start_id_=0,
-                                          end_id_= int(args.num_stations) - 1,
-                                          padding_number_=100)
+        station_list = LFUtils.portNameSeries(prefix_="sta",
+                                              start_id_=int(number_template),
+                                              end_id_=args.num_stations + int(number_template) - 1,
+                                              padding_number_=10000,
+                                              radio=args.radio)
     else:
         station_list = []
 
+
     generic_test = GenTest(host=args.mgr, port=args.mgr_port,
                            lf_user=args.lf_user, lf_passwd=args.lf_passwd,
-                           number_template="00",
                            radio=args.radio,
                            sta_list=station_list,
                            use_existing_eid=args.use_existing_eid,
@@ -481,6 +492,8 @@ python3 ./test_generic.py
 
     if not generic_test.check_tab_exists():
         raise ValueError("Error received from GUI, please ensure generic tab is enabled")
+    
+    generic_test.validate_sort_args(args)
 
     generic_test.cleanup(station_list)
 
