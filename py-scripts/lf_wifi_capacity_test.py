@@ -396,7 +396,8 @@ class WiFiCapacityTest(cv_test):
                  graph_groups=None,
                  test_rig="",
                  test_tag="",
-                 local_lf_report_dir=""
+                 local_lf_report_dir="",
+                 sta_list="",
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -445,16 +446,20 @@ class WiFiCapacityTest(cv_test):
         self.test_rig = test_rig
         self.test_tag = test_tag
         self.local_lf_report_dir = local_lf_report_dir
+        self.stations_list = sta_list
 
     def setup(self):
+        sta_names = None
         if self.create_stations and self.stations != "":
-            sta = self.stations.split(",")
-            self.station_profile.cleanup(sta)
-            self.station_profile.use_security(self.security, self.ssid, self.paswd)
-            self.station_profile.create(radio=self.radio, sta_names_=sta, debug=self.debug)
-            self.station_profile.admin_up()
-            self.wait_for_ip(station_list=sta)
-            logger.info("stations created")
+            sta_names = self.stations.split(",")
+        elif self.create_stations and self.stations_list is not None:
+            sta_names = self.stations_list
+        self.station_profile.cleanup(sta_names)
+        self.station_profile.use_security(self.security, self.ssid, self.paswd)
+        self.station_profile.create(radio=self.radio, sta_names_=sta_names, debug=self.debug)
+        self.station_profile.admin_up()
+        self.wait_for_ip(station_list=sta_names)
+        logger.info("Stations created and got the ips...")
 
     def run(self):
         self.sync_cv()
@@ -471,14 +476,19 @@ class WiFiCapacityTest(cv_test):
         port = "%i.%i.%s" % (eid[0], eid[1], eid[2])
 
         port_list = [port]
-        if self.stations == "":
+        if self.stations != "" or self.stations_list != []:
+            stas = None
+            if self.stations:
+                stas = self.stations.split(",")
+            elif self.stations_list:
+                stas = self.stations_list
+            for s in stas:
+                port_list.append(s)
+        else:
             stas = self.station_map()  # See realm
             for eid in stas.keys():
                 port_list.append(eid)
-        else:
-            stas = self.stations.split(",")
-            for s in stas:
-                port_list.append(s)
+        logger.info(f"Selected Port list: {port_list}")
 
         idx = 0
         for eid in port_list:
@@ -638,6 +648,10 @@ INCLUDE_IN_README: False
     parser.add_argument("--graph_groups", help="File to save graph groups to", default=None)
     parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from", default="")
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument("--num_stations", help="Specify the number of stations need to be create.", type=int,
+                        default=None)
+    parser.add_argument('--start_id', help='Specify the station starting id \n e.g: --start_id <value> default 0',
+                        default=0)
 
     args = parser.parse_args()
 
@@ -650,6 +664,24 @@ INCLUDE_IN_README: False
     if args.lf_logger_config_json:
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
+
+    # getting station list if number of stations provided.
+    start_id = 0
+    if args.start_id != 0:
+        start_id = int(args.start_id)
+
+    num_sta = 1
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
+    if args.num_stations:
+        station_list = LFUtils.port_name_series(prefix="sta",
+                                                start_id=start_id,
+                                                end_id=start_id + num_sta - 1,
+                                                padding_number=10000,
+                                                radio=args.radio)
+    else:
+        station_list = []
 
     WFC_Test = WiFiCapacityTest(lfclient_host=args.mgr,
                                 lf_port=args.port,
@@ -681,7 +713,8 @@ INCLUDE_IN_README: False
                                 graph_groups=args.graph_groups,
                                 test_rig=args.test_rig,
                                 test_tag=args.test_tag,
-                                local_lf_report_dir=args.local_lf_report_dir
+                                local_lf_report_dir=args.local_lf_report_dir,
+                                sta_list=station_list
                                 )
     WFC_Test.setup()
     WFC_Test.run()
