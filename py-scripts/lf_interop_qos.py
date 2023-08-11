@@ -677,7 +677,7 @@ class ThroughputQOS(Realm):
                                 _xaxis_step=1,
                                 _graph_title=f"Overall {self.direction} throughput – BK,BE,VO,VI traffic streams",
                                 _title_size=16,
-                                _color=['orange', 'plum', 'steelblue', 'lightgrey'],
+                                _color=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
                                 _color_edge='black',
                                 _bar_width=0.15,
                                 _figsize=(18, 6),
@@ -686,7 +686,7 @@ class ThroughputQOS(Realm):
                                 _dpi=96,
                                 _show_bar_value=True,
                                 _enable_csv=True,
-                                _color_name=['orange', 'olivedrab', 'steelblue', 'blueviolet'])
+                                _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'])
         graph_png = graph.build_bar_graph()
         print("graph name {}".format(graph_png))
         report.set_graph_image(graph_png)
@@ -830,7 +830,7 @@ class ThroughputQOS(Realm):
                         individual_set=list[3]
                         individual_download_list=individual_set[0]
                         individual_upload_list=individual_set[1]
-                        colors=['plum','violet']
+                        colors=['lightcoral','mistyrose']
                         labels=['Download','Upload']
                     else:
                         individual_set=[data_set[load]['BE']]
