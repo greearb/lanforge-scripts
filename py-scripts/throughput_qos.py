@@ -261,8 +261,8 @@ class ThroughputQOS(Realm):
     def create_cx(self):
         count =0
         print("tos: {}".format(self.tos))
-        for sta in range(len(self.sta_list)):
-            for ip_tos in range(len(self.tos)):
+        for ip_tos in range(len(self.tos)):
+            for sta in range(len(self.sta_list)):
                 print("## ip_tos: {}".format(ip_tos))
                 print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (
                 self.traffic_type, ip_tos, self.cx_profile.get_cx_count()))
