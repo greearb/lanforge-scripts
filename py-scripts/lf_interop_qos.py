@@ -560,11 +560,11 @@ class ThroughputQOS(Realm):
             upload_throughput_df[2].append(res['test_results'][0][1][rate_up]['videoQOS'])
             upload_throughput_df[3].append(res['test_results'][0][1][rate_up]['voiceQOS'])               
             table_df.update({"No of Stations": []})
-            table_df.update({"Throughput for Load {}".format(rate_up): []})
+            table_df.update({"Throughput for Load {}".format(rate_up+"-upload"): []})
             graph_df.update({rate_up: upload_throughput_df})
             
             table_df.update({"No of Stations": str(len(self.input_devices_list))})
-            table_df["Throughput for Load {}".format(rate_up)].append(upload_throughput[0])
+            table_df["Throughput for Load {}".format(rate_up+"-upload")].append(upload_throughput[0])
             res_copy=copy.copy(res)
             res_copy.update({"throughput_table_df": table_df})
             res_copy.update({"graph_df": graph_df})
@@ -582,11 +582,11 @@ class ThroughputQOS(Realm):
             download_throughput_df[2].append(res['test_results'][0][0][rate_down]['videoQOS'])
             download_throughput_df[3].append(res['test_results'][0][0][rate_down]['voiceQOS'])               
             table_df.update({"No of Stations": []})
-            table_df.update({"Throughput for Load {}".format(rate_down): []})
-            graph_df.update({rate_down: download_throughput_df})
-            
+            table_df.update({"Throughput for Load {}".format(rate_down+"-download"): []})
+            graph_df.update({rate_down+"download": download_throughput_df})
+            print("...........graph_df",graph_df)
             table_df.update({"No of Stations": str(len(self.input_devices_list))})
-            table_df["Throughput for Load {}".format(rate_down)].append(download_throughput[0])
+            table_df["Throughput for Load {}".format(rate_down+"-download")].append(download_throughput[0])
             res_copy=copy.copy(res)
             res_copy.update({"throughput_table_df": table_df})
             res_copy.update({"graph_df": graph_df})
@@ -606,6 +606,7 @@ class ThroughputQOS(Realm):
         res = self.set_report_data(data)
         print("res",res)
         if self.direction=="Bi-direction":
+            load = 'Upload'+':'+rate_up + ','+ 'Download'+':'+ rate_down
             for key in res["graph_df"]:
                 for j in range(len(res['graph_df'][key])):
                     overall_list.append(res['graph_df'][key][j])
@@ -645,6 +646,7 @@ class ThroughputQOS(Realm):
         "TOS" : self.tos,
         "Per TOS Load in Mbps" : load
         }
+        print(res["throughput_table_df"])
 
         report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
         report.set_table_title(
@@ -658,8 +660,7 @@ class ThroughputQOS(Realm):
                 _obj_title=f"Overall {self.direction} throughput for {len(self.input_devices_list)} clients with different TOS.",
                 _obj=f"The below graph represents overall {self.direction} throughput for all "
                      "connected stations running BK, BE, VO, VI traffic with different "
-                     "intended loads per station – {}".format(
-                    "".join(str(key))))
+                     f"intended loads{load} per tos")
         report.build_objective()
         #print("data set",data_set)
         graph = lf_bar_graph(_data_set=data_set,
@@ -737,6 +738,7 @@ class ThroughputQOS(Realm):
             traffic_direction_list.append(self.direction)
         print(traffic_type_list,traffic_direction_list,bk_tos_list,be_tos_list,vi_tos_list,vo_tos_list)
         if self.direction == "Bi-direction":
+            load = 'Upload'+':'+rate_up + ','+ 'Download'+':'+ rate_down
             for key in res['test_results'][0][0]:
                 list[0].append(res['test_results'][0][0][key]['VI'])
                 list[1].append(res['test_results'][0][0][key]['VO'])
