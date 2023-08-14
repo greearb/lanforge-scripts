@@ -455,17 +455,22 @@ class WiFiCapacityTest(cv_test):
         self.stations_list = sta_list
 
     def setup(self):
-        sta_names = None
         if self.create_stations and self.stations != "":
             sta_names = self.stations.split(",")
+            self.station_profile.cleanup(sta_names)
+            self.station_profile.use_security(self.security, self.ssid, self.paswd)
+            self.station_profile.create(radio=self.radio, sta_names_=sta_names, debug=self.debug)
+            self.station_profile.admin_up()
+            self.wait_for_ip(station_list=sta_names)
+            logger.info("Stations created and got the ips...")
         elif self.create_stations and self.stations_list is not None:
             sta_names = self.stations_list
-        self.station_profile.cleanup(sta_names)
-        self.station_profile.use_security(self.security, self.ssid, self.paswd)
-        self.station_profile.create(radio=self.radio, sta_names_=sta_names, debug=self.debug)
-        self.station_profile.admin_up()
-        self.wait_for_ip(station_list=sta_names)
-        logger.info("Stations created and got the ips...")
+            self.station_profile.cleanup(sta_names)
+            self.station_profile.use_security(self.security, self.ssid, self.paswd)
+            self.station_profile.create(radio=self.radio, sta_names_=sta_names, debug=self.debug)
+            self.station_profile.admin_up()
+            self.wait_for_ip(station_list=sta_names)
+            logger.info("Stations created and got the ips...")
 
     def run(self):
         self.sync_cv()
