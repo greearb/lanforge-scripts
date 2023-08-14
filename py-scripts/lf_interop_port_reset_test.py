@@ -710,29 +710,30 @@ class InteropPortReset(Realm):
                 ax.yaxis.set_visible(yaxis_visable)
 
         # creating the bar plot
-        plt.bar(courses, values, color=('#f56122', '#00FF00', '#f5ea22', '#3D85C6', '#fa4d4d', "forestgreen"),
-                width=bar_width)
+        colors = ('#f56122', '#00FF00', '#f5ea22', '#3D85C6', '#fa4d4d', "forestgreen")
+        for bar_values, color, i in zip(values, colors, range(len(courses))):
+            plt.bar(courses[i], bar_values, color=color, width=bar_width)
         for item, value in enumerate(values):
             plt.text(item, value, "{value}".format(value=value), ha='center', rotation=bar_text_rotation, fontsize=text_font)
 
         plt.xlabel("", fontweight='bold', fontsize=15)
         plt.ylabel("Count", fontweight='bold', fontsize=15)
-        # plt.title("Overall Graph for Port Reset Test")
-        # plt.legend(
-        #     handles=_legend_handles,
-        #     loc=_legend_loc,
-        #     bbox_to_anchor=(1.0, 1.0),
-        #     ncol=_legend_ncol,
-        #     fontsize=_legend_fontsize)
+
+        plt.xticks(color='white')
+        plt.legend(
+            ['Port Resets', 'Disconnects', 'Scans', 'Assoc Attempts', "Assoc Rejections", 'Connects'],
+            loc=_legend_loc,
+            bbox_to_anchor=_legend_box,
+            ncol=_legend_ncol,
+            fontsize=_legend_fontsize)
         plt.suptitle("Overall Graph for Port Reset Test", fontsize=16)
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
-        # plt.show()
         return "%s.png" % self.graph_image_name
 
     def per_client_graph(self, data=None, name=None, figsize=(13, 5), _alignmen=None, remove_border=None, bar_width=0.5,
-                         _legend_handles=None, _legend_loc="best", _legend_box=None, _legend_ncol=1,
-                         _legend_fontsize=None, text_font=12, bar_text_rotation=45, xaxis_name="", yaxis_name="",
-                         graph_title="Client %s Performance Port Reset Totals", graph_title_size=16):
+                         _legend_loc="best", _legend_box=None, _legend_fontsize=None, text_font=12, bar_text_rotation=45,
+                         xaxis_name="", yaxis_name="", graph_title="Client %s Performance Port Reset Totals",
+                         graph_title_size=16):
         self.graph_image_name = name
         courses = list(data.keys())
         values = list(data.values())
@@ -750,8 +751,9 @@ class InteropPortReset(Realm):
                 ax.yaxis.set_visible(yaxis_visable)
 
         # creating the bar plot
-        plt.bar(courses, values, color=('#f56122', '#00FF00', '#f5ea22', '#3D85C6', '#fa4d4d', "forestgreen"),
-                edgecolor="black", width=bar_width)
+        colors = ('#f56122', '#00FF00', '#f5ea22', '#3D85C6', '#fa4d4d', "forestgreen")
+        for bar_values, color, i in zip(values, colors, range(len(courses))):
+            plt.bar(courses[i], bar_values, color=color, width=bar_width)
         for item, value in enumerate(values):
             plt.text(item, value, "{value}".format(value=value), ha='center', va='bottom', rotation=bar_text_rotation,
                      fontsize=text_font)
@@ -759,14 +761,13 @@ class InteropPortReset(Realm):
         plt.xlabel(xaxis_name, fontweight='bold', fontsize=15)
         plt.ylabel(yaxis_name, fontweight='bold', fontsize=15)
         plt.legend(
-            handles=_legend_handles,
+            ['Port Resets', 'Disconnects', 'Scans', 'Assoc Attempts', "Assoc Rejections", 'Connects'],
             loc=_legend_loc,
-            # bbox_to_anchor=(1.0, 1.0),
-            ncol=_legend_ncol,
+            bbox_to_anchor=_legend_box,
+            frameon=False,
             fontsize=_legend_fontsize)
         plt.suptitle(graph_title, fontsize=graph_title_size)
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
-        # plt.show()
         return "%s.png" % self.graph_image_name
 
     def generate_report(self, reset_dict=None, test_dur=None):
@@ -822,8 +823,8 @@ class InteropPortReset(Realm):
                                         )
             self.lf_report.build_objective()
             graph1 = self.generate_overall_graph(reset_dict=reset_dict, figsize=(13, 5), _alignmen=None, bar_width=0.5,
-                                                 _legend_handles=None, _legend_loc="best", _legend_ncol=1, _legend_fontsize=None,
-                                                 _legend_box=(1.9, 1.0), text_font=12)
+                                                 _legend_loc="upper center", _legend_ncol=6, _legend_fontsize=10,
+                                                 _legend_box=(0.5, -0.06), text_font=12)
             # graph1 = self.generate_per_station_graph()
             self.lf_report.set_graph_image(graph1)
             self.lf_report.move_graph_image()
@@ -879,23 +880,23 @@ class InteropPortReset(Realm):
 
                 # setting the title for per client graph and table represent title.
                 self.lf_report.set_obj_html("Port Resets for Client " + str(adb_user_name) + " (" + str(y.split(".")[2] + ")"),
-                                            "The below table & graph displays details of " + str(adb_user_name) + "device."
-                                            # "The below graph provides information regarding per station behaviour for every reset count"
-                                            # " where"
-                                            # "Port resets=Total resets provided as test input, Disconnected=It is the total number "
-                                            # "of disconnects happened for a client  during every reset when WiFi was disabled , Scans=It is the"
-                                            # "total number of scanning state achieved by a client during the test when network is enabled back for "
-                                            # "every reset"
-                                            # " again, Association attempts=It is the total number of association attempts(Associating state) achieved  by"
-                                            # " a client after the WiFi is enabled back again in full test, Connected=It is the total number"
-                                            # "of connection(Associated state) achieved by a client during the test when Wifi is enabled back again."
-                                            )
+                    "The below table & graph displays details of " + str(adb_user_name) + "device."
+                    # "The below graph provides information regarding per station behaviour for every reset count"
+                    # " where"
+                    # "Port resets=Total resets provided as test input, Disconnected=It is the total number "
+                    # "of disconnects happened for a client  during every reset when WiFi was disabled , Scans=It is the"
+                    # "total number of scanning state achieved by a client during the test when network is enabled back for "
+                    # "every reset"
+                    # " again, Association attempts=It is the total number of association attempts(Associating state) achieved  by"
+                    # " a client after the WiFi is enabled back again in full test, Connected=It is the total number"
+                    # "of connection(Associated state) achieved by a client during the test when Wifi is enabled back again."
+                    )
                 self.lf_report.build_objective()
 
                 # per client graph generation
                 graph2 = self.per_client_graph(data=data, name="per_client_" + str(z), figsize=(13, 5),
                                                _alignmen={"left": 0.1}, remove_border=['top', 'right'],
-                                               _legend_loc="upper right", _legend_fontsize=12, _legend_box=(1.2, 1.01),
+                                               _legend_loc="upper left", _legend_fontsize=9, _legend_box=(1, 1),
                                                yaxis_name="COUNT",
                                                graph_title="Client " + str(adb_user_name) + " Total Reset Performance Graph")
                 # graph1 = self.generate_per_station_graph()
