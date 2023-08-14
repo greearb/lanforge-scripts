@@ -226,29 +226,41 @@ class GenTest():
 
     def build(self):
         #TODO move arg validation to validate_sort_args
+        #create stations
         if self.sta_list:
-            
             logger.info("Creating stations")
             types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
             if self.security in types.keys():
-                security_flag = ""
-                if (self.passwd is None) or (self.passwd == ""):
-                    raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
+                add_sta_flags = []
+                set_port_interest = []
                 if self.security != "open":
-                    security_flag = types[security_flag]
-                    for sta_to_create in self.sta_list:
+                    if (self.passwd is None) or (self.passwd == ""):
+                        raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
+                    else:
+                        add_sta_flags.extend([types[self.security], "create_admin_down"])
+                for sta_alias in self.sta_list:
+                    sta_flags_rslt=self.command.AddStaFlags(add_sta_flags)
+                    set_port_interest_rslt=self.command.SetPortInterest(set_port_interest.append('rpt_timer'))
+                    if self.security == "wpa3":
+                        self.command.post_add_sta(flags=sta_flags_rslt,
+                                                  flags_mask=sta_flags_rslt,
+                                                  radio=self.radio,
+                                                  sta_name=sta_alias,
+                                                  ieee80211w=2,
+                                                  debug=self.debug)
 
-                        #self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-                        #self.station_profile.set_command_param("set_port", "report_timer", 1500)
-                        #self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-
-                        if self.station_profile.create(radio=self.radio, sleep_time=0, sta_names_=self.sta_list, debug=self.debug):
-                            self._pass("Station creation completed.")
-                        else:
-                            self._fail("Station creation failed.")
-                    #check if stations are created with wait_until_ports_appear
-        else:
-            raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
+                    else:
+                        self.command.post_add_sta(flags=sta_flags_rslt,
+                                                  flags_mask=sta_flags_rslt,
+                                                  radio=self.radio,
+                                                  sta_name=sta_alias,
+                                                  debug=self.debug)
+                    self.command.post_set_port(alias=sta_alias,
+                                               interest=set_port_interest_rslt,
+                                               report_timer=1500,
+                                               debug=self.debug)
+            else:
+                raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
 
         #create endpoints
         if self.generic_endps_profile.create(ports=self.station_profile.station_names, sleep_time=.5):
@@ -369,7 +381,7 @@ def main():
             --mgr_port 4122 (optional)
             --upstream_port eth1 (optional)
             --radio wiphy0 (required)
-            --num_stations 3 (optional)lahaina fire
+            --num_stations 3 (optional)
             --security {open | wep | wpa | wpa2 | wpa3} (required)
             --ssid netgear (required)
             --passwd admin123 (required)
@@ -494,9 +506,7 @@ def main():
         raise ValueError("Error received from GUI, please ensure generic tab is enabled")
     
     generic_test.validate_sort_args(args)
-
-    generic_test.cleanup(station_list)
-
+    #generic_test.cleanup(station_list)
     generic_test.build()
     if not generic_test.passes():
         logger.error(generic_test.get_fail_message())
