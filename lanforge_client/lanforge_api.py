@@ -1457,12 +1457,26 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#adb_gui
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    class AdbGuiFlags(Enum):
+    class AdbGuiFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
+                int:flag_val = 0
+                flag_val = LFPost.set_flags(AdbGuiFlags0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-        NO_AUDIO_SCRCPY = 2      # Disable scrcpy audio forwarding
-        USE_SCRCPY = 1           # Use scrcpy instead of MonkeyRemote
+
+        NO_AUDIO_SCRCPY = 0x2              # Disable scrcpy audio forwarding
+        OMX_H264_ENCODER_SCRCPY = 0x4      # Use non-default OMX.google.h264.encoder scrcpy video encoder
+        USE_SCRCPY = 0x1                   # Use scrcpy instead of MonkeyRemote
+
+        # use to get in value of flag
+        @classmethod
+        def valueof(cls, name=None):
+            if name is None:
+                return name
+            if name not in cls.__members__:
+                raise ValueError("AdbGuiFlags has no member:[%s]" % name)
+            return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_adb_gui(self, 
                      adb_id: str = None,                       # Android device identifier.
@@ -3805,6 +3819,7 @@ class LFJsonCommand(JsonCommand):
                          proxy_userpwd: str = None,                # The user-name and password for proxy authentication,
                          # format: <tt>user:passwd</tt>.
                          quiesce_after: str = None,                # Quiesce test after this many URLs have been processed.
+                         quiesce_after_sec: str = None,            # Quiesce test after this many seconds have elapsed.
                          resource: int = None,                     # Resource number.
                          shelf: int = 1,                           # Shelf name/id. [D:1]
                          smtp_from: str = None,                    # SMTP From address.
@@ -3854,6 +3869,8 @@ class LFJsonCommand(JsonCommand):
             data["proxy_userpwd"] = proxy_userpwd
         if quiesce_after is not None:
             data["quiesce_after"] = quiesce_after
+        if quiesce_after_sec is not None:
+            data["quiesce_after_sec"] = quiesce_after_sec
         if resource is not None:
             data["resource"] = resource
         if shelf is not None:
@@ -3905,6 +3922,7 @@ class LFJsonCommand(JsonCommand):
                               proxy_server=param_map.get("proxy_server"),
                               proxy_userpwd=param_map.get("proxy_userpwd"),
                               quiesce_after=param_map.get("quiesce_after"),
+                              quiesce_after_sec=param_map.get("quiesce_after_sec"),
                               resource=param_map.get("resource"),
                               shelf=param_map.get("shelf"),
                               smtp_from=param_map.get("smtp_from"),
@@ -3931,9 +3949,10 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(AddMonitorFlags0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        disable_ht40 = 0x800             # Disable HT-40 even if hardware and AP support it.
-        disable_ht80 = 0x8000000         # Disable HT80 (for AC chipset NICs only)
-        ht160_enable = 0x100000000       # Enable HT160 mode.
+        be320_enable = 0x4000000000000         # Enable 320Mhz mode.
+        disable_ht40 = 0x800                   # Disable HT-40 even if hardware and AP support it.
+        disable_ht80 = 0x8000000               # Disable HT80 (for AC chipset NICs only)
+        ht160_enable = 0x100000000             # Enable HT160 mode.
 
         # use to get in value of flag
         @classmethod
@@ -4309,7 +4328,7 @@ class LFJsonCommand(JsonCommand):
     def post_add_profile(self, 
                          alias_prefix: str = None,                 # Port alias prefix, aka hostname prefix.
                          antenna: str = None,                      # Antenna count for this profile.
-                         bandwidth: str = None,                    # 0 (auto), 20, 40, 80 or 160
+                         bandwidth: str = None,                    # 0 (auto), 20, 40, 80, 160 or 320
                          eap_id: str = None,                       # EAP Identifier
                          flags_mask: str = None,                   # Specify what flags to set.
                          freq: str = None,                         # WiFi frequency to be used, 0 means default.
@@ -4606,6 +4625,7 @@ class LFJsonCommand(JsonCommand):
         p_80211u_enable = 0x20000                      # Enable 802.11u (Interworking) feature.
         p_80211u_gw = 0x80000                          # AP Provides access to internet (802.11u Interworking)
         p_8021x_radius = 0x2000000                     # Use 802.1x (RADIUS for AP).
+        be320_enable = 0x4000000000000                 # Enable 320Mhz mode.
         create_admin_down = 0x1000000000               # Station should be created admin-down.
         custom_conf = 0x20                             # Use Custom wpa_supplicant config file.
         disable_obss_scan = 0x400000000000             # Disable OBSS SCAN feature in supplicant.
@@ -4635,6 +4655,7 @@ class LFJsonCommand(JsonCommand):
         txo_enable = 0x8000000000                      # Enable/disable tx-offloads, typically managed by
         # +set_wifi_txo command
         use_bss_transition = 0x80000000000             # Enable BSS transition.
+        use_owe = 0x2000000000000                      # Enable OWE
         use_wpa3 = 0x10000000000                       # Enable WPA-3 (SAE Personal) mode.
         verbose = 0x10000                              # Verbose-Debug: Increase debug info in wpa-supplicant and
         # +hostapd logs.
@@ -5375,6 +5396,7 @@ class LFJsonCommand(JsonCommand):
         p_80211u_enable = 0x20000                 # Enable 802.11u (Interworking) feature.
         p_80211u_gw = 0x80000                     # AP Provides access to internet (802.11u Interworking)
         p_8021x_radius = 0x2000000                # Use 802.1x (RADIUS for AP).
+        be320_enable = 0x4000000000000            # Enable 320Mhz mode.
         create_admin_down = 0x1000000000          # Station should be created admin-down.
         disable_dgaf = 0x1000000                  # AP Disable DGAF (used by HotSpot 2.0).
         disable_ht40 = 0x800                      # Disable HT-40 (will use HT-20 if available).
@@ -14851,6 +14873,7 @@ class LFJsonCommand(JsonCommand):
                        resource: int = None,                     # Resource number. [W]
                        rfgen_flags: str = None,                  # RF Generator flags, see above.
                        rfgen_flags_mask: str = None,             # Mask of what flags to set, see above.
+                       sample_rate: str = None,                  # Tx/Rx sample rate in khz. Use 20000 if unsure.
                        shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
                        sweep_time_ms: str = None,                # Time interval between pulse groups in miliseconds
                        trigger_amp: str = None,                  # Set the trigger amplitude in 1/100 of amp, for the RF
@@ -14928,6 +14951,8 @@ class LFJsonCommand(JsonCommand):
             data["rfgen_flags"] = rfgen_flags
         if rfgen_flags_mask is not None:
             data["rfgen_flags_mask"] = rfgen_flags_mask
+        if sample_rate is not None:
+            data["sample_rate"] = sample_rate
         if shelf is not None:
             data["shelf"] = shelf
         if sweep_time_ms is not None:
@@ -14988,6 +15013,7 @@ class LFJsonCommand(JsonCommand):
                             resource=param_map.get("resource"),
                             rfgen_flags=param_map.get("rfgen_flags"),
                             rfgen_flags_mask=param_map.get("rfgen_flags_mask"),
+                            sample_rate=param_map.get("sample_rate"),
                             shelf=param_map.get("shelf"),
                             sweep_time_ms=param_map.get("sweep_time_ms"),
                             trigger_amp=param_map.get("trigger_amp"),
@@ -16623,6 +16649,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_wifi_txo
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    class SetWifiTxoTxoFlags(Enum):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        block_traffic = 2      # Disable all tx/rx traffic for a given radio. This can only be
+        enable_agg = 1         # Enable aggregation. This can only be enabled on Intel radios.
+
     def post_set_wifi_txo(self, 
                           port: str = None,                         # WiFi interface name or number. [W]
                           resource: int = None,                     # Resource number. [W]
@@ -16631,6 +16665,8 @@ class LFJsonCommand(JsonCommand):
                           # 160, 4 == 80+80, 5 = 320.
                           txo_enable: str = None,                   # Set to 1 if you wish to enable transmit override, 0 to
                           # disable.
+                          txo_flags: str = None,                    # Specify some additional behaviour.
+                          txo_flags_mask: str = None,               # Specify which txo_flags should be changed.
                           txo_mcs: str = None,                      # Configure the MCS (0-3 for CCK, 0-7 for OFDM, 0-7 for
                           # HT, 0-9 for VHT, 0-11 for HE, 0-13 for EHT
                           txo_nss: str = None,                      # Configure number of spatial streams (0 == nss1, 1 ==
@@ -16663,6 +16699,10 @@ class LFJsonCommand(JsonCommand):
             data["txo_bw"] = txo_bw
         if txo_enable is not None:
             data["txo_enable"] = txo_enable
+        if txo_flags is not None:
+            data["txo_flags"] = txo_flags
+        if txo_flags_mask is not None:
+            data["txo_flags_mask"] = txo_flags_mask
         if txo_mcs is not None:
             data["txo_mcs"] = txo_mcs
         if txo_nss is not None:
@@ -16701,6 +16741,8 @@ class LFJsonCommand(JsonCommand):
                                shelf=param_map.get("shelf"),
                                txo_bw=param_map.get("txo_bw"),
                                txo_enable=param_map.get("txo_enable"),
+                               txo_flags=param_map.get("txo_flags"),
+                               txo_flags_mask=param_map.get("txo_flags_mask"),
                                txo_mcs=param_map.get("txo_mcs"),
                                txo_nss=param_map.get("txo_nss"),
                                txo_pream=param_map.get("txo_pream"),
@@ -20815,7 +20857,7 @@ class LFJsonQuery(JsonQuery):
         rx+rate+%28last%29, rx+rate+ll, rx+wrong+dev, script, send+buf, source+addr, 
         tcp+mss, tcp+rtx, tx+bytes, tx+pdus, tx+pkts+ll, tx+rate, tx+rate+%281%C2%A0min%29, 
         tx+rate+%28last%29, tx+rate+ll        # hidden columns:
-        drop-count-5m, latency-5m, rt-latency-5m, rx-silence-3s
+        drop-count-5m, latency-5m, rt-latency-5m, rx-silence-3s, tos
     Example URL: /endp?fields=1st+rx,a%2Fb
 
     Example py-json call (it knows the URL):
@@ -21459,13 +21501,14 @@ class LFJsonQuery(JsonQuery):
         /layer4/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
-        %21conn, acc.+denied, bad-proto, bad-url, bytes-rd, bytes-wr, dns-avg, dns-max, 
-        dns-min, eid, elapsed, entity+id, fb-avg, fb-max, fb-min, ftp-host, ftp-port, 
-        ftp-stor, http-p, http-r, http-t, login-denied, mean-audio-format-bitrate, 
-        mean-video-format-bitrate, name, nf+%284xx%29, other-err, read, redir, rpt+timer, 
-        rslv-h, rslv-p, rx+rate, rx+rate+%281%C2%A0min%29, status, time-stamp, timeout, 
-        total-buffers, total-err, total-rebuffers, total-urls, total-wait-time, tx+rate, 
-        tx+rate+%281%C2%A0min%29, type, uc-avg, uc-max, uc-min, urls%2Fs, write        # hidden columns:
+        %21conn, acc.+denied, audio-format-bitrate, bad-proto, bad-url, bytes-rd, bytes-wr, 
+        dns-avg, dns-max, dns-min, eid, elapsed, entity+id, fb-avg, fb-max, fb-min, 
+        frame-rate, ftp-host, ftp-port, ftp-stor, http-p, http-r, http-t, login-denied, 
+        name, nf+%284xx%29, other-err, read, redir, rpt+timer, rslv-h, rslv-p, rx+rate, 
+        rx+rate+%281%C2%A0min%29, status, time-stamp, timeout, total-buffers, total-err, 
+        total-rebuffers, total-urls, total-wait-time, tx+rate, tx+rate+%281%C2%A0min%29, 
+        type, uc-avg, uc-max, uc-min, urls%2Fs, video-format-bitrate, video-quality, 
+        write        # hidden columns:
         rpt-time
     Example URL: /layer4?fields=%21conn,acc.+denied
 
@@ -21476,85 +21519,87 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        '!conn':                     # Could not establish connection.
-        'acc. denied':               # Access Access Denied Error.This could be password, user-name,
-                                     # file-permissions or other error.
-        'bad-proto':                 # Bad protocol.
-        'bad-url':                   # Bad URL format.
-        'bytes-rd':                  # Bytes read.
-        'bytes-wr':                  # Bytes written.
-        'dns-avg':                   # Average time in milliseconds to complete resolving the DNS lookupfor the
-                                     # last 100 requests.
-        'dns-max':                   # Maximum time in milliseconds to complete resolving the DNS lookupfor
-                                     # requests made in the last 30 seconds.
-        'dns-min':                   # Minimum time in milliseconds to complete resolving the DNS lookupfor
-                                     # requests made in the last 30 seconds.
-        'eid':                       # EID
-        'elapsed':                   # Amount of time (seconds) this endpoint has been running (or ran.)
-        'entity id':                 # Entity ID
-        'fb-avg':                    # Average time in milliseconds for receiving the first byte of the URLfor
-                                     # the last 100 requests.
-        'fb-max':                    # Maximum time in milliseconds for receiving the first byte of the URLfor
-                                     # requests made in the last 30 seconds.
-        'fb-min':                    # Minimum time in milliseconds for receiving the first byte of the URLfor
-                                     # requests made in the last 30 seconds.
-        'ftp-host':                  # FTP Host Error
-        'ftp-port':                  # FTP Port Error.
-        'ftp-stor':                  # FTP STOR Error.
-        'http-p':                    # HTTP Post error.
-        'http-r':                    # HTTP Range error.
-        'http-t':                    # HTTP Port Error.
-        'login-denied':              # Login attempt was denied.Probable cause is user-name or password errors.
-        'mean-audio-format-bitrate': # Mean Audio Format BitRate which is reported from Video Server Side. It
-                                     # can be converted to Audio Quality depending upon Video Server Manifest
-                                     # file configuration.
-        'mean-video-format-bitrate': # Mean Video Format BitRate which is reported from Video Server Side. It
-                                     # can be converted to Video Quality depending upon Video Server Manifest
-                                     # file configuration.
-        'name':                      # Endpoint's Name.
-        'nf (4xx)':                  # File not found.For HTTP, an HTTP 4XX error was returned.  This is only
-                                     # counted when the endpoint has 'Enable 4XX' selected.Includes 403
-                                     # permission denied and 404 not found errors.For other protocols, it
-                                     # should be returned any time a file is not found.
-        'other-err':                 # Error not otherwise specified.  The actual error code may be found
-                                     # inl4helper logs.  Contact support if you see these errors:we would like
-                                     # to account for all possible errors.
-        'read':                      # Error attempting to read file or URL.
-        'redir':                     # Noticed redirect loop!
-        'rpt timer':                 # Cross Connect's Report Timer (milliseconds).This is how often the GUI
-                                     # will ask for updates from the LANforge processes.If the GUI is sluggish,
-                                     # increasing the report timers may help.
-        'rslv-h':                    # Couldn't resolve host.
-        'rslv-p':                    # Couldn't resolve Proxy.
-        'rx rate':                   # Payload receive rate (bps).
-        'rx rate (1&nbsp;min)':      # Payload receive rate over the last minute (bps).
-        'status':                    # Current State of the connection.UninitializedHas not yet been
-                                     # started/stopped.InitializingBeing set up.StartingStarting the
-                                     # test.RunningTest is actively running.StoppedTest has been
-                                     # stopped.QuiesceTest will gracefully stop soon.HW-BYPASSTest is in
-                                     # hardware-bypass mode (WanLinks only)FTM_WAITTest wants to run, but is
-                                     # phantom, probably due to non-existent interface or resource.WAITINGWill
-                                     # restart as soon as resources are available.PHANTOMTest is stopped, and
-                                     # is phantom, probably due to non-existent interface or resource.
-        'time-stamp':                # Time-Stamp
-        'timeout':                   # Operation timed out.
-        'total-buffers':             # Total Buffer Count in Video Stream Test with InterOp.
-        'total-err':                 # Total Errors. This is also total failed URLs.
-        'total-rebuffers':           # Total Rebuffers in Video Stream Test with InterOp
-        'total-urls':                # URLs processed and in process. This includes passed and failed URLs.
-        'total-wait-time':           # Total Time taken by video playback in miliseconds due to Initial
-                                     # Playback during Join Time and playback Buffering in Video Resume State.
-        'tx rate':                   # Payload transmit rate (bps).
-        'tx rate (1&nbsp;min)':      # Payload transmit rate over the last minute (bps).
-        'type':                      # The specific type of this Layer 4-7 Endpoint.
-        'uc-avg':                    # Average time in milliseconds to complete processing of the URLfor the
-                                     # last 100 requests.
-        'uc-max':                    # Maximum time in milliseconds to complete processing of the URLfor
-                                     # requests made in the last 30 seconds.
-        'uc-min':                    # Minimum time in milliseconds to complete processing of the URLfor
-                                     # requests made in the last 30 seconds.
-        'urls/s':                    # URLs processed per second over the last minute.
-        'write':                     # Error attempting to write file or URL.
+        '!conn':                # Could not establish connection.
+        'acc. denied':          # Access Access Denied Error.This could be password, user-name,
+                                # file-permissions or other error.
+        'audio-format-bitrate': # Audio Format BitRate which is reported from Video Server Side. It can be
+                                # converted to Audio Quality depending upon Video Server Manifest file
+                                # configuration.
+        'bad-proto':            # Bad protocol.
+        'bad-url':              # Bad URL format.
+        'bytes-rd':             # Bytes read.
+        'bytes-wr':             # Bytes written.
+        'dns-avg':              # Average time in milliseconds to complete resolving the DNS lookupfor the
+                                # last 100 requests.
+        'dns-max':              # Maximum time in milliseconds to complete resolving the DNS lookupfor
+                                # requests made in the last 30 seconds.
+        'dns-min':              # Minimum time in milliseconds to complete resolving the DNS lookupfor
+                                # requests made in the last 30 seconds.
+        'eid':                  # EID
+        'elapsed':              # Amount of time (seconds) this endpoint has been running (or ran.)
+        'entity id':            # Entity ID
+        'fb-avg':               # Average time in milliseconds for receiving the first byte of the URLfor
+                                # the last 100 requests.
+        'fb-max':               # Maximum time in milliseconds for receiving the first byte of the URLfor
+                                # requests made in the last 30 seconds.
+        'fb-min':               # Minimum time in milliseconds for receiving the first byte of the URLfor
+                                # requests made in the last 30 seconds.
+        'frame-rate':           # Frame Rate in fps which is reported from Video Server Side.
+        'ftp-host':             # FTP Host Error
+        'ftp-port':             # FTP Port Error.
+        'ftp-stor':             # FTP STOR Error.
+        'http-p':               # HTTP Post error.
+        'http-r':               # HTTP Range error.
+        'http-t':               # HTTP Port Error.
+        'login-denied':         # Login attempt was denied.Probable cause is user-name or password errors.
+        'name':                 # Endpoint's Name.
+        'nf (4xx)':             # File not found.For HTTP, an HTTP 4XX error was returned.  This is only
+                                # counted when the endpoint has 'Enable 4XX' selected.Includes 403
+                                # permission denied and 404 not found errors.For other protocols, it
+                                # should be returned any time a file is not found.
+        'other-err':            # Error not otherwise specified.  The actual error code may be found
+                                # inl4helper logs.  Contact support if you see these errors:we would like
+                                # to account for all possible errors.
+        'read':                 # Error attempting to read file or URL.
+        'redir':                # Noticed redirect loop!
+        'rpt timer':            # Cross Connect's Report Timer (milliseconds).This is how often the GUI
+                                # will ask for updates from the LANforge processes.If the GUI is sluggish,
+                                # increasing the report timers may help.
+        'rslv-h':               # Couldn't resolve host.
+        'rslv-p':               # Couldn't resolve Proxy.
+        'rx rate':              # Payload receive rate (bps).
+        'rx rate (1&nbsp;min)': # Payload receive rate over the last minute (bps).
+        'status':               # Current State of the connection.UninitializedHas not yet been
+                                # started/stopped.InitializingBeing set up.StartingStarting the
+                                # test.RunningTest is actively running.StoppedTest has been
+                                # stopped.QuiesceTest will gracefully stop soon.HW-BYPASSTest is in
+                                # hardware-bypass mode (WanLinks only)FTM_WAITTest wants to run, but is
+                                # phantom, probably due to non-existent interface or resource.WAITINGWill
+                                # restart as soon as resources are available.PHANTOMTest is stopped, and
+                                # is phantom, probably due to non-existent interface or resource.
+        'time-stamp':           # Time-Stamp
+        'timeout':              # Operation timed out.
+        'total-buffers':        # Total Buffer Count in Video Stream Test with InterOp.
+        'total-err':            # Total Errors. This is also total failed URLs.
+        'total-rebuffers':      # Total Rebuffers in Video Stream Test with InterOp
+        'total-urls':           # URLs processed and in process. This includes passed and failed URLs.
+        'total-wait-time':      # Total Time taken by video playback in miliseconds due to Initial
+                                # Playback during Join Time and playback Buffering in Video Resume State.
+        'tx rate':              # Payload transmit rate (bps).
+        'tx rate (1&nbsp;min)': # Payload transmit rate over the last minute (bps).
+        'type':                 # The specific type of this Layer 4-7 Endpoint.
+        'uc-avg':               # Average time in milliseconds to complete processing of the URLfor the
+                                # last 100 requests.
+        'uc-max':               # Maximum time in milliseconds to complete processing of the URLfor
+                                # requests made in the last 30 seconds.
+        'uc-min':               # Minimum time in milliseconds to complete processing of the URLfor
+                                # requests made in the last 30 seconds.
+        'urls/s':               # URLs processed per second over the last minute.
+        'video-format-bitrate': # Video Format BitRate which is reported from Video Server Side. It can be
+                                # converted to Video Quality depending upon Video Server Manifest file
+                                # configuration.
+        'video-quality':        # Video Quality which is reported from Video Server.
+        'write':                # Error attempting to write file or URL.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
