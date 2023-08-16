@@ -79,7 +79,7 @@ if sys.version_info[0] != 3:
 
 class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd, sta_list, 
-                name_prefix, upstream, client=None, _client_port = None,_server_port=None,
+                name_prefix, upstream, client_port = None,server_port=None,
                  host="localhost", port=8080, csv_outfile=None,
                  use_existing_eid=None, test_duration="5m",test_type="lfping", dest=None, cmd=None, interval=1, 
                  radio=None, speedtest_min_up=None, speedtest_min_dl=None, 
@@ -94,14 +94,26 @@ class GenTest():
         self.upstream = upstream
         self.sta_list = sta_list
         self.security = security
+        self.use_existing_eid= use_existing_eid
+        self.speedtest_min_up = speedtest_min_up
+        self.speedtest_min_dl = speedtest_min_dl
+        self.speedtest_max_ping = speedtest_max_ping
+        self.file_output_lfcurl = file_output_lfcurl
+        self.loop_count = loop_count
+        self.test_type = test_type
+        self.dest = dest
+        self.cmd = cmd
+        self.interval = interval
+        self.client_port = client_port
+        self.server_port = server_port
         self.passwd = passwd
         self.name_prefix = name_prefix
         self.test_duration = test_duration
         self.debug = _debug_on
+        self.exit_on_error = _exit_on_error
+        self.exit_on_fail = _exit_on_fail
         self.csv_outfile = csv_outfile
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
-        if client:
-            self.client_name = client
 
         # create a session
         # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
@@ -197,12 +209,7 @@ class GenTest():
     """
 
     def start(self):
-        self.station_profile.admin_up()
-        temp_stas = []
-        for station in self.sta_list.copy():
-            temp_stas.append(self.name_to_eid(station)[2])
-        if self.debug:
-            pprint.pprint(self.station_profile.station_names)
+        
 
         if LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
                                              port_list=self.station_profile.station_names,
@@ -263,12 +270,91 @@ class GenTest():
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
 
         #create endpoints
-        if self.generic_endps_profile.create(ports=self.station_profile.station_names, sleep_time=.5):
-            self._pass("Generic endpoints creation completed.")
-        else:
-            self._fail("Generic endpoints NOT completed.")        
-                    
+        # combine sta_list and use_existing_eids
+        #this is how many endps need to be created : 1 for each eid.
+        unique_alias = len(self.sta_list) + len(self.use_existing_eid)
+        if self.sta_list:
+            for sta_alias in self.sta_list:
+                sta_eid = LFUtils.name_to_eid(sta_alias)
+                self.create_generic_endp(sta_eid, self.type, unique_alias)
+                unique_alias=-1
 
+        if self.use_existing_eid:
+            for eid in self.use_existing_eid:
+                self.create_generic_endp(eid, self.type, unique_alias)
+                unique_alias=-1
+
+        if not self.created_endp:
+            raise ValueError("no endpoints have been created.")
+                    
+    def create_generic_endp(self, eid, type, unique_num):
+        #create initial generic endp
+        #  add_gen_endp testing 1 1 sta0000 gen_generic
+        unique_alias = type + "-" + str(unique_num)
+        self.command.post_add_gen_endp(alias = unique_alias,
+                                       shelf=eid[0],
+                                       resource=eid[1],
+                                       port=eid[2],
+                                       p_type="gen_generic")
+
+        #TODO add wait_until_ports_appear
+        #TODO add to self.created_endp
+
+        #edit generic endp with type we actually want to run - construct  cmd 
+        cmd = ""
+        cmd_iperf_server = ""
+        if (self.cmd):
+            cmd=self.cmd
+        elif (self.type == 'ping'):
+            # lfping  -s 128 -i 0.1 -c 10000 -I sta0000 www.google.com
+            cmd="lfping"
+            if (self.interval):
+                cmd = cmd + " -i %d" % self.interval
+            if (self.loop_count):
+                cmd = cmd + " -c %d" % self.loop_count
+            cmd = cmd + " -I %s" % eid[2]
+            if (self.dest):
+                cmd = cmd + str(self.dest)
+  
+        elif (self.type == 'iperf3-client'):
+            #  iperf3 --forceflush --format k --precision 4 -c 192.168.10.1 -t 60 --tos 0 -b 1K --bind_dev sta0000 
+            # -i 5 --pidfile /tmp/lf_helper_iperf3_testing.pid -p 101
+            cmd = self.do_iperf(self, 'client', unique_alias, eid)
+        elif (self.type == 'iperf3-server'):
+            # iperf3 --forceflush --format k --precision 4 -s --bind_dev sta0000 
+            # -i 5 --pidfile /tmp/lf_helper_iperf3_testing.pid -p 101
+            cmd = self.do_iperf(self, 'server', unique_alias, eid)
+
+        elif (self.type == 'iperf'):
+            #TODO server part of 'iperf'
+            #cmd_iperf_server = self.do_iperf(self, 'server', self.server_port, eid)
+            cmd = self.do_iperf(self, 'client', unique_alias, eid)
+            #self.command.post_set_gen_cmd(name = self.,
+                                          #command= cmd_iperf_server)
+
+        elif (self.type == 'lfcurl'):
+            # ./scripts/lf_curl.sh  -p sta0000 -i 192.168.50.167 -o /dev/null -n 1 -d 8.8.8.8
+            cmd = cmd + str("./scripts/lf_curl.sh -p %s" % eid[2])
+            # cmd = cmd + "-i %s" % str(self.dest) TODO: get ip address of -i (sta0000) if i is a station, but not if eth port.
+            cmd = cmd + "-o /dev/null -n 1 -d %s" % str(self.dest)
+
+        else:
+            raise ValueError("Was not able to identify type given in arguments.")
+        self.command.post_set_gen_cmd(name = unique_alias,
+                                      command= cmd)
+        
+    def do_iperf (self, type, alias, eid):
+        cmd = "iperf3 --forceflush --format k --precision 4"
+        #TODO check if dest, client_port and server_port are not empty
+        if (type == 'client'):
+            cmd = cmd + str("-c %s" % self.dest) + " -t 60 --tos 0 -b 1K" + str("--bind_dev %s" % eid[2])
+            cmd = cmd + " -i 5 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
+            cmd = cmd + " -p %d" % self.client_port
+        else:
+            cmd = cmd + str("--bind_dev %s" % eid[2])
+            cmd = cmd + " -i 5 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
+            cmd = cmd + " -p %d" % self.server_port
+        return cmd
 
     def cleanup(self, sta_list):
         logger.info("Cleaning up all cxs and endpoints.")
@@ -280,8 +366,7 @@ class GenTest():
                 self.command.post_rm_endp(endp_name=endp_name, debug=self.debug)
         if self.sta_list:
             for sta_name in self.sta_list:
-                eid = LFUtils.name_to_eid(sta_name)
-                if self.port_exists(self, eid, self.debug):
+                if self.port_exists(self, LFUtils.name_to_eid(sta_name), self.debug):
                     self.command.post_rm_vlan(port=sta_name, debug=self.debug)
 
         if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug):
@@ -412,40 +497,43 @@ def main():
     required = parser.add_argument_group('Arguments that must be defined by user:')
     optional = parser.add_argument_group('Arguements that do not need to be defined by user:')
 
-    required.add_argument('--type', type=str, help='type of command to run: generic, lfping, iperf3-client, iperf3-server, iperf, lfcurl. Iperf option will create both iperf client and server.', required=True)
     required.add_argument("--lf_user", type=str, help="user: lanforge", default=None)
     required.add_argument("--lf_passwd", type=str, help="passwd: lanforge", default=None)
+    required.add_argument('--type', type=str, help='type of command to run: ping, iperf3-client, iperf3-server, iperf, lfcurl', required=True)
 
     optional.add_argument('--mgr', help='specifies command to be run by generic type endp', default=None)
     optional.add_argument('--mgr_port', help='specifies command to be run by generic type endp', default=8080)
     optional.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
-    optional.add_argument('--csv_outfile', help="output file for csv data", default="test_generic_kpi")
-    optional.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
-    optional.add_argument('--interval', help='interval to use when running lfping (1s, 1m)', default=1)
+
+    #generic endpoint configurations
+    optional.add_argument('--interval', help='interval to use when running lfping. in seconds', default=1)
     optional.add_argument('--speedtest_min_up', help='sets the minimum upload threshold for the speedtest type', default=None)
     optional.add_argument('--speedtest_min_dl', help='sets the minimum download threshold for the speedtest type', default=None)
     optional.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type', default=None)
-    optional.add_argument('--client', help='client (sta alias) to the iperf3 server', default=None)
     optional.add_argument('--file_output_lfcurl', help='location to output results of lf_curl, absolute path preferred', default=None)
-    optional.add_argument('--loop_count', help='determines the number of loops to use in lf_curl', default=None)
+    optional.add_argument('--loop_count', help='determines the number of loops to use in lf_curl and lfping', default=None)
     optional.add_argument("--test_rig", help="test rig for kpi.csv, testbed that the tests are run on", default="")
     optional.add_argument("--test_tag", help="test tag for kpi.csv,  test specific information to differentiate the test", default="")
     optional.add_argument("--dut_hw_version", help="dut hw version for kpi.csv, hardware version of the device under test", default="")
     optional.add_argument("--dut_sw_version", help="dut sw version for kpi.csv, software version of the device under test", default="")
     optional.add_argument("--dut_model_num", help="dut model for kpi.csv,  model number / name of the device under test", default="")
     optional.add_argument("--dut_serial_num", help="dut serial for kpi.csv, serial number of the device under test", default="")
-    optional.add_argument('--dest', help='destination IP for command', default=None)
+    optional.add_argument('--dest', help='"Destination URL/IP" for lfcurl, "Target" for lfping and iperf-client', default=None)
     optional.add_argument('--client_port', help="the port number of the iperf client endpoint",default=None)
     optional.add_argument('--server_port', help="the port number of the iperf server endpoint",default=None)
 
-    optional.add_argument('--use_existing_eid', help="EID of port we want to use",default=None)
+    #args for creating stations or using existing eid
+    optional.add_argument('--use_existing_eid', help="EID of ports we want to use (in list form)",default=None)
     optional.add_argument('--radio', help="radio that stations should be created on",default=None)
     optional.add_argument('--num_stations', help="number of stations that are to be made, defaults to 1",default=1)
     optional.add_argument('--ssid', help="ssid for stations to connect to",default=None)
     optional.add_argument('--passwd', help="password to ssid for stations to connect to",default=None)
     optional.add_argument('--mode', help='Used to force mode of stations')
     optional.add_argument('--ap', help='Used to force a connection to a particular AP')
+
+    # args for reporting
     optional.add_argument('--output_format', help= 'choose either csv or xlsx',default='csv')
+    optional.add_argument('--csv_outfile', help="output file for csv data", default="test_generic_kpi")
     optional.add_argument('--report_file', help='where you want to store results', default=None)
     optional.add_argument( '--a_min', help= '--a_min bps rate minimum for side_a', default=256000)
     optional.add_argument('--b_min', help= '--b_min bps rate minimum for side_b', default= 256000)
@@ -453,6 +541,7 @@ def main():
     optional.add_argument( '--port_mgr_cols', help='Columns wished to be monitored from port manager tab',default= ['ap', 'ip', 'parent dev'])
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',default= None)
     optional.add_argument('--monitor_interval',help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',default='2s')
+    optional.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
 
     #check if the arguments are empty?
     if (len(sys.argv) <= 2 and not sys.argv[1]):
@@ -475,7 +564,7 @@ def main():
     else:
         station_list = []
 
-
+    #TODO edit name_prefix
     generic_test = GenTest(host=args.mgr, port=args.mgr_port,
                            lf_user=args.lf_user, lf_passwd=args.lf_passwd,
                            radio=args.radio,
@@ -498,8 +587,8 @@ def main():
                            csv_outfile=args.csv_outfile,
                            loop_count=args.loop_count,
                            client=args.client,
-                           _client_port=args.client_port,
-                           _server_port=args.server_port,
+                           client_port=args.client_port,
+                           server_port=args.server_port,
                            _debug_on=args.debug)
 
     if not generic_test.check_tab_exists():
