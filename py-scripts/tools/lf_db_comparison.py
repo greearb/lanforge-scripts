@@ -397,7 +397,7 @@ class db_comparison:
 
             wb.close()
         else:
-            print(f"None of the sheet {sheet_name} are available for wct, dp, ap_auto...")
+            logger.info(f"The {sheet_name} sheet is does not exist/available.")
 
     def set_background_color(self, cell, percentage):
         if percentage >= 90:  # You can define your own conditions here
@@ -592,11 +592,11 @@ class db_comparison:
                                                                            distinct=True)
                         list_of_short_desc = sorted(list(set(dp_short_desc['short-description_1'].unique()) & set(
                             dp_short_desc['short-description_1'].unique())))
-                        slicing_short_description_tag = ['-'.join(str(item).split('-')[0:3]) + '-%' for item in
-                                                         list_of_short_desc]
-                        sorted_short_description = list(set(slicing_short_description_tag))
-                        # self.short_description = 'TCP-%'
-                        for short_desc in sorted_short_description:
+                        ## self.short_description = 'TCP-%'
+                        # slicing_short_description_tag = ['-'.join(str(item).split('-')[0:3]) + '-%' for item in
+                        #                                  list_of_short_desc]
+                        # sorted_short_description = list(set(slicing_short_description_tag))
+                        for short_desc in list_of_short_desc:
                             self.short_description = short_desc
                             # querying the db for Wi-fi Capacity
                             query_results.append(
