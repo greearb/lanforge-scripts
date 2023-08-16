@@ -55,15 +55,15 @@ from openpyxl.styles import Alignment, Font, PatternFill
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 lf_pdf_report = importlib.import_module("py-scripts.lf_report")
-# lf_report = lf_report.lf_report
+lf_graph = importlib.import_module("py-scripts.lf_graph")
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class db_comparison:
-    def __init__(self, host, database, data_base1=None, data_base2=None, table_name=None, dp=None, wct=None,
-                 ap_auto=None, index=None):
+    def __init__(self, host, database, data_base1=None, data_base2=None, table_name=None, dp=False, wct=False,
+                 ap_auto=False, index=None, plot_graphs=False, sort_results=False):
         self.query_df_dict = None
         self.lf_mgr_ip = host
         self.lf_mgr_port = "8080"
@@ -88,6 +88,8 @@ class db_comparison:
         self.wct = wct
         self.ap_auto = ap_auto
         self.table_name = table_name
+        self.plot_graph = plot_graphs
+        self.sort_results = sort_results
         if self.database:
             self.db_conn = sqlite3.connect(self.database)
         else:
@@ -373,7 +375,7 @@ class db_comparison:
             wb.save(file_name)
             wb.close()
         else:
-            print(f"None of the sheet {sheet_name} are available for wct, dp, ap_auto...")
+            logger.info(f"{sheet_name}  is not available.")
 
     def merge_cells_with_msg(self, file_name, sheet_name, start_column, start_row, end_column, end_row, msg,
                              font_style="DejaVu Serif", font_size=32, font_color="0A9B22"):
@@ -797,7 +799,7 @@ class db_comparison:
         report.set_text(
             "To calculate percentages, use the formula (Test Run-2 Values / Test Run-1 Values) * 100. <div><br>"
             "<u><b>Color Indication</u> :-</b><div><br>"
-            " * <font color="'#00FF00'">GREEN</font>  -  % >=  90,  <div><br>"
+            " * <font color="'#00FF00'">GREEN</font>  -   % >=  90,  <div><br>"
             " * <font color="'#FFFF00'">YELLOW</font>  -  % >=  70,  <div><br>"
             " * <font color="'#E39957'">ORANGE</font>  -  % >=  50,  <div><br>"
             " * <font color="'#FF0000'">RED</font>     -  % <   50"
@@ -810,6 +812,8 @@ class db_comparison:
         for i, df in enumerate(dataframes):
             # get the keyword from the Test-Tag column
             keyword = df['Test-Tag'][0].split('_')[0]
+            df_index = df.index.tolist()
+            values_list = df[['Test Run-1 Values', 'Test Run-2 Values']].T.values.tolist()
 
             # set the table title based on the keyword
             title = title_dict.get(keyword, 'UNKNOWN')
@@ -828,6 +832,34 @@ class db_comparison:
                 else:
                     color = '#FF0000'  # red
                 return f'background:{color}'
+
+            if self.plot_graph:
+                graph = lf_graph.lf_line_graph(_data_set=values_list,
+                                               _xaxis_name="Table Index",
+                                               _yaxis_name="Mega Bytes Per Second (MBps)",
+                                               _xaxis_categories=df_index,
+                                               _xaxis_label=None,
+                                               _graph_title="Graph Title will come here...:)",
+                                               _title_size=16,
+                                               _graph_image_name=f"{keyword}_graph_{i}",
+                                               _label=["Test Run-1 Values", "Test Run-2 Values"],
+                                               _font_weight='bold',
+                                               _color=['forestgreen', 'r'],
+                                               _figsize=(16, 5),
+                                               _xaxis_step=1,
+                                               _xticks_font=None,
+                                               _text_font=16,
+                                               _legend_handles=None,
+                                               _legend_loc="best",
+                                               _legend_box=None,
+                                               _legend_ncol=1,
+                                               _legend_fontsize=None,
+                                               _marker=['s', 'v'])
+
+                graph_png = graph.build_line_graph()
+                report.set_graph_image(graph_png)
+                report.move_graph_image()
+                report.build_graph()
 
             colored_df = df.style.applymap(set_pdf_column_color, subset=['Comparison'])
             report.set_table_dataframe(colored_df)
@@ -906,6 +938,10 @@ INCLUDE_IN_README: False
                              '--index 0, 1 (compares with the first and second test runs.)\n',
                         action='append',
                         default=[])
+    parser.add_argument('--plot_graphs', help="To generate the comparison graphs in the final report.",
+                        action='store_true')
+    parser.add_argument('sort_poor_comparison', help='To show the poor comparison results at the top of the report.',
+                        action='store_true')
     # logging configuration:
     parser.add_argument('--log_level', default=None,
                         help='Set logging level: debug | info | warning | error | critical')
@@ -936,7 +972,9 @@ INCLUDE_IN_README: False
                         dp=args.dp,
                         wct=args.wct,
                         ap_auto=args.ap_auto,
-                        index=args.index)
+                        index=args.index,
+                        plot_graphs=args.plot_graphs,
+                        sort_results=args.sort_poor_comparison)
     # checking the dbs are existed and the data is identical or not
     if not args.database:
         obj.checking_data_bases(db1=args.db1, db2=args.db2)
