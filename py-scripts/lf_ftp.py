@@ -368,64 +368,89 @@ class FtpTest(LFCliBase):
         # data in json format
         data = self.json_get("layer4/list?fields=bytes-rd")
 
-        # list of layer 4 connections name
-        self.data1 = []
-
-        for i in range(self.num_sta):
-            self.data1.append((str(list(data['endpoint'][i].keys())))[2:-2])
-
-        data2 = self.data1
-        list_of_time = []
-        list1 = []
-        list2 = []
-        counter = 0
-
-        for i in range(self.num_sta):
-            list_of_time.append(0)
-        # running layer 4 traffic upto user given time
-        while str(datetime.now() - time1) <= self.traffic_duration:
-            if list_of_time.count(0) == 0:
-                break
-
-            while list_of_time.count(0) != 0:
-
-                # run script upto given time
-                if counter == 0:
-                    if str(datetime.now() - time1) >= self.duration:
-                        counter = counter + 1
-                        break
-                else:
-                    if str(datetime.now() - time1) >= self.traffic_duration:
-                        break
-
+        if 'endpoint' in data.keys():
+            # list of layer 4 connections name
+            self.data1 = []
+            if type(data['endpoint']) is dict:
                 for i in range(self.num_sta):
-                    data = self.json_get("layer4/list?fields=bytes-rd")
+                    self.data1.append((str(data['endpoint']['name'])))
+            else:
+                for i in range(self.num_sta):
+                    self.data1.append((str(list(data['endpoint'][i].keys())))[2:-2])
+            data2 = self.data1
+            list_of_time = []
+            list1 = []
+            list2 = []
+            counter = 0
 
-                    # reading uc-avg data in json format
-                    uc_avg = self.json_get("layer4/list?fields=uc-avg")
-                    if int(data['endpoint'][i][data2[i]]['bytes-rd']) <= self.file_size_bytes:
+            for i in range(self.num_sta):
+                list_of_time.append(0)
+            # running layer 4 traffic upto user given time
+            while str(datetime.now() - time1) <= self.traffic_duration:
+                if list_of_time.count(0) == 0:
+                    break
+
+                while list_of_time.count(0) != 0:
+
+                    # run script upto given time
+                    if counter == 0:
+                        if str(datetime.now() - time1) >= self.duration:
+                            counter = counter + 1
+                            break
+                    else:
+                        if str(datetime.now() - time1) >= self.traffic_duration:
+                            break
+
+                    for i in range(self.num_sta):
                         data = self.json_get("layer4/list?fields=bytes-rd")
-                    if int(data['endpoint'][i][data2[i]]['bytes-rd']) >= self.file_size_bytes:
-                        list1.append(i)
-                        if list1.count(i) == 1:
-                            list2.append(i)
-                            list1 = list2
+                        #print("data1",data)
+                        # reading uc-avg data in json format
+                        uc_avg = self.json_get("layer4/list?fields=uc-avg")
+                        #print("uc_avg",uc_avg)
+                        if type(data['endpoint']) is dict:
+                            if int(data['endpoint']['bytes-rd']) <= self.file_size_bytes:
+                                data = self.json_get("layer4/list?fields=bytes-rd")
+                            if int(data['endpoint']['bytes-rd']) >= self.file_size_bytes:
+                                list1.append(i)
+                                if list1.count(i) == 1:
+                                    list2.append(i)
+                                    list1 = list2
 
-                            # stop station after download or upload file with particular size
-                            self.json_post("/cli-json/set_cx_state", {
-                                "test_mgr": "default_tm",
-                                "cx_name": "CX_" + data2[i],
-                                "cx_state": "STOPPED"
-                            }, debug_=self.debug)
+                                    # stop station after download or upload file with particular size
+                                    self.json_post("/cli-json/set_cx_state", {
+                                        "test_mgr": "default_tm",
+                                        "cx_name": "CX_" + data2[i],
+                                        "cx_state": "STOPPED"
+                                    }, debug_=self.debug)
 
-                            list_of_time[i] = round(int(uc_avg['endpoint'][i][data2[i]]['uc-avg']) / 1000, 1)
-                time.sleep(0.5)
+                                    list_of_time[i] = round(int(uc_avg['endpoint']['uc-avg']) / 1000, 1)
+                        else:
+                            if int(data['endpoint'][i][data2[i]]['bytes-rd']) <= self.file_size_bytes:
+                                data = self.json_get("layer4/list?fields=bytes-rd")
+                            if int(data['endpoint'][i][data2[i]]['bytes-rd']) >= self.file_size_bytes:
+                                list1.append(i)
+                                if list1.count(i) == 1:
+                                    list2.append(i)
+                                    list1 = list2
 
-        # method calling for throughput calculation
-        self.throughput_calculation()
+                                    # stop station after download or upload file with particular size
+                                    self.json_post("/cli-json/set_cx_state", {
+                                        "test_mgr": "default_tm",
+                                        "cx_name": "CX_" + data2[i],
+                                        "cx_state": "STOPPED"
+                                    }, debug_=self.debug)
 
-        # return list of download/upload time in seconds
-        return list_of_time
+                                    list_of_time[i] = round(int(uc_avg['endpoint'][i][data2[i]]['uc-avg']) / 1000, 1)
+                    time.sleep(0.5)
+
+            # method calling for throughput calculation
+            self.throughput_calculation()
+
+            # return list of download/upload time in seconds
+            return list_of_time
+        else:
+            logger.info("No layer 4-7 endpoints")
+            exit()
 
     def throughput_calculation(self):
         '''Method for calculate throughput of each station'''
@@ -433,7 +458,10 @@ class FtpTest(LFCliBase):
         self.list_of_throughput = []
         data = self.json_get("layer4/list?fields=bytes-rd")
         for i in range(self.num_sta):
-            throughput = data['endpoint'][i][self.data1[i]]['bytes-rd'] / 10 ** 6
+            if type(data['endpoint']) is dict:
+                throughput = data['endpoint']['bytes-rd'] / 10 ** 6
+            else:
+                throughput = data['endpoint'][i][self.data1[i]]['bytes-rd'] / 10 ** 6
             if isinstance(throughput, float):
                 self.list_of_throughput.append(round(throughput, 2))
             else:
