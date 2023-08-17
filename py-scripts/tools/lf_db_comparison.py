@@ -887,7 +887,8 @@ class db_comparison:
                                                _legend_box=None,
                                                _legend_ncol=1,
                                                _legend_fontsize=None,
-                                               _marker=['s', 'v'])
+                                               _marker=['s', 'v'],
+                                               _grid=True)
 
                 graph_png = graph.build_line_graph()
                 report.set_graph_image(graph_png)
