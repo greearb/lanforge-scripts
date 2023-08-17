@@ -807,7 +807,19 @@ class db_comparison:
         report.build_text_simple()
 
         # create a dictionary to map keywords to table titles
-        title_dict = {'WCT': 'WIFI-CAPACITY', 'DP': 'DATA PLANE', 'AP_AUTO': 'AP AUTO'}
+        title_dict = {'WCT': 'WIFI-CAPACITY', 'DP': 'DATA PLANE', 'AP': 'AP AUTO'}
+
+        if self.sort_results:
+            report.set_table_title("Sorted Filter Results From Overall Report:")
+            report.build_table_title()
+            # Assuming you've constructed the DataFrame with the given data
+            df = pd.concat(dataframes, ignore_index=True)
+
+            # Convert the 'Comparison' column to numeric (removing the '%' sign) and filter
+            df['Comparison'] = df['Comparison'].str.rstrip('%').astype(float)
+            filtered_rows = df[df['Comparison'] <= 50.0]
+            report.set_table_dataframe(filtered_rows)
+            report.build_table()
 
         for i, df in enumerate(dataframes):
             # get the keyword from the Test-Tag column
@@ -834,12 +846,20 @@ class db_comparison:
                 return f'background:{color}'
 
             if self.plot_graph:
+                if keyword == 'WCT':
+                    graph_title = f"{df['Test-Tag'][0]} - Different Stations"
+                elif keyword == 'DP':
+                    graph_title = f"{df['Test-Tag'][0]} - {df['Short Description - (NSS-Band-Packet-Size)'][0]}"
+                elif keyword == 'AP':
+                    graph_title = f"{df['Test-Tag'][0]} - Different Band Ranges"
+                else:
+                    graph_title = ""
                 graph = lf_graph.lf_line_graph(_data_set=values_list,
                                                _xaxis_name="Table Index",
-                                               _yaxis_name="Mega Bytes Per Second (MBps)",
+                                               _yaxis_name="Mega Bytes Per Second (Mbps)",
                                                _xaxis_categories=df_index,
                                                _xaxis_label=None,
-                                               _graph_title="Graph Title will come here...:)",
+                                               _graph_title=graph_title,
                                                _title_size=16,
                                                _graph_image_name=f"{keyword}_graph_{i}",
                                                _label=["Test Run-1 Values", "Test Run-2 Values"],
@@ -940,7 +960,7 @@ INCLUDE_IN_README: False
                         default=[])
     parser.add_argument('--plot_graphs', help="To generate the comparison graphs in the final report.",
                         action='store_true')
-    parser.add_argument('sort_poor_comparison', help='To show the poor comparison results at the top of the report.',
+    parser.add_argument('--sort_poor_comparison', help='To show the poor comparison results at the top of the report.',
                         action='store_true')
     # logging configuration:
     parser.add_argument('--log_level', default=None,
