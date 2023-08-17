@@ -91,6 +91,9 @@ class ThroughputQOS(Realm):
                  ssid_5g=None,
                  security_5g=None,
                  password_5g=None,
+                 ssid_6g=None,
+                 security_6g=None,
+                 password_6g=None,
                  create_sta=True,
                  name_prefix=None,
                  upstream=None,
@@ -98,6 +101,7 @@ class ThroughputQOS(Realm):
                  sta_list=[],
                  radio_2g="wiphy0",
                  radio_5g="wiphy1",
+                 radio_6g="wiphy2",
                  host="localhost",
                  port=8080,
                  mode=0,
@@ -128,8 +132,12 @@ class ThroughputQOS(Realm):
         self.ssid_5g = ssid_5g
         self.security_5g = security_5g
         self.password_5g = password_5g
+        self.ssid_6g = ssid_6g
+        self.security_6g = security_6g
+        self.password_6g = password_6g
         self.radio_2g = radio_2g
         self.radio_5g = radio_5g
+        self.radio_6g = radio_6g
         self.num_stations = num_stations
         self.sta_list = sta_list
         self.create_sta = create_sta
@@ -195,6 +203,7 @@ class ThroughputQOS(Realm):
                                                debug=self.debug)
 
     def build(self):
+        print(self.ssid_6g)
         for key in self.bands:
             if self.create_sta:
                 if key == "2.4G" or key == "2.4g":
@@ -221,7 +230,19 @@ class ThroughputQOS(Realm):
                     self.station_profile.set_command_param("set_port", "report_timer", 1500)
                     self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                     self.station_profile.create(radio=self.radio_5g, sta_names_=self.sta_list, debug=self.debug)
-                if key == "BOTH" or key == "both":
+                if key == "6G" or key == "6g":
+                    self.station_profile.mode = 15
+                    if self.ssid is None:
+                        self.station_profile.use_security(self.security_6g, self.ssid_6g, self.password_6g)
+                    else:
+                        self.station_profile.use_security(self.security, self.ssid, self.password)
+                    self.station_profile.set_number_template(self.number_template)
+                    print("Creating stations")
+                    self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+                    self.station_profile.set_command_param("set_port", "report_timer", 1500)
+                    self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+                    self.station_profile.create(radio=self.radio_6g, sta_names_=self.sta_list, debug=self.debug)
+                if key == "" or key == "both":
                     split = len(self.sta_list) // 2
                     if self.ssid is None:
                         self.station_profile.use_security(self.security_2g, self.ssid_2g, self.password_2g)
@@ -567,6 +588,8 @@ class ThroughputQOS(Realm):
                 elif case == "5g" or case == "5G":
                     num_stations.append("{}".format(str(len(self.sta_list))))
                     mode.append("an-AX")
+                elif case == "6g" or case == "6G":
+                    num_stations.append("{}".format(str(len(self.sta_list))))
                 elif case == "both" or case == "BOTH":
                     num_stations.append("{} + {}".format(str(len(self.sta_list) // 2), str(len(self.sta_list) // 2)))
                     mode.append("bgn-AX + an-AX")
@@ -666,9 +689,11 @@ class ThroughputQOS(Realm):
         "AP Model": self.ap_name,
         "SSID_2.4GHz": self.ssid_2g,
         "SSID_5GHz": self.ssid_5g,
+        "SSID_6GHz" : self.ssid_6g,
         "Traffic Duration in hours" : round(int(self.test_duration)/3600,2),
         "Security_2.4GHz" : self.security_2g,
         "Security_5GHz" : self.security_5g,
+        "Security_6GHz" : self.security_6g,
         "Protocol" : (self.traffic_type.strip("lf_")).upper(),
         "Traffic Direction" : self.direction,
         "TOS" : self.tos,
@@ -1045,11 +1070,15 @@ def main():
     parser.add_argument('--ssid_2g', help="ssid for  2.4Ghz band")
     parser.add_argument('--security_2g', help="security type for  2.4Ghz band")
     parser.add_argument('--passwd_2g', help="password for 2.4Ghz band")
+    parser.add_argument('--ssid_6g', help="ssid for  6Ghz band")
+    parser.add_argument('--security_6g', help="security type for  6Ghz band")
+    parser.add_argument('--passwd_6g', help="password for 6Ghz band")
     parser.add_argument('--ssid_5g', help="ssid for  5Ghz band")
     parser.add_argument('--security_5g', help="security type  for  5Ghz band")
     parser.add_argument('--passwd_5g', help="password for  5Ghz band")
     parser.add_argument('--radio_2g', help="radio which supports 2.4G bandwidth", default="wiphy0")
     parser.add_argument('--radio_5g', help="radio which supports 5G bandwidth", default="wiphy1")
+    parser.add_argument('--radio_6g', help="radio which supports 6G bandwidth", default="wiphy2")
     args = parser.parse_args()
     print("--------------------------------------------")
     print(args)
@@ -1109,6 +1138,15 @@ def main():
                                                       radio=args.radio_5g)
             else:
                 station_list = args.sta_names.split(",")
+        elif bands[i] == "6G" or bands[i] == "6g":
+            args.bands = bands[i]
+            args.mode = 14
+            if args.create_sta:
+                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=int(args.num_stations) - 1,
+                                                      padding_number_=10000,
+                                                      radio=args.radio_6g)
+            else:
+                station_list = args.sta_names.split(",")
         elif bands[i] == "BOTH" or bands[i] == "both":
             args.bands = bands[i]
             args.mode = 0
@@ -1149,8 +1187,12 @@ def main():
                                            ssid_5g=args.ssid_5g,
                                            password_5g=args.passwd_5g,
                                            security_5g=args.security_5g,
+                                           ssid_6g=args.ssid_6g,
+                                           password_6g=args.passwd_6g,
+                                           security_6g=args.security_6g,
                                            radio_2g=args.radio_2g,
                                            radio_5g=args.radio_5g,
+                                           radio_6g=args.radio_6g,
                                            test_duration=args.test_duration,
                                            use_ht160=False,
                                            side_a_min_rate=int(loads['upload'][index]),
