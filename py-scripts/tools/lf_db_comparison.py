@@ -5,14 +5,27 @@ NAME: lf_db_comparison.py
 PURPOSE: lf_db_comparison.py used for comparing the two databases and data manipulations using sql query's
 
 EXAMPLE:
-        # Use CLI to compare two different databases:
+        # To compare two different databases:
 
             ./lf_db_comparison.py --mgr localhost --db1 <path of the database-1> --db2 <path of the database-2> --wct --dp --ap_auto
+
+            OPTIONS:-
+
+            --> To compare two different databases with plotting graphs for each comparision table
+
+                ./lf_db_comparison.py --db1 <path of the database-1> --db2 <path of the database-2> --wct --ap_auto --dp --plot_graphs
+
+            --> To compare two different databases with sorting poor comparision results
+
+                ./lf_db_comparison.py --db1 <path of the database-1> --db2 <path of the database-2> --wct --ap_auto --dp --sort_poor_comparison
+
+            --> To compare two different databases with plotting graphs and sorting poor comparision results
+
+                ./lf_db_comparison.py --db1 <path of the database-1> --db2 <path of the database-2> --wct --ap_auto --dp --plot_graphs --sort_poor_comparison
 
         # Compare two test runs in a single database using CLI:
 
             ./lf_db_comparison.py --mgr localhost --database <path of the database> --wct --dp --ap_auto  --index 0,1
-
 
 SCRIPT_CLASSIFICATION:  Comparison, Excel & Pdf Reporting
 
@@ -25,7 +38,7 @@ NOTES:
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   29-JUN-2023,
+VERIFIED_ON:   17-AUG-2023,
              Build Version:  5.4.6
              Kernel Version: 6.2.14+
 
@@ -906,9 +919,23 @@ NAME: lf_db_comparison.py
 PURPOSE: lf_db_comparison.py used for comparing the two databases and data manipulations using sql query's
 
 EXAMPLE:
-        # Use CLI to compare two different databases:
+        # To compare two different databases:
 
             ./lf_db_comparison.py --mgr localhost --db1 <path of the database-1> --db2 <path of the database-2> --wct --dp --ap_auto
+            
+            OPTIONS:-
+            
+            --> To compare two different databases with plotting graphs for each comparision table
+            
+                ./lf_db_comparison.py --db1 <path of the database-1> --db2 <path of the database-2> --wct --ap_auto --dp --plot_graphs
+                
+            --> To compare two different databases with sorting poor comparision results
+            
+                ./lf_db_comparison.py --db1 <path of the database-1> --db2 <path of the database-2> --wct --ap_auto --dp --sort_poor_comparison
+                
+            --> To compare two different databases with plotting graphs and sorting poor comparision results
+            
+                ./lf_db_comparison.py --db1 <path of the database-1> --db2 <path of the database-2> --wct --ap_auto --dp --plot_graphs --sort_poor_comparison
 
         # Compare two test runs in a single database using CLI:
 
@@ -925,7 +952,7 @@ NOTES:
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   29-JUN-2023,
+VERIFIED_ON:   17-AUG-2023,
              Build Version:  5.4.6
              Kernel Version: 6.2.14+
 
