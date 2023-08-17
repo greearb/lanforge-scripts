@@ -114,6 +114,7 @@ class GenTest():
         self.exit_on_fail = _exit_on_fail
         self.csv_outfile = csv_outfile
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
+        self.report_timer = 1500
 
         # create a session
         # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
@@ -209,10 +210,28 @@ class GenTest():
     """
 
     def start(self):
+        #admin up all created stations
+        if self.sta_list:
+            for sta in self.sta_list:
+                eid = LFUtils.name_to_eid(sta)
+                self.command.post_set_port(shelf = eid[0],
+                                           resource = eid[1],
+                                           port = eid[2],
+                                           current_flags= 0, # vs 0x1 = interface down
+                                           interest=3833610, # includes use_current_flags + dhcp + dhcp_rls + ifdown
+                                           report_timer= self.report_timer)
         
+        if self.use_existing_eid:
+            for eid in self.sta_list:
+                self.command.post_set_port(shelf = eid[0],
+                                           resource = eid[1],
+                                           port = eid[2],
+                                           current_flags= 0, # vs 0x1 = interface down
+                                           interest=3833610, # includes use_current_flags + dhcp + dhcp_rls + ifdown
+                                           report_timer= self.report_timer)
 
         if LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
-                                             port_list=self.station_profile.station_names,
+                                             port_list=self.sta_list,
                                              debug_=self.debug):
             self._pass("All stations went admin up.")
         else:
@@ -264,7 +283,7 @@ class GenTest():
                                                   debug=self.debug)
                     self.command.post_set_port(alias=sta_alias,
                                                interest=set_port_interest_rslt,
-                                               report_timer=1500,
+                                               report_timer=self.report_timer,
                                                debug=self.debug)
             else:
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
