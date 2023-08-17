@@ -813,7 +813,7 @@ class FtpTest(LFCliBase):
         logger.info("returned file {}".format(html_file))
         logger.info(html_file)
         self.report.write_pdf()
-        self.kpi_results
+        #self.kpi_results
         # print("generate_report - self.kpi_results:{kpi_results}".format(kpi_results=self.kpi_results))
 
         # Begin kpi.csv
@@ -853,16 +853,16 @@ class FtpTest(LFCliBase):
             # print("download_table_value:{download_table_value}".format(download_table_value=download_table_value))
 
         # if upload tests are being ran as well:
-        if len(self.kpi_results) > 1:
-            for upload_rts in self.kpi_results[1]:
+        if len(self.kpi_results) > 0:
+            for upload_rts in self.kpi_results[0]:
                 split_upload_rates = upload_rts.split(',')
                 # print("split_upload_rates:{split_upload_rates}".format(split_upload_rates=split_upload_rates))
+                # split upload data rates for upload_table_values dict
 
                 up_x_fin = []
                 up_y_fin = []
                 up_z_fin = []
 
-                # split upload data rates for upload_table_values dict
                 up_x = split_upload_rates[0]
                 up_y = split_upload_rates[1]
                 up_z = split_upload_rates[2]
@@ -887,7 +887,7 @@ class FtpTest(LFCliBase):
                     "Maximum": up_y_fin,
                     "Average": up_z_fin
                 }
-                # print("upload_table_value:{upload_table_value}".format(upload_table_value=upload_table_value))
+                print("upload_table_value:{upload_table_value}".format(upload_table_value=upload_table_value))
 
         if local_lf_report_dir != "":
             report = lf_report.lf_report(
@@ -933,23 +933,27 @@ class FtpTest(LFCliBase):
             self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Average".format(
                 band=download_table_value['Band'][band])
             self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=download_table_value['Average'][band])
-            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)  
 
+            if 'Upload' in self.directions:
+                for band in range(len(upload_table_value["Band"])):
             # ftp upload data for kpi.csv
-            self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Upload {band}".format(
-                band=upload_table_value['Band'][band])
-            self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Minimum".format(
-                band=upload_table_value['Band'][band])
-            self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=upload_table_value['Minimum'][band])
-            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-            self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Maximum".format(
-                band=upload_table_value['Band'][band])
-            self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=upload_table_value['Maximum'][band])
-            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-            self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Average".format(
-                band=upload_table_value['Band'][band])
-            self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=upload_table_value['Average'][band])
-            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+                    self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Upload {band}".format(
+                        band=upload_table_value['Band'][band])
+                    self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Minimum".format(
+                        band=upload_table_value['Band'][band])
+                    print("self.kpi_csv.kpi_dict['numeric-score']",self.kpi_csv.kpi_dict['numeric-score'])
+                    self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=upload_table_value['Minimum'][band])
+                    self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+                    self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Maximum".format(
+                        band=upload_table_value['Band'][band])
+                    print(self.kpi_csv.kpi_dict['numeric-score'])
+                    self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=upload_table_value['Maximum'][band])
+                    self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+                    self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Average".format(
+                        band=upload_table_value['Band'][band])
+                    self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=upload_table_value['Average'][band])
+                    self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
 
             '''
             # ftp download data for kpi.csv
