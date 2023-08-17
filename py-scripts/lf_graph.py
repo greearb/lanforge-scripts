@@ -966,6 +966,7 @@ class lf_line_graph:
                  _legend_fontsize=None,
                  _marker=None,
                  _dpi=96,
+                 _grid=True,
                  _enable_csv=False,
                  _reverse_x=False,
                  _reverse_y=False):
@@ -981,6 +982,7 @@ class lf_line_graph:
             _color = ['forestgreen', 'c', 'r', 'g', 'b', 'p']
         if _marker is None:
             _marker = ['s', 'o', 'v']  # available markers =  '.', 'o', 'v', '<', 's', '*', 'p', 'P'
+        self.grid = _grid
         self.data_set = _data_set
         self.xaxis_name = _xaxis_name
         self.yaxis_name = _yaxis_name
@@ -1021,6 +1023,8 @@ class lf_line_graph:
 
         plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
         plt.ylabel(self.yaxis_name, fontweight='bold', fontsize=15)
+        if self.grid:
+            plt.grid(True, linestyle=':')  # available line styles = ':', '-', '--', '-.'
         plt.legend(
             handles=self.legend_handles,
             loc=self.legend_loc,
