@@ -400,6 +400,9 @@ class GenTest():
         if current_stations:
             return True
         return False
+    
+    def wait_for_action(self, type, secs_to_wait):
+        success = False
 
     def validate_sort_args(self, args):
         print(args)
