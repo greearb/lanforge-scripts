@@ -951,7 +951,7 @@ class lf_line_graph:
                  _xaxis_label=None,
                  _graph_title="",
                  _title_size=16,
-                 _graph_image_name="image_name",
+                 _graph_image_name="line_graph",
                  _label=None,
                  _font_weight='bold',
                  _color=None,
@@ -970,7 +970,7 @@ class lf_line_graph:
                  _reverse_x=False,
                  _reverse_y=False):
         if _data_set is None:
-            _data_set = [[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]]
+            _data_set = [[30.4, 55.3, 69.2, 37.1, 44.0], [45.1, 67.2, 34.3, 22.4, 37.6], [22.5, 45.6, 12.7, 34.8, 22.5]]
         if _xaxis_categories is None:
             _xaxis_categories = [1, 2, 3, 4, 5]
         if _xaxis_label is None:
@@ -979,6 +979,8 @@ class lf_line_graph:
             _label = ["bi-downlink", "bi-uplink", 'uplink']
         if _color is None:
             _color = ['forestgreen', 'c', 'r', 'g', 'b', 'p']
+        if _marker is None:
+            _marker = ['s', 'o', 'v']  # available markers =  '.', 'o', 'v', '<', 's', '*', 'p', 'P'
         self.data_set = _data_set
         self.xaxis_name = _xaxis_name
         self.yaxis_name = _yaxis_name
@@ -1014,7 +1016,7 @@ class lf_line_graph:
                 data,
                 color=self.color[i],
                 label=self.label[i],
-                marker=self.marker)
+                marker=self.marker[i])
             i += 1
 
         plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
@@ -1162,6 +1164,10 @@ INCLUDE_IN_README
     test_file = open(output_html_2, "w")
     test_file.write(graph_html_obj)
     test_file.close()
+
+    graph = lf_line_graph()
+
+    graph.build_line_graph()
 
     # write to pdf
     # write logic to generate pdf here
