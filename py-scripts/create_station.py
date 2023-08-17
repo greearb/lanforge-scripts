@@ -22,6 +22,16 @@ EXAMPLE:
             
             create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
             --station_flag <staion_flags>
+
+         # For creating station with enterprise authentication with TLS
+
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --security <wpa2|wpa3> 
+                --eap_method TLS --radius_identity <username> --radius_passwd <password> --pk_passwd <password> --key_mgmt <key mgmt> --ca_cert <path> --private_key <path> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
+
+         # For creating station with enterprise authentication with TTLS or PEAP
+
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --security <wpa2|wpa3> 
+                --eap_method <TTLS|PEAP> --radius_identity <username> --radius_passwd <password> --key_mgmt <key mgmt> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
            
 
 SCRIPT_CLASSIFICATION:  Creation
@@ -127,6 +137,71 @@ NOTES:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
                     --security wpa2 --cleanup
 
+        * For enterprise authentication
+            --eap_method <eap_method>
+                    Add this argument to specify the EAP method
+            
+            example:
+                    TLS, TTLS, PEAP
+
+            --pairwise_cipher [BLANK]
+                    Add this argument to specify the type of pairwise cipher
+                
+                DEFAULT
+                CCMP
+                TKIP
+                NONE
+                CCMP-TKIP
+                CCMP-256
+                GCMP
+                GCMP-256
+                CCMP/GCMP-256
+
+            --groupwise_cipher [BLANK]
+                    Add this argument to specify the type of groupwise cipher
+
+                DEFAULT
+                CCMP
+                TKIP
+                WEP104
+                WEP40
+                GTK_NOT_USED
+                GCMP-256
+                CCMP-256
+                GCMP/CCMP-256
+                ALL  
+
+            --radius_identity <radius_username>
+                    Add this argument to specify the username of radius server
+
+            --radius_passwd <radius_password>
+                    Add this argument to specify the password of radius server
+
+            --pk_passwd <private_key_passsword>
+                    Add this argument to specify the private key password
+                    Required only for TLS
+
+            --ca_cert <path_to_certificate>
+                    Add this argument to specify the certificate path
+                    Required only for TLS
+            
+            example:
+                    /home/lanforge/ca.pem
+
+            --private_key <path_to_private_key>
+                    Add this argument to specify the private key path
+                    Required only for TLS
+            
+            example:
+                    /home/lanforge/client.p12
+
+            --key_mgmt <0 | WPA-EAP | WPA-SHA256>
+                    Add this flag to give the key management value
+
+                default : 0
+                wpa2    : WPA-EAP
+                wpa3    : WPA-SHA256
+
 STATUS: Functional
 
 VERIFIED_ON:   9-JUN-2023,
@@ -172,6 +247,15 @@ class CreateStation(Realm):
                  _host=None,
                  _port=None,
                  _mode=0,
+                 _eap_method=None,
+                 _radius_identity=None,
+                 _radius_passwd=None,
+                 _pk_passwd=None,
+                 _ca_cert=None,
+                 _private_key=None,
+                 _key_mgmt=None,
+                 _pairwise_cipher=None,
+                 _groupwise_cipher=None,
                  _sta_list=None,
                  _sta_flags=None,
                  _number_template="00000",
@@ -190,6 +274,15 @@ class CreateStation(Realm):
         self.security = _security
         self.password = _password
         self.mode = _mode
+        self.eap_method = _eap_method
+        self.radius_identity = _radius_identity
+        self.radius_passwd = _radius_passwd
+        self.pk_passwd = _pk_passwd
+        self.ca_cert = _ca_cert
+        self.private_key = _private_key
+        self.key_mgmt = _key_mgmt
+        self.pairwise_cipher=_pairwise_cipher
+        self.groupwise_cipher=_groupwise_cipher
         self.sta_list = _sta_list
         self.sta_flags = _sta_flags
         self.radio = _radio
@@ -238,6 +331,23 @@ class CreateStation(Realm):
         print("Creating stations")
         self.station_profile.set_command_flag(
             "add_sta", "create_admin_down", 1)
+        if(self.eap_method is not None):
+            if(self.eap_method == 'TLS'):
+                self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt, pairwise=self.pairwise_cipher, group=self.groupwise_cipher,eap=self.eap_method, identity=self.radius_identity,
+                                                        passwd=self.radius_passwd, private_key=self.private_key,
+                                                        ca_cert=self.ca_cert, pk_password=self.pk_passwd)
+            elif(self.eap_method == 'TTLS' or self.eap_method == 'PEAP'):
+                self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt, pairwise=self.pairwise_cipher, group=self.groupwise_cipher, eap=self.eap_method, identity=self.radius_identity,
+                                                    passwd=self.radius_passwd)
+            if(self.security == 'wpa3'):
+                self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
+            # elif(self.security == 'wpa2'):
+            #     self.station_profile.set_command_param("add_sta", "ieee80211w", 0)
+            self.desired_add_sta_flags = []
+            self.desired_add_sta_flags_mask = []
+            self.station_profile.set_command_flag(command_name="add_sta", param_name="8021x_radius", value=1)  # enable 802.1x flag
+            self.station_profile.set_command_flag(command_name="add_sta", param_name="80211u_enable", value=0)  # disable 802.11u flag
+            # self.station_profile.set_command_flag(command_name="add_sta", param_name="80211r_pmska_cache", value=1)  # enable 80211r_pmska_cache flag
         self.station_profile.set_command_param(
             "set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
@@ -327,6 +437,16 @@ EXAMPLE:
             
             create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
             --station_flag <staion_flags>
+
+         # For creating station with enterprise authentication with TLS
+
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --security <wpa2|wpa3> 
+                --eap_method TLS --radius_identity <username> --radius_passwd <password> --pk_passwd <password> --key_mgmt <key mgmt> --ca_cert <path> --private_key <path> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
+
+         # For creating station with enterprise authentication with TTLS or PEAP
+
+            create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --security <wpa2|wpa3> 
+                --eap_method <TTLS|PEAP> --radius_identity <username> --radius_passwd <password> --key_mgmt <key mgmt> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
            
 
 SCRIPT_CLASSIFICATION:  Creation
@@ -432,6 +552,71 @@ NOTES:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
                     --security wpa2 --cleanup
 
+        * For enterprise authentication
+            --eap_method <eap_method>
+                    Add this argument to specify the EAP method
+            
+            example:
+                    TLS, TTLS, PEAP
+
+            --pairwise_cipher [BLANK]
+                    Add this argument to specify the type of pairwise cipher
+                
+                DEFAULT
+                CCMP
+                TKIP
+                NONE
+                CCMP-TKIP
+                CCMP-256
+                GCMP
+                GCMP-256
+                CCMP/GCMP-256
+
+            --groupwise_cipher [BLANK]
+                    Add this argument to specify the type of groupwise cipher
+
+                DEFAULT
+                CCMP
+                TKIP
+                WEP104
+                WEP40
+                GTK_NOT_USED
+                GCMP-256
+                CCMP-256
+                GCMP/CCMP-256
+                ALL
+
+            --radius_identity <radius_username>
+                    Add this argument to specify the username of radius server
+
+            --radius_passwd <radius_password>
+                    Add this argument to specify the password of radius server
+
+            --pk_passwd <private_key_passsword>
+                    Add this argument to specify the private key password
+                    Required only for TLS
+
+            --ca_cert <path_to_certificate>
+                    Add this argument to specify the certificate path
+                    Required only for TLS
+            
+            example:
+                    /home/lanforge/ca.pem
+
+            --private_key <path_to_private_key>
+                    Add this argument to specify the private key path
+                    Required only for TLS
+            
+            example:
+                    /home/lanforge/client.p12
+
+            --key_mgmt <0 | WPA-EAP | WPA-SHA256>
+                    Add this flag to give the key management value
+
+                default : 0
+                wpa2    : WPA-EAP
+                wpa3    : WPA-SHA256
+
 STATUS: Functional
 
 VERIFIED_ON:   9-JUN-2023,
@@ -490,6 +675,73 @@ INCLUDE_IN_README: False
         help='Radio Country Code:\n'
             'e.g: \t--country_code 840')
     optional.add_argument(
+        "--eap_method",
+        type=str,
+        help='Enter EAP method e.g: TLS'
+    )
+    optional.add_argument(
+        "--radius_identity",
+        type=str,
+        help='Enter the username of radius server'
+    )
+    optional.add_argument(
+        "--radius_passwd",
+        type=str,
+        help='Enter the password of radius server'
+    )
+    optional.add_argument(
+        "--pk_passwd",
+        type=str,
+        help='Enter the private key password'
+    )
+    optional.add_argument(
+        "--ca_cert",
+        type=str,
+        help='Enter path for certificate e.g: /home/lanforge/ca.pem'
+    )
+    optional.add_argument(
+        "--private_key",
+        type=str,
+        help='Enter private key path e.g: /home/lanforge/client.p12'
+    )
+    optional.add_argument(
+        "--key_mgmt",
+        type=str,
+        help='Add the key management value\n'
+             'default = 0 \n'
+             'wpa2    = WPA-EAP \n'
+             'wpa3    = WPA-SHA256\n'
+    )
+    optional.add_argument(
+        "--pairwise_cipher",
+        help='Pairwise Ciphers\n'
+             'DEFAULT\n'
+             'CCMP\n'
+             'TKIP\n'
+             'NONE\n'
+             'CCMP-TKIP\n'
+             'CCMP-256\n'
+             'GCMP\n'
+             'GCMP-256\n'
+             'CCMP/GCMP-256',
+        default='[BLANK]'
+    )
+    optional.add_argument(
+        "--groupwise_cipher",
+        help='Groupwise Ciphers\n'
+             'DEFAULT\n'
+             'CCMP\n'
+             'TKIP\n'
+             'WEP104\n'
+             'WEP40\n'
+             'GTK_NOT_USED\n'
+             'GCMP-256\n'
+             'CCMP-256\n'
+             'GCMP/CCMP-256\n'
+             'ALL',
+        default='[BLANK]'
+    )
+    optional.add_argument(
         "--no_pre_cleanup",
         help='Add this flag to stop cleaning up before station creation',
         action='store_true'
@@ -512,6 +764,34 @@ INCLUDE_IN_README: False
     #    time.sleep(5)
     if args.radio is None:
         raise ValueError("--radio required")
+    
+    if(args.eap_method is not None):
+        if(args.radius_identity is None):
+            print("--radius_identity required")
+            exit(0)
+        elif(args.radius_passwd is None):
+            print("--radius_passwd required")
+            exit(0)
+        elif(args.key_mgmt is None):
+            print("--key_mgmt required")
+            exit(0)
+        elif(args.eap_method == 'TLS'):
+            if(args.pk_passwd is None):
+                print("--pk_passwd required")
+                exit(0)
+            elif(args.ca_cert is None):
+                print('--ca_cert required')
+                exit(0)
+            elif(args.private_key is None):
+                print('--private_key required')
+                exit(0)
+        if(args.security == 'wpa3'):
+            if(args.pairwise_cipher == '[BLANK]'):
+                print('--pairwise_cipher required')
+                exit(0)
+            elif(args.groupwise_cipher == '[BLANK]'):
+                print('--groupwise_cipher required')
+                exit(0)
 
     start_id = 0
     if args.start_id != 0:
@@ -535,6 +815,15 @@ INCLUDE_IN_README: False
                                    _ssid=args.ssid,
                                    _password=args.passwd,
                                    _security=args.security,
+                                   _eap_method=args.eap_method,
+                                   _radius_identity=args.radius_identity,
+                                   _radius_passwd=args.radius_passwd,
+                                   _pk_passwd=args.pk_passwd,
+                                   _ca_cert=args.ca_cert,
+                                   _private_key=args.private_key,
+                                   _key_mgmt=args.key_mgmt,
+                                   _pairwise_cipher=args.pairwise_cipher,
+                                   _groupwise_cipher=args.groupwise_cipher,
                                    _sta_list=station_list,
                                    _sta_flags=args.station_flag,
                                    _mode=args.mode,
