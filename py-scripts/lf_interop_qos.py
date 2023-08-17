@@ -106,7 +106,7 @@ class ThroughputQOS(Realm):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,
-                 user_list=[],real_client_list=[],hw_list=[],laptop_list=[],android_list=[],mac_list=[],windows_list=[],linux_list=[],
+                 user_list=[],real_client_list=[],real_client_list1=[],hw_list=[],laptop_list=[],android_list=[],mac_list=[],windows_list=[],linux_list=[],
                  total_resources_list=[],working_resources_list=[],hostname_list=[],username_list=[],eid_list=[],
                  devices_available=[],input_devices_list=[],mac_id1_list=[],mac_id_list=[]):
         super().__init__(lfclient_host=host,
@@ -156,6 +156,7 @@ class ThroughputQOS(Realm):
         self.devices_available = devices_available
         self.input_devices_list = input_devices_list
         self.real_client_list = real_client_list
+        self.real_client_list1 = real_client_list1
         self.user_list = user_list
         self.mac_id_list = mac_id_list
         self.mac_id1_list = mac_id1_list
@@ -194,23 +195,23 @@ class ThroughputQOS(Realm):
                                 self.eid_list.append(b['eid'])
                                 self.windows_list.append(b['hw version'])
                                 #self.hostname_list.append(b['eid']+ " " +b['hostname'])
-                                self.devices_available.append(b['eid'] +" "+ b['hostname'] +" " +'Windows')
+                                self.devices_available.append(b['eid'] +" " +'Win'+" "+ b['hostname'] )
                             elif "Linux" in b['hw version']:
                                 if ('ct' or 'lf') not in b['hostname']:
                                     self.eid_list.append(b['eid'])
                                     self.linux_list.append(b['hw version'])
                                     #self.hostname_list.append(b['eid']+ " " +b['hostname'])
-                                    self.devices_available.append(b['eid'] +" "+ b['hostname'] +" " +'Linux')
+                                    self.devices_available.append(b['eid'] +" " +'Lin'+" "+ b['hostname'])
                             elif "Apple" in b['hw version']:
                                 self.eid_list.append(b['eid'])
                                 self.mac_list.append(b['hw version'])
                                 #self.hostname_list.append(b['eid']+ " " +b['hostname'])
-                                self.devices_available.append(b['eid'] +" "+ b['hostname'] +" " +'Apple')
+                                self.devices_available.append(b['eid'] +" " +'Mac'+" "+ b['hostname'])
                             else:
                                 self.eid_list.append(b['eid'])
                                 self.android_list.append(b['hw version'])  
                                 #self.username_list.append(b['eid']+ " " +b['user'])
-                                self.devices_available.append(b['eid'] +" "+ b['user'] +" " +'android')
+                                self.devices_available.append(b['eid'] +" " +'android'+" "+ b['user'])
         #print("hostname list :",self.hostname_list)
         #print("username list :", self.username_list)
         #print("Available resources in resource tab :", self.devices_available)
@@ -266,7 +267,10 @@ class ThroughputQOS(Realm):
             for j in range(len(self.devices_available)):
                 if i in self.devices_available[j]:
                     self.real_client_list.append(self.devices_available[j])
+                    self.real_client_list1.append((self.devices_available[j])[:25])
         print("REAL CLIENT LIST", self.real_client_list)
+        #print("REAL CLIENT LIST1", self.real_client_list1)
+
         self.num_stations = len(self.real_client_list)
 
         for eid in resource_eid_list2:
@@ -325,7 +329,7 @@ class ThroughputQOS(Realm):
         print("tos: {}".format(self.tos))    
 
         for ip_tos in self.tos:
-            for i in self.real_client_list:
+            for i in self.real_client_list1:
                 for j in traffic_direction_list:
                     for k in traffic_type_list:
                         cxs="%s_%s_%s_%s" % (i,k,j,ip_tos)
@@ -634,7 +638,7 @@ class ThroughputQOS(Realm):
         report_path_date_time = report.get_path_date_time()
         print("path: {}".format(report_path))
         print("path_date_time: {}".format(report_path_date_time))
-        report.set_title("Throughput QOS")
+        report.set_title("Interop QOS")
         report.build_banner()
         # objective title and description
         report.set_obj_html(_obj_title="Objective",
@@ -791,8 +795,8 @@ class ThroughputQOS(Realm):
                     print(upload_list,download_list,individual_download_list,individual_upload_list)
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _xaxis_name="Throughput in Mbps",
                                             _yaxis_name="Client names",
-                                            _yaxis_categories=[i for i in self.real_client_list],
-                                            _yaxis_label=[i for i in self.real_client_list],
+                                            _yaxis_categories=[i for i in self.real_client_list1],
+                                            _yaxis_label=[i for i in self.real_client_list1],
                                             _label=labels,
                                             _yaxis_step=1,
                                             _yticks_font=8,
@@ -855,8 +859,8 @@ class ThroughputQOS(Realm):
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                             _xaxis_name="Throughput in Mbps",
-                                            _yaxis_categories=[i for i in self.real_client_list],
-                                            _yaxis_label=[i for i in self.real_client_list],
+                                            _yaxis_categories=[i for i in self.real_client_list1],
+                                            _yaxis_label=[i for i in self.real_client_list1],
                                             _label=labels,
                                             _yaxis_step=1,
                                             _yticks_font=8,
@@ -918,8 +922,8 @@ class ThroughputQOS(Realm):
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                             _xaxis_name="Throughput in Mbps",
-                                            _yaxis_categories=[i for i in self.real_client_list],
-                                            _yaxis_label=[i for i in self.real_client_list],
+                                            _yaxis_categories=[i for i in self.real_client_list1],
+                                            _yaxis_label=[i for i in self.real_client_list1],
                                             _label=labels,
                                             _yaxis_step=1,
                                             _yticks_font=8,
@@ -982,8 +986,8 @@ class ThroughputQOS(Realm):
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                             _xaxis_name="Throughput in Mbps",
-                                            _yaxis_categories=[i for i in self.real_client_list],
-                                            _yaxis_label=[i for i in self.real_client_list],
+                                            _yaxis_categories=[i for i in self.real_client_list1],
+                                            _yaxis_label=[i for i in self.real_client_list1],
                                             _label=labels,
                                             _yaxis_step=1,
                                             _yticks_font=8,
