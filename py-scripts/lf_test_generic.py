@@ -78,9 +78,9 @@ if sys.version_info[0] != 3:
     exit(1)
 
 class GenTest():
-    def __init__(self, lf_user, lf_passwd, ssid, security, passwd, sta_list, 
+    def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
                 name_prefix, upstream, client_port = None,server_port=None,
-                 host="localhost", port=8080, csv_outfile=None,
+                 host="localhost", port=8080, csv_outfile=None, num_stations,
                  use_existing_eid=None, test_duration="5m",test_type="lfping", dest=None, cmd=None, interval=1, 
                  radio=None, speedtest_min_up=None, speedtest_min_dl=None, 
                  speedtest_max_ping=None, file_output_lfcurl=None, loop_count=None, 
@@ -92,7 +92,7 @@ class GenTest():
         self.ssid = ssid
         self.radio = radio
         self.upstream = upstream
-        self.sta_list = sta_list
+        self.num_stations = num_stations
         self.security = security
         self.use_existing_eid= use_existing_eid
         self.speedtest_min_up = speedtest_min_up
@@ -140,6 +140,14 @@ class GenTest():
         self.created_cx = []
         self.created_sta = []
         self.created_endp = []
+
+        number_template = "000"
+        if (self.num_stations > 0):
+            self.station_list = self.port_name_series(prefix_="sta",
+                                              start_id_=int(number_template),
+                                              end_id_= self.num_stations + int(number_template) - 1,
+                                              padding_number_=10000,
+                                              radio=args.radio)
 
     def check_tab_exists(self):
         response = self.json_get("generic")
@@ -230,9 +238,7 @@ class GenTest():
                                            interest=3833610, # includes use_current_flags + dhcp + dhcp_rls + ifdown
                                            report_timer= self.report_timer)
 
-        if LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
-                                             port_list=self.sta_list,
-                                             debug_=self.debug):
+        if self.wait_for_action("admin up", 30):
             self._pass("All stations went admin up.")
         else:
             self._fail("All stations did NOT go admin up.")
@@ -287,7 +293,7 @@ class GenTest():
                                                debug=self.debug)
             else:
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
-
+        #wait until ports appear stations
         #create endpoints
         # combine sta_list and use_existing_eids
         #this is how many endps need to be created : 1 for each eid.
@@ -302,6 +308,7 @@ class GenTest():
             for eid in self.use_existing_eid:
                 self.create_generic_endp(eid, self.type, unique_alias)
                 unique_alias=-1
+        #wait until ports appear for endp        
 
         if not self.created_endp:
             raise ValueError("no endpoints have been created.")
@@ -388,10 +395,38 @@ class GenTest():
                 if self.port_exists(self, LFUtils.name_to_eid(sta_name), self.debug):
                     self.command.post_rm_vlan(port=sta_name, debug=self.debug)
 
-        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug):
+        if self.wait_for_action(self, "ports disappear", 30):
             self._pass("Ports successfully cleaned up.")
         else:
             self._fail("Ports NOT successfully cleaned up.")
+    
+    def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, radio=None):
+        """
+        This produces a named series similar to "sta000, sta001, sta002...sta0(end_id)"
+        the padding_number is added to the start and end numbers and the resulting sum
+        has the first digit trimmed, so f(0, 1, 10000) => {"0000", "0001"}
+        @deprecated -- please use port_name_series
+        :param radio:
+        :param prefix: defaults to 'sta'
+        :param start_id: beginning id
+        :param end_id: ending_id
+        :param padding_number: used for width of resulting station number
+        :return: list of stations
+        """
+
+        eid = None
+        if radio is not None:
+            eid = name_to_eid(radio)
+
+        name_list = []
+        for i in range((padding_number + start_id), (padding_number + end_id + 1)):
+            sta_name = "%s%s" % (prefix, str(i)[1:])
+            if eid is None:
+                name_list.append(sta_name)
+            else:
+                name_list.append("%i.%i.%s" % (eid[0], eid[1], sta_name))
+        return name_list
+
 
 
     def port_exists(self, port_eid, debug=None):
@@ -402,7 +437,18 @@ class GenTest():
         return False
     
     def wait_for_action(self, type, secs_to_wait):
+        # if type == "ip":
+
+        # elif type == "admin up":
+
+        # elif type == "ports appear":
+
+        # elif type == "ports disappear":
+
+        # elif type == "endp created":
+
         success = False
+
 
     def validate_sort_args(self, args):
         print(args)
@@ -576,21 +622,12 @@ def main():
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    number_template = "000"
-    if (int(args.num_stations) > 0): 
-        station_list = LFUtils.portNameSeries(prefix_="sta",
-                                              start_id_=int(number_template),
-                                              end_id_=args.num_stations + int(number_template) - 1,
-                                              padding_number_=10000,
-                                              radio=args.radio)
-    else:
-        station_list = []
 
     #TODO edit name_prefix
     generic_test = GenTest(host=args.mgr, port=args.mgr_port,
                            lf_user=args.lf_user, lf_passwd=args.lf_passwd,
                            radio=args.radio,
-                           sta_list=station_list,
+                           num_stations = args.num_stations
                            use_existing_eid=args.use_existing_eid,
                            name_prefix="GT",
                            test_type=args.type,
