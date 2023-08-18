@@ -221,7 +221,7 @@
                 "command":"./tools/lf_inspect.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1"
+                    " --path REPORT_PATH --database DATABASE_SQLITE --db_index 1,0"
                 ]
             }
         },
