@@ -53,7 +53,7 @@ class BaseInteropWifi(Realm):
         super().__init__(lfclient_host=manager_ip,
                          debug_=_debug_on)
         if release is None:
-            release = ["11", "12"]
+            release = ["11", "12", "13"]
         self.manager_ip = manager_ip
         self.manager_port = port
         self.ssid = ssid
@@ -62,7 +62,7 @@ class BaseInteropWifi(Realm):
         self.release = release
         self.debug = _debug_on
         self.screen_size_prcnt = screen_size_prcnt
-        self.supported_sdk = ["11", "12"]
+        self.supported_sdk = ["11", "12", "13"]
         self.supported_devices_names = []
         self.log_dur = log_dur
         self.log_destination = log_destination
