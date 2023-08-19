@@ -1042,7 +1042,7 @@ EXAMPLE:
         # To run port-reset test on specified number of devices with specified number of WIFI resets.
 
             ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.156  --dut TestDut --ssid Netgear5g
-            --passwd lanforge --encryp psk2 --reset 2 --time_int 5 --wait_time 10 --release 11 --clients 1
+            --passwd lanforge --encryp psk2 --reset 2 --time_int 5 --wait_time 10 --release 11 12 --clients 1
 
 SCRIPT_CLASSIFICATION:  Toggling, Report Generation
 
@@ -1102,7 +1102,8 @@ INCLUDE_IN_README: False
                         help='Specify the time interval or wait time in seconds after enabling WIFI.')
 
     parser.add_argument("--release", nargs='+', default=["12"],
-                        help='Specify the SDK release version (Android Version) of real clients to be supported in test.')
+                        help='Specify the SDK release version (Android Version) of real clients to be supported in test.'
+                             'eg:- --release 11 12 13')
 
     args = parser.parse_args()
     obj = InteropPortReset(host=args.host,
