@@ -404,6 +404,7 @@ class WiFiCapacityTest(cv_test):
                  test_tag="",
                  local_lf_report_dir="",
                  sta_list="",
+                 verbosity="5",
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -453,6 +454,7 @@ class WiFiCapacityTest(cv_test):
         self.test_tag = test_tag
         self.local_lf_report_dir = local_lf_report_dir
         self.stations_list = sta_list
+        self.verbosity = verbosity
 
     def setup(self):
         if self.create_stations and self.stations != "":
@@ -534,6 +536,9 @@ class WiFiCapacityTest(cv_test):
         self.build_cfg(self.config_name, blob_test, cfg_options)
 
         cv_cmds = []
+
+        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name,self.verbosity)
+        cv_cmds.append(cmd)
 
         if self.sort == 'linear':
             cmd = "cv click '%s' 'Linear Sort'" % self.instance_name
@@ -643,6 +648,7 @@ INCLUDE_IN_README: False
                         help="Protocol ex.TCP-IPv4")
     parser.add_argument("-d", "--duration", type=str, default="",
                         help="duration in ms. ex. 5000")
+    parser.add_argument("--verbosity", default="5",help="Specify verbosity of the report values 1 - 11 default 5")
     parser.add_argument("--download_rate", type=str, default="1Gbps",
                         help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps")
     parser.add_argument("--upload_rate", type=str, default="10Mbps",
@@ -732,9 +738,9 @@ INCLUDE_IN_README: False
                                 test_rig=args.test_rig,
                                 test_tag=args.test_tag,
                                 local_lf_report_dir=args.local_lf_report_dir,
-                                sta_list=station_list
+                                sta_list=station_list,
+                                verbosity=args.verbosity
                                 )
-    WFC_Test.setup()
     WFC_Test.run()
 
     WFC_Test.check_influx_kpi(args)
