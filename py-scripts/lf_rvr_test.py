@@ -186,6 +186,7 @@ class RvrTest(cvtest):
                  raw_lines=[],
                  raw_lines_file="",
                  sets=[],
+                 verbosity='5'
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
@@ -194,6 +195,7 @@ class RvrTest(cvtest):
         self.lf_user = lf_user
         self.lf_password = lf_password
         self.instance_name = instance_name
+        self.verbosity = verbosity
         self.config_name = config_name
         self.dut = dut
         self.duration = duration
@@ -203,7 +205,15 @@ class RvrTest(cvtest):
         self.load_old_cfg = load_old_cfg
         self.test_name = "Rate vs Range"
         self.upload_speed = upload_speed
-        self.download_speed = download_speed
+        self.download_speed = download_speed        
+    
+        cv_cmds = []
+
+        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name,self.verbosity)
+        cv_cmds.append(cmd)
+
+        logger.info("verbosity is : {verbosity}".format(verbosity=self.verbosity))
+
         self.enables = enables
         self.disables = disables
         self.raw_lines = raw_lines
@@ -425,6 +435,7 @@ def main():
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--duration", default="",
                         help="Specify duration of each traffic run")
+    parser.add_argument("--verbosity", default="5",help="Specify verbosity of the report values 1 - 11 default 5")
     parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
     parser.add_argument("--report_dir", default="")
     parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from", default="")
@@ -512,7 +523,8 @@ def main():
                       raw_lines=args.raw_line,
                       raw_lines_file=args.raw_lines_file,
                       sets=args.set,
-                      graph_groups=args.graph_groups
+                      graph_groups=args.graph_groups,
+                      verbosity=args.verbosity
                       )
     CV_Test.setup()
     CV_Test.run()
