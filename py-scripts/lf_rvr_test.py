@@ -207,13 +207,6 @@ class RvrTest(cvtest):
         self.upload_speed = upload_speed
         self.download_speed = download_speed        
     
-        cv_cmds = []
-
-        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name,self.verbosity)
-        cv_cmds.append(cmd)
-
-        logger.info("verbosity is : {verbosity}".format(verbosity=self.verbosity))
-
         self.enables = enables
         self.disables = disables
         self.raw_lines = raw_lines
@@ -262,6 +255,12 @@ class RvrTest(cvtest):
         self.build_cfg(self.config_name, blob_test, cfg_options)
 
         cv_cmds = []
+
+        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name,self.verbosity)
+        cv_cmds.append(cmd)
+
+        logger.info("verbosity is : {verbosity}".format(verbosity=self.verbosity))
+
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
