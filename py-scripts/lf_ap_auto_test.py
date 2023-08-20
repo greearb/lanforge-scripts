@@ -212,7 +212,8 @@ class ApAutoTest(cvtest):
                  sets=None,
                  graph_groups=None,
                  debug=False,
-                 test_tag=""
+                 test_tag="",
+                 verbosity='5'
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port, debug_=debug)
 
@@ -234,6 +235,7 @@ class ApAutoTest(cvtest):
         self.lf_password = lf_password
         self.instance_name = instance_name
         self.config_name = config_name
+        self.verbosity = verbosity        
         self.upstream = upstream
         self.pull_report = pull_report
         self.load_old_cfg = load_old_cfg
@@ -305,6 +307,12 @@ class ApAutoTest(cvtest):
         self.build_cfg(self.config_name, blob_test, cfg_options)
 
         cv_cmds = []
+
+        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name,self.verbosity)
+        cv_cmds.append(cmd)
+
+        logger.info("verbosity is : {verbosity}".format(verbosity=self.verbosity))
+
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
@@ -361,6 +369,7 @@ def main():
                         help="Specify 2.4Ghz radio.  May be specified multiple times.")
     parser.add_argument("--radio5", action='append', nargs=1, default=[],
                         help="Specify 5Ghz radio.  May be specified multiple times.")
+    parser.add_argument("--verbosity", default="5",help="Specify verbosity of the report values 1 - 11 default 5")
     parser.add_argument("--local_lf_report_dir",
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
                         default="")
@@ -409,7 +418,8 @@ def main():
                          raw_lines=args.raw_line,
                          raw_lines_file=args.raw_lines_file,
                          sets=args.set,
-                         debug=args.debug
+                         debug=args.debug,
+                         verbosity=args.verbosity
                          )
     CV_Test.setup()
     CV_Test.run()
