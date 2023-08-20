@@ -228,7 +228,8 @@ class DataplaneTest(cv_test):
                  sets=None,
                  graph_groups=None,
                  test_rig="",
-                 test_tag=""
+                 test_tag="",
+                 verbosity='5'
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
@@ -265,6 +266,7 @@ class DataplaneTest(cv_test):
         self.local_lf_report_dir = local_lf_report_dir
         self.test_rig = test_rig
         self.test_tag = test_tag
+        self.verbosity = verbosity
 
     def setup(self):
         # Nothing to do at this time.
@@ -311,6 +313,10 @@ class DataplaneTest(cv_test):
         self.build_cfg(self.config_name, blob_test, cfg_options)
 
         cv_cmds = []
+
+        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name,self.verbosity)
+        cv_cmds.append(cmd)
+
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
@@ -527,6 +533,7 @@ INCLUDE_IN_README: False
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--duration", default="",
                         help="Specify duration of each traffic run")
+    parser.add_argument("--verbosity", default="5",help="Specify verbosity of the report values 1 - 11 default 5")
     parser.add_argument(
         "--graph_groups", help="File to save graph_groups to", default=None)
     parser.add_argument("--local_lf_report_dir",
@@ -635,7 +642,8 @@ INCLUDE_IN_README: False
                             raw_lines_file=args.raw_lines_file,
                             sets=args.set,
                             graph_groups=args.graph_groups,
-                            test_rig=args.test_rig
+                            test_rig=args.test_rig,
+                            verbosity=args.verbosity
                             )
     CV_Test.setup()
     CV_Test.run()
