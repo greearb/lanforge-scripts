@@ -215,7 +215,6 @@ class ThroughputQOS(Realm):
                                                debug=self.debug)
 
     def build(self):
-        print(self.ssid_6g)
         for key in self.bands:
             if self.create_sta:
                 if key == "2.4G" or key == "2.4g":
@@ -292,6 +291,33 @@ class ThroughputQOS(Realm):
             print("cx build finished")
 
     def create_cx(self):
+        direction=''
+        if (int(self.cx_profile.side_b_min_bps))!=0 and (int(self.cx_profile.side_a_min_bps))!=0:
+            self.direction = "Bi-direction"
+            direction = 'Bi-di'
+        elif int(self.cx_profile.side_b_min_bps) != 0:
+            self.direction = "Download"
+            direction = 'DL'
+        else:
+            if int(self.cx_profile.side_a_min_bps) != 0:
+                self.direction = "Upload"
+                direction = 'UL'
+        print("direction",self.direction)
+        traffic_type=(self.traffic_type.strip("lf_")).upper()
+        traffic_direction_list,cx_list,traffic_type_list = [],[],[]
+        for client in range(len(self.sta_list)):
+            traffic_direction_list.append(direction)
+            traffic_type_list.append(traffic_type)
+        print("tos: {}".format(self.tos))
+        for ip_tos in self.tos:
+            for i in self.sta_list:
+                for j in traffic_direction_list:
+                    for k in traffic_type_list:
+                        cxs="%s_%s_%s_%s" % (i,k,j,ip_tos)
+                        cx_names=cxs.replace(" ","")
+                        #print(cx_names)
+                cx_list.append(cx_names)
+        print('cx_list',cx_list)
         count =0
         print("tos: {}".format(self.tos))
         for ip_tos in range(len(self.tos)):
@@ -301,7 +327,7 @@ class ThroughputQOS(Realm):
                 self.traffic_type, self.tos[ip_tos], self.cx_profile.get_cx_count()))
                 self.cx_profile.create(endp_type=self.traffic_type, side_a=[self.sta_list[sta]],
                                     side_b=self.upstream,
-                                    sleep_time=0, tos=self.tos[ip_tos])
+                                    sleep_time=0, tos=self.tos[ip_tos],cx_name="%s-%i" % (cx_list[count], len(self.cx_profile.created_cx)))
                 count += 1
         print("cross connections with TOS type created.")
 
