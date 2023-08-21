@@ -50,7 +50,8 @@
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -118,7 +119,8 @@
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -186,7 +188,8 @@
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -254,7 +257,8 @@
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -322,7 +326,8 @@
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -390,7 +395,8 @@
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -458,7 +464,8 @@
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -526,7 +533,8 @@
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{

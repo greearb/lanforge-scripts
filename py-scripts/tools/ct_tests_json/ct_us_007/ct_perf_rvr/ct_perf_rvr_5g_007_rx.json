@@ -49,7 +49,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -117,7 +118,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -185,7 +187,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -253,7 +256,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -321,7 +325,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -389,7 +394,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -457,7 +463,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -525,7 +532,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -593,7 +601,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -661,7 +670,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -729,7 +739,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -797,7 +808,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -865,7 +877,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -933,7 +946,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -1001,7 +1015,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
@@ -1069,7 +1084,8 @@
                     " --raw_line 'attenuations: 1,000,200,300,400,450,470,480,490,500,510,520,530,540,550,560,570,580,590,600' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
