@@ -295,8 +295,12 @@ li {
 }
 
 /* these styles will get overridden by custom.css */
+/* orange background-color: #e68b15; */
+/* dark green color: #033500 */
+/* light green : # 90ee90 */
+
 #BannerBack {
-   background-color: #e68b15;
+   background-color: #90ee90;
    height:           205px;
    max-height:       205px;
    border:           0 none;
