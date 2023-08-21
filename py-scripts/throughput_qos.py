@@ -126,6 +126,8 @@ class ThroughputQOS(Realm):
                  test_duration="2m",
                  bands="2.4G, 5G, BOTH",
                  test_case={},
+                 channel_list=[],
+                 mac_list=[],
                  use_ht160=False,
                  _debug_on=False,
                  _exit_on_error=False,
@@ -152,6 +154,8 @@ class ThroughputQOS(Realm):
         self.radio_6g = radio_6g
         self.num_stations = num_stations
         self.sta_list = sta_list
+        self.channel_list = channel_list
+        self.mac_list = mac_list
         self.create_sta = create_sta
         self.mode = mode
         self.ap_name = ap_name
@@ -289,6 +293,12 @@ class ThroughputQOS(Realm):
                 self._pass("PASS: Station build finished")
             self.create_cx()
             print("cx build finished")
+        response_port = self.json_get("/port/all")
+        for interface in response_port['interfaces']:
+            for port,port_data in interface.items():
+                if(port in self.sta_list):
+                    self.mac_list.append(port_data['mac'])
+                    self.channel_list.append(port_data['channel'])
 
     def create_cx(self):
         direction=''
@@ -369,8 +379,6 @@ class ThroughputQOS(Realm):
             for i in range(len(throughput[key])):
                 upload[i].append(throughput[key][i][1])
                 download[i].append(throughput[key][i][0])
-        print("Upload values", upload)
-        print("Download Values", download)
         upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
         keys = list(connections_upload.keys())
@@ -380,10 +388,6 @@ class ThroughputQOS(Realm):
             connections_download.update({keys[i]: float(f"{(download_throughput[i] ):.2f}")})
         for i in range(len(upload_throughput)):
             connections_upload.update({keys[i]: float(f"{(upload_throughput[i] ):.2f}")})
-        
-        print("connections download",connections_download)
-        print("connections upload",connections_upload)
-
         return connections_download,connections_upload
         
     def evaluate_qos(self, connections_download,connections_upload):
@@ -915,6 +919,8 @@ class ThroughputQOS(Realm):
                         report.build_table_title()
                         bk_dataframe = {
                             " Client Name " : self.sta_list,
+                            " Mac " : self.mac_list,
+                            " Channel " : self.channel_list,
                             " Type of traffic " : bk_tos_list,
                             " Traffic Direction " : traffic_direction_list,
                             " Traffic Protocol " : traffic_type_list,
@@ -980,6 +986,8 @@ class ThroughputQOS(Realm):
                         report.build_table_title()
                         be_dataframe = {
                             " Client Name " : self.sta_list,
+                            " Mac " : self.mac_list,
+                            " Channel " : self.channel_list,
                             " Type of traffic " : be_tos_list,
                             " Traffic Direction " : traffic_direction_list,
                             " Traffic Protocol " : traffic_type_list,
@@ -1045,6 +1053,8 @@ class ThroughputQOS(Realm):
                         report.build_table_title()
                         video_dataframe = {
                             " Client Name " : self.sta_list,
+                            " Mac " : self.mac_list,
+                            " Channel " : self.channel_list,
                             " Type of traffic " : vi_tos_list,
                             " Traffic Direction " : traffic_direction_list,
                             " Traffic Protocol " : traffic_type_list,
@@ -1109,6 +1119,8 @@ class ThroughputQOS(Realm):
                         report.build_table_title()
                         voice_dataframe = {
                             " Client Name " : self.sta_list,
+                            " Mac " : self.mac_list,
+                            " Channel " : self.channel_list,
                             " Type of traffic " : vo_tos_list,
                             " Traffic Direction " : traffic_direction_list,
                             " Traffic Protocol " : traffic_type_list,
@@ -1234,7 +1246,6 @@ def main():
     station_list = []
     data = {}
 
-    print(args.upload)
     if args.download and args.upload:
         loads = {'upload': str(args.upload).split(","), 'download': str(args.download).split(",")}
 
