@@ -273,13 +273,6 @@ class db_comparison:
                         str(round(abs(((item['numeric-score_2'][i] / item['numeric-score_1'][i]) * 100)), 1)) + "%")
                 else:
                     temp_list.append("NaN")
-                # if int(item['numeric-score_1'][i]) > int(item['numeric-score_2'][i]):
-                #     temp_list.append(
-                #         str(round(abs(((item['numeric-score_2'][i] / item['numeric-score_1'][i]) * 100)), 1)) + "%")
-                # else:
-                #     temp_list.append(
-                #         str(round(abs((((item['numeric-score_2'][i] - item['numeric-score_1'][i]) / item['numeric-score_1'][i]) * 100)), 1)) + "%")
-
             percentage_list.append(temp_list)
             item['Comparison'] = temp_list  # adding the comparison column
             # renaming the data frame keys or column names
@@ -327,7 +320,6 @@ class db_comparison:
                 dp_list.append(df)
             elif 'AP_AUTO' in df['Test-Tag'][0]:
                 ap_autolist.append(df)
-        list_dfs = [wct_list, dp_list, ap_autolist]
 
         # TABLE ARRANGEMENT FOR WIFI CAPACITY WORK SHEET
         row, column = 9, 0
@@ -380,8 +372,6 @@ class db_comparison:
                             column_length_list.append(len(str(length)))
                     else:
                         column_length_list.append(10)
-                # print("column :", letter)
-                # print("width", max(column_length_list))
                 ws.column_dimensions[letter].alignment = Alignment(horizontal='center', vertical='center')
                 ws.column_dimensions[letter].width = max(column_length_list) + 1
 
@@ -700,7 +690,6 @@ class db_comparison:
             lanforge_gui_version_full, lanforge_gui_git_sha = self.get_lanforge_gui_version()
         except Exception:
             logger.error("ERROR: LANForge GUI Version INFO Exception, GUI Ver Please check the lanforge ip")
-            # exit(1)
 
         wct_result = self.db_querying_with_limit(column_names='kernel, gui_ver, dut-model-num',
                                                  condition='"test-id" == "WiFi Capacity"', limit='1')
@@ -731,8 +720,6 @@ class db_comparison:
             gui_info1 = pd.DataFrame(
                 {
                     "Test Run-1 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
-                    # "Kernel Version": [wct_result[0][kernel_1], dp_result[0][kernel_1], ap_auto_result[0][kernel_1]],
-                    # "GUI Version": [wct_result[0][gui_ver_1], dp_result[0][gui_ver_1], ap_auto_result[0][gui_ver_1]],
                     "DUT Model": [wct_dut1, dp_dut1, ap_auto1],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
                 }
@@ -740,8 +727,6 @@ class db_comparison:
             gui_info2 = pd.DataFrame(
                 {
                     "Test Run-2 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
-                    # "Kernel Version": [wct_result[1][kernel_2], dp_result[1][kernel_2], ap_auto_result[1][kernel_2]],
-                    # "GUI Version": [wct_result[1][gui_ver_2], dp_result[1][gui_ver_2], ap_auto_result[1][gui_ver_2]],
                     "DUT Model": [wct_dut2, dp_dut2, ap_auto2],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
                 }
@@ -754,8 +739,6 @@ class db_comparison:
             gui_info1 = pd.DataFrame(
                 {
                     "Test Run-1 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
-                    # "Kernel Version": [wct_result[0][kernel], dp_result[0][kernel], ap_auto_result[0][kernel]],
-                    # "GUI Version": [wct_result[0][gui_ver], dp_result[0][gui_ver], ap_auto_result[0][gui_ver]],
                     "DUT Model": [wct_dut, dp_dut, ap_auto],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
                 }
@@ -763,8 +746,6 @@ class db_comparison:
             gui_info2 = pd.DataFrame(
                 {
                     "Test Run-2 Info": ["WiFi Capacity", "Dataplane", "AP Auto"],
-                    # "Kernel Version": [wct_result[0][kernel], dp_result[0][kernel], ap_auto_result[0][kernel]],
-                    # "GUI Version": [wct_result[0][gui_ver], dp_result[0][gui_ver], ap_auto_result[0][gui_ver]],
                     "DUT Model": [wct_dut, dp_dut, ap_auto],
                     "GUI git sha": [lanforge_gui_git_sha, lanforge_gui_git_sha, lanforge_gui_git_sha]
                 }
