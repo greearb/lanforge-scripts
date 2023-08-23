@@ -49,7 +49,7 @@ class DnsTest(Realm):
                  lfapi_session: lanforge_api.LFSession = None,
                  debug: bool = False,
                  port_pattern: str = None,
-                 duration_min: int = None,
+                 duration_sec: int = None,
                  args: argparse = None, ):
         """
                  lfclient_host="localhost",
@@ -64,7 +64,7 @@ class DnsTest(Realm):
         :param lfapi_session:
         :param debug:
         :param port_pattern:
-        :param duration_min:
+        :param duration_sec:
         :param args:
         """
         super().__init__(lfclient_host=host,
@@ -91,8 +91,53 @@ class DnsTest(Realm):
         # collect a list of ports
         self.command = self.lfapi.get_command()
         self.query = self.lfapi.get_query()
+        self.cx_aliases: list[str] = []
+        self.test_duration_sec = args.duration_sec
+        self.generic_script = args.generic_script
 
     # ~DnsTest::init
+
+    def create_generics(self, eid_list: list = None):
+        if not eid_list:
+            raise ValueError("create_generics needs entries in eid_list")
+        seen_eids: list = []
+        api_command = self.lfapi.get_command()
+        cmd_i: int = 0
+
+        e_w: list[str] = []
+        responsez: list = []
+        for eidstr in eid_list:
+            if not eidstr:
+                print(f"eidstr[{eidstr}]")
+                pprint(["eidstrs:", eid_list])
+                raise ValueError("create_generic will not parse empty eidstr values")
+
+            eid = self.name_to_eid(eidstr)
+            if eid in seen_eids:
+                # call the create_generics method twice to create two connections per port
+                print(f"create_generics: eid seen before[{eid}], not creating twice")
+                continue
+            seen_eids.append(eid)
+            alias: str = f"{cmd_i:03d}"
+            api_command.post_add_gen_endp(alias=alias,
+                                          shelf=eid[0],
+                                          resource=eid[1],
+                                          port=eid[2],
+                                          p_type="gen_generic",
+                                          response_json_list=responsez,
+                                          debug=self.debug,
+                                          errors_warnings=e_w,
+                                          suppress_related_commands=True)
+            cmd_i += 1
+            self.cx_aliases.append(alias)
+        time.sleep(1)
+        # we want to run a command that runs for a duration, not a single call
+        # cmd: str = f"./vrf_exec.bash %s /usr/bin/dig %s host %s | grep 'Query time:'"
+        cmd: str = f"./vrf_exec.bash %s {self.generic_script} --duration {self.test_duration_sec}"
+        for cx in self.cx_aliases:
+            formatted_cmd = cmd % (cx,)
+            api_command.post_set_gen_cmd()
+
     def start(self):
         port_list: list[str] = []
         all_ports: list = self.query.get_port(eid_list="list",
@@ -105,15 +150,22 @@ class DnsTest(Realm):
         for record in all_ports:
             if not record:
                 continue
-            #print(f"Inspecting record[{record}]")
+            # print(f"Inspecting record[{record}]")
             for pat in self.port_patterns:
-                #pprint(["pat:", pat, ", record:", record])
                 key = list(record.keys())[0]
-                if record[key]['alias'].find(pat) > -1:
-                    #print(f"pat[{pat}] ^= alias[{record[key]['alias']}]")
+                pprint(["pat:", pat, " record:", record, " alias:", record[key]['alias']])
+                if (key == pat) \
+                        or (record[key]['alias'] == pat) \
+                        or (record[key]['alias'].find(pat) > -1):
+                    print(f"pat[{pat}] ^= alias[{record[key]['alias']}]")
                     self.eid_list.append(key)
 
         print(f"Matching eids: {', '.join(self.eid_list)}")
+
+        # GenCXProfile is not useful for ad-hoc commands. Ad hoc commands are
+        # better expressed thru the lanforge_api structure
+        # generics : Realm.GenCXProfile = Realm.new_generic_endp_profile()
+        self.create_generics(eid_list=self.eid_list)
 
     def stop(self):
         pass
@@ -128,13 +180,20 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='tests dns robustness with random hostnames')
     parser.add_argument("--host", "--mgr",
+                        default="localhost",
                         help='specify the GUI to connect to, assumes port 8080')
     parser.add_argument("--port_pattern",
-                        help='comma-separated prefix of ports to use for generic connections')
-    parser.add_argument("--duration_min",
+                        required=True,
+                        help='comma-separated prefix of ports or port prefixes to use for generic connections')
+    parser.add_argument("--duration_sec", "--duration",
+                        required=True,
                         help='text-blob body')
+    parser.add_argument("--generic_script", "--script",
+                        required=True,
+                        help="script to invoke on the station which starts DNS queries")
     parser.add_argument("--debug",
-                        help='turn on debugging', action="store_true")
+                        help='turn on debugging',
+                        action="store_true")
 
     args = parser.parse_args()
     host_url = args.host
@@ -155,7 +214,8 @@ def main():
     dnstest = DnsTest(host=args.host,
                       debug=args.debug,
                       lfapi_session=session,
-                      port_pattern=args.port_pattern)
+                      port_pattern=args.port_pattern,
+                      args=args)
 
     dnstest.start();
 
