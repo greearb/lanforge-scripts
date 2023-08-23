@@ -134,9 +134,15 @@ class DnsTest(Realm):
         # we want to run a command that runs for a duration, not a single call
         # cmd: str = f"./vrf_exec.bash %s /usr/bin/dig %s host %s | grep 'Query time:'"
         cmd: str = f"./vrf_exec.bash %s {self.generic_script} --duration {self.test_duration_sec}"
+        responsez = []
         for cx in self.cx_aliases:
             formatted_cmd = cmd % (cx,)
-            api_command.post_set_gen_cmd()
+            api_command.post_set_gen_cmd(command=formatted_cmd,
+                                         name=cx,
+                                         response_json_list=responsez,
+                                         errors_warnings=e_w,
+                                         suppress_related_commands=True,
+                                         debug=self.debug)
 
     def start(self):
         port_list: list[str] = []
