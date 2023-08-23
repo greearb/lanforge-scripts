@@ -79,8 +79,8 @@ if sys.version_info[0] != 3:
 
 class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
-                name_prefix, upstream, client_port = None,server_port=None,
-                 host="localhost", port=8080, csv_outfile=None, num_stations,
+                name_prefix, upstream, num_stations, client_port = None,server_port=None,
+                 host="localhost", port=8080, csv_outfile=None,
                  use_existing_eid=None, test_duration="5m",test_type="lfping", dest=None, cmd=None, interval=1, 
                  radio=None, speedtest_min_up=None, speedtest_min_dl=None, 
                  speedtest_max_ping=None, file_output_lfcurl=None, loop_count=None, 
@@ -627,7 +627,7 @@ def main():
     generic_test = GenTest(host=args.mgr, port=args.mgr_port,
                            lf_user=args.lf_user, lf_passwd=args.lf_passwd,
                            radio=args.radio,
-                           num_stations = args.num_stations
+                           num_stations = args.num_stations,
                            use_existing_eid=args.use_existing_eid,
                            name_prefix="GT",
                            test_type=args.type,
