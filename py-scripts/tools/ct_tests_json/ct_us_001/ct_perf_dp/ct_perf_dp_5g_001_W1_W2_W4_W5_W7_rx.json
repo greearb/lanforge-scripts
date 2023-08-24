@@ -47,7 +47,8 @@
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_ATH10K_9984_5G_W1_RX' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_ATH9K_5G_W2":{
@@ -91,7 +92,8 @@
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_ATH9K_5G_W2_RX' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_AX200_5G_W4":{
@@ -135,7 +137,8 @@
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_AX200_5G_W4_RX' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_AX210_5G_W5":{
@@ -179,7 +182,8 @@
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_AX210_5G_W5_RX' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_MTK7915_5G_W7":{
@@ -223,7 +227,8 @@
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_MTK7915_5G_W7_RX' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
