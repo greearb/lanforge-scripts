@@ -30,7 +30,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario WC_ATH10K_9984_5G_W1 ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 32 'DUT: USE_DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                    " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
             "WC_ATH10K_9984_5G_W1":{
@@ -91,7 +91,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario WC_ATH9K_5G_W2 ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 32 'DUT: USE_DUT_NAME Radio-2' NA wiphy2,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                    " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
             "WC_ATH9K_5G_W2":{
@@ -152,7 +152,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario WC_AX200_5G_W4 ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy4,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                    " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
             "WC_AX200_5G_W4":{
@@ -213,7 +213,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario CC_MTK7915_5G_W5 ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1,2,4 'DUT: USE_DUT_NAME Radio-2' NA wiphy5,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                    " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
             "WC_MTK7915_5G_W5":{
@@ -274,7 +274,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario WC_AX210_5G_W5 ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy6,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                    " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
             "WC_AX210_5G_W6":{
@@ -335,7 +335,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario CC_MTK7915_5G_W7 ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 19 'DUT: USE_DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                    " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
             "WC_MTK7915_5G_W7":{
