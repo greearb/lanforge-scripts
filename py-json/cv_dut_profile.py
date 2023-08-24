@@ -65,8 +65,7 @@ class cv_dut(LFCliBase):
             if (name is None) or (name == ""):
                 continue
             if name not in command_ref:
-                if self.debug:
-                    logger.debug(command_ref)
+                logger.warning(command_ref)
                 logger.critical("flag %s not in map" % name)
                 raise ValueError("flag %s not in map" % name)
             result += command_ref[name]
