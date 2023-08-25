@@ -1161,8 +1161,8 @@ def main():
 
             ''',
         description='''\
-Compare last test run to previous
-    --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1
+Compare second to last run to last run the index would be 1 for second to last and 0 for last run
+    --path REPORT_PATH --database DATABASE_SQLITE --db_index 1, 0
 
 To compare a kpi element such as dut-model-num
     --path REPORT_PATH --databasek DATABASE_SQLITE_1,DATABASE_SQLITE_2 --db_index 0,0 --element dut-model-num==AXE11000&&NETGEAR_R7000
@@ -1310,11 +1310,15 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
 
 
         else:
-            objective = '''QA test run comparision in database: {db_1} index: {index_1} and index: {index_2}
+            objective = '''QA test run comparision in database : {db_1} index: {index_1} and index: {index_2} ,
                         '''.format(db_1=__database_list[0],index_1=__db_index_list[0],index_2=__db_index_list[1])
             report.set_obj_html("Objective", objective)
             report.build_objective()
-            report.set_text("Column headings with #1: for first db_index, Column headings with # 2 for second db_index ")
+            report.set_text("Column headings with #1 for first db_index: {attrib_1}".format(attrib_1=__db_index_list[0]))
+            report.build_text_simple()
+            report.set_text("Column headings with #2 for second db_index: {attrib_2}".format(attrib_2=__db_index_list[1]))
+            report.build_text_simple()
+            report.set_text("In a database the lower the number value the more recent the data,  thus 1 is the second to last run and 0 is the last run")
             report.build_text_simple()
 
     else:
