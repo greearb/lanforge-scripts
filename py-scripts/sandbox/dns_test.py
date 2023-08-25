@@ -79,19 +79,19 @@ class DnsTest(Realm):
         self.eid_list: list = []
 
         if (isinstance(port_pattern, list)):
-            self.port_patterns.append(port_pattern)
+            self.port_patterns.extend(port_pattern)
         elif (isinstance(port_pattern, str)):
             if (port_pattern.find(",") > 0):  # patterns beginning with "," are nonsense
-                self.port_patterns.append(port_pattern.split(","))
+                self.port_patterns.extend(port_pattern.split(","))
             else:
-                self.port_patterns.append(port_pattern)
+                self.port_patterns.extend(port_pattern)
         else:
             raise ValueError("no port pattern specified")
 
         # collect a list of ports
         self.command = self.lfapi.get_command()
         self.query = self.lfapi.get_query()
-        self.cx_aliases: list[str] = []
+        self.port_to_cxaliases: dict = {}
         self.test_duration_sec = args.duration_sec
         self.generic_script = args.generic_script
 
@@ -118,7 +118,7 @@ class DnsTest(Realm):
                 print(f"create_generics: eid seen before[{eid}], not creating twice")
                 continue
             seen_eids.append(eid)
-            alias: str = f"{cmd_i:03d}"
+            alias: str = f"dns{cmd_i:03d}"
             api_command.post_add_gen_endp(alias=alias,
                                           shelf=eid[0],
                                           resource=eid[1],
@@ -129,20 +129,26 @@ class DnsTest(Realm):
                                           errors_warnings=e_w,
                                           suppress_related_commands=True)
             cmd_i += 1
-            self.cx_aliases.append(alias)
+            self.port_to_cxaliases[eidstr] = alias
         time.sleep(1)
         # we want to run a command that runs for a duration, not a single call
         # cmd: str = f"./vrf_exec.bash %s /usr/bin/dig %s host %s | grep 'Query time:'"
         cmd: str = f"./vrf_exec.bash %s {self.generic_script} --duration {self.test_duration_sec}"
         responsez = []
-        for cx in self.cx_aliases:
-            formatted_cmd = cmd % (cx,)
-            api_command.post_set_gen_cmd(command=formatted_cmd,
-                                         name=cx,
+        pprint(["cxaliases:",self.port_to_cxaliases])
+        for (eidstr, alias) in self.port_to_cxaliases.items():
+
+            eid = self.name_to_eid(eidstr)
+            pprint(["eidstr:",eidstr, "eid", eid])
+            formatted_cmd = cmd % (eid[2])
+            print(f"formatted command: {formatted_cmd}")
+            api_command.post_set_gen_cmd(name=alias,
+                                         command=formatted_cmd,
                                          response_json_list=responsez,
                                          errors_warnings=e_w,
                                          suppress_related_commands=True,
                                          debug=self.debug)
+
 
     def start(self):
         port_list: list[str] = []
@@ -159,14 +165,21 @@ class DnsTest(Realm):
             # print(f"Inspecting record[{record}]")
             for pat in self.port_patterns:
                 key = list(record.keys())[0]
-                pprint(["pat:", pat, " record:", record, " alias:", record[key]['alias']])
-                if (key == pat) \
-                        or (record[key]['alias'] == pat) \
-                        or (record[key]['alias'].find(pat) > -1):
-                    print(f"pat[{pat}] ^= alias[{record[key]['alias']}]")
+                #pprint(["pat:", pat, "key:",key, " record:", record, " alias:", record[key]['alias']])
+                if key == pat:
+                    print(f"adding key {key}")
+                    self.eid_list.append(key)
+                    continue
+                if not record[key]['alias']:
+                    continue
+                p_alias = record[key]['alias']
+                #pprint(["key:", key, "p_alias:", p_alias, "pat:", pat, "patterns:", self.port_patterns])
+                if str(p_alias).find(pat) >= 0:
+                    print(f"adding key {key}")
                     self.eid_list.append(key)
 
-        print(f"Matching eids: {', '.join(self.eid_list)}")
+        pprint(["self.eid_list:", self.eid_list])
+        print(f"Matching eids: "+str(self.eid_list))
 
         # GenCXProfile is not useful for ad-hoc commands. Ad hoc commands are
         # better expressed thru the lanforge_api structure
