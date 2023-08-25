@@ -363,9 +363,11 @@ class inspect_sql:
                                     self.performance_good += 1
                                     self.test_result = "Good"
 
-                                # negative logic like Stations Failed IP if zero is a goot thing
+                                # negative logic like Stations Failed IP if zero is a good thing
                                 elif 'Failed' in df_data_1['short-description']:
-                                    if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) !=0.0)):
+                                    # Only check the lastest run to see if zero
+                                    # if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) !=0.0)):
+                                    if((float(df_data_2['numeric-score']) !=0.0)):
                                         logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                         background = self.background_red
                                         self.performance_critical += 1
@@ -375,6 +377,18 @@ class inspect_sql:
                                         self.test_result = "Good"
                                         background = self.background_green
                                         self.performance_good += 1
+                                elif 'Max Stations IP' in df_data_1['short-description']:
+                                    if((float(df_data_2['numeric-score']) == 0.0)):
+                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                        background = self.background_red
+                                        self.performance_critical += 1
+                                        self.test_result = "Critical"
+                                    else:
+                                        logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                        self.test_result = "Good"
+                                        background = self.background_green
+                                        self.performance_good += 1
+
                                 else:
                                     logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                     self.test_result = "Critical"
