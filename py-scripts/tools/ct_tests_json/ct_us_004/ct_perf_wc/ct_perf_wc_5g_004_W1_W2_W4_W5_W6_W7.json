@@ -46,7 +46,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1,8,16,32 --loop_iter 1 --protocol UDP-IPv4 --duration 20000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_ATH10K_9984_5G_W1'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_ATH9K_5G_W2":{
@@ -86,7 +87,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1,8,16,32 --loop_iter 1 --protocol UDP-IPv4 --duration 20000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_ATH9K_5G_W2'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_AX200_5G_W4":{
@@ -126,7 +128,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 20000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_AX200_5G_W4'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_MTK7915_5G_W5":{
@@ -166,7 +169,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 20000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_MTK7915_5G_W5'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_AX210_5G_W6":{
@@ -206,7 +210,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 20000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_AX210_5G_W6'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_MTK7915_5G_W7":{
@@ -246,7 +251,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1,8,16,19 --loop_iter 1 --protocol UDP-IPv4 --duration 20000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_MTK7915_5G_W7'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
