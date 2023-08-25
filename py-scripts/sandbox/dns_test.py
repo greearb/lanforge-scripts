@@ -26,8 +26,10 @@ import argparse
 from pprint import pprint
 
 sys.path.insert(1, "../../")
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 if "SHELL" in os.environ.keys():
+    # pyjson = importlib.import_module("..py-json")
     realm = importlib.import_module("py-json.realm")
     lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
     from lanforge_client.lanforge_api import LFSession
@@ -79,14 +81,18 @@ class DnsTest(Realm):
         self.eid_list: list = []
 
         if (isinstance(port_pattern, list)):
+            #print("extending port_patterns")
             self.port_patterns.extend(port_pattern)
         elif (isinstance(port_pattern, str)):
             if (port_pattern.find(",") > 0):  # patterns beginning with "," are nonsense
+                #print("using split")
                 self.port_patterns.extend(port_pattern.split(","))
             else:
-                self.port_patterns.extend(port_pattern)
+                #print(f"appending {port_pattern}")
+                self.port_patterns.append(port_pattern)
         else:
             raise ValueError("no port pattern specified")
+        #pprint(["self.port_patterns:", self.port_patterns])
 
         # collect a list of ports
         self.command = self.lfapi.get_command()
@@ -108,8 +114,8 @@ class DnsTest(Realm):
         responsez: list = []
         for eidstr in eid_list:
             if not eidstr:
-                print(f"eidstr[{eidstr}]")
-                pprint(["eidstrs:", eid_list])
+                #print(f"eidstr[{eidstr}]")
+                #pprint(["eidstrs:", eid_list])
                 raise ValueError("create_generic will not parse empty eidstr values")
 
             eid = self.name_to_eid(eidstr)
@@ -130,17 +136,17 @@ class DnsTest(Realm):
                                           suppress_related_commands=True)
             cmd_i += 1
             self.port_to_cxaliases[eidstr] = alias
-        time.sleep(1)
+        #time.sleep(1)
+
         # we want to run a command that runs for a duration, not a single call
         # cmd: str = f"./vrf_exec.bash %s /usr/bin/dig %s host %s | grep 'Query time:'"
-        cmd: str = f"./vrf_exec.bash %s {self.generic_script} --duration {self.test_duration_sec}"
+        cmd: str = f"./vrf_exec.bash %s {self.generic_script} %s nameserver=192.168.92.1 duration={self.test_duration_sec}"
         responsez = []
-        pprint(["cxaliases:",self.port_to_cxaliases])
+        #pprint(["cxaliases:", self.port_to_cxaliases])
         for (eidstr, alias) in self.port_to_cxaliases.items():
-
             eid = self.name_to_eid(eidstr)
-            pprint(["eidstr:",eidstr, "eid", eid])
-            formatted_cmd = cmd % (eid[2])
+            #pprint(["eidstr:", eidstr, "eid", eid])
+            formatted_cmd = cmd % (eid[2], eid[2])
             print(f"formatted command: {formatted_cmd}")
             api_command.post_set_gen_cmd(name=alias,
                                          command=formatted_cmd,
@@ -148,7 +154,6 @@ class DnsTest(Realm):
                                          errors_warnings=e_w,
                                          suppress_related_commands=True,
                                          debug=self.debug)
-
 
     def start(self):
         port_list: list[str] = []
@@ -162,24 +167,26 @@ class DnsTest(Realm):
         for record in all_ports:
             if not record:
                 continue
-            # print(f"Inspecting record[{record}]")
             for pat in self.port_patterns:
+                #pprint(["pat:", pat, self.port_patterns, "record:",record])
+                #time.sleep(2)
                 key = list(record.keys())[0]
-                #pprint(["pat:", pat, "key:",key, " record:", record, " alias:", record[key]['alias']])
+                #pprint(["pat:", pat, "key:", key, " record:", record, " alias:", record[key]['alias']])
                 if key == pat:
-                    print(f"adding key {key}")
+                    #print(f"adding key {key}")
                     self.eid_list.append(key)
                     continue
                 if not record[key]['alias']:
                     continue
                 p_alias = record[key]['alias']
-                #pprint(["key:", key, "p_alias:", p_alias, "pat:", pat, "patterns:", self.port_patterns])
+                # pprint(["key:", key, "p_alias:", p_alias, "pat:", pat, "patterns:", self.port_patterns])
                 if str(p_alias).find(pat) >= 0:
-                    print(f"adding key {key}")
+                    #print(f"adding key {key}")
                     self.eid_list.append(key)
 
+
         pprint(["self.eid_list:", self.eid_list])
-        print(f"Matching eids: "+str(self.eid_list))
+        print(f"Matching eids: " + str(self.eid_list))
 
         # GenCXProfile is not useful for ad-hoc commands. Ad hoc commands are
         # better expressed thru the lanforge_api structure
@@ -229,7 +236,7 @@ def main():
     # command = session.get_command()
     # query: LFJsonQuery
     # query = session.get_query()
-
+    pprint(["args.port_pattern:", args.port_pattern])
     dnstest = DnsTest(host=args.host,
                       debug=args.debug,
                       lfapi_session=session,
