@@ -356,8 +356,7 @@ class max_associate(Realm):
         end_num_stations = 0
         for wiphy_radio in wiphy_radio_list:
             # build stations for wiphy0 radio:
-            radio_name = wiphy_radio.split('.')
-            if radio_name[2] in self.radio_name_list[0]:
+            if wiphy_radio in self.radio_name_list[0]:
                 num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
                 radio_driver = self.wiphy_info.get_radio_driver(wiphy_radio)
                 end_num_stations += int(num_stations)
@@ -404,7 +403,9 @@ class max_associate(Realm):
                                        side_b=self.upstream_port,
                                        sleep_time=0)
             else:
-                logger.info("Skipping: %s", wiphy_radio)
+                logger.info(
+                    f"Skipping: Because the radio {wiphy_radio} provided do not match with the available radio named "
+                    f"{self.radio_name_list[0]}. Please double-check your self, resources, port name..!")
 
     def start_cxs(self):
         if self.station_profile is None:
@@ -855,7 +856,7 @@ For an overnight test with a ct523c system and a 6e network:
         help="test-id for kpi.csv,  script or test name")
     parser.add_argument(
         '--csv_outfile',
-        help="--csv_outfile <prepend input to generated file for csv data>",
+        help="--csv_outfile <prepend input to generated file name for csv data>",
         default="")
 
     # logging configuration:
@@ -877,6 +878,19 @@ For an overnight test with a ct523c system and a 6e network:
               ' reset_port_enable==True reset_port_time_min==<min>s'
               ' reset_port_time_max==<max>s" ')
     )
+
+    parser.add_argument('--ssid', help='Enter ssid for all stations with respect to the radios', nargs='+',
+                        default=['Netgear2g'])
+    parser.add_argument('--ssid_pw', help='Enter password for all stations with respect to the radios',
+                        nargs='+', default=['lanforge'])
+    parser.add_argument('--security', help='Enter security for all stations', nargs='+', default=['wpa2'])
+    parser.add_argument('--wifi_settings', help='To enable wifi settings', action='store_true')
+    parser.add_argument('--wifi_mode', help='Enter mode for stations', nargs='+', type=int, default=[0])
+    parser.add_argument('--wifi_enable_flags', help='Enter flags need to be enable', type=str, nargs='+',
+                        default=['wpa2_enable', '80211u_enable', 'create_admin_down'])
+    parser.add_argument('--reset_port_enable', help='To enable reset port settings', action='store_true')
+    parser.add_argument('--reset_port_time_min', help='Enter minimum port reset time', nargs='+', default=['0s'])
+    parser.add_argument('--reset_port_time_max', help='Enter maximum port reset time', nargs='+', default=['0s'])
 
     args = parser.parse_args()
 
@@ -1047,6 +1061,46 @@ For an overnight test with a ct523c system and a 6e network:
                 reset_port_enable_list.append(False)
                 reset_port_time_min_list.append('0s')
                 reset_port_time_max_list.append('0s')
+    else:
+        logger.info(
+            "If radio is None, will fetch all available radios and pass the same ssid, password for each radios.")
+        wiphy_info = lf_radio_info.radio_information(args.mgr,
+                                                     _resource=args.resource,
+                                                     debug_=args.debug,
+                                                     _exit_on_fail=True)
+        wiphy_info.get_lanforge_radio_information()
+        radio_name_list = wiphy_info.get_radios()
+
+        # making the ssid, password, security list same as radio list length
+        if len(args.ssid) == len(args.ssid_pw) == len(args.security) < len(radio_name_list):
+            ssid_list = args.ssid
+            ssid_password_list = args.ssid_pw
+            ssid_security_list = args.security
+            radio_count = len(radio_name_list)
+            ssid_list *= radio_count
+            ssid_password_list *= radio_count
+            ssid_security_list *= radio_count
+        else:
+            logger.info("Please provide clear values for ssid, password, and security.")
+            exit(1)
+
+        # To enable Wi-Fi settings like wifi mode, wifi sta-flags
+        if args.wifi_settings:
+            wifi_mode_list = args.wifi_mode * len(radio_name_list)
+            wifi_enable_flags_list = [args.wifi_enable_flags] * len(radio_name_list)
+        else:
+            wifi_mode_list = args.wifi_mode * len(radio_name_list)
+            wifi_enable_flags_list = [args.wifi_enable_flags] * len(radio_name_list)
+
+        # To enable reset port settings like min reset port time, max reset port time
+        if args.reset_port_enable:
+            reset_port_enable_list = [args.reset_port_enable] * len(radio_name_list)
+            reset_port_time_min_list = args.reset_port_time_min * len(radio_name_list)
+            reset_port_time_max_list = args.reset_port_time_max * len(radio_name_list)
+        else:
+            reset_port_enable_list = [False] * len(radio_name_list)
+            reset_port_time_min_list = ['0s'] * len(radio_name_list)
+            reset_port_time_max_list = ['0s'] * len(radio_name_list)
 
     # create here & pass in w/ MaxAssociate, or
     wiphy_info = lf_radio_info.radio_information(args.mgr,
