@@ -1,47 +1,97 @@
 #!/usr/bin/env python3
-'''
+"""
 NAME: lf_test_max_association.py
 
-PURPOSE:
-This script will conduct a maximum client overnight test for the ct521a and ct523c systems. The following steps will take place:
-- create the maximum supported stations per installed radio.
-- associate the created stations to their prospective SSID's.
-- create sta-to-eth Layer-3 CX for 9.6Kbps bidirectional overnight maximum-client wifi test.
+PURPOSE:  [LANforge Unit Test]:-  Create maximum stations per wiphy radio.
 
-EXAMPLE ct521a:
-./lf_test_max_association.py --mgr <localhost>
-    --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
-    --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
+          This script will conduct a maximum client overnight test for the ct521a and ct523c systems. The following steps will take place:
 
-EXAMPLE ct523c:
-./lf_max_association.py --mgr <localhost>
-    --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy2,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy3,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy4,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy5,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy6,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy7,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
-    --dut_hw_version 1.0 --dut_model_num ct523c --dut_sw_version 5.4.5 --dut_serial_num cc34
+            - Creates the maximum supported stations per installed radio.
+            - Associate the created stations to their prospective SSID's.
+            - Create sta-to-eth Layer-3 CX for 9.6Kbps bidirectional overnight maximum-client wifi test.
 
-EXAMPLE ct523c with 6e network:
-./lf_max_association.py --mgr <localhost>
-    --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy2,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy3,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy4,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
-    --radio 'radio==1.1.wiphy5,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
-    --radio 'radio==1.1.wiphy6,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
-    --radio 'radio==1.1.wiphy7,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
-    --radio6 1.1.wiphy4 --radio6 1.1.wiphy5 --radio6 1.1.wiphy6 --radio6 1.1.wiphy7
-    --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
-    --dut_hw_version 1.0 --dut_model_num ct523c --dut_sw_version 5.4.5 --dut_serial_num cc34
-'''
+EXAMPLE:
+        # To run the test on specified time duration on all available radios
+            [Automatically detect the available radios in lanforge & will create the max supported radios on each radios.]
+
+            ./lf_test_max_association.py --mgr 192.168.200.64 --ssid 208NETWORK --ssid_pw lanforge --security wpa2
+                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA --dut_hw_version 1.0
+                --dut_model_num ct521a--dut_sw_version 5.4.6 --dut_serial_num 361c --upstream_port 1.1.eth1
+                --upload_bps 6200000 --download_bps 6200000 --test_duration 30s
+
+        # To run the test based on specified time duration and radios
+
+            ./lf_test_max_association.py --mgr 192.168.200.64
+                --radio 'radio==wiphy0,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2'
+                --radio 'radio==wiphy1,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2'
+                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
+                --dut_hw_version 1.0 --dut_model_num ct521a --dut_sw_version 5.4.6 --dut_serial_num 361c
+                --test_duration 30s --upstream_port 1.1.eth1
+
+        # To run overnight test using chambered AP's on specified radios only.
+
+            ./lf_test_max_association.py --mgr <localhost>
+                --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==<password>,security==<type>'
+                --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==<password>,security==<type>'
+                --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
+                --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
+
+        # For an overnight test using chambered AP's with no security enabled:
+            ./lf_test_max_association.py --mgr <localhost>
+                --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==[BLANK],security==open'
+                --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==[BLANK],security==open'
+                --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
+                --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
+
+        # For an overnight test with a ct523c system:
+            ./lf_max_association.py --mgr <localhost>
+                --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy2,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy3,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy4,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy5,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy6,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy7,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
+                --dut_hw_version 1.0 --dut_model_num ct523c --dut_sw_version 5.4.5 --dut_serial_num cc34
+
+        # For an overnight test with a ct523c system and a 6e network:
+            ./lf_max_association.py --mgr <localhost>
+                --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy2,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy3,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy4,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
+                --radio 'radio==1.1.wiphy5,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
+                --radio 'radio==1.1.wiphy6,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
+                --radio 'radio==1.1.wiphy7,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
+                --radio6 1.1.wiphy4 --radio6 1.1.wiphy5 --radio6 1.1.wiphy6 --radio6 1.1.wiphy7
+                --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
+                --dut_hw_version 1.0 --dut_model_num ct523c --dut_sw_version 5.4.5 --dut_serial_num cc34
+
+SCRIPT_CLASSIFICATION:  Stations & Cross-connectionCreation, Report generation
+
+SCRIPT_CATEGORIES:   Functional
+
+NOTES:  This script serves two main purposes:
+            * It can create the maximum supported stations and cross-connections based on the available radio capability.
+            * You can choose to create stations on a specific radio using the '--radio' argument, or if on all radios
+              no '--radio' argument is provided.
+            * Additionally, you have the flexibility to run the script for both short and long durations using the
+              '--test_duration' argument."
+
+STATUS: Functional
+
+VERIFIED_ON:   25-AUG-2023,
+           Build Version:  5.4.7
+           Kernel Version: 6.2.16+
+
+LICENSE:
+        Free to distribute and modify. LANforge systems must be licensed.
+        Copyright 2023 Candela Technologies Inc
+
+"""
 
 import argparse
 import sys
@@ -736,57 +786,98 @@ def main():
     parser = argparse.ArgumentParser(
         prog="lf_test_max_association.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        description="""
----------------------------
-LANforge Unit Test:  Create maximum stations per wiphy radio - lf_test_max_association.py
----------------------------
-Summary:
-This script will provide the following features for the ct521a and ct523c system:
-- create the maximum supported stations per installed radio.
-- associate the created stations to their prospective SSID's.
-- create sta-to-eth Layer-3 CX for 9.6Kbps bidirectional overnight maximum-client wifi test.
----------------------------
-CLI Example:
-./lf_test_max_association.py --mgr <localhost>
-    --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==<password>,security==<type>'
-    --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==<password>,security==<type>'
-    --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
-    --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
+        description=
+"""
+NAME: lf_test_max_association.py
 
-For an overnight test using chambered AP's with no security enabled:
-./lf_test_max_association.py --mgr <localhost>
-    --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==[BLANK],security==open'
-    --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==[BLANK],security==open'
-    --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
-    --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
+PURPOSE:  [LANforge Unit Test]:-  Create maximum stations per wiphy radio.
 
-For an overnight test with a ct523c system:
-./lf_max_association.py --mgr <localhost>
-    --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy2,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy3,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy4,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy5,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy6,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy7,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
-    --dut_hw_version 1.0 --dut_model_num ct523c --dut_sw_version 5.4.5 --dut_serial_num cc34
+          This script will conduct a maximum client overnight test for the ct521a and ct523c systems. The following steps will take place:
 
-For an overnight test with a ct523c system and a 6e network:
-./lf_max_association.py --mgr <localhost>
-    --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy2,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy3,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==1.1.wiphy4,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
-    --radio 'radio==1.1.wiphy5,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
-    --radio 'radio==1.1.wiphy6,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
-    --radio 'radio==1.1.wiphy7,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
-    --radio6 1.1.wiphy4 --radio6 1.1.wiphy5 --radio6 1.1.wiphy6 --radio6 1.1.wiphy7
-    --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
-    --dut_hw_version 1.0 --dut_model_num ct523c --dut_sw_version 5.4.5 --dut_serial_num cc34
----------------------------
+            - Creates the maximum supported stations per installed radio.
+            - Associate the created stations to their prospective SSID's.
+            - Create sta-to-eth Layer-3 CX for 9.6Kbps bidirectional overnight maximum-client wifi test.
+
+EXAMPLE:
+        # To run the test on specified time duration on all available radios
+            [Automatically detect the available radios in lanforge & will create the max supported radios on each radios.]
+
+            ./lf_test_max_association.py --mgr 192.168.200.64 --ssid 208NETWORK --ssid_pw lanforge --security wpa2
+                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA --dut_hw_version 1.0
+                --dut_model_num ct521a--dut_sw_version 5.4.6 --dut_serial_num 361c --upstream_port 1.1.eth1
+                --upload_bps 6200000 --download_bps 6200000 --test_duration 30s
+
+        # To run the test based on specified time duration and radios
+
+            ./lf_test_max_association.py --mgr 192.168.200.64
+                --radio 'radio==wiphy0,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2'
+                --radio 'radio==wiphy1,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2'
+                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
+                --dut_hw_version 1.0 --dut_model_num ct521a --dut_sw_version 5.4.6 --dut_serial_num 361c
+                --test_duration 30s --upstream_port 1.1.eth1
+
+        # To run overnight test using chambered AP's on specified radios only.
+
+            ./lf_test_max_association.py --mgr <localhost>
+                --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==<password>,security==<type>'
+                --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==<password>,security==<type>'
+                --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
+                --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
+
+        # For an overnight test using chambered AP's with no security enabled:
+            ./lf_test_max_association.py --mgr <localhost>
+                --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==[BLANK],security==open'
+                --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==[BLANK],security==open'
+                --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
+                --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
+
+        # For an overnight test with a ct523c system:
+            ./lf_max_association.py --mgr <localhost>
+                --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy2,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy3,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy4,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy5,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy6,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy7,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
+                --dut_hw_version 1.0 --dut_model_num ct523c --dut_sw_version 5.4.5 --dut_serial_num cc34
+
+        # For an overnight test with a ct523c system and a 6e network:
+            ./lf_max_association.py --mgr <localhost>
+                --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy2,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy3,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+                --radio 'radio==1.1.wiphy4,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
+                --radio 'radio==1.1.wiphy5,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
+                --radio 'radio==1.1.wiphy6,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
+                --radio 'radio==1.1.wiphy7,ssid==<ssid>,ssid_pw==<password>,security==wpa3'
+                --radio6 1.1.wiphy4 --radio6 1.1.wiphy5 --radio6 1.1.wiphy6 --radio6 1.1.wiphy7
+                --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
+                --dut_hw_version 1.0 --dut_model_num ct523c --dut_sw_version 5.4.5 --dut_serial_num cc34
+
+SCRIPT_CLASSIFICATION:  Stations & Cross-connectionCreation, Report generation
+
+SCRIPT_CATEGORIES:   Functional
+
+NOTES:  This script serves two main purposes:
+            * It can create the maximum supported stations and cross-connections based on the available radio capability.
+            * You can choose to create stations on a specific radio using the '--radio' argument, or if on all radios
+              no '--radio' argument is provided.
+            * Additionally, you have the flexibility to run the script for both short and long durations using the
+              '--test_duration' argument."
+
+STATUS: Functional
+
+VERIFIED_ON:   25-AUG-2023,
+           Build Version:  5.4.7
+           Kernel Version: 6.2.16+
+
+LICENSE:
+        Free to distribute and modify. LANforge systems must be licensed.
+        Copyright 2023 Candela Technologies Inc
 
 """)
     parser.add_argument("-m", "--mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
