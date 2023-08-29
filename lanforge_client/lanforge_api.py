@@ -127,16 +127,17 @@ def print_diagnostics(url_: str = None,
                       error_list_: list = None,
                       debug_: bool = False,
                       die_on_error_: bool = False):
-    LOGGER.error("::print_diagnostics: error_.__class__: %s" % error_.__class__)
-    LOGGER.error(pformat(error_))
-
+    LOGGER.error(f"::print_diagnostics: {url_} => {error_.__class__}")
     if url_ is None:
-        LOGGER.error("WARNING:print_diagnostics: url_ is None")
+        LOGGER.error("    url_ is None")
     if request_ is None:
-        LOGGER.error("WARNING:print_diagnostics: request_ is None")
+        LOGGER.error("    request_ is None")
     if error_ is None:
-        LOGGER.error("WARNING:print_diagnostics: error_ is None")
+        LOGGER.error("    error_ is None")
 
+    LOGGER.error(pformat(request_))
+    if debug_:
+        traceback.print_stack()
     method = 'NA'
     if hasattr(request_, 'method'):
         method = request_.method
@@ -4261,6 +4262,7 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         p_11r = 0x40                        # Use 802.11r roaming setup.
+        ADMIN_UP = 0x4000                   # Request stations be created admin-up.
         ALLOW_11W = 0x800                   # Set 11w (MFP/PMF) to optional.
         BSS_TRANS = 0x400                   # Enable BSS Transition logic
         DHCP_SERVER = 0x1                   # This should provide DHCP server.
@@ -4341,6 +4343,7 @@ class LFJsonCommand(JsonCommand):
                          profile_flags: str = None,                # Flags for this profile, see above.
                          profile_type: str = None,                 # Profile type: See above.
                          ssid: str = None,                         # WiFi SSID to be used, [BLANK] means any.
+                         txpower: str = None,                      # WiFi Radio requested txpower. -1 means default.
                          vid: str = None,                          # Vlan-ID (only valid for vlan profiles).
                          wifi_mode: str = None,                    # WiFi Mode for this profile.
                          response_json_list: list = None,
@@ -4381,6 +4384,8 @@ class LFJsonCommand(JsonCommand):
             data["profile_type"] = profile_type
         if ssid is not None:
             data["ssid"] = ssid
+        if txpower is not None:
+            data["txpower"] = txpower
         if vid is not None:
             data["vid"] = vid
         if wifi_mode is not None:
@@ -4419,6 +4424,7 @@ class LFJsonCommand(JsonCommand):
                               profile_flags=param_map.get("profile_flags"),
                               profile_type=param_map.get("profile_type"),
                               ssid=param_map.get("ssid"),
+                              txpower=param_map.get("txpower"),
                               vid=param_map.get("vid"),
                               wifi_mode=param_map.get("wifi_mode"),
                               )
@@ -12180,7 +12186,8 @@ class LFJsonCommand(JsonCommand):
                             serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
                             # [W]
                             shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
-                            val: str = None,                          # Requested attenution in 1/10ths of dB (ddB).
+                            val: str = None,                          # Requested attenution in 1/10ths of dB (ddB). START,
+                            # STOP will operate an attenuator script
                             response_json_list: list = None,
                             debug: bool = False,
                             errors_warnings: list = None,
@@ -19735,12 +19742,12 @@ class LFJsonQuery(JsonQuery):
 
     When requesting specific column names, they need to be URL encoded:
         api, app-id, device, device-type, model, name, phantom, product, release, 
-        timed-out, user-name
+        resource-id, timed-out, user-name
     Example URL: /adb?fields=api,app-id
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_adb(eid_list=['1.234', '1.344'],
-                                   requested_col_names=['app-id'], 
+                                   requested_col_names=['resource-id'], 
                                    debug=True)
 
     The record returned will have these members: 
@@ -19755,6 +19762,7 @@ class LFJsonQuery(JsonQuery):
                        # unplugged?).
         'product':     # Android device product identifier.
         'release':     # Android SDK Release
+        'resource-id': # Identifier for the Resource this ADB device is associated.
         'timed-out':   # The device has timed out too many times while running adb commands. Go
                        # check on it?
         'user-name':   # LANforge interop app username for this ADB device.
@@ -23086,12 +23094,13 @@ class LFJsonQuery(JsonQuery):
         /voip-endp/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
-        calls+answered, calls+attempted, calls+completed, calls+failed, cf+404, cf+408, 
-        cf+busy, cf+canceled, delay, destination+addr, dropped, dup+pkts, eid, elapsed, 
-        entity+id, jb+cur, jb+over, jb+silence, jb+under, jitter, mng, name, ooo+pkts, 
-        pesq, pesq+bklg, pesq%23, reg+state, rst, rtp+rtt, run, rx+bytes, rx+pkts, 
-        source+addr, state, tx+bytes, tx+pkts, vad+pkts
-    Example URL: /voip-endp?fields=calls+answered,calls+attempted
+        attenuation+%28agc%29, avg+delay, calls+answered, calls+attempted, calls+completed, 
+        calls+failed, cf+404, cf+408, cf+busy, cf+canceled, delay, destination+addr, 
+        dropped, dup+pkts, eid, elapsed, entity+id, jb+cur, jb+over, jb+silence, 
+        jb+under, jitter, mng, mos-lqo, mos-lqo%23, name, ooo+pkts, reg+state, rst, 
+        rtp+rtt, run, rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, source+addr, 
+        state, tx+bytes, tx+pkts, vad+pkts
+    Example URL: /voip-endp?fields=attenuation+%28agc%29,avg+delay
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_voip_endp(eid_list=['1.234', '1.344'],
@@ -23100,50 +23109,57 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        'calls answered':   # Number of calls that where the remote answered
-        'calls attempted':  # Number of calls that have been attempted
-        'calls completed':  # Number of calls that have been successfully completed
-        'calls failed':     # Number of calls that did not succeed for any reason.
-        'cf 404':           # Number of calls failed for '404': callee not found.
-        'cf 408':           # Number of calls failed for '408': callee did not answer.
-        'cf busy':          # Number of calls failed because callee is busy.
-        'cf canceled':      # Number of calls failed because they were canceled.
-        'delay':            # Average latency in milliseconds for packets received by this endpoint.
-        'destination addr': # Destination Address (MAC, ip/port, VoIP destination).
-        'dropped':          # Total dropped packets, as identified by gaps in RTP sequence numbers
-                            # (pre jitter buffer).
-        'dup pkts':         # Total duplicate packets, as identified by RTP sequence numbers (pre
-                            # jitter buffer).
-        'eid':              # Entity ID
-        'elapsed':          # Amount of time (seconds) this endpoint has been running (or ran.)
-        'entity id':        # Entity ID
-        'jb cur':           # Current number of packets in the jitter buffer waiting to be played /
-                            # Jitter Buffer Size.
-        'jb over':          # Total times the jitter buffer was given more packets than it could hold.
-        'jb silence':       # Silence is played when there is no valid voice packet, due to drop, or
-                            # reorder/jitter/latency out of range of the jitter buffer.
-        'jb under':         # Total times the reader asked for a packet to play but the jitter buffer
-                            # was empty.
-        'jitter':           # Average interpacket variation, calculated per RFC 1889 A.8.
-        'mng':              # Is the Endpoint managed or not?
-        'name':             # Endpoint's Name.
-        'ooo pkts':         # Total out-of-order packets, as identified by RTP sequence numbers (pre
-                            # jitter buffer).
-        'pesq':             # PESQ Report score for the PESQ report number (PESQ#).
-        'pesq bklg':        # PESQ server call processing backlog.
-        'pesq#':            # The pesq-report-number to which the PESQ value cooresponds.
-        'reg state':        # Current State of the Endpoint.
-        'rst':              # How many times has the endpoint been restarted due to abnormal
-                            # termination.
-        'rtp rtt':          # Round trip latency as reported by RTCP
-        'run':              # Is the Endpoint is Running or not.
-        'rx bytes':         # Total received bytes count.
-        'rx pkts':          # Total received packet count.
-        'source addr':      # Source Address (MAC, ip/port, VoIP source).
-        'state':            # Phone registration state
-        'tx bytes':         # Total transmitted bytes count.
-        'tx pkts':          # Total transmitted packet count.
-        'vad pkts':         # Total VAD (Silence Suppression) packets suppressed before transmit.
+        'attenuation (agc)': # Attenuation (Automatic gain control) values from POLQA/PESQ report
+                             # (unit: dB)
+        'avg delay':         # Average delay values between reference and degraded/test audio file from
+                             # POLQA/PESQ report (unit: ms)
+        'calls answered':    # Number of calls that where the remote answered
+        'calls attempted':   # Number of calls that have been attempted
+        'calls completed':   # Number of calls that have been successfully completed
+        'calls failed':      # Number of calls that did not succeed for any reason.
+        'cf 404':            # Number of calls failed for '404': callee not found.
+        'cf 408':            # Number of calls failed for '408': callee did not answer.
+        'cf busy':           # Number of calls failed because callee is busy.
+        'cf canceled':       # Number of calls failed because they were canceled.
+        'delay':             # Average latency in milliseconds for packets received by this endpoint.
+        'destination addr':  # Destination Address (MAC, ip/port, VoIP destination).
+        'dropped':           # Total dropped packets, as identified by gaps in RTP sequence numbers
+                             # (pre jitter buffer).
+        'dup pkts':          # Total duplicate packets, as identified by RTP sequence numbers (pre
+                             # jitter buffer).
+        'eid':               # Entity ID
+        'elapsed':           # Amount of time (seconds) this endpoint has been running (or ran.)
+        'entity id':         # Entity ID
+        'jb cur':            # Current number of packets in the jitter buffer waiting to be played /
+                             # Jitter Buffer Size.
+        'jb over':           # Total times the jitter buffer was given more packets than it could hold.
+        'jb silence':        # Silence is played when there is no valid voice packet, due to drop, or
+                             # reorder/jitter/latency out of range of the jitter buffer.
+        'jb under':          # Total times the reader asked for a packet to play but the jitter buffer
+                             # was empty.
+        'jitter':            # Average interpacket variation, calculated per RFC 1889 A.8.
+        'mng':               # Is the Endpoint managed or not?
+        'mos-lqo':           # Mean Opinion Score (Listening Quality Objective) by POLQA/PESQ report
+                             # for the report number (MOS-LQO#).
+        'mos-lqo#':          # The report number to which the POLQA/PESQ MOS-LQO value corresponds.
+        'name':              # Endpoint's Name.
+        'ooo pkts':          # Total out-of-order packets, as identified by RTP sequence numbers (pre
+                             # jitter buffer).
+        'reg state':         # Current State of the Endpoint.
+        'rst':               # How many times has the endpoint been restarted due to abnormal
+                             # termination.
+        'rtp rtt':           # Round trip latency as reported by RTCP
+        'run':               # Is the Endpoint is Running or not.
+        'rx bytes':          # Total received bytes count.
+        'rx pkts':           # Total received packet count.
+        'scoring bklg':      # POLQA/PESQ server call processing backlog.
+        'snr deg':           # Signal to noise ratio of the degraded/test audio file (unit: dB)
+        'snr ref':           # Signal to noise ratio of the reference audio file (unit: dB)
+        'source addr':       # Source Address (MAC, ip/port, VoIP source).
+        'state':             # Phone registration state
+        'tx bytes':          # Total transmitted bytes count.
+        'tx pkts':           # Total transmitted packet count.
+        'vad pkts':          # Total VAD (Silence Suppression) packets suppressed before transmit.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
