@@ -127,9 +127,11 @@ class VoipReport():
                                          errors_warnings=e_w_list)
             except Exception as e:
                 pprint(['exception:', e, "cx:", key, e_w_list])
-        self.csv_data: list = []
+        self.csv_data: list = ["---- begin -----"]
         # csv header row:
         self.csv_data.append(','.join(self.ep_col_names))
+        pprint(["self.csv_data:", self.csv_data])
+        exit(1)
 
     def append_to_csv(self, ep_name: str = None, ep_record: dict = None):
         if not ep_name:
@@ -138,6 +140,7 @@ class VoipReport():
             raise ValueError("append_to_csv needs endpoint record")
         data : list = []
         data.append(ep_name)
+        pprint(["data:epname:", ep_name, data])
         if isinstance(ep_record[ep_name], list):
             pprint(["wuuut:", ep_record.keys()])
         if isinstance(ep_record[ep_name], dict):
@@ -147,11 +150,12 @@ class VoipReport():
         else:
             pprint(ep_record[ep_name])
             raise ValueError("wut wut?")
+        pprint(["data2:", data, " should this have been joined?"])
         stuff : str = ','.join(data)
         data.extend(stuff)
         pprint(["stuff:", stuff, "data:", data])
         self.csv_data.append(stuff)
-        pprint(["data:", data, "stuff:", stuff])
+        pprint(["csv_data:", self.csv_data])
 
     def monitor(self):
         if not self.ep_col_names:
