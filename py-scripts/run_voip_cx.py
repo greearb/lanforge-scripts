@@ -54,6 +54,7 @@ class VoipReport():
         else:
             self.csv_filename = csv_file_name
         self.ep_col_names: list = (
+            "epoch_time",
             "attenuation (agc)",
             "avg delay",
             "calls answered",
@@ -96,6 +97,7 @@ class VoipReport():
             "tx pkts",
             "vad pkts"
         )
+        self.csv_data : list = []
 
     def start(self):
         # query list of voip connections, warn on any not found
@@ -127,35 +129,29 @@ class VoipReport():
                                          errors_warnings=e_w_list)
             except Exception as e:
                 pprint(['exception:', e, "cx:", key, e_w_list])
-        self.csv_data: list = ["---- begin -----"]
+
         # csv header row:
         self.csv_data.append(','.join(self.ep_col_names))
-        pprint(["self.csv_data:", self.csv_data])
-        exit(1)
+        #pprint(["self.csv_data:", self.csv_data])
+        #exit(1)
+        #print("----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
 
     def append_to_csv(self, ep_name: str = None, ep_record: dict = None):
         if not ep_name:
             raise ValueError("append_to_csv needs endpoint name")
         if not ep_record:
             raise ValueError("append_to_csv needs endpoint record")
-        data : list = []
-        data.append(ep_name)
-        pprint(["data:epname:", ep_name, data])
-        if isinstance(ep_record[ep_name], list):
-            pprint(["wuuut:", ep_record.keys()])
-        if isinstance(ep_record[ep_name], dict):
-            for k in ep_record[ep_name].keys():
-                pprint(["tuuuw:", ep_record[ep_name].keys()])
-                data.append(k)
-        else:
-            pprint(ep_record[ep_name])
-            raise ValueError("wut wut?")
-        pprint(["data2:", data, " should this have been joined?"])
-        stuff : str = ','.join(data)
-        data.extend(stuff)
-        pprint(["stuff:", stuff, "data:", data])
-        self.csv_data.append(stuff)
-        pprint(["csv_data:", self.csv_data])
+        #pprint(["ep_record:", ep_record])
+        csv_row : list = []
+        # ep_col_names defines the sorted order to retrieve the column values
+        for key in self.ep_col_names:
+            if "epoch_time" == key:
+                csv_row.extend([int(time.time()), ep_name])
+                continue
+            csv_row.append(str(ep_record[key]))
+        self.csv_data.append(csv_row)
+        pprint(["   csv_row> ", csv_row])
+        exit(1)
 
     def monitor(self):
         if not self.ep_col_names:
@@ -171,7 +167,7 @@ class VoipReport():
         while num_running_ep > 0:
             time.sleep(1)
             try:
-                pprint(self.voip_endp_list)
+                pprint(["self.voip.endp_list:", self.voip_endp_list])
                 num_running_ep = len(self.voip_endp_list)
                 response = lf_query.get_voip_endp(eid_list=self.voip_endp_list,
                                                   debug=False,
@@ -180,13 +176,12 @@ class VoipReport():
                     #pprint(e_w_list)
                     raise ValueError("unable to find endpoint data")
 
-
                 for entry in response:
                     name = list(entry.keys())[0]
                     record = entry[name]
-                    self.append_to_csv(ep_name=name, ep_record=entry)
+                    self.append_to_csv(ep_name=name, ep_record=entry[name])
 
-                    #pprint(f"name {name}: {record['state']}")
+                    print(f"    state: {record['state']}")
                     if "Stopped" == record['state']:
                         num_running_ep -= 1
                         continue
