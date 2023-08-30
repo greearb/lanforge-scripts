@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # This script will start a named set of voip connections and report their data to a csv file
-import logging
 import argparse
+import csv
 import importlib
+import logging
 import os
 import pprint
 import sys
@@ -38,6 +39,7 @@ class VoipReport():
         self.csv_filename = args.csv_file
         self.cx_list: list = []
         self.voip_endp_list: list = []
+        self.last_written_row = 0
         if not args.cx_list:
             raise ValueError("no cx names")
         if isinstance(args.cx_list, list):
@@ -97,11 +99,18 @@ class VoipReport():
             "tx pkts",
             "vad pkts"
         )
-        self.csv_data : list = []
+        self.csv_data: list = []
+        try:
+            self.csv_fileh = open(self.csv_filename, "w")
+            self.csv_writer = csv.writer(self.csv_fileh)
+            self.csv_writer.writerow(self.ep_col_names)
+        except Exception as e:
+            e.print_exc()
+            traceback.print_exc()
+            exit(1)
 
     def start(self):
         # query list of voip connections, warn on any not found
-
         lf_query: LFJsonQuery = self.lfsession.get_query()
         lf_cmd: LFJsonCommand = self.lfsession.get_command()
         e_w_list: list = []
@@ -110,10 +119,11 @@ class VoipReport():
                                            requested_col_names=("name"),
                                            errors_warnings=e_w_list,
                                            debug=True)
-        if len(e_w_list):
-            pprint(['ewlist:', e_w_list])
+        #if len(e_w_list):
+        #    pprint(['ewlist:', e_w_list])
         if not response:
             raise ValueError("unable to find voip connections")
+
         for (key, _) in response[0].items():
             if key not in self.cx_list:
                 print(f"cx {key} not found")
@@ -130,50 +140,52 @@ class VoipReport():
             except Exception as e:
                 pprint(['exception:', e, "cx:", key, e_w_list])
 
-        # csv header row:
-        self.csv_data.append(','.join(self.ep_col_names))
-        #pprint(["self.csv_data:", self.csv_data])
-        #exit(1)
-        #print("----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
+    def write_rows(self):
+        if self.last_written_row >= (len(self.csv_data) - 1):
+            print(f"write_row: row[{self.last_written_row}] already written, rows: {len(self.csv_data)} rows")
+            return
+        for i in range(self.last_written_row, len(self.csv_data) - 1):
+            #pprint(["i:", i, "csv:", self.csv_data[i]])
+            row_strs : list = map(str, self.csv_data[i])
+            self.csv_writer.writerow(row_strs)
+            self.last_written_row = i
+        self.csv_fileh.flush()
 
     def append_to_csv(self, ep_name: str = None, ep_record: dict = None):
         if not ep_name:
             raise ValueError("append_to_csv needs endpoint name")
         if not ep_record:
             raise ValueError("append_to_csv needs endpoint record")
-        #pprint(["ep_record:", ep_record])
-        csv_row : list = []
+        # pprint(["ep_record:", ep_record])
+        new_row: list[str] = []
         # ep_col_names defines the sorted order to retrieve the column values
         for key in self.ep_col_names:
             if "epoch_time" == key:
-                csv_row.extend([int(time.time()), ep_name])
+                new_row.extend([int(time.time()), ep_name])
                 continue
-            csv_row.append(str(ep_record[key]))
-        self.csv_data.append(csv_row)
-        pprint(["   csv_row> ", csv_row])
-        exit(1)
+            new_row.append(ep_record[key])
+        #pprint(["csv_row:", new_row])
+        self.csv_data.append(new_row)
 
     def monitor(self):
         if not self.ep_col_names:
             raise ValueError("no endpoint names")
         num_running_ep = 1
-
-        #column_names: str = ','.join(self.ep_col_names)
         lf_query: LFJsonQuery = self.lfsession.get_query()
-        lf_cmd: LFJsonCommand = self.lfsession.get_command()
+        # lf_cmd: LFJsonCommand = self.lfsession.get_command()
         e_w_list: list = []
         response: list
-        #pprint(['column_names:', column_names])
+
         while num_running_ep > 0:
             time.sleep(1)
             try:
-                pprint(["self.voip.endp_list:", self.voip_endp_list])
+                # pprint(["self.voip.endp_list:", self.voip_endp_list])
                 num_running_ep = len(self.voip_endp_list)
                 response = lf_query.get_voip_endp(eid_list=self.voip_endp_list,
                                                   debug=False,
                                                   errors_warnings=e_w_list)
                 if not response:
-                    #pprint(e_w_list)
+                    # pprint(e_w_list)
                     raise ValueError("unable to find endpoint data")
 
                 for entry in response:
@@ -181,19 +193,23 @@ class VoipReport():
                     record = entry[name]
                     self.append_to_csv(ep_name=name, ep_record=entry[name])
 
-                    print(f"    state: {record['state']}")
+                    # print(f"    state: {record['state']}")
                     if "Stopped" == record['state']:
                         num_running_ep -= 1
                         continue
-
+                self.write_rows()
             except Exception as e:
+                self.write_rows()
                 traceback.print_exc()
                 pprint(['exception:', e, 'e_w_list:', e_w_list])
+                self.write_rows()
                 exit(1)
+            self.write_rows()
 
     def report(self):
-        pprint(self.csv_data)
-        pass
+        self.write_rows()
+        print(f"saved {self.csv_filename}")
+        self.csv_fileh.close()
 
 
 def main():
@@ -218,8 +234,8 @@ def main():
         print("Please list voip connection names (ex: cx1,cx2,cx3) or ALL")
 
     lfapi_session = LFSession(lfclient_url=lfjson_host,
-                                debug=debug,
-                                )
+                              debug=debug,
+                              )
     voip_report = VoipReport(lfsession=lfapi_session, args=args)
     voip_report.start()
     voip_report.monitor()
