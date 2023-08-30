@@ -60,11 +60,11 @@ from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
 from lanforge_client.logg import Logg
 
-LFUtils = importlib.import_module("py-json.LANforge.LFUtils") #to be deleted after using name_to_eid
+#to be deleted after using name_to_eid
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 #stand-alone (not dependent on realm)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
-
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
@@ -143,7 +143,7 @@ class GenTest():
 
         number_template = "000"
         if (self.num_stations > 0):
-            self.station_list = self.port_name_series(prefix_="sta",
+            self.sta_list = self.port_name_series(prefix_="sta",
                                               start_id_=int(number_template),
                                               end_id_= self.num_stations + int(number_template) - 1,
                                               padding_number_=10000,
@@ -218,7 +218,7 @@ class GenTest():
     """
 
     def start(self):
-        #admin up all created stations
+        #admin up all created stations & existing stations
         if self.sta_list:
             for sta in self.sta_list:
                 eid = LFUtils.name_to_eid(sta)
@@ -243,7 +243,7 @@ class GenTest():
         else:
             self._fail("All stations did NOT go admin up.")
 
-        if self.wait_for_ip(station_list=temp_stas, ipv4=True, debug=self.debug, timeout_sec=-1):
+        if self.wait_for_action("ip", 30):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
@@ -293,9 +293,9 @@ class GenTest():
                                                debug=self.debug)
             else:
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
-        #wait until ports appear stations
+        self.wait_for_action(self, "ports appear", 30)
+
         #create endpoints
-        # combine sta_list and use_existing_eids
         #this is how many endps need to be created : 1 for each eid.
         unique_alias = len(self.sta_list) + len(self.use_existing_eid)
         if self.sta_list:
@@ -427,8 +427,6 @@ class GenTest():
                 name_list.append("%i.%i.%s" % (eid[0], eid[1], sta_name))
         return name_list
 
-
-
     def port_exists(self, port_eid, debug=None):
         if port_eid:
             current_stations = self.query.get_port(list(port_eid), debug=debug)
@@ -437,11 +435,35 @@ class GenTest():
         return False
     
     def wait_for_action(self, type, secs_to_wait):
-        # if type == "ip":
-
+        if type == "ports appear":
+            found_stations = set()
+            if base_url.endswith('/'):
+                port_url = port_url[1:]
+                show_url = show_url[1:]
+            else:
+                base_url="http://localhost:8080"
+                port_url="/port/1"
+                show_url = "/cli-json/show_ports"
+            #keep trying to see if ports appear
+            for attempt in range(0, int(timeout / 2))
+                for sta_alias in self.station_list:
+                    shelf, resource, port_name, *nil = LFUtils.name_to_eid(sta_alias)
+                    uri = "%s/%s/%s" % (port_url, resource_id, port_name)
+                    requested_url = url + uri
+                    json_response = LFJsonQuery.get_as_json(url=requested_url, debug=self.debug)
+                    if (json_response is None)
+                        or (not json_response['interface']['phantom'])
+                        or (not json_response['status']['NOT_FOUND']):
+                        found_stations.add("%s.%s.%s" % (shelf, resource_id, port_name))
+            if len(found_stations) < len(self.sta_list):
+                sleep(2)
+                logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(self.sta_list), attempt, timeout/2))
+            else:
+                logger.info('All %s ports appeared' % len(found_stations))
+                return True
+        #TODO add debug
+        return False
         # elif type == "admin up":
-
-        # elif type == "ports appear":
 
         # elif type == "ports disappear":
 
