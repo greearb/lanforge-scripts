@@ -49,6 +49,7 @@ import os
 import matplotlib.patches as mpatches
 import pandas as pd
 import logging
+from lf_graph import lf_bar_graph_horizontal
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -70,15 +71,18 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class FtpTest(LFCliBase):
-    def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta=None,
+    def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta=None,radio="",
                  dut_ssid=None, dut_security=None, dut_passwd=None, file_size=None, band=None, twog_radio=None,
                  fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False,
-                 direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None):
+                 direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None,clients_type= "Virtual",real_client_list=[],
+                 working_resources_list=[],hw_list=[],windows_list=[],mac_list=[],linux_list=[],android_list=[],
+                 eid_list=[],mac_id_list=[],devices_available=[],mac_id1_list=[],user_list=[],input_devices_list=[],
+                 real_client_list1=[],uc_avg=[],url_data=[],channel_list=[],mode_list=[],cx_list=[]):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         logger.info("Test is about to start")
         self.host = lfclient_host
         self.port = lfclient_port
-        # self.radio = radio
+        #self.radio = radio
         self.upstream = upstream
         self.sta_prefix = sta_prefix
         self.sta_start_id = start_id
@@ -86,7 +90,7 @@ class FtpTest(LFCliBase):
         self.ssid = dut_ssid
         self.security = dut_security
         self.password = dut_passwd
-        self.requests_per_ten = 1
+        self.requests_per_ten = 600
         self.band = band
         self.kpi_csv = kpi_csv
         self.kpi_results = kpi_results
@@ -102,8 +106,141 @@ class FtpTest(LFCliBase):
         self.cx_profile = self.local_realm.new_http_profile()
         self.port_util = realm.PortUtils(self.local_realm)
         self.cx_profile.requests_per_ten = self.requests_per_ten
+        self.clients_type = clients_type
+        self.real_client_list = real_client_list
+        self.working_resources_list = working_resources_list
+        self.hw_list = hw_list
+        self.windows_list = windows_list
+        self.mac_list = mac_list
+        self.linux_list = linux_list
+        self.android_list = android_list
+        self.eid_list = eid_list
+        self.devices_available = devices_available
+        self.user_list = user_list
+        self.input_devices_list = input_devices_list
+        self.mac_id1_list = mac_id1_list
+        self.mac_id_list = mac_id_list
+        self.real_client_list1 = real_client_list1
+        self.uc_avg = uc_avg
+        self.url_data = url_data
+        self.channel_list = channel_list
+        self.mode_list = mode_list
+        self.cx_list = cx_list
 
         logger.info("Test is Initialized")
+
+    def query_realclients(self):
+        response = self.json_get("/resource/all")
+        for key,value in response.items():
+            if key == "resources":
+                for element in value:
+                    for a,b in element.items():
+                        self.hw_list.append(b['hw version'])
+        for hw_version in self.hw_list:                       
+            if "Win" in hw_version:
+                self.windows_list.append(hw_version)
+            elif "Linux" in hw_version:
+                self.linux_list.append(hw_version)
+            elif "Apple" in hw_version:
+                self.mac_list.append(hw_version)
+            else:
+                if hw_version != "":
+                    self.android_list.append(hw_version)
+        port_eid_list, same_eid_list,original_port_list=[],[],[]
+        response = self.json_get("/resource/all")
+        for key,value in response.items():
+            if key == "resources":
+                for element in value:
+                    for a,b in element.items():
+                        if b['phantom'] == False :
+                            self.working_resources_list.append(b["hw version"])
+                            if "Win" in b['hw version']:
+                                self.eid_list.append(b['eid'])
+                                self.windows_list.append(b['hw version'])
+                                #self.hostname_list.append(b['eid']+ " " +b['hostname'])
+                                self.devices_available.append(b['eid'] +" " +'Win'+" "+ b['hostname'] )
+                            elif "Linux" in b['hw version']:
+                                if ('ct' not in b['hostname']) and ('lf' not in b['hostname']):
+                                    self.eid_list.append(b['eid'])
+                                    self.linux_list.append(b['hw version'])
+                                    #self.hostname_list.append(b['eid']+ " " +b['hostname'])
+                                    self.devices_available.append(b['eid'] +" " +'Lin'+" "+ b['hostname'])
+                            elif "Apple" in b['hw version']:
+                                self.eid_list.append(b['eid'])
+                                self.mac_list.append(b['hw version'])
+                                #self.hostname_list.append(b['eid']+ " " +b['hostname'])
+                                self.devices_available.append(b['eid'] +" " +'Mac'+" "+ b['hostname'])
+                            else:
+                                self.eid_list.append(b['eid'])
+                                self.android_list.append(b['hw version'])  
+                                #self.username_list.append(b['eid']+ " " +b['user'])
+                                self.devices_available.append(b['eid'] +" " +'android'+" "+ b['user'])
+        #print("hostname list :",self.hostname_list)
+        #print("username list :", self.username_list)
+        #print("Available resources in resource tab :", self.devices_available)
+        #print("eid_list : ",self.eid_list)
+        #All the available resources are fetched from resource mgr tab ----
+
+        response_port = self.json_get("/port/all")
+        #print(response_port)
+        for interface in response_port['interfaces']:
+            for port,port_data in interface.items():
+                if(not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0"):
+                    for id in self.eid_list:
+                        if(id+'.' in port):
+                            original_port_list.append(port)
+                            port_eid_list.append(str(LFUtils.name_to_eid(port)[0])+'.'+str(LFUtils.name_to_eid(port)[1]))
+                            self.mac_id1_list.append(str(LFUtils.name_to_eid(port)[0])+'.'+str(LFUtils.name_to_eid(port)[1])+' '+port_data['mac'])
+                            self.channel_list.append(str(port_data['channel']))
+                            self.mode_list.append(str(port_data['mode']))
+        #print("port eid list",port_eid_list)
+        for i in range(len(self.eid_list)):
+            for j in range(len(port_eid_list)):
+                if self.eid_list[i] == port_eid_list[j]:
+                    same_eid_list.append(self.eid_list[i])
+        same_eid_list = [_eid + ' ' for _eid in same_eid_list]
+        #print("same eid list",same_eid_list)  
+        #print("mac_id list",self.mac_id_list)
+        #All the available ports from port manager are fetched from port manager tab ---
+
+        for eid in same_eid_list:
+            for device in self.devices_available:
+                if eid in device:
+                    print(eid + ' ' + device)
+                    self.user_list.append(device)
+        print("AVAILABLE DEVICES TO RUN TEST : ",self.user_list)
+
+        devices_list = input("Enter the desired resources to run the test:")
+        #print("devices list",devices_list)
+        resource_eid_list = devices_list.split(',')
+        resource_eid_list2 = [eid + ' ' for eid in resource_eid_list]
+        resource_eid_list1 = [resource + '.' for resource in resource_eid_list]
+        #print("resource eid list",resource_eid_list)
+
+        #User desired eids are fetched ---
+
+        for eid in resource_eid_list1:
+            for ports_m in original_port_list:
+                if eid in ports_m:
+                    self.input_devices_list.append(ports_m)
+        print("INPUT DEVICES LIST",self.input_devices_list)
+        
+        # user desired real client list 1.1 wlan0 ---
+        
+        for i in resource_eid_list2:
+            for j in range(len(self.devices_available)):
+                if i in self.devices_available[j]:
+                    self.real_client_list.append(self.devices_available[j])
+                    self.real_client_list1.append((self.devices_available[j])[:25])
+        print("REAL CLIENT LIST", self.real_client_list)
+        #print("REAL CLIENT LIST1", self.real_client_list1)
+
+        for eid in resource_eid_list2:
+            for i in self.mac_id1_list:
+                if eid in i:
+                    self.mac_id_list.append(i.strip(eid+' '))
+        print("MAC ID LIST",self.mac_id_list)
+        return self.real_client_list
 
     def set_values(self):
         '''This method will set values according user input'''
@@ -168,7 +305,7 @@ class FtpTest(LFCliBase):
                 LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
                                                    port_list=self.station_list,
                                                    debug=self.debug)
-                return
+                
             # clean layer4 ftp traffic
             self.cx_profile.cleanup()
             self.station_list = LFUtils.portNameSeries(prefix_=self.sta_prefix, start_id_=self.sta_start_id,
@@ -191,22 +328,26 @@ class FtpTest(LFCliBase):
         # rv[0]=shelf, rv[1]=resource, rv[2]=port
         self.port_util.set_ftp(port_name=rv[2], resource=rv[1], on=True)
         # self.port_util.set_ftp(port_name=rv, resource=rv[1], on=True)
+        eth_list = []
+        # list of upstream port
+        eth_list.append(self.upstream)
 
-        for rad in self.radio:
-            # station build
-            self.station_profile.use_security(self.security, self.ssid, self.password)
-            self.station_profile.set_number_template("00")
-            self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-            self.station_profile.set_command_param("set_port", "report_timer", 1500)
-            self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-            self.station_profile.create(radio=rad, sta_names_=self.station_list, debug=self.debug)
-            self.local_realm.wait_until_ports_appear(sta_list=self.station_list)
-            self.station_profile.admin_up()
-            if self.local_realm.wait_for_ip(self.station_list):
-                self._pass("All stations got IPs")
-            else:
-                self._fail("Stations failed to get IPs")
-                # exit(1)
+        if (self.clients_type == "Virtual"):
+            for rad in self.radio:
+                # station build
+                self.station_profile.use_security(self.security, self.ssid, self.password)
+                self.station_profile.set_number_template("00")
+                self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+                self.station_profile.set_command_param("set_port", "report_timer", 1500)
+                self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+                self.station_profile.create(radio=rad, sta_names_=self.station_list, debug=self.debug)
+                self.local_realm.wait_until_ports_appear(sta_list=self.station_list)
+                self.station_profile.admin_up()
+                if self.local_realm.wait_for_ip(self.station_list):
+                    self._pass("All stations got IPs")
+                else:
+                    self._fail("Stations failed to get IPs")
+                    # exit(1)
 
             # building layer4
             logger.info("Build Layer4")
@@ -237,15 +378,14 @@ class FtpTest(LFCliBase):
                 if ip_upstream is not None:
                     # print("station:{station_names}".format(station_names=self.station_profile.station_names))
                     # print("ip_upstream:{ip_upstream}".format(ip_upstream=ip_upstream))
-                    self.cx_profile.create(ports=self.station_profile.station_names, ftp_ip=ip_upstream +
-                                           "/ftp_test.txt",
-                                           sleep_time=.5, debug_=self.debug, suppress_related_commands_=True, ftp=True,
-                                           user="lanforge",
-                                           passwd="lanforge", source="")
-
+                        self.cx_profile.create(ports=self.station_profile.station_names, ftp_ip=ip_upstream +
+                                                "/ftp_test.txt",
+                                                sleep_time=.5, debug_=self.debug, suppress_related_commands_=True,timeout=1000,ftp=True,
+                                                user="lanforge",
+                                                passwd="lanforge", source="") 
+                        
             elif self.direction == "Upload":
                 dict_sta_and_ip = {}
-
                 # data from GUI for find out ip addr of each station
                 data = self.json_get("ports/list?fields=IP")
 
@@ -259,29 +399,87 @@ class FtpTest(LFCliBase):
                 # list of ip addr of all stations
                 ip = list(dict_sta_and_ip.values())
                 # print("build() - ip:{ip}".format(ip=ip))
-                eth_list = []
                 client_list = []
 
                 # list of all stations
                 for i in range(len(self.station_list)):
                     client_list.append(self.station_list[i][4:])
-
-                # list of upstream port
-                eth_list.append(self.upstream)
-
                 # create layer four connection for upload
                 for client_num in range(len(self.station_list)):
                     self.cx_profile.create(ports=eth_list, ftp_ip=ip[client_num] + "/ftp_test.txt", sleep_time=.5,
-                                           debug_=self.debug, suppress_related_commands_=True, ftp=True,
-                                           user="lanforge", passwd="lanforge",
-                                           source="", upload_name=client_list[client_num])
+                                            debug_=self.debug, suppress_related_commands_=True,timeout=1000,ftp=True,
+                                            user="lanforge", passwd="lanforge",
+                                            source="", upload_name=client_list[client_num])
 
+        # check Both band present then build stations with another station list
+        if self.count == 2:
+            self.station_list = self.station_list1
+
+            # if Both band then another 20 stations will connects to 2.4G
+            self.station_profile.mode = 6
+        logger.info("Test Build done")
+
+        if self.clients_type == "Real":
+            if self.direction == "Download":
+                # data from GUI for find out ip addr of upstream port
+                data = self.json_get("ports/list?fields=IP")
+                rv = self.local_realm.name_to_eid(self.upstream)
+                # rv[0]=shelf, rv[1]=resource, rv[2]=port
+                ip_upstream = None
+                for i in data["interfaces"]:
+                    for j in i:
+                        # if "1.1." + self.upstream == j:
+                        # ip_upstream = i["1.1." + self.upstream]['ip']
+                        interface = "{shelf}.{resource}.{port}".format(shelf=rv[0], resource=rv[1], port=rv[2])
+                        if interface == j:
+                            ip_upstream = i[interface]['ip']
+                            # print("ip_upstream:{ip_upstream}".format(ip_upstream=ip_upstream))
+
+                        '''
+                        elif self.upstream == j:
+                            ip_upstream = i[self.upstream]['ip']
+                        '''
+
+                if ip_upstream is not None:
+                    # print("station:{station_names}".format(station_names=self.station_profile.station_names))
+                    # print("ip_upstream:{ip_upstream}".format(ip_upstream=ip_upstream))
+                        self.cx_profile.create(ports=self.input_devices_list, ftp_ip=ip_upstream +
+                                                "/ftp_test.txt",
+                                                sleep_time=.5, debug_=self.debug, suppress_related_commands_=True, interop=True,timeout=1000,ftp=True,
+                                                user="lanforge",
+                                                passwd="lanforge", source="")
+
+            elif self.direction == "Upload":
+                # list of upstream port
+                # data from GUI for find out ip addr of each station
+                data = self.json_get("ports/list?fields=IP")
+                dict_sta_and_ip = {}
+
+                # This loop for find out proper ip addr and station name
+                for i in self.input_devices_list:
+                    for j in data['interfaces']:
+                        for k in j:
+                            if i == k:
+                                dict_sta_and_ip[k] = j[i]['ip']
+
+                # list of ip addr of all stations
+                ip = list(dict_sta_and_ip.values())
+                # print("build() - ip:{ip}".format(ip=ip))
+                # create layer four connection for upload
+                for client in range(len(self.input_devices_list)):
+                    self.cx_profile.create(ports=eth_list, ftp_ip=ip[client] + "/ftp_test.txt", sleep_time=.5,
+                                            debug_=self.debug, suppress_related_commands_=True,timeout=1000, interop=True,ftp=True,
+                                            user="lanforge", passwd="lanforge",
+                                            source="", upload_name=self.input_devices_list[client])
+            
             # check Both band present then build stations with another station list
-            if self.count == 2:
-                self.station_list = self.station_list1
+            # if self.count == 2:
+            #     self.station_list = self.station_list1
 
-                # if Both band then another 20 stations will connects to 2.4G
-                self.station_profile.mode = 6
+            #     # if Both band then another 20 stations will connects to 2.4G
+            #     self.station_profile.mode = 6
+        self.cx_list = list(self.cx_profile.created_cx.keys())
+        print("cx keys",self.cx_list)
         logger.info("Test Build done")
 
     def start(self, print_pass=False, print_fail=False):
@@ -364,94 +562,136 @@ class FtpTest(LFCliBase):
         else:
             return float(upper[:-2]) * 10 ** 6
 
-    def my_monitor(self, time1):
+    def my_monitor(self):
+        if self.clients_type == "Virtual":
+            response_port = self.json_get("/port/all")
+            for interface in response_port['interfaces']:
+                for port,port_data in interface.items():
+                    for sta in self.station_list:
+                        if port == sta:
+                            self.channel_list.append(str(port_data['channel']))
+                            self.mode_list.append(str(port_data['mode']))
+                            self.mac_id_list.append(str(port_data['mac']))
+
         # data in json format
-        data = self.json_get("layer4/list?fields=bytes-rd")
+        #data = self.json_get("layer4/list?fields=bytes-rd")
+        uc_avg_data = self.json_get("layer4/list?fields=uc-avg")
+        total_url_data = self.json_get("layer4/list?fields=total-urls")
+        print(uc_avg_data)
+        print(total_url_data)
 
-        if 'endpoint' in data.keys():
+        if 'endpoint' in uc_avg_data.keys():
             # list of layer 4 connections name
-            self.data1 = []
-            if type(data['endpoint']) is dict:
-                for i in range(self.num_sta):
-                    self.data1.append((str(data['endpoint']['name'])))
+            if type(uc_avg_data['endpoint']) is dict:
+                self.uc_avg.append(uc_avg_data['endpoint']['uc-avg'])
+                #reading uc-avg data in json format
+                self.url_data.append(total_url_data['endpoint']['total-urls'])
             else:
-                for i in range(self.num_sta):
-                    self.data1.append((str(list(data['endpoint'][i].keys())))[2:-2])
-            data2 = self.data1
-            list_of_time = []
-            list1 = []
-            list2 = []
-            counter = 0
-
-            for i in range(self.num_sta):
-                list_of_time.append(0)
-            # running layer 4 traffic upto user given time
-            while str(datetime.now() - time1) <= self.traffic_duration:
-                if list_of_time.count(0) == 0:
-                    break
-
-                while list_of_time.count(0) != 0:
-
-                    # run script upto given time
-                    if counter == 0:
-                        if str(datetime.now() - time1) >= self.duration:
-                            counter = counter + 1
-                            break
-                    else:
-                        if str(datetime.now() - time1) >= self.traffic_duration:
-                            break
-
-                    for i in range(self.num_sta):
-                        data = self.json_get("layer4/list?fields=bytes-rd")
-                        #print("data1",data)
-                        # reading uc-avg data in json format
-                        uc_avg = self.json_get("layer4/list?fields=uc-avg")
-                        #print("uc_avg",uc_avg)
-                        if type(data['endpoint']) is dict:
-                            if int(data['endpoint']['bytes-rd']) <= self.file_size_bytes:
-                                data = self.json_get("layer4/list?fields=bytes-rd")
-                            if int(data['endpoint']['bytes-rd']) >= self.file_size_bytes:
-                                list1.append(i)
-                                if list1.count(i) == 1:
-                                    list2.append(i)
-                                    list1 = list2
-
-                                    # stop station after download or upload file with particular size
-                                    self.json_post("/cli-json/set_cx_state", {
-                                        "test_mgr": "default_tm",
-                                        "cx_name": "CX_" + data2[i],
-                                        "cx_state": "STOPPED"
-                                    }, debug_=self.debug)
-
-                                    list_of_time[i] = round(int(uc_avg['endpoint']['uc-avg']) / 1000, 1)
-                        else:
-                            if int(data['endpoint'][i][data2[i]]['bytes-rd']) <= self.file_size_bytes:
-                                data = self.json_get("layer4/list?fields=bytes-rd")
-                            if int(data['endpoint'][i][data2[i]]['bytes-rd']) >= self.file_size_bytes:
-                                list1.append(i)
-                                if list1.count(i) == 1:
-                                    list2.append(i)
-                                    list1 = list2
-
-                                    # stop station after download or upload file with particular size
-                                    self.json_post("/cli-json/set_cx_state", {
-                                        "test_mgr": "default_tm",
-                                        "cx_name": "CX_" + data2[i],
-                                        "cx_state": "STOPPED"
-                                    }, debug_=self.debug)
-
-                                    list_of_time[i] = round(int(uc_avg['endpoint'][i][data2[i]]['uc-avg']) / 1000, 1)
-                    time.sleep(0.5)
-
-            # method calling for throughput calculation
-            self.throughput_calculation()
-
-            # return list of download/upload time in seconds
-            return list_of_time
+                for cx in uc_avg_data['endpoint']:
+                    for CX in cx:
+                        for created_cx in self.cx_list:
+                            if CX == created_cx:
+                                self.uc_avg.append(cx[CX]['uc-avg'])
+                for cx in total_url_data['endpoint']:
+                    for CX in cx:
+                        for created_cx in self.cx_list:
+                            if CX == created_cx:                
+                                self.url_data.append(cx[CX]['total-urls'])
+            print("uc_avg",self.uc_avg)
+            print("total urls",self.url_data)
         else:
             logger.info("No layer 4-7 endpoints")
             exit()
+   
+    # The below method is useful when traffic is to be run for one url and stop - virtual clients and when pass/fail criteria is required
+    # def my_monitor(self, time1):
+    #     # data in json format
+    #     data = self.json_get("layer4/list?fields=bytes-rd")
 
+    #     if 'endpoint' in data.keys():
+    #         # list of layer 4 connections name
+    #         self.data1 = []
+    #         if type(data['endpoint']) is dict:
+    #             for i in range(self.num_sta):
+    #                 self.data1.append((str(data['endpoint']['name'])))
+    #         else:
+    #             for i in range(self.num_sta):
+    #                 self.data1.append((str(list(data['endpoint'][i].keys())))[2:-2])
+    #         data2 = self.data1
+    #         list_of_time = []
+    #         list1 = []
+    #         list2 = []
+    #         counter = 0
+
+    #         for i in range(self.num_sta):
+    #             list_of_time.append(0)
+    #         # running layer 4 traffic upto user given time
+    #         while str(datetime.now() - time1) <= self.traffic_duration:
+    #             if list_of_time.count(0) == 0:
+    #                 break
+
+    #             while list_of_time.count(0) != 0:
+
+    #                 # run script upto given time
+    #                 if counter == 0:
+    #                     if str(datetime.now() - time1) >= self.duration:
+    #                         counter = counter + 1
+    #                         break
+    #                 else:
+    #                     if str(datetime.now() - time1) >= self.traffic_duration:
+    #                         break
+
+    #                 for i in range(self.num_sta):
+    #                     data = self.json_get("layer4/list?fields=bytes-rd")
+    #                     #print("data1",data)
+    #                     # reading uc-avg data in json format
+    #                     uc_avg = self.json_get("layer4/list?fields=uc-avg")
+    #                     #print("uc_avg",uc_avg)
+    #                     if type(data['endpoint']) is dict:
+    #                         if int(data['endpoint']['bytes-rd']) <= self.file_size_bytes:
+    #                             data = self.json_get("layer4/list?fields=bytes-rd")
+    #                         if int(data['endpoint']['bytes-rd']) >= self.file_size_bytes:
+    #                             list1.append(i)
+    #                             if list1.count(i) == 1:
+    #                                 list2.append(i)
+    #                                 list1 = list2
+
+    #                                 # stop station after download or upload file with particular size
+    #                                 self.json_post("/cli-json/set_cx_state", {
+    #                                     "test_mgr": "default_tm",
+    #                                     "cx_name": "CX_" + data2[i],
+    #                                     "cx_state": "STOPPED"
+    #                                 }, debug_=self.debug)
+
+    #                                 list_of_time[i] = round(int(uc_avg['endpoint']['uc-avg']) / 1000, 1)
+    #                     else:
+    #                         if int(data['endpoint'][i][data2[i]]['bytes-rd']) <= self.file_size_bytes:
+    #                             data = self.json_get("layer4/list?fields=bytes-rd")
+    #                         if int(data['endpoint'][i][data2[i]]['bytes-rd']) >= self.file_size_bytes:
+    #                             list1.append(i)
+    #                             if list1.count(i) == 1:
+    #                                 list2.append(i)
+    #                                 list1 = list2
+
+    #                                 # stop station after download or upload file with particular size
+    #                                 self.json_post("/cli-json/set_cx_state", {
+    #                                     "test_mgr": "default_tm",
+    #                                     "cx_name": "CX_" + data2[i],
+    #                                     "cx_state": "STOPPED"
+    #                                 }, debug_=self.debug)
+
+    #                                 list_of_time[i] = round(int(uc_avg['endpoint'][i][data2[i]]['uc-avg']) / 1000, 1)
+    #                 time.sleep(0.5)
+
+    #         # method calling for throughput calculation
+    #         self.throughput_calculation()
+
+    #         # return list of download/upload time in seconds
+    #         return list_of_time
+    #     else:
+    #         logger.info("No layer 4-7 endpoints")
+    #         exit()
+            
     def throughput_calculation(self):
         '''Method for calculate throughput of each station'''
 
@@ -771,13 +1011,19 @@ class FtpTest(LFCliBase):
         for b in self.bands:
             for size in self.file_sizes:
                 self.generate_graph_time(result_data, x_axis, b, size)
-                self.generate_graph_throughput(result_data, x_axis, b, size)
+                #self.generate_graph_throughput(result_data, x_axis, b, size)
 
     def generate_report(self, ftp_data, date, test_setup_info, input_setup_info, test_rig, test_tag, dut_hw_version,
                         dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
                         csv_outfile, local_lf_report_dir):
         '''Method for generate the report'''
-
+        print(self.real_client_list,self.station_list,self.url_data,self.uc_avg,self.mac_id_list,self.channel_list,self.mode_list)
+        client_list=[]
+        if self.clients_type == "Real":
+            client_list = self.real_client_list1
+        else:
+            if self.clients_type == "Virtual":
+                client_list = self.station_list
         self.report = lf_report.lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
 
         self.report.set_title("FTP Test")
@@ -785,211 +1031,290 @@ class FtpTest(LFCliBase):
         self.report.build_banner()
         self.report.set_table_title("Test Setup Information")
         self.report.build_table_title()
-        self.report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
+        self.report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
         self.report.set_obj_html("Objective",
                                  "This FTP Test is used to Verify that N clients connected on Specified band and can "
                                  "simultaneously download/upload some amount of file from FTP server and measuring the "
                                  "time taken by client to Download/Upload the file.")
         self.report.build_objective()
-        self.report.set_obj_html("PASS/FAIL Results",
-                                 "This Table will give Pass/Fail results.")
+        # self.report.set_obj_html("PASS/FAIL Results",
+        #                          "This Table will give Pass/Fail results.")
+        # self.report.build_objective()
+        # dataframe1 = pd.DataFrame(self.add_pass_fail_table(ftp_data))
+        # self.report.set_table_dataframe(dataframe1)
+        # self.report.build_table()
+        # self.report.set_obj_html("File Download/Upload Time (sec)",
+        #                          "This Table will  give FTP Download/Upload Time of Clients.")
+        # self.report.build_objective()
+        # dataframe2 = pd.DataFrame(self.download_upload_time_table(ftp_data))
+        # self.report.set_table_dataframe(dataframe2)
+        # self.report.build_table()
+        #self.generate_graph(ftp_data)
+        self.report.set_obj_html(
+                        _obj_title=f"No of times file {self.direction}",
+                        _obj=f"The below graph represents number of times a file {self.direction} for each client"
+                                f"(WiFi) traffic.  X- axis shows “No of times file {self.direction}” and Y-axis shows "
+                                f"Client names.")
+                   
         self.report.build_objective()
-        dataframe1 = pd.DataFrame(self.add_pass_fail_table(ftp_data))
+        graph = lf_bar_graph_horizontal(_data_set=[self.url_data], _xaxis_name=f"No of times file {self.direction}",
+                                            _yaxis_name="Client names",
+                                            _yaxis_categories=[i for i in client_list],
+                                            _yaxis_label=[i for i in client_list],
+                                            _yaxis_step=1,
+                                            _yticks_font=8,
+                                            _yticks_rotation=None,
+                                            _graph_title=f"No of times file {self.direction} (Count)",
+                                            _title_size=16,
+                                            _figsize= (18, 10),
+                                            _legend_loc="best",
+                                            _legend_box=(1.0, 1.0),
+                                            _color_name=['orange'],
+                                            _show_bar_value=True,
+                                            _enable_csv=True,
+                                            _graph_image_name="Total-url", _color_edge=['black'],
+                                            _color=['orange'],
+                                            _label=[self.direction])
+        graph_png = graph.build_bar_graph_horizontal()
+        print("graph name {}".format(graph_png))
+        self.report.set_graph_image(graph_png)
+        # need to move the graph image to the results
+        self.report.move_graph_image()
+        self.report.set_csv_filename(graph_png)
+        self.report.move_csv_file()
+        self.report.build_graph()
+        self.report.set_obj_html(
+                        _obj_title=f"Average time taken to {self.direction} file ",
+                        _obj=f"The below graph represents average time taken to {self.direction} for each client  "
+                                f"(WiFi) traffic.  X- axis shows “Average time taken to {self.direction} a file ” and Y-axis shows "
+                                f"Client names.")
+                   
+        self.report.build_objective()
+        graph = lf_bar_graph_horizontal(_data_set=[self.uc_avg], _xaxis_name=f"Average time taken to {self.direction} file in ms",
+                                            _yaxis_name="Client names",
+                                            _yaxis_categories=[i for i in client_list],
+                                            _yaxis_label=[i for i in client_list],
+                                            _yaxis_step=1,
+                                            _yticks_font=8,
+                                            _yticks_rotation=None,
+                                            _graph_title=f"Average time taken to {self.direction} file",
+                                            _title_size=16,
+                                            _figsize= (18, 10),
+                                            _legend_loc="best",
+                                            _legend_box=(1.0, 1.0),
+                                            _color_name=['steelblue'],
+                                            _show_bar_value=True,
+                                            _enable_csv=True,
+                                            _graph_image_name="ucg-avg", _color_edge=['black'],
+                                            _color=['steelblue'],
+                                            _label=[self.direction])
+        graph_png = graph.build_bar_graph_horizontal()
+        print("graph name {}".format(graph_png))
+        self.report.set_graph_image(graph_png)
+        self.report.move_graph_image()
+        # need to move the graph image to the results
+        self.report.set_csv_filename(graph_png)
+        self.report.move_csv_file()
+        self.report.build_graph()
+        self.report.set_table_title("Overall Results")
+        self.report.build_table_title()
+        #self.report.test_setup_table(value="Information", test_setup_data=input_setup_info)
+        dataframe = {
+                        " Clients" : client_list,
+                        " MAC " : self.mac_id_list,
+                        " Channel" : self.channel_list,
+                        " Mode" : self.mode_list,
+                        " No of times File downloaded " : self.url_data,
+                        " Time Taken to Download file" : self.uc_avg
+                    }
+        dataframe1 = pd.DataFrame(dataframe)
         self.report.set_table_dataframe(dataframe1)
         self.report.build_table()
-        self.report.set_obj_html("File Download/Upload Time (sec)",
-                                 "This Table will  give FTP Download/Upload Time of Clients.")
-        self.report.build_objective()
-        dataframe2 = pd.DataFrame(self.download_upload_time_table(ftp_data))
-        self.report.set_table_dataframe(dataframe2)
-        self.report.build_table()
-        self.generate_graph(ftp_data)
-        self.report.set_table_title("Test input Information")
-        self.report.build_table_title()
-        self.report.test_setup_table(value="Information", test_setup_data=input_setup_info)
         self.report.build_footer()
         html_file = self.report.write_html()
         logger.info("returned file {}".format(html_file))
         logger.info(html_file)
         self.report.write_pdf()
-        #self.kpi_results
+
+        # The following lines can be used when the kpi results are needed
+        # self.kpi_results
         # print("generate_report - self.kpi_results:{kpi_results}".format(kpi_results=self.kpi_results))
 
-        # Begin kpi.csv
-        # start splicing data from self.kpi_results to feed table dicts
-        for dwnld_rts in self.kpi_results[0]:
-            split_download_rates = dwnld_rts.split(',')
+        # # Begin kpi.csv
+        # # start splicing data from self.kpi_results to feed table dicts
+        # for dwnld_rts in self.kpi_results[0]:
+        #     split_download_rates = dwnld_rts.split(',')
 
-            # split download data rates for download_table_values dict
-            x_fin = []
-            y_fin = []
-            z_fin = []
+        #     # split download data rates for download_table_values dict
+        #     x_fin = []
+        #     y_fin = []
+        #     z_fin = []
 
-            x = split_download_rates[0]
-            y = split_download_rates[1]
-            z = split_download_rates[2]
+        #     x = split_download_rates[0]
+        #     y = split_download_rates[1]
+        #     z = split_download_rates[2]
 
-            split_min = x.split('=')
-            split_max = y.split('=')
-            split_avg = z.split('=')
+        #     split_min = x.split('=')
+        #     split_max = y.split('=')
+        #     split_avg = z.split('=')
 
-            x1 = split_min[1]
-            y1 = split_max[1]
-            z1 = split_avg[1]
-            z2 = z1.split()
-            z3 = z2[0]
+        #     x1 = split_min[1]
+        #     y1 = split_max[1]
+        #     z1 = split_avg[1]
+        #     z2 = z1.split()
+        #     z3 = z2[0]
 
-            x_fin.append(x1)
-            y_fin.append(y1)
-            z_fin.append(z3)
+        #     x_fin.append(x1)
+        #     y_fin.append(y1)
+        #     z_fin.append(z3)
 
-            download_table_value = {
-                "Band": bands,
-                "Minimum": x_fin,
-                "Maximum": y_fin,
-                "Average": z_fin
-            }
-            # print("download_table_value:{download_table_value}".format(download_table_value=download_table_value))
+        #     download_table_value = {
+        #         "Band": bands,
+        #         "Minimum": x_fin,
+        #         "Maximum": y_fin,
+        #         "Average": z_fin
+        #     }
+        #     # print("download_table_value:{download_table_value}".format(download_table_value=download_table_value))
 
-        # if upload tests are being ran as well:
-        if len(self.kpi_results) > 0:
-            for upload_rts in self.kpi_results[0]:
-                split_upload_rates = upload_rts.split(',')
-                # print("split_upload_rates:{split_upload_rates}".format(split_upload_rates=split_upload_rates))
-                # split upload data rates for upload_table_values dict
+        # # if upload tests are being ran as well:
+        # if len(self.kpi_results) > 0:
+        #     for upload_rts in self.kpi_results[0]:
+        #         split_upload_rates = upload_rts.split(',')
+        #         # print("split_upload_rates:{split_upload_rates}".format(split_upload_rates=split_upload_rates))
+        #         # split upload data rates for upload_table_values dict
 
-                up_x_fin = []
-                up_y_fin = []
-                up_z_fin = []
+        #         up_x_fin = []
+        #         up_y_fin = []
+        #         up_z_fin = []
 
-                up_x = split_upload_rates[0]
-                up_y = split_upload_rates[1]
-                up_z = split_upload_rates[2]
+        #         up_x = split_upload_rates[0]
+        #         up_y = split_upload_rates[1]
+        #         up_z = split_upload_rates[2]
 
-                up_split_min = up_x.split('=')
-                up_split_max = up_y.split('=')
-                up_split_avg = up_z.split('=')
+        #         up_split_min = up_x.split('=')
+        #         up_split_max = up_y.split('=')
+        #         up_split_avg = up_z.split('=')
 
-                up_x1 = up_split_min[1]
-                up_y1 = up_split_max[1]
-                up_z1 = up_split_avg[1]
-                up_z2 = up_z1.split()
-                up_z3 = up_z2[0]
+        #         up_x1 = up_split_min[1]
+        #         up_y1 = up_split_max[1]
+        #         up_z1 = up_split_avg[1]
+        #         up_z2 = up_z1.split()
+        #         up_z3 = up_z2[0]
 
-                up_x_fin.append(up_x1)
-                up_y_fin.append(up_y1)
-                up_z_fin.append(up_z3)
+        #         up_x_fin.append(up_x1)
+        #         up_y_fin.append(up_y1)
+        #         up_z_fin.append(up_z3)
 
-                upload_table_value = {
-                    "Band": bands,
-                    "Minimum": up_x_fin,
-                    "Maximum": up_y_fin,
-                    "Average": up_z_fin
-                }
-                print("upload_table_value:{upload_table_value}".format(upload_table_value=upload_table_value))
+        #         upload_table_value = {
+        #             "Band": bands,
+        #             "Minimum": up_x_fin,
+        #             "Maximum": up_y_fin,
+        #             "Average": up_z_fin
+        #         }
+        #         print("upload_table_value:{upload_table_value}".format(upload_table_value=upload_table_value))
 
-        if local_lf_report_dir != "":
-            report = lf_report.lf_report(
-                _path=local_lf_report_dir,
-                _results_dir_name="lf_ftp",
-                _output_html="lf_ftp.html",
-                _output_pdf="lf_ftp.pdf")
-        else:
-            report = lf_report.lf_report(
-                _results_dir_name="lf_ftp",
-                _output_html="lf_ftp.html",
-                _output_pdf="lf_ftp.pdf")
+        # if local_lf_report_dir != "":
+        #     report = lf_report.lf_report(
+        #         _path=local_lf_report_dir,
+        #         _results_dir_name="lf_ftp",
+        #         _output_html="lf_ftp.html",
+        #         _output_pdf="lf_ftp.pdf")
+        # else:
+        #     report = lf_report.lf_report(
+        #         _results_dir_name="lf_ftp",
+        #         _output_html="lf_ftp.html",
+        #         _output_pdf="lf_ftp.pdf")
 
         # Get the report path to create the kpi.csv path
-        kpi_path = report.get_report_path()
+        #kpi_path = report.get_report_path()
         # print("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
 
-        self.kpi_csv = lf_kpi_csv.lf_kpi_csv(
-            _kpi_path=kpi_path,
-            _kpi_test_rig=test_rig,
-            _kpi_test_tag=test_tag,
-            _kpi_dut_hw_version=dut_hw_version,
-            _kpi_dut_sw_version=dut_sw_version,
-            _kpi_dut_model_num=dut_model_num,
-            _kpi_dut_serial_num=dut_serial_num,
-            _kpi_test_id=test_id)
+        # self.kpi_csv = lf_kpi_csv.lf_kpi_csv(
+        #     _kpi_path=kpi_path,
+        #     _kpi_test_rig=test_rig,
+        #     _kpi_test_tag=test_tag,
+        #     _kpi_dut_hw_version=dut_hw_version,
+        #     _kpi_dut_sw_version=dut_sw_version,
+        #     _kpi_dut_model_num=dut_model_num,
+        #     _kpi_dut_serial_num=dut_serial_num,
+        #     _kpi_test_id=test_id)
 
-        self.kpi_csv.kpi_dict['Units'] = "Mbps"
-        for band in range(len(download_table_value["Band"])):
-            self.kpi_csv.kpi_csv_get_dict_update_time()
+        # self.kpi_csv.kpi_dict['Units'] = "Mbps"
+        # for band in range(len(download_table_value["Band"])):
+        #     self.kpi_csv.kpi_csv_get_dict_update_time()
 
-            # ftp download data for kpi.csv
-            self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Download {band}".format(
-                band=download_table_value['Band'][band])
-            self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Minimum".format(
-                band=download_table_value['Band'][band])
-            self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=download_table_value['Minimum'][band])
-            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-            self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Maximum".format(
-                band=download_table_value['Band'][band])
-            self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=download_table_value['Maximum'][band])
-            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-            self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Average".format(
-                band=download_table_value['Band'][band])
-            self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=download_table_value['Average'][band])
-            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)  
+        #     # ftp download data for kpi.csv
+        #     self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Download {band}".format(
+        #         band=download_table_value['Band'][band])
+        #     self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Minimum".format(
+        #         band=download_table_value['Band'][band])
+        #     self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=download_table_value['Minimum'][band])
+        #     self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+        #     self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Maximum".format(
+        #         band=download_table_value['Band'][band])
+        #     self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=download_table_value['Maximum'][band])
+        #     self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+        #     self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Average".format(
+        #         band=download_table_value['Band'][band])
+        #     self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=download_table_value['Average'][band])
+        #     self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)  
 
-            if 'Upload' in self.directions:
-                for band in range(len(upload_table_value["Band"])):
-            # ftp upload data for kpi.csv
-                    self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Upload {band}".format(
-                        band=upload_table_value['Band'][band])
-                    self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Minimum".format(
-                        band=upload_table_value['Band'][band])
-                    print("self.kpi_csv.kpi_dict['numeric-score']",self.kpi_csv.kpi_dict['numeric-score'])
-                    self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=upload_table_value['Minimum'][band])
-                    self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-                    self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Maximum".format(
-                        band=upload_table_value['Band'][band])
-                    print(self.kpi_csv.kpi_dict['numeric-score'])
-                    self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=upload_table_value['Maximum'][band])
-                    self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-                    self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Average".format(
-                        band=upload_table_value['Band'][band])
-                    self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=upload_table_value['Average'][band])
-                    self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+        #     if 'Upload' in self.directions:
+        #         for band in range(len(upload_table_value["Band"])):
+        #     # ftp upload data for kpi.csv
+        #             self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Upload {band}".format(
+        #                 band=upload_table_value['Band'][band])
+        #             self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Minimum".format(
+        #                 band=upload_table_value['Band'][band])
+        #             print("self.kpi_csv.kpi_dict['numeric-score']",self.kpi_csv.kpi_dict['numeric-score'])
+        #             self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=upload_table_value['Minimum'][band])
+        #             self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+        #             self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Maximum".format(
+        #                 band=upload_table_value['Band'][band])
+        #             print(self.kpi_csv.kpi_dict['numeric-score'])
+        #             self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=upload_table_value['Maximum'][band])
+        #             self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+        #             self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Average".format(
+        #                 band=upload_table_value['Band'][band])
+        #             self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=upload_table_value['Average'][band])
+        #             self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
 
-            '''
-            # ftp download data for kpi.csv
-            if self.direction == "Download":
-                self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Download {band}".format(
-                    band=download_table_value['Band'][band])
-                self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Minimum".format(
-                    band=download_table_value['Band'][band])
-                self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=download_table_value['Minimum'][band])
-                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-                self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Maximum".format(
-                    band=download_table_value['Band'][band])
-                self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=download_table_value['Maximum'][band])
-                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-                self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Average".format(
-                    band=download_table_value['Band'][band])
-                self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=download_table_value['Average'][band])
-                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+        #     '''
+        #     # ftp download data for kpi.csv
+        #     if self.direction == "Download":
+        #         self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Download {band}".format(
+        #             band=download_table_value['Band'][band])
+        #         self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Minimum".format(
+        #             band=download_table_value['Band'][band])
+        #         self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=download_table_value['Minimum'][band])
+        #         self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+        #         self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Maximum".format(
+        #             band=download_table_value['Band'][band])
+        #         self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=download_table_value['Maximum'][band])
+        #         self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+        #         self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Average".format(
+        #             band=download_table_value['Band'][band])
+        #         self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=download_table_value['Average'][band])
+        #         self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
 
-            # ftp upload data for kpi.csv
-            if self.direction == "Upload":
-                self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Upload {band}".format(
-                    band=upload_table_value['Band'][band])
-                self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Minimum".format(
-                    band=upload_table_value['Band'][band])
-                self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=upload_table_value['Minimum'][band])
-                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-                self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Maximum".format(
-                    band=upload_table_value['Band'][band])
-                self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=upload_table_value['Maximum'][band])
-                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-                self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Average".format(
-                    band=upload_table_value['Band'][band])
-                self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=upload_table_value['Average'][band])
-                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-            '''
+        #     # ftp upload data for kpi.csv
+        #     if self.direction == "Upload":
+        #         self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Upload {band}".format(
+        #             band=upload_table_value['Band'][band])
+        #         self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Minimum".format(
+        #             band=upload_table_value['Band'][band])
+        #         self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=upload_table_value['Minimum'][band])
+        #         self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+        #         self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Maximum".format(
+        #             band=upload_table_value['Band'][band])
+        #         self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=upload_table_value['Maximum'][band])
+        #         self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+        #         self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Average".format(
+        #             band=upload_table_value['Band'][band])
+        #         self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=upload_table_value['Average'][band])
+        #         self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+        #     '''
 
         if csv_outfile is not None:
             current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
@@ -1073,7 +1398,8 @@ INCLUDE_IN_README: False
     parser.add_argument('--twog_duration', nargs="+", help='Pass and Fail duration for 2.4G band in minutes')
     parser.add_argument('--fiveg_duration', nargs="+", help='Pass and Fail duration for 5G band in minutes')
     parser.add_argument('--both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
-    parser.add_argument('--traffic_duration', type=int, help='duration for layer 4 traffic running in minutes')
+    parser.add_argument('--traffic_duration', help='duration for layer 4 traffic running in minutes')
+    parser.add_argument('--clients_type',help='Enter the type of clients on which the test is to be run. Example: "Virtual","Real"')
     # allow for test run as seconds, minutes, etc
     # TODO: add --debug support
     parser.add_argument('--ssh_port', type=int, help="specify the shh port: eg 22 [default = 22]", default=22)
@@ -1085,7 +1411,8 @@ INCLUDE_IN_README: False
                         default=["Download", "Upload"])
     parser.add_argument('--file_sizes', nargs="+", help='--File Size defaults ["2MB","500MB","1000MB"]',
                         default=["2MB", "500MB", "1000MB"])
-    parser.add_argument('--num_stations', type=int, help='--num_stations is number of stations', default=40)
+    parser.add_argument('--num_stations', type=int, help='--num_stations is number of stations', default=0)
+    #parser.add_argument('--num_stations_real', type=int, help='--num_stations_real is number of stations', default=0)
 
     # kpi_csv arguments
     parser.add_argument(
@@ -1180,6 +1507,24 @@ INCLUDE_IN_README: False
 
         return duration
 
+    if args.traffic_duration.endswith('s') or args.traffic_duration.endswith('S'):
+        args.traffic_duration = int(args.traffic_duration[0:-1])
+    elif args.traffic_duration.endswith('m') or args.traffic_duration.endswith('M'):
+        args.traffic_duration = int(args.traffic_duration[0:-1]) * 60
+    elif args.traffic_duration.endswith('h') or args.traffic_duration.endswith('H'):
+        args.traffic_duration = int(args.traffic_duration[0:-1]) * 60 * 60
+    elif args.traffic_duration.endswith(''):
+        args.traffic_duration = int(args.traffic_duration)
+
+    duration=""
+    if int(args.traffic_duration) < 60 :
+        duration = str(args.traffic_duration) + "s"
+    elif int(args.traffic_duration == 60) or (int(args.traffic_duration) > 60 and int(args.traffic_duration) < 3600) :
+        duration = str(args.traffic_duration/60) + "m"
+    else:
+        if int(args.traffic_duration == 3600) or (int(args.traffic_duration) > 3600):
+            duration = str(args.traffic_duration/3600) + "h"
+
     # For all combinations ftp_data of directions, file size and client counts, run the test
     for band in args.bands:
         for direction in args.directions:
@@ -1200,10 +1545,13 @@ INCLUDE_IN_README: False
                               duration=pass_fail_duration(band, file_size),
                               traffic_duration=args.traffic_duration,
                               ssh_port=args.ssh_port,
+                              clients_type= args.clients_type
                               )
 
                 interation_num = interation_num + 1
                 obj.file_create()
+                if args.clients_type == "Real":
+                    obj.query_realclients()
                 obj.set_values()
                 obj.precleanup()
                 obj.build()
@@ -1213,36 +1561,44 @@ INCLUDE_IN_README: False
 
                 # First time stamp
                 time1 = datetime.now()
-
+                print("Traffic started running at ",time1)
                 obj.start(False, False)
 
-                # return list of download/upload completed time stamp
-                time_list = obj.my_monitor(time1)
-                # print("pass_fail_duration - time_list:{time_list}".format(time_list=time_list))
-                # check pass or fail
-                pass_fail = obj.pass_fail_check(time_list)
+                time.sleep(args.traffic_duration)
+                # # return list of download/upload completed time stamp
+                # time_list = obj.my_monitor(time1)
+                # # print("pass_fail_duration - time_list:{time_list}".format(time_list=time_list))
+                # # check pass or fail
+                # pass_fail = obj.pass_fail_check(time_list)
 
-                # dictionary of whole data
-                ftp_data[interation_num] = obj.ftp_test_data(time_list, pass_fail, args.bands, args.file_sizes,
-                                                             args.directions, args.num_stations)
-                # print("pass_fail_duration - ftp_data:{ftp_data}".format(ftp_data=ftp_data))
+                # # dictionary of whole data
+                # ftp_data[interation_num] = obj.ftp_test_data(time_list, pass_fail, args.bands, args.file_sizes,
+                #                                              args.directions, args.num_stations)
+                # # print("pass_fail_duration - ftp_data:{ftp_data}".format(ftp_data=ftp_data))
                 obj.stop()
+                print("Traffic stopped running")
+                obj.my_monitor()
                 obj.postcleanup()
+                time2 = datetime.now()
+                print("Test ended at",time2)
 
     # 2nd time stamp for test duration
     time_stamp2 = datetime.now()
 
     # total time for test duration
-    test_duration = str(time_stamp2 - time_stamp1)[:-7]
+    #test_duration = str(time_stamp2 - time_stamp1)[:-7]
 
     date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
 
     # print(ftp_data)
-
     test_setup_info = {
         "AP Name": args.ap_name,
         "SSID": args.ssid,
-        "Test Duration": test_duration
+        "Security" : args.security,
+        "No of Devices" : int(args.num_stations) + int(args.num_stations_real),
+        "File size" : args.file_sizes,
+        "File location" : "/home/lanforge",
+        "Traffic Duration ": duration
     }
 
     input_setup_info = {
