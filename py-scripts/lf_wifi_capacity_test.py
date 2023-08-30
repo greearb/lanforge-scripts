@@ -741,6 +741,7 @@ INCLUDE_IN_README: False
                                 sta_list=station_list,
                                 verbosity=args.verbosity
                                 )
+    WFC_Test.setup()
     WFC_Test.run()
 
     WFC_Test.check_influx_kpi(args)
