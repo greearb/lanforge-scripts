@@ -101,6 +101,9 @@ class VoipReport():
         )
         self.csv_data: list = []
         try:
+            if not self.csv_filename:
+                raise ValueError("no filename provided")
+                exit(1)
             self.csv_fileh = open(self.csv_filename, "w")
             self.csv_writer = csv.writer(self.csv_fileh)
             self.csv_writer.writerow(self.ep_col_names)
