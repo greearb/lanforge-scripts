@@ -135,7 +135,9 @@ class VoipReport():
             for (key, value) in entry.items():
                 if key == "name":
                     key = value
-                if key not in self.cx_list:
+                if str(self.cx_list[0]).lower() == "all":
+                    print(f"adding endpoints for {key}")
+                elif key not in self.cx_list:
                     print(f"cx [{key}] not found in {self.cx_list}")
                     continue
                 self.voip_endp_list.append(f"{key}-A")
