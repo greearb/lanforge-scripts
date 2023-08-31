@@ -122,6 +122,10 @@ class VoipReport():
                                      requested_col_names=("name"),
                                      errors_warnings=e_w_list,
                                      debug=True)
+        #print(" - - - - - - -  - - - - - - -  - - - - - - -  - - - - - - - ")
+        #pprint(response)
+        #print(" - - - - - - -  - - - - - - -  - - - - - - -  - - - - - - - ")
+
         if not response:
             raise ValueError("unable to find voip connections")
 
@@ -150,8 +154,8 @@ class VoipReport():
             print(f"write_row: row[{self.last_written_row}] already written, rows: {len(self.csv_data)} rows")
             return
         for i in range(self.last_written_row, len(self.csv_data) - 1):
-            #pprint(["i:", i, "csv:", self.csv_data[i]])
-            row_strs : list = map(str, self.csv_data[i])
+            # pprint(["i:", i, "csv:", self.csv_data[i]])
+            row_strs: list = map(str, self.csv_data[i])
             self.csv_writer.writerow(row_strs)
             self.last_written_row = i
         self.csv_fileh.flush()
@@ -169,7 +173,7 @@ class VoipReport():
                 new_row.extend([int(time.time())])
                 continue
             new_row.append(ep_record[key])
-        #pprint(["csv_row:", new_row])
+        # pprint(["csv_row:", new_row])
         self.csv_data.append(new_row)
 
     def monitor(self):
