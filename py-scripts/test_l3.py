@@ -990,6 +990,9 @@ class L3VariableTime(Realm):
 
     # Find avg latency, jitter for connections using specified port.
     def get_endp_stats_for_port(self, port_eid, endps):
+        dl_tos = "NA"
+        ul_tos = "NA"
+        endp_name = "NA"
         lat = 0
         jit = 0
         total_dl_rate = 0
@@ -1031,7 +1034,7 @@ class L3VariableTime(Realm):
                 name = endp["name"]
                 logger.debug("endp name {name}".format(name=name))
                 sta_name = name.replace('-A', '')
-                # only the -A endpoint will be found so need to look
+                # only the -A endpoint will be found 
 
                 count += 1
                 logger.debug(
@@ -1058,14 +1061,41 @@ class L3VariableTime(Realm):
                     total_dl_rate_ll += int(endp["rx rate ll"])
                     total_dl_pkts_ll += int(endp["rx pkts ll"])
                     dl_tx_drop_percent = round(endp["rx drop %"], 2)
+                    # the tos is in the endp so need to get the endp name and query for the tos
+                    # also any other endp data
+                    url = "/endp/{endp_name}".format(endp_name=endp["name"])
+                    response = self.json_get(url)
+                    if (response is None) or (
+                            "endpoint" not in response):
+                        logger.info(
+                            "query-endpoint: %s: incomplete response:" % url)
+                        pprint(response)
+                    else:
+                        endp_data = response['endpoint']
+                        dl_tos = endp_data["tos"]
+                        logger.debug("endp {endp} dl_tos {dl_tos}".format(endp=endp["name"],dl_tos=dl_tos))
+                        # can get other enpdata needed
+
                 # -B upload side
                 else:
                     total_ul_rate += int(endp["rx rate"])
                     total_ul_rate_ll += int(endp["rx rate ll"])
                     total_ul_pkts_ll += int(endp["rx pkts ll"])
                     ul_rx_drop_percent = round(endp["rx drop %"], 2)
+                    url = "/endp/{endp_name}".format(endp_name=endp["name"])
+                    response = self.json_get(url)
+                    if (response is None) or (
+                            "endpoint" not in response):
+                        logger.info(
+                            "query-endpoint: %s: incomplete response:" % url)
+                        pprint(response)
+                    else:
+                        endp_data = response['endpoint']
+                        ul_tos = endp_data["tos"]
+                        # can get other enpdata needed
+                        logger.debug("endp {endp} dl_tos {dl_tos}".format(endp=endp["name"],dl_tos=dl_tos))
 
-        return lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent
+        return dl_tos, ul_tos, lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent
 
     # Query all endpoints to generate rx and other stats, returned
     # as an array of objects.
@@ -1578,7 +1608,7 @@ class L3VariableTime(Realm):
                                         mac=mac, ap_row_tx_dl=ap_row_tx_dl))
                                     # Find latency, jitter for connections
                                     # using this port.
-                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                    tos, dl_tos, ul_tos, latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
 
                                     ap_row_tx_dl.append(ap_row_chanim)
@@ -1592,6 +1622,9 @@ class L3VariableTime(Realm):
                                         atten_val,
                                         port_eid,
                                         port_data,
+                                        tos,
+                                        dl_tos,
+                                        ul_tos,
                                         latency,
                                         jitter,
                                         total_ul_rate,
@@ -1620,6 +1653,9 @@ class L3VariableTime(Realm):
                                         atten_val,
                                         port_eid,
                                         port_data,
+                                        tos,
+                                        dl_tos,
+                                        ul_tos,
                                         latency,
                                         jitter,
                                         total_ul_rate,
@@ -1650,13 +1686,13 @@ class L3VariableTime(Realm):
                                                           eid[1], eid[2])
                                 response = self.json_get(url)
                                 if (response is None) or (
-                                        "interface" not in response):
+                                         "interface" not in response):
                                     logger.info(
                                         "query-port: %s: incomplete response:" % url)
                                     pprint(response)
                                 else:
                                     port_data = response['interface']
-                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                    dl_tos, ul_tos, latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
                                     self.write_dl_port_csv(
                                         len(temp_stations_list),
@@ -1667,6 +1703,8 @@ class L3VariableTime(Realm):
                                         atten_val,
                                         port_eid,
                                         port_data,
+                                        dl_tos,
+                                        ul_tos,
                                         latency,
                                         jitter,
                                         total_ul_rate,
@@ -1722,8 +1760,10 @@ class L3VariableTime(Realm):
                         all_dl_port_stations_file_name)
 
                     # we should be able to add the values for each eid
-                    all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                                    'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'].sum()
+                    # FutureWarning: Indexing with multiple keys need to make single [] to double [[]] 
+                    # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys                    
+                    all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
+                                                                                                    'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
                     all_dl_ports_stations_sum_file_name = self.outfile[:-4]
                     all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + \
                         "-dl-all-eids-sum-per-interval.csv"
@@ -1794,8 +1834,10 @@ class L3VariableTime(Realm):
                             all_ul_ports_stations_file_name)
 
                         # we add all the values based on the epoch time
-                        all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                                        'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'].sum()
+                        # FutureWarning: Indexing with multiple keys need to make single [] to double [[]] 
+                        # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys                        
+                        all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
+                                                                                                        'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
                         all_ul_ports_stations_sum_file_name = self.outfile[:-4]
                         all_ul_port_stations_sum_file_name = all_ul_ports_stations_sum_file_name + \
                             "-ul-all-eids-sum-per-interval.csv"
@@ -1878,6 +1920,8 @@ class L3VariableTime(Realm):
             atten,
             port_eid,
             port_data,
+            dl_tos,
+            ul_tos,
             latency,
             jitter,
             total_ul_rate,
@@ -1901,6 +1945,8 @@ class L3VariableTime(Realm):
                      port_data['signal'],
                      port_data['ap'],
                      port_data['mode'],
+                     ul_tos,
+                     dl_tos,
                      latency,
                      jitter,
                      total_ul_rate,
@@ -1934,6 +1980,8 @@ class L3VariableTime(Realm):
             atten,
             port_eid,
             port_data,
+            ul_tos,
+            dl_tos,
             latency,
             jitter,
             total_ul_rate,
@@ -1957,6 +2005,8 @@ class L3VariableTime(Realm):
                      port_data['signal'],
                      port_data['ap'],
                      port_data['mode'],
+                     dl_tos,
+                     ul_tos,
                      latency,
                      jitter,
                      total_ul_rate,
@@ -2167,6 +2217,8 @@ class L3VariableTime(Realm):
             'RSSI',
             'AP',
             'Mode',
+            "DL_TOS",
+            "UL_TOS",
             'Rx-Latency',
             'Rx-Jitter',
             'Ul-Rx-Goodput-bps',
@@ -2210,6 +2262,8 @@ class L3VariableTime(Realm):
             'RSSI',
             'AP',
             'Mode',
+            "DL_TOS",
+            "UL_TOS",
             'Rx-Latency',
             'Rx-Jitter',
             'Ul-Rx-Goodput-bps',
