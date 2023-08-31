@@ -118,18 +118,20 @@ class VoipReport():
         lf_cmd: LFJsonCommand = self.lfsession.get_command()
         e_w_list: list = []
 
-        response: list = lf_query.get_voip(eid_list=self.cx_list,
-                                           requested_col_names=("name"),
-                                           errors_warnings=e_w_list,
-                                           debug=True)
-        #if len(e_w_list):
-        #    pprint(['ewlist:', e_w_list])
+        response = lf_query.get_voip(eid_list=self.cx_list,
+                                     requested_col_names=("name"),
+                                     errors_warnings=e_w_list,
+                                     debug=True)
         if not response:
             raise ValueError("unable to find voip connections")
 
-        for (key, _) in response[0].items():
+        if isinstance(response, dict):
+            response = [ response ]
+        for (key, value) in response[0].items():
+            if key == "name":
+                key = value
             if key not in self.cx_list:
-                print(f"cx {key} not found")
+                print(f"cx [{key}] not found in {self.cx_list}")
                 continue
             self.voip_endp_list.append(f"{key}-A")
             self.voip_endp_list.append(f"{key}-B")
