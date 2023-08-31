@@ -97,7 +97,7 @@ class VoipReport():
             "run",
             "mng",
             "eid",
-            #"entity id"
+            # "entity id"
         )
         self.csv_data: list = []
         try:
@@ -122,15 +122,16 @@ class VoipReport():
                                      requested_col_names=("name"),
                                      errors_warnings=e_w_list,
                                      debug=True)
-        #print(" - - - - - - -  - - - - - - -  - - - - - - -  - - - - - - - ")
-        #pprint(response)
-        #print(" - - - - - - -  - - - - - - -  - - - - - - -  - - - - - - - ")
+        # print(" - - - - - - -  - - - - - - -  - - - - - - -  - - - - - - - ")
+        # pprint(response)
+        # print(" - - - - - - -  - - - - - - -  - - - - - - -  - - - - - - - ")
 
         if not response:
             raise ValueError("unable to find voip connections")
 
         if isinstance(response, dict):
-            response = [ response ]
+            response = [response]
+
         for entry in response:
             for (key, value) in entry.items():
                 if key == "name":
@@ -144,7 +145,7 @@ class VoipReport():
                 self.voip_endp_list.append(f"{key}-B")
                 # start cx
                 try:
-                    #print(f"Starting cx {key}")
+                    # print(f"Starting cx {key}")
                     lf_cmd.post_set_cx_state(cx_name=key,
                                              test_mgr='ALL',
                                              suppress_related_commands=True,
@@ -204,14 +205,14 @@ class VoipReport():
                 for entry in response:
                     name = list(entry.keys())[0]
                     record = entry[name]
-                    #print(f"checking {name}, ", end=None)
+                    # print(f"checking {name}, ", end=None)
                     self.append_to_csv(ep_name=name, ep_record=entry[name])
 
                     # print(f"    state: {record['state']}")
                     if "Stopped" == record['state']:
                         num_running_ep -= 1
-                        #continue
-                    #print(f"running: {num_running_ep}, ", end=None)
+                        # continue
+                    # print(f"running: {num_running_ep}, ", end=None)
                 self.write_rows()
             except Exception as e:
                 self.write_rows()
