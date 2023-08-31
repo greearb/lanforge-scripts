@@ -445,15 +445,15 @@ class GenTest():
                 port_url="/port/1"
                 show_url = "/cli-json/show_ports"
             #keep trying to see if ports appear
-            for attempt in range(0, int(timeout / 2))
+            for attempt in range(0, int(timeout / 2)):
                 for sta_alias in self.station_list:
                     shelf, resource, port_name, *nil = LFUtils.name_to_eid(sta_alias)
                     uri = "%s/%s/%s" % (port_url, resource_id, port_name)
                     requested_url = url + uri
                     json_response = LFJsonQuery.get_as_json(url=requested_url, debug=self.debug)
-                    if (json_response is None)
+                    if ((json_response is None) 
                         or (not json_response['interface']['phantom'])
-                        or (not json_response['status']['NOT_FOUND']):
+                        or (not json_response['status']['NOT_FOUND'])):
                         found_stations.add("%s.%s.%s" % (shelf, resource_id, port_name))
             if len(found_stations) < len(self.sta_list):
                 sleep(2)
