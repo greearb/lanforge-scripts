@@ -57,9 +57,27 @@ class VoipReport():
             self.csv_filename = csv_file_name
         self.ep_col_names: list = (
             "epoch_time",
-            "attenuation (agc)",
-            "avg delay",
-            "calls answered",
+            "name",
+            "state",
+            "reg state",
+            "mos-lqo#",
+            "mos-lqo",
+            "scoring bklg",
+            "tx pkts",
+            "rx pkts",
+            "tx bytes",
+            "rx bytes",
+            "dropped",
+            "ooo pkts",
+            "dup pkts",
+            "jb silence",
+            "jb under",
+            "jb over",
+            "jb cur",
+            "delay",
+            "rtp rtt",
+            "jitter",
+            "vad pkts",
             "calls attempted",
             "calls completed",
             "calls failed",
@@ -67,37 +85,19 @@ class VoipReport():
             "cf 408",
             "cf busy",
             "cf canceled",
-            "delay",
-            "destination addr",
-            "dropped",
-            "dup pkts",
-            "eid",
-            "elapsed",
-            "entity id",
-            "jb cur",
-            "jb over",
-            "jb silence",
-            "jb under",
-            "jitter",
-            "mng",
-            "mos-lqo",
-            "mos-lqo#",
-            "name",
-            "ooo pkts",
-            "reg state",
-            "rst",
-            "rtp rtt",
-            "run",
-            "rx bytes",
-            "rx pkts",
-            "scoring bklg",
-            "snr deg",
+            "calls answered",
+            "attenuation (agc)",
+            "avg delay",
             "snr ref",
+            "snr deg",
+            "destination addr",
             "source addr",
-            "state",
-            "tx bytes",
-            "tx pkts",
-            "vad pkts"
+            "elapsed",
+            "rst",
+            "run",
+            "mng",
+            "eid",
+            #"entity id"
         )
         self.csv_data: list = []
         try:
@@ -164,7 +164,7 @@ class VoipReport():
         # ep_col_names defines the sorted order to retrieve the column values
         for key in self.ep_col_names:
             if "epoch_time" == key:
-                new_row.extend([int(time.time()), ep_name])
+                new_row.extend([int(time.time())])
                 continue
             new_row.append(ep_record[key])
         #pprint(["csv_row:", new_row])
