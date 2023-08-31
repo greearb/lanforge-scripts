@@ -3,38 +3,51 @@
 NAME: lf_ftp.py
 
 PURPOSE:
-    lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload
-     some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file.
+lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload
+some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file.
 
-EXAMPLE:
-    Use './lf_ftp.py --help' to see command line usage and options
+EXAMPLE-1:
+Command Line Interface to run download scenario for Real clients
+python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+--security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 5G
 
-    ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101
-        --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload --num_stations 2
+EXAMPLE-2:
+Command Line Interface to run download scenario on 5GHz band for Virtual clients
+python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+--security wpa2 --fiveg_radio wiphy2 --directions Download --clients_type Virtual --ap_name Netgear --bands 5G --num_stations 2
 
-    test command that includes kpi.csv features on resource-1:
-    ./lf_ftp.py --ssid SSID --passwd PASSWRD  --file_sizes 2MB --fiveg_duration 1 --mgr 192.168.1.101 --num_stations 2
-     --upstream_port eth2 --traffic_duration 1 --security wpa2  --bands 5G --fiveg_radio wiphy0 --directions Download Upload
-     --csv_outfile FTP_CSV.csv --test_rig LF-LAB --test_tag LF_FTP --dut_hw_version Linux --dut_model_num 1
-     --dut_sw_version 5.4.4 --dut_serial_num 1234
+EXAMPLE-3:
+Command Line Interface to run upload scenario for Real clients
+python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+--security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 2.4G
+
+EXAMPLE-4:
+Command Line Interface to run upload scenario on 2.4GHz band for Virtual clients
+python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+--security wpa2 --twog_radio wiphy1 --directions Upload --clients_type Virtual --ap_name Netgear --bands 2.4G --num_stations 2 
 
 SCRIPT_CLASSIFICATION : Test
 
-SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation
+SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
 
 NOTES:
+After passing cli, a list will be displayed on terminal which contains available resources to run test.
+The following sentence will be displayed
+Enter the desired resources to run the test:
+Please enter the port numbers seperated by commas ','.
+Example: 
+Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.303
 
-    Currently, the test must run with both directions enabled for kpi.csv results: '--directions Download Upload'
+STATUS : Functional
 
-STATUS : Not Functional (not working for single station)
-
-VERIFIED_ON: 10-JULY-2023,
-            GUI Version:  5.4.6
-            Kernel Version: 6.2.16+
+VERIFIED_ON: 
+31-AUGUST-2023,
+GUI Version:  5.4.6
+Kernel Version: 6.2.16+
 
 LICENSE : 
-        Copyright 2023 Candela Technologies Inc
-        Free to distribute and modify. LANforge systems must be licensed.
+Copyright 2023 Candela Technologies Inc
+Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README: False
 
@@ -73,7 +86,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 class FtpTest(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta=None,radio="",
                  dut_ssid=None, dut_security=None, dut_passwd=None, file_size=None, band=None, twog_radio=None,
-                 fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False,
+                 fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False,ap_name="",
                  direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None,clients_type= "Virtual",real_client_list=[],
                  working_resources_list=[],hw_list=[],windows_list=[],mac_list=[],linux_list=[],android_list=[],
                  eid_list=[],mac_id_list=[],devices_available=[],mac_id1_list=[],user_list=[],input_devices_list=[],
@@ -83,6 +96,7 @@ class FtpTest(LFCliBase):
         self.host = lfclient_host
         self.port = lfclient_port
         #self.radio = radio
+        self.ap_name = ap_name
         self.upstream = upstream
         self.sta_prefix = sta_prefix
         self.sta_start_id = start_id
@@ -257,8 +271,8 @@ class FtpTest(LFCliBase):
 
         # converting minutes into time stamp
         self.pass_fail_duration = self.duration
-        self.duration = self.convert_min_in_time(self.duration)
-        self.traffic_duration = self.convert_min_in_time(self.traffic_duration)
+        #self.duration = self.convert_min_in_time(self.duration)
+        #self.traffic_duration = self.convert_min_in_time(self.traffic_duration)
 
         # file size in Bytes
         self.file_size_bytes = int(self.convert_file_size_in_Bytes(self.file_size))
@@ -479,7 +493,6 @@ class FtpTest(LFCliBase):
             #     # if Both band then another 20 stations will connects to 2.4G
             #     self.station_profile.mode = 6
         self.cx_list = list(self.cx_profile.created_cx.keys())
-        print("cx keys",self.cx_list)
         logger.info("Test Build done")
 
     def start(self, print_pass=False, print_fail=False):
@@ -1013,9 +1026,19 @@ class FtpTest(LFCliBase):
                 self.generate_graph_time(result_data, x_axis, b, size)
                 #self.generate_graph_throughput(result_data, x_axis, b, size)
 
-    def generate_report(self, ftp_data, date, test_setup_info, input_setup_info, test_rig, test_tag, dut_hw_version,
+    def generate_report(self, ftp_data, date, input_setup_info, test_rig, test_tag, dut_hw_version,
                         dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
                         csv_outfile, local_lf_report_dir):
+        no_of_stations = ""
+        duration=""
+        if int(self.traffic_duration) < 60 :
+            duration = str(self.traffic_duration) + "s"
+        elif int(self.traffic_duration == 60) or (int(self.traffic_duration) > 60 and int(self.traffic_duration) < 3600) :
+            duration = str(self.traffic_duration/60) + "m"
+        else:
+            if int(self.traffic_duration == 3600) or (int(self.traffic_duration) > 3600):
+                duration = str(self.traffic_duration/3600) + "h"
+
         '''Method for generate the report'''
         print(self.real_client_list,self.station_list,self.url_data,self.uc_avg,self.mac_id_list,self.channel_list,self.mode_list)
         client_list=[]
@@ -1031,6 +1054,21 @@ class FtpTest(LFCliBase):
         self.report.build_banner()
         self.report.set_table_title("Test Setup Information")
         self.report.build_table_title()
+
+        if self.clients_type == "Virtual":
+            no_of_stations = str(len(self.station_list))
+        else :
+            no_of_stations = str(len(self.input_devices_list))
+
+        test_setup_info = {
+        "AP Name": self.ap_name,
+        "SSID": self.ssid,
+        "Security" : self.security,
+        "No of Devices" : no_of_stations,
+        "File size" : self.file_size,
+        "File location" : "/home/lanforge",
+        "Traffic Duration ": duration
+    }
         self.report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
         self.report.set_obj_html("Objective",
@@ -1348,112 +1386,128 @@ def main():
 NAME: lf_ftp.py
 
 PURPOSE:
-    lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload
-     some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file.
+lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload
+some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file.
 
-EXAMPLE:
-    Use './lf_ftp.py --help' to see command line usage and options
+EXAMPLE-1:
+Command Line Interface to run download scenario for Real clients
+python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+--security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 5G
 
-    ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101
-        --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload --num_stations 2
+EXAMPLE-2:
+Command Line Interface to run download scenario on 5GHz band for Virtual clients
+python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+--security wpa2 --fiveg_radio wiphy2 --directions Download --clients_type Virtual --ap_name Netgear --bands 5G --num_stations 2
 
-    test command that includes kpi.csv features on resource-1:
-    ./lf_ftp.py --ssid SSID --passwd PASSWRD  --file_sizes 2MB --fiveg_duration 1 --mgr 192.168.1.101 --num_stations 2
-     --upstream_port eth2 --traffic_duration 1 --security wpa2  --bands 5G --fiveg_radio wiphy0 --directions Download Upload
-     --csv_outfile FTP_CSV.csv --test_rig LF-LAB --test_tag LF_FTP --dut_hw_version Linux --dut_model_num 1
-     --dut_sw_version 5.4.4 --dut_serial_num 1234
+EXAMPLE-3:
+Command Line Interface to run upload scenario for Real clients
+python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+--security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 2.4G
+
+EXAMPLE-4:
+Command Line Interface to run upload scenario on 2.4GHz band for Virtual clients
+python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+--security wpa2 --twog_radio wiphy1 --directions Upload --clients_type Virtual --ap_name Netgear --bands 2.4G --num_stations 2 
 
 SCRIPT_CLASSIFICATION : Test
 
-SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation
+SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
 
 NOTES:
+After passing cli, a list will be displayed on terminal which contains available resources to run test.
+The following sentence will be displayed
+Enter the desired resources to run the test:
+Please enter the port numbers seperated by commas ','.
+Example: 
+Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.303
 
-    Currently, the test must run with both directions enabled for kpi.csv results: '--directions Download Upload'
+STATUS : Functional
 
-STATUS : Not Functional (not working for single station)
-
-VERIFIED_ON: 10-JULY-2023,
-            GUI Version:  5.4.6
-            Kernel Version: 6.2.16+
+VERIFIED_ON: 
+31-AUGUST-2023,
+GUI Version:  5.4.6
+Kernel Version: 6.2.16+
 
 LICENSE : 
-        Copyright 2023 Candela Technologies Inc
-        Free to distribute and modify. LANforge systems must be licensed.
+Copyright 2023 Candela Technologies Inc
+Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README: False
 
                     ''')
-    parser.add_argument('--mgr', help='hostname for where LANforge GUI is running [default = localhost]', default='localhost')
-    parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on [default = 8080]', default=8080)
-    parser.add_argument('--local_lf_report_dir', help='--local_lf_report_dir override the report path, primary use when running test in test suite', default="")
-    parser.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1 [default = eth1]', default='eth1')
-    parser.add_argument('--ssid', type=str, help='--ssid')
-    parser.add_argument('--passwd', type=str, help='--passwd')
-    parser.add_argument('--security', type=str, help='--security')
-    parser.add_argument('--ap_name', type=str, help='--ap_name')
-    parser.add_argument('--ap_ip', type=str, help='--ap_ip')
-    parser.add_argument('--twog_radio', type=str, help='specify radio for 2.4G clients [default = wiphy1]', default='wiphy1')
-    parser.add_argument('--fiveg_radio', type=str, help='specify radio for 5G client [default = wiphy0]', default='wiphy0')
-    parser.add_argument('--twog_duration', nargs="+", help='Pass and Fail duration for 2.4G band in minutes')
-    parser.add_argument('--fiveg_duration', nargs="+", help='Pass and Fail duration for 5G band in minutes')
-    parser.add_argument('--both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
-    parser.add_argument('--traffic_duration', help='duration for layer 4 traffic running in minutes')
-    parser.add_argument('--clients_type',help='Enter the type of clients on which the test is to be run. Example: "Virtual","Real"')
+    required = parser.add_argument_group('Required arguments to run lf_interop_qos.py')
+    optional = parser.add_argument_group('Optional arguments to run lf_interop_qos.py')
+
+    required.add_argument('--mgr', help='hostname for where LANforge GUI is running [default = localhost]', default='localhost')
+    required.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on [default = 8080]', default=8080)
+    optional.add_argument('--local_lf_report_dir', help='--local_lf_report_dir override the report path, primary use when running test in test suite', default="")
+    required.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1 [default = eth1]', default='eth1')
+    required.add_argument('--ssid', type=str, help='Enter ssid')
+    required.add_argument('--passwd', type=str, help='Enter password for ssid provided')
+    required.add_argument('--security', type=str, help='Enter the security')
+    required.add_argument('--ap_name', type=str, help='Enter the Access point or router name')
+    optional.add_argument('--ap_ip', type=str, help='Enter ip of accesspoint or router')
+    optional.add_argument('--twog_radio', type=str, help='specify radio for 2.4G clients [default = wiphy1]', default='wiphy1')
+    optional.add_argument('--fiveg_radio', type=str, help='specify radio for 5G client [default = wiphy0]', default='wiphy0')
+    #parser.add_argument('--twog_duration', nargs="+", help='Pass and Fail duration for 2.4G band in minutes')
+    #parser.add_argument('--fiveg_duration', nargs="+", help='Pass and Fail duration for 5G band in minutes')
+    #parser.add_argument('--both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
+    required.add_argument('--traffic_duration', help='duration for layer 4 traffic running in minutes or seconds or hours. Example : 30s,3m,48h')
+    required.add_argument('--clients_type',help='Enter the type of clients on which the test is to be run. Example: "Virtual","Real"')
     # allow for test run as seconds, minutes, etc
     # TODO: add --debug support
-    parser.add_argument('--ssh_port', type=int, help="specify the shh port: eg 22 [default = 22]", default=22)
+    optional.add_argument('--ssh_port', type=int, help="specify the shh port: eg 22 [default = 22]", default=22)
 
     # Test variables
-    parser.add_argument('--bands', nargs="+", help='--bands defaults ["5G","2.4G","Both"]',
+    optional.add_argument('--bands', nargs="+", help='select bands for virtul clients Example : "5G","2.4G" ',
                         default=["5G", "2.4G", "Both"])
-    parser.add_argument('--directions', nargs="+", help='--directions defaults ["Download","Upload"]',
+    required.add_argument('--directions', nargs="+", help='Enter the traffic direction. Example : "Download","Upload"',
                         default=["Download", "Upload"])
-    parser.add_argument('--file_sizes', nargs="+", help='--File Size defaults ["2MB","500MB","1000MB"]',
+    required.add_argument('--file_sizes', nargs="+", help='File Size Example : "1000MB"',
                         default=["2MB", "500MB", "1000MB"])
-    parser.add_argument('--num_stations', type=int, help='--num_stations is number of stations', default=0)
+    optional.add_argument('--num_stations', type=int, help='number of virtual stations', default=0)
     #parser.add_argument('--num_stations_real', type=int, help='--num_stations_real is number of stations', default=0)
 
     # kpi_csv arguments
-    parser.add_argument(
+    optional.add_argument(
         "--test_rig",
         default="",
         help="test rig for kpi.csv, testbed that the tests are run on")
-    parser.add_argument(
+    optional.add_argument(
         "--test_tag",
         default="",
         help="test tag for kpi.csv,  test specific information to differenciate the test")
-    parser.add_argument(
+    optional.add_argument(
         "--dut_hw_version",
         default="",
         help="dut hw version for kpi.csv, hardware version of the device under test")
-    parser.add_argument(
+    optional.add_argument(
         "--dut_sw_version",
         default="",
         help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument(
+    optional.add_argument(
         "--dut_model_num",
         default="",
         help="dut model for kpi.csv,  model number / name of the device under test")
-    parser.add_argument(
+    optional.add_argument(
         "--dut_serial_num",
         default="",
         help="dut serial for kpi.csv, serial number / serial number of the device under test")
-    parser.add_argument(
+    optional.add_argument(
         "--test_priority",
         default="",
         help="dut model for kpi.csv,  test-priority is arbitrary number")
-    parser.add_argument(
+    optional.add_argument(
         "--test_id",
         default="FTP Data",
         help="test-id for kpi.csv,  script or test name")
-    parser.add_argument(
+    optional.add_argument(
         '--csv_outfile',
         help="--csv_outfile <Output file for csv data>",
         default="")
 
     # logging configuration
-    parser.add_argument(
+    optional.add_argument(
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
@@ -1516,15 +1570,6 @@ INCLUDE_IN_README: False
     elif args.traffic_duration.endswith(''):
         args.traffic_duration = int(args.traffic_duration)
 
-    duration=""
-    if int(args.traffic_duration) < 60 :
-        duration = str(args.traffic_duration) + "s"
-    elif int(args.traffic_duration == 60) or (int(args.traffic_duration) > 60 and int(args.traffic_duration) < 3600) :
-        duration = str(args.traffic_duration/60) + "m"
-    else:
-        if int(args.traffic_duration == 3600) or (int(args.traffic_duration) > 3600):
-            duration = str(args.traffic_duration/3600) + "h"
-
     # For all combinations ftp_data of directions, file size and client counts, run the test
     for band in args.bands:
         for direction in args.directions:
@@ -1538,11 +1583,12 @@ INCLUDE_IN_README: False
                               dut_security=args.security,
                               num_sta=args.num_stations,
                               band=band,
+                              ap_name=args.ap_name,
                               file_size=file_size,
                               direction=direction,
                               twog_radio=args.twog_radio,
                               fiveg_radio=args.fiveg_radio,
-                              duration=pass_fail_duration(band, file_size),
+                              #duration=pass_fail_duration(band, file_size),
                               traffic_duration=args.traffic_duration,
                               ssh_port=args.ssh_port,
                               clients_type= args.clients_type
@@ -1591,15 +1637,6 @@ INCLUDE_IN_README: False
     date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
 
     # print(ftp_data)
-    test_setup_info = {
-        "AP Name": args.ap_name,
-        "SSID": args.ssid,
-        "Security" : args.security,
-        "No of Devices" : int(args.num_stations) + int(args.num_stations_real),
-        "File size" : args.file_sizes,
-        "File location" : "/home/lanforge",
-        "Traffic Duration ": duration
-    }
 
     input_setup_info = {
         "AP IP": args.ap_ip,
@@ -1612,7 +1649,7 @@ INCLUDE_IN_README: False
         "Security": args.security,
         "Contact": "support@candelatech.com"
     }
-    obj.generate_report(ftp_data, date, test_setup_info, input_setup_info, test_rig=args.test_rig,
+    obj.generate_report(ftp_data, date, input_setup_info, test_rig=args.test_rig,
                         test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
                         dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                         dut_serial_num=args.dut_serial_num, test_id=args.test_id,
