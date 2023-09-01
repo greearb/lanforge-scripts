@@ -137,8 +137,7 @@ class GenTest():
         self.query: LFJsonQuery
         self.query = self.session.get_query()
 
-        self.created_cx = []
-        self.created_sta = []
+        #self.created_cx = []
         self.created_endp = []
 
         number_template = "000"
@@ -221,7 +220,7 @@ class GenTest():
         #admin up all created stations & existing stations
         if self.sta_list:
             for sta in self.sta_list:
-                eid = LFUtils.name_to_eid(sta)
+                eid = self.name_to_eid(sta)
                 self.command.post_set_port(shelf = eid[0],
                                            resource = eid[1],
                                            port = eid[2],
@@ -238,12 +237,12 @@ class GenTest():
                                            interest=3833610, # includes use_current_flags + dhcp + dhcp_rls + ifdown
                                            report_timer= self.report_timer)
 
-        if self.wait_for_action("admin up", 30):
+        if self.wait_for_action("port", "up", 30):
             self._pass("All stations went admin up.")
         else:
             self._fail("All stations did NOT go admin up.")
 
-        if self.wait_for_action("ip", 30):
+        if self.wait_for_action("port", "ip", 30):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
@@ -293,14 +292,14 @@ class GenTest():
                                                debug=self.debug)
             else:
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
-        self.wait_for_action(self, "ports appear", 30)
+        self.wait_for_action(self, "port", "up", 30)
 
         #create endpoints
         #this is how many endps need to be created : 1 for each eid.
         unique_alias = len(self.sta_list) + len(self.use_existing_eid)
         if self.sta_list:
             for sta_alias in self.sta_list:
-                sta_eid = LFUtils.name_to_eid(sta_alias)
+                sta_eid = self.name_to_eid(sta_alias)
                 self.create_generic_endp(sta_eid, self.type, unique_alias)
                 unique_alias=-1
 
@@ -308,10 +307,11 @@ class GenTest():
             for eid in self.use_existing_eid:
                 self.create_generic_endp(eid, self.type, unique_alias)
                 unique_alias=-1
-        #wait until ports appear for endp        
 
-        if not self.created_endp:
-            raise ValueError("no endpoints have been created.")
+        if self.wait_for_action("endp", "appear", 30):
+            System.out.println("Generic endp creation completed.")
+        else
+            System.out.println("Generic endps were not created.")
                     
     def create_generic_endp(self, eid, type, unique_num):
         #create initial generic endp
@@ -322,9 +322,7 @@ class GenTest():
                                        resource=eid[1],
                                        port=eid[2],
                                        p_type="gen_generic")
-
-        #TODO add wait_until_ports_appear
-        #TODO add to self.created_endp
+        created_endp.add(unique_alias)
 
         #edit generic endp with type we actually want to run - construct  cmd 
         cmd = ""
@@ -384,18 +382,18 @@ class GenTest():
 
     def cleanup(self, sta_list):
         logger.info("Cleaning up all cxs and endpoints.")
-        if self.created_cx:
-            for cx_name in self.created_cx:
-                self.command.post_rm_cx(cx_name=cx_name, test_mgr="default_tm", debug=self.debug)
+        #if self.created_cx:
+            #for cx_name in self.created_cx:
+                #self.command.post_rm_cx(cx_name=cx_name, test_mgr="default_tm", debug=self.debug)
         if self.created_endp:
             for endp_name in self.created_endp:
                 self.command.post_rm_endp(endp_name=endp_name, debug=self.debug)
         if self.sta_list:
             for sta_name in self.sta_list:
-                if self.port_exists(self, LFUtils.name_to_eid(sta_name), self.debug):
+                if self.port_exists(self, self.name_to_eid(sta_name), self.debug):
                     self.command.post_rm_vlan(port=sta_name, debug=self.debug)
 
-        if self.wait_for_action(self, "ports disappear", 30):
+        if self.wait_for_action(self, "port", "disappear", 30):
             self._pass("Ports successfully cleaned up.")
         else:
             self._fail("Ports NOT successfully cleaned up.")
@@ -416,7 +414,7 @@ class GenTest():
 
         eid = None
         if radio is not None:
-            eid = name_to_eid(radio)
+            eid = self.name_to_eid(radio)
 
         name_list = []
         for i in range((padding_number + start_id), (padding_number + end_id + 1)):
@@ -434,50 +432,97 @@ class GenTest():
             return True
         return False
     
-    def wait_for_action(self, type, secs_to_wait):
-        if type == "ports appear":
-            found_stations = set()
-            if base_url.endswith('/'):
-                port_url = port_url[1:]
-                show_url = show_url[1:]
+    def wait_for_action(self, object, action, secs_to_wait):
+        for attempt in range(0, int(timeout / 2)):
+            passed = set()
+
+            # Port Manager Actions
+            if object = "port":
+                for sta_alias in self.sta_list if self.sta_list:
+                    port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
+                    if action == "appear":
+                        compared_pass = len(self.sta_list)
+                        json_response = lanforge_api.post_show_ports(port= port_name,
+                                                                    resource=port_resource,
+                                                                    shelf=port_shelf,
+                                                                    debug=self.debug
+                                                                    )
+                        #if sta is found by json response
+                        if ((json_response is not None)
+                        and (not json_response['interface']['phantom'])
+                        and (not json_response['status']['NOT_FOUND'])):
+                            passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
+                    else if action == "admin up":
+                        compared_pass = len(self.sta_list)
+                        json_response = lanforge_api.post_show_ports(port= port_name,
+                                            resource=port_resource,
+                                            shelf=port_shelf,
+                                            debug=self.debug
+                                            )
+                        #if sta is NOT down
+                        if (json_response is not None)
+                        and not json_response['interface']['down']
+                        and not json_response['status']['NOT_FOUND']:
+                            passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
+
+                    else if action == "disappear":
+                        compared_pass = len(self.sta_list)
+                        json_response = lanforge_api.post_show_ports(port= port_name,
+                                            resource=port_resource,
+                                            shelf=port_shelf,
+                                            debug=self.debug
+                                            )
+                        if (json_response is not None)
+                        and json_response['status']['NOT_FOUND']:
+                            passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
+
+                #loop for existing eids
+                if action == "up":
+                    for sta_alias in self.use_existing_eid if self.use_existing_eid:
+                        compared_pass += len(self.use_existing_eid)
+                        port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
+                        json_response = lanforge_api.post_show_ports(port= port_name,
+                                            resource=port_resource,
+                                            shelf=port_shelf,
+                                            debug=self.debug
+                                            )
+                                                #our station interface is NOT down
+                        if (json_response is not None)
+                        and not json_response['interface']['down']
+                        and not json_response['status']['NOT_FOUND']:
+                            passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
+    
+                if len(passed) < compared_pass:
+                    sleep(2)
+                    logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(self.sta_list), attempt, timeout/2))
+                    return False
+                else:
+                    logger.info('All %s ports appeared' % len(passed))
+                    return True
+
+            # Generic Tab Actions
             else:
-                base_url="http://localhost:8080"
-                port_url="/port/1"
-                show_url = "/cli-json/show_ports"
-            #keep trying to see if ports appear
-            for attempt in range(0, int(timeout / 2)):
-                for sta_alias in self.station_list:
-                    shelf, resource, port_name, *nil = LFUtils.name_to_eid(sta_alias)
-                    uri = "%s/%s/%s" % (port_url, resource_id, port_name)
-                    requested_url = url + uri
-                    json_response = LFJsonQuery.get_as_json(url=requested_url, debug=self.debug)
-                    if ((json_response is None) 
-                        or (not json_response['interface']['phantom'])
-                        or (not json_response['status']['NOT_FOUND'])):
-                        found_stations.add("%s.%s.%s" % (shelf, resource_id, port_name))
-            if len(found_stations) < len(self.sta_list):
-                sleep(2)
-                logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(self.sta_list), attempt, timeout/2))
-            else:
-                logger.info('All %s ports appeared' % len(found_stations))
-                return True
-        #TODO add debug
-        return False
-        # elif type == "admin up":
-
-        # elif type == "ports disappear":
-
-        # elif type == "endp created":
-
-        success = False
-
+                if action == "appear":
+                    for endp_name in self.created_endp if self.created_endp:
+                       compared_pass = len(self.created_endp)
+                       json_response = lanforge_api.post_nc_show_endpoints(endpoint=endp_name,
+                                                                            extra ='history')
+                       if (json_response['endpoint']['name'] == endp_name):
+                            passed.add(endp_name)
+                if len(passed) < compared_pass:
+                    sleep(2)
+                    logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(self.sta_list), attempt, timeout/2))
+                    return False
+                else:
+                    logger.info('All %s ports appeared' % len(passed))
+                    return True
 
     def validate_sort_args(self, args):
         print(args)
         #TODO check if ssid is none or empty, check if passwd is none or empty.
         if args.dest is None:
             # get ip upstream port
-            rv = LFUtils.name_to_eid(args.upstream_port)
+            rv = self.name_to_eid(args.upstream_port)
             shelf = rv[0]
             resource = rv[1]
             port_name = rv[2]
@@ -539,6 +584,58 @@ class GenTest():
                 raise ValueError("Cannot process this file type. Please select a different file and re-run script.")
             else:
                 compared_rept = args.compared_report
+
+    def name_to_eid(eid_input, non_port=False):
+        rv = [1, 1, "", ""]
+        if (eid_input is None) or (eid_input == ""):
+            logger.critical("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid_input)
+            raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid_input)
+        if type(eid_input) is not str:
+            logger.critical(
+                "name_to_eid wants string formatted like '1.2.name', not a tuple or list or [%s]" % type(eid_input))
+            raise ValueError(
+                "name_to_eid wants string formatted like '1.2.name', not a tuple or list or [%s]" % type(eid_input))
+
+        info = eid_input.split('.')
+        if len(info) == 1:
+            rv[2] = info[0]  # just port name
+            return rv
+
+        if (len(info) == 2) and info[0].isnumeric() and not info[1].isnumeric():  # resource.port-name
+            rv[1] = int(info[0])
+            rv[2] = info[1]
+            return rv
+
+        elif (len(info) == 2) and not info[0].isnumeric():  # port-name.qvlan
+            rv[2] = info[0] + "." + info[1]
+            return rv
+
+        if (len(info) == 3) and info[0].isnumeric() and info[1].isnumeric():  # shelf.resource.port-name
+            rv[0] = int(info[0])
+            rv[1] = int(info[1])
+            rv[2] = info[2]
+            return rv
+
+        elif (len(info) == 3) and info[0].isnumeric() and not info[1].isnumeric():  # resource.port-name.qvlan
+            rv[1] = int(info[0])
+            rv[2] = info[1] + "." + info[2]
+            return rv
+
+        if non_port:
+            # Maybe attenuator or similar shelf.card.atten.index
+            rv[0] = int(info[0])
+            rv[1] = int(info[1])
+            rv[2] = int(info[2])
+            if len(info) >= 4:
+                rv[3] = int(info[3])
+            return rv
+
+        if len(info) == 4:  # shelf.resource.port-name.qvlan
+            rv[0] = int(info[0])
+            rv[1] = int(info[1])
+            rv[2] = info[2] + "." + info[3]
+
+        return rv
 
 def main():
 
@@ -676,7 +773,7 @@ def main():
         raise ValueError("Error received from GUI, please ensure generic tab is enabled")
     
     generic_test.validate_sort_args(args)
-    #generic_test.cleanup(station_list)
+    #generic_test.cleanup(sta_list)
     generic_test.build()
     if not generic_test.passes():
         logger.error(generic_test.get_fail_message())
@@ -711,7 +808,7 @@ def main():
     generic_test.start()
     time.sleep(5) # give traffic a chance to get started.
 
-    resource_id = LFUtils.name_to_eid(args.radio)[1]
+    resource_id = self.name_to_eid(args.radio)[1]
 
     must_increase_cols = None
     if args.type == "lfping":
@@ -723,7 +820,7 @@ def main():
                                monitor_endps=mon_endp, generic_cols=generic_cols)
     # generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
     #                                            must_increase_cols=must_increase_cols,
-    #                                            sta_list=station_list,
+    #                                            sta_list=sta_list,
     #                                            resource_id=resource_id,
     #                                            # port_mgr_cols=port_mgr_cols,
     #                                            report_file=report_f,
@@ -740,7 +837,7 @@ def main():
     logger.info("Done with connection monitoring")
     generic_test.stop()
 
-    generic_test.cleanup(station_list)
+    generic_test.cleanup(sta_list)
 
 
     if len(generic_test.get_passed_result_list()) > 0:
