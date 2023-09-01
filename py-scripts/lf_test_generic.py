@@ -310,7 +310,7 @@ class GenTest():
 
         if self.wait_for_action("endp", "appear", 30):
             System.out.println("Generic endp creation completed.")
-        else
+        else:
             System.out.println("Generic endps were not created.")
                     
     def create_generic_endp(self, eid, type, unique_num):
@@ -437,48 +437,46 @@ class GenTest():
             passed = set()
 
             # Port Manager Actions
-            if object = "port":
-                for sta_alias in self.sta_list if self.sta_list:
-                    port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
-                    if action == "appear":
-                        compared_pass = len(self.sta_list)
-                        json_response = lanforge_api.post_show_ports(port= port_name,
-                                                                    resource=port_resource,
-                                                                    shelf=port_shelf,
-                                                                    debug=self.debug
-                                                                    )
-                        #if sta is found by json response
-                        if ((json_response is not None)
-                        and (not json_response['interface']['phantom'])
-                        and (not json_response['status']['NOT_FOUND'])):
-                            passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
-                    else if action == "admin up":
-                        compared_pass = len(self.sta_list)
-                        json_response = lanforge_api.post_show_ports(port= port_name,
-                                            resource=port_resource,
-                                            shelf=port_shelf,
-                                            debug=self.debug
-                                            )
-                        #if sta is NOT down
-                        if (json_response is not None)
-                        and not json_response['interface']['down']
-                        and not json_response['status']['NOT_FOUND']:
-                            passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
+            if object == "port":
+                if self.sta_list:
+                    for sta_alias in self.sta_list:
+                        port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
+                        if action == "appear":
+                            compared_pass = len(self.sta_list)
+                            json_response = lanforge_api.post_show_ports(port= port_name,
+                                                                        resource=port_resource,
+                                                                        shelf=port_shelf,
+                                                                        debug=self.debug
+                                                                        )
+                            #if sta is found by json response
+                            if ((json_response is not None)
+                            and (not json_response['interface']['phantom'])
+                            and (not json_response['status']['NOT_FOUND'])):
+                                passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
+                        elif action == "up":
+                            compared_pass = len(self.sta_list)
+                            json_response = lanforge_api.post_show_ports(port= port_name,
+                                                resource=port_resource,
+                                                shelf=port_shelf,
+                                                debug=self.debug
+                                                )
+                            #if sta is NOT down
+                            if (json_response is not None) and not json_response['interface']['down'] and not json_response['status']['NOT_FOUND']:
+                                passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
 
-                    else if action == "disappear":
-                        compared_pass = len(self.sta_list)
-                        json_response = lanforge_api.post_show_ports(port= port_name,
-                                            resource=port_resource,
-                                            shelf=port_shelf,
-                                            debug=self.debug
-                                            )
-                        if (json_response is not None)
-                        and json_response['status']['NOT_FOUND']:
-                            passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
+                        elif action == "disappear":
+                            compared_pass = len(self.sta_list)
+                            json_response = lanforge_api.post_show_ports(port= port_name,
+                                                resource=port_resource,
+                                                shelf=port_shelf,
+                                                debug=self.debug
+                                                )
+                            if (json_response is not None) and json_response['status']['NOT_FOUND']:
+                                passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
 
                 #loop for existing eids
-                if action == "up":
-                    for sta_alias in self.use_existing_eid if self.use_existing_eid:
+                if self.use_existing_eid and action == "up":
+                    for sta_alias in self.use_existing_eid :
                         compared_pass += len(self.use_existing_eid)
                         port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
                         json_response = lanforge_api.post_show_ports(port= port_name,
@@ -487,9 +485,7 @@ class GenTest():
                                             debug=self.debug
                                             )
                                                 #our station interface is NOT down
-                        if (json_response is not None)
-                        and not json_response['interface']['down']
-                        and not json_response['status']['NOT_FOUND']:
+                        if (json_response is not None) and not json_response['interface']['down'] and not json_response['status']['NOT_FOUND']:
                             passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
     
                 if len(passed) < compared_pass:
@@ -503,12 +499,13 @@ class GenTest():
             # Generic Tab Actions
             else:
                 if action == "appear":
-                    for endp_name in self.created_endp if self.created_endp:
-                       compared_pass = len(self.created_endp)
-                       json_response = lanforge_api.post_nc_show_endpoints(endpoint=endp_name,
-                                                                            extra ='history')
-                       if (json_response['endpoint']['name'] == endp_name):
-                            passed.add(endp_name)
+                    if self.created_endp:
+                        for endp_name in self.created_endp:
+                            compared_pass = len(self.created_endp)
+                            json_response = lanforge_api.post_nc_show_endpoints(endpoint=endp_name,
+                                                                                    extra ='history')
+                        if (json_response['endpoint']['name'] == endp_name):
+                                passed.add(endp_name)
                 if len(passed) < compared_pass:
                     sleep(2)
                     logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(self.sta_list), attempt, timeout/2))
