@@ -1182,8 +1182,8 @@ INCLUDE_IN_README
     pdfkit.from_file(output_html_2, output_pdf_2, options=options)
 
     # test build_bar_graph_horizontal with defaults
-    dataset = [[45, 67, 34, 22, 31, 52, 60, 71, 24, 25], [22, 45, 12, 34, 70, 80, 14, 35, 44, 45], [30, 55, 69, 37, 77, 24, 25, 77, 77, 80]] 
-    y_axis_values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    dataset = [[45, 67, 34, 22, 31, 52, 60, 71, 24, 25, 45, 67, 34, 22, 31, 52, 60, 71, 24, 25], [22, 45, 12, 34, 70, 80, 14, 35, 44, 45,22, 45, 12, 34, 70, 80, 14, 35, 44, 45 ], [30, 55, 69, 37, 77, 24, 25, 77, 77, 80, 30, 55, 69, 37, 77, 24, 25, 77, 77, 80]] 
+    y_axis_values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
     # calculate the height of the y-axis .25 * number of values
     y_fig_size = len(y_axis_values) * len(dataset) * .35
