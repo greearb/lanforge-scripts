@@ -1340,9 +1340,10 @@ class L3VariableTime(Realm):
                 for etype in self.endp_types:
                     # TODO multi cast does not work
                     if etype == "mc_udp" or etype == "mc_udp6":
-                        logger.info("Creating Multicast connections for endpoint type: %s" %etype)
-                        self.multicast_profile.create_mc_tx(etype, self.side_b)
-                        self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
+                        for _tos in self.tos:
+                            logger.info("Creating Multicast connections for endpoint type:  {etype} TOS: {tos}".format(etype=etype,tos=_tos))
+                            self.multicast_profile.create_mc_tx(etype, self.side_b, tos=_tos)
+                            self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names, tos=_tos)
                     else:
                         for _tos in self.tos:
                             logger.info("Creating connections for endpoint type: {etype} TOS: {tos}  cx-count: {cx_count}".format(
@@ -1945,6 +1946,8 @@ class L3VariableTime(Realm):
                      port_data['signal'],
                      port_data['ap'],
                      port_data['mode'],
+                     port_data['mac'],
+                     port_data['channel'],
                      ul_tos,
                      dl_tos,
                      latency,
@@ -2005,6 +2008,8 @@ class L3VariableTime(Realm):
                      port_data['signal'],
                      port_data['ap'],
                      port_data['mode'],
+                     port_data['mac'],
+                     port_data['channel'],
                      dl_tos,
                      ul_tos,
                      latency,
@@ -2217,6 +2222,8 @@ class L3VariableTime(Realm):
             'RSSI',
             'AP',
             'Mode',
+            'MAC',
+            'Channel',
             "DL_TOS",
             "UL_TOS",
             'Rx-Latency',
@@ -2262,6 +2269,8 @@ class L3VariableTime(Realm):
             'RSSI',
             'AP',
             'Mode',
+            'Mac',
+            'Channel',
             "DL_TOS",
             "UL_TOS",
             'Rx-Latency',
