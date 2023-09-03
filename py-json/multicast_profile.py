@@ -164,6 +164,7 @@ class MULTICASTProfile(LFCliBase):
     def create_mc_tx(self,
                     endp_type,
                     side_tx, 
+                    tos=None,
                     suppress_related_commands=None, 
                     debug_=False):
         if self.debug:
@@ -210,14 +211,21 @@ class MULTICASTProfile(LFCliBase):
         url = "cli-json/set_mc_endp"
         self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
+
+
         self.created_mc[side_tx_name] = side_tx_name
 
         these_endp = [side_tx_name]
+
+        if tos:
+            self.local_realm.set_endp_tos(side_tx_name, tos)
+
         self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
 
     def create_mc_rx(self, 
                     endp_type, 
                     side_rx,
+                    tos=None,
                     suppress_related_commands=None, 
                     debug_=False):
         if self.debug:
@@ -256,7 +264,6 @@ class MULTICASTProfile(LFCliBase):
             url = "cli-json/add_endp"
             self.local_realm.json_post(url, json_data, debug_=debug_,
                                        suppress_related_commands_=suppress_related_commands)
-
             json_data = {
                 'name': side_rx_name,
                 'ttl': self.side_a_ttl,
@@ -270,6 +277,9 @@ class MULTICASTProfile(LFCliBase):
 
             self.created_mc[side_rx_name] = side_rx_name
             these_endp.append(side_rx_name)
+
+            if tos:
+                self.local_realm.set_endp_tos(side_rx_name, tos)
 
         self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
 
