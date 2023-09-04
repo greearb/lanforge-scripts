@@ -174,11 +174,12 @@ class FtpTest(LFCliBase):
                                 #self.hostname_list.append(b['eid']+ " " +b['hostname'])
                                 self.devices_available.append(b['eid'] +" " +'Win'+" "+ b['hostname'] )
                             elif "Linux" in b['hw version']:
-                                if ('ct' not in b['hostname']) and ('lf' not in b['hostname']):
-                                    self.eid_list.append(b['eid'])
-                                    self.linux_list.append(b['hw version'])
-                                    #self.hostname_list.append(b['eid']+ " " +b['hostname'])
-                                    self.devices_available.append(b['eid'] +" " +'Lin'+" "+ b['hostname'])
+                                if ('ct' not in b['hostname']):
+                                    if('lf' not in b['hostname']):
+                                        self.eid_list.append(b['eid'])
+                                        self.linux_list.append(b['hw version'])
+                                        #self.hostname_list.append(b['eid']+ " " +b['hostname'])
+                                        self.devices_available.append(b['eid'] +" " +'Lin'+" "+ b['hostname'])
                             elif "Apple" in b['hw version']:
                                 self.eid_list.append(b['eid'])
                                 self.mac_list.append(b['hw version'])
@@ -396,7 +397,7 @@ class FtpTest(LFCliBase):
                                                 "/ftp_test.txt",
                                                 sleep_time=.5, debug_=self.debug, suppress_related_commands_=True,timeout=1000,ftp=True,
                                                 user="lanforge",
-                                                passwd="lanforge", source="") 
+                                                passwd="lanforge", source="",proxy_auth_type=0x200) 
                         
             elif self.direction == "Upload":
                 dict_sta_and_ip = {}
@@ -423,7 +424,7 @@ class FtpTest(LFCliBase):
                     self.cx_profile.create(ports=eth_list, ftp_ip=ip[client_num] + "/ftp_test.txt", sleep_time=.5,
                                             debug_=self.debug, suppress_related_commands_=True,timeout=1000,ftp=True,
                                             user="lanforge", passwd="lanforge",
-                                            source="", upload_name=client_list[client_num])
+                                            source="", upload_name=client_list[client_num],proxy_auth_type=0x200)
 
         # check Both band present then build stations with another station list
         if self.count == 2:
@@ -461,7 +462,7 @@ class FtpTest(LFCliBase):
                                                 "/ftp_test.txt",
                                                 sleep_time=.5, debug_=self.debug, suppress_related_commands_=True, interop=True,timeout=1000,ftp=True,
                                                 user="lanforge",
-                                                passwd="lanforge", source="")
+                                                passwd="lanforge", source="",proxy_auth_type=0x200)
 
             elif self.direction == "Upload":
                 # list of upstream port
@@ -484,7 +485,7 @@ class FtpTest(LFCliBase):
                     self.cx_profile.create(ports=eth_list, ftp_ip=ip[client] + "/ftp_test.txt", sleep_time=.5,
                                             debug_=self.debug, suppress_related_commands_=True,timeout=1000, interop=True,ftp=True,
                                             user="lanforge", passwd="lanforge",
-                                            source="", upload_name=self.input_devices_list[client])
+                                            source="", upload_name=self.input_devices_list[client],proxy_auth_type=0x200)
             
             # check Both band present then build stations with another station list
             # if self.count == 2:
