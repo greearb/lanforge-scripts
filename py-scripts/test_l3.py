@@ -488,10 +488,15 @@ if sys.version_info[0] != 3:
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lf_report = importlib.import_module("py-scripts.lf_report")
+lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
+
+# from lf_graph import lf_bar_graph_horizontal
+# from lf_graph import lf_bar_graph
+
 
 # additional imports for testing with vap
 lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
@@ -731,6 +736,9 @@ class L3VariableTime(Realm):
         # Data used for graphing the TOS bar graphs
         # currently place all types of traffic together.
         # TODO separate out Multi cast and Uni cast
+        self.side_b_min_bps = 0
+        self.ride_a_min_bps = 0
+
         self.bk_clients_A = []
         self.bk_tos_ul_A = []
         self.bk_tos_dl_A = []
@@ -1073,7 +1081,7 @@ class L3VariableTime(Realm):
                 name = endp["name"]
                 logger.debug("endp name {name}".format(name=name))
                 sta_name = name.replace('-A', '')
-                # only the -A endpoint will be found 
+                # only the -A endpoint will be found
 
                 count += 1
                 logger.debug(
@@ -1112,7 +1120,8 @@ class L3VariableTime(Realm):
                     else:
                         endp_data = response['endpoint']
                         dl_tos = endp_data["tos"]
-                        logger.debug("endp {endp} dl_tos {dl_tos}".format(endp=endp["name"],dl_tos=dl_tos))
+                        logger.debug("endp {endp} dl_tos {dl_tos}".format(
+                            endp=endp["name"], dl_tos=dl_tos))
                         # can get other enpdata needed
 
                 # -B upload side
@@ -1132,7 +1141,8 @@ class L3VariableTime(Realm):
                         endp_data = response['endpoint']
                         ul_tos = endp_data["tos"]
                         # can get other enpdata needed
-                        logger.debug("endp {endp} dl_tos {dl_tos}".format(endp=endp["name"],dl_tos=dl_tos))
+                        logger.debug("endp {endp} dl_tos {dl_tos}".format(
+                            endp=endp["name"], dl_tos=dl_tos))
 
         return dl_tos, ul_tos, lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent
 
@@ -1143,7 +1153,7 @@ class L3VariableTime(Realm):
             "endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll",
             debug_=False)
         # multicast only shows tx rates
-        #endp_list = self.json_get(
+        # endp_list = self.json_get(
         #    "endp?fields=name,eid,delay,jitter,tx+rate,tx+rate+ll,tx+bytes,tx+drop+%25,tx+pkts+ll",
         #    debug_=False)
 
@@ -1157,7 +1167,6 @@ class L3VariableTime(Realm):
         total_dl = 0
         total_dl_ll = 0
 
-
         # Multicast endpoints
         for e in self.multicast_profile.get_mc_names():
             our_endps[e] = e
@@ -1165,12 +1174,14 @@ class L3VariableTime(Realm):
             logger.debug("endpoint: {}".format(endp_name))
             if endp_name != 'uri' and endp_name != 'handler':
                 for item, endp_value in endp_name.items():
-                    if item in our_endps:  # multicast does not support use existing: or self.use_existing_station_lists:
+                    # multicast does not support use existing: or self.use_existing_station_lists:
+                    if item in our_endps:
                         # endps.append(endp_value) need to see how to affect
                         # NOTE: during each monitor period the rates are added to get the totals
-                        # this is done so that if there is an issue the rate information will be in 
+                        # this is done so that if there is an issue the rate information will be in
                         # the csv for the individual polling period
-                        logger.debug("multicast endpoint: {item} value:\n".format(item=item))
+                        logger.debug(
+                            "multicast endpoint: {item} value:\n".format(item=item))
                         logger.debug(endp_value)
                         for value_name, value in endp_value.items():
                             if value_name == 'rx rate':
@@ -1188,7 +1199,7 @@ class L3VariableTime(Realm):
                                 else:
                                     total_ul_ll += int(value)
 
-                            # TODO need a way to report rates 
+                            # TODO need a way to report rates
 
         # Unicast endpoints
         for e in self.cx_profile.created_endp.keys():
@@ -1380,9 +1391,12 @@ class L3VariableTime(Realm):
                     # TODO multi cast does not work
                     if etype == "mc_udp" or etype == "mc_udp6":
                         for _tos in self.tos:
-                            logger.info("Creating Multicast connections for endpoint type:  {etype} TOS: {tos}".format(etype=etype,tos=_tos))
-                            self.multicast_profile.create_mc_tx(etype, self.side_b, tos=_tos, add_tos_to_name=False)
-                            self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names, tos=_tos, add_tos_to_name=False)
+                            logger.info("Creating Multicast connections for endpoint type:  {etype} TOS: {tos}".format(
+                                etype=etype, tos=_tos))
+                            self.multicast_profile.create_mc_tx(
+                                etype, self.side_b, tos=_tos, add_tos_to_name=False)
+                            self.multicast_profile.create_mc_rx(
+                                etype, side_rx=station_profile.station_names, tos=_tos, add_tos_to_name=False)
                     else:
                         for _tos in self.tos:
                             logger.info("Creating connections for endpoint type: {etype} TOS: {tos}  cx-count: {cx_count}".format(
@@ -1547,7 +1561,8 @@ class L3VariableTime(Realm):
                                 host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
                             atten_mod_test.build()
 
-                    logger.info("Starting multicast traffic (if any configured)")
+                    logger.info(
+                        "Starting multicast traffic (if any configured)")
                     self.multicast_profile.start_mc(debug_=self.debug)
                     self.multicast_profile.refresh_mc(debug_=self.debug)
                     logger.info("Starting layer-3 traffic (if any configured)")
@@ -1682,7 +1697,7 @@ class L3VariableTime(Realm):
                                 if rx_ul_mac_found:
                                     # Find latency, jitter for connections
                                     # using this port.
-                                    #latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_tx_drop_percent = self.get_endp_stats_for_port(
+                                    # latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_tx_drop_percent = self.get_endp_stats_for_port(
                                     #    port_data["port"], endps)
                                     self.write_ul_port_csv(
                                         len(temp_stations_list),
@@ -1800,8 +1815,8 @@ class L3VariableTime(Realm):
                         all_dl_port_stations_file_name)
 
                     # we should be able to add the values for each eid
-                    # FutureWarning: Indexing with multiple keys need to make single [] to double [[]] 
-                    # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys                    
+                    # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
+                    # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
                     all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
                                                                                                     'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
                     all_dl_ports_stations_sum_file_name = self.outfile[:-4]
@@ -1874,8 +1889,8 @@ class L3VariableTime(Realm):
                             all_ul_ports_stations_file_name)
 
                         # we add all the values based on the epoch time
-                        # FutureWarning: Indexing with multiple keys need to make single [] to double [[]] 
-                        # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys                        
+                        # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
+                        # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
                         all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
                                                                                                         'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
                         all_ul_ports_stations_sum_file_name = self.outfile[:-4]
@@ -1888,16 +1903,26 @@ class L3VariableTime(Realm):
                                 "The ul (upload) has no data check the AP connection or configuration")
                             warnings += 1
                         else:
-                            all_ul_ports_stations_sum_df['Rx-Bps-Diff'] = all_ul_ports_stations_sum_df['Rx-Bps'].diff()
-                            all_ul_ports_stations_sum_df['Tx-Bps-Diff'] = all_ul_ports_stations_sum_df['Tx-Bps'].diff()
-                            all_ul_ports_stations_sum_df['Rx-Latency-Diff'] = all_ul_ports_stations_sum_df['Rx-Latency'].diff()
-                            all_ul_ports_stations_sum_df['Rx-Jitter-Diff'] = all_ul_ports_stations_sum_df['Rx-Jitter'].diff()
-                            all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff()
-                            all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff()
-                            all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff()
-                            all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff()
-                            all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff()
-                            all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
+                            all_ul_ports_stations_sum_df['Rx-Bps-Diff'] = all_ul_ports_stations_sum_df['Rx-Bps'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Tx-Bps-Diff'] = all_ul_ports_stations_sum_df['Tx-Bps'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Rx-Latency-Diff'] = all_ul_ports_stations_sum_df['Rx-Latency'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Rx-Jitter-Diff'] = all_ul_ports_stations_sum_df['Rx-Jitter'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff(
+                            )
+                            all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff(
+                            )
 
                         # write out the data
                         all_ul_ports_stations_sum_df.to_csv(
@@ -2192,118 +2217,140 @@ class L3VariableTime(Realm):
         # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos | json_pp
 
         # for port curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/port/all | json_pp
-        self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos')
+        self.endp_data = self.json_get(
+            'endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos')
         self.endp_data.pop("handler")
         self.endp_data.pop("uri")
         self.endpoint_data_list = self.endp_data['endpoint']
-        logger.info("self.endpoint_data type: {dtype} data: {data}".format(dtype=type(self.endpoint_data),data=self.endpoint_data))
-        rate_down= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
-        rate_up= str(str(int(self.cx_profile.side_a_min_bps) / 1000000) +' '+'Mbps')
+        logger.info("self.endpoint_data type: {dtype} data: {data}".format(
+            dtype=type(self.endpoint_data), data=self.endpoint_data))
+        # self.side_b_min_bps= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
+        # self.side_a_min_bps= str(str(int(self.cx_profile.side_a_min_bps) / 1000000) +' '+'Mbps')
+
+        self.side_b_min_bps = self.cx_profile.side_b_min_bps
+        self.side_a_min_bps = self.cx_profile.side_a_min_bps
 
         for endp_data in self.endp_data['endpoint']:
-            logger.info("endp_data type {endp_type} endp_data {endp_data}".format(endp_type=type(endp_data),endp_data=endp_data))
-            endp_data_key = list(endp_data.keys())[0]  # The dictionary only has one key
+            logger.info("endp_data type {endp_type} endp_data {endp_data}".format(
+                endp_type=type(endp_data), endp_data=endp_data))
+            # The dictionary only has one key
+            endp_data_key = list(endp_data.keys())[0]
             logger.info("endpoint_data key: {key}  name: {name} a/b {ab} rx rate {rx_rate}".format(
-                key=endp_data_key,tos=endp_data[endp_data_key]['tos'],name=endp_data[endp_data_key]['name'],ab=endp_data[endp_data_key]['a/b'],rx_rate=endp_data[endp_data_key]['rx rate']))
+                key=endp_data_key, tos=endp_data[endp_data_key]['tos'], name=endp_data[endp_data_key]['name'], ab=endp_data[endp_data_key]['a/b'], rx_rate=endp_data[endp_data_key]['rx rate']))
 
-            # Gather data for upload , download for the four data types BK, BE, VI, VO, place the 
+            # Gather data for upload , download for the four data types BK, BE, VI, VO, place the
             # the data_set will be the upload and download rates for each client
             # the y_axis values are the clients
             # TODO how many data sets
-            if endp_data[endp_data_key]['tos'] =='BK':
-                if endp_data[endp_data_key]['a/b']  == "A":
+            if endp_data[endp_data_key]['tos'] == 'BK':
+                if endp_data[endp_data_key]['a/b'] == "A":
                     self.bk_clients_A.append(endp_data[endp_data_key]['name'])
-                    self.bk_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
-                    self.bk_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
-                if endp_data[endp_data_key]['a/b']  == "B":
+                    self.bk_tos_ul_A.append(
+                        endp_data[endp_data_key]["tx rate"])
+                    self.bk_tos_dl_A.append(
+                        endp_data[endp_data_key]["rx rate"])
+                if endp_data[endp_data_key]['a/b'] == "B":
                     self.bk_clients_B.append(endp_data[endp_data_key]['name'])
-                    self.bk_tos_ul_B.append(endp_data[endp_data_key]["tx rate"])
-                    self.bk_tos_dl_B.append(endp_data[endp_data_key]["rx rate"])
+                    self.bk_tos_ul_B.append(
+                        endp_data[endp_data_key]["tx rate"])
+                    self.bk_tos_dl_B.append(
+                        endp_data[endp_data_key]["rx rate"])
 
-            elif endp_data[endp_data_key]['tos'] =='BE':
-                if endp_data[endp_data_key]['a/b']  == "A":
+            elif endp_data[endp_data_key]['tos'] == 'BE':
+                if endp_data[endp_data_key]['a/b'] == "A":
                     self.be_clients_A.append(endp_data[endp_data_key]['name'])
-                    self.be_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
-                    self.be_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
-                if endp_data[endp_data_key]['a/b']  == "B":
+                    self.be_tos_ul_A.append(
+                        endp_data[endp_data_key]["tx rate"])
+                    self.be_tos_dl_A.append(
+                        endp_data[endp_data_key]["rx rate"])
+                if endp_data[endp_data_key]['a/b'] == "B":
                     self.be_clients_B.append(endp_data[endp_data_key]['name'])
-                    self.be_tos_ul_B.append(endp_data[endp_data_key]["tx rate"])
-                    self.be_tos_dl_B.append(endp_data[endp_data_key]["rx rate"])
+                    self.be_tos_ul_B.append(
+                        endp_data[endp_data_key]["tx rate"])
+                    self.be_tos_dl_B.append(
+                        endp_data[endp_data_key]["rx rate"])
 
-            elif endp_data[endp_data_key]['tos'] =='VI':
-                if endp_data[endp_data_key]['a/b']  == "A":
+            elif endp_data[endp_data_key]['tos'] == 'VI':
+                if endp_data[endp_data_key]['a/b'] == "A":
                     self.vi_clients_A.append(endp_data[endp_data_key]['name'])
-                    self.vi_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
-                    self.vi_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
-                if endp_data[endp_data_key]['a/b']  == "B":
+                    self.vi_tos_ul_A.append(
+                        endp_data[endp_data_key]["tx rate"])
+                    self.vi_tos_dl_A.append(
+                        endp_data[endp_data_key]["rx rate"])
+                if endp_data[endp_data_key]['a/b'] == "B":
                     self.vi_clients_B.append(endp_data[endp_data_key]['name'])
-                    self.vi_tos_ul_B.append(endp_data[endp_data_key]["tx rate"])
-                    self.vi_tos_dl_B.append(endp_data[endp_data_key]["rx rate"])
+                    self.vi_tos_ul_B.append(
+                        endp_data[endp_data_key]["tx rate"])
+                    self.vi_tos_dl_B.append(
+                        endp_data[endp_data_key]["rx rate"])
 
-            elif endp_data[endp_data_key]['tos'] =='VO':
-                if endp_data[endp_data_key]['a/b']  == "A":
+            elif endp_data[endp_data_key]['tos'] == 'VO':
+                if endp_data[endp_data_key]['a/b'] == "A":
                     self.vo_clients_A.append(endp_data[endp_data_key]['name'])
-                    self.vo_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
-                    self.vo_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
-                if endp_data[endp_data_key]['a/b']  == "B":
+                    self.vo_tos_ul_A.append(
+                        endp_data[endp_data_key]["tx rate"])
+                    self.vo_tos_dl_A.append(
+                        endp_data[endp_data_key]["rx rate"])
+                if endp_data[endp_data_key]['a/b'] == "B":
                     self.vo_clients_B.append(endp_data[endp_data_key]['name'])
-                    self.vo_tos_ul_B.append(endp_data[endp_data_key]["tx rate"])
-                    self.vo_tos_dl_B.append(endp_data[endp_data_key]["rx rate"])
+                    self.vo_tos_ul_B.append(
+                        endp_data[endp_data_key]["tx rate"])
+                    self.vo_tos_dl_B.append(
+                        endp_data[endp_data_key]["rx rate"])
 
         self.client_dict = {
-            "BK" :{
+            "y_axis_name": "Client names",
+            "x_axis_name": "Throughput in Mbps",
+            "min_bps_a": self.side_a_min_bps,
+            "min_bps_b": self.side_b_min_bps,
+            "BK": {
                 "clients_A": self.bk_clients_A,
                 "ul_A": self.bk_tos_ul_A,
                 "dl_A": self.bk_tos_dl_A,
                 "clients_B": self.bk_clients_B,
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
-                "colors":['orange','wheat'],
-                "labels":['Download','Upload']
+                "colors": ['orange', 'wheat'],
+                "labels": ['Download', 'Upload']
             },
-            "BE" :{
+            "BE": {
                 "clients_A": self.be_clients_A,
                 "ul_A": self.be_tos_ul_A,
                 "dl_A": self.be_tos_dl_A,
                 "clients_B": self.be_clients_B,
                 "ul_B": self.be_tos_ul_B,
                 "dl_B": self.be_tos_dl_B,
-                "colors":['lightcoral','mistyrose'],
-                "labels":['Download','Upload']
+                "colors": ['lightcoral', 'mistyrose'],
+                "labels": ['Download', 'Upload']
             },
-            "VI" :{
+            "VI": {
                 "clients_A": self.vi_clients_A,
                 "ul_A": self.vi_tos_ul_A,
                 "dl_A": self.vi_tos_dl_A,
                 "clients_B": self.vi_clients_B,
                 "ul_B": self.vi_tos_ul_B,
                 "dl_B": self.vi_tos_dl_B,
-                "colors":['steelblue','lightskyblue'],
-                "labels":['Download','Upload']
+                "colors": ['steelblue', 'lightskyblue'],
+                "labels": ['Download', 'Upload']
             },
-            "VO" :{
+            "VO": {
                 "clients_A": self.vo_clients_A,
                 "ul_A": self.vo_tos_ul_A,
                 "dl_A": self.vo_tos_dl_A,
                 "clients_B": self.vo_clients_B,
                 "ul_B": self.vo_tos_ul_B,
                 "dl_B": self.vo_tos_dl_B,
-                "colors":['green','lightgreen'],
-                "labels":['Download','Upload']
+                "colors": ['green', 'lightgreen'],
+                "labels": ['Download', 'Upload']
             }
         }
 
         logger.info("printed the collected data")
 
-
-        
-
-
-
-
     # quiesce the cx : quiesce a test at the end, which means stop transmitter
     # but leave received going to drain packets from the network and get better drop% calculations.
     # Stopping a test would record packets in flight at the moment it is stopped as dropped.
+
     def quiesce_cx(self):
         self.cx_profile.quiesce_cx()
 
@@ -2317,13 +2364,15 @@ class L3VariableTime(Realm):
 
     # clean up cx
     def cleanup_cx(self):
-        cleanup = lf_cleanup.lf_clean(host=self.lfclient_host, port=self.lfclient_port, resource='all')
+        cleanup = lf_cleanup.lf_clean(
+            host=self.lfclient_host, port=self.lfclient_port, resource='all')
         cleanup.cxs_clean()
-            
 
     # Remove traffic connections and stations.
+
     def cleanup(self):
-        cleanup = lf_cleanup.lf_clean(host=self.lfclient_host, port=self.lfclient_port, resource='all')
+        cleanup = lf_cleanup.lf_clean(
+            host=self.lfclient_host, port=self.lfclient_port, resource='all')
         cleanup.sanitize_all()
 
         # Make sure they are gone
@@ -2339,7 +2388,7 @@ class L3VariableTime(Realm):
                 break
             count += 1
             time.sleep(5)
-        '''            
+        '''
         self.cx_profile.cleanup()
         self.multicast_profile.cleanup()
         for station_profile in self.station_profiles:
@@ -2561,16 +2610,16 @@ def main():
             ''',
 
         description='''\
-                
+
 NAME: test_l3.py
 
 PURPOSE: The Layer 3 Traffic Generation Test is designed to test the performance of the Access Point by running layer-3
          Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream of data flowing through the system under test.
          A Cross-Connect (CX) is composed of two Endpoints, each of which is associated with a particular Port (physical or virtual interface).
 
-         The test will create stations, create cx traffic between upstream port and stations,  run traffic. Verify 
+         The test will create stations, create cx traffic between upstream port and stations,  run traffic. Verify
          the traffic is being transmitted and received
-            
+
          * Supports creating user-specified amount stations on multiple radios
          * Supports configuring upload and download requested rates and PDU sizes.
          * Supports generating connections with different ToS values.
@@ -2579,7 +2628,7 @@ PURPOSE: The Layer 3 Traffic Generation Test is designed to test the performance
          * Supports iterating over different requested tx rates (configurable as total or per-connection value)
          * Supports iterating over attenuation values.
          * Supports testing connection between two ethernet connection - L3 dataplane
-         
+
          Generic command layout:
          -----------------------
          ./test_l3.py --mgr <ip_address> --test_duration <duration> --endp_type <traffic types> --upstream_port <port>
@@ -2600,57 +2649,57 @@ Example running traffic with two radios
 6. Create connections with TOS of BK and VI
 
          # The script now supports multiple radios, each specified with an individual --radio switch.
-         
+
            * UDP and TCP bi-directional test, no use of controller.
-             ./test_l3.py --mgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --upstream_port 1.1.eth1 
-             --radio "radio==1.1.wiphy0 stations==5 ssid==Netgear2g ssid_pw==lanforge security==wpa2" 
-             --radio "radio==1.1.wiphy1 stations==1 ssid==Netgear5g ssid_pw==lanforge security==wpa2" 
+             ./test_l3.py --mgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --upstream_port 1.1.eth1
+             --radio "radio==1.1.wiphy0 stations==5 ssid==Netgear2g ssid_pw==lanforge security==wpa2"
+             --radio "radio==1.1.wiphy1 stations==1 ssid==Netgear5g ssid_pw==lanforge security==wpa2"
              --test_duration 60s
 
            * Port resets, chooses random value between min and max
-             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 90s --polling_interval 10s --upstream_port eth1 
+             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 90s --polling_interval 10s --upstream_port eth1
              --radio 'radio==wiphy0,stations==4,ssid==Netgear2g,ssid_pw==lanforge,security==wpa2,reset_port_enable==TRUE,
-             reset_port_time_min==10s,reset_port_time_max==20s' --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 
+             reset_port_time_min==10s,reset_port_time_max==20s' --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000
              --side_b_min_bps=300000000
-             
+
          # Command: (remove carriage returns)
-             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 30s --endp_type "lf_tcp,lf_udp" --tos "BK VI" --upstream_port 1.1.eth1 
+             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 30s --endp_type "lf_tcp,lf_udp" --tos "BK VI" --upstream_port 1.1.eth1
              --radio "radio==1.1.wiphy0 stations==1 ssid==Netgear2g ssid_pw==lanforge security==wpa2"
 
          # Have the stations continue to run after the completion of the script
-             ./test_l3.py --lfmgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth1 
-             --radio 'radio==wiphy0 stations==2 ssid==Netgear2g ssid_pw==lanforge security==wpa2' --test_duration 30s 
+             ./test_l3.py --lfmgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth1
+             --radio 'radio==wiphy0 stations==2 ssid==Netgear2g ssid_pw==lanforge security==wpa2' --test_duration 30s
              --polling_interval 5s --side_a_min_bps 256000 --side_b_min_bps 102400000 --no_stop_traffic
-     
-         #  Have script use existing stations from previous run where traffic was not stopped and also create new stations and leave traffic running	
-             ./test_l3.py --lfmgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth1 
-             --radio 'radio==wiphy0 stations==2 ssid==Netgear2g ssid_pw==lanforge security==wpa2' --sta_start_offset 1000 
-             --test_duration 30s --polling_interval 5s --side_a_min_bps 256000 --side_b_min_bps 102400000 --use_existing_station_list 
+
+         #  Have script use existing stations from previous run where traffic was not stopped and also create new stations and leave traffic running
+             ./test_l3.py --lfmgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth1
+             --radio 'radio==wiphy0 stations==2 ssid==Netgear2g ssid_pw==lanforge security==wpa2' --sta_start_offset 1000
+             --test_duration 30s --polling_interval 5s --side_a_min_bps 256000 --side_b_min_bps 102400000 --use_existing_station_list
              --existing_station_list '1.1.sta0000,1.1.sta0001,1.1.sta0002' --no_stop_traffic
-             
+
          # Have script use wifi_settings enable flages  ::  wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)
-             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 20s --polling_interval 5s --upstream_port 1.1.eth1 
-             --radio 'radio==1.1.wiphy0,stations==1,ssid==Netgear2g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)' 
-             --radio 'radio==1.1.wiphy1,stations==1,ssid==Netgear5g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)' 
-             --radio 'radio==1.1.wiphy2,stations==1,ssid==Netgear2g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)' 
-             --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --test_rig ID_003 --test_tag 'l3_longevity' --dut_model_num GT-AXE11000 --dut_sw_version 3.0.0.4.386_44266 
-             --dut_hw_version 1.0 --dut_serial_num 12345678 --log_level debug  
-             
+             ./test_l3.py --lfmgr 192.168.200.83 --test_duration 20s --polling_interval 5s --upstream_port 1.1.eth1
+             --radio 'radio==1.1.wiphy0,stations==1,ssid==Netgear2g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+             --radio 'radio==1.1.wiphy1,stations==1,ssid==Netgear5g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+             --radio 'radio==1.1.wiphy2,stations==1,ssid==Netgear2g,ssid_pw==lanforge,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+             --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --test_rig ID_003 --test_tag 'l3_longevity' --dut_model_num GT-AXE11000 --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0 --dut_serial_num 12345678 --log_level debug
+
          # Setting wifi_settings per radio
-            ./test_l3.py 
-            --lfmgr 192.168.100.116 
-            --local_lf_report_dir /home/lanforge/html-reports/ 
-            --test_duration 15s 
-            --polling_interval 5s 
+            ./test_l3.py
+            --lfmgr 192.168.100.116
+            --local_lf_report_dir /home/lanforge/html-reports/
+            --test_duration 15s
+            --polling_interval 5s
             --upstream_port eth2
             --radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2  mode==0 wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down&&ht160_enable) "
-            --endp_type lf_udp 
-            --rates_are_totals 
-            --side_a_min_bps=20000 
-            --side_b_min_bps=300000000 
-            --test_rig CT-US-001 
+            --endp_type lf_udp
+            --rates_are_totals
+            --side_a_min_bps=20000
+            --side_b_min_bps=300000000
+            --test_rig CT-US-001
             --test_tag 'test_l3'
-             
+
          # Example : LAN-1927  WPA2-TLS-Configuration
             ./test_l3.py
              --lfmgr 192.168.0.103
@@ -2669,14 +2718,14 @@ Example running traffic with two radios
              --dut_hw_version 1.0
              --dut_serial_num 12345678
              --log_level debug
-                
+
         # Example : LAN-1927  WPA2-TTLS-Configuration
             ./test_l3.py
              --lfmgr 192.168.0.103
              --test_duration 20s
              --polling_interval 5s
              --upstream_port 1.1.eth2
-             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa2,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra==key_mgmt&&WPA-EAP!!eap&&TTLS!!identity&&testuser!!passwd&&testpasswd!!ieee80211w&&Disabled' 
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa2,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra==key_mgmt&&WPA-EAP!!eap&&TTLS!!identity&&testuser!!passwd&&testpasswd!!ieee80211w&&Disabled'
              --endp_type lf_udp
              --rates_are_totals
              --side_a_min_bps=256000
@@ -2688,15 +2737,15 @@ Example running traffic with two radios
              --dut_hw_version 1.0
              --dut_serial_num 12345678
              --log_level debug
-        
-        
+
+
         # Example : LAN-1927  WPA3-TTLS-Configuration
             ./test_l3.py
              --lfmgr 192.168.0.103
              --test_duration 20s
              --polling_interval 5s
              --upstream_port 1.1.eth2
-             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TTLS!!identity&&testuser!!passwd&&testpasswd!!ieee80211w&&Required' 
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TTLS!!identity&&testuser!!passwd&&testpasswd!!ieee80211w&&Required'
              --endp_type lf_ud
              --rates_are_totals
              --side_a_min_bps=256000
@@ -2708,14 +2757,14 @@ Example running traffic with two radios
              --dut_hw_version 1.0
              --dut_serial_num 12345678
              --log_level debug
-        
+
         # Example : LAN-1927  WPA3-TLS-Configuration
             ./test_l3.py
              --lfmgr 192.168.0.103
              --test_duration 20s
              --polling_interval 5s
              --upstream_port 1.1.eth2
-             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Required' 
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Required'
              --endp_type lf_udp
              --rates_are_totals
              --side_a_min_bps=256000
@@ -2726,13 +2775,13 @@ Example running traffic with two radios
              --dut_sw_version 3.0.0.4.386_44266
              --dut_hw_version 1.0
              --dut_serial_num 12345678
-             --log_level debug      
+             --log_level debug
 
 SCRIPT_CLASSIFICATION:  Creation & Runs Traffic
 
 SCRIPT_CATEGORIES:  Performance, Functional,  KPI Generation,  Report Generation
 
-NOTES: 
+NOTES:
 
 #################################
 # Command switches
@@ -2764,18 +2813,18 @@ mc_udp6 : IPv6 multi cast UDP traffic
 <tos>:
 BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred numeric values. Cross connects type of service
 
-    * Data 0 (Best Effort, BE): Medium priority queue, medium throughput and delay. 
+    * Data 0 (Best Effort, BE): Medium priority queue, medium throughput and delay.
              Most traditional IP data is sent to this queue.
-    * Data 1 (Background, BK): Lowest priority queue, high throughput. Bulk data that requires maximum throughput and 
+    * Data 1 (Background, BK): Lowest priority queue, high throughput. Bulk data that requires maximum throughput and
              is not time-sensitive is sent to this queue (FTP data, for example).
-    * Data 2 (Video, VI): High priority queue, minimum delay. Time-sensitive data such as Video and other streaming 
+    * Data 2 (Video, VI): High priority queue, minimum delay. Time-sensitive data such as Video and other streaming
              media are automatically sent to this queue.
-    * Data 3 (Voice, VO): Highest priority queue, minimum delay. Time-sensitive data such as Voice over IP (VoIP) 
+    * Data 3 (Voice, VO): Highest priority queue, minimum delay. Time-sensitive data such as Voice over IP (VoIP)
              is automatically sent to this Queue.
 
 <wifi_mode>:
     Input       : Enum Val  : Shown by nc_show_ports
-    
+
     AUTO        |  0        #  802.11
     802.11a     |  1        #  802.11a
     b           |  2        #  802.11b
@@ -2796,48 +2845,73 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
 
 wifi_settings flags are currently defined as:
     wpa_enable           | 0x10         # Enable WPA
-    custom_conf          | 0x20         # Use Custom wpa_supplicant config file.
-    wep_enable           | 0x200        # Use wpa_supplicant configured for WEP encryption.
-    wpa2_enable          | 0x400        # Use wpa_supplicant configured for WPA2 encryption.
-    ht40_disable         | 0x800        # Disable HT-40 even if hardware and AP support it.
-    scan_ssid            | 0x1000       # Enable SCAN-SSID flag in wpa_supplicant.
-    passive_scan         | 0x2000       # Use passive scanning (don't send probe requests).
+    # Use Custom wpa_supplicant config file.
+    custom_conf          | 0x20
+    # Use wpa_supplicant configured for WEP encryption.
+    wep_enable           | 0x200
+    # Use wpa_supplicant configured for WPA2 encryption.
+    wpa2_enable          | 0x400
+    # Disable HT-40 even if hardware and AP support it.
+    ht40_disable         | 0x800
+    # Enable SCAN-SSID flag in wpa_supplicant.
+    scan_ssid            | 0x1000
+    # Use passive scanning (don't send probe requests).
+    passive_scan         | 0x2000
     disable_sgi          | 0x4000       # Disable SGI (Short Guard Interval).
-    lf_sta_migrate       | 0x8000       # OK-To-Migrate (Allow station migration between LANforge radios)
-    verbose              | 0x10000      # Verbose-Debug:  Increase debug info in wpa-supplicant and hostapd logs.
-    80211u_enable        | 0x20000      # Enable 802.11u (Interworking) feature.
-    80211u_auto          | 0x40000      # Enable 802.11u (Interworking) Auto-internetworking feature.  Always enabled currently.
-    80211u_gw            | 0x80000      # AP Provides access to internet (802.11u Interworking)
-    80211u_additional    | 0x100000     # AP requires additional step for access (802.11u Interworking)
-    80211u_e911          | 0x200000     # AP claims emergency services reachable (802.11u Interworking)
-    80211u_e911_unauth   | 0x400000     # AP provides Unauthenticated emergency services (802.11u Interworking)
-    hs20_enable          | 0x800000     # Enable Hotspot 2.0 (HS20) feature.  Requires WPA-2.
-    disable_gdaf         | 0x1000000    # AP:  Disable DGAF (used by HotSpot 2.0).
+    # OK-To-Migrate (Allow station migration between LANforge radios)
+    lf_sta_migrate       | 0x8000
+    # Verbose-Debug:  Increase debug info in wpa-supplicant and hostapd logs.
+    verbose              | 0x10000
+    # Enable 802.11u (Interworking) feature.
+    80211u_enable        | 0x20000
+    # Enable 802.11u (Interworking) Auto-internetworking feature.  Always enabled currently.
+    80211u_auto          | 0x40000
+    # AP Provides access to internet (802.11u Interworking)
+    80211u_gw            | 0x80000
+    # AP requires additional step for access (802.11u Interworking)
+    80211u_additional    | 0x100000
+    # AP claims emergency services reachable (802.11u Interworking)
+    80211u_e911          | 0x200000
+    # AP provides Unauthenticated emergency services (802.11u Interworking)
+    80211u_e911_unauth   | 0x400000
+    # Enable Hotspot 2.0 (HS20) feature.  Requires WPA-2.
+    hs20_enable          | 0x800000
+    # AP:  Disable DGAF (used by HotSpot 2.0).
+    disable_gdaf         | 0x1000000
     8021x_radius         | 0x2000000    # Use 802.1x (RADIUS for AP).
-    80211r_pmska_cache   | 0x4000000    # Enable oportunistic PMSKA caching for WPA2 (Related to 802.11r).
-    disable_ht80         | 0x8000000    # Disable HT80 (for AC chipset NICs only)
+    # Enable oportunistic PMSKA caching for WPA2 (Related to 802.11r).
+    80211r_pmska_cache   | 0x4000000
+    # Disable HT80 (for AC chipset NICs only)
+    disable_ht80         | 0x8000000
     ibss_mode            | 0x20000000   # Station should be in IBSS mode.
-    osen_enable          | 0x40000000   # Enable OSEN protocol (OSU Server-only Authentication)
-    disable_roam         | 0x80000000   # Disable automatic station roaming based on scan results.
+    # Enable OSEN protocol (OSU Server-only Authentication)
+    osen_enable          | 0x40000000
+    # Disable automatic station roaming based on scan results.
+    disable_roam         | 0x80000000
     ht160_enable         | 0x100000000  # Enable HT160 mode.
-    disable_fast_reauth  | 0x200000000  # Disable fast_reauth option for virtual stations.
+    # Disable fast_reauth option for virtual stations.
+    disable_fast_reauth  | 0x200000000
     mesh_mode            | 0x400000000  # Station should be in MESH mode.
-    power_save_enable    | 0x800000000  # Station should enable power-save.  May not work in all drivers/configurations.
+    # Station should enable power-save.  May not work in all drivers/configurations.
+    power_save_enable    | 0x800000000
     create_admin_down    | 0x1000000000 # Station should be created admin-down.
-    wds-mode             | 0x2000000000 # WDS station (sort of like a lame mesh), not supported on ath10k
-    no-supp-op-class-ie  | 0x4000000000 # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
-    txo-enable           | 0x8000000000 # Enable/disable tx-offloads, typically managed by set_wifi_txo command
+    # WDS station (sort of like a lame mesh), not supported on ath10k
+    wds-mode             | 0x2000000000
+    # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
+    no-supp-op-class-ie  | 0x4000000000
+    # Enable/disable tx-offloads, typically managed by set_wifi_txo command
+    txo-enable           | 0x8000000000
     use-wpa3             | 0x10000000000 # Enable WPA-3 (SAE Personal) mode.
     use-bss-transition   | 0x80000000000 # Enable BSS transition.
     disable-twt          | 0x100000000000 # Disable TWT mode
-        
+
 For wifi_extra_keys syntax :
-    telnet <lanforge ip> 4001 
-    type: help set_wifi_extra 
+    telnet <lanforge ip> 4001
+    type: help set_wifi_extra
 wifi_extra keys:
                 key_mgmt  (Key Mangement)
                 pairwise  (Pairwise Ciphers)
-                group   (Group Ciphers) 
+                group   (Group Ciphers)
                 psk     (WPA PSK)
                 wep_key
                 ca_cert (CA Cert File)
@@ -2865,11 +2939,11 @@ wifi_extra keys:
                 anqp_3gpp_cell_net ()
 
                 ieee80211w :   0,1,2
-        
+
 Multicast traffic :
-        Multicast traffic default IGMP Address in the range of 224.0.0.0 to 239.255.255.255, 
-        so I have provided 224.9.9.9 as IGMP address and IGMP Dest port as 9999 and MIN-IP PORT as 9999. 
-        these values must be same on the eth1(server side) and client side, then the traffic will run.  
+        Multicast traffic default IGMP Address in the range of 224.0.0.0 to 239.255.255.255,
+        so I have provided 224.9.9.9 as IGMP address and IGMP Dest port as 9999 and MIN-IP PORT as 9999.
+        these values must be same on the eth1(server side) and client side, then the traffic will run.
 
 ===============================================================================
  ** FURTHER INFORMATION **
@@ -3209,9 +3283,11 @@ INCLUDE_IN_README: False
     test_l3_parser.add_argument('--no_cleanup', help='Do not cleanup before exit',
                                 action='store_true')
 
-    test_l3_parser.add_argument('--cleanup_cx', help='cleanup cx before exit', action='store_true')
+    test_l3_parser.add_argument(
+        '--cleanup_cx', help='cleanup cx before exit', action='store_true')
 
-    test_l3_parser.add_argument('--csv_data_to_report', help='collected interval data in csv for each cx will be put in report', action='store_true')
+    test_l3_parser.add_argument(
+        '--csv_data_to_report', help='collected interval data in csv for each cx will be put in report', action='store_true')
 
     test_l3_parser.add_argument('--no_stop_traffic', help='leave traffic running',
                                 action='store_true')
@@ -3677,8 +3753,8 @@ INCLUDE_IN_README: False
                 else:
                     ieee80211w_list.append('Optional')
 
-                '''            
-                # wifi extra configuration 
+                '''
+                # wifi extra configuration
                 key_mgmt_list.append(key_mgmt)
                 pairwise_list.append(pairwise)
                 group_list.append(group)
@@ -4076,13 +4152,78 @@ INCLUDE_IN_README: False
         }
         report.test_setup_table(value=radio_, test_setup_data=radio_info)
 
+    # TODO move the graphing to the class so it may be called as a service
+
     # Graph TOS data
     # Once the data is stopped can collect the data for the cx's both multi cast and uni cast
     # if the traffic is still running will gather the running traffic
     ip_var_test.evaluate_qos()
 
+    # graph BK A
+    # try to do as a loop
+    tos_list = ['BK','BE','VI','VO']
 
-    
+    for tos in tos_list:
+        if (len(ip_var_test.client_dict[tos]["ul_A"]) != 0 ) or len(ip_var_test.client_dict[tos]["dl_A"] != 0):
+            dataset_list = [ip_var_test.client_dict[tos]["ul_A"], ip_var_test.client_dict[tos]["dl_A"]]
+            x_fig_size = 12
+            y_fig_size = len(ip_var_test.client_dict[tos]["clients_A"]) * .35 + 2
+
+            graph= lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
+                                _xaxis_name="Throughput in bps",
+                                _yaxis_name="Client names",
+                                _yaxis_categories=ip_var_test.client_dict[tos]["clients_A"],
+                                _graph_image_name=f"{tos}_A",
+                                _label=ip_var_test.client_dict[tos]['labels'],
+                                _color_name=ip_var_test.client_dict[tos]['colors'],
+                                _color_edge=['black'],
+                                _graph_title=f"Individual {tos} side a traffic",
+                                _title_size=6,
+                                _figsize=(x_fig_size,y_fig_size),
+                                _show_bar_value= True,
+                                _enable_csv=True,
+                                _text_font=5,
+                                _legend_loc="best",
+                                _legend_box=(1.0,1.0)
+                                )
+            graph_png = graph.build_bar_graph_horizontal()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.build_graph()
+
+
+    for tos in tos_list:
+        if (len(ip_var_test.client_dict[tos]["ul_B"]) != 0 ) or len(ip_var_test.client_dict[tos]["dl_B"] != 0):
+            dataset_list = [ip_var_test.client_dict[tos]["ul_B"], ip_var_test.client_dict[tos]["dl_B"]]
+            x_fig_size = 11
+            y_fig_size = len(ip_var_test.client_dict[tos]["clients_B"]) * .35 + 1
+
+            graph= lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
+                                _xaxis_name="Throughput in bps",
+                                _yaxis_name="Client names",
+                                _yaxis_categories=ip_var_test.client_dict[tos]["clients_B"],
+                                _graph_image_name=f"{tos}_B",
+                                _label=ip_var_test.client_dict[tos]['labels'],
+                                _color_name=ip_var_test.client_dict[tos]['colors'],
+                                _color_edge=['black'],
+                                _graph_title=f"Individual {tos} side b (WIFI) traffic",
+                                _title_size=10,
+                                _figsize=(x_fig_size,y_fig_size),
+                                _show_bar_value= True,
+                                _enable_csv=True,
+                                _text_font=6,
+                                _legend_loc="best",
+                                _legend_box=(1.0,1.0)
+                                )
+            graph_png = graph.build_bar_graph_horizontal()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.build_graph()
+
+
+    # create graph
+
+
     # L3 total traffic
     report.set_table_title(
         "Total Layer 3 Cross-Connect Traffic across all Stations")
@@ -4091,19 +4232,21 @@ INCLUDE_IN_README: False
     report.build_table()
 
     # empty dictionarys evaluate to false , placing tables in output
-    if bool(ip_var_test.dl_port_csv_files ):
+    if bool(ip_var_test.dl_port_csv_files):
         for key, value in ip_var_test.dl_port_csv_files.items():
             if args.csv_data_to_report:
-                # read the csv file 
-                report.set_table_title("Layer 3 Cx Traffic  {key}".format(key=key))
+                # read the csv file
+                report.set_table_title(
+                    "Layer 3 Cx Traffic  {key}".format(key=key))
                 report.build_table_title()
                 report.set_table_dataframe_from_csv(value.name)
                 report.build_table()
 
-            # read in column heading and last line 
+            # read in column heading and last line
             df = pd.read_csv(value.name)
             last_row = df.tail(1)
-            report.set_table_title("Layer 3 Cx Traffic Last Reporting Interval {key}".format(key=key))
+            report.set_table_title(
+                "Layer 3 Cx Traffic Last Reporting Interval {key}".format(key=key))
             report.build_table_title()
             report.set_table_dataframe(last_row)
             report.build_table()
