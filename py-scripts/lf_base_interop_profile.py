@@ -25,6 +25,7 @@ import json
 import argparse
 import time
 import logging
+import pandas as pd
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -192,7 +193,7 @@ class BaseInteropWifi(Realm):
         errors_warnings = []
 
         adb_key = self.session.get_session_based_key()
-        self.session.logger.error("adb_key: " + adb_key)
+        # self.session.logger.error("adb_key: " + adb_key)
         eid = self.name_to_eid(device)
         # print("ADB POST....")
         self.command.post_adb(shelf=eid[0],
@@ -432,7 +433,7 @@ class BaseInteropWifi(Realm):
         if self.debug:
             print("====== ====== destination [%s] dur[%s] user_key[%s] " %
                   (self.log_destination, self.log_dur, user_key))
-            self.session.logger.register_method_name("json_post")
+            # self.session.logger.register_method_name("json_post")
         json_response = []
         self.command.post_log_capture(shelf=eid[0],
                                       resource=eid[1],
@@ -590,7 +591,107 @@ class UtilityInteropWifi(BaseInteropWifi):
             }
             # print("Network info:", network_info_dict)
         return network_info_dict
+    
+class RealDevice(Realm):
+    def __init__(self,
+                 manager_ip=None,
+                 port=8080,
+                 _debug_on=False,
+                 _exit_on_error=False):
+        super().__init__(lfclient_host=manager_ip,
+                         debug_=_debug_on)
+        self.manager_ip = manager_ip
+        self.manager_port = port
+        self.devices = []
+        self.devices_data = []
+        self.selected_device_eids = []
+        self.selected_devices = []
+        self.selected_macs = []
+        self.report_labels = []
+    
+    # getting data of all real devices
+    def get_devices(self):
+        real_stations = []
+        real_stations_with_data = {}
+        
+        # query all resources
+        resources = self.json_get('/resource/all')['resources']
+        non_phantom_resources = []
+        non_phantom_resources_with_data = []
+        for resource in resources:
+            port = list(resource.keys())[0]
+            
+            # filtering LANforges from mobiles and computers and checking the phantom state
+            #NOTE len(port)!=3 means that it checks for LANforge and clustered LANforges(1.1, 1.2, 1.3, .., 1.9).
+            #NOTE So, this logic needs modification if more than 8 LANforges are clustered (1.10, 1.11 ...).
+            if(len(port) != 3 and not resource[port]['phantom']):
+                non_phantom_resources.append(port)
+                non_phantom_resources_with_data.append(resource)
+        # print(non_phantom_resources)
 
+        # query all ports
+        valid_ports = []
+        valid_ports_with_data = {}
+        ports = self.json_get('/ports/all')['interfaces']
+        for port_data in ports:
+            port = list(port_data.keys())[0]
+
+            #filtering non-phantom and non-down ports with parent dev as wiphy0
+            if(not (port_data[port]['phantom'] or port_data[port]['down']) and port_data[port]['parent dev'] == 'wiphy0'):
+                valid_ports.append(port)
+                valid_ports_with_data.update(port_data)
+        # print(valid_ports)
+
+        # getting real stations data from resource mgr data
+        for station in valid_ports:
+            station_split = self.name_to_eid(station)
+            if('{}.{}'.format(station_split[0], station_split[1]) in non_phantom_resources):
+                real_stations.append(station)
+
+        # getting real stations data from resource mgr data
+        for station in real_stations:
+            for resource in non_phantom_resources_with_data:
+                station_split = self.name_to_eid(station)
+                if('{}.{}'.format(station_split[0], station_split[1]) in list(resource.keys())[0]):
+                    real_stations_with_data[station] = resource[list(resource.keys())[0]]
+                    real_stations_with_data[station].update(valid_ports_with_data[station])
+        self.devices = real_stations
+        self.devices_data = real_stations_with_data
+        return(self.devices)
+    
+    # querying the user the required mobiles to test
+    def query_user(self):
+        print('The available real devices are:')
+        # print('Port\t\thw version\t\t\tMAC')
+        t_devices = {}
+        for device, device_details in self.devices_data.items():
+            t_devices[device_details['eid']] = {
+                'Port Name': device,
+                'hw version': device_details['hw version'],
+                'MAC': device_details['mac']
+            }
+            # print('{}\t{}\t\t\t{}'.format(device, device_details['hw version'], device_details['mac']))
+        df = pd.DataFrame(data=t_devices).transpose()
+        print(df)
+
+        self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11):').split(',')
+        print('You have selected the below devices for testing')
+        # print('Port\t\thw version\t\t\tMAC')
+        selected_t_devices = {}
+        for selected_device in self.selected_device_eids:
+            for device, device_details in self.devices_data.items():
+                if(selected_device in device):
+                    selected_t_devices[device] = {
+                        'Eid': selected_device,
+                        'hw version': self.devices_data[device]['hw version'],
+                        'MAC': self.devices_data[device]['mac']
+                    }
+                    self.selected_devices.append(device)
+                    self.selected_macs.append(self.devices_data[device]['mac'])
+                    self.report_labels.append('{} {} {}'.format(selected_device, [ 'Win' if 'Win' in self.devices_data[device]['hw version'] else 'Lin' if 'Lin' in self.devices_data[device]['hw version'] else 'Mac' if 'Mac' in self.devices_data[device]['hw version'] else 'android'][0], [ self.devices_data[device]['user'] if self.devices_data[device]['user'] != '' else self.devices_data[device]['hostname'] ][0])[:25])
+        df = pd.DataFrame(data=selected_t_devices).transpose()
+        print(df)
+        return [self.selected_devices, self.report_labels, self.selected_macs]
 
 def main():
     desc = """standard library which supports different functionality of interop
