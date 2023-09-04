@@ -731,10 +731,39 @@ class L3VariableTime(Realm):
         # Data used for graphing the TOS bar graphs
         # currently place all types of traffic together.
         # TODO separate out Multi cast and Uni cast
-        self.bk_tos_list = []
-        self.be_tos_list = []
-        self.vi_tos_list = []
-        self.vo_tos_list = []
+        self.bk_clients_A = []
+        self.bk_tos_ul_A = []
+        self.bk_tos_dl_A = []
+
+        self.bk_clients_B = []
+        self.bk_tos_ul_B = []
+        self.bk_tos_dl_B = []
+
+        self.be_clients_A = []
+        self.be_tos_ul_A = []
+        self.be_tos_dl_A = []
+
+        self.be_clients_B = []
+        self.be_tos_ul_B = []
+        self.be_tos_dl_B = []
+
+        self.vi_clients_A = []
+        self.vi_tos_ul_A = []
+        self.vi_tos_dl_A = []
+
+        self.vi_clients_B = []
+        self.vi_tos_ul_B = []
+        self.vi_tos_dl_B = []
+
+        self.vo_clients_A = []
+        self.vo_tos_ul_A = []
+        self.vo_tos_dl_A = []
+
+        self.vo_clients_B = []
+        self.vo_tos_ul_B = []
+        self.vo_tos_dl_B = []
+
+        self.client_dict = {}
 
         # AP information
         self.ap = None
@@ -2175,9 +2204,94 @@ class L3VariableTime(Realm):
             logger.info("endp_data type {endp_type} endp_data {endp_data}".format(endp_type=type(endp_data),endp_data=endp_data))
             endp_data_key = list(endp_data.keys())[0]  # The dictionary only has one key
             logger.info("endpoint_data key: {key}  name: {name} a/b {ab} rx rate {rx_rate}".format(
-                key=endp_data_key,name=endp_data[endp_data_key]['name'],ab=endp_data[endp_data_key]['a/b'],rx_rate=endp_data[endp_data_key]['rx rate']))
-            #logger.info("endpoint_data key: {key} data: {data} ".format(key=key,data=self.endp_data[key]))
-            #logger.info("endpoint_data key: {key} data: {data} ".format(key=key,data=self.endp_data[key]))
+                key=endp_data_key,tos=endp_data[endp_data_key]['tos'],name=endp_data[endp_data_key]['name'],ab=endp_data[endp_data_key]['a/b'],rx_rate=endp_data[endp_data_key]['rx rate']))
+
+            # Gather data for upload , download for the four data types BK, BE, VI, VO, place the 
+            # the data_set will be the upload and download rates for each client
+            # the y_axis values are the clients
+            # TODO how many data sets
+            if endp_data[endp_data_key]['tos'] =='BK':
+                if endp_data[endp_data_key]['a/b']  == "A":
+                    self.bk_clients_A.append(endp_data[endp_data_key]['name'])
+                    self.bk_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
+                    self.bk_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                if endp_data[endp_data_key]['a/b']  == "B":
+                    self.bk_clients_B.append(endp_data[endp_data_key]['name'])
+                    self.bk_tos_ul_B.append(endp_data[endp_data_key]["tx rate"])
+                    self.bk_tos_dl_B.append(endp_data[endp_data_key]["rx rate"])
+
+            elif endp_data[endp_data_key]['tos'] =='BE':
+                if endp_data[endp_data_key]['a/b']  == "A":
+                    self.be_clients_A.append(endp_data[endp_data_key]['name'])
+                    self.be_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
+                    self.be_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                if endp_data[endp_data_key]['a/b']  == "B":
+                    self.be_clients_B.append(endp_data[endp_data_key]['name'])
+                    self.be_tos_ul_B.append(endp_data[endp_data_key]["tx rate"])
+                    self.be_tos_dl_B.append(endp_data[endp_data_key]["rx rate"])
+
+            elif endp_data[endp_data_key]['tos'] =='VI':
+                if endp_data[endp_data_key]['a/b']  == "A":
+                    self.vi_clients_A.append(endp_data[endp_data_key]['name'])
+                    self.vi_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
+                    self.vi_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                if endp_data[endp_data_key]['a/b']  == "B":
+                    self.vi_clients_B.append(endp_data[endp_data_key]['name'])
+                    self.vi_tos_ul_B.append(endp_data[endp_data_key]["tx rate"])
+                    self.vi_tos_dl_B.append(endp_data[endp_data_key]["rx rate"])
+
+            elif endp_data[endp_data_key]['tos'] =='VO':
+                if endp_data[endp_data_key]['a/b']  == "A":
+                    self.vo_clients_A.append(endp_data[endp_data_key]['name'])
+                    self.vo_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
+                    self.vo_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                if endp_data[endp_data_key]['a/b']  == "B":
+                    self.vo_clients_B.append(endp_data[endp_data_key]['name'])
+                    self.vo_tos_ul_B.append(endp_data[endp_data_key]["tx rate"])
+                    self.vo_tos_dl_B.append(endp_data[endp_data_key]["rx rate"])
+
+        self.client_dict = {
+            "BK" :{
+                "clients_A": self.bk_clients_A,
+                "ul_A": self.bk_tos_ul_A,
+                "dl_A": self.bk_tos_dl_A,
+                "clients_B": self.bk_clients_B,
+                "ul_B": self.bk_tos_ul_B,
+                "dl_B": self.bk_tos_dl_B,
+                "colors":['orange','wheat'],
+                "labels":['Download','Upload']
+            },
+            "BE" :{
+                "clients_A": self.be_clients_A,
+                "ul_A": self.be_tos_ul_A,
+                "dl_A": self.be_tos_dl_A,
+                "clients_B": self.be_clients_B,
+                "ul_B": self.be_tos_ul_B,
+                "dl_B": self.be_tos_dl_B,
+                "colors":['lightcoral','mistyrose'],
+                "labels":['Download','Upload']
+            },
+            "VI" :{
+                "clients_A": self.vi_clients_A,
+                "ul_A": self.vi_tos_ul_A,
+                "dl_A": self.vi_tos_dl_A,
+                "clients_B": self.vi_clients_B,
+                "ul_B": self.vi_tos_ul_B,
+                "dl_B": self.vi_tos_dl_B,
+                "colors":['steelblue','lightskyblue'],
+                "labels":['Download','Upload']
+            },
+            "VO" :{
+                "clients_A": self.vo_clients_A,
+                "ul_A": self.vo_tos_ul_A,
+                "dl_A": self.vo_tos_dl_A,
+                "clients_B": self.vo_clients_B,
+                "ul_B": self.vo_tos_ul_B,
+                "dl_B": self.vo_tos_dl_B,
+                "colors":['green','lightgreen'],
+                "labels":['Download','Upload']
+            }
+        }
 
         logger.info("printed the collected data")
 
