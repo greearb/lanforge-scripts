@@ -87,7 +87,8 @@ class FtpTest(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta=None,radio="",
                  dut_ssid=None, dut_security=None, dut_passwd=None, file_size=None, band=None, twog_radio=None,
                  fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False,ap_name="",
-                 direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None,clients_type= "Virtual",real_client_list=[],
+                 direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None,
+                 lf_username="lanforge",lf_password="lanforge",clients_type= "Virtual",real_client_list=[],
                  working_resources_list=[],hw_list=[],windows_list=[],mac_list=[],linux_list=[],android_list=[],
                  eid_list=[],mac_id_list=[],devices_available=[],mac_id1_list=[],user_list=[],input_devices_list=[],
                  real_client_list1=[],uc_avg=[],url_data=[],channel_list=[],mode_list=[],cx_list=[]):
@@ -106,6 +107,8 @@ class FtpTest(LFCliBase):
         self.password = dut_passwd
         self.requests_per_ten = 600
         self.band = band
+        self.lf_username = lf_username
+        self.lf_password = lf_password
         self.kpi_csv = kpi_csv
         self.kpi_results = kpi_results
         self.file_size = file_size
@@ -396,8 +399,8 @@ class FtpTest(LFCliBase):
                         self.cx_profile.create(ports=self.station_profile.station_names, ftp_ip=ip_upstream +
                                                 "/ftp_test.txt",
                                                 sleep_time=.5, debug_=self.debug, suppress_related_commands_=True,timeout=1000,ftp=True,
-                                                user="lanforge",
-                                                passwd="lanforge", source="",proxy_auth_type=0x200) 
+                                                user=self.lf_username,
+                                                passwd=self.lf_password, source="",proxy_auth_type=0x200) 
                         
             elif self.direction == "Upload":
                 dict_sta_and_ip = {}
@@ -423,7 +426,7 @@ class FtpTest(LFCliBase):
                 for client_num in range(len(self.station_list)):
                     self.cx_profile.create(ports=eth_list, ftp_ip=ip[client_num] + "/ftp_test.txt", sleep_time=.5,
                                             debug_=self.debug, suppress_related_commands_=True,timeout=1000,ftp=True,
-                                            user="lanforge", passwd="lanforge",
+                                            user=self.lf_username, passwd=self.lf_password,
                                             source="", upload_name=client_list[client_num],proxy_auth_type=0x200)
 
         # check Both band present then build stations with another station list
@@ -461,8 +464,8 @@ class FtpTest(LFCliBase):
                         self.cx_profile.create(ports=self.input_devices_list, ftp_ip=ip_upstream +
                                                 "/ftp_test.txt",
                                                 sleep_time=.5, debug_=self.debug, suppress_related_commands_=True, interop=True,timeout=1000,ftp=True,
-                                                user="lanforge",
-                                                passwd="lanforge", source="",proxy_auth_type=0x200)
+                                                user=self.lf_username,
+                                                passwd=self.lf_password, source="",proxy_auth_type=0x200)
 
             elif self.direction == "Upload":
                 # list of upstream port
@@ -484,7 +487,7 @@ class FtpTest(LFCliBase):
                 for client in range(len(self.input_devices_list)):
                     self.cx_profile.create(ports=eth_list, ftp_ip=ip[client] + "/ftp_test.txt", sleep_time=.5,
                                             debug_=self.debug, suppress_related_commands_=True,timeout=1000, interop=True,ftp=True,
-                                            user="lanforge", passwd="lanforge",
+                                            user=self.lf_username, passwd=self.lf_password,
                                             source="", upload_name=self.input_devices_list[client],proxy_auth_type=0x200)
             
             # check Both band present then build stations with another station list
@@ -1068,6 +1071,7 @@ class FtpTest(LFCliBase):
         "No of Devices" : no_of_stations,
         "File size" : self.file_size,
         "File location" : "/home/lanforge",
+        "Traffic Direction" : self.direction,
         "Traffic Duration ": duration
     }
         self.report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
@@ -1165,7 +1169,7 @@ class FtpTest(LFCliBase):
                         " Channel" : self.channel_list,
                         " Mode" : self.mode_list,
                         " No of times File downloaded " : self.url_data,
-                        " Time Taken to Download file" : self.uc_avg
+                        " Time Taken to Download file (ms)" : self.uc_avg
                     }
         dataframe1 = pd.DataFrame(dataframe)
         self.report.set_table_dataframe(dataframe1)
@@ -1450,6 +1454,8 @@ INCLUDE_IN_README: False
     optional.add_argument('--ap_ip', type=str, help='Enter ip of accesspoint or router')
     optional.add_argument('--twog_radio', type=str, help='specify radio for 2.4G clients [default = wiphy1]', default='wiphy1')
     optional.add_argument('--fiveg_radio', type=str, help='specify radio for 5G client [default = wiphy0]', default='wiphy0')
+    parser.add_argument('--lf_username',help="Enter the lanforge user name. Example : 'lanforge' ", default= "lanforge")
+    parser.add_argument('--lf_password',help="Enter the lanforge password. Example : 'lanforge' ",default="lanforge")
     #parser.add_argument('--twog_duration', nargs="+", help='Pass and Fail duration for 2.4G band in minutes')
     #parser.add_argument('--fiveg_duration', nargs="+", help='Pass and Fail duration for 5G band in minutes')
     #parser.add_argument('--both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
@@ -1589,6 +1595,8 @@ INCLUDE_IN_README: False
                               direction=direction,
                               twog_radio=args.twog_radio,
                               fiveg_radio=args.fiveg_radio,
+                              lf_username=args.lf_username,
+                              lf_password=args.lf_password,
                               #duration=pass_fail_duration(band, file_size),
                               traffic_duration=args.traffic_duration,
                               ssh_port=args.ssh_port,
