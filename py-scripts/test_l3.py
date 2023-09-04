@@ -609,6 +609,8 @@ class L3VariableTime(Realm):
                  ieee80211w_list=[]
                  ):
 
+        self.endp_data = {}
+        self.endpoint_data = {}
         self.eth_endps = []
         self.cx_names = []
         self.total_stas = 0
@@ -1342,8 +1344,8 @@ class L3VariableTime(Realm):
                     if etype == "mc_udp" or etype == "mc_udp6":
                         for _tos in self.tos:
                             logger.info("Creating Multicast connections for endpoint type:  {etype} TOS: {tos}".format(etype=etype,tos=_tos))
-                            self.multicast_profile.create_mc_tx(etype, self.side_b, tos=_tos)
-                            self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names, tos=_tos)
+                            self.multicast_profile.create_mc_tx(etype, self.side_b, tos=_tos, add_tos_to_name=True)
+                            self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names, tos=_tos, add_tos_to_name=True)
                     else:
                         for _tos in self.tos:
                             logger.info("Creating connections for endpoint type: {etype} TOS: {tos}  cx-count: {cx_count}".format(
@@ -2147,6 +2149,17 @@ class L3VariableTime(Realm):
 
             self.csv_results_writer.writerow(row)
             self.csv_results_file.flush()
+
+    def evaluate_qos(self):
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/endp/all | json_pp
+        self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+pkts+ll,rx+rate,a/b,tos')
+        self.endp_data.pop("handler")
+        self.endp_data.pop("uri")
+        self.endpoint_data = self.endp_data['endpoint']
+        
+
+
+
 
     # quiesce the cx : quiesce a test at the end, which means stop transmitter
     # but leave received going to drain packets from the network and get better drop% calculations.
@@ -3831,6 +3844,12 @@ INCLUDE_IN_README: False
         # Quisce cx
         else:
             ip_var_test.stop()
+
+    # Once the data is stopped can collect the data for the cx's both multi cast and uni cast
+    # if the traffic is still running will gather the running traffic
+    ip_var_test.evaluate_qos()
+    
+
     if not ip_var_test.passes():
         logger.warning("Test Ended: There were Failures")
         logger.warning(ip_var_test.get_fail_message())
