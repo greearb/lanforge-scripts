@@ -1344,8 +1344,8 @@ class L3VariableTime(Realm):
                     if etype == "mc_udp" or etype == "mc_udp6":
                         for _tos in self.tos:
                             logger.info("Creating Multicast connections for endpoint type:  {etype} TOS: {tos}".format(etype=etype,tos=_tos))
-                            self.multicast_profile.create_mc_tx(etype, self.side_b, tos=_tos, add_tos_to_name=True)
-                            self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names, tos=_tos, add_tos_to_name=True)
+                            self.multicast_profile.create_mc_tx(etype, self.side_b, tos=_tos, add_tos_to_name=False)
+                            self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names, tos=_tos, add_tos_to_name=False)
                     else:
                         for _tos in self.tos:
                             logger.info("Creating connections for endpoint type: {etype} TOS: {tos}  cx-count: {cx_count}".format(
@@ -3850,23 +3850,6 @@ INCLUDE_IN_README: False
     ip_var_test.evaluate_qos()
     
 
-    if not ip_var_test.passes():
-        logger.warning("Test Ended: There were Failures")
-        logger.warning(ip_var_test.get_fail_message())
-
-    if args.no_cleanup or args.no_stop_traffic:
-        logger.info(
-            "--no_cleanup or --no_stop_traffic set stations will be left intack")
-    else:
-        ip_var_test.cleanup()
-
-    if args.cleanup_cx:
-        logger.info("cleaning layer 3 cx")
-        ip_var_test.cleanup_cx()
-
-    if ip_var_test.passes():
-        test_passed = True
-        logger.info("Full test passed, all connections increased rx bytes")
 
     # Results
     csv_results_file = ip_var_test.get_results_csv()
@@ -3959,6 +3942,8 @@ INCLUDE_IN_README: False
         }
         report.test_setup_table(value=radio_, test_setup_data=radio_info)
 
+    # Graph TOS data
+    
     # L3 total traffic
     report.set_table_title(
         "Total Layer 3 Cross-Connect Traffic across all Stations")
@@ -3991,6 +3976,26 @@ INCLUDE_IN_README: False
     if platform.system() == 'Linux':
         report.write_pdf_with_timestamp(
             _page_size='A3', _orientation='Landscape')
+
+    # TODO move to after reporting
+    if not ip_var_test.passes():
+        logger.warning("Test Ended: There were Failures")
+        logger.warning(ip_var_test.get_fail_message())
+
+    if args.no_cleanup or args.no_stop_traffic:
+        logger.info(
+            "--no_cleanup or --no_stop_traffic set stations will be left intack")
+    else:
+        ip_var_test.cleanup()
+
+    if args.cleanup_cx:
+        logger.info("cleaning layer 3 cx")
+        ip_var_test.cleanup_cx()
+
+    if ip_var_test.passes():
+        test_passed = True
+        logger.info("Full test passed, all connections increased rx bytes")
+
 
     if test_passed:
         ip_var_test.exit_success()
