@@ -728,6 +728,14 @@ class L3VariableTime(Realm):
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
+        # Data used for graphing the TOS bar graphs
+        # currently place all types of traffic together.
+        # TODO separate out Multi cast and Uni cast
+        self.bk_tos_list = []
+        self.be_tos_list = []
+        self.vi_tos_list = []
+        self.vo_tos_list = []
+
         # AP information
         self.ap = None
         self.ap_obj = None
@@ -2152,10 +2160,28 @@ class L3VariableTime(Realm):
 
     def evaluate_qos(self):
         # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/endp/all | json_pp
-        self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+pkts+ll,rx+rate,a/b,tos')
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos | json_pp
+
+        # for port curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/port/all | json_pp
+        self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos')
         self.endp_data.pop("handler")
         self.endp_data.pop("uri")
-        self.endpoint_data = self.endp_data['endpoint']
+        self.endpoint_data_list = self.endp_data['endpoint']
+        logger.info("self.endpoint_data type: {dtype} data: {data}".format(dtype=type(self.endpoint_data),data=self.endpoint_data))
+        rate_down= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
+        rate_up= str(str(int(self.cx_profile.side_a_min_bps) / 1000000) +' '+'Mbps')
+
+        for endp_data in self.endp_data['endpoint']:
+            logger.info("endp_data type {endp_type} endp_data {endp_data}".format(endp_type=type(endp_data),endp_data=endp_data))
+            endp_data_key = list(endp_data.keys())[0]  # The dictionary only has one key
+            logger.info("endpoint_data key: {key}  name: {name} a/b {ab} rx rate {rx_rate}".format(
+                key=endp_data_key,name=endp_data[endp_data_key]['name'],ab=endp_data[endp_data_key]['a/b'],rx_rate=endp_data[endp_data_key]['rx rate']))
+            #logger.info("endpoint_data key: {key} data: {data} ".format(key=key,data=self.endp_data[key]))
+            #logger.info("endpoint_data key: {key} data: {data} ".format(key=key,data=self.endp_data[key]))
+
+        logger.info("printed the collected data")
+
+
         
 
 
@@ -3845,12 +3871,6 @@ INCLUDE_IN_README: False
         else:
             ip_var_test.stop()
 
-    # Once the data is stopped can collect the data for the cx's both multi cast and uni cast
-    # if the traffic is still running will gather the running traffic
-    ip_var_test.evaluate_qos()
-    
-
-
     # Results
     csv_results_file = ip_var_test.get_results_csv()
     report.set_title("Test Layer 3 Cross-Connect Traffic: test_l3.py ")
@@ -3943,6 +3963,11 @@ INCLUDE_IN_README: False
         report.test_setup_table(value=radio_, test_setup_data=radio_info)
 
     # Graph TOS data
+    # Once the data is stopped can collect the data for the cx's both multi cast and uni cast
+    # if the traffic is still running will gather the running traffic
+    ip_var_test.evaluate_qos()
+
+
     
     # L3 total traffic
     report.set_table_title(
