@@ -165,6 +165,7 @@ class MULTICASTProfile(LFCliBase):
                     endp_type,
                     side_tx, 
                     tos=None,
+                    add_tos_to_name=False,
                     suppress_related_commands=None, 
                     debug_=False):
         if self.debug:
@@ -174,7 +175,10 @@ class MULTICASTProfile(LFCliBase):
         side_tx_shelf = side_tx_info[0]
         side_tx_resource = side_tx_info[1]
         side_tx_port = side_tx_info[2]
-        side_tx_name = "%smtx-%s-%i" % (self.name_prefix, side_tx_port, len(self.created_mc))
+        if tos and add_tos_to_name:
+            side_tx_name = "%smtx-%s-%s-%i" % (self.name_prefix, tos, side_tx_port, len(self.created_mc))
+        else:
+            side_tx_name = "%smtx-%s-%i" % (self.name_prefix, side_tx_port, len(self.created_mc))
 
         # add_endp mcast-xmit-sta 1 1 side_tx mc_udp -1 NO 4000000 0 NO 1472 0 INCREASING NO 32 0 0
         json_data = {
@@ -226,6 +230,7 @@ class MULTICASTProfile(LFCliBase):
                     endp_type, 
                     side_rx,
                     tos=None,
+                    add_tos_to_name=False,
                     suppress_related_commands=None, 
                     debug_=False):
         if self.debug:
@@ -238,7 +243,10 @@ class MULTICASTProfile(LFCliBase):
             side_rx_shelf = side_rx_info[0]
             side_rx_resource = side_rx_info[1]
             side_rx_port = side_rx_info[2]
-            side_rx_name = "%smrx-%s-%i" % (self.name_prefix, side_rx_port, len(self.created_mc))
+            if tos and add_tos_to_name:
+                side_rx_name = "%smrx-%s-%s-%i" % (self.name_prefix, tos, side_rx_port, len(self.created_mc))
+            else:
+                side_rx_name = "%smrx-%s-%i" % (self.name_prefix, side_rx_port, len(self.created_mc))
             # add_endp mcast-rcv-sta-001 1 1 sta0002 mc_udp 9999 NO 0 0 NO 1472 0 INCREASING NO 32 0 0
             json_data = {
                 'alias': side_rx_name,
