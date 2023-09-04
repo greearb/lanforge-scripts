@@ -113,7 +113,7 @@ class HTTPProfile(LFCliBase):
 
     def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
                https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None,
-               https_ip=None, interop=None,timeout=10):
+               https_ip=None, interop=None,timeout=10,proxy_auth_type=0x2200):
         if ports is None:
             ports = []
         cx_post_data = []
@@ -237,7 +237,7 @@ class HTTPProfile(LFCliBase):
                         "timeout": timeout,
                         "url_rate": self.requests_per_ten,
                         "url": url,
-                        "proxy_auth_type": 0x2200,
+                        "proxy_auth_type": proxy_auth_type,
                         "quiesce_after": self.quiesce_after,
                         "max_speed": self.max_speed
                     }
@@ -255,7 +255,7 @@ class HTTPProfile(LFCliBase):
                         "ssl_cert_fname": "ca-bundle.crt",
                         "proxy_port": 0,
                         "max_speed": self.max_speed,
-                        "proxy_auth_type": 0x2200,
+                        "proxy_auth_type": proxy_auth_type,
                         "quiesce_after": self.quiesce_after
                     }
                 url = "cli-json/add_l4_endp"
