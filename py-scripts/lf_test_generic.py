@@ -339,9 +339,9 @@ class GenTest():
                 unique_alias=-1
 
         if self.wait_for_action("endp", "appear", 30):
-            System.out.println("Generic endp creation completed.")
+            print("Generic endp creation completed.")
         else:
-            System.out.println("Generic endps were not created.")
+            print("Generic endps were not created.")
                     
     def create_generic_endp(self, eid, type, unique_num):
         #create initial generic endp
@@ -352,7 +352,7 @@ class GenTest():
                                        resource=eid[1],
                                        port=eid[2],
                                        p_type="gen_generic")
-        created_endp.add(unique_alias)
+        self.created_endp.add(unique_alias)
 
         #edit generic endp with type we actually want to run - construct  cmd 
         cmd = ""
@@ -410,7 +410,7 @@ class GenTest():
             cmd = cmd + " -p %d" % self.server_port
         return cmd
 
-    def cleanup(self, sta_list):
+    def cleanup(self):
         logger.info("Cleaning up all cxs and endpoints.")
         #if self.created_cx:
             #for cx_name in self.created_cx:
@@ -463,7 +463,7 @@ class GenTest():
         return False
     
     def wait_for_action(self, object, action, secs_to_wait):
-        for attempt in range(0, int(timeout / 2)):
+        for attempt in range(0, int(secs_to_wait / 2)):
             passed = set()
 
             # Port Manager Actions
@@ -482,7 +482,7 @@ class GenTest():
                             if ((json_response is not None)
                             and (not json_response['interface']['phantom'])
                             and (not json_response['status']['NOT_FOUND'])):
-                                passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
+                                passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
                         elif action == "up":
                             compared_pass = len(self.sta_list)
                             json_response = lanforge_api.post_show_ports(port= port_name,
@@ -492,7 +492,7 @@ class GenTest():
                                                 )
                             #if sta is NOT down
                             if (json_response is not None) and not json_response['interface']['down'] and not json_response['status']['NOT_FOUND']:
-                                passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
+                                passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
 
                         elif action == "disappear":
                             compared_pass = len(self.sta_list)
@@ -502,7 +502,7 @@ class GenTest():
                                                 debug=self.debug
                                                 )
                             if (json_response is not None) and json_response['status']['NOT_FOUND']:
-                                passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
+                                passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
 
                 #loop for existing eids
                 if self.use_existing_eid and action == "up":
@@ -516,7 +516,7 @@ class GenTest():
                                             )
                                                 #our station interface is NOT down
                         if (json_response is not None) and not json_response['interface']['down'] and not json_response['status']['NOT_FOUND']:
-                            passed.add("%s.%s.%s" % (shelf, resource_id, port_name))
+                            passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
     
                 if len(passed) < compared_pass:
                     sleep(2)
@@ -612,7 +612,7 @@ class GenTest():
             else:
                 compared_rept = args.compared_report
 
-    def name_to_eid(eid_input, non_port=False):
+    def name_to_eid(self, eid_input, non_port=False):
         rv = [1, 1, "", ""]
         if (eid_input is None) or (eid_input == ""):
             logger.critical("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid_input)
@@ -835,8 +835,6 @@ def main():
     generic_test.start()
     time.sleep(5) # give traffic a chance to get started.
 
-    resource_id = self.name_to_eid(args.radio)[1]
-
     must_increase_cols = None
     if args.type == "lfping":
         must_increase_cols = ["rx bytes"]
@@ -864,7 +862,7 @@ def main():
     logger.info("Done with connection monitoring")
     generic_test.stop()
 
-    generic_test.cleanup(sta_list)
+    generic_test.cleanup()
 
 
     if len(generic_test.get_passed_result_list()) > 0:
