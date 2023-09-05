@@ -4165,9 +4165,23 @@ INCLUDE_IN_README: False
 
     for tos in tos_list:
         if (len(ip_var_test.client_dict[tos]["ul_A"]) != 0 ) or len(ip_var_test.client_dict[tos]["dl_A"] != 0):
+            min_bps_a = ip_var_test.client_dict["min_bps_a"]
+            min_bps_b = ip_var_test.client_dict["min_bps_b"]
+
             dataset_list = [ip_var_test.client_dict[tos]["ul_A"], ip_var_test.client_dict[tos]["dl_A"]]
-            x_fig_size = 12
-            y_fig_size = len(ip_var_test.client_dict[tos]["clients_A"]) * .35 + 2
+            # TODO possibly explain the wording for upload and download
+            dataset_length = len(ip_var_test.client_dict[tos]["ul_A"])
+            x_fig_size = 15
+            y_fig_size = len(ip_var_test.client_dict[tos]["clients_A"]) * .5 + 4
+
+
+            report.set_obj_html(
+                _obj_title=f"Individual throughput with intended load side a bps: {min_bps_a} sibe b bps: {min_bps_b} /station for traffic {tos} (WiFi).",
+                _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
+                    f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
+                    f"Throughput in Mbps”.")
+            report.build_objective()
+
 
             graph= lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
                                 _xaxis_name="Throughput in bps",
@@ -4178,11 +4192,11 @@ INCLUDE_IN_README: False
                                 _color_name=ip_var_test.client_dict[tos]['colors'],
                                 _color_edge=['black'],
                                 _graph_title=f"Individual {tos} side a traffic",
-                                _title_size=6,
+                                _title_size=10,
                                 _figsize=(x_fig_size,y_fig_size),
                                 _show_bar_value= True,
                                 _enable_csv=True,
-                                _text_font=5,
+                                _text_font=8,
                                 _legend_loc="best",
                                 _legend_box=(1.0,1.0)
                                 )
@@ -4194,9 +4208,22 @@ INCLUDE_IN_README: False
 
     for tos in tos_list:
         if (len(ip_var_test.client_dict[tos]["ul_B"]) != 0 ) or len(ip_var_test.client_dict[tos]["dl_B"] != 0):
+            min_bps_a = ip_var_test.client_dict["min_bps_a"]
+            min_bps_b = ip_var_test.client_dict["min_bps_b"]
+
             dataset_list = [ip_var_test.client_dict[tos]["ul_B"], ip_var_test.client_dict[tos]["dl_B"]]
-            x_fig_size = 11
-            y_fig_size = len(ip_var_test.client_dict[tos]["clients_B"]) * .35 + 1
+            dataset_length = len(ip_var_test.client_dict[tos]["ul_B"])
+
+            x_fig_size = 15
+            y_fig_size = len(ip_var_test.client_dict[tos]["clients_B"]) * .5 + 4
+
+            report.set_obj_html(
+                _obj_title=f"Individual throughput with intended load side A bps: {min_bps_a} sibe B bps: {min_bps_b} /station for traffic {tos} (WiFi).",
+                _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
+                    f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
+                    f"Throughput in Mbps”.")
+            report.build_objective()
+
 
             graph= lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
                                 _xaxis_name="Throughput in bps",
@@ -4211,7 +4238,7 @@ INCLUDE_IN_README: False
                                 _figsize=(x_fig_size,y_fig_size),
                                 _show_bar_value= True,
                                 _enable_csv=True,
-                                _text_font=6,
+                                _text_font=8,
                                 _legend_loc="best",
                                 _legend_box=(1.0,1.0)
                                 )
