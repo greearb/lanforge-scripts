@@ -248,12 +248,42 @@ class GenTest():
             self._fail("Stations failed to get IPs")
             self.exit_fail()
 
-        self.generic_endps_profile.start_cx()
+        #at this point, all endpoints have been created, start all endpoints
+        if self.created_endp:
+            for endp_name in self.created_endp:
+                lanforge_api.post_set_cx_state(cx_name= "CX_" + endp_name,
+                                               cx_state="RUNNING",
+                                               test_mgr="default_tm",
+                                               debug=self.debug)
 
     def stop(self):
+        # set_cx_state default_tm CX_ping-hi STOPPED
         logger.info("Stopping Test...")
-        self.generic_endps_profile.stop_cx()
-        self.station_profile.admin_down()
+        if self.created_endp:
+            for endp_name in self.created_endp:
+                lanforge_api.post_set_cx_state(cx_name= "CX_" + endp_name,
+                                               cx_state="STOPPED",
+                                               test_mgr="default_tm",
+                                               debug=self.debug)
+
+        if self.sta_list:
+            for sta in self.sta_list:
+                eid = self.name_to_eid(sta)
+                self.command.post_set_port(shelf = eid[0],
+                                           resource = eid[1],
+                                           port = eid[2],
+                                           current_flags= 1,  # vs 0x0 = interface up
+                                           interest=8388610, # = current_flags + ifdown
+                                           report_timer= self.report_timer)
+
+        if self.use_existing_eid:
+            for eid in self.sta_list:
+                self.command.post_set_port(shelf = eid[0],
+                                           resource = eid[1],
+                                           port = eid[2],
+                                           current_flags= 1, # vs 0x0 = interface up
+                                           interest=8388610, # = current_flags + ifdown
+                                           report_timer= self.report_timer)
 
     def build(self):
         #TODO move arg validation to validate_sort_args
