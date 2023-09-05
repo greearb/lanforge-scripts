@@ -4164,7 +4164,7 @@ INCLUDE_IN_README: False
     tos_list = ['BK','BE','VI','VO']
 
     for tos in tos_list:
-        if (len(ip_var_test.client_dict[tos]["ul_A"]) != 0 ) or len(ip_var_test.client_dict[tos]["dl_A"] != 0):
+        if (ip_var_test.client_dict[tos]["ul_A"]  and ip_var_test.client_dict[tos]["dl_A"]):
             min_bps_a = ip_var_test.client_dict["min_bps_a"]
             min_bps_b = ip_var_test.client_dict["min_bps_b"]
 
@@ -4207,7 +4207,7 @@ INCLUDE_IN_README: False
 
 
     for tos in tos_list:
-        if (len(ip_var_test.client_dict[tos]["ul_B"]) != 0 ) or len(ip_var_test.client_dict[tos]["dl_B"] != 0):
+        if (ip_var_test.client_dict[tos]["ul_B"] and ip_var_test.client_dict[tos]["dl_B"]):
             min_bps_a = ip_var_test.client_dict["min_bps_a"]
             min_bps_b = ip_var_test.client_dict["min_bps_b"]
 
