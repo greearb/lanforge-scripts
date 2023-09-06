@@ -14740,6 +14740,8 @@ class LFJsonCommand(JsonCommand):
                           resource_flags: str = None,               # System wide flags, often requires a reboot for changes
                           # to take effect.
                           resource_flags_mask: str = None,          # What flags to change. If unset, default is all.
+                          rf_path: str = None,                      # Configure RF path between DUT and this device. See
+                          # above.
                           shelf: int = 1,                           # Name of the Shelf, or <tt>all</tt>. [R][D:1]
                           top_left_x: str = None,                   # X Location for Chamber View.
                           top_left_y: str = None,                   # X Location for Chamber View.
@@ -14773,6 +14775,8 @@ class LFJsonCommand(JsonCommand):
             data["resource_flags"] = resource_flags
         if resource_flags_mask is not None:
             data["resource_flags_mask"] = resource_flags_mask
+        if rf_path is not None:
+            data["rf_path"] = rf_path
         if shelf is not None:
             data["shelf"] = shelf
         if top_left_x is not None:
@@ -14810,6 +14814,7 @@ class LFJsonCommand(JsonCommand):
                                resource=param_map.get("resource"),
                                resource_flags=param_map.get("resource_flags"),
                                resource_flags_mask=param_map.get("resource_flags_mask"),
+                               rf_path=param_map.get("rf_path"),
                                shelf=param_map.get("shelf"),
                                top_left_x=param_map.get("top_left_x"),
                                top_left_y=param_map.get("top_left_y"),
@@ -18039,7 +18044,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_profile
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_profile(self, 
-                          name: str = None,                         # Profile Name or 'ALL'. [R]
+                          name: str = None,                         # Profile Name or 'ALL'. Not specifying a profile is
+                          # same as 'ALL'.
                           response_json_list: list = None,
                           debug: bool = False,
                           errors_warnings: list = None,
@@ -19742,7 +19748,7 @@ class LFJsonQuery(JsonQuery):
 
     When requesting specific column names, they need to be URL encoded:
         api, app-id, device, device-type, model, name, phantom, product, release, 
-        resource-id, timed-out, user-name
+        resource-id, timed-out, unauth, user-name
     Example URL: /adb?fields=api,app-id
 
     Example py-json call (it knows the URL):
@@ -19765,6 +19771,7 @@ class LFJsonQuery(JsonQuery):
         'resource-id': # Identifier for the Resource this ADB device is associated.
         'timed-out':   # The device has timed out too many times while running adb commands. Go
                        # check on it?
+        'unauth':      # The device is un-authorized.  Enable ADB debugging on device to use it.
         'user-name':   # LANforge interop app username for this ADB device.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -22376,8 +22383,8 @@ class LFJsonQuery(JsonQuery):
     When requesting specific column names, they need to be URL encoded:
         app-id, bps-rx-3s, bps-tx-3s, build+date, cli-port, cpu, ct-kernel, ctrl-ip, 
         ctrl-port, eid, entity+id, free+mem, free+swap, gps, hostname, hw+version, 
-        kernel, load, max+if-up, max+staged, mem, phantom, ports, rx+bytes, shelf, 
-        sta+up, sw+version, swap, tx+bytes, user        # hidden columns:
+        kernel, load, max+if-up, max+staged, mem, phantom, ports, rf-path, rx+bytes, 
+        shelf, sta+up, sw+version, swap, tx+bytes, user        # hidden columns:
         timestamp
     Example URL: /resource?fields=app-id,bps-rx-3s
 
@@ -22418,6 +22425,8 @@ class LFJsonQuery(JsonQuery):
         'mem':        # Total memory (Kbytes) on the machine.
         'phantom':    # Is the resource PHANTOM (undiscovered) or not.
         'ports':      # All real and phantom ports on this machine.
+        'rf-path':    # Configure current RF path between this device and the DUT.Informational
+                      # only at this time.
         'rx bytes':   # Total management TCP payload bytes received from the manager process by
                       # this resource.
         'shelf':      # Number of shelf that this resource belongs to.
@@ -23153,8 +23162,8 @@ class LFJsonQuery(JsonQuery):
         'rx bytes':          # Total received bytes count.
         'rx pkts':           # Total received packet count.
         'scoring bklg':      # POLQA/PESQ server call processing backlog.
-        'snr deg':           # Signal to noise ratio of the degraded/test audio file (unit: dB)
-        'snr ref':           # Signal to noise ratio of the reference audio file (unit: dB)
+        'snr deg':           # Signal to noise ratio of the degraded audio file. Unit: dB
+        'snr ref':           # Signal to noise ratio of the reference audio file. Unit: dB
         'source addr':       # Source Address (MAC, ip/port, VoIP source).
         'state':             # Phone registration state
         'tx bytes':          # Total transmitted bytes count.
