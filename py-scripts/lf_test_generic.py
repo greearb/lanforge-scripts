@@ -311,6 +311,9 @@ class GenTest():
                                                   shelf=port_shelf,
                                                   sta_name=port_name,
                                                   ieee80211w=2,
+                                                  mac="xx:xx:xx:*:*:xx",
+                                                  ssid=self.ssid,
+                                                  password=self.passwd,
                                                   debug=self.debug)
 
                     else:
@@ -319,6 +322,9 @@ class GenTest():
                                                   radio=self.radio,
                                                   resource=port_resource,
                                                   shelf=port_shelf,
+                                                  mac="xx:xx:xx:*:*:xx",
+                                                  ssid=self.ssid,
+                                                  password=self.passwd,
                                                   sta_name=port_name,
                                                   debug=self.debug)
                     self.command.post_set_port(alias=sta_alias,
