@@ -737,6 +737,7 @@ def main():
     optional.add_argument('--dest', help='"Destination URL/IP" for lfcurl, "Target" for lfping and iperf-client', default=None)
     optional.add_argument('--client_port', help="the port number of the iperf client endpoint",default=None)
     optional.add_argument('--server_port', help="the port number of the iperf server endpoint",default=None)
+    optional.add_argument('--upstream_port', help="upstream port of our connection",default=None)
 
     #args for creating stations or using existing eid
     optional.add_argument('--use_existing_eid', help="EID of ports we want to use (in list form)",default=None)
