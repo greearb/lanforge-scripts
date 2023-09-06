@@ -733,6 +733,7 @@ class L3VariableTime(Realm):
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
+        # Interopt graphs
         # Data used for graphing the TOS bar graphs
         # currently place all types of traffic together.
         # TODO separate out Multi cast and Uni cast
@@ -742,34 +743,76 @@ class L3VariableTime(Realm):
         self.bk_clients_A = []
         self.bk_tos_ul_A = []
         self.bk_tos_dl_A = []
+        self.bk_endp_eid_A = []
+        self.bk_port_eid_A = []
+        self.bk_port_mac_A = []
+        self.bk_port_channel_A = []
+        self.bk_request_dl_A = []
+        self.bk_request_ul_A = []
+
+
 
         self.bk_clients_B = []
         self.bk_tos_ul_B = []
         self.bk_tos_dl_B = []
+        self.bk_endp_eid_B = []
+        self.bk_port_eid_B = []
+        self.bk_port_mac_B = []
+        self.bk_port_channel_B = []
+
 
         self.be_clients_A = []
         self.be_tos_ul_A = []
         self.be_tos_dl_A = []
+        self.be_endp_eid_dl_A = []
+        self.be_port_eid_dl_A = []
+        self.be_port_mac_dl_A = []
+        self.be_port_channel_dl_A = []
+
 
         self.be_clients_B = []
         self.be_tos_ul_B = []
         self.be_tos_dl_B = []
+        self.be_endp_eid_dl_B = []
+        self.be_port_eid_dl_B = []
+        self.be_port_mac_dl_B = []
+        self.be_port_channel_dl_B = []
+
 
         self.vi_clients_A = []
         self.vi_tos_ul_A = []
         self.vi_tos_dl_A = []
+        self.vi_endp_eid_dl_A = []
+        self.vi_port_eid_dl_A = []
+        self.vi_port_mac_dl_A = []
+        self.vi_port_channel_dl_A = []
+
 
         self.vi_clients_B = []
         self.vi_tos_ul_B = []
         self.vi_tos_dl_B = []
+        self.vi_endp_eid_dl_B = []
+        self.vi_port_eid_dl_B = []
+        self.vi_port_mac_dl_B = []
+        self.vi_port_channel_dl_B = []
+
 
         self.vo_clients_A = []
         self.vo_tos_ul_A = []
         self.vo_tos_dl_A = []
+        self.vo_endp_eid_dl_A = []
+        self.vo_port_eid_dl_A = []
+        self.vo_port_mac_dl_A = []
+        self.vo_port_channel_dl_A = []
+
 
         self.vo_clients_B = []
         self.vo_tos_ul_B = []
         self.vo_tos_dl_B = []
+        self.vo_endp_eid_dl_B = []
+        self.vo_port_eid_dl_B = []
+        self.vo_port_mac_dl_B = []
+        self.vo_port_channel_dl_B = []
 
         self.client_dict = {}
 
@@ -1037,9 +1080,6 @@ class L3VariableTime(Realm):
 
     # Find avg latency, jitter for connections using specified port.
     def get_endp_stats_for_port(self, port_eid, endps):
-        dl_tos = "NA"
-        ul_tos = "NA"
-        endp_name = "NA"
         lat = 0
         jit = 0
         total_dl_rate = 0
@@ -1108,21 +1148,6 @@ class L3VariableTime(Realm):
                     total_dl_rate_ll += int(endp["rx rate ll"])
                     total_dl_pkts_ll += int(endp["rx pkts ll"])
                     dl_tx_drop_percent = round(endp["rx drop %"], 2)
-                    # the tos is in the endp so need to get the endp name and query for the tos
-                    # also any other endp data
-                    url = "/endp/{endp_name}".format(endp_name=endp["name"])
-                    response = self.json_get(url)
-                    if (response is None) or (
-                            "endpoint" not in response):
-                        logger.info(
-                            "query-endpoint: %s: incomplete response:" % url)
-                        pprint(response)
-                    else:
-                        endp_data = response['endpoint']
-                        dl_tos = endp_data["tos"]
-                        logger.debug("endp {endp} dl_tos {dl_tos}".format(
-                            endp=endp["name"], dl_tos=dl_tos))
-                        # can get other enpdata needed
 
                 # -B upload side
                 else:
@@ -1130,21 +1155,8 @@ class L3VariableTime(Realm):
                     total_ul_rate_ll += int(endp["rx rate ll"])
                     total_ul_pkts_ll += int(endp["rx pkts ll"])
                     ul_rx_drop_percent = round(endp["rx drop %"], 2)
-                    url = "/endp/{endp_name}".format(endp_name=endp["name"])
-                    response = self.json_get(url)
-                    if (response is None) or (
-                            "endpoint" not in response):
-                        logger.info(
-                            "query-endpoint: %s: incomplete response:" % url)
-                        pprint(response)
-                    else:
-                        endp_data = response['endpoint']
-                        ul_tos = endp_data["tos"]
-                        # can get other enpdata needed
-                        logger.debug("endp {endp} dl_tos {dl_tos}".format(
-                            endp=endp["name"], dl_tos=dl_tos))
 
-        return dl_tos, ul_tos, lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent
+        return lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent
 
     # Query all endpoints to generate rx and other stats, returned
     # as an array of objects.
@@ -1663,7 +1675,7 @@ class L3VariableTime(Realm):
                                         mac=mac, ap_row_tx_dl=ap_row_tx_dl))
                                     # Find latency, jitter for connections
                                     # using this port.
-                                    tos, dl_tos, ul_tos, latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
 
                                     ap_row_tx_dl.append(ap_row_chanim)
@@ -1677,9 +1689,6 @@ class L3VariableTime(Realm):
                                         atten_val,
                                         port_eid,
                                         port_data,
-                                        tos,
-                                        dl_tos,
-                                        ul_tos,
                                         latency,
                                         jitter,
                                         total_ul_rate,
@@ -1708,9 +1717,6 @@ class L3VariableTime(Realm):
                                         atten_val,
                                         port_eid,
                                         port_data,
-                                        tos,
-                                        dl_tos,
-                                        ul_tos,
                                         latency,
                                         jitter,
                                         total_ul_rate,
@@ -1747,7 +1753,7 @@ class L3VariableTime(Realm):
                                     pprint(response)
                                 else:
                                     port_data = response['interface']
-                                    dl_tos, ul_tos, latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
                                     self.write_dl_port_csv(
                                         len(temp_stations_list),
@@ -1758,8 +1764,6 @@ class L3VariableTime(Realm):
                                         atten_val,
                                         port_eid,
                                         port_data,
-                                        dl_tos,
-                                        ul_tos,
                                         latency,
                                         jitter,
                                         total_ul_rate,
@@ -1985,8 +1989,6 @@ class L3VariableTime(Realm):
             atten,
             port_eid,
             port_data,
-            dl_tos,
-            ul_tos,
             latency,
             jitter,
             total_ul_rate,
@@ -2012,8 +2014,6 @@ class L3VariableTime(Realm):
                      port_data['mode'],
                      port_data['mac'],
                      port_data['channel'],
-                     ul_tos,
-                     dl_tos,
                      latency,
                      jitter,
                      total_ul_rate,
@@ -2047,8 +2047,6 @@ class L3VariableTime(Realm):
             atten,
             port_eid,
             port_data,
-            ul_tos,
-            dl_tos,
             latency,
             jitter,
             total_ul_rate,
@@ -2074,8 +2072,6 @@ class L3VariableTime(Realm):
                      port_data['mode'],
                      port_data['mac'],
                      port_data['channel'],
-                     dl_tos,
-                     ul_tos,
                      latency,
                      jitter,
                      total_ul_rate,
@@ -2218,7 +2214,7 @@ class L3VariableTime(Realm):
 
         # for port curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/port/all | json_pp
         self.endp_data = self.json_get(
-            'endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos')
+            'endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid')
         self.endp_data.pop("handler")
         self.endp_data.pop("uri")
         self.endpoint_data_list = self.endp_data['endpoint']
@@ -2242,6 +2238,8 @@ class L3VariableTime(Realm):
             # the data_set will be the upload and download rates for each client
             # the y_axis values are the clients
             # TODO how many data sets
+            # for multicast upstream is A
+            # for unicast the upstream is B
             if endp_data[endp_data_key]['tos'] == 'BK':
                 if endp_data[endp_data_key]['a/b'] == "A":
                     self.bk_clients_A.append(endp_data[endp_data_key]['name'])
@@ -2311,7 +2309,7 @@ class L3VariableTime(Realm):
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
                 "colors": ['orange', 'wheat'],
-                "labels": ['Download', 'Upload']
+                "labels": ['Upload','Download']
             },
             "BE": {
                 "clients_A": self.be_clients_A,
@@ -2321,7 +2319,7 @@ class L3VariableTime(Realm):
                 "ul_B": self.be_tos_ul_B,
                 "dl_B": self.be_tos_dl_B,
                 "colors": ['lightcoral', 'mistyrose'],
-                "labels": ['Download', 'Upload']
+                "labels": ['Upload','Download']
             },
             "VI": {
                 "clients_A": self.vi_clients_A,
@@ -2426,8 +2424,6 @@ class L3VariableTime(Realm):
             'Mode',
             'MAC',
             'Channel',
-            "DL_TOS",
-            "UL_TOS",
             'Rx-Latency',
             'Rx-Jitter',
             'Ul-Rx-Goodput-bps',
@@ -2473,8 +2469,6 @@ class L3VariableTime(Realm):
             'Mode',
             'Mac',
             'Channel',
-            "DL_TOS",
-            "UL_TOS",
             'Rx-Latency',
             'Rx-Jitter',
             'Ul-Rx-Goodput-bps',
