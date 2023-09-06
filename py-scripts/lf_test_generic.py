@@ -84,7 +84,7 @@ class GenTest():
                  test_duration="5m",test_type="lfping", target=None, cmd=None, interval=1,
                  radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
                  file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
-                 _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
+                 _debug_on=False, _exit_on_error=False, die_on_error = False,_exit_on_fail=False):
         self.host=host
         self.port=port
         self.lf_user=lf_user
@@ -137,8 +137,9 @@ class GenTest():
         self.command = self.session.get_command()
         self.query: LFJsonQuery
         self.query = self.session.get_query()
+        #TODO add this to args
+        self.die_on_error = die_on_error
 
-        #self.created_cx = []
         self.created_endp = []
 
         number_template = "000"
@@ -154,7 +155,6 @@ class GenTest():
         if json_response is None:
             return False
         return True
-
  
     def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version, 
                         dut_model_num, dut_serial_num, test_id, csv_outfile,
@@ -214,16 +214,15 @@ class GenTest():
                 csv_outfile, current_time)
             csv_outfile = report.file_add_path(csv_outfile)
         print("csv output file : {}".format(csv_outfile))
-    
 
     def start(self):
         #admin up all created stations & existing stations
         if self.sta_list:
-            for sta in self.sta_list:
-                eid = self.name_to_eid(sta)
-                self.command.post_set_port(shelf = eid[0],
-                                           resource = eid[1],
-                                           port = eid[2],
+            for sta_alias in self.sta_list:
+                port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
+                self.command.post_set_port(shelf = port_shelf,
+                                           resource = port_resource,
+                                           port = port_name,
                                            current_flags= 0, # vs 0x1 = interface down
                                            interest=3833610, # includes use_current_flags + dhcp + dhcp_rls + ifdown
                                            report_timer= self.report_timer)
@@ -267,11 +266,11 @@ class GenTest():
                                                debug=self.debug)
 
         if self.sta_list:
-            for sta in self.sta_list:
-                eid = self.name_to_eid(sta)
-                self.command.post_set_port(shelf = eid[0],
-                                           resource = eid[1],
-                                           port = eid[2],
+            for sta_alias in self.sta_list:
+                port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
+                self.command.post_set_port(shelf = port_shelf,
+                                           resource = port_resource,
+                                           port = port_name,
                                            current_flags= 1,  # vs 0x0 = interface up
                                            interest=8388610, # = current_flags + ifdown
                                            report_timer= self.report_timer)
@@ -294,19 +293,23 @@ class GenTest():
             if self.security in types.keys():
                 add_sta_flags = []
                 set_port_interest = []
+                set_port_interest.append('rpt_timer')
                 if self.security != "open":
                     if (self.passwd is None) or (self.passwd == ""):
                         raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
                     else:
                         add_sta_flags.extend([types[self.security], "create_admin_down"])
                 for sta_alias in self.sta_list:
-                    sta_flags_rslt = self.command.AddStaFlags(add_sta_flags)
-                    set_port_interest_rslt=self.command.SetPortInterest(set_port_interest.append('rpt_timer'))
+                    port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
+                    sta_flags_rslt = self.command.set_flags(LFJsonCommand.AddStaFlags, starting_value=0, flag_names= add_sta_flags)
+                    set_port_interest_rslt=self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names= set_port_interest)
                     if self.security == "wpa3":
                         self.command.post_add_sta(flags=sta_flags_rslt,
                                                   flags_mask=sta_flags_rslt,
                                                   radio=self.radio,
-                                                  sta_name=sta_alias,
+                                                  resource=port_resource,
+                                                  shelf=port_shelf,
+                                                  sta_name=port_name,
                                                   ieee80211w=2,
                                                   debug=self.debug)
 
@@ -314,7 +317,9 @@ class GenTest():
                         self.command.post_add_sta(flags=sta_flags_rslt,
                                                   flags_mask=sta_flags_rslt,
                                                   radio=self.radio,
-                                                  sta_name=sta_alias,
+                                                  resource=port_resource,
+                                                  shelf=port_shelf,
+                                                  sta_name=port_name,
                                                   debug=self.debug)
                     self.command.post_set_port(alias=sta_alias,
                                                interest=set_port_interest_rslt,
@@ -322,7 +327,7 @@ class GenTest():
                                                debug=self.debug)
             else:
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
-        self.wait_for_action(self, "port", "up", 30)
+        self.wait_for_action(self, "port", "appear", 30)
 
         #create endpoints
         #this is how many endps need to be created : 1 for each eid.
@@ -521,7 +526,7 @@ class GenTest():
     
                 if len(passed) < compared_pass:
                     time.sleep(2)
-                    logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(self.sta_list), attempt, timeout/2))
+                    logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(passed), len(self.sta_list), attempt, timeout/2))
                     return False
                 else:
                     logger.info('All %s ports appeared' % len(passed))
