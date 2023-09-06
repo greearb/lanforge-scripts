@@ -79,11 +79,11 @@ if sys.version_info[0] != 3:
 
 class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
-                name_prefix, upstream, num_stations, client_port = None,server_port=None,
-                 host="localhost", port=8080, csv_outfile=None,
-                 use_existing_eid=None, test_duration="5m",test_type="lfping", dest=None, cmd=None, interval=1, 
-                 radio=None, speedtest_min_up=None, speedtest_min_dl=None, 
-                 speedtest_max_ping=None, file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
+                name_prefix, num_stations, upstream=None, client_port = None,server_port=None,
+                 host="localhost", port=8080, csv_outfile=None,use_existing_eid=None,
+                 test_duration="5m",test_type="lfping", target=None, cmd=None, interval=1,
+                 radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
+                 file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
                  _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
         self.host=host
         self.port=port
@@ -91,7 +91,6 @@ class GenTest():
         self.lf_passwd=lf_passwd
         self.ssid = ssid
         self.radio = radio
-        self.upstream = upstream
         self.num_stations = num_stations
         self.security = security
         self.use_existing_eid= use_existing_eid
@@ -101,7 +100,7 @@ class GenTest():
         self.file_output_lfcurl = file_output_lfcurl
         self.loop_count = loop_count
         self.test_type = test_type
-        self.dest = dest
+        self.target = target
         self.cmd = cmd
         self.interval = interval
         self.client_port = client_port
@@ -113,7 +112,7 @@ class GenTest():
         self.exit_on_error = _exit_on_error
         self.exit_on_fail = _exit_on_fail
         self.csv_outfile = csv_outfile
-        self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
+        self.lfclient_url = "http://%s:%s" % (self.host, self.port)
         self.report_timer = 1500
         self.log_level = log_level
         self.lf_logger_json = lf_logger_json
@@ -121,13 +120,13 @@ class GenTest():
         # create a session
         # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
         # session to use lanforge_api
-        self.session = LFSession(lfclient_url="http://%s:8080" % self.lf_mgr,
+        self.session = LFSession(lfclient_url="http://%s:8080" % self.host,
                                  debug=_debug_on,
                                  connection_timeout_sec=4.0,
                                  stream_errors=True,
                                  stream_warnings=True,
                                  require_session=True,
-                                 exit_on_error=True)
+                                 exit_on_error=self.exit_on_error)
         if _debug_on:
             Logg.register_method_name("json_post")
             Logg.register_method_name("json_get")
@@ -143,19 +142,18 @@ class GenTest():
         self.created_endp = []
 
         number_template = "000"
-        if (self.num_stations > 0):
-            self.sta_list = self.port_name_series(prefix_="sta",
-                                              start_id_=int(number_template),
-                                              end_id_= self.num_stations + int(number_template) - 1,
-                                              padding_number_=10000,
-                                              radio=args.radio)
+        if (int(self.num_stations) > 0):
+            self.sta_list = self.port_name_series(prefix="sta",
+                                                  start_id=int(number_template),
+                                                  end_id= int(self.num_stations) + int(number_template) - 1,
+                                                  padding_number=10000,
+                                                  radio=self.radio)
 
     def check_tab_exists(self):
-        response = self.json_get("generic")
-        if response is None:
+        json_response = self.command.json_get(self.lfclient_url+"/generic/")
+        if json_response is None:
             return False
-        else:
-            return True
+        return True
 
  
     def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version, 
@@ -253,7 +251,7 @@ class GenTest():
         #at this point, all endpoints have been created, start all endpoints
         if self.created_endp:
             for endp_name in self.created_endp:
-                lanforge_api.post_set_cx_state(cx_name= "CX_" + endp_name,
+                self.command.post_set_cx_state(cx_name= "CX_" + endp_name,
                                                cx_state="RUNNING",
                                                test_mgr="default_tm",
                                                debug=self.debug)
@@ -263,7 +261,7 @@ class GenTest():
         logger.info("Stopping Test...")
         if self.created_endp:
             for endp_name in self.created_endp:
-                lanforge_api.post_set_cx_state(cx_name= "CX_" + endp_name,
+                self.command.post_set_cx_state(cx_name= "CX_" + endp_name,
                                                cx_state="STOPPED",
                                                test_mgr="default_tm",
                                                debug=self.debug)
@@ -302,7 +300,7 @@ class GenTest():
                     else:
                         add_sta_flags.extend([types[self.security], "create_admin_down"])
                 for sta_alias in self.sta_list:
-                    sta_flags_rslt=self.command.AddStaFlags(add_sta_flags)
+                    sta_flags_rslt = self.command.AddStaFlags(add_sta_flags)
                     set_port_interest_rslt=self.command.SetPortInterest(set_port_interest.append('rpt_timer'))
                     if self.security == "wpa3":
                         self.command.post_add_sta(flags=sta_flags_rslt,
@@ -368,9 +366,9 @@ class GenTest():
                 cmd = cmd + " -i %d" % self.interval
             if (self.loop_count):
                 cmd = cmd + " -c %d" % self.loop_count
-            cmd = cmd + " -I %s" % eid[2]
-            if (self.dest):
-                cmd = cmd + str(self.dest)
+            cmd = cmd + " -I %s " % eid[2]
+            if (self.target):
+                cmd = cmd + str(self.target)
   
         elif (self.type == 'iperf3-client'):
             #  iperf3 --forceflush --format k --precision 4 -c 192.168.10.1 -t 60 --tos 0 -b 1K --bind_dev sta0000 
@@ -391,8 +389,9 @@ class GenTest():
         elif (self.type == 'lfcurl'):
             # ./scripts/lf_curl.sh  -p sta0000 -i 192.168.50.167 -o /dev/null -n 1 -d 8.8.8.8
             cmd = cmd + str("./scripts/lf_curl.sh -p %s" % eid[2])
-            # cmd = cmd + "-i %s" % str(self.dest) TODO: get ip address of -i (sta0000) if i is a station, but not if eth port.
-            cmd = cmd + "-o /dev/null -n 1 -d %s" % str(self.dest)
+            # cmd = cmd + "-i %s" % str(self.target) TODO: get ip address of -i (sta0000) if i is a station, but not if eth port.
+            #TODO add -o
+            cmd = cmd + "-o /dev/null -n 1 -d %s" % str(self.target)
 
         else:
             raise ValueError("Was not able to identify type given in arguments.")
@@ -403,7 +402,7 @@ class GenTest():
         cmd = "iperf3 --forceflush --format k --precision 4"
         #TODO check if dest, client_port and server_port are not empty
         if (type == 'client'):
-            cmd = cmd + str("-c %s" % self.dest) + " -t 60 --tos 0 -b 1K" + str("--bind_dev %s" % eid[2])
+            cmd = cmd + str("-c %s" % self.target) + " -t 60 --tos 0 -b 1K" + str("--bind_dev %s" % eid[2])
             cmd = cmd + " -i 5 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
             cmd = cmd + " -p %d" % self.client_port
         else:
@@ -475,7 +474,7 @@ class GenTest():
                         port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
                         if action == "appear":
                             compared_pass = len(self.sta_list)
-                            json_response = lanforge_api.post_show_ports(port= port_name,
+                            json_response = self.command.post_show_ports(port= port_name,
                                                                         resource=port_resource,
                                                                         shelf=port_shelf,
                                                                         debug=self.debug
@@ -487,7 +486,7 @@ class GenTest():
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
                         elif action == "up":
                             compared_pass = len(self.sta_list)
-                            json_response = lanforge_api.post_show_ports(port= port_name,
+                            json_response = self.command.post_show_ports(port= port_name,
                                                 resource=port_resource,
                                                 shelf=port_shelf,
                                                 debug=self.debug
@@ -498,7 +497,7 @@ class GenTest():
 
                         elif action == "disappear":
                             compared_pass = len(self.sta_list)
-                            json_response = lanforge_api.post_show_ports(port= port_name,
+                            json_response = self.command.post_show_ports(port= port_name,
                                                 resource=port_resource,
                                                 shelf=port_shelf,
                                                 debug=self.debug
@@ -511,7 +510,7 @@ class GenTest():
                     for sta_alias in self.use_existing_eid :
                         compared_pass += len(self.use_existing_eid)
                         port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
-                        json_response = lanforge_api.post_show_ports(port= port_name,
+                        json_response = self.command.post_show_ports(port= port_name,
                                             resource=port_resource,
                                             shelf=port_shelf,
                                             debug=self.debug
@@ -521,7 +520,7 @@ class GenTest():
                             passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
     
                 if len(passed) < compared_pass:
-                    sleep(2)
+                    time.sleep(2)
                     logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(self.sta_list), attempt, timeout/2))
                     return False
                 else:
@@ -534,12 +533,12 @@ class GenTest():
                     if self.created_endp:
                         for endp_name in self.created_endp:
                             compared_pass = len(self.created_endp)
-                            json_response = lanforge_api.post_nc_show_endpoints(endpoint=endp_name,
+                            json_response = self.command.post_nc_show_endpoints(endpoint=endp_name,
                                                                                     extra ='history')
                         if (json_response['endpoint']['name'] == endp_name):
                                 passed.add(endp_name)
                 if len(passed) < compared_pass:
-                    sleep(2)
+                    time.sleep(2)
                     logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(self.sta_list), attempt, timeout/2))
                     return False
                 else:
@@ -548,29 +547,29 @@ class GenTest():
 
     def validate_sort_args(self, args):
         print(args)
-        #TODO check if ssid is none or empty, check if passwd is none or empty.
-        if args.dest is None:
-            # get ip upstream port
-            rv = self.name_to_eid(args.upstream_port)
-            shelf = rv[0]
-            resource = rv[1]
-            port_name = rv[2]
-            request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
-            lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
-            logger.info("port request command: {request_command}".format(request_command=request_command))
+        #TODO validate all args, depending on which test is used.
+        # if (args.target):
+        #     # get ip upstream port
+        #     rv = self.name_to_eid(args.upstream_port)
+        #     shelf = rv[0]
+        #     resource = rv[1]
+        #     port_name = rv[2]
+        #     request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
+        #     lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
+        #     logger.info("port request command: {request_command}".format(request_command=request_command))
 
-            request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
-            logger.info("port request status_code {status}".format(status=request.status_code))
+        #     request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
+        #     logger.info("port request status_code {status}".format(status=request.status_code))
 
-            lanforge_json = request.json()
-            lanforge_json_formatted = json.dumps(lanforge_json, indent=4)        
-            try: 
-                key = 'interface'
-                df = json_normalize(lanforge_json[key])
-                args.dest = df['ip'].iloc[0]
-            except Exception as x:
-                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+        #     lanforge_json = request.json()
+        #     lanforge_json_formatted = json.dumps(lanforge_json, indent=4)        
+        #     try: 
+        #         key = 'interface'
+        #         df = json_normalize(lanforge_json[key])
+        #         args.dest = df['ip'].iloc[0]
+        #     except Exception as x:
+        #         traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+        #         logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
 
             # if file path with output file extension is not given...
             # check if home/lanforge/report-data exists. if not, save
@@ -683,7 +682,7 @@ def main():
             --upstream_port eth1 (optional)
             --radio wiphy0 (required)
             --num_stations 3 (optional)
-            --security {open | wep | wpa | wpa2 | wpa3} (required)
+            --security {open | wep | wpa | wpa2 | wpa3}
             --ssid netgear (required)
             --passwd admin123 (required)
             --type lfping  {generic | lfping | iperf3-client | speedtest | lf_curl} (required)
@@ -719,7 +718,7 @@ def main():
 
     optional.add_argument('--mgr', help='specifies command to be run by generic type endp', default=None)
     optional.add_argument('--mgr_port', help='specifies command to be run by generic type endp', default=8080)
-    optional.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
+    optional.add_argument('--cmd', help='specifies command to be run by generic type endp', default=None)
 
     #generic endpoint configurations
     optional.add_argument('--interval', help='interval to use when running lfping. in seconds', default=1)
@@ -728,25 +727,29 @@ def main():
     optional.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type', default=None)
     optional.add_argument('--file_output_lfcurl', help='location to output results of lf_curl, absolute path preferred', default=None)
     optional.add_argument('--loop_count', help='determines the number of loops to use in lf_curl and lfping', default=None)
-    optional.add_argument("--test_rig", help="test rig for kpi.csv, testbed that the tests are run on", default="")
-    optional.add_argument("--test_tag", help="test tag for kpi.csv,  test specific information to differentiate the test", default="")
-    optional.add_argument("--dut_hw_version", help="dut hw version for kpi.csv, hardware version of the device under test", default="")
-    optional.add_argument("--dut_sw_version", help="dut sw version for kpi.csv, software version of the device under test", default="")
-    optional.add_argument("--dut_model_num", help="dut model for kpi.csv,  model number / name of the device under test", default="")
-    optional.add_argument("--dut_serial_num", help="dut serial for kpi.csv, serial number of the device under test", default="")
-    optional.add_argument('--dest', help='"Destination URL/IP" for lfcurl, "Target" for lfping and iperf-client', default=None)
+    optional.add_argument('--target', help='Target for lfping and iperf-client', default=None)
     optional.add_argument('--client_port', help="the port number of the iperf client endpoint",default=None)
     optional.add_argument('--server_port', help="the port number of the iperf server endpoint",default=None)
-    optional.add_argument('--upstream_port', help="upstream port of our connection",default=None)
 
-    #args for creating stations or using existing eid
+    # args for creating stations or using existing eid
     optional.add_argument('--use_existing_eid', help="EID of ports we want to use (in list form)",default=None)
     optional.add_argument('--radio', help="radio that stations should be created on",default=None)
     optional.add_argument('--num_stations', help="number of stations that are to be made, defaults to 1",default=1)
     optional.add_argument('--ssid', help="ssid for stations to connect to",default=None)
-    optional.add_argument('--passwd', help="password to ssid for stations to connect to",default=None)
-    optional.add_argument('--mode', help='Used to force mode of stations')
-    optional.add_argument('--ap', help='Used to force a connection to a particular AP')
+    optional.add_argument('--passwd', '-p', help="password to ssid for stations to connect to",default=None)
+    optional.add_argument('--mode', help='Used to force mode of stations', default=None)
+    optional.add_argument('--ap', help='Used to force a connection to a particular AP, bssid of specific AP', default=None)
+    optional.add_argument('--security', help='security for station ssids. options: {open | wep | wpa | wpa2 | wpa3}'  )
+
+    # dut info
+    optional.add_argument("--dut_hw_version", help="dut hw version for kpi.csv, hardware version of the device under test", default="")
+    optional.add_argument("--dut_sw_version", help="dut sw version for kpi.csv, software version of the device under test", default="")
+    optional.add_argument("--dut_model_num", help="dut model for kpi.csv,  model number / name of the device under test", default="")
+    optional.add_argument("--dut_serial_num", help="dut serial for kpi.csv, serial number of the device under test", default="")
+
+    # test tag info
+    optional.add_argument("--test_rig", help="test rig for kpi.csv, testbed that the tests are run on", default="")
+    optional.add_argument("--test_tag", help="test tag for kpi.csv,  test specific information to differentiate the test", default="")
 
     # args for reporting
     optional.add_argument('--output_format', help= 'choose either csv or xlsx',default='csv')
@@ -785,11 +788,10 @@ def main():
                            use_existing_eid=args.use_existing_eid,
                            name_prefix="GT",
                            test_type=args.type,
-                           dest=args.dest,
+                           target=args.target,
                            cmd=args.cmd,
                            interval=args.interval,
                            ssid=args.ssid,
-                           upstream=args.upstream_port,
                            passwd=args.passwd,
                            security=args.security,
                            test_duration=args.test_duration,
@@ -799,7 +801,6 @@ def main():
                            file_output_lfcurl=args.file_output_lfcurl,
                            csv_outfile=args.csv_outfile,
                            loop_count=args.loop_count,
-                           client=args.client,
                            client_port=args.client_port,
                            server_port=args.server_port,
                            _debug_on=args.debug,
@@ -807,7 +808,7 @@ def main():
                            lf_logger_json = args.lf_logger_json)
 
     if not generic_test.check_tab_exists():
-        raise ValueError("Error received from GUI, please ensure generic tab is enabled")
+        raise ValueError("Error received from GUI when trying to request generic tab information, please ensure generic tab is enabled")
     
     generic_test.validate_sort_args(args)
     #generic_test.cleanup(sta_list)
