@@ -209,8 +209,6 @@ class FtpTest(LFCliBase):
                             original_port_list.append(port)
                             port_eid_list.append(str(LFUtils.name_to_eid(port)[0])+'.'+str(LFUtils.name_to_eid(port)[1]))
                             self.mac_id1_list.append(str(LFUtils.name_to_eid(port)[0])+'.'+str(LFUtils.name_to_eid(port)[1])+' '+port_data['mac'])
-                            self.channel_list.append(str(port_data['channel']))
-                            self.mode_list.append(str(port_data['mode']))
         #print("port eid list",port_eid_list)
         for i in range(len(self.eid_list)):
             for j in range(len(port_eid_list)):
@@ -584,11 +582,17 @@ class FtpTest(LFCliBase):
             response_port = self.json_get("/port/all")
             for interface in response_port['interfaces']:
                 for port,port_data in interface.items():
-                    for sta in self.station_list:
-                        if port == sta:
-                            self.channel_list.append(str(port_data['channel']))
-                            self.mode_list.append(str(port_data['mode']))
-                            self.mac_id_list.append(str(port_data['mac']))
+                    if port in self.station_list:
+                        self.channel_list.append(str(port_data['channel']))
+                        self.mode_list.append(str(port_data['mode']))
+                        self.mac_id_list.append(str(port_data['mac']))
+        elif self.clients_type == "Real":
+            response_port = self.json_get("/port/all")
+            for interface in response_port['interfaces']:
+                for port,port_data in interface.items():
+                    if port in self.input_devices_list:
+                        self.channel_list.append(str(port_data['channel']))
+                        self.mode_list.append(str(port_data['mode']))
 
         # data in json format
         #data = self.json_get("layer4/list?fields=bytes-rd")
