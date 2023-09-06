@@ -83,7 +83,7 @@ class GenTest():
                  host="localhost", port=8080, csv_outfile=None,
                  use_existing_eid=None, test_duration="5m",test_type="lfping", dest=None, cmd=None, interval=1, 
                  radio=None, speedtest_min_up=None, speedtest_min_dl=None, 
-                 speedtest_max_ping=None, file_output_lfcurl=None, loop_count=None, 
+                 speedtest_max_ping=None, file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
                  _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
         self.host=host
         self.port=port
@@ -115,6 +115,8 @@ class GenTest():
         self.csv_outfile = csv_outfile
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
         self.report_timer = 1500
+        self.log_level = log_level
+        self.lf_logger_json = lf_logger_json
 
         # create a session
         # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
@@ -155,7 +157,7 @@ class GenTest():
         else:
             return True
 
-    """ 
+ 
     def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version, 
                         dut_model_num, dut_serial_num, test_id, csv_outfile,
                         monitor_endps, generic_cols):
@@ -214,7 +216,7 @@ class GenTest():
                 csv_outfile, current_time)
             csv_outfile = report.file_add_path(csv_outfile)
         print("csv output file : {}".format(csv_outfile))
-    """
+    
 
     def start(self):
         #admin up all created stations & existing stations
@@ -428,7 +430,7 @@ class GenTest():
         else:
             self._fail("Ports NOT successfully cleaned up.")
     
-    def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, radio=None):
+    def port_name_series(self, prefix="sta", start_id=0, end_id=1, padding_number=10000, radio=None):
         """
         This produces a named series similar to "sta000, sta001, sta002...sta0(end_id)"
         the padding_number is added to the start and end numbers and the resulting sum
@@ -757,6 +759,11 @@ def main():
     optional.add_argument('--monitor_interval',help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',default='2s')
     optional.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
 
+    #debug and logger
+    optional.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
+    optional.add_argument('--lf_logger_json', help="--lf_logger_config_json <json file> , json configuration of logger")
+    optional.add_argument('--debug', '-d', default=False, action="store_true", help='Enable debugging')
+
     #check if the arguments are empty?
     if (len(sys.argv) <= 2 and not sys.argv[1]):
         print("This python file needs the minimum required args. See add the --help flag to check out all possible arguments.")
@@ -766,7 +773,7 @@ def main():
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
-    logger_config.set_json(json_file=args.lf_logger_config_json)
+    logger_config.set_json(json_file=args.lf_logger_json)
 
 
     #TODO edit name_prefix
@@ -794,7 +801,9 @@ def main():
                            client=args.client,
                            client_port=args.client_port,
                            server_port=args.server_port,
-                           _debug_on=args.debug)
+                           _debug_on=args.debug,
+                           log_level=args.log_level,
+                           lf_logger_json = args.lf_logger_json)
 
     if not generic_test.check_tab_exists():
         raise ValueError("Error received from GUI, please ensure generic tab is enabled")
