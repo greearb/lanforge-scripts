@@ -236,12 +236,12 @@ class GenTest():
                                            interest=3833610, # includes use_current_flags + dhcp + dhcp_rls + ifdown
                                            report_timer= self.report_timer)
 
-        if self.wait_for_action("port", "up", 30):
+        if self.wait_for_action("port", self.sta_list, "up", 30):
             self._pass("All stations went admin up.")
         else:
             self._fail("All stations did NOT go admin up.")
 
-        if self.wait_for_action("port", "ip", 30):
+        if self.wait_for_action("port", self.sta_list, "ip", 30):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
@@ -295,7 +295,7 @@ class GenTest():
                 set_port_interest = []
                 set_port_current=[]
                 set_port_interest.append('rpt_timer')
-                set_port_current.append('use-dhcp')
+                set_port_current.append('use_dhcp')
                 if self.security != "open":
                     if (self.passwd is None) or (self.passwd == ""):
                         raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
@@ -306,9 +306,6 @@ class GenTest():
                     sta_flags_rslt = self.command.set_flags(LFJsonCommand.AddStaFlags, starting_value=0, flag_names= add_sta_flags)
                     set_port_interest_rslt=self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names= set_port_interest)
                     set_port_current_rslt=self.command.set_flags(LFJsonCommand.SetPortCurrentFlags, starting_value=0, flag_names= set_port_current)
-
-                    
-
                     if self.security == "wpa3":
                         self.command.post_add_sta(flags=sta_flags_rslt,
                                                 flags_mask=sta_flags_rslt,
@@ -335,17 +332,22 @@ class GenTest():
                                                 ssid=self.ssid,
                                                 sta_name=port_name,
                                                 debug=self.debug)
-                    self.command.post_set_port(alias=sta_alias,
+
+                    #wait until port appears, then set use_dhcp and rpt_timer
+                    wait_for_action_list = [sta_alias]
+                    self.wait_for_action("port", wait_for_action_list, "appear", 30)
+
+                    self.command.post_set_port(alias=port_name,
+                                               port=port_name,
+                                               shelf=port_shelf,
                                                interest=set_port_interest_rslt,
                                                current_flags=set_port_current_rslt,
                                                report_timer=self.report_timer,
                                                debug=self.debug,
                                                resource=port_resource)
-
                     
             else:
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
-        self.wait_for_action("port", "appear", 30)
 
         #create endpoints
         #this is how many endps need to be created : 1 for each eid.
@@ -486,31 +488,30 @@ class GenTest():
             return True
         return False
     
-    def wait_for_action(self, object, action, secs_to_wait):
-        for attempt in range(0, int(secs_to_wait / 2)):
-            passed = set()
+    def wait_for_action(self, lf_type, type_list, action, secs_to_wait):
+        if type(type_list) is not list:
+            raise Exception("wait_for_action: type_list is not a list")
+        else: 
+            compared_pass = len(type_list)
+            for attempt in range(0, int(secs_to_wait / 2)):
+                passed = set()
 
-            # Port Manager Actions
-            if object == "port":
-                if self.sta_list:
-                    for sta_alias in self.sta_list:
+                # Port Manager Actions
+                if lf_type == "port":
+                    for sta_alias in type_list:
                         port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
                         if action == "appear":
-                            compared_pass = len(self.sta_list)
                             json_response = self.command.post_show_ports(port= port_name,
                                                                         resource=port_resource,
                                                                         shelf=port_shelf,
                                                                         debug=self.debug
                                                                         )
                             #if sta is found by json response
-                            print("-----json--------------")
-                            pprint(json_response)
                             if ((json_response is not None)
                             and (not json_response['interface']['phantom'])
                             and (not json_response['status']['NOT_FOUND'])):
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
                         elif action == "up":
-                            compared_pass = len(self.sta_list)
                             json_response = self.command.post_show_ports(port= port_name,
                                                 resource=port_resource,
                                                 shelf=port_shelf,
@@ -521,7 +522,6 @@ class GenTest():
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
 
                         elif action == "disappear":
-                            compared_pass = len(self.sta_list)
                             json_response = self.command.post_show_ports(port= port_name,
                                                 resource=port_resource,
                                                 shelf=port_shelf,
@@ -529,46 +529,31 @@ class GenTest():
                                                 )
                             if (json_response is not None) and json_response['status']['NOT_FOUND']:
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
+        
+                    if len(passed) < compared_pass:
+                        time.sleep(2)
+                        logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(passed), len(self.sta_list), attempt, timeout/2))
+                        return False
+                    else:
+                        logger.info('All %s ports appeared' % len(passed))
+                        return True
 
-                #loop for existing eids
-                if self.use_existing_eid and action == "up":
-                    for sta_alias in self.use_existing_eid :
-                        compared_pass += len(self.use_existing_eid)
-                        port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
-                        json_response = self.command.post_show_ports(port= port_name,
-                                            resource=port_resource,
-                                            shelf=port_shelf,
-                                            debug=self.debug
-                                            )
-                                                #our station interface is NOT down
-                        if (json_response is not None) and not json_response['interface']['down'] and not json_response['status']['NOT_FOUND']:
-                            passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
-    
-                if len(passed) < compared_pass:
-                    time.sleep(2)
-                    logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(passed), len(self.sta_list), attempt, timeout/2))
-                    return False
+                # Generic Tab Actions
                 else:
-                    logger.info('All %s ports appeared' % len(passed))
-                    return True
-
-            # Generic Tab Actions
-            else:
-                if action == "appear":
-                    if self.created_endp:
+                    if action == "appear":
                         for endp_name in self.created_endp:
                             compared_pass = len(self.created_endp)
                             json_response = self.command.post_nc_show_endpoints(endpoint=endp_name,
                                                                                     extra ='history')
                         if (json_response['endpoint']['name'] == endp_name):
                                 passed.add(endp_name)
-                if len(passed) < compared_pass:
-                    time.sleep(2)
-                    logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(self.sta_list), attempt, timeout/2))
-                    return False
-                else:
-                    logger.info('All %s ports appeared' % len(passed))
-                    return True
+                    if len(passed) < compared_pass:
+                        time.sleep(2)
+                        logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(self.sta_list), attempt, timeout/2))
+                        return False
+                    else:
+                        logger.info('All %s ports appeared' % len(passed))
+                        return True
 
     def validate_sort_args(self, args):
         print(args)
