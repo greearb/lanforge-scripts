@@ -197,11 +197,12 @@ class ThroughputQOS(Realm):
                                 #self.hostname_list.append(b['eid']+ " " +b['hostname'])
                                 self.devices_available.append(b['eid'] +" " +'Win'+" "+ b['hostname'] )
                             elif "Linux" in b['hw version']:
-                                if ('ct' or 'lf') not in b['hostname']:
-                                    self.eid_list.append(b['eid'])
-                                    self.linux_list.append(b['hw version'])
-                                    #self.hostname_list.append(b['eid']+ " " +b['hostname'])
-                                    self.devices_available.append(b['eid'] +" " +'Lin'+" "+ b['hostname'])
+                                if ('ct' not in b['hostname']):
+                                    if('lf' not in b['hostname']):
+                                        self.eid_list.append(b['eid'])
+                                        self.linux_list.append(b['hw version'])
+                                        #self.hostname_list.append(b['eid']+ " " +b['hostname'])
+                                        self.devices_available.append(b['eid'] +" " +'Lin'+" "+ b['hostname'])
                             elif "Apple" in b['hw version']:
                                 self.eid_list.append(b['eid'])
                                 self.mac_list.append(b['hw version'])
@@ -278,7 +279,7 @@ class ThroughputQOS(Realm):
                 if eid in i:
                     self.mac_id_list.append(i.strip(eid+' '))
         print("MAC ID LIST",self.mac_id_list)
-
+        return self.input_devices_list,self.real_client_list,self.mac_id_list
         # user desired real client list 1.1 OnePlus, 1.1 Apple for report generation ---
 
     def start(self, print_pass=False, print_fail=False):
@@ -887,7 +888,7 @@ class ThroughputQOS(Realm):
                         " Client Name " : self.real_client_list,
                         " MAC " : self.mac_id_list,
                         " Type of traffic " : be_tos_list,
-                        " Tra_xaxis_categories=[i for i in self.real_client_list],ffic Direction " : traffic_direction_list,
+                        " Traffic Direction " : traffic_direction_list,
                         " Traffic Protocol " : traffic_type_list,
                         " Offered upload rate(Mbps) " : upload_list,
                         " Offered download rate(Mbps) " : download_list,
