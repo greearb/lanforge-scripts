@@ -21,11 +21,14 @@ import paramiko
 from datetime import datetime
 import pandas as pd
 import logging
+from lf_graph import lf_bar_graph_horizontal
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 PortUtils = realm.PortUtils
@@ -33,12 +36,13 @@ lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+from lf_interop_qos import ThroughputQOS
 
 
 class HttpDownload(Realm):
-    def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password,
+    def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password,ap_name,
                  target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None, _debug_on=False, _exit_on_error=False,
-                 _exit_on_fail=False):
+                 _exit_on_fail=False,client_type="",port_list=[],devices_list=[],macid_list=[],lf_username="lanforge",lf_password="lanforge"):
         self.host = lfclient_host
         self.port = lfclient_port
         self.upstream = upstream
@@ -53,7 +57,13 @@ class HttpDownload(Realm):
         self.file_size = file_size
         self.bands = bands
         self.debug = _debug_on
-        print(bands)
+        self.port_list = port_list
+        self.devices_list = devices_list
+        self.macid_list = macid_list
+        self.client_type = client_type
+        self.lf_username = lf_username
+        self.lf_password = lf_password
+        self.ap_name = ap_name
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
@@ -66,27 +76,42 @@ class HttpDownload(Realm):
         self.station_list = []
         self.radio = []
 
+    #Todo- Make use of lf_base_interop_profile.py : Real device class to fetch available devices data
+    def get_real_client_list(self):
+        object=ThroughputQOS(host=self.host,
+                            port=self.port,
+                            number_template="0000",
+                            ap_name="Netgear",
+                            name_prefix="TOS-",
+                            upstream=self.upstream,
+                            ssid=self.ssid,
+                            password=self.password,
+                            security=self.security,
+                            tos="BK"
+                            )
+        self.port_list,self.devices_list,self.macid_list=object.phantom_check()
+        return self.port_list,self.devices_list,self.macid_list
+
     def set_values(self):
         # This method will set values according user input
         if self.bands == "5G":
             self.radio = [self.fiveg_radio]
-            self.station_list = [LFUtils.portNameSeries(prefix_="fiveg_sta", start_id_=self.sta_start_id,
+            self.station_list = [LFUtils.portNameSeries(prefix_="http_5g_sta", start_id_=self.sta_start_id,
                                                             end_id_=self.num_sta - 1, padding_number_=10000,
                                                             radio=self.fiveg_radio)]
         elif self.bands == "2.4G":
             self.radio = [self.twog_radio]
-            self.station_list = [LFUtils.portNameSeries(prefix_="twog_sta", start_id_=self.sta_start_id,
+            self.station_list = [LFUtils.portNameSeries(prefix_="http_2.4g_sta", start_id_=self.sta_start_id,
                                                        end_id_=self.num_sta - 1, padding_number_=10000,
                                                        radio=self.twog_radio)]
         elif self.bands == "Both":
             self.radio = [self.twog_radio, self.fiveg_radio]
-            print(self.radio)
             # self.num_sta = self.num_sta // 2
             self.station_list = [
-                                 LFUtils.portNameSeries(prefix_="twog_sta", start_id_=self.sta_start_id,
+                                 LFUtils.portNameSeries(prefix_="http_2.4g_sta", start_id_=self.sta_start_id,
                                                         end_id_=self.num_sta - 1, padding_number_=10000,
                                                         radio=self.twog_radio),
-                                 LFUtils.portNameSeries(prefix_="fiveg_sta", start_id_=self.sta_start_id,
+                                 LFUtils.portNameSeries(prefix_="http_5g_sta", start_id_=self.sta_start_id,
                                                         end_id_=self.num_sta - 1, padding_number_=10000,
                                                         radio=self.fiveg_radio)
                                  ]
@@ -94,7 +119,6 @@ class HttpDownload(Realm):
     def precleanup(self):
         self.count = 0
         for rad in range(len(self.radio)):
-            print("radio", self.radio[rad])
             if self.radio[rad] == self.fiveg_radio:
                 # select an mode
                 self.station_profile.mode = 10
@@ -130,38 +154,57 @@ class HttpDownload(Realm):
         # enable http on ethernet
         self.port_util.set_http(port_name=self.local_realm.name_to_eid(self.upstream)[2],
                                 resource=self.local_realm.name_to_eid(self.upstream)[1], on=True)
-        for rad in range(len(self.radio)):
-            print(self.station_list[rad])
-            self.station_profile.use_security(self.security[rad], self.ssid[rad], self.password[rad])
-            self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-            self.station_profile.set_command_param("set_port", "report_timer", 1500)
-            self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-            self.station_profile.create(radio=self.radio[rad], sta_names_=self.station_list[rad], debug=self.local_realm.debug)
-            self.local_realm.wait_until_ports_appear(sta_list=self.station_list[rad])
-            self.station_profile.admin_up()
-            if self.local_realm.wait_for_ip(self.station_list[rad], timeout_sec=60):
-                self.local_realm._pass("All stations got IPs")
-            else:
-                self.local_realm._fail("Stations failed to get IPs")
-            # building layer4
-            self.http_profile.direction = 'dl'
-            self.http_profile.dest = '/dev/null'
-            data = self.local_realm.json_get("ports/list?fields=IP")
+        if self.client_type == "Virtual":
+            for rad in range(len(self.radio)):
+                self.station_profile.use_security(self.security[rad], self.ssid[rad], self.password[rad])
+                self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+                self.station_profile.set_command_param("set_port", "report_timer", 1500)
+                self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+                self.station_profile.create(radio=self.radio[rad], sta_names_=self.station_list[rad], debug=self.local_realm.debug)
+                self.local_realm.wait_until_ports_appear(sta_list=self.station_list[rad])
+                self.station_profile.admin_up()
+                if self.local_realm.wait_for_ip(self.station_list[rad], timeout_sec=60):
+                    self.local_realm._pass("All stations got IPs")
+                else:
+                    self.local_realm._fail("Stations failed to get IPs")
+                # building layer4
+                self.http_profile.direction = 'dl'
+                self.http_profile.dest = '/dev/null'
+                data = self.local_realm.json_get("ports/list?fields=IP")
 
-            # getting eth ip
-            eid = self.local_realm.name_to_eid(self.upstream)
-            for i in data["interfaces"]:
-                for j in i:
-                    if "{shelf}.{resource}.{port}".format(shelf=eid[0], resource=eid[1], port=eid[2]) == j:
-                        ip_upstream = i["{shelf}.{resource}.{port}".format(
-                            shelf=eid[0], resource=eid[1], port=eid[2])]['ip']
+                # getting eth ip
+                eid = self.local_realm.name_to_eid(self.upstream)
+                for i in data["interfaces"]:
+                    for j in i:
+                        if "{shelf}.{resource}.{port}".format(shelf=eid[0], resource=eid[1], port=eid[2]) == j:
+                            ip_upstream = i["{shelf}.{resource}.{port}".format(
+                                shelf=eid[0], resource=eid[1], port=eid[2])]['ip']
 
-            # create http profile
-            self.http_profile.create(ports=self.station_profile.station_names, sleep_time=.5,
-                                     suppress_related_commands_=None, http=True,
-                                     http_ip=ip_upstream + "/webpage.html")
-            if self.count == 2:
-                self.station_profile.mode = 6
+                # create http profile
+                self.http_profile.create(ports=self.station_profile.station_names, sleep_time=.5,
+                                        suppress_related_commands_=None, http=True,user=self.lf_username, passwd=self.lf_password,
+                                        http_ip=ip_upstream + "/webpage.html",proxy_auth_type=0x200)
+                if self.count == 2:
+                    self.station_profile.mode = 6
+        else:
+            if self.client_type == "Real": 
+                self.http_profile.direction = 'dl'
+                self.http_profile.dest = '/dev/null'
+                data = self.local_realm.json_get("ports/list?fields=IP")
+
+                    # getting eth ip
+                eid = self.local_realm.name_to_eid(self.upstream)
+                for i in data["interfaces"]:
+                    for j in i:
+                        if "{shelf}.{resource}.{port}".format(shelf=eid[0], resource=eid[1], port=eid[2]) == j:
+                            ip_upstream = i["{shelf}.{resource}.{port}".format(
+                                shelf=eid[0], resource=eid[1], port=eid[2])]['ip']
+
+                self.http_profile.create(ports=self.port_list, sleep_time=.5,
+                                    suppress_related_commands_=None, http=True,interop=True,
+                                    user=self.lf_username, passwd=self.lf_password,
+                                    http_ip=ip_upstream + "/webpage.html",proxy_auth_type=0x200)
+                    
         print("Test Build done")
 
     def start(self):
@@ -184,6 +227,8 @@ class HttpDownload(Realm):
         # print(data)
         data1 = []
         data = data['endpoint']
+        if self.client_type == "Real":
+            self.num_sta = len(self.port_list)
         if self.num_sta == 1:
             data1.append(data[data_mon])
         else:
@@ -191,7 +236,6 @@ class HttpDownload(Realm):
                 for info in data:
                     if cx in info:
                         data1.append(info[cx][data_mon])
-        # print(data_mon, data1)
         return data1
 
     def postcleanup(self):
@@ -211,7 +255,6 @@ class HttpDownload(Realm):
         cmd = '[ -f /usr/local/lanforge/nginx/html/webpage.html ] && echo "True" || echo "False"'
         stdin, stdout, stderr = ssh.exec_command(str(cmd))
         output = stdout.readlines()
-        print(output)
         if output == ["True\n"]:
             cmd1 = "rm /usr/local/lanforge/nginx/html/webpage.html"
             stdin, stdout, stderr = ssh.exec_command(str(cmd1))
@@ -246,11 +289,11 @@ class HttpDownload(Realm):
         dataset = []
         for i in download_time:
             if i == "5G":
+                print("download time[i]",download_time[i])
                 for j in download_time[i]:
                     x = (j / 1000)
                     y = round(x, 1)
                     lst.append(y)
-                print(lst)
                 dwnld_time["5G"] = lst
                 dataset.append(dwnld_time["5G"])
             if i == "2.4G":
@@ -258,7 +301,6 @@ class HttpDownload(Realm):
                     x = (j / 1000)
                     y = round(x, 1)
                     lst1.append(y)
-                print(lst)
                 dwnld_time["2.4G"] = lst1
                 dataset.append(dwnld_time["2.4G"])
             if i == "Both":
@@ -280,7 +322,6 @@ class HttpDownload(Realm):
                 speed[i] = result_data[i]['speed']
             except BaseException:
                 speed[i] = []
-        print(speed)
         lst = []
         lst1 = []
         lst2 = []
@@ -292,7 +333,6 @@ class HttpDownload(Realm):
                     x = (j / 1000000)
                     y = round(x, 1)
                     lst.append(y)
-                print("hi", lst)
                 speed_["5G"] = lst
                 dataset.append(speed_["5G"])
             if i == "2.4G":
@@ -300,7 +340,6 @@ class HttpDownload(Realm):
                     x = (j / 1000000)
                     y = round(x, 1)
                     lst1.append(y)
-                print("yes", lst1)
                 speed_["2.4G"] = lst1
                 dataset.append(speed_["2.4G"])
             if i == "Both":
@@ -309,7 +348,6 @@ class HttpDownload(Realm):
                     x = (j / 1000000)
                     y = round(x, 1)
                     lst2.append(y)
-                print(lst2)
                 speed_["Both"] = lst2
                 dataset.append(speed_["Both"])
         return dataset
@@ -381,39 +419,77 @@ class HttpDownload(Realm):
         pass
 
     def generate_graph(self, dataset, lis, bands):
-        graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Time in Seconds",
-                                      _xaxis_categories=lis, _label=bands, _xticks_font=8,
-                                      _graph_image_name="webpage download time graph",
-                                      _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black', _figsize=(14, 5),
-                                      _grp_title="Download time taken by each client", _xaxis_step=1, _show_bar_value=True,
-                                      _text_font=6, _text_rotation=60,
-                                      _legend_loc="upper right",
-                                      _legend_box=(1, 1.15),
-                                      _enable_csv=True
-                                      )
-        graph_png = graph.build_bar_graph()
+        if self.client_type == "Real":
+            lis=self.devices_list
+        elif self.client_type == "Virtual":
+            lis=self.station_list[0]
+        print(dataset,lis)
+        # graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Time in Seconds",
+        #                               _xaxis_categories=lis, _label=bands, _xticks_font=8,
+        #                               _graph_image_name="webpage download time graph",
+        #                               _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black', _figsize=(14, 5),
+        #                               _grp_title="Download time taken by each client", _xaxis_step=1, _show_bar_value=True,
+        #                               _text_font=6, _text_rotation=60,
+        #                               _legend_loc="upper right",
+        #                               _legend_box=(1, 1.15),
+        #                               _enable_csv=True
+        #                               )
+        graph = lf_bar_graph_horizontal(_data_set=[dataset], _xaxis_name="Average time taken to Download file in ms",
+                                            _yaxis_name="Client names",
+                                            _yaxis_categories=[i for i in lis],
+                                            _yaxis_label=[i for i in lis],
+                                            _yaxis_step=1,
+                                            _yticks_font=8,
+                                            _yticks_rotation=None,
+                                            _graph_title="Average time taken to Download file",
+                                            _title_size=16,
+                                            _figsize= (18, 10),
+                                            _legend_loc="best",
+                                            _legend_box=(1.0, 1.0),
+                                            _color_name=['steelblue'],
+                                            _show_bar_value=True,
+                                            _enable_csv=True,
+                                            _graph_image_name="ucg-avg", _color_edge=['black'],
+                                            _color=['steelblue'],
+                                            _label=bands)
+        graph_png = graph.build_bar_graph_horizontal()
         print("graph name {}".format(graph_png))
         return graph_png
 
     def graph_2(self, dataset2, lis, bands):
-        graph_2 = lf_graph.lf_bar_graph(_data_set=dataset2, _xaxis_name="Stations", _yaxis_name="Download Rate in Mbps",
-                                        _xaxis_categories=lis, _label=bands, _xticks_font=8,
-                                        _graph_image_name="webpage_speed_graph",
-                                        _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black',
-                                        _figsize=(14, 5),
-                                        _grp_title="Download rate for each client (Mbps)", _xaxis_step=1, _show_bar_value=True,
-                                        _text_font=6, _text_rotation=60,
-                                        _legend_loc="upper right",
-                                        _legend_box=(1, 1.15),
-                                        _enable_csv=True
-                                        )
-        graph_png = graph_2.build_bar_graph()
+        if self.client_type == "Real":
+            lis = self.devices_list
+        elif self.client_type == "Virtual":
+            lis = self.station_list[0]
+        print(dataset2)
+        print(lis)
+        graph_2 = lf_bar_graph_horizontal(_data_set=[dataset2], _xaxis_name="No of times file Download",
+                                            _yaxis_name="Client names",
+                                            _yaxis_categories=[i for i in lis],
+                                            _yaxis_label=[i for i in lis],
+                                            _yaxis_step=1,
+                                            _yticks_font=8,
+                                            _yticks_rotation=None,
+                                            _graph_title="No of times file Download (Count)",
+                                            _title_size=16,
+                                            _figsize= (18, 10),
+                                            _legend_loc="best",
+                                            _legend_box=(1.0, 1.0),
+                                            _color_name=['orange'],
+                                            _show_bar_value=True,
+                                            _enable_csv=True,
+                                            _graph_image_name="Total-url", _color_edge=['black'],
+                                            _color=['orange'],
+                                            _label=bands)
+        graph_png = graph_2.build_bar_graph_horizontal()
         return graph_png
 
     def generate_report(self, date, num_stations, duration, test_setup_info, dataset, lis, bands, threshold_2g,
-                        threshold_5g, threshold_both, dataset2, summary_table_value, result_data, test_rig,
+                        threshold_5g, threshold_both, dataset2, #summary_table_value,
+                        result_data, test_rig,
                         test_tag, dut_hw_version, dut_sw_version, dut_model_num, dut_serial_num, test_id,
                         test_input_infor, csv_outfile):
+        channel_list,mode_list,devices = [],[],[]
         report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html", _output_pdf="Webpage.pdf")
 
         if bands == "Both":
@@ -424,26 +500,15 @@ class HttpDownload(Realm):
         report.set_table_title("Test Setup Information")
         report.build_table_title()
 
-        report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
+        report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
-        report.set_obj_html("Objective", "The Webpage Download Test is designed to test the performance of the "
-                            "Access Point. The goal is to check whether the webpage loading time of all the "
-                            + str(num_stations) +
-                            "clients which are downloading at the same time meets the expectation when clients"
-                            "connected on single radio as well as dual radio")
+        report.set_obj_html("Objective", "The Webpage Download Test is designed to verify that N clients connected on specified band can "
+                                 "download some amount of file from HTTP server and measures the "
+                                 "time taken by the client to Download the file.")
         report.build_objective()
-        report.set_obj_html("Download Time Graph", "The below graph provides information about the download time taken "
-                            "by each client to download webpage for test duration of  " + str(duration) + " min")
-        report.build_objective()
-
-        graph = self.generate_graph(dataset=dataset, lis=lis, bands=bands)
-        report.set_graph_image(graph)
-        report.set_csv_filename(graph)
-        report.move_csv_file()
-        report.move_graph_image()
-        report.build_graph()
-        report.set_obj_html("Download Rate Graph", "The below graph provides information about the download rate in "
-                            "Mbps of each client to download the webpage for test duration of " + str(duration) + " min")
+        report.set_obj_html("No of times file Downloads","The below graph represents number of times a file downloads for each client"
+                            ". X- axis shows “No of times file downloads and Y-axis shows "
+                            "Client names.")
         report.build_objective()
         graph2 = self.graph_2(dataset2, lis=lis, bands=bands)
         print("graph name {}".format(graph2))
@@ -452,24 +517,54 @@ class HttpDownload(Realm):
         report.move_csv_file()
         report.move_graph_image()
         report.build_graph()
-        report.set_obj_html("Summary Table Description", "This Table shows you the summary "
-                            "result of Webpage Download Test as PASS or FAIL criteria. If the average time taken by " +
-                            str(num_stations) + " clients to access the webpage is less than " + str( threshold_2g) +
-                            "s it's a PASS criteria for 2.4 ghz clients, If the average time taken by " + "" +
-                            str( num_stations) + " clients to access the webpage is less than " + str( threshold_5g) +
-                            "s it's a PASS criteria for 5 ghz clients and If the average time taken by " + str( num_stations) +
-                            " clients to access the webpage is less than " + str(threshold_both) +
-                            "s it's a PASS criteria for 2.4 ghz and 5ghz clients")
-
+        report.set_obj_html("Average time taken to download file ","The below graph represents average time taken to download for each client  "
+                            ".  X- axis shows “Average time taken to download a file ” and Y-axis shows "
+                            "Client names.")
         report.build_objective()
-        test_setup1 = pd.DataFrame(summary_table_value)
-        report.set_table_dataframe(test_setup1)
-        report.build_table()
+        graph = self.generate_graph(dataset=dataset, lis=lis, bands=bands)
+        report.set_graph_image(graph)
+        report.set_csv_filename(graph)
+        report.move_csv_file()
+        report.move_graph_image()
+        report.build_graph()
+
+        # report.set_obj_html("Summary Table Description", "This Table shows you the summary "
+        #                     "result of Webpage Download Test as PASS or FAIL criteria. If the average time taken by " +
+        #                     str(num_stations) + " clients to access the webpage is less than " + str( threshold_2g) +
+        #                     "s it's a PASS criteria for 2.4 ghz clients, If the average time taken by " + "" +
+        #                     str( num_stations) + " clients to access the webpage is less than " + str( threshold_5g) +
+        #                     "s it's a PASS criteria for 5 ghz clients and If the average time taken by " + str( num_stations) +
+        #                     " clients to access the webpage is less than " + str(threshold_both) +
+        #                     "s it's a PASS criteria for 2.4 ghz and 5ghz clients")
+
+        # report.build_objective()
+        #test_setup1 = pd.DataFrame(summary_table_value)
+        #report.set_table_dataframe(test_setup1)
+        #report.build_table()
 
         report.set_obj_html("Download Time Table Description", "This Table will provide you information of the "
-                            "minimum, maximum and the average time taken by clients to download a webpage in seconds")
+                             "minimum, maximum and the average time taken by clients to download a webpage in seconds")
 
         report.build_objective()
+        response_port = self.local_realm.json_get("/port/all")
+        #print(response_port)
+        print("port list",self.port_list)
+        if self.client_type == "Real":
+            devices = self.devices_list
+            for interface in response_port['interfaces']:
+                for port,port_data in interface.items():
+                    if port in self.port_list:
+                        channel_list.append(str(port_data['channel']))
+                        mode_list.append(str(port_data['mode']))
+        elif self.client_type == "Virtual":
+            devices = self.station_list[0]
+            for interface in response_port['interfaces']:
+                for port,port_data in interface.items():       
+                    if port in self.station_list[0]:
+                        channel_list.append(str(port_data['channel']))
+                        mode_list.append(str(port_data['mode']))
+                        self.macid_list.append(str(port_data['mac']))
+
         x = []
         for fcc in list(result_data.keys()):
             fcc_type = result_data[fcc]["min"]
@@ -568,9 +663,20 @@ class HttpDownload(Realm):
         test_setup = pd.DataFrame(download_table_value)
         report.set_table_dataframe(test_setup)
         report.build_table()
-        report.set_table_title("Test input Information")
+        report.set_table_title("Overall Results")
         report.build_table_title()
-        report.test_setup_table(value="Information", test_setup_data=test_input_infor)
+        print("details",mode_list,channel_list,devices,self.macid_list,dataset,dataset2)
+        dataframe = {
+                        " Clients" : devices,
+                        " MAC " : self.macid_list,
+                        " Channel" : channel_list,
+                        " Mode" : mode_list,
+                        " No of times File downloaded " : dataset2,
+                        " Average time taken to Download file (ms)" : dataset
+                    }
+        dataframe1 = pd.DataFrame(dataframe)
+        report.set_table_dataframe(dataframe1)
+        report.build_table()
         report.build_footer()
         html_file = report.write_html()
         print("returned file {}".format(html_file))
@@ -602,7 +708,7 @@ CLI Example:
     parser.add_argument('--mgr', help='hostname for where LANforge GUI is running', default='localhost')
     parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
     parser.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1', default='eth2')
-    parser.add_argument('--num_stations', type=int, help='number of stations to create', default=1)
+    parser.add_argument('--num_stations', type=int, help='number of stations to create', default=0)
     parser.add_argument('--twog_radio', help='specify radio for 2.4G clients', default='wiphy3')
     parser.add_argument('--fiveg_radio', help='specify radio for 5 GHz client', default='wiphy0')
     parser.add_argument('--twog_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 2.4G clients')
@@ -616,10 +722,13 @@ CLI Example:
     parser.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G OR 2.4G OR Both',
                         default=["5G", "2.4G"])
     parser.add_argument('--duration', type=int, help='time to run traffic')
+    parser.add_argument('--client_type', help='Enter the type of client. Example:"Real","Virtual"')
     parser.add_argument('--threshold_5g', help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
     parser.add_argument('--threshold_2g', help="Enter the threshold value for 2.4G Pass/Fail criteria", default="90")
     parser.add_argument('--threshold_both', help="Enter the threshold value for Both Pass/Fail criteria", default="50")
     parser.add_argument('--ap_name', help="specify the ap model ", default="TestAP")
+    parser.add_argument('--lf_username',help="Enter the lanforge user name. Example : 'lanforge' ", default= "lanforge")
+    parser.add_argument('--lf_password',help="Enter the lanforge password. Example : 'lanforge' ",default="lanforge")
     parser.add_argument('--ssh_port', type=int, help="specify the ssh port eg 22", default=22)
     parser.add_argument("--test_rig", default="", help="test rig for kpi.csv, testbed that the tests are run on")
     parser.add_argument("--test_tag", default="",
@@ -658,21 +767,16 @@ CLI Example:
     test_time = datetime.now()
     test_time = test_time.strftime("%b %d %H:%M:%S")
     print("Test started at ", test_time)
-    list5G = []
-    list5G_bytes = []
-    list5G_speed = []
-    list2G = []
-    list2G_bytes = []
-    list2G_speed = []
-    Both = []
-    Both_bytes = []
-    Both_speed = []
+    list5G,list5G_bytes,list5G_speed,list5G_urltimes = [],[],[],[]
+    list2G,list2G_bytes,list2G_speed,list2G_urltimes = [],[],[],[]
+    Both,Both_bytes,Both_speed,Both_urltimes = [],[],[],[]
+    real_data=[]
     dict_keys = []
     dict_keys.extend(args.bands)
     # print(dict_keys)
     final_dict = dict.fromkeys(dict_keys)
     # print(final_dict)
-    dict1_keys = ['dl_time', 'min', 'max', 'avg', 'bytes_rd', 'speed']
+    dict1_keys = ['dl_time', 'min', 'max', 'avg', 'bytes_rd', 'speed','url_times']
     for i in final_dict:
         final_dict[i] = dict.fromkeys(dict1_keys)
     print(final_dict)
@@ -685,7 +789,7 @@ CLI Example:
     avg2 = []
     avg5 = []
     avg_both = []
-
+    port_list,device_list,macid_list = [],[],[]
     for bands in args.bands:
         if bands == "2.4G":
             security = [args.twog_security]
@@ -701,36 +805,36 @@ CLI Example:
             passwd = [args.twog_passwd, args.fiveg_passwd]
         http = HttpDownload(lfclient_host=args.mgr, lfclient_port=args.mgr_port,
                             upstream=args.upstream_port, num_sta=args.num_stations,
-                            security=security,
+                            security=security,ap_name=args.ap_name,
                             ssid=ssid, password=passwd,
                             target_per_ten=args.target_per_ten,
                             file_size=args.file_size, bands=bands,
                             twog_radio=args.twog_radio,
-                            fiveg_radio=args.fiveg_radio
+                            fiveg_radio=args.fiveg_radio,
+                            client_type=args.client_type,
+                            lf_username=args.lf_username,lf_password=args.lf_password
                             )
+        if args.client_type == "Real":
+            port_list,device_list,macid_list = http.get_real_client_list()
+            args.num_stations = len(port_list)
         http.file_create(ssh_port=args.ssh_port)
         http.set_values()
         http.precleanup()
         http.build()
         http.start()
-        duration = args.duration
-        duration = 60 * duration
-        print("time in seconds ", duration)
-        time.sleep(duration)
+        time.sleep(60 * args.duration)
         http.stop()
         uc_avg_val = http.my_monitor('uc-avg')
+        url_times = http.my_monitor('total-urls')
         rx_bytes_val = http.my_monitor('bytes-rd')
         rx_rate_val = http.my_monitor('rx rate')
-        http.postcleanup()
 
         if bands == "5G":
-            print("yes")
             list5G.extend(uc_avg_val)
             list5G_bytes.extend(rx_bytes_val)
             list5G_speed.extend(rx_rate_val)
-            print(list5G)
-            print(list5G_bytes)
-            print(list5G_speed)
+            list5G_urltimes.extend(url_times)
+            print(list5G,list5G_bytes,list5G_speed,list5G_urltimes)
             final_dict['5G']['dl_time'] = list5G
             min5.append(min(list5G))
             final_dict['5G']['min'] = min5
@@ -740,14 +844,13 @@ CLI Example:
             final_dict['5G']['avg'] = avg5
             final_dict['5G']['bytes_rd'] = list5G_bytes
             final_dict['5G']['speed'] = list5G_speed
+            final_dict['5G']['url_times'] = list5G_urltimes
         elif bands == "2.4G":
-            print("no")
             list2G.extend(uc_avg_val)
             list2G_bytes.extend(rx_bytes_val)
             list2G_speed.extend(rx_rate_val)
-            print(list2G)
-            print(list2G_bytes)
-            print(list2G_speed)
+            list2G_urltimes.extend(url_times)
+            print(list2G,list2G_bytes,list2G_speed)
             final_dict['2.4G']['dl_time'] = list2G
             min2.append(min(list2G))
             final_dict['2.4G']['min'] = min2
@@ -757,10 +860,12 @@ CLI Example:
             final_dict['2.4G']['avg'] = avg2
             final_dict['2.4G']['bytes_rd'] = list2G_bytes
             final_dict['2.4G']['speed'] = list2G_speed
+            final_dict['2.4G']['url_times'] = list2G_urltimes
         elif bands == "Both":
             Both.extend(uc_avg_val)
             Both_bytes.extend(rx_bytes_val)
             Both_speed.extend(rx_rate_val)
+            Both_urltimes.extend(url_times)
             final_dict['Both']['dl_time'] = Both
             min_both.append(min(Both))
             final_dict['Both']['min'] = min_both
@@ -770,6 +875,7 @@ CLI Example:
             final_dict['Both']['avg'] = avg_both
             final_dict['Both']['bytes_rd'] = Both_bytes
             final_dict['Both']['speed'] = Both_speed
+            final_dict['Both']['url_times'] = Both_urltimes
 
     result_data = final_dict
     print("result", result_data)
@@ -799,10 +905,24 @@ CLI Example:
 
     print("total test duration ", test_duration)
     date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
+    duration = 60*args.duration
+    if int(duration) < 60 :
+        duration = str(duration) + "s"
+    elif int(duration == 60) or (int(duration) > 60 and int(duration) < 3600) :
+        duration = str(duration/60) + "m"
+    else:
+        if int(duration == 3600) or (int(duration) > 3600):
+            duration = str(duration/3600) + "h"
+
     test_setup_info = {
-        "DUT Name": args.ap_name,
-        "SSID": ', '.join(info_ssid),
-        "Test Duration": test_duration,
+        "AP Name": args.ap_name,
+        "SSID": ssid,
+        "Security" : security,
+        "No of Devices" : args.num_stations,
+        "File size" : args.file_size,
+        "File location" : "/usr/local/lanforge/nginx/html",
+        "Traffic Direction" : "Download",
+        "Traffic Duration ": duration
     }
     test_input_infor = {
         "LANforge ip": args.mgr,
@@ -816,7 +936,11 @@ CLI Example:
         "Contact": "support@candelatech.com"
     }
 
-    dataset = http.download_time_in_sec(result_data=result_data)
+    #dataset = http.download_time_in_sec(result_data=result_data)
+    for i in result_data:
+        dataset = result_data[i]['dl_time']
+        dataset2 = result_data[i]['url_times']
+    print("data sets",dataset,dataset2)
     lis = []
     if bands == "Both":
         for i in range(1, args.num_stations*2 + 1):
@@ -825,29 +949,29 @@ CLI Example:
         for i in range(1, args.num_stations + 1):
             lis.append(i)
 
-    dataset2 = http.speed_in_Mbps(result_data=result_data)
+    #dataset2 = http.speed_in_Mbps(result_data=result_data)
 
-    data = http.summary_calculation(
-        result_data=result_data,
-        bands=args.bands,
-        threshold_5g=args.threshold_5g,
-        threshold_2g=args.threshold_2g,
-        threshold_both=args.threshold_both)
-    summary_table_value = {
-        "": args.bands,
-        "PASS/FAIL": data
-    }
-
+    #data = http.summary_calculation(
+        # result_data=result_data,
+        # bands=args.bands,
+        # threshold_5g=args.threshold_5g,
+        # threshold_2g=args.threshold_2g,
+        # threshold_both=args.threshold_both)
+    #summary_table_value = {
+        #"": args.bands,
+        #"PASS/FAIL": data
+    #}
     http.generate_report(date, num_stations=args.num_stations,
                           duration=args.duration, test_setup_info=test_setup_info, dataset=dataset, lis=lis,
                           bands=args.bands, threshold_2g=args.threshold_2g, threshold_5g=args.threshold_5g,
                           threshold_both=args.threshold_both, dataset2=dataset2,
-                          summary_table_value=summary_table_value, result_data=result_data,
+                          #summary_table_value=summary_table_value, 
+                          result_data=result_data,
                           test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
                           dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                           dut_serial_num=args.dut_serial_num, test_id=args.test_id,
                           test_input_infor=test_input_infor, csv_outfile=args.csv_outfile)
-
+    http.postcleanup()
 
 if __name__ == '__main__':
     main()
