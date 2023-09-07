@@ -300,7 +300,7 @@ class GenTest():
                     if (self.passwd is None) or (self.passwd == ""):
                         raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
                     else:
-                        add_sta_flags.extend([types[self.security], "create_admin_down", ""])
+                        add_sta_flags.extend([types[self.security], "create_admin_down"])
                 for sta_alias in self.sta_list:
                     port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
                     sta_flags_rslt = self.command.set_flags(LFJsonCommand.AddStaFlags, starting_value=0, flag_names= add_sta_flags)
