@@ -1,15 +1,46 @@
 #!/usr/bin/env python3
 """
-This script will create 40 clients on 5Ghz , 2.4Ghz and Both and generate layer4 traffic on LANforge ,The Webpage
- Download Test is designed to test the performance of the  Access Point.The goal is to  check whether the webpage
- loading time meets the expectation when clients connected on single radio as well as dual radio.
+NAME: lf_webpage.py
 
-how to run -
-./lf_webpage.py --mgr <ip_address> --fiveg_ssid <5G_ssid> --fiveg_security wpa2 --fiveg_passwd <passwd>
---twog_ssid <2G_ssid> --twog_security wpa2 --twog_passwd <passwd> --fiveg_radio wiphy0 --twog_radio wiphy1
---num_stations 5 --upstream_port eth1 --duration 1
+PURPOSE:
+lf_webpage.py will verify that N clients are connected on a specified band and can download
+some amount of file data from the HTTP server while measuring the time taken by clients to download the file and number of 
+times the file is downloaded.
 
-Copyright 2021 Candela Technologies Inc 04 - April - 2021
+EXAMPLE-1:
+Command Line Interface to run download scenario for Real clients
+python3 lf_webpage.py --mgr 192.168.200.165 --fiveg_ssid Netgear-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret 
+--upstream_port eth1 --duration 10 --bands 5G --client_type Real --file_size 2MB
+
+EXAMPLE-2:
+Command Line Interface to run download scenario on 5GHz band for Virtual clients
+python3 lf_webpage.py --mgr 192.168.200.165 --fiveg_ssid Netgear-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret 
+--fiveg_radio wiphy0 --upstream_port eth1 --duration 1 --bands 5G --client_type Virtual --file_size 2MB --num_stations 3
+
+SCRIPT_CLASSIFICATION : Test
+
+SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
+
+NOTES:
+After passing cli, a list will be displayed on terminal which contains available resources to run test.
+The following sentence will be displayed
+Enter the desired resources to run the test:
+Please enter the port numbers seperated by commas ','.
+Example: 
+Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.303
+
+STATUS : Functional
+
+VERIFIED_ON: 
+07-SEPTEMBER-2023,
+GUI Version:  5.4.6
+Kernel Version: 6.2.16+
+
+LICENSE : 
+Copyright 2023 Candela Technologies Inc
+Free to distribute and modify. LANforge systems must be licensed.
+
+INCLUDE_IN_README: False
 """
 
 import sys
@@ -691,19 +722,48 @@ def main():
         prog="lf_webpage.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description='''
----------------------------
-LANforge Webpage Download Test Script - lf_webpage.py
----------------------------
-Summary:
-This script will create 40 clients on 5Ghz , 2.4Ghz and Both and generate layer4 traffic on LANforge ,The Webpage
- Download Test is designed to test the performance of the  Access Point. The goal is to  check whether the webpage
- loading time meets the expectation when clients connected on single radio as well as dual radio.
----------------------------
-CLI Example: 
-./lf_webpage.py --mgr <ip_address> --fiveg_ssid <5G_ssid> --fiveg_security wpa2 --fiveg_passwd <passwd> 
---twog_ssid <2G_ssid> --twog_security wpa2 --twog_passwd <passwd> --fiveg_radio wiphy0 --twog_radio wiphy1 
---num_stations 5 --upstream_port eth1 --duration 1  
----------------------------         
+    NAME: lf_webpage.py
+
+    PURPOSE:
+    lf_webpage.py will verify that N clients are connected on a specified band and can download
+    some amount of file data from the HTTP server while measuring the time taken by clients to download the file and number of 
+    times the file is downloaded.
+
+    EXAMPLE-1:
+    Command Line Interface to run download scenario for Real clients
+    python3 lf_webpage.py --mgr 192.168.200.165 --fiveg_ssid Netgear-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret 
+    --upstream_port eth1 --duration 10 --bands 5G --client_type Real --file_size 2MB
+
+    EXAMPLE-2:
+    Command Line Interface to run download scenario on 5GHz band for Virtual clients
+    python3 lf_webpage.py --mgr 192.168.200.165 --fiveg_ssid Netgear-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret 
+    --fiveg_radio wiphy0 --upstream_port eth1 --duration 1 --bands 5G --client_type Virtual --file_size 2MB --num_stations 3
+
+    SCRIPT_CLASSIFICATION : Test
+
+    SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
+
+    NOTES:
+    After passing cli, a list will be displayed on terminal which contains available resources to run test.
+    The following sentence will be displayed
+    Enter the desired resources to run the test:
+    Please enter the port numbers seperated by commas ','.
+    Example: 
+    Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.303
+
+    STATUS : Functional
+
+    VERIFIED_ON: 
+    07-SEPTEMBER-2023,
+    GUI Version:  5.4.6
+    Kernel Version: 6.2.16+
+
+    LICENSE : 
+    Copyright 2023 Candela Technologies Inc
+    Free to distribute and modify. LANforge systems must be licensed.
+
+    INCLUDE_IN_README: False   
+        
         ''')
     parser.add_argument('--mgr', help='hostname for where LANforge GUI is running', default='localhost')
     parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
