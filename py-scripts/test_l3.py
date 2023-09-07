@@ -4166,7 +4166,7 @@ INCLUDE_IN_README: False
             # TODO possibly explain the wording for upload and download
             dataset_length = len(ip_var_test.client_dict[tos]["ul_A"])
             x_fig_size = 15
-            y_fig_size = len(ip_var_test.client_dict[tos]["clients_A"]) * .5 + 4
+            y_fig_size = len(ip_var_test.client_dict[tos]["clients_A"]) * .4 + 3
 
 
             report.set_obj_html(
@@ -4209,7 +4209,7 @@ INCLUDE_IN_README: False
             dataset_length = len(ip_var_test.client_dict[tos]["ul_B"])
 
             x_fig_size = 15
-            y_fig_size = len(ip_var_test.client_dict[tos]["clients_B"]) * .5 + 4
+            y_fig_size = len(ip_var_test.client_dict[tos]["clients_B"]) * .4 + 3
 
             report.set_obj_html(
                 _obj_title=f"Individual throughput with intended load side A bps: {min_bps_a} sibe B bps: {min_bps_b} /station for traffic {tos} (WiFi).",
