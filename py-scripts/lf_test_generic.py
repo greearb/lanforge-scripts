@@ -293,47 +293,59 @@ class GenTest():
             if self.security in types.keys():
                 add_sta_flags = []
                 set_port_interest = []
+                set_port_current=[]
                 set_port_interest.append('rpt_timer')
+                set_port_current.append('use-dhcp')
                 if self.security != "open":
                     if (self.passwd is None) or (self.passwd == ""):
                         raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
                     else:
-                        add_sta_flags.extend([types[self.security], "create_admin_down"])
+                        add_sta_flags.extend([types[self.security], "create_admin_down", ""])
                 for sta_alias in self.sta_list:
                     port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
                     sta_flags_rslt = self.command.set_flags(LFJsonCommand.AddStaFlags, starting_value=0, flag_names= add_sta_flags)
                     set_port_interest_rslt=self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names= set_port_interest)
+                    set_port_current_rslt=self.command.set_flags(LFJsonCommand.SetPortCurrentFlags, starting_value=0, flag_names= set_port_current)
+
+                    
+
                     if self.security == "wpa3":
                         self.command.post_add_sta(flags=sta_flags_rslt,
-                                                  flags_mask=sta_flags_rslt,
-                                                  radio=self.radio,
-                                                  resource=port_resource,
-                                                  shelf=port_shelf,
-                                                  sta_name=port_name,
-                                                  ieee80211w=2,
-                                                  mac="xx:xx:xx:*:*:xx",
-                                                  ssid=self.ssid,
-                                                  password=self.passwd,
-                                                  debug=self.debug)
+                                                flags_mask=sta_flags_rslt,
+                                                radio=self.radio,
+                                                resource=port_resource,
+                                                shelf=port_shelf,
+                                                sta_name=port_name,
+                                                ieee80211w=2,
+                                                mode=0,
+                                                mac="xx:xx:xx:*:*:xx",
+                                                ssid=self.ssid,
+                                                key=self.passwd,
+                                                debug=self.debug)
 
                     else:
                         self.command.post_add_sta(flags=sta_flags_rslt,
-                                                  flags_mask=sta_flags_rslt,
-                                                  radio=self.radio,
-                                                  resource=port_resource,
-                                                  shelf=port_shelf,
-                                                  mac="xx:xx:xx:*:*:xx",
-                                                  ssid=self.ssid,
-                                                  password=self.passwd,
-                                                  sta_name=port_name,
-                                                  debug=self.debug)
+                                                flags_mask=sta_flags_rslt,
+                                                radio=self.radio,
+                                                resource=port_resource,
+                                                shelf=port_shelf,
+                                                mac="xx:xx:xx:*:*:xx",
+                                                key=self.passwd,
+                                                mode=0,
+                                                ssid=self.ssid,
+                                                sta_name=port_name,
+                                                debug=self.debug)
                     self.command.post_set_port(alias=sta_alias,
                                                interest=set_port_interest_rslt,
+                                               current_flags=set_port_current_rslt,
                                                report_timer=self.report_timer,
-                                               debug=self.debug)
+                                               debug=self.debug,
+                                               resource=port_resource)
+
+                    
             else:
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
-        self.wait_for_action(self, "port", "appear", 30)
+        self.wait_for_action("port", "appear", 30)
 
         #create endpoints
         #this is how many endps need to be created : 1 for each eid.
@@ -491,6 +503,8 @@ class GenTest():
                                                                         debug=self.debug
                                                                         )
                             #if sta is found by json response
+                            print("-----json--------------")
+                            pprint(json_response)
                             if ((json_response is not None)
                             and (not json_response['interface']['phantom'])
                             and (not json_response['status']['NOT_FOUND'])):
@@ -503,7 +517,7 @@ class GenTest():
                                                 debug=self.debug
                                                 )
                             #if sta is NOT down
-                            if (json_response is not None) and not json_response['interface']['down'] and not json_response['status']['NOT_FOUND']:
+                            if (json_response is not None) or not json_response['interface']['down'] or not json_response['status']['NOT_FOUND']:
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
 
                         elif action == "disappear":
