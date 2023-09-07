@@ -32,8 +32,7 @@ NOTES: getting radio information:
 1. Using curl
  https://docs.python-requests.org/en/latest/
  https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
- curl --user "lanforge:lanforge" -H 'Accept: application/json'
- http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user
+ curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user
  "USERNAME:PASSWORD"
 
 2. (using Python)
