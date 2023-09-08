@@ -236,12 +236,12 @@ class GenTest():
                                            interest=3833610, # includes use_current_flags + dhcp + dhcp_rls + ifdown
                                            report_timer= self.report_timer)
 
-        if self.wait_for_action("port", self.sta_list, "up", 30):
+        if self.wait_for_action("port", self.sta_list, "up", 3000):
             self._pass("All stations went admin up.")
         else:
             self._fail("All stations did NOT go admin up.")
 
-        if self.wait_for_action("port", self.sta_list, "ip", 30):
+        if self.wait_for_action("port", self.sta_list, "ip", 3000):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
@@ -333,9 +333,13 @@ class GenTest():
                                                 sta_name=port_name,
                                                 debug=self.debug)
 
+                    self.command.post_nc_show_ports(port=port_name,
+                                                    resource=port_resource,
+                                                    shelf=port_shelf)
+
                     #wait until port appears, then set use_dhcp and rpt_timer
-                    wait_for_action_list = [sta_alias]
-                    self.wait_for_action("port", wait_for_action_list, "appear", 30)
+                    wfa_list = [sta_alias]
+                    self.wait_for_action("port", wfa_list, "appear", 3000)
 
                     self.command.post_set_port(alias=port_name,
                                                port=port_name,
@@ -351,7 +355,12 @@ class GenTest():
 
         #create endpoints
         #this is how many endps need to be created : 1 for each eid.
-        unique_alias = len(self.sta_list) + len(self.use_existing_eid)
+        unique_alias = 0
+        if self.sta_list:
+            unique_alias += len(self.sta_list)
+        elif self.use_existing_eid:
+            unique_alias += len(self.use_existing_eid)
+
         if self.sta_list:
             for sta_alias in self.sta_list:
                 sta_eid = self.name_to_eid(sta_alias)
@@ -363,7 +372,7 @@ class GenTest():
                 self.create_generic_endp(eid, self.type, unique_alias)
                 unique_alias=-1
 
-        if self.wait_for_action("endp", "appear", 30):
+        if self.wait_for_action("endp", self.created_endp, "appear", 3000):
             print("Generic endp creation completed.")
         else:
             print("Generic endps were not created.")
@@ -449,7 +458,7 @@ class GenTest():
                 if self.port_exists(self, self.name_to_eid(sta_name), self.debug):
                     self.command.post_rm_vlan(port=sta_name, debug=self.debug)
 
-        if self.wait_for_action(self, "port", "disappear", 30):
+        if self.wait_for_action("port", self.sta_list, "disappear", 3000):
             self._pass("Ports successfully cleaned up.")
         else:
             self._fail("Ports NOT successfully cleaned up.")
@@ -499,17 +508,16 @@ class GenTest():
                 # Port Manager Actions
                 if lf_type == "port":
                     for sta_alias in type_list:
-                        port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
+                        port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)        
                         if action == "appear":
-                            json_response = self.command.post_show_ports(port= port_name,
-                                                                        resource=port_resource,
-                                                                        shelf=port_shelf,
-                                                                        debug=self.debug
-                                                                        )
+                            #http://192.168.102.211:8080/ports/1/1/sta0000?fields=device,down
+                            json_url = "%s/ports/%s/%s/%s?fields=device,down" % (self.lfclient_url, port_resource, port_shelf, port_name)
+                            print(json_url)
+                            json_response = self.query.json_get(url=json_url,
+                                                                debug=self.debug)
                             #if sta is found by json response
                             if ((json_response is not None)
-                            and (not json_response['interface']['phantom'])
-                            and (not json_response['status']['NOT_FOUND'])):
+                            or (not json_response['interface']['phantom'])):
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
                         elif action == "up":
                             json_response = self.command.post_show_ports(port= port_name,
@@ -532,7 +540,7 @@ class GenTest():
         
                     if len(passed) < compared_pass:
                         time.sleep(2)
-                        logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(passed), len(self.sta_list), attempt, timeout/2))
+                        logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_%s' % (len(passed), len(self.sta_list), attempt, int(secs_to_wait / 2), action))
                         return False
                     else:
                         logger.info('All %s ports appeared' % len(passed))
@@ -549,7 +557,7 @@ class GenTest():
                                 passed.add(endp_name)
                     if len(passed) < compared_pass:
                         time.sleep(2)
-                        logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(self.sta_list), attempt, timeout/2))
+                        logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_endp_appear' % (len(passed), len(compared_pass), attempt, timeout/2))
                         return False
                     else:
                         logger.info('All %s ports appeared' % len(passed))
