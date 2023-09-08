@@ -1,0 +1,27 @@
+{
+    "ct_AX12_dut":{
+        "Notes":[
+            "This json file describes the device undertest as input to ./lf_check.py",
+            "The variables that are capitalize are used for configuration",
+            "The dut related configuration is contained in this file",
+            "DUT_SET_NAME is an input to wifi capacity, dataplane and ap_auto tests, for --set parameter",
+            "The DUT_NAME must be part of DUT_SET_NAME"
+        ]  
+    },
+    "test_dut":{
+        "DUT_SET_NAME": "DUT_NAME ASUS 16k",
+        "USE_DUT_NAME": "ASUS_16k",
+        "DUT_SW": "3.0.0.4.388_23012",
+        "wireless_network_dict":{
+            "ssid_idx=1":{"ssid_idx":"0","SSID_USED":"axe16k-2","SSID_PW_USED":"hello123","BSSID_TO_USE":"c8:7f:54:4e:61:cc","SECURITY_USED":"wpa2"},
+            "ssid_idx=2":{"ssid_idx":"1","SSID_USED":"axe16k-5-1","SSID_PW_USED":"hello123","BSSID_TO_USE":"c8:74:54:4e:61:d0","SECURITY_USED":"wpa2"},
+            "ssid_idx=3":{"ssid_idx":"2","SSID_USED":"axe16k-5-2","SSID_PW_USED":"hello123","BSSID_TO_USE":"c8:74:54:4e:61:d4","SECURITY_USED":"wpa2"},
+            "ssid_idx=4":{"ssid_idx":"3","SSID_USED":"axe16k-6","SSID_PW_USED":"hello123","BSSID_TO_USE":"c8:74:54:4e:61:d8","SECURITY_USED":"wpa3"}
+        },
+        "UPSTREAM_PORT":"1.1.eth2",
+        "UPSTREAM_ALIAS":"eth2",
+        "DATABASE_SQLITE":"./tools/CT_002_AXE16k.db"
+
+    }
+}
+			
