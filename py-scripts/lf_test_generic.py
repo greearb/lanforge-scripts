@@ -364,12 +364,12 @@ class GenTest():
         if self.sta_list:
             for sta_alias in self.sta_list:
                 sta_eid = self.name_to_eid(sta_alias)
-                self.create_generic_endp(sta_eid, self.type, unique_alias)
+                self.create_generic_endp(sta_eid, self.test_type, unique_alias)
                 unique_alias=-1
 
         if self.use_existing_eid:
             for eid in self.use_existing_eid:
-                self.create_generic_endp(eid, self.type, unique_alias)
+                self.create_generic_endp(eid, self.test_type, unique_alias)
                 unique_alias=-1
 
         if self.wait_for_action("endp", self.created_endp, "appear", 3000):
@@ -386,14 +386,14 @@ class GenTest():
                                        resource=eid[1],
                                        port=eid[2],
                                        p_type="gen_generic")
-        self.created_endp.add(unique_alias)
+        self.created_endp.append(unique_alias)
 
         #edit generic endp with type we actually want to run - construct  cmd 
         cmd = ""
         cmd_iperf_server = ""
         if (self.cmd):
             cmd=self.cmd
-        elif (self.type == 'ping'):
+        elif (self.test_type == 'ping'):
             # lfping  -s 128 -i 0.1 -c 10000 -I sta0000 www.google.com
             cmd="lfping"
             if (self.interval):
@@ -404,23 +404,23 @@ class GenTest():
             if (self.target):
                 cmd = cmd + str(self.target)
   
-        elif (self.type == 'iperf3-client'):
+        elif (self.test_type == 'iperf3-client'):
             #  iperf3 --forceflush --format k --precision 4 -c 192.168.10.1 -t 60 --tos 0 -b 1K --bind_dev sta0000 
             # -i 5 --pidfile /tmp/lf_helper_iperf3_testing.pid -p 101
             cmd = self.do_iperf(self, 'client', unique_alias, eid)
-        elif (self.type == 'iperf3-server'):
+        elif (self.test_type == 'iperf3-server'):
             # iperf3 --forceflush --format k --precision 4 -s --bind_dev sta0000 
             # -i 5 --pidfile /tmp/lf_helper_iperf3_testing.pid -p 101
             cmd = self.do_iperf(self, 'server', unique_alias, eid)
 
-        elif (self.type == 'iperf'):
+        elif (self.test_type == 'iperf'):
             #TODO server part of 'iperf'
             #cmd_iperf_server = self.do_iperf(self, 'server', self.server_port, eid)
             cmd = self.do_iperf(self, 'client', unique_alias, eid)
             #self.command.post_set_gen_cmd(name = self.,
                                           #command= cmd_iperf_server)
 
-        elif (self.type == 'lfcurl'):
+        elif (self.test_type == 'lfcurl'):
             # ./scripts/lf_curl.sh  -p sta0000 -i 192.168.50.167 -o /dev/null -n 1 -d 8.8.8.8
             cmd = cmd + str("./scripts/lf_curl.sh -p %s" % eid[2])
             # cmd = cmd + "-i %s" % str(self.target) TODO: get ip address of -i (sta0000) if i is a station, but not if eth port.
@@ -533,14 +533,6 @@ class GenTest():
                             #if device is not found
                             if json_response is None:
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
-        
-                    if len(passed) < compared_pass:
-                        time.sleep(2)
-                        logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_%s' % (len(passed), len(self.sta_list), attempt, int(secs_to_wait / 2), action))
-                        return False
-                    else:
-                        logger.info('All %s ports appeared' % len(passed))
-                        return True
 
                 # Generic Tab Actions
                 else:
@@ -551,13 +543,12 @@ class GenTest():
                                                                                     extra ='history')
                         if (json_response['endpoint']['name'] == endp_name):
                                 passed.add(endp_name)
-                    if len(passed) < compared_pass:
-                        time.sleep(2)
-                        logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_endp_appear' % (len(passed), len(compared_pass), attempt, timeout/2))
-                        return False
-                    else:
-                        logger.info('All %s ports appeared' % len(passed))
-                        return True
+                if len(passed) < compared_pass:
+                    time.sleep(2)
+                    logger.info('Found %s out of %s %ss in %s out of %s tries in wait_until_%s_%s' % (len(passed), len(compared_pass), lf_type, attempt, int(secs_to_wait / 2), lf_type, action))
+                else:
+                    logger.info('All %s ports appeared' % len(passed))
+                    return True
 
     def validate_sort_args(self, args):
         print(args)
