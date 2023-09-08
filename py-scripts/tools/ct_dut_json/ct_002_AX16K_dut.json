@@ -10,7 +10,7 @@
     },
     "test_dut":{
         "DUT_SET_NAME": "DUT_NAME ASUS 16k",
-        "USE_DUT_NAME": "ASUS_16k",
+        "USE_DUT_NAME": "ASUS_16K",
         "DUT_SW": "3.0.0.4.388_23012",
         "wireless_network_dict":{
             "ssid_idx=1":{"ssid_idx":"0","SSID_USED":"axe16k-2","SSID_PW_USED":"hello123","BSSID_TO_USE":"c8:7f:54:4e:61:cc","SECURITY_USED":"wpa2"},
