@@ -512,30 +512,26 @@ class GenTest():
                         if action == "appear":
                             #http://192.168.102.211:8080/ports/1/1/sta0000?fields=device,down
                             json_url = "%s/ports/%s/%s/%s?fields=device,down" % (self.lfclient_url, port_resource, port_shelf, port_name)
-                            print(json_url)
                             json_response = self.query.json_get(url=json_url,
                                                                 debug=self.debug)
-                            #if sta is found by json response
-                            if ((json_response is not None)
-                            or (not json_response['interface']['phantom'])):
+                            #if sta is found by json response & not phantom
+                            if json_response is not None:
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
+
                         elif action == "up":
-                            json_response = self.command.post_show_ports(port= port_name,
-                                                resource=port_resource,
-                                                shelf=port_shelf,
-                                                debug=self.debug
-                                                )
-                            #if sta is NOT down
-                            if (json_response is not None) or not json_response['interface']['down'] or not json_response['status']['NOT_FOUND']:
+                            json_url = "%s/ports/%s/%s/%s?fields=device,up" % (self.lfclient_url, port_resource, port_shelf, port_name)
+                            json_response = self.query.json_get(url=json_url,
+                                                                debug=self.debug)
+                            #if sta is up
+                            if json_response is not None:
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
 
                         elif action == "disappear":
-                            json_response = self.command.post_show_ports(port= port_name,
-                                                resource=port_resource,
-                                                shelf=port_shelf,
-                                                debug=self.debug
-                                                )
-                            if (json_response is not None) and json_response['status']['NOT_FOUND']:
+                            json_url = "%s/ports/%s/%s/%s?fields=device" % (self.lfclient_url, port_resource, port_shelf, port_name)
+                            json_response = self.query.json_get(url=json_url,
+                                                                debug=self.debug)
+                            #if device is not found
+                            if json_response is None:
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
         
                     if len(passed) < compared_pass:
