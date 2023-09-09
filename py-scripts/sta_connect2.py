@@ -63,6 +63,7 @@ WEP = "wep"
 WPA = "wpa"
 WPA2 = "wpa2"
 WPA3 = "wpa3"
+OWE = "owe" # a wpa3 mode
 MODE_AUTO = 0
 
 
@@ -345,6 +346,13 @@ class StaConnect2(Realm):
             self.station_profile.use_security(security_type="wep", ssid=self.dut_ssid, passwd=self.dut_passwd)
         elif self.dut_security == WPA3:
             self.station_profile.use_security(security_type="wpa3", ssid=self.dut_ssid, passwd=self.dut_passwd)
+        elif self.dut_security == OWE:
+            self.station_profile.use_security(security_type="wpa3", ssid=self.dut_ssid, passwd=self.dut_passwd)
+            self.station_profile.set_command_flag("add_sta", "use-wpa3", 1)
+            self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
+        else:
+            raise ValueError(f"unknown setting for station security: {self.dut_security}")
+
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         for security in extra_securities:
             self.station_profile.add_security_extra(security=security)
@@ -881,7 +889,7 @@ CLI Example:
                         help="LANforge station-mode setting (see add_sta LANforge CLI documentation, default is 0 (auto))",
                         default=0)
     parser.add_argument("--dut_ssid", type=str, help="DUT SSID")
-    parser.add_argument("--dut_security", type=str, help="DUT security: openLF, wpa, wpa2, wpa3")
+    parser.add_argument("--dut_security", type=str, help="DUT security: open, wpa, wpa2, wpa3, owe")
     parser.add_argument("--dut_passwd", type=str, help="DUT PSK password.  Do not set for OPEN auth")
     parser.add_argument("--dut_bssid", type=str, help="DUT BSSID to which we expect to connect.")
     parser.add_argument("--download_bps", type=int, help="Set the minimum bps value on test endpoint A. Default: 25g000", default=256000)
