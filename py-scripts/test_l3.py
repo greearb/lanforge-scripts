@@ -2278,8 +2278,6 @@ class L3VariableTime(Realm):
             logger.info("Consider upgrading to 5.4.7 + endp field type not supported in LANforge GUI version results for Multicast reversed in graphs and tables")
             self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid')
 
-        endp_type_present = False
-
         self.endp_data.pop("handler")
         self.endp_data.pop("uri")
         logger.info("self.endpoint_data type: {dtype} data: {data}".format(
