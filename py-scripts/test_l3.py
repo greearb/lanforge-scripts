@@ -614,8 +614,6 @@ class L3VariableTime(Realm):
                  ieee80211w_list=[]
                  ):
 
-        self.endp_data = {}
-        self.endpoint_data = {}
         self.eth_endps = []
         self.cx_names = []
         self.total_stas = 0
@@ -740,10 +738,18 @@ class L3VariableTime(Realm):
         self.side_b_min_bps = 0
         self.ride_a_min_bps = 0
 
+        self.endp_data = {}
+        self.port_data = {}
+        self.endpoint_data = {}
+
+
+        # endp data
         self.bk_clients_A = []
         self.bk_tos_ul_A = []
         self.bk_tos_dl_A = []
         self.bk_endp_eid_A = []
+
+        # port data
         self.bk_port_eid_A = []
         self.bk_port_mac_A = []
         self.bk_port_channel_A = []
@@ -751,68 +757,103 @@ class L3VariableTime(Realm):
         self.bk_request_ul_A = []
 
 
-
+        # endp data
         self.bk_clients_B = []
         self.bk_tos_ul_B = []
         self.bk_tos_dl_B = []
         self.bk_endp_eid_B = []
+
+        # port data
         self.bk_port_eid_B = []
         self.bk_port_mac_B = []
         self.bk_port_channel_B = []
+        self.bk_request_dl_B = []
+        self.bk_request_ul_B = []
 
 
+        # endp data
         self.be_clients_A = []
         self.be_tos_ul_A = []
         self.be_tos_dl_A = []
         self.be_endp_eid_dl_A = []
+
+
+        # port data
         self.be_port_eid_dl_A = []
         self.be_port_mac_dl_A = []
         self.be_port_channel_dl_A = []
+        self.be_request_dl_A = []
+        self.be_request_ul_A = []
 
-
+        # endp data
         self.be_clients_B = []
         self.be_tos_ul_B = []
         self.be_tos_dl_B = []
         self.be_endp_eid_dl_B = []
+
+        # port data
         self.be_port_eid_dl_B = []
         self.be_port_mac_dl_B = []
         self.be_port_channel_dl_B = []
+        self.be_request_dl_B = []
+        self.be_request_ul_B = []
 
 
+        # endp data
         self.vi_clients_A = []
         self.vi_tos_ul_A = []
         self.vi_tos_dl_A = []
         self.vi_endp_eid_dl_A = []
+
+        # port data
         self.vi_port_eid_dl_A = []
         self.vi_port_mac_dl_A = []
         self.vi_port_channel_dl_A = []
+        self.vi_request_dl_A = []
+        self.vi_request_ul_A = []
 
 
+        # endp data
         self.vi_clients_B = []
         self.vi_tos_ul_B = []
         self.vi_tos_dl_B = []
         self.vi_endp_eid_dl_B = []
+
+        # port data        
         self.vi_port_eid_dl_B = []
         self.vi_port_mac_dl_B = []
         self.vi_port_channel_dl_B = []
+        self.vi_request_dl_B = []
+        self.vi_request_ul_B = []
 
 
+        # endp data
         self.vo_clients_A = []
         self.vo_tos_ul_A = []
         self.vo_tos_dl_A = []
         self.vo_endp_eid_dl_A = []
+
+        # port data
         self.vo_port_eid_dl_A = []
         self.vo_port_mac_dl_A = []
         self.vo_port_channel_dl_A = []
+        self.vo_request_dl_A = []
+        self.vo_request_ul_A = []
+
 
 
         self.vo_clients_B = []
         self.vo_tos_ul_B = []
         self.vo_tos_dl_B = []
         self.vo_endp_eid_dl_B = []
+
+        # port data
         self.vo_port_eid_dl_B = []
         self.vo_port_mac_dl_B = []
         self.vo_port_channel_dl_B = []
+        self.vo_request_dl_B = []
+        self.vo_request_ul_B = []
+
 
         self.client_dict = {}
 
@@ -2208,12 +2249,26 @@ class L3VariableTime(Realm):
             self.csv_results_writer.writerow(row)
             self.csv_results_file.flush()
 
+
     def evaluate_qos(self):
+        # for port: 
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/port/all | json_pp
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.103:8080/port/all?fields=alias,mac,channel,bps+rx,rx-rate,bps+tx,tx-rate | json_pp
+
+        # for endp
         # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/endp/all | json_pp
         # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos | json_pp
 
-        # for port curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/port/all | json_pp
+        # gather port data
+        self.port_data = self.json_get('port/all?fields=alias,port,mac,channel,bps+rx,rx-rate,bps+tx,tx-rate')
+        self.port_data.pop("handler")
+        self.port_data.pop("uri")
+        self.port_data.pop("warnings")
+        logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
+
+
         # Note will type will only work for 5.4.7
+        # gather endp data
         endp_type_present = False
         try:
             self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid,type')
@@ -2225,9 +2280,8 @@ class L3VariableTime(Realm):
 
         self.endp_data.pop("handler")
         self.endp_data.pop("uri")
-        self.endpoint_data_list = self.endp_data['endpoint']
         logger.info("self.endpoint_data type: {dtype} data: {data}".format(
-            dtype=type(self.endpoint_data), data=self.endpoint_data))
+            dtype=type(self.endp_data), data=self.endp_data))
         # self.side_b_min_bps= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
         # self.side_a_min_bps= str(str(int(self.cx_profile.side_a_min_bps) / 1000000) +' '+'Mbps')
 
@@ -2264,9 +2318,9 @@ class L3VariableTime(Realm):
                         # for multicast the logic is reversed. A is upstream, B is downstream
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.bk_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.bk_tos_ul_B.append(
-                                endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_dl_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.bk_tos_ul_B.append(
                                 endp_data[endp_data_key]["rx rate"])
 
                     elif endp_data[endp_data_key]['tos'] == 'BE':
@@ -2279,9 +2333,9 @@ class L3VariableTime(Realm):
                                 endp_data[endp_data_key]["rx rate"])
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.be_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.be_tos_ul_B.append(
-                                endp_data[endp_data_key]["tx rate"])
                             self.be_tos_dl_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.be_tos_ul_B.append(
                                 endp_data[endp_data_key]["rx rate"])
 
                     elif endp_data[endp_data_key]['tos'] == 'VI':
@@ -2294,9 +2348,9 @@ class L3VariableTime(Realm):
                                 endp_data[endp_data_key]["rx rate"])
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.vi_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.vi_tos_ul_B.append(
-                                endp_data[endp_data_key]["tx rate"])
                             self.vi_tos_dl_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vi_tos_ul_B.append(
                                 endp_data[endp_data_key]["rx rate"])
 
                     elif endp_data[endp_data_key]['tos'] == 'VO':
@@ -2309,9 +2363,9 @@ class L3VariableTime(Realm):
                                 endp_data[endp_data_key]["rx rate"])
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.vo_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.vo_tos_ul_B.append(
-                                endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_dl_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vo_tos_ul_B.append(
                                 endp_data[endp_data_key]["rx rate"])
                 # for unicast the upstream is B and downstream is A
                 elif endp_data[endp_data_key]['type'] == 'LF/TCP' or endp_data[endp_data_key]['type'] == 'LF/UDP' :
@@ -2324,9 +2378,9 @@ class L3VariableTime(Realm):
                                 endp_data[endp_data_key]["rx rate"])
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.bk_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.bk_tos_ul_B.append(
-                                endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_dl_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.bk_tos_ul_B.append(
                                 endp_data[endp_data_key]["rx rate"])
 
                     elif endp_data[endp_data_key]['tos'] == 'BE':
@@ -2338,9 +2392,9 @@ class L3VariableTime(Realm):
                                 endp_data[endp_data_key]["rx rate"])
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.be_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.be_tos_ul_B.append(
-                                endp_data[endp_data_key]["tx rate"])
                             self.be_tos_dl_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.be_tos_ul_B.append(
                                 endp_data[endp_data_key]["rx rate"])
 
                     elif endp_data[endp_data_key]['tos'] == 'VI':
@@ -2352,9 +2406,9 @@ class L3VariableTime(Realm):
                                 endp_data[endp_data_key]["rx rate"])
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.vi_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.vi_tos_ul_B.append(
-                                endp_data[endp_data_key]["tx rate"])
                             self.vi_tos_dl_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vi_tos_ul_B.append(
                                 endp_data[endp_data_key]["rx rate"])
 
                     elif endp_data[endp_data_key]['tos'] == 'VO':
@@ -2366,9 +2420,9 @@ class L3VariableTime(Realm):
                                 endp_data[endp_data_key]["rx rate"])
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.vo_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.vo_tos_ul_B.append(
-                                endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_dl_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vo_tos_ul_B.append(
                                 endp_data[endp_data_key]["rx rate"])
         else:
             if endp_data[endp_data_key]['tos'] == 'BK':
@@ -2394,9 +2448,9 @@ class L3VariableTime(Realm):
                         endp_data[endp_data_key]["rx rate"])
                 if endp_data[endp_data_key]['a/b'] == "B":
                     self.be_clients_B.append(endp_data[endp_data_key]['name'])
-                    self.be_tos_ul_B.append(
-                        endp_data[endp_data_key]["tx rate"])
                     self.be_tos_dl_B.append(
+                        endp_data[endp_data_key]["tx rate"])
+                    self.be_tos_ul_B.append(
                         endp_data[endp_data_key]["rx rate"])
 
             elif endp_data[endp_data_key]['tos'] == 'VI':
@@ -2408,9 +2462,9 @@ class L3VariableTime(Realm):
                         endp_data[endp_data_key]["rx rate"])
                 if endp_data[endp_data_key]['a/b'] == "B":
                     self.vi_clients_B.append(endp_data[endp_data_key]['name'])
-                    self.vi_tos_ul_B.append(
-                        endp_data[endp_data_key]["tx rate"])
                     self.vi_tos_dl_B.append(
+                        endp_data[endp_data_key]["tx rate"])
+                    self.vi_tos_ul_B.append(
                         endp_data[endp_data_key]["rx rate"])
 
             elif endp_data[endp_data_key]['tos'] == 'VO':
@@ -2422,9 +2476,9 @@ class L3VariableTime(Realm):
                         endp_data[endp_data_key]["rx rate"])
                 if endp_data[endp_data_key]['a/b'] == "B":
                     self.vo_clients_B.append(endp_data[endp_data_key]['name'])
-                    self.vo_tos_ul_B.append(
-                        endp_data[endp_data_key]["tx rate"])
                     self.vo_tos_dl_B.append(
+                        endp_data[endp_data_key]["tx rate"])
+                    self.vo_tos_ul_B.append(
                         endp_data[endp_data_key]["rx rate"])
 
 
@@ -2462,7 +2516,7 @@ class L3VariableTime(Realm):
                 "ul_B": self.vi_tos_ul_B,
                 "dl_B": self.vi_tos_dl_B,
                 "colors": ['steelblue', 'lightskyblue'],
-                "labels": ['Download', 'Upload']
+                "labels": ['Upload', 'Download']
             },
             "VO": {
                 "clients_A": self.vo_clients_A,
@@ -2472,7 +2526,7 @@ class L3VariableTime(Realm):
                 "ul_B": self.vo_tos_ul_B,
                 "dl_B": self.vo_tos_dl_B,
                 "colors": ['green', 'lightgreen'],
-                "labels": ['Download', 'Upload']
+                "labels": ['Upload', 'Download']
             }
         }
 
