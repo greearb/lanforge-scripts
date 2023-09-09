@@ -2278,6 +2278,8 @@ class L3VariableTime(Realm):
             logger.info("Consider upgrading to 5.4.7 + endp field type not supported in LANforge GUI version results for Multicast reversed in graphs and tables")
             self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid')
 
+        endp_type_present = False
+
         self.endp_data.pop("handler")
         self.endp_data.pop("uri")
         logger.info("self.endpoint_data type: {dtype} data: {data}".format(
@@ -2367,7 +2369,8 @@ class L3VariableTime(Realm):
                                 endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_ul_B.append(
                                 endp_data[endp_data_key]["rx rate"])
-                # for unicast the upstream is B and downstream is A
+                # for unicast the upstream is B and downstream is A 
+                # note for B tx is download and rx is uploat
                 elif endp_data[endp_data_key]['type'] == 'LF/TCP' or endp_data[endp_data_key]['type'] == 'LF/UDP' :
                     if endp_data[endp_data_key]['tos'] == 'BK':
                         if endp_data[endp_data_key]['a/b'] == "A":
@@ -2424,62 +2427,62 @@ class L3VariableTime(Realm):
                                 endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_ul_B.append(
                                 endp_data[endp_data_key]["rx rate"])
-        else:
-            if endp_data[endp_data_key]['tos'] == 'BK':
-                if endp_data[endp_data_key]['a/b'] == "A":
-                    self.bk_clients_A.append(endp_data[endp_data_key]['name'])
-                    self.bk_tos_ul_A.append(
-                        endp_data[endp_data_key]["tx rate"])
-                    self.bk_tos_dl_A.append(
-                        endp_data[endp_data_key]["rx rate"])
-                if endp_data[endp_data_key]['a/b'] == "B":
-                    self.bk_clients_B.append(endp_data[endp_data_key]['name'])
-                    self.bk_tos_ul_B.append(
-                        endp_data[endp_data_key]["tx rate"])
-                    self.bk_tos_dl_B.append(
-                        endp_data[endp_data_key]["rx rate"])
+            else:
+                if endp_data[endp_data_key]['tos'] == 'BK':
+                    if endp_data[endp_data_key]['a/b'] == "A":
+                        self.bk_clients_A.append(endp_data[endp_data_key]['name'])
+                        self.bk_tos_ul_A.append(
+                            endp_data[endp_data_key]["tx rate"])
+                        self.bk_tos_dl_A.append(
+                            endp_data[endp_data_key]["rx rate"])
+                    if endp_data[endp_data_key]['a/b'] == "B":
+                        self.bk_clients_B.append(endp_data[endp_data_key]['name'])
+                        self.bk_tos_ul_B.append(
+                            endp_data[endp_data_key]["tx rate"])
+                        self.bk_tos_dl_B.append(
+                            endp_data[endp_data_key]["rx rate"])
 
-            elif endp_data[endp_data_key]['tos'] == 'BE':
-                if endp_data[endp_data_key]['a/b'] == "A":
-                    self.be_clients_A.append(endp_data[endp_data_key]['name'])
-                    self.be_tos_ul_A.append(
-                        endp_data[endp_data_key]["tx rate"])
-                    self.be_tos_dl_A.append(
-                        endp_data[endp_data_key]["rx rate"])
-                if endp_data[endp_data_key]['a/b'] == "B":
-                    self.be_clients_B.append(endp_data[endp_data_key]['name'])
-                    self.be_tos_dl_B.append(
-                        endp_data[endp_data_key]["tx rate"])
-                    self.be_tos_ul_B.append(
-                        endp_data[endp_data_key]["rx rate"])
+                elif endp_data[endp_data_key]['tos'] == 'BE':
+                    if endp_data[endp_data_key]['a/b'] == "A":
+                        self.be_clients_A.append(endp_data[endp_data_key]['name'])
+                        self.be_tos_ul_A.append(
+                            endp_data[endp_data_key]["tx rate"])
+                        self.be_tos_dl_A.append(
+                            endp_data[endp_data_key]["rx rate"])
+                    if endp_data[endp_data_key]['a/b'] == "B":
+                        self.be_clients_B.append(endp_data[endp_data_key]['name'])
+                        self.be_tos_dl_B.append(
+                            endp_data[endp_data_key]["tx rate"])
+                        self.be_tos_ul_B.append(
+                            endp_data[endp_data_key]["rx rate"])
 
-            elif endp_data[endp_data_key]['tos'] == 'VI':
-                if endp_data[endp_data_key]['a/b'] == "A":
-                    self.vi_clients_A.append(endp_data[endp_data_key]['name'])
-                    self.vi_tos_ul_A.append(
-                        endp_data[endp_data_key]["tx rate"])
-                    self.vi_tos_dl_A.append(
-                        endp_data[endp_data_key]["rx rate"])
-                if endp_data[endp_data_key]['a/b'] == "B":
-                    self.vi_clients_B.append(endp_data[endp_data_key]['name'])
-                    self.vi_tos_dl_B.append(
-                        endp_data[endp_data_key]["tx rate"])
-                    self.vi_tos_ul_B.append(
-                        endp_data[endp_data_key]["rx rate"])
+                elif endp_data[endp_data_key]['tos'] == 'VI':
+                    if endp_data[endp_data_key]['a/b'] == "A":
+                        self.vi_clients_A.append(endp_data[endp_data_key]['name'])
+                        self.vi_tos_ul_A.append(
+                            endp_data[endp_data_key]["tx rate"])
+                        self.vi_tos_dl_A.append(
+                            endp_data[endp_data_key]["rx rate"])
+                    if endp_data[endp_data_key]['a/b'] == "B":
+                        self.vi_clients_B.append(endp_data[endp_data_key]['name'])
+                        self.vi_tos_dl_B.append(
+                            endp_data[endp_data_key]["tx rate"])
+                        self.vi_tos_ul_B.append(
+                            endp_data[endp_data_key]["rx rate"])
 
-            elif endp_data[endp_data_key]['tos'] == 'VO':
-                if endp_data[endp_data_key]['a/b'] == "A":
-                    self.vo_clients_A.append(endp_data[endp_data_key]['name'])
-                    self.vo_tos_ul_A.append(
-                        endp_data[endp_data_key]["tx rate"])
-                    self.vo_tos_dl_A.append(
-                        endp_data[endp_data_key]["rx rate"])
-                if endp_data[endp_data_key]['a/b'] == "B":
-                    self.vo_clients_B.append(endp_data[endp_data_key]['name'])
-                    self.vo_tos_dl_B.append(
-                        endp_data[endp_data_key]["tx rate"])
-                    self.vo_tos_ul_B.append(
-                        endp_data[endp_data_key]["rx rate"])
+                elif endp_data[endp_data_key]['tos'] == 'VO':
+                    if endp_data[endp_data_key]['a/b'] == "A":
+                        self.vo_clients_A.append(endp_data[endp_data_key]['name'])
+                        self.vo_tos_ul_A.append(
+                            endp_data[endp_data_key]["tx rate"])
+                        self.vo_tos_dl_A.append(
+                            endp_data[endp_data_key]["rx rate"])
+                    if endp_data[endp_data_key]['a/b'] == "B":
+                        self.vo_clients_B.append(endp_data[endp_data_key]['name'])
+                        self.vo_tos_dl_B.append(
+                            endp_data[endp_data_key]["tx rate"])
+                        self.vo_tos_ul_B.append(
+                            endp_data[endp_data_key]["rx rate"])
 
 
 
