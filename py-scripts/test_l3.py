@@ -2213,8 +2213,16 @@ class L3VariableTime(Realm):
         # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos | json_pp
 
         # for port curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/port/all | json_pp
-        self.endp_data = self.json_get(
-            'endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid')
+        # Note will type will only work for 5.4.7
+        endp_type_present = False
+        try:
+            self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid,type')
+            endp_type_present = True
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.info("Consider upgrading to 5.4.7 + endp field type not supported in LANforge GUI version results for Multicast reversed in graphs and tables")
+            self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid')
+
         self.endp_data.pop("handler")
         self.endp_data.pop("uri")
         self.endpoint_data_list = self.endp_data['endpoint']
@@ -2240,6 +2248,129 @@ class L3VariableTime(Realm):
             # TODO how many data sets
             # for multicast upstream is A
             # for unicast the upstream is B
+
+            
+            # multi cast A side is upstream
+            if endp_type_present:
+                if endp_data[endp_data_key]['type'] == 'Mcast':
+                    if endp_data[endp_data_key]['tos'] == 'BK':
+                        # for multicast the logic is reversed. A is upstream, B is downstream
+                        if endp_data[endp_data_key]['a/b'] == "B":
+                            self.bk_clients_A.append(endp_data[endp_data_key]['name'])
+                            self.bk_tos_ul_A.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.bk_tos_dl_A.append(
+                                endp_data[endp_data_key]["rx rate"])
+                        # for multicast the logic is reversed. A is upstream, B is downstream
+                        if endp_data[endp_data_key]['a/b'] == "A":
+                            self.bk_clients_B.append(endp_data[endp_data_key]['name'])
+                            self.bk_tos_ul_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.bk_tos_dl_B.append(
+                                endp_data[endp_data_key]["rx rate"])
+
+                    elif endp_data[endp_data_key]['tos'] == 'BE':
+                        # for multicast the logic is reversed. A is upstream
+                        if endp_data[endp_data_key]['a/b'] == "B":
+                            self.be_clients_A.append(endp_data[endp_data_key]['name'])
+                            self.be_tos_ul_A.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.be_tos_dl_A.append(
+                                endp_data[endp_data_key]["rx rate"])
+                        if endp_data[endp_data_key]['a/b'] == "A":
+                            self.be_clients_B.append(endp_data[endp_data_key]['name'])
+                            self.be_tos_ul_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.be_tos_dl_B.append(
+                                endp_data[endp_data_key]["rx rate"])
+
+                    elif endp_data[endp_data_key]['tos'] == 'VI':
+                        # for multicast the logic is reversed. A is upstream, B is downstream
+                        if endp_data[endp_data_key]['a/b'] == "B":
+                            self.vi_clients_A.append(endp_data[endp_data_key]['name'])
+                            self.vi_tos_ul_A.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vi_tos_dl_A.append(
+                                endp_data[endp_data_key]["rx rate"])
+                        if endp_data[endp_data_key]['a/b'] == "A":
+                            self.vi_clients_B.append(endp_data[endp_data_key]['name'])
+                            self.vi_tos_ul_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vi_tos_dl_B.append(
+                                endp_data[endp_data_key]["rx rate"])
+
+                    elif endp_data[endp_data_key]['tos'] == 'VO':
+                        # for multicast the logic is reversed. A is upstream, B is downstream
+                        if endp_data[endp_data_key]['a/b'] == "B":
+                            self.vo_clients_A.append(endp_data[endp_data_key]['name'])
+                            self.vo_tos_ul_A.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vo_tos_dl_A.append(
+                                endp_data[endp_data_key]["rx rate"])
+                        if endp_data[endp_data_key]['a/b'] == "A":
+                            self.vo_clients_B.append(endp_data[endp_data_key]['name'])
+                            self.vo_tos_ul_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vo_tos_dl_B.append(
+                                endp_data[endp_data_key]["rx rate"])
+                # for unicast the upstream is B and downstream is A
+                elif endp_data[endp_data_key]['type'] == 'LF/TCP' or endp_data[endp_data_key]['type'] == 'LF/UDP' :
+                    if endp_data[endp_data_key]['tos'] == 'BK':
+                        if endp_data[endp_data_key]['a/b'] == "A":
+                            self.bk_clients_A.append(endp_data[endp_data_key]['name'])
+                            self.bk_tos_ul_A.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.bk_tos_dl_A.append(
+                                endp_data[endp_data_key]["rx rate"])
+                        if endp_data[endp_data_key]['a/b'] == "B":
+                            self.bk_clients_B.append(endp_data[endp_data_key]['name'])
+                            self.bk_tos_ul_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.bk_tos_dl_B.append(
+                                endp_data[endp_data_key]["rx rate"])
+
+                    elif endp_data[endp_data_key]['tos'] == 'BE':
+                        if endp_data[endp_data_key]['a/b'] == "A":
+                            self.be_clients_A.append(endp_data[endp_data_key]['name'])
+                            self.be_tos_ul_A.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.be_tos_dl_A.append(
+                                endp_data[endp_data_key]["rx rate"])
+                        if endp_data[endp_data_key]['a/b'] == "B":
+                            self.be_clients_B.append(endp_data[endp_data_key]['name'])
+                            self.be_tos_ul_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.be_tos_dl_B.append(
+                                endp_data[endp_data_key]["rx rate"])
+
+                    elif endp_data[endp_data_key]['tos'] == 'VI':
+                        if endp_data[endp_data_key]['a/b'] == "A":
+                            self.vi_clients_A.append(endp_data[endp_data_key]['name'])
+                            self.vi_tos_ul_A.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vi_tos_dl_A.append(
+                                endp_data[endp_data_key]["rx rate"])
+                        if endp_data[endp_data_key]['a/b'] == "B":
+                            self.vi_clients_B.append(endp_data[endp_data_key]['name'])
+                            self.vi_tos_ul_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vi_tos_dl_B.append(
+                                endp_data[endp_data_key]["rx rate"])
+
+                    elif endp_data[endp_data_key]['tos'] == 'VO':
+                        if endp_data[endp_data_key]['a/b'] == "A":
+                            self.vo_clients_A.append(endp_data[endp_data_key]['name'])
+                            self.vo_tos_ul_A.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vo_tos_dl_A.append(
+                                endp_data[endp_data_key]["rx rate"])
+                        if endp_data[endp_data_key]['a/b'] == "B":
+                            self.vo_clients_B.append(endp_data[endp_data_key]['name'])
+                            self.vo_tos_ul_B.append(
+                                endp_data[endp_data_key]["tx rate"])
+                            self.vo_tos_dl_B.append(
+                                endp_data[endp_data_key]["rx rate"])
+        else:
             if endp_data[endp_data_key]['tos'] == 'BK':
                 if endp_data[endp_data_key]['a/b'] == "A":
                     self.bk_clients_A.append(endp_data[endp_data_key]['name'])
@@ -2295,6 +2426,8 @@ class L3VariableTime(Realm):
                         endp_data[endp_data_key]["tx rate"])
                     self.vo_tos_dl_B.append(
                         endp_data[endp_data_key]["rx rate"])
+
+
 
         self.client_dict = {
             "y_axis_name": "Client names",
@@ -4109,7 +4242,7 @@ INCLUDE_IN_README: False
         9: '802.11anAC',  # 802.11an-AC
         10: '802.11an',  # 802.11an
         11: '802.11bgnAC',  # 802.11bgn-AC
-        12: '802.11abgnAX',  # 802.11abgn-AX
+        12: '802.11abgnAX',  # 802.11abgn-A+
         #     a/b/g/n/AC/AX (dual-band AX) support
         13: '802.11bgnAX',  # 802.11bgn-AX
         14: '802.11anAX',  # 802.11an-AX
@@ -4170,7 +4303,7 @@ INCLUDE_IN_README: False
 
 
             report.set_obj_html(
-                _obj_title=f"Individual throughput with intended load side a bps: {min_bps_a} sibe b bps: {min_bps_b} /station for traffic {tos} (WiFi).",
+                _obj_title=f"Individual throughput measured at download endpoint with intended load upload bps: {min_bps_a} download bps: {min_bps_b} station for traffic {tos} (WiFi).",
                 _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
                     f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
                     f"Throughput in Mbps”.")
@@ -4185,7 +4318,7 @@ INCLUDE_IN_README: False
                                 _label=ip_var_test.client_dict[tos]['labels'],
                                 _color_name=ip_var_test.client_dict[tos]['colors'],
                                 _color_edge=['black'],
-                                _graph_title=f"Individual {tos} side a traffic",
+                                _graph_title=f"Individual {tos} station side traffic (downstream)", # traditional station side -A
                                 _title_size=10,
                                 _figsize=(x_fig_size,y_fig_size),
                                 _show_bar_value= True,
@@ -4212,7 +4345,7 @@ INCLUDE_IN_README: False
             y_fig_size = len(ip_var_test.client_dict[tos]["clients_B"]) * .4 + 3
 
             report.set_obj_html(
-                _obj_title=f"Individual throughput with intended load side A bps: {min_bps_a} sibe B bps: {min_bps_b} /station for traffic {tos} (WiFi).",
+                _obj_title=f"Individual throughput upstream endp,  offered upload bps: {min_bps_a} offered download bps: {min_bps_b} /station for traffic {tos} (WiFi).",
                 _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
                     f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
                     f"Throughput in Mbps”.")
