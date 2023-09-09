@@ -2437,9 +2437,9 @@ class L3VariableTime(Realm):
                             endp_data[endp_data_key]["rx rate"])
                     if endp_data[endp_data_key]['a/b'] == "B":
                         self.bk_clients_B.append(endp_data[endp_data_key]['name'])
-                        self.bk_tos_ul_B.append(
-                            endp_data[endp_data_key]["tx rate"])
                         self.bk_tos_dl_B.append(
+                            endp_data[endp_data_key]["tx rate"])
+                        self.bk_tos_ul_B.append(
                             endp_data[endp_data_key]["rx rate"])
 
                 elif endp_data[endp_data_key]['tos'] == 'BE':
