@@ -22,7 +22,8 @@ SCRIPT_CLASSIFICATION : Test
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
 
 NOTES:
-After passing cli, a list will be displayed on terminal which contains available resources to run test.
+1.Please enter the duration in s,m,h (seconds or minutes or hours).Eg: 30s,5m,48h.
+2.After passing cli, a list will be displayed on terminal which contains available resources to run test.
 The following sentence will be displayed
 Enter the desired resources to run the test:
 Please enter the port numbers seperated by commas ','.
@@ -127,22 +128,22 @@ class HttpDownload(Realm):
         # This method will set values according user input
         if self.bands == "5G":
             self.radio = [self.fiveg_radio]
-            self.station_list = [LFUtils.portNameSeries(prefix_="http_5g_sta", start_id_=self.sta_start_id,
+            self.station_list = [LFUtils.portNameSeries(prefix_="http_sta", start_id_=self.sta_start_id,
                                                             end_id_=self.num_sta - 1, padding_number_=10000,
                                                             radio=self.fiveg_radio)]
         elif self.bands == "2.4G":
             self.radio = [self.twog_radio]
-            self.station_list = [LFUtils.portNameSeries(prefix_="http_2.4g_sta", start_id_=self.sta_start_id,
+            self.station_list = [LFUtils.portNameSeries(prefix_="http_sta", start_id_=self.sta_start_id,
                                                        end_id_=self.num_sta - 1, padding_number_=10000,
                                                        radio=self.twog_radio)]
         elif self.bands == "Both":
             self.radio = [self.twog_radio, self.fiveg_radio]
             # self.num_sta = self.num_sta // 2
             self.station_list = [
-                                 LFUtils.portNameSeries(prefix_="http_2.4g_sta", start_id_=self.sta_start_id,
+                                 LFUtils.portNameSeries(prefix_="http_sta", start_id_=self.sta_start_id,
                                                         end_id_=self.num_sta - 1, padding_number_=10000,
                                                         radio=self.twog_radio),
-                                 LFUtils.portNameSeries(prefix_="http_5g_sta", start_id_=self.sta_start_id,
+                                 LFUtils.portNameSeries(prefix_="http_sta", start_id_=self.sta_start_id,
                                                         end_id_=self.num_sta - 1, padding_number_=10000,
                                                         radio=self.fiveg_radio)
                                  ]
@@ -239,7 +240,6 @@ class HttpDownload(Realm):
         print("Test Build done")
 
     def start(self):
-        print("Test Started")
         self.http_profile.start_cx()
         try:
             for i in self.http_profile.created_cx.keys():
@@ -779,9 +779,9 @@ def main():
     parser.add_argument('--fiveg_passwd', help='WiFi passphrase/password/key for 5G clients')
     parser.add_argument('--target_per_ten', help='number of request per 10 minutes', default=100)
     parser.add_argument('--file_size', type=str, help='specify the size of file you want to download', default='5MB')
-    parser.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G OR 2.4G OR Both',
+    parser.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G OR 2.4G',
                         default=["5G", "2.4G"])
-    parser.add_argument('--duration', type=int, help='time to run traffic')
+    parser.add_argument('--duration', help='Please enter the duration in s,m,h (seconds or minutes or hours).Eg: 30s,5m,48h')
     parser.add_argument('--client_type', help='Enter the type of client. Example:"Real","Virtual"')
     parser.add_argument('--threshold_5g', help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
     parser.add_argument('--threshold_2g', help="Enter the threshold value for 2.4G Pass/Fail criteria", default="90")
@@ -824,9 +824,15 @@ def main():
     if len(args.bands) > 1 and "Both" in args.bands:
         raise ValueError("'Both' test type must be used independently!")
 
-    test_time = datetime.now()
-    test_time = test_time.strftime("%b %d %H:%M:%S")
-    print("Test started at ", test_time)
+    if args.duration.endswith('s') or args.duration.endswith('S'):
+        args.duration = int(args.duration[0:-1])
+    elif args.duration.endswith('m') or args.duration.endswith('M'):
+        args.duration = int(args.duration[0:-1]) * 60
+    elif args.duration.endswith('h') or args.duration.endswith('H'):
+        args.duration = int(args.duration[0:-1]) * 60 * 60
+    elif args.duration.endswith(''):
+        args.duration = int(args.duration)
+
     list5G,list5G_bytes,list5G_speed,list5G_urltimes = [],[],[],[]
     list2G,list2G_bytes,list2G_speed,list2G_urltimes = [],[],[],[]
     Both,Both_bytes,Both_speed,Both_urltimes = [],[],[],[]
@@ -881,8 +887,11 @@ def main():
         http.set_values()
         http.precleanup()
         http.build()
+        test_time = datetime.now()
+        test_time = test_time.strftime("%b %d %H:%M:%S")
+        print("Test started at ", test_time)
         http.start()
-        time.sleep(60 * args.duration)
+        time.sleep(args.duration)
         http.stop()
         uc_avg_val = http.my_monitor('uc-avg')
         url_times = http.my_monitor('total-urls')
