@@ -72,7 +72,8 @@ our $usage = "$0:    # modulates a Layer 3 CX to emulate a video server
   --cx_name     {name}
   --tx_side     {A|B} # which side is emulating the server,
                       # default $::tx_side
-  --max_tx      {speed in bps [K|M|G]} # use this to fill buffer
+  --max_tx      {speed in bps [K|M|G]} # use this to fill buffer. Append '+' to let this number
+                 # to follow the tx/rx rate of the station.
   --min_tx      {speed in bps [K|M|G]} # use when not filling buffer, default 0
   --buf_size    {size[K|M|G]}  # fill a buffer at max_tx for this long
   --stream_res  {$avail_stream_desc}
@@ -100,7 +101,7 @@ our $usage = "$0:    # modulates a Layer 3 CX to emulate a video server
 
 my $show_help = undef;
 our $debug = 0;
-
+our $max_tx_follows_txrx = 0;
 $::stream_key = $resolution;
 GetOptions
 (
@@ -131,6 +132,10 @@ GetOptions
 if ($show_help) {
    print $usage;
    exit 0;
+}
+if ($::max_tx =~ /\+/) {
+    $::max_tx_follows_txrx = 1;
+    $::max_tx =~ s/(\+)//;
 }
 
 if ($list_streams) {
@@ -260,7 +265,7 @@ sub get_txrx_rate {
    my $rxendp = "${cxnam}-${rx_sid}";
    my $cmd = "/home/lanforge/scripts/lf_firemod.pl --mgr $lf_host --mgr_port $lf_port -r $rez "
       ."--action show_endp --endp_name $rxendp --endp_vals EID";
-   # print "GET_TXRX: $cmd\n";
+   #print "GET_TXRX: $cmd\n";
    my @lines = `$cmd`;
    chomp(@lines);
 
@@ -280,6 +285,7 @@ sub get_txrx_rate {
    my ($discard2, $rez2, $portid) = split(/[.]/, $port_eid);
    $cmd = "/home/lanforge/scripts/lf_portmod.pl --mgr $lf_host --mp $lf_port --resource $rez2"
          ." --port_name $portid --show_port Probed-TX-Rate,Probed-RX-Rate";
+   #print "nextcmd: $cmd\n";
    @lines = `$cmd`;
    chomp(@lines);
    my $rate = 0;
@@ -287,6 +293,7 @@ sub get_txrx_rate {
       my @hunks = split(/:\s*/, $line);
       if (@hunks > 1) {
          $rate = $::utils->expand_unit_str($hunks[1]);
+         #print "[$rate] from [$hunks[1]]\n";
       }
       $max_rate = $rate if ($rate > $max_rate);
    }
@@ -735,11 +742,15 @@ do {
       $bytes = txbytes($endp, $check_if_stopped);
       my ($delta2_sec, $delta2_usec) = gettimeofday();
       my $rx_side = ($::tx_side eq "A") ? "B" : "A";
-      my $updated_txbps = get_txrx_rate($::lfmgr_host, $lfmgr_port, $::resource, $::cx_name, $rx_side);
-      if ($updated_txbps > 0) {
-         $::max_tx = $updated_txbps;
-         $::est_fill_time_sec  = (8 * $::buf_size) / ($::max_tx * 0.5);
-         $drain_wait_sec = $drain_time_sec - $::est_fill_time_sec;
+
+      if ($max_tx_follows_txrx) {
+          my $updated_txbps = get_txrx_rate($::lfmgr_host, $lfmgr_port, $::resource, $::cx_name, $rx_side);
+          if ($updated_txbps > 0) {
+              #print "Updated_txbs: $updated_txbps\n";
+              $::max_tx = $updated_txbps;
+              $::est_fill_time_sec = (8 * $::buf_size) / ($::max_tx * 0.5);
+              $drain_wait_sec = $drain_time_sec - $::est_fill_time_sec;
+          }
       }
       $delta1_sec = $delta1_sec + ($delta1_usec/1000000);
       $delta2_sec = $delta2_sec + ($delta2_usec/1000000);
