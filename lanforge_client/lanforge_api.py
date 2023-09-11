@@ -1453,6 +1453,67 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/ADB_BT> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#adb_bt
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_adb_bt(self, 
+                    adb_id: str = None,                       # Android device identifier, use NA if it should not be
+                    # used/specified. [W]
+                    keystrokes: str = None,                   # All remaining text after adb_id will be sent as keystrokes.
+                    # For example: [... {adb_id} ctrl h ctrl f s e t t...] <tt
+                    # escapearg='false'>Unescaped Value</tt>
+                    resource: int = None,                     # Resource number. [W]
+                    shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                    response_json_list: list = None,
+                    debug: bool = False,
+                    errors_warnings: list = None,
+                    suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_adb_bt(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if adb_id is not None:
+            data["adb_id"] = adb_id
+        if keystrokes is not None:
+            data["keystrokes"] = keystrokes
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/adb_bt",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+    #
+
+    def post_adb_bt_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_adb_bt(adb_id=param_map.get("adb_id"),
+                         keystrokes=param_map.get("keystrokes"),
+                         resource=param_map.get("resource"),
+                         shelf=param_map.get("shelf"),
+                         )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADB_GUI> type requests
 
         https://www.candelatech.com/lfcli_ug.php#adb_gui
@@ -1463,7 +1524,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AdbGuiFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AdbGuiFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         NO_AUDIO_SCRCPY = 0x2              # Disable scrcpy audio forwarding
@@ -1690,6 +1751,7 @@ class LFJsonCommand(JsonCommand):
                      adb_model: str = None,                    # Android device model ID
                      adb_product: str = None,                  # Android device product ID
                      app_identifier: str = None,               # Identifier that App and adb can both query (mac of wlan0)
+                     bt_ctrl_dev: str = None,                  # Filepath of device's assigned BT adapter
                      device_type: str = None,                  # Interop device type
                      lf_username: str = None,                  # LANforge Interop app user-name
                      resource: int = None,                     # Resource number. [W]
@@ -1718,6 +1780,8 @@ class LFJsonCommand(JsonCommand):
             data["adb_product"] = adb_product
         if app_identifier is not None:
             data["app_identifier"] = app_identifier
+        if bt_ctrl_dev is not None:
+            data["bt_ctrl_dev"] = bt_ctrl_dev
         if device_type is not None:
             data["device_type"] = device_type
         if lf_username is not None:
@@ -1756,6 +1820,7 @@ class LFJsonCommand(JsonCommand):
                           adb_model=param_map.get("adb_model"),
                           adb_product=param_map.get("adb_product"),
                           app_identifier=param_map.get("app_identifier"),
+                          bt_ctrl_dev=param_map.get("bt_ctrl_dev"),
                           device_type=param_map.get("device_type"),
                           lf_username=param_map.get("lf_username"),
                           resource=param_map.get("resource"),
@@ -1859,7 +1924,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddBgpPeerFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddBgpPeerFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         ENABLE_PEER = 0x1             # Set this to zero if you don't want this peer enabled.
@@ -2307,7 +2372,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddChamberChamberFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddChamberChamberFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         OPEN = 0x4         # (3) Door is open, no real isolation right now.
@@ -2328,7 +2393,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddChamberTurntableType0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddChamberTurntableType, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         COMXIM = 0x1      # ComXim stand-alone USB connected turn-table.
@@ -2789,7 +2854,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddDutDutFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddDutDutFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         p_11r = 0x200            # Use .11r connection logic on all ssids, deprecated, see add_dut_ssid.
@@ -3029,7 +3094,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddDutSsidDutFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddDutSsidDutFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         p_11r = 0x200          # Use .11r connection logic
@@ -3337,7 +3402,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddFileEndpFioFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddFileEndpFioFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         AUTO_MOUNT = 0x2                # (2) Attempt to mount with the provided information if not already
@@ -3658,7 +3723,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddGroupFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddGroupFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         group_total_rates = 0x4      # Set rates as total for group.
@@ -3734,7 +3799,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddL4EndpHttpAuthType0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddL4EndpHttpAuthType, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         BASIC = 0x1             # Basic authentication
@@ -3756,7 +3821,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddL4EndpProxyAuthType0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddL4EndpProxyAuthType, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         BASIC = 0x1                            # 1 Basic authentication
@@ -3790,7 +3855,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddL4EndpType0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddL4EndpType, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         l4_generic = 0x0      # Layer 4 type
@@ -3947,7 +4012,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddMonitorFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddMonitorFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         be320_enable = 0x4000000000000         # Enable 320Mhz mode.
@@ -4258,7 +4323,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddProfileProfileFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddProfileProfileFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         p_11r = 0x40                        # Use 802.11r roaming setup.
@@ -4615,7 +4680,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddStaFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddStaFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         p_80211r_pmska_cache = 0x4000000               # Enable oportunistic PMSKA caching for WPA2 (Related to
@@ -5217,7 +5282,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddTrafficProfileTrafficProfileFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddTrafficProfileTrafficProfileFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         BI_DIRECTIONAL = 0x2      # Should we do bi-directional traffic?
@@ -5386,7 +5451,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddVapFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddVapFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         p_80211h_enable = 0x10000000              # Enable 802.11h (needed for running on DFS channels) Requires
@@ -5597,7 +5662,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddVenueFreq240, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddVenueFreq24, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         ALL = 0xffff       # ALL
@@ -5619,7 +5684,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddVenueFreq50, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddVenueFreq5, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         Ch_100 = 0x800           # Channel 100 5500
@@ -5937,7 +6002,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddVrFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddVrFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         p_4BYTE_AS_NUMBER = 0x40      # Sets corresponding Xorp flag.
@@ -6053,7 +6118,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddVrBgpFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddVrBgpFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         p_4BYTE_AS_NUMBER = 0x40      # Sets corresponding Xorp flag.
@@ -6169,7 +6234,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(AddVrcxFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(AddVrcxFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         custom_dhcpd = 0x400        # Use custom DHCP config file
@@ -6910,7 +6975,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(CShowPortsProbeFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(CShowPortsProbeFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         BRIDGE = 0x8                 # 8 include bridges
@@ -8960,7 +9025,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(LogLevelLevel0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(LogLevelLevel, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         ALL = 0xffffffff        # Log everything
@@ -9389,7 +9454,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(NcShowPortsProbeFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(NcShowPortsProbeFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         BRIDGE = 0x8                 # 8 include bridges
@@ -12017,7 +12082,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetArmInfoArmFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetArmInfoArmFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         random_payload = 0x10000      # Use random payload sizes instead of linear increase
@@ -13252,7 +13317,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetEventInterestEiFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetEventInterestEiFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         CLEAR = 0x0      # will clear interest
@@ -13272,7 +13337,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetEventInterestEvents10, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetEventInterestEvents1, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         BAD_TOS = 0x400000                        # Endpoint has bad ToS values configured.
@@ -13322,7 +13387,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetEventInterestEvents20, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetEventInterestEvents2, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         FW_CRASH = 0x800                     # Firmware for entity has crashed.
@@ -14146,7 +14211,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetPortCmdFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetPortCmdFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         abort_if_scripts = 0x400       # Forceably abort all ifup/down scripts on this Port.
@@ -14176,7 +14241,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetPortCurrentFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetPortCurrentFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         adv_100bt_fd = 0x800000                       # advert-100bt-FD
@@ -14257,7 +14322,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetPortFlags20, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetPortFlags2, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         bypass_disconnect = 0x200      # Logically disconnect the cable (link-down)
@@ -14281,7 +14346,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetPortInterest0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetPortInterest, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         alias = 0x1000                     # Port alias
@@ -14833,7 +14898,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetRfgenRfgenFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetRfgenRfgenFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         one_burst = 0x8           # Run for about 1 second and stop. Uses 5-sec sweep time for single pulse
@@ -15045,7 +15110,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetScriptFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetScriptFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         SCR_COMPLETED = 0x80                # Set automatically by LANforge.
@@ -15659,7 +15724,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetWanpathCorruptionFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetWanpathCorruptionFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         BIT_FLIP = 0x4              # Flip a random bit in a byte.
@@ -15905,7 +15970,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetWifiCorruptionsCorruptFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetWifiCorruptionsCorruptFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         MSG_TYPE_DEAUTH = 0x2                   # de-authentication message
@@ -16411,7 +16476,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetWifiRadioFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetWifiRadioFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         allow_all_mcs = 0x400000         # Enable MCS otherwise disabled by firmware (ath10k only).
@@ -16775,7 +16840,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SetWlCorruptionFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SetWlCorruptionFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         BIT_FLIP = 0x4              # Flip a random bit in a byte.
@@ -18879,7 +18944,7 @@ class LFJsonCommand(JsonCommand):
             This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
                 int:flag_val = 0
-                flag_val = LFPost.set_flags(SniffPortFlags0, flag_names=['bridge', 'dhcp'])
+                flag_val = LFPost.set_flags(SniffPortFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         DUMPCAP = 0x2                 # Use command-line dumpcap, more efficient than tshark
@@ -20866,12 +20931,12 @@ class LFJsonQuery(JsonQuery):
     When requesting specific column names, they need to be URL encoded:
         1st+rx, a%2Fb, bursty, crc+fail, cwnd, cx+active, cx+estab, cx+estab%2Fs, cx+to, 
         delay, destination+addr, dropped, dup+pkts, eid, elapsed, entity+id, jitter, 
-        max+pdu, max+rate, min+pdu, min+rate, mng, name, ooo+pkts, pattern, pdu%2Fs+rx, 
-        pdu%2Fs+tx, pps+rx+ll, pps+tx+ll, rcv+buf, replays, run, rx+ber, rx+bytes, 
-        rx+drop+%25, rx+dup+%25, rx+ooo+%25, rx+pdus, rx+pkts+ll, rx+rate, rx+rate+%281%C2%A0min%29, 
+        max+pdu, max+rate, mcast+rx, min+pdu, min+rate, mng, name, ooo+pkts, pattern, 
+        pdu%2Fs+rx, pdu%2Fs+tx, pps+rx+ll, pps+tx+ll, rcv+buf, replays, run, rx+ber, 
+        rx+bytes, rx+drop+%25, rx+dup+%25, rx+ooo+%25, rx+pdus, rx+pkts+ll, rx+rate, rx+rate+%281%C2%A0min%29, 
         rx+rate+%28last%29, rx+rate+ll, rx+wrong+dev, script, send+buf, source+addr, 
         tcp+mss, tcp+rtx, tx+bytes, tx+pdus, tx+pkts+ll, tx+rate, tx+rate+%281%C2%A0min%29, 
-        tx+rate+%28last%29, tx+rate+ll        # hidden columns:
+        tx+rate+%28last%29, tx+rate+ll, type        # hidden columns:
         drop-count-5m, latency-5m, rt-latency-5m, rx-silence-3s, tos
     Example URL: /endp?fields=1st+rx,a%2Fb
 
@@ -20912,6 +20977,7 @@ class LFJsonQuery(JsonQuery):
                                 # maximum write sizes put memory pressure on theLANforge system and can
                                 # degrade performance.
         'max rate':             # Maximum desired transmit rate, in bits per second (bps).
+        'mcast rx':             # Indicates if endpoint is configured as a multicast receiver.
         'min pdu':              # The minimum write size.For Ethernet protocols, this is the entire
                                 # Ethernet frame. For UDP, it is the UDP payload size, and for TCP, it
                                 # just means the maximum amount of data that is written per socket
@@ -20967,7 +21033,7 @@ class LFJsonQuery(JsonQuery):
         'rx wrong dev':         # Total packets received on the wrong device (port).
         'script':               # Endpoint script state.
         'send buf':             # Configured/Actual values for sending buffer size (bytes).
-        'source addr':          # 
+        'source addr':          # Source Address (MAC, ip/port, VoIP source).
         'tcp mss':              # Sender's TCP-MSS (max segment size) setting.This cooresponds to the
                                 # TCP_MAXSEGS socket option,and TCP-MSS plus 54 is the maximum packet size
                                 # on the wirefor Ethernet frames.This is a good option to efficiently
@@ -20988,6 +21054,7 @@ class LFJsonQuery(JsonQuery):
                                 # only the protocol payload (goodput).
         'tx rate ll':           # Estimated low-level transmit rate (bps) over the last minute.This
                                 # includes any Ethernet, IP, TCP, UDP or similar headers.
+        'type':                 # Type
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
