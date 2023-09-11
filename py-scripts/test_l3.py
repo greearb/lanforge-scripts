@@ -739,7 +739,7 @@ class L3VariableTime(Realm):
         self.ride_a_min_bps = 0
 
         self.endp_data = {}
-        self.port_data = {}
+        self.port_response = {}
         self.endpoint_data = {}
 
 
@@ -788,6 +788,7 @@ class L3VariableTime(Realm):
         self.be_port_channel_dl_A = []
         self.be_request_dl_A = []
         self.be_request_ul_A = []
+
 
         # dataframe
         self.be_dataframe_A = pd.DataFrame()
@@ -868,10 +869,17 @@ class L3VariableTime(Realm):
         self.vo_request_dl_B = []
         self.vo_request_ul_B = []
 
+        # station list information
+        self.port_list = []
+        self.mac_list = []
+        self.channel_list = []
+
+        
         # dataframe
         self.vo_dataframe_B = pd.DataFrame()
 
         self.client_dict = {}
+        self.client_table_dict = {}
 
         # AP information
         self.ap = None
@@ -2498,6 +2506,79 @@ class L3VariableTime(Realm):
                 "labels": ['Upload', 'Download']
             }
         }
+
+        
+        # gather port information
+        self.port_response = self.json_get("/port/all")
+        for interface in self.port_response['interfaces']:
+            for port, port_data in interface.items():
+                if(port in self.station_profile.station_names):
+                    self.port_list.append(port)
+                    self.mac_list.append(port_data['mac'])
+                    self.channel_list.append(port_data['channel'])
+
+
+        self.client_table_dict = {
+            "y_axis_name": "Client names",
+            "x_axis_name": "Throughput in Mbps",
+            "min_bps_a": self.side_a_min_bps,
+            "min_bps_b": self.side_b_min_bps,
+            "BK": {
+                "clients_A": self.bk_clients_A,
+                "ul_A": self.bk_tos_ul_A,
+                "dl_A": self.bk_tos_dl_A,
+                "clients_B": self.bk_clients_B,
+                "ul_B": self.bk_tos_ul_B,
+                "dl_B": self.bk_tos_dl_B,
+                "colors": ['orange', 'wheat'],
+                "labels": ['Upload','Download'],
+                "ports": self.port_list,
+                "mac":   self.mac_list,
+                "channel": self.channel_list
+            },
+            "BE": {
+                "clients_A": self.be_clients_A,
+                "ul_A": self.be_tos_ul_A,
+                "dl_A": self.be_tos_dl_A,
+                "clients_B": self.be_clients_B,
+                "ul_B": self.be_tos_ul_B,
+                "dl_B": self.be_tos_dl_B,
+                "colors": ['lightcoral', 'mistyrose'],
+                "labels": ['Upload','Download'],
+                "ports": self.port_list,
+                "mac":   self.mac_list,
+                "channel": self.channel_list
+            },
+            "VI": {
+                "clients_A": self.vi_clients_A,
+                "ul_A": self.vi_tos_ul_A,
+                "dl_A": self.vi_tos_dl_A,
+                "clients_B": self.vi_clients_B,
+                "ul_B": self.vi_tos_ul_B,
+                "dl_B": self.vi_tos_dl_B,
+                "colors": ['steelblue', 'lightskyblue'],
+                "labels": ['Upload', 'Download'],
+                "ports": self.port_list,
+                "mac":   self.mac_list,
+                "channel": self.channel_list
+            },
+            "VO": {
+                "clients_A": self.vo_clients_A,
+                "ul_A": self.vo_tos_ul_A,
+                "dl_A": self.vo_tos_dl_A,
+                "clients_B": self.vo_clients_B,
+                "ul_B": self.vo_tos_ul_B,
+                "dl_B": self.vo_tos_dl_B,
+                "colors": ['green', 'lightgreen'],
+                "labels": ['Upload', 'Download'],
+                "ports": self.port_list,
+                "mac":   self.mac_list,
+                "channel": self.channel_list
+            }
+        }
+
+
+
 
         logger.info("printed the collected data")
 
@@ -4354,6 +4435,28 @@ INCLUDE_IN_README: False
             report.set_graph_image(graph_png)
             report.move_graph_image()
             report.build_graph()
+            '''
+            bk_dataframe = {
+                " Client Name " : self.sta_list,
+                " Mac " : self.mac_list,
+                " Channel " : self.channel_list,
+                " Type of traffic " : bk_tos_list,
+                " Traffic Direction " : traffic_direction_list,
+                " Traffic Protocol " : traffic_type_list,
+                " Offered upload rate(Mbps) " : upload_list,
+                " Offered download rate(Mbps) " : download_list,
+                " Observed upload rate(Mbps) " : individual_upload_list,
+                " Observed download rate(Mbps)" : individual_download_list
+            }
+
+
+            dataframe = {
+                " Client Name " :  ip_var_test.client_table_list[tos]["clients_A"],
+                " Ports " : ip_var_test.client_table_list[tos]["ports"],
+                " "
+            }
+
+            '''
 
 
     for tos in tos_list:
