@@ -187,6 +187,10 @@ class HttpDownload(Realm):
         self.port_util.set_http(port_name=self.local_realm.name_to_eid(self.upstream)[2],
                                 resource=self.local_realm.name_to_eid(self.upstream)[1], on=True)
         if self.client_type == "Virtual":
+            if self.bands == "2.4G":
+                self.station_profile.mode = 13
+            elif self.bands == "5G":
+                self.station_profile.mode = 14
             for rad in range(len(self.radio)):
                 self.station_profile.use_security(self.security[rad], self.ssid[rad], self.password[rad])
                 self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
@@ -215,7 +219,7 @@ class HttpDownload(Realm):
                 # create http profile
                 self.http_profile.create(ports=self.station_profile.station_names, sleep_time=.5,
                                         suppress_related_commands_=None, http=True,user=self.lf_username, passwd=self.lf_password,
-                                        http_ip=ip_upstream + "/webpage.html",proxy_auth_type=0x200)
+                                        http_ip=ip_upstream + "/webpage.html",proxy_auth_type=0x200,timeout = 1000)
                 if self.count == 2:
                     self.station_profile.mode = 6
         else:
@@ -235,7 +239,7 @@ class HttpDownload(Realm):
                 self.http_profile.create(ports=self.port_list, sleep_time=.5,
                                     suppress_related_commands_=None, http=True,interop=True,
                                     user=self.lf_username, passwd=self.lf_password,
-                                    http_ip=ip_upstream + "/webpage.html",proxy_auth_type=0x200)
+                                    http_ip=ip_upstream + "/webpage.html",proxy_auth_type=0x200,timeout = 1000)
                     
         print("Test Build done")
 
@@ -974,7 +978,7 @@ def main():
 
     print("total test duration ", test_duration)
     date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
-    duration = 60*args.duration
+    duration = args.duration
     if int(duration) < 60 :
         duration = str(duration) + "s"
     elif int(duration == 60) or (int(duration) > 60 and int(duration) < 3600) :
