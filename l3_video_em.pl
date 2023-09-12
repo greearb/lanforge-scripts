@@ -50,8 +50,8 @@ our $quit_when_const = 0;
 our $sta             = "";
 our $upstream        = "";
 our $proto           = "lf_udp"; # for constant
-our $est_fill_time_sec = 0;
-our $last_fill_time_sec = 0;
+our $est_tx_time_sec = 0;
+our $previous_tx_time_sec = 0;
 our $begin_running   = 1; # set to 0 to not start CX running; 0 is appropriate for batch creation or bufferfill
 
 
@@ -522,8 +522,8 @@ die("Unknown stream key $::stream_key")
 
 $stream_bps = @{$::avail_stream_res{$::stream_key}}[$::stream_keys{stream_bps}];
 
-my $drain_time_sec = 0;
-my $drain_wait_sec = 0;
+my $segment_play_sec = 0;
+my $wait_until_next_tx_sec = 0;
 my $stream_kbps = 0;
 
 if ($::tx_style =~ /constant/) {
@@ -536,22 +536,22 @@ if ($::tx_style =~ /constant/) {
    $stream_kbps = $stream_bps / 1000;
 }
 else {
-   print "Using tx_style $tx_style\n";
+   print "Using tx_style $tx_style \n";
    sleep(2);
    # estimated fill time is probably not going to be accurate because
    # there's no way to know the txrate between the AP and station.
-   $::est_fill_time_sec  = (8 * $::buf_size) / ($::max_tx * 0.5);
-   $drain_time_sec = (8 * $::buf_size) / $stream_bps;
-   $drain_wait_sec = $drain_time_sec - $est_fill_time_sec;
+   $::est_tx_time_sec  = (8 * $::buf_size) / ($::max_tx * 0.5);
+   $segment_play_sec = (8 * $::buf_size) / $stream_bps;
+   $wait_until_next_tx_sec = $segment_play_sec - $est_tx_time_sec;
 
-   if ($drain_wait_sec <= 0) {
+   if ($wait_until_next_tx_sec <= 0) {
      $stream_kbps = $stream_bps / 1000;
      print "Warning: constant transmit! Raise max_tx to at least $stream_kbps Kbps\n";
-     $drain_wait_sec = 0;
+     $wait_until_next_tx_sec = 0;
    }
 
    my $buf_kB = $::buf_size / 1024;
-   print "Filling $::stream_key $buf_kB KB buffer est ${est_fill_time_sec}sec, empties in ${drain_time_sec} sec\n"
+   print "Sending $::stream_key ${buf_kB}KB buffer ~${est_tx_time_sec}sec, playtime ${segment_play_sec} sec\n"
      unless($::silent);
 }
 $stream_kbps = $stream_bps / 1000;
@@ -563,7 +563,7 @@ my $cx_exists = 0;
 $cx_exists = 1 if (@matches == 0);
 
 if (($::tx_style eq "bufferfill") && !$cx_exists) {
-   print "Tx_style bufferfill requires your connection already exists, bye.\n";
+   print "tx_style=bufferfill requires your L3 connection already exists, bye.\n";
    exit 1;
 }
 
@@ -634,9 +634,9 @@ if ($::tx_style eq "L4") {
 
    $endp = $tmp_ep1; # L4 endpoints are not '-A', '-B'
    my $timeout = 2000; # ms
-   die("Invalid drain time: $drain_time_sec")
-      if ($drain_time_sec <= 0);
-   my $url_rate = floor(600 / $drain_time_sec);
+   die("Invalid drain time: $segment_play_sec")
+      if ($segment_play_sec <= 0);
+   my $url_rate = floor(600 / $segment_play_sec);
 
    my $short_size = $::buf_size;
    while ($short_size > 1024) {
@@ -695,7 +695,7 @@ if ($::tx_style =~ /constant|bufferfill/) {
 #     start CX
 #
 # avoid a stampede of scripts starting at the same time
-my $rand_start_delay = rand(7);
+my $rand_start_delay = rand(3);
    if (! $::debug) {
    print "Random start delay: $rand_start_delay...\n";
    $::utils->sleep_sec($rand_start_delay);
@@ -748,33 +748,36 @@ do {
           if ($updated_txbps > 0) {
               #print "Updated_txbs: $updated_txbps\n";
               $::max_tx = $updated_txbps;
-              $::est_fill_time_sec = (8 * $::buf_size) / ($::max_tx * 0.5);
-              $drain_wait_sec = $drain_time_sec - $::est_fill_time_sec;
+              $::est_tx_time_sec = (8 * $::buf_size) / ($::max_tx * 0.5);
+              $wait_until_next_tx_sec = $segment_play_sec - $::est_tx_time_sec;
           }
       }
       $delta1_sec = $delta1_sec + ($delta1_usec/1000000);
       $delta2_sec = $delta2_sec + ($delta2_usec/1000000);
       #push(@delta_reports, sprintf(" Sent %d B, d %.5f",($bytes-$prev_bytes), ($delta2_sec - $delta1_sec)));
-      push(@delta_reports, sprintf(" Sent %d B/ %.5f bps;",
-         ($bytes-$prev_bytes),
-         ($bytes-$prev_bytes)/($delta2_sec - $starttime) ));
+      # if (($delta2_sec - $starttime) > 0) {
+      #     push(@delta_reports, sprintf(" Sent %02.2f B/ %02.2f bps;",
+      #         ($bytes - $prev_bytes),
+      #         ($bytes - $prev_bytes) / ($delta2_sec - $starttime)));
+      # }
+
       if ($bytes > ($buf_size + $startbytes)) {
           for my $rep (@reports) {
             print "$rep\n";
           }
           @reports = ();
-          #print "sent enough bytes\n";
+          print "\n";
           last ;
       }
 
       # if we're taking unreasonably long, let's just escape
-      if (($delta2_sec - $starttime) > (12 * $last_fill_time_sec)) {
-         if ($last_fill_time_sec > 1) {
-           push(@reports, sprintf("Likely overfill detected, txsec: %.4f", ($delta2_sec - $starttime)));
+      if (($delta2_sec - $starttime) > (12 * $previous_tx_time_sec)) {
+         if ($previous_tx_time_sec > 1) {
+           push(@reports, sprintf("Likely overtx detected, txsec: %02.2f", ($delta2_sec - $starttime)));
          }
          last;
       }
-      push(@delta_reports, "z");
+      # push(@delta_reports, "z");
       $::utils->sleep_ms(200);
       #$::utils->sleep_ms( 5 * ($delta2_sec - $delta1_sec));
       for my $rep (@reports) {
@@ -785,19 +788,19 @@ do {
    $startbytes = 0;
    my ($finishtime_sec, $finishtime_usec) = gettimeofday();
    $finishtime_sec = ($finishtime_sec + ($finishtime_usec / 1000000));
-   $last_fill_time_sec =  $finishtime_sec - $starttime_sec;
+   $previous_tx_time_sec = $finishtime_sec - $starttime_sec;
    $tt_bytes += $bytes;
 
-   $drain_wait_sec = $drain_time_sec - $last_fill_time_sec;
-   push(@reports, sprintf("## drain_wait_seconds: %.4f; est fill: %.4f; actual fill %.4f; dev: %.4f",
-      $drain_wait_sec, $est_fill_time_sec, $last_fill_time_sec, ($est_fill_time_sec - $last_fill_time_sec )));
-   push(@reports, "deltas: ".join(',', @delta_reports));
+   $wait_until_next_tx_sec = $segment_play_sec - $previous_tx_time_sec;
+   push(@reports, sprintf(" sec until tx: %02.2f; est tx time: %02.2f; prev tx time: %02.2f; estimation error: %02.2f\n",
+      $wait_until_next_tx_sec, $est_tx_time_sec, $previous_tx_time_sec, ($est_tx_time_sec - $previous_tx_time_sec )));
+   #push(@reports, "deltas: ".join("\n", @delta_reports));
    for my $rep (@reports) {
        print "$rep\n";
    }
-   if ($::quit_when_const && ($fill_stops > 1) && ($drain_wait_sec <= 0)) {
+   if ($::quit_when_const && ($fill_stops > 1) && ($wait_until_next_tx_sec <= 0)) {
       # this is a failure condition, we are misconfigured or overloaded
-      cleanexit("Constant TX Quit: Wait $drain_wait_sec = Drain $drain_time_sec - Fill time $last_fill_time_sec;\n"
+      cleanexit("Constant TX Quit: Wait $wait_until_next_tx_sec = (Play time: $segment_play_sec sec) - (Prev TX: $previous_tx_time_sec sec);\n"
                .join("\n", @reports));
    }
 
@@ -812,9 +815,12 @@ do {
    #$ave_fill_bytes = $tt_bytes / $fill_stops;
    #push(@reports, "# $fill_starts fills for ave ${ave_fill_bytes}B/fill");
 
-   $::utils->sleep_sec($drain_wait_sec);
+   $::utils->sleep_sec($wait_until_next_tx_sec);
    $startbytes = txbytes($endp, $check_if_stopped);
-   push(@reports, "Setting max_tx to $::max_tx");
+   if ($max_tx_follows_txrx) {
+        push(@reports, "Setting max_tx to $::max_tx \n");
+   }
+
    $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
    $::utils->doCmd($cmd);
    $::utils->doCmd("set_cx_state all $cx_name RUNNING");
