@@ -349,6 +349,10 @@ class FtpTest(LFCliBase):
         eth_list.append(self.upstream)
 
         if (self.clients_type == "Virtual"):
+            if self.band == "2.4G":
+                self.station_profile.mode = 13
+            elif self.band == "5G":
+                self.station_profile.mode = 14
             for rad in self.radio:
                 # station build
                 self.station_profile.use_security(self.security, self.ssid, self.password)
