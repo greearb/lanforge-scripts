@@ -64,8 +64,8 @@ def main():
             ''')
     parser.add_argument("--host", "--mgr", "--lf_mgr", dest='mgr', help='specify the GUI to connect to',default='localhost')
     parser.add_argument("--mgr_port", help="specify the GUI to connect to, default 8080", default="8080")
-    parser.add_argument("--lf_user", help="lanforge user name", default="lanforge")
-    parser.add_argument("--lf_passwd", help="lanforge password", default="lanforge")
+    parser.add_argument("--lf_user", help="lanforge user name default: lanforge", default="lanforge")
+    parser.add_argument("--lf_passwd", help="lanforge password default: lanforge", default="lanforge")
 
     parser.add_argument("--instance", "--scenario", dest='instance', help='chamber view instance to query')
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
