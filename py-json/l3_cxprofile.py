@@ -472,7 +472,8 @@ class L3CXProfile(LFCliBase):
                 pkts_to_send=None,
                 tos=None, timeout=300, ip_port_a=-1, ip_port_b=-1,
                 batch_quantity=1, port_increment_a=None, port_increment_b=None,
-                ip_port_increment_a=0, ip_port_increment_b=0, cx_name=None):
+                ip_port_increment_a=0, ip_port_increment_b=0, cx_name=None,
+                add_tos_to_name=False):
         # Returns a 2-member array, list of cx, list of endp on success.
         # If endpoints creation fails, returns False, False
         # if Endpoints creation is OK, but CX creation fails, returns False, list of endp
@@ -569,8 +570,12 @@ class L3CXProfile(LFCliBase):
                 else:
                     cx_name = cx_name
 
-                endp_a_name = cx_name + "-A"
-                endp_b_name = cx_name + "-B"
+                if tos and add_tos_to_name:
+                    endp_a_name = cx_name + "-%s-A" % (tos)
+                    endp_b_name = cx_name + "-%s-B" % (tos)
+                else:
+                    endp_a_name = cx_name + "-A"
+                    endp_b_name = cx_name + "-B"
                 self.created_cx[cx_name] = [endp_a_name, endp_b_name]
                 self.created_endp[endp_a_name] = endp_a_name
                 self.created_endp[endp_b_name] = endp_b_name
