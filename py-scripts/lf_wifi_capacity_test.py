@@ -677,12 +677,18 @@ INCLUDE_IN_README: False
     parser.add_argument('--start_id', help='Specify the station starting id \n e.g: --start_id <value> default 0',
                         default=0)
 
+    parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
+
     args = parser.parse_args()
 
     cv_base_adjust_parser(args)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
+
+    # set the logger level to debug
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
 
     # lf_logger_config_json will take presidence to changing debug levels
     if args.lf_logger_config_json:
