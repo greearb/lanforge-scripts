@@ -1480,7 +1480,7 @@ class L3VariableTime(Realm):
                             logger.info("Creating connections for endpoint type: {etype} TOS: {tos}  cx-count: {cx_count}".format(
                                 etype=etype, tos=_tos, cx_count=self.cx_profile.get_cx_count()))
                             these_cx, these_endp = self.cx_profile.create(
-                                endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos, add_tos_to_name=False)
+                                endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos, add_tos_to_name=True)
                             if etype == "lf_udp" or etype == "lf_udp6":
                                 self.udp_endps = self.udp_endps + these_endp
                             else:
