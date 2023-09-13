@@ -529,7 +529,7 @@ class HttpDownload(Realm):
 
         if bands == "Both":
             num_stations = num_stations * 2
-        report.set_title("WEBPAGE DOWNLOAD TEST")
+        report.set_title("HTTP DOWNLOAD TEST")
         report.set_date(date)
         report.build_banner()
         report.set_table_title("Test Setup Information")
