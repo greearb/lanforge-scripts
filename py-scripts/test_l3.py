@@ -1467,19 +1467,20 @@ class L3VariableTime(Realm):
                 for etype in self.endp_types:
                     # TODO multi cast does not work
                     if etype == "mc_udp" or etype == "mc_udp6":
+                        # TODO add multicast to name be passed in 
                         for _tos in self.tos:
                             logger.info("Creating Multicast connections for endpoint type:  {etype} TOS: {tos}".format(
                                 etype=etype, tos=_tos))
                             self.multicast_profile.create_mc_tx(
-                                etype, self.side_b, tos=_tos, add_tos_to_name=False)
+                                etype, self.side_b, tos=_tos, add_tos_to_name=True)
                             self.multicast_profile.create_mc_rx(
-                                etype, side_rx=station_profile.station_names, tos=_tos, add_tos_to_name=False)
+                                etype, side_rx=station_profile.station_names, tos=_tos, add_tos_to_name=True)
                     else:
                         for _tos in self.tos:
                             logger.info("Creating connections for endpoint type: {etype} TOS: {tos}  cx-count: {cx_count}".format(
                                 etype=etype, tos=_tos, cx_count=self.cx_profile.get_cx_count()))
                             these_cx, these_endp = self.cx_profile.create(
-                                endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
+                                endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos, add_tos_to_name=False)
                             if etype == "lf_udp" or etype == "lf_udp6":
                                 self.udp_endps = self.udp_endps + these_endp
                             else:
@@ -4422,7 +4423,7 @@ INCLUDE_IN_README: False
                                 _label=ip_var_test.client_dict[tos]['labels'],
                                 _color_name=ip_var_test.client_dict[tos]['colors'],
                                 _color_edge=['black'],
-                                _graph_title=f"Individual {tos} station side traffic (downstream)", # traditional station side -A
+                                _graph_title=f"Individual {tos} client side traffic measurement - side a (downstream)", # traditional station side -A
                                 _title_size=10,
                                 _figsize=(x_fig_size,y_fig_size),
                                 _show_bar_value= True,
@@ -4486,7 +4487,7 @@ INCLUDE_IN_README: False
                                 _label=ip_var_test.client_dict[tos]['labels'],
                                 _color_name=ip_var_test.client_dict[tos]['colors'],
                                 _color_edge=['black'],
-                                _graph_title=f"Individual {tos} side b (WIFI) traffic",
+                                _graph_title=f"Individual {tos} upstream side traffic measurement - side b (WIFI) traffic",
                                 _title_size=10,
                                 _figsize=(x_fig_size,y_fig_size),
                                 _show_bar_value= True,
@@ -4516,8 +4517,7 @@ INCLUDE_IN_README: False
         for key, value in ip_var_test.dl_port_csv_files.items():
             if args.csv_data_to_report:
                 # read the csv file
-                report.set_table_title(
-                    "Layer 3 Cx Traffic  {key}".format(key=key))
+                report.set_table_title("Layer 3 Cx Traffic  {key}".format(key=key))
                 report.build_table_title()
                 report.set_table_dataframe_from_csv(value.name)
                 report.build_table()
