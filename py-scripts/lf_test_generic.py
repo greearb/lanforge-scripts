@@ -358,19 +358,19 @@ class GenTest():
         unique_alias = 0
         if self.sta_list:
             unique_alias += len(self.sta_list)
-        elif self.use_existing_eid:
+        if self.use_existing_eid:
             unique_alias += len(self.use_existing_eid)
 
         if self.sta_list:
             for sta_alias in self.sta_list:
                 sta_eid = self.name_to_eid(sta_alias)
                 self.create_generic_endp(sta_eid, self.test_type, unique_alias)
-                unique_alias=-1
+                unique_alias-=1
 
         if self.use_existing_eid:
             for eid in self.use_existing_eid:
                 self.create_generic_endp(eid, self.test_type, unique_alias)
-                unique_alias=-1
+                unique_alias-=1
 
         if self.wait_for_action("endp", self.created_endp, "appear", 3000):
             print("Generic endp creation completed.")
@@ -380,7 +380,8 @@ class GenTest():
     def create_generic_endp(self, eid, type, unique_num):
         #create initial generic endp
         #  add_gen_endp testing 1 1 sta0000 gen_generic
-        unique_alias = type + "-" + str(unique_num)
+        print(unique_num)
+        unique_alias = "CX_" + type + "_" + str(unique_num)
         self.command.post_add_gen_endp(alias = unique_alias,
                                        shelf=eid[0],
                                        resource=eid[1],
@@ -514,8 +515,10 @@ class GenTest():
                             json_url = "%s/ports/%s/%s/%s?fields=device,down" % (self.lfclient_url, port_resource, port_shelf, port_name)
                             json_response = self.query.json_get(url=json_url,
                                                                 debug=self.debug)
+                            print("-----json_response------")
+                            print(json_response)
                             #if sta is found by json response & not phantom
-                            if json_response is not None:
+                            if json_response is not None and True:
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
 
                         elif action == "up":
@@ -715,7 +718,7 @@ def main():
         ''',
     )
     required = parser.add_argument_group('Arguments that must be defined by user:')
-    optional = parser.add_argument_group('Arguements that do not need to be defined by user:')
+    optional = parser.add_argument_group('Arguments that do not need to be defined by user:')
 
     required.add_argument("--lf_user", type=str, help="user: lanforge", default=None)
     required.add_argument("--lf_passwd", type=str, help="passwd: lanforge", default=None)
@@ -852,7 +855,7 @@ def main():
     time.sleep(5) # give traffic a chance to get started.
 
     must_increase_cols = None
-    if args.type == "lfping":
+    if args.type == "ping":
         must_increase_cols = ["rx bytes"]
     mon_endp = generic_test.generic_endps_profile.created_endp
     generic_test.generate_report(test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
