@@ -696,6 +696,13 @@ def name_to_eid(eid_input, non_port=False):
         rv[1] = int(info[1])
         rv[2] = info[2] + "." + info[3]
 
+    if len(info) == 5:
+        rv[0] = int(info[0])
+        rv[1] = int(info[1])
+        rv[2] = int(info[2])
+        rv[3] = int(info[3])
+        #rv[4] = int(info[4])  # need to do more testing for the 5 th element
+
     return rv
 
 
