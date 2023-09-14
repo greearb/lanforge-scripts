@@ -608,6 +608,10 @@ class RealDevice(Realm):
         self.selected_devices = []
         self.selected_macs = []
         self.report_labels = []
+        self.android = 0
+        self.linux = 0
+        self.windows = 0
+        self.mac = 0
     
     # getting data of all real devices
     def get_devices(self):
@@ -689,6 +693,14 @@ class RealDevice(Realm):
                     self.selected_devices.append(device)
                     self.selected_macs.append(self.devices_data[device]['mac'])
                     self.report_labels.append('{} {} {}'.format(selected_device, [ 'Win' if 'Win' in self.devices_data[device]['hw version'] else 'Lin' if 'Lin' in self.devices_data[device]['hw version'] else 'Mac' if 'Mac' in self.devices_data[device]['hw version'] else 'android'][0], [ self.devices_data[device]['user'] if self.devices_data[device]['user'] != '' else self.devices_data[device]['hostname'] ][0])[:25])
+                    if('Win' in 'Win' in self.devices_data[device]['hw version']):
+                        self.windows += 1
+                    elif('Lin' in 'Lin' in self.devices_data[device]['hw version']):
+                        self.linux += 1
+                    elif('Mac' in self.devices_data[device]['hw version']):
+                        self.mac += 1
+                    else:
+                        self.android += 1
         df = pd.DataFrame(data=selected_t_devices).transpose()
         print(df)
         return [self.selected_devices, self.report_labels, self.selected_macs]

@@ -42,10 +42,13 @@ class GenCXProfile(LFCliBase):
         self.speedtest_min_up = 0
         self.speedtest_max_ping = 0
 
-    def parse_command(self, sta_name, gen_name):
+    def parse_command(self, sta_name, gen_name, real_client=False):
         if self.type == "lfping":
             if self.dest and self.interval:
-                self.cmd = "%s  -i %s -I %s %s" % (self.type, self.interval, sta_name, self.dest)
+                if not real_client:
+                    self.cmd = "%s  -i %s -I %s %s" % (self.type, self.interval, sta_name, self.dest)
+                else:
+                    self.cmd = "%s  -i %s %s" % (self.type, self.interval, self.dest)
             else:
                 logger.critical("Please ensure dest and interval have been set correctly")
                 raise ValueError("Please ensure dest and interval have been set correctly")
@@ -85,7 +88,12 @@ class GenCXProfile(LFCliBase):
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
                 "cx_state": "RUNNING"
-            }, debug_=self.debug)
+            }, debug_=True)
+            print({
+                "test_mgr": "default_tm",
+                "cx_name": cx_name,
+                "cx_state": "RUNNING"
+            })
             # this is for a visual affect someone watching the screen, leave as print
             print(".", end='')
         print("")
@@ -97,7 +105,12 @@ class GenCXProfile(LFCliBase):
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
                 "cx_state": "STOPPED"
-            }, debug_=self.debug)
+            }, debug_=True)
+            print({
+                "test_mgr": "default_tm",
+                "cx_name": cx_name,
+                "cx_state": "STOPPED"
+            })
             # this is for a visual affect someone watching the screen, leave as print
             print(".", end='')
         print("")
@@ -125,6 +138,7 @@ class GenCXProfile(LFCliBase):
             "flag": flag_name,
             "val": val
         }
+        print('Setting flags', data)
         self.json_post("cli-json/set_endp_flag", data, debug_=self.debug)
 
     def set_cmd(self, endp_name, cmd):
@@ -132,6 +146,7 @@ class GenCXProfile(LFCliBase):
             "name": endp_name,
             "command": cmd
         }
+        print('Setting cmd', data)
         self.json_post("cli-json/set_gen_cmd", data, debug_=self.debug)
 
     def parse_command_gen(self, sta_name, dest):
@@ -293,7 +308,7 @@ class GenCXProfile(LFCliBase):
             })
         time.sleep(sleep_time)
 
-    def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None):
+    def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, real_client=False):
         if not ports:
             ports = []
         if self.debug:
@@ -304,7 +319,10 @@ class GenCXProfile(LFCliBase):
             port_info = self.local_realm.name_to_eid(port_name)
             resource = port_info[1]
             shelf = port_info[0]
-            name = port_info[2]
+            if(real_client):
+                name = port_name
+            else:
+                name = port_info[2]
 
             # this naming convention follows what you see when you use
             # lf_firemod.pl --action list_endp after creating a generic endpoint
@@ -314,7 +332,10 @@ class GenCXProfile(LFCliBase):
         for endp_tpl in endp_tpls:
             shelf = endp_tpl[0]
             resource = endp_tpl[1]
-            name = endp_tpl[2]
+            if(real_client):
+                name = endp_tpl[2].split('.')[2]
+            else:
+                name = endp_tpl[2]
             gen_name_a = endp_tpl[3]
 
             data = {
@@ -325,7 +346,7 @@ class GenCXProfile(LFCliBase):
                 "type": "gen_generic"
             }
             logger.debug(pformat(data))
-
+            print('Adding endpoint ', data)
             self.json_post("cli-json/add_gen_endp", data, debug_=self.debug)
 
         self.local_realm.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
@@ -339,16 +360,22 @@ class GenCXProfile(LFCliBase):
             time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
-            name = endp_tpl[2]
+            if(real_client):
+                name = endp_tpl[2].split('.')[2]
+            else:
+                name = endp_tpl[2]
             gen_name_a = endp_tpl[3]
             # gen_name_b  = endp_tpl[4]
-            self.parse_command(name, gen_name_a)
+            self.parse_command(name, gen_name_a, real_client=real_client)
             self.set_cmd(gen_name_a, self.cmd)
         if sleep_time:
             time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
-            name = endp_tpl[2]
+            if(real_client):
+                name = endp_tpl[2].split('.')[2]
+            else:
+                name = endp_tpl[2]
             gen_name_a = endp_tpl[3]
             cx_name = "CX_%s-%s" % (self.name_prefix, name)
             data = {
@@ -366,6 +393,7 @@ class GenCXProfile(LFCliBase):
         for data in post_data:
             url = "/cli-json/add_cx"
             logger.info(pformat(data))
+            print('Adding cx', data)
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
             # time.sleep(2)
         if sleep_time:
