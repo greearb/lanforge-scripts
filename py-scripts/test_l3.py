@@ -742,6 +742,9 @@ class L3VariableTime(Realm):
         self.port_response = {}
         self.endpoint_data = {}
 
+        self.port_data = {}
+        self.resourse_data = {}
+
 
         # endp data
         self.bk_clients_A = []
@@ -753,6 +756,8 @@ class L3VariableTime(Realm):
         self.bk_port_eid_A = []
         self.bk_port_mac_A = []
         self.bk_port_channel_A = []
+        self.bk_resourse_host_A = []
+        self.bk_resourse_hw_ver_A = []
         self.bk_request_dl_A = []
         self.bk_request_ul_A = []
 
@@ -2292,6 +2297,13 @@ class L3VariableTime(Realm):
         logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
 
 
+        self.resourse_data = self.json_get('resource/all?fields=hostname,hw+version')
+        self.resourse_data.pop("handler")
+        self.resourse_data.pop("uri")
+        # self.resourse_data.pop("warnings")
+        logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
+
+
         # Note will type will only work for 5.4.7
         # gather endp data
         endp_type_present = False
@@ -2338,6 +2350,50 @@ class L3VariableTime(Realm):
                             self.bk_clients_A.append(endp_data[endp_data_key]['name'])
                             self.bk_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            # use the eid to get the hostname and channel
+                            # todo eid_temp shows 1.1;
+                            eid_tmp_resourse = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0])+'.'+str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            # look up the resourse
+                            resource_found = False
+                            for resource_data in self.resourse_data['resources']:
+                                resource_data_key = list(resource_data.keys())[0]
+                                if resource_data_key == eid_tmp_resourse:
+                                    resource_found = True
+                                    self.bk_resourse_host_A.append(resource_data[resource_data_key]['hostname'])
+                                    self.bk_resourse_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+
+                            if resource_found is False:
+                                self.bk_resourse_host_A.append('NA')
+                                self.bk_resourse_hw_ver_A.append('NA')
+
+
+
+                            # look up port information
+                            if 'en1' in endp_data[endp_data_key]['name']:
+                                eid_tmp_port = eid_tmp_resourse+'.en1'
+                            elif 'en0' in endp_data[endp_data_key]['name']:
+                                eid_tmp_port = eid_tmp_resourse+'.en0'
+                            elif 'ad0' in endp_data[endp_data_key]['name']:
+                                eid_tmp_port = eid_tmp_resourse+'.ad0'
+                            else:
+                                eid_tmp_port = eid_tmp_resourse+'.virt'
+                            
+                            port_found = False
+                            self.bk_port_eid_A.append(eid_tmp_port)
+                            for port_data in self.port_data['interfaces']:
+                                port_data_key = list(port_data.keys())[0]
+                                if port_data_key == eid_tmp_port:
+                                    self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    # self.bk_port_channel_A.append(port_data[port_data_key]["channel"])
+                                    #self.bk_port_channel_A.append(port_data[port_data_key]['channel'])
+                                    self.bk_port_channel_A.append('NA')
+                                    port_found = True
+                            if port_found is False:
+                                self.bk_port_mac_A.append('NA')
+                                self.bk_port_channel_A.append('NA')
+
+
+
                         # for multicast the logic is reversed. A is upstream, B is downstream
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.bk_clients_B.append(endp_data[endp_data_key]['name'])
@@ -2474,7 +2530,11 @@ class L3VariableTime(Realm):
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
                 "colors": ['orange', 'wheat'],
-                "labels": ['Upload','Download']
+                "labels": ['Upload','Download'],
+                "resourse": self.bk_resourse_host_A,
+                "port": self.bk_port_eid_A,
+                "mac": self.bk_port_mac_A,
+                "channel": self.bk_port_channel_A
             },
             "BE": {
                 "clients_A": self.be_clients_A,
@@ -4436,6 +4496,16 @@ INCLUDE_IN_README: False
             report.set_graph_image(graph_png)
             report.move_graph_image()
             report.build_graph()
+
+
+
+            bk_dataframe = {
+                " Client Name " : ip_var_test.client_dict['BK']['resourse'],
+                " Mac " : ip_var_test.client_dict['BK']['mac'],
+                " Channel " : ip_var_test.client_dict['BK']['channel'],
+                " Type of traffic " : ip_var_test.client_dict['BK']['ul_A']
+            }
+
             '''
             bk_dataframe = {
                 " Client Name " : self.sta_list,
@@ -4449,15 +4519,12 @@ INCLUDE_IN_README: False
                 " Observed upload rate(Mbps) " : individual_upload_list,
                 " Observed download rate(Mbps)" : individual_download_list
             }
+        '''
 
+            dataframe3 = pd.DataFrame(bk_dataframe)
+            report.set_table_dataframe(dataframe3)
+            report.build_table()
 
-            dataframe = {
-                " Client Name " :  ip_var_test.client_table_list[tos]["clients_A"],
-                " Ports " : ip_var_test.client_table_list[tos]["ports"],
-                " "
-            }
-
-            '''
 
 
     for tos in tos_list:
