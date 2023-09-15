@@ -347,8 +347,7 @@ class StaConnect2(Realm):
         elif self.dut_security == WPA3:
             self.station_profile.use_security(security_type="wpa3", ssid=self.dut_ssid, passwd=self.dut_passwd)
         elif self.dut_security == OWE:
-            self.station_profile.use_security(security_type="wpa3", ssid=self.dut_ssid, passwd='--------')
-            #self.station_profile.set_command_flag("add_sta", "use-wpa3", 1)
+            self.station_profile.use_security(security_type="owe", ssid=self.dut_ssid, passwd=BLANK)
             self.station_profile.set_command_flag("add_sta", "use-owe", 1)
             self.station_profile.set_command_flag("add_sta", "8021x_radius", 1)
             self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
