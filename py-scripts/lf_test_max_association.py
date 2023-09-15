@@ -786,8 +786,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog="lf_test_max_association.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        description=
-"""
+        description="""
 NAME: lf_test_max_association.py
 
 PURPOSE:  [LANforge Unit Test]:-  Create maximum stations per wiphy radio.
@@ -799,35 +798,35 @@ PURPOSE:  [LANforge Unit Test]:-  Create maximum stations per wiphy radio.
             - Create sta-to-eth Layer-3 CX for 9.6Kbps bidirectional overnight maximum-client wifi test.
 
 EXAMPLE:
-        # To run the test on specified time duration on all available radios
+        # To run the test on specified time duration on all available radios 
             [Automatically detect the available radios in lanforge & will create the max supported radios on each radios.]
-
-            ./lf_test_max_association.py --mgr 192.168.200.64 --ssid 208NETWORK --ssid_pw lanforge --security wpa2
-                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA --dut_hw_version 1.0
-                --dut_model_num ct521a--dut_sw_version 5.4.6 --dut_serial_num 361c --upstream_port 1.1.eth1
+        
+            ./lf_test_max_association.py --mgr 192.168.200.64 --ssid 208NETWORK --ssid_pw lanforge --security wpa2  
+                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA --dut_hw_version 1.0 
+                --dut_model_num ct521a--dut_sw_version 5.4.6 --dut_serial_num 361c --upstream_port 1.1.eth1 
                 --upload_bps 6200000 --download_bps 6200000 --test_duration 30s
-
+    
         # To run the test based on specified time duration and radios
-
-            ./lf_test_max_association.py --mgr 192.168.200.64
-                --radio 'radio==wiphy0,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2'
-                --radio 'radio==wiphy1,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2'
-                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
-                --dut_hw_version 1.0 --dut_model_num ct521a --dut_sw_version 5.4.6 --dut_serial_num 361c
+        
+            ./lf_test_max_association.py --mgr 192.168.200.64 
+                --radio 'radio==1.1.wiphy0,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2' 
+                --radio 'radio==1.1.wiphy1,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2' 
+                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA 
+                --dut_hw_version 1.0 --dut_model_num ct521a --dut_sw_version 5.4.6 --dut_serial_num 361c 
                 --test_duration 30s --upstream_port 1.1.eth1
-
+    
         # To run overnight test using chambered AP's on specified radios only.
-
+        
             ./lf_test_max_association.py --mgr <localhost>
-                --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==<password>,security==<type>'
-                --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==<password>,security==<type>'
+                --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==<password>,security==<type>'
+                --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==<password>,security==<type>'
                 --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
                 --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
-
+        
         # For an overnight test using chambered AP's with no security enabled:
             ./lf_test_max_association.py --mgr <localhost>
-                --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==[BLANK],security==open'
-                --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==[BLANK],security==open'
+                --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==[BLANK],security==open'
+                --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==[BLANK],security==open'
                 --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
                 --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
 
@@ -878,6 +877,8 @@ VERIFIED_ON:   25-AUG-2023,
 LICENSE:
         Free to distribute and modify. LANforge systems must be licensed.
         Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: False
 
 """)
     parser.add_argument("-m", "--mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
@@ -1154,7 +1155,7 @@ LICENSE:
                 reset_port_time_max_list.append('0s')
     else:
         logger.info(
-            "If radio is None, will fetch all available radios and pass the same ssid, password for each radios.")
+            "If radio is None, will get the all available radios and pass the same ssid, password for each radios.")
         wiphy_info = lf_radio_info.radio_information(args.mgr,
                                                      _resource=args.resource,
                                                      debug_=args.debug,
