@@ -223,7 +223,7 @@ class StationProfile:
 
     def use_security(self, security_type, ssid=None, passwd=None):
         types = {"open": "[BLANK]",
-                 "owe": "[BLANK]",
+                 "owe": "use-owe",
                  "wep": "wep_enable",
                  "wpa": "wpa_enable",
                  "wpa2": "wpa2_enable",
@@ -250,12 +250,13 @@ class StationProfile:
             if security_type == "wpa3":
                 self.set_command_param("add_sta", "ieee80211w", 2)
             if security_type == "owe":
-                self.set_command_param("add_sta", "ieee80211w", 2)
                 self.set_wifi_extra(key_mgmt="OWE")
+                # 802.11u is not necessary when owe selected
+                if "80211u_enable" in self.desired_add_sta_flags:
+                    self.desired_add_sta_flags.remove("80211u_enable")
+                self.set_command_param("add_sta", "ieee80211w", 2)
                 self.set_command_flag("add_sta", "8021x_radius", 1)
                 self.set_command_flag("add_sta", "use-owe", 1)
-                self.set_command_flag("add_sta", "use-wpa3", 1)
-                self.set_command_param("add_sta", "ieee80211w", 2)
 
     @staticmethod
     def station_mode_to_number(mode):
