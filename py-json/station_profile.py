@@ -222,7 +222,12 @@ class StationProfile:
         self.reset_port_extra_data["reset_port_time_max"] = reset_port_max_time
 
     def use_security(self, security_type, ssid=None, passwd=None):
-        types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
+        types = {"open": "[BLANK]",
+                 "owe": "[BLANK]",
+                 "wep": "wep_enable",
+                 "wpa": "wpa_enable",
+                 "wpa2": "wpa2_enable",
+                 "wpa3": "use-wpa3" }
         self.add_sta_data["ssid"] = ssid
         if security_type in types.keys():
             if (ssid is None) or (ssid == ""):
@@ -244,7 +249,13 @@ class StationProfile:
             # unset any other security flag before setting our present flags
             if security_type == "wpa3":
                 self.set_command_param("add_sta", "ieee80211w", 2)
-            # self.add_sta_data["key"] = passwd
+            if security_type == "owe":
+                self.set_command_param("add_sta", "ieee80211w", 2)
+                self.set_wifi_extra(key_mgmt="OWE")
+                self.set_command_flag("add_sta", "8021x_radius", 1)
+                self.set_command_flag("add_sta", "use-owe", 1)
+                self.set_command_flag("add_sta", "use-wpa3", 1)
+                self.set_command_param("add_sta", "ieee80211w", 2)
 
     @staticmethod
     def station_mode_to_number(mode):
