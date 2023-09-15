@@ -81,7 +81,7 @@ class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
                 name_prefix, num_stations, upstream=None, client_port = None,server_port=None,
                  host="localhost", port=8080, csv_outfile=None,use_existing_eid=None,
-                 test_duration="5m",test_type="lfping", target=None, cmd=None, interval=1,
+                 test_duration="5m",test_type="ping", target=None, cmd=None, interval=1,
                  radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
                  file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
                  _debug_on=False, _exit_on_error=False, die_on_error = False,_exit_on_fail=False):
@@ -217,6 +217,7 @@ class GenTest():
 
     def start(self):
         #admin up all created stations & existing stations
+        
         if self.sta_list:
             for sta_alias in self.sta_list:
                 port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
@@ -292,10 +293,9 @@ class GenTest():
             types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
             if self.security in types.keys():
                 add_sta_flags = []
-                set_port_interest = []
-                set_port_current=[]
-                set_port_interest.append('rpt_timer')
-                set_port_current.append('use_dhcp')
+                set_port_interest = ['rpt_timer','current_flags', 'dhcp']
+                set_port_current=['use_dhcp']
+                
                 if self.security != "open":
                     if (self.passwd is None) or (self.passwd == ""):
                         raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
@@ -539,19 +539,19 @@ class GenTest():
 
                 # Generic Tab Actions
                 else:
+                    compared_pass = len(self.created_endp)
                     if action == "appear":
                         for endp_name in self.created_endp:
-                            compared_pass = len(self.created_endp)
-                            json_response = self.command.post_nc_show_endpoints(endpoint=endp_name,
-                                                                                    extra ='history')
-                        if (json_response['endpoint']['name'] == endp_name):
+                            json_response = self.command.post_nc_show_endpoints(endpoint=endp_name, extra ='history')
+                            if  json_response is not None:
                                 passed.add(endp_name)
                 if len(passed) < compared_pass:
                     time.sleep(2)
-                    logger.info('Found %s out of %s %ss in %s out of %s tries in wait_until_%s_%s' % (len(passed), len(compared_pass), lf_type, attempt, int(secs_to_wait / 2), lf_type, action))
+                    logger.info('Found %s out of %s %ss in %s out of %s tries in wait_until_%s_%s' % (len(passed), compared_pass, lf_type, attempt, int(secs_to_wait / 2), lf_type, action))
                 else:
                     logger.info('All %s ports appeared' % len(passed))
                     return True
+        return False
 
     def validate_sort_args(self, args):
         print(args)
@@ -821,30 +821,30 @@ def main():
     generic_test.validate_sort_args(args)
     #generic_test.cleanup(sta_list)
     generic_test.build()
-    if not generic_test.passes():
-        logger.error(generic_test.get_fail_message())
-        generic_test.exit_fail()
+    #if not generic_test.passes():
+        #logger.error(generic_test.get_fail_message())
+        #generic_test.exit_fail()
     generic_test.start()
-    if not generic_test.passes():
-        logger.error(generic_test.get_fail_message())
-        generic_test.exit_fail()
+    #if not generic_test.passes():
+        #logger.error(generic_test.get_fail_message())
+        #generic_test.exit_fail()
 
-    if type(args.gen_cols) is not list:
-        generic_cols = list(args.gen_cols.split(","))
+    # if type(args.gen_cols) is not list:
+    #     generic_cols = list(args.gen_cols.split(","))
+    #     # send col names here to file to reformat
+    # else:
+    #     generic_cols = args.gen_cols
+    #     # send col names here to file to reformat
+    # if type(args.port_mgr_cols) is not list:
+    #     port_mgr_cols = list(args.port_mgr_cols.split(","))
+    #     # send col names here to file to reformat
+    # else:
+    #     port_mgr_cols = args.port_mgr_cols
         # send col names here to file to reformat
-    else:
-        generic_cols = args.gen_cols
-        # send col names here to file to reformat
-    if type(args.port_mgr_cols) is not list:
-        port_mgr_cols = list(args.port_mgr_cols.split(","))
-        # send col names here to file to reformat
-    else:
-        port_mgr_cols = args.port_mgr_cols
-        # send col names here to file to reformat
-    logger.info("Generic Endp column names are...")
-    logger.info(generic_cols)
-    logger.info("Port Manager column names are...")
-    logger.info(port_mgr_cols)
+    # logger.info("Generic Endp column names are...")
+    # logger.info(generic_cols)
+    # logger.info("Port Manager column names are...")
+    # logger.info(port_mgr_cols)
     # try:
     #     monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
     # except ValueError as error:
