@@ -64,6 +64,7 @@ else:
         "ipsec_client":         0x40000000000000,  # Enable client IPSEC xfrm on this port.
         "ipsec_concentrator":   0x80000000000000,  # Enable concentrator (upstream) IPSEC xfrm on this port.
         "service_dns":          0x100000000000000,  # Enable DNS (dnsmasq) service on this port.
+        "adv_5g_fd":            0x400000000000000,  # Advertise 5Gbps link speed.
     }
     set_port_cmd_flags = {
         "reset_transceiver":    0x1,  # Reset transciever

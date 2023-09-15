@@ -13,5 +13,10 @@ set_radio_mode = {
     "802.11bgnAC": 11,  # 802.11bgn-AC
     "802.11abgnAX": 12,  # 802.11abgn-AX a/b/g/n/AC/AX (dual-band AX) support
     "802.11bgnAX": 13,  # 802.11bgn-AX
-    "802.11anAX": 14  # 802.11an-AX
+    "802.11anAX": 14,  # 802.11an-AX
+    "aAX": 15,  # 802.11a-AX (6E disables /n and /ac)
+    "abgn7": 16,  # 802.11abgn-EHT a/b/g/n/AC/AX/EHT (dual-band AX) support
+    "bgn7": 17,  # 802.11bgn-EHT
+    "an7": 18,  # 802.11an-EHT
+    "a7": 19,  # 802.11a-EHT (6E disables /n and /ac)
 }

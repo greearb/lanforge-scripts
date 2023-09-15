@@ -32,9 +32,12 @@ add_sta_flags = {
     "wds-mode"             : 0x2000000000, # WDS station (sort of like a lame mesh), not supported on ath10k
     "no-supp-op-class-ie"  : 0x4000000000, # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
     "txo-enable"           : 0x8000000000, # Enable/disable tx-offloads, typically managed by set_wifi_txo command
-    "use-wpa3"             : 0x10000000000, # Enable WPA-3 (SAE Personal) mode.
-    "use-bss-transition"   : 0x80000000000, # Enable BSS transition.
-    "ft-roam-over-ds"      : 0x800000000000 # Roam over DS when AP supports it.
+    "use-wpa3"             : 0x10000000000,     # Enable WPA-3 (SAE Personal) mode.
+    "use-bss-transition"   : 0x80000000000,     # Enable BSS transition.
+    "ft-roam-over-ds"      : 0x800000000000,    # Roam over DS when AP supports it.
+    "rrm-ignore-beacon-req": 0x1000000000000,   # Ignore (reject) RRM Beacon measurement request.
+    "use-owe"              : 0x2000000000000,   # Enable OWE
+    "be320-enable"         : 0x4000000000000    # Enable 320Mhz mode.
 }
 add_sta_modes = {
     "AUTO"        :  0,        #  802.11g
@@ -52,4 +55,9 @@ add_sta_modes = {
     "abgnAX"      : 12,        #  802.11abgn-AX, a/b/g/n/AC/AX (dual-band AX) support
     "bgnAX"       : 13,        #  802.11bgn-AX
     "anAX"        : 14,        #  802.11an-AX
+    "aAX"         : 15,        #  802.11a-AX (6E disables /n and /ac)
+    "abgn7"       : 16,        #  802.11abgn-EHT  a/b/g/n/AC/AX/EHT (dual-band AX) support
+    "bgn7"        : 17,        #  802.11bgn-EHT
+    "an7"         : 18,        #  802.11an-EHT
+    "a7"          : 19         #  802.11a-EHT (6E disables /n and /ac)
 }
