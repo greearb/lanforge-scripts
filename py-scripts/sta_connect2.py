@@ -65,7 +65,7 @@ WPA2 = "wpa2"
 WPA3 = "wpa3"
 OWE = "owe" # a wpa3 mode
 MODE_AUTO = 0
-
+BLANK = "[BLANK]"
 
 class StaConnect2(Realm):
     def __init__(self, host, port, _dut_ssid="jedway-open-1", _dut_passwd="NA", _dut_bssid="",
@@ -339,7 +339,7 @@ class StaConnect2(Realm):
         if self.dut_security == WPA2:
             self.station_profile.use_security(security_type="wpa2", ssid=self.dut_ssid, passwd=self.dut_passwd)
         elif self.dut_security == OPEN:
-            self.station_profile.use_security(security_type="open", ssid=self.dut_ssid, passwd="[BLANK]")
+            self.station_profile.use_security(security_type="open", ssid=self.dut_ssid, passwd=BLANK)
         elif self.dut_security == WPA:
             self.station_profile.use_security(security_type="wpa", ssid=self.dut_ssid, passwd=self.dut_passwd)
         elif self.dut_security == WEP:
@@ -347,9 +347,12 @@ class StaConnect2(Realm):
         elif self.dut_security == WPA3:
             self.station_profile.use_security(security_type="wpa3", ssid=self.dut_ssid, passwd=self.dut_passwd)
         elif self.dut_security == OWE:
-            self.station_profile.use_security(security_type="wpa3", ssid=self.dut_ssid, passwd=self.dut_passwd)
-            self.station_profile.set_command_flag("add_sta", "use-wpa3", 1)
+            self.station_profile.use_security(security_type="wpa3", ssid=self.dut_ssid, passwd='--------')
+            #self.station_profile.set_command_flag("add_sta", "use-wpa3", 1)
+            self.station_profile.set_command_flag("add_sta", "use-owe", 1)
+            self.station_profile.set_command_flag("add_sta", "8021x_radius", 1)
             self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
+            self.station_profile.set_wifi_extra(key_mgmt="OWE")
         else:
             raise ValueError(f"unknown setting for station security: {self.dut_security}")
 
