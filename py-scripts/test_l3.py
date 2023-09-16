@@ -743,7 +743,7 @@ class L3VariableTime(Realm):
         self.endpoint_data = {}
 
         self.port_data = {}
-        self.resourse_data = {}
+        self.resource_data = {}
 
 
         # endp data BK -A
@@ -765,8 +765,8 @@ class L3VariableTime(Realm):
         self.bk_port_offered_tx_rate_A = []
 
         # resource data BK -A
-        self.bk_resourse_host_A = []
-        self.bk_resourse_hw_ver_A = []
+        self.bk_resource_host_A = []
+        self.bk_resource_hw_ver_A = []
 
         self.bk_request_dl_A = []
         self.bk_request_ul_A = []
@@ -793,8 +793,8 @@ class L3VariableTime(Realm):
         self.bk_port_offered_tx_rate_B = []
 
         # resource data BK -B
-        self.bk_resourse_host_B = []
-        self.bk_resourse_hw_ver_B = []
+        self.bk_resource_host_B = []
+        self.bk_resource_hw_ver_B = []
 
         self.bk_request_dl_B = []
         self.bk_request_ul_B = []
@@ -823,8 +823,8 @@ class L3VariableTime(Realm):
 
 
         # resource data BE -A
-        self.be_resourse_host_A = []
-        self.be_resourse_hw_ver_A = []
+        self.be_resource_host_A = []
+        self.be_resource_hw_ver_A = []
 
         self.be_request_dl_A = []
         self.be_request_ul_A = []
@@ -853,8 +853,8 @@ class L3VariableTime(Realm):
 
 
         # resource data BE -B
-        self.be_resourse_host_B = []
-        self.be_resourse_hw_ver_B = []
+        self.be_resource_host_B = []
+        self.be_resource_hw_ver_B = []
 
         self.be_request_dl_B = []
         self.be_request_ul_B = []
@@ -881,8 +881,8 @@ class L3VariableTime(Realm):
         self.vi_port_offered_tx_rate_A = []
 
         # resource data VI -A
-        self.vi_resourse_host_A = []
-        self.vi_resourse_hw_ver_A = []
+        self.vi_resource_host_A = []
+        self.vi_resource_hw_ver_A = []
 
 
         self.vi_request_dl_A = []
@@ -911,8 +911,8 @@ class L3VariableTime(Realm):
 
 
         # resource data VI -B
-        self.vi_resourse_host_B = []
-        self.vi_resourse_hw_ver_B = []
+        self.vi_resource_host_B = []
+        self.vi_resource_hw_ver_B = []
 
         self.vi_request_dl_B = []
         self.vi_request_ul_B = []
@@ -947,8 +947,8 @@ class L3VariableTime(Realm):
 
 
         # resource data VO -A
-        self.vo_resourse_host_A = []
-        self.vo_resourse_hw_ver_A = []
+        self.vo_resource_host_A = []
+        self.vo_resource_hw_ver_A = []
 
 
         self.vo_request_dl_A = []
@@ -976,8 +976,8 @@ class L3VariableTime(Realm):
         self.vo_port_offered_tx_rate_B = []
 
         # resource data VO -B
-        self.vo_resourse_host_B = []
-        self.vo_resourse_hw_ver_B = []
+        self.vo_resource_host_B = []
+        self.vo_resource_hw_ver_B = []
 
 
         self.vo_request_dl_B = []
@@ -2403,11 +2403,11 @@ class L3VariableTime(Realm):
         logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
 
 
-        self.resourse_data = self.json_get('resource/all?fields=hostname,hw+version')
-        # self.resourse_data = self.json_get('resource/all')
-        self.resourse_data.pop("handler")
-        self.resourse_data.pop("uri")
-        # self.resourse_data.pop("warnings")
+        self.resource_data = self.json_get('resource/all?fields=hostname,hw+version')
+        # self.resource_data = self.json_get('resource/all')
+        self.resource_data.pop("handler")
+        self.resource_data.pop("uri")
+        # self.resource_data.pop("warnings")
         logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
 
 
@@ -2463,23 +2463,23 @@ class L3VariableTime(Realm):
 
                             # use the eid to get the hostname and channel
                             # todo eid_temp shows 1.1;
-                            eid_tmp_resourse = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0])+'.'+str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resourse
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0])+'.'+str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            # look up the resource
                             resource_found = False
-                            for resource_data in self.resourse_data['resources']:
+                            for resource_data in self.resource_data['resources']:
                                 resource_data_key = list(resource_data.keys())[0]
-                                if resource_data_key == eid_tmp_resourse:
+                                if resource_data_key == eid_tmp_resource:
                                     resource_found = True
-                                    self.bk_resourse_host_A.append(resource_data[resource_data_key]['hostname'])
-                                    self.bk_resourse_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
+                                    self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
 
                             if resource_found is False:
-                                self.bk_resourse_host_A.append('NA')
-                                self.bk_resourse_hw_ver_A.append('NA')
+                                self.bk_resource_host_A.append('NA')
+                                self.bk_resource_hw_ver_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
-                            eid_tmp_port = eid_tmp_resourse+'.'+eid_info[3]
+                            eid_tmp_port = eid_tmp_resource+'.'+eid_info[3]
                             
                             port_found = False
                             self.bk_port_eid_A.append(eid_tmp_port)
@@ -2565,23 +2565,23 @@ class L3VariableTime(Realm):
                             self.bk_port_protocol_A.append(endp_data[endp_data_key]['type'])
 
 
-                            eid_tmp_resourse = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0])+'.'+str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resourse may need to have try except to handle cases where there is an issue getting data
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0])+'.'+str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            # look up the resource may need to have try except to handle cases where there is an issue getting data
                             resource_found = False
-                            for resource_data in self.resourse_data['resources']:
+                            for resource_data in self.resource_data['resources']:
                                 resource_data_key = list(resource_data.keys())[0]
-                                if resource_data_key == eid_tmp_resourse:
+                                if resource_data_key == eid_tmp_resource:
                                     resource_found = True
-                                    self.bk_resourse_host_A.append(resource_data[resource_data_key]['hostname'])
-                                    self.bk_resourse_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
+                                    self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
 
                             if resource_found is False:
-                                self.bk_resourse_host_A.append('NA')
-                                self.bk_resourse_hw_ver_A.append('NA')
+                                self.bk_resource_host_A.append('NA')
+                                self.bk_resource_hw_ver_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
-                            eid_tmp_port = eid_tmp_resourse+'.'+eid_info[1]
+                            eid_tmp_port = eid_tmp_resource+'.'+eid_info[1]
                             
                             port_found = False
                             self.bk_port_eid_A.append(eid_tmp_port)
@@ -2599,9 +2599,8 @@ class L3VariableTime(Realm):
                                     except:                                        
                                         #self.bk_port_channel_A.append(port_data[port_data_key]['channel'])
                                         self.bk_port_channel_A.append('NA')
-
-
                                     port_found = True
+
                             if port_found is False:
                                     self.bk_port_mac_A.append('NA')
                                     self.bk_port_mode_A.append('NA')
@@ -2703,7 +2702,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.bk_clients_A,
                 "ul_A": self.bk_tos_ul_A,
                 "dl_A": self.bk_tos_dl_A,
-                "resourse_A": self.bk_resourse_host_A,
+                "resource_A": self.bk_resource_host_A,
                 "port_A": self.bk_port_eid_A,
                 "mac_A": self.bk_port_mac_A,
                 "channel_A": self.bk_port_channel_A,
@@ -2717,7 +2716,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.bk_clients_B,
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
-                "resourse_B": self.bk_resourse_host_B,
+                "resource_B": self.bk_resource_host_B,
                 "port_B": self.bk_port_eid_B,
                 "mac_B": self.bk_port_mac_B,
                 "channel_B": self.bk_port_channel_B,
@@ -2736,7 +2735,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.be_clients_A,
                 "ul_A": self.be_tos_ul_A,
                 "dl_A": self.be_tos_dl_A,
-                "resourse_A": self.be_resourse_host_A,
+                "resource_A": self.be_resource_host_A,
                 "port_A": self.be_port_eid_A,
                 "mac_A": self.be_port_mac_A,
                 "channel_A": self.be_port_channel_A,
@@ -2750,7 +2749,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.be_clients_B,
                 "ul_B": self.be_tos_ul_B,
                 "dl_B": self.be_tos_dl_B,
-                "resourse_B": self.be_resourse_host_B,
+                "resource_B": self.be_resource_host_B,
                 "port_B": self.be_port_eid_B,
                 "mac_B": self.be_port_mac_B,
                 "channel_B": self.be_port_channel_B,
@@ -2769,7 +2768,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.vi_clients_A,
                 "ul_A": self.vi_tos_ul_A,
                 "dl_A": self.vi_tos_dl_A,
-                "resourse_A": self.vi_resourse_host_A,
+                "resource_A": self.vi_resource_host_A,
                 "port_A": self.vi_port_eid_A,
                 "mac_A": self.vi_port_mac_A,
                 "channel": self.vi_port_channel_A,
@@ -2783,7 +2782,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.vi_clients_B,
                 "ul_B": self.vi_tos_ul_B,
                 "dl_B": self.vi_tos_dl_B,
-                "resourse": self.vi_resourse_host_B,
+                "resource": self.vi_resource_host_B,
                 "port": self.vi_port_eid_B,
                 "mac": self.vi_port_mac_B,
                 "channel": self.vi_port_channel_B,
@@ -2802,7 +2801,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.vo_clients_A,
                 "ul_A": self.vo_tos_ul_A,
                 "dl_A": self.vo_tos_dl_A,
-                "resourse": self.vo_resourse_host_A,
+                "resource": self.vo_resource_host_A,
                 "port": self.vo_port_eid_A,
                 "mac": self.vo_port_mac_A,
                 "channel": self.vo_port_channel_A,
@@ -2816,7 +2815,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.vo_clients_B,
                 "ul_B": self.vo_tos_ul_B,
                 "dl_B": self.vo_tos_dl_B,
-                "resourse": self.vo_resourse_host_B,
+                "resource": self.vo_resource_host_B,
                 "port": self.vo_port_eid_B,
                 "mac": self.vo_port_mac_B,
                 "channel": self.vo_port_channel_B,
@@ -2842,7 +2841,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.bk_clients_A,
                 "ul_A": self.bk_tos_ul_A,
                 "dl_A": self.bk_tos_dl_A,
-                "resourse_A": self.bk_resourse_host_A,
+                "resource_A": self.bk_resource_host_A,
                 "port_A": self.bk_port_eid_A,
                 "mac_A": self.bk_port_mac_A,
                 "channel_A": self.bk_port_channel_A,
@@ -2856,7 +2855,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.bk_clients_B,
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
-                "resourse_B": self.bk_resourse_host_B,
+                "resource_B": self.bk_resource_host_B,
                 "port_B": self.bk_port_eid_B,
                 "mac_B": self.bk_port_mac_B,
                 "channel_B": self.bk_port_channel_B,
@@ -2875,7 +2874,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.be_clients_A,
                 "ul_A": self.be_tos_ul_A,
                 "dl_A": self.be_tos_dl_A,
-                "resourse_A": self.be_resourse_host_A,
+                "resource_A": self.be_resource_host_A,
                 "port_A": self.be_port_eid_A,
                 "mac_A": self.be_port_mac_A,
                 "channel_A": self.be_port_channel_A,
@@ -2889,7 +2888,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.be_clients_B,
                 "ul_B": self.be_tos_ul_B,
                 "dl_B": self.be_tos_dl_B,
-                "resourse_B": self.be_resourse_host_B,
+                "resource_B": self.be_resource_host_B,
                 "port_B": self.be_port_eid_B,
                 "mac_B": self.be_port_mac_B,
                 "channel_B": self.be_port_channel_B,
@@ -2908,7 +2907,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.vi_clients_A,
                 "ul_A": self.vi_tos_ul_A,
                 "dl_A": self.vi_tos_dl_A,
-                "resourse_A": self.vi_resourse_host_A,
+                "resource_A": self.vi_resource_host_A,
                 "port_A": self.vi_port_eid_A,
                 "mac_A": self.vi_port_mac_A,
                 "channel": self.vi_port_channel_A,
@@ -2922,7 +2921,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.vi_clients_B,
                 "ul_B": self.vi_tos_ul_B,
                 "dl_B": self.vi_tos_dl_B,
-                "resourse": self.vi_resourse_host_B,
+                "resource": self.vi_resource_host_B,
                 "port": self.vi_port_eid_B,
                 "mac": self.vi_port_mac_B,
                 "channel": self.vi_port_channel_B,
@@ -2941,7 +2940,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.vo_clients_A,
                 "ul_A": self.vo_tos_ul_A,
                 "dl_A": self.vo_tos_dl_A,
-                "resourse": self.vo_resourse_host_A,
+                "resource": self.vo_resource_host_A,
                 "port": self.vo_port_eid_A,
                 "mac": self.vo_port_mac_A,
                 "channel": self.vo_port_channel_A,
@@ -2955,7 +2954,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.vo_clients_B,
                 "ul_B": self.vo_tos_ul_B,
                 "dl_B": self.vo_tos_dl_B,
-                "resourse": self.vo_resourse_host_B,
+                "resource": self.vo_resource_host_B,
                 "port": self.vo_port_eid_B,
                 "mac": self.vo_port_mac_B,
                 "channel": self.vo_port_channel_B,
@@ -2967,125 +2966,6 @@ class L3VariableTime(Realm):
 
             }
         }
-
-
-        '''        
-        self.client_table_dict = {
-            "y_axis_name": "Client names",
-            "x_axis_name": "Throughput in Mbps",
-            "min_bps_a": self.side_a_min_bps,
-            "min_bps_b": self.side_b_min_bps,
-            "BK": {
-                "colors": ['orange', 'wheat'],
-                "labels": ['Upload','Download'],
-
-                # side A
-                "clients_A": self.bk_clients_A,
-                "ul_A": self.bk_tos_ul_A,
-                "dl_A": self.bk_tos_dl_A,
-                "ports_A": self.bk_port_eid_A,
-                "mac_A":   self.bk_port_mac_A,
-                "channel_A": self.bk_port_channel_A,
-                "mode_A": self.bk_port_mode_A,
-                "traffic_type_A": self.bk_port_traffic_type_A,
-                "traffic_protocol_A": self.bk_port_protocol_A,
-
-                # side B
-                "clients_B": self.bk_clients_B,
-                "ul_B": self.bk_tos_ul_B,
-                "dl_B": self.bk_tos_dl_B,
-                "ports_B": self.bk_port_eid_B,
-                "mac_B":   self.bk_port_mac_B,
-                "channel_B": self.bk_port_channel_B,
-                "mode_B": self.bk_port_mode_B,
-                "traffic_type_B": self.bk_port_traffic_type_B,
-                "traffic_protocol_B": self.bk_port_protocol_B
-            },
-            "BE": {
-                "colors": ['lightcoral', 'mistyrose'],
-                "labels": ['Upload','Download'],
-
-                # side A
-                "clients_A": self.be_clients_A,
-                "ul_A": self.be_tos_ul_A,
-                "dl_A": self.be_tos_dl_A,
-                "ports_A": self.be_port_eid_A,
-                "mac_A":   self.be_port_mac_A,
-                "channel_A": self.be_port_channel_A,
-                "mode_A": self.be_port_mode_A,
-                "traffic_type_A": self.be_port_traffic_type_A,
-                "traffic_protocol_A": self.be_port_protocol_A,
-
-                # side B
-                "clients_B": self.be_clients_B,
-                "ul_B": self.be_tos_ul_B,
-                "dl_B": self.be_tos_dl_B,
-                "ports_B": self.be_port_eid_B,
-                "mac_B":   self.be_port_mac_B,
-                "channel_B": self.be_port_channel_B,
-                "mode_B": self.be_port_mode_B,
-                "traffic_type_B": self.be_port_traffic_type_B,
-                "traffic_protocol_B": self.be_port_protocol_B
-
-            },
-            "VI": {
-                "colors": ['steelblue', 'lightskyblue'],
-                "labels": ['Upload', 'Download'],
-
-                # side A
-                "clients_A": self.vi_clients_A,
-                "ul_A": self.vi_tos_ul_A,
-                "dl_A": self.vi_tos_dl_A,
-                "ports_A": self.vi_port_eid_A,
-                "mac_A":   self.vi_port_mac_A,
-                "channel_A": self.vi_port_channel_A,
-                "mode_A": self.vi_port_mode_A,
-                "traffic_type_A": self.vi_port_traffic_type_A,
-                "traffic_protocol_A": self.vi_port_protocol_A,
-
-                # side B
-                "clients_B": self.vi_clients_B,
-                "ul_B": self.vi_tos_ul_B,
-                "dl_B": self.vi_tos_dl_B,
-                "ports_B": self.vi_port_eid_B,
-                "mac_B":   self.vi_port_mac_B,
-                "channel_B": self.vi_port_channel_B,
-                "mode_B": self.vi_port_mode_B,
-                "traffic_type_B": self.vi_port_traffic_type_B,
-                "traffic_protocol_B": self.vi_port_protocol_B
-            },
-            "VO": {
-                "colors": ['green', 'lightgreen'],
-                "labels": ['Upload', 'Download'],
-
-                # side A
-                "clients_A": self.vo_clients_A,
-                "ul_A": self.vo_tos_ul_A,
-                "dl_A": self.vo_tos_dl_A,
-                "ports_A": self.vo_port_eid_A,
-                "mac_A":   self.vo_port_mac_A,
-                "channel_A": self.vo_port_channel_A,
-                "mode_A": self.vo_port_mode_A,
-                "traffic_type_A": self.vo_port_traffic_type_A,
-                "traffic_protocol_A": self.vo_port_protocol_A,
-
-                # side B
-                "clients_B": self.vo_clients_B,
-                "ul_B": self.vo_tos_ul_B,
-                "dl_B": self.vo_tos_dl_B,
-                "ports_B": self.vo_port_eid_B,
-                "mac_B":   self.vo_port_mac_B,
-                "channel_B": self.vo_port_channel_B,
-                "mode_B": self.vo_port_mode_B,
-                "traffic_type_B": self.vo_port_traffic_type_B,
-                "traffic_protocol_B": self.vo_port_protocol_B
-
-                
-            }
-        }
-        '''
-
-
 
 
         logger.info("printed the collected data")
@@ -4947,7 +4827,7 @@ INCLUDE_IN_README: False
 
 
             bk_dataframe = {
-                " Client Name " : ip_var_test.client_dict_A['BK']['resourse_A'],
+                " Client Name " : ip_var_test.client_dict_A['BK']['resource_A'],
                 " Mode " : ip_var_test.client_dict_A['BK']['mode_A'],
                 " Mac " : ip_var_test.client_dict_A['BK']['mac_A'],
                 " Channel " : ip_var_test.client_dict_A['BK']['channel_A'],
