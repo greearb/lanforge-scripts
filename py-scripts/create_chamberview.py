@@ -67,8 +67,6 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
 cv_test = cv_test_manager.cv_test
-realm = importlib.import_module("py-json.realm")
-Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
@@ -131,7 +129,8 @@ class CreateChamberview(cv_test):
                     # pprint(sub_item)
 
                     sub_item = sub_item.split("=")
-                    if sub_item[0] == "Resource" or str(sub_item[0]) == "Res" or sub_item[0] == "R":
+                    if sub_item[0] == "Resource" or str(
+                            sub_item[0]) == "Res" or sub_item[0] == "R":
                         Resource = sub_item[1]
                     elif sub_item[0] == "Profile" or sub_item[0] == "Prof" or sub_item[0] == "P":
                         Profile = sub_item[1]
@@ -195,42 +194,8 @@ class CreateChamberview(cv_test):
                     break
                 time.sleep(1)
             else:
-                self._pass("Completed building %s scenario" % scenario_name)
+                self._pass("completed building %s scenario" % scenario_name)
                 break
-
-    # Finding and admin up all 'sta*' and 'wlan*' ports with in the given resources.
-    def admin_up_sta_ports(self, line):
-        sta_list = Realm.station_list(self)
-        eid_list = [list(i.keys())[0] for i in sta_list]
-        logger.info("Fetching All Existing WIFI-Station Ports List: %s" % eid_list)
-        logger.info("Waiting for 10 seconds to retrieve ports from the phantom state...")
-        time.sleep(10)
-        resource_list = []
-        for item in line:
-            if "profile_link" in item[0]:
-                parts = item[0].split()
-                profile_link_value = parts[parts.index("profile_link") + 1]
-                resource_list.append(profile_link_value)
-            else:
-                for sub_item in shlex.split(item[0]):
-                    key, value = sub_item.split("=")
-                    if key in {"Resource", "Res", "R"}:
-                        resource_list.append(value)
-        logger.info("Given Resource list: %s" % resource_list)
-        # Modifying the given resource list based on given resources. eg : 1.1 --> 1.1.
-        modified_res = [item + '.' for item in resource_list]
-        filtered_items = [item for item in eid_list if any(item.startswith(res) for res in modified_res)]
-
-        logger.info("Filtered station ports list based on given resources : %s" % filtered_items)
-        # Admin Up for the filtered 'sta*' or 'wlan*' ports
-        for j in filtered_items:
-            Realm.admin_up(self=self, port_eid=j)
-        # Verifying and waiting for an ip for the ports
-        logger.info("Waiting for ip...")
-        if Realm.wait_for_ip(self=self, station_list=filtered_items):
-            logger.info("All stations ports got IPs.")
-        else:
-            logger.info("Stations ports failed to get IPs.")
 
 
 def main():
@@ -305,10 +270,6 @@ INCLUDE_IN_README: False
         action='store_true',
         help="delete existing scenario with same name as given in 'create-scenario' argument. See 'further notes' section for more details. (by default: False)")
 
-    parser.add_argument("--ports_up_and_wait_for_ip",
-                        help="To admin up the 'sta*' or 'wlan*' ports and  wait until all ports receive IP addresses.",
-                        action='store_true')
-
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
@@ -330,15 +291,9 @@ INCLUDE_IN_README: False
                              raw_line=args.raw_line)
     Create_Chamberview.build(args.create_scenario)
 
-    if args.ports_up_and_wait_for_ip:
-        if args.line:
-            line = args.line
-        elif args.raw_line:
-            line = args.raw_line
-        else:
-            logger.info("The --line or --raw_line arg values needed to make the admin up.")
-            exit(1)
-        Create_Chamberview.admin_up_sta_ports(line=line)
+    # TODO:  Build the scenario (cv click the 'Build Scenario' button, wait until build has completed
+    # TODO:  Find and admin up all wlan* and sta* ports,
+    # TODO:  Verify they admin up and get IP address.
 
     if Create_Chamberview.passes():
         Create_Chamberview.exit_success()
