@@ -746,13 +746,13 @@ class L3VariableTime(Realm):
         self.resourse_data = {}
 
 
-        # endp data
+        # endp data BK -A
         self.bk_clients_A = []
         self.bk_tos_ul_A = []
         self.bk_tos_dl_A = []
         self.bk_endp_eid_A = []
 
-        # port data
+        # port data BK -A
         self.bk_port_eid_A = []
         self.bk_port_mac_A = []
         self.bk_port_channel_A = []
@@ -764,131 +764,227 @@ class L3VariableTime(Realm):
         self.bk_port_offered_rx_rate_A = []
         self.bk_port_offered_tx_rate_A = []
 
+        # resource data BK -A
         self.bk_resourse_host_A = []
         self.bk_resourse_hw_ver_A = []
+
         self.bk_request_dl_A = []
         self.bk_request_ul_A = []
 
-        # dataframe
+        # dataframe BK -A
         self.bk_dataframe_A = pd.DataFrame()
 
-        # endp data
+        # endp data BK -B
         self.bk_clients_B = []
         self.bk_tos_ul_B = []
         self.bk_tos_dl_B = []
         self.bk_endp_eid_B = []
 
-        # port data
+        # port data BK -B
         self.bk_port_eid_B = []
         self.bk_port_mac_B = []
         self.bk_port_channel_B = []
+        self.bk_port_mode_B = []
+        self.bk_port_observed_rx_rate_B = []
+        self.bk_port_observed_tx_rate_B = []
+        self.bk_port_traffic_type_B = []
+        self.bk_port_protocol_B = []
+        self.bk_port_offered_rx_rate_B = []
+        self.bk_port_offered_tx_rate_B = []
+
+        # resource data BK -B
+        self.bk_resourse_host_B = []
+        self.bk_resourse_hw_ver_B = []
+
         self.bk_request_dl_B = []
         self.bk_request_ul_B = []
 
-        # dataframe
+        # dataframe BK -B
         self.bk_dataframe_B = pd.DataFrame()
 
-        # endp data
+        # endp data BE -A
         self.be_clients_A = []
         self.be_tos_ul_A = []
         self.be_tos_dl_A = []
         self.be_endp_eid_dl_A = []
 
 
-        # port data
+        # port data BE -A
         self.be_port_eid_dl_A = []
         self.be_port_mac_dl_A = []
         self.be_port_channel_dl_A = []
+        self.be_port_mode_A = []
+        self.be_port_observed_rx_rate_A = []
+        self.be_port_observed_tx_rate_A = []
+        self.be_port_traffic_type_A = []
+        self.be_port_protocol_A = []
+        self.be_port_offered_rx_rate_A = []
+        self.be_port_offered_tx_rate_A = []
+
+
+        # resource data BE -A
+        self.be_resourse_host_A = []
+        self.be_resourse_hw_ver_A = []
+
         self.be_request_dl_A = []
         self.be_request_ul_A = []
 
 
-        # dataframe
+        # dataframe BE -A
         self.be_dataframe_A = pd.DataFrame()
 
-        # endp data
+        # endp data BE -B
         self.be_clients_B = []
         self.be_tos_ul_B = []
         self.be_tos_dl_B = []
         self.be_endp_eid_dl_B = []
 
-        # port data
+        # port data BE -B
         self.be_port_eid_dl_B = []
         self.be_port_mac_dl_B = []
         self.be_port_channel_dl_B = []
+        self.be_port_mode_B = []
+        self.be_port_observed_rx_rate_B = []
+        self.be_port_observed_tx_rate_B = []
+        self.be_port_traffic_type_B = []
+        self.be_port_protocol_B = []
+        self.be_port_offered_rx_rate_B = []
+        self.be_port_offered_tx_rate_B = []
+
+
+        # resource data BE -B
+        self.be_resourse_host_B = []
+        self.be_resourse_hw_ver_B = []
+
         self.be_request_dl_B = []
         self.be_request_ul_B = []
 
-        # dataframe
+        # dataframe BE -B
         self.be_dataframe_B = pd.DataFrame()
 
-        # endp data
+        # endp data VI -A
         self.vi_clients_A = []
         self.vi_tos_ul_A = []
         self.vi_tos_dl_A = []
         self.vi_endp_eid_dl_A = []
 
-        # port data
+        # port data VI -A
         self.vi_port_eid_dl_A = []
         self.vi_port_mac_dl_A = []
         self.vi_port_channel_dl_A = []
+        self.vi_port_mode_A = []
+        self.vi_port_observed_rx_rate_A = []
+        self.vi_port_observed_tx_rate_A = []
+        self.vi_port_traffic_type_A = []
+        self.vi_port_protocol_A = []
+        self.vi_port_offered_rx_rate_A = []
+        self.vi_port_offered_tx_rate_A = []
+
+        # resource data VI -A
+        self.be_resourse_host_A = []
+        self.be_resourse_hw_ver_A = []
+
+
         self.vi_request_dl_A = []
         self.vi_request_ul_A = []
 
-        # dataframe
+        # dataframe resource data VI -A
         self.vi_dataframe_A = pd.DataFrame()
 
-        # endp data
+        # endp data VI -B
         self.vi_clients_B = []
         self.vi_tos_ul_B = []
         self.vi_tos_dl_B = []
         self.vi_endp_eid_dl_B = []
 
-        # port data        
+        # port data  VI -B
         self.vi_port_eid_dl_B = []
         self.vi_port_mac_dl_B = []
         self.vi_port_channel_dl_B = []
+        self.vi_port_mode_B = []
+        self.vi_port_observed_rx_rate_B = []
+        self.vi_port_observed_tx_rate_B = []
+        self.vi_port_traffic_type_B = []
+        self.vi_port_protocol_B = []
+        self.vi_port_offered_rx_rate_B = []
+        self.vi_port_offered_tx_rate_B = []
+
+
+        # resource data VI -B
+        self.vi_resourse_host_B = []
+        self.vi_resourse_hw_ver_B = []
+
         self.vi_request_dl_B = []
         self.vi_request_ul_B = []
 
-        # dataframe
+        # dataframe  VI -B
         self.vi_dataframe_B = pd.DataFrame()
 
-        # endp data
+        # endp data VO -A
         self.vo_clients_A = []
         self.vo_tos_ul_A = []
         self.vo_tos_dl_A = []
         self.vo_endp_eid_dl_A = []
+        self.vo_port_mode_A = []
+        self.vo_port_observed_rx_rate_A = []
+        self.vo_port_observed_tx_rate_A = []
+        self.vo_port_traffic_type_A = []
+        self.vo_port_protocol_A = []
+        self.vo_port_offered_rx_rate_A = []
+        self.vo_port_offered_tx_rate_A = []
 
-        # port data
+        # port data VO -A
         self.vo_port_eid_dl_A = []
         self.vo_port_mac_dl_A = []
         self.vo_port_channel_dl_A = []
+        self.vo_port_mode_A = []
+        self.vo_port_observed_rx_rate_A = []
+        self.vo_port_observed_tx_rate_A = []
+        self.vo_port_traffic_type_A = []
+        self.vo_port_protocol_A = []
+        self.vo_port_offered_rx_rate_A = []
+        self.vo_port_offered_tx_rate_A = []
+
+
+        # resource data VO -A
+        self.vo_resourse_host_B = []
+        self.vo_resourse_hw_ver_B = []
+
+
         self.vo_request_dl_A = []
         self.vo_request_ul_A = []
 
-        # dataframe
+        # dataframe VO -A
         self.vo_dataframe_A = pd.DataFrame()
 
+        #endp data VO -B
         self.vo_clients_B = []
         self.vo_tos_ul_B = []
         self.vo_tos_dl_B = []
         self.vo_endp_eid_dl_B = []
 
-        # port data
+        # port data VO -B
         self.vo_port_eid_dl_B = []
         self.vo_port_mac_dl_B = []
         self.vo_port_channel_dl_B = []
+        self.vo_port_mode_B = []
+        self.vo_port_observed_rx_rate_B = []
+        self.vo_port_observed_tx_rate_B = []
+        self.vo_port_traffic_type_B = []
+        self.vo_port_protocol_B = []
+        self.vo_port_offered_rx_rate_B = []
+        self.vo_port_offered_tx_rate_B = []
+
+        # resource data VO -B
+        self.vo_resourse_host_B = []
+        self.vo_resourse_hw_ver_B = []
+
+
         self.vo_request_dl_B = []
         self.vo_request_ul_B = []
 
-        # station list information
-        self.port_list = []
-        self.mac_list = []
-        self.channel_list = []
-
         
-        # dataframe
+        # dataframe VO -B
         self.vo_dataframe_B = pd.DataFrame()
 
         self.client_dict = {}
@@ -2352,7 +2448,8 @@ class L3VariableTime(Realm):
             # for unicast the upstream is B
 
             
-            # multi cast A side is upstream
+            # multi cast A side is upstream  Being explicite with code coudl have been done with arrays, yet wanted the code to be
+            # maintainable
             if endp_type_present:
                 if endp_data[endp_data_key]['type'] == 'Mcast':
                     if endp_data[endp_data_key]['tos'] == 'BK':
@@ -2391,8 +2488,6 @@ class L3VariableTime(Realm):
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
                                     self.bk_port_mode_A.append(port_data[port_data_key]['mode'])
-                                    # self.bk_port_observed_rx_rate_A.append("NA")
-                                    # self.bk_port_observed_tx_rate_A.append("NA")
                                     self.bk_port_traffic_type_A.append(endp_data[endp_data_key]['tos'] )
                                     self.bk_port_offered_rx_rate_A.append("NA")
                                     self.bk_port_offered_tx_rate_A.append("NA")
@@ -2403,8 +2498,8 @@ class L3VariableTime(Realm):
                                         #self.bk_port_channel_A.append(port_data[port_data_key]['channel'])
                                         self.bk_port_channel_A.append('NA')
 
-
                                     port_found = True
+
                             if port_found is False:
                                     self.bk_port_mac_A.append('NA')
                                     self.bk_port_mode_A.append('NA')
@@ -2422,6 +2517,8 @@ class L3VariableTime(Realm):
                             self.bk_clients_B.append(endp_data[endp_data_key]['name'])
                             self.bk_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
+                            self.bk_port_protocol_B.append(endp_data[endp_data_key]['type'])
+
 
                     elif endp_data[endp_data_key]['tos'] == 'BE':
                         # for multicast the logic is reversed. A is upstream
@@ -2469,7 +2566,7 @@ class L3VariableTime(Realm):
 
 
                             eid_tmp_resourse = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0])+'.'+str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resourse
+                            # look up the resourse may need to have try except to handle cases where there is an issue getting data
                             resource_found = False
                             for resource_data in self.resourse_data['resources']:
                                 resource_data_key = list(resource_data.keys())[0]
@@ -2493,8 +2590,6 @@ class L3VariableTime(Realm):
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
                                     self.bk_port_mode_A.append(port_data[port_data_key]['mode'])
-                                    # self.bk_port_observed_rx_rate_A.append("NA")
-                                    # self.bk_port_observed_tx_rate_A.append("NA")
                                     self.bk_port_traffic_type_A.append(endp_data[endp_data_key]['tos'] )
                                     self.bk_port_offered_rx_rate_A.append("NA")
                                     self.bk_port_offered_tx_rate_A.append("NA")
@@ -2595,131 +2690,260 @@ class L3VariableTime(Realm):
 
 
 
-        self.client_dict = {
+        self.client_dict_A = {
             "y_axis_name": "Client names",
             "x_axis_name": "Throughput in Mbps",
             "min_bps_a": self.side_a_min_bps,
             "min_bps_b": self.side_b_min_bps,
             "BK": {
+                "colors": ['orange', 'wheat'],
+                "labels": ['Upload','Download'],
+
+                # A side
                 "clients_A": self.bk_clients_A,
                 "ul_A": self.bk_tos_ul_A,
                 "dl_A": self.bk_tos_dl_A,
+                "resourse_A": self.bk_resourse_host_A,
+                "port_A": self.bk_port_eid_A,
+                "mac_A": self.bk_port_mac_A,
+                "channel_A": self.bk_port_channel_A,
+                "mode_A": self.bk_port_mode_A,
+                "traffic_type_A": self.bk_port_traffic_type_A,
+                "traffic_protocol_A": self.bk_port_protocol_A,
+                "offered_download_rate_A" : self.bk_port_offered_rx_rate_A,
+                "offered_upload_rate_A" : self.bk_port_offered_tx_rate_A,
+
+                # B side
                 "clients_B": self.bk_clients_B,
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
-                "colors": ['orange', 'wheat'],
-                "labels": ['Upload','Download'],
-                "resourse": self.bk_resourse_host_A,
-                "port": self.bk_port_eid_A,
-                "mac": self.bk_port_mac_A,
-                "channel": self.bk_port_channel_A,
-                "mode": self.bk_port_mode_A,
-                "traffic_type": self.bk_port_traffic_type_A,
-                "traffic_protocol": self.bk_port_protocol_A,
-                "offered_download_rate" : self.bk_port_offered_rx_rate_A,
-                "offered_upload_rate" : self.bk_port_offered_tx_rate_A,
+                "resourse_B": self.bk_resourse_host_B,
+                "port_B": self.bk_port_eid_B,
+                "mac_B": self.bk_port_mac_B,
+                "channel_B": self.bk_port_channel_B,
+                "mode_B": self.bk_port_mode_B,
+                "traffic_type_B": self.bk_port_traffic_type_B,
+                "traffic_protocol_B": self.bk_port_protocol_B,
+                "offered_download_rate_B" : self.bk_port_offered_rx_rate_B,
+                "offered_upload_rate_B" : self.bk_port_offered_tx_rate_B,
+
             },
             "BE": {
+                "colors": ['lightcoral', 'mistyrose'],
+                "labels": ['Upload','Download'],
+
+                # A side
                 "clients_A": self.be_clients_A,
                 "ul_A": self.be_tos_ul_A,
                 "dl_A": self.be_tos_dl_A,
+                "resourse_A": self.be_resourse_host_A,
+                "port_A": self.be_port_eid_A,
+                "mac_A": self.be_port_mac_A,
+                "channel_A": self.be_port_channel_A,
+                "mode_A": self.be_port_mode_A,
+                "traffic_type_A": self.be_port_traffic_type_A,
+                "traffic_protocol_A": self.be_port_protocol_A,
+                "offered_download_rate_A" : self.be_port_offered_rx_rate_A,
+                "offered_upload_rate_A" : self.be_port_offered_tx_rate_A,
+
+                # B side
                 "clients_B": self.be_clients_B,
                 "ul_B": self.be_tos_ul_B,
                 "dl_B": self.be_tos_dl_B,
-                "colors": ['lightcoral', 'mistyrose'],
-                "labels": ['Upload','Download']
+                "resourse_B": self.be_resourse_host_B,
+                "port_B": self.be_port_eid_B,
+                "mac_B": self.be_port_mac_B,
+                "channel_B": self.be_port_channel_B,
+                "mode_B": self.be_port_mode_B,
+                "traffic_type_B": self.be_port_traffic_type_B,
+                "traffic_protocol_B": self.be_port_protocol_B,
+                "offered_download_rate_B" : self.be_port_offered_rx_rate_B,
+                "offered_upload_rate_B" : self.be_port_offered_tx_rate_B,
+
             },
             "VI": {
+                "colors": ['steelblue', 'lightskyblue'],
+                "labels": ['Upload', 'Download'],
+
+                # A side
                 "clients_A": self.vi_clients_A,
                 "ul_A": self.vi_tos_ul_A,
                 "dl_A": self.vi_tos_dl_A,
+                "resourse_A": self.vi_resourse_host_A,
+                "port_A": self.vi_port_eid_A,
+                "mac_A": self.vi_port_mac_A,
+                "channel": self.vi_port_channel_A,
+                "mode": self.vi_port_mode_A,
+                "traffic_type": self.vi_port_traffic_type_A,
+                "traffic_protocol": self.vi_port_protocol_A,
+                "offered_download_rate" : self.vi_port_offered_rx_rate_A,
+                "offered_upload_rate" : self.vi_port_offered_tx_rate_A,
+
+                # B side
                 "clients_B": self.vi_clients_B,
                 "ul_B": self.vi_tos_ul_B,
                 "dl_B": self.vi_tos_dl_B,
-                "colors": ['steelblue', 'lightskyblue'],
-                "labels": ['Upload', 'Download']
+                "resourse": self.vi_resourse_host_B,
+                "port": self.vi_port_eid_B,
+                "mac": self.vi_port_mac_B,
+                "channel": self.vi_port_channel_B,
+                "mode": self.vi_port_mode_B,
+                "traffic_type": self.vi_port_traffic_type_B,
+                "traffic_protocol": self.vi_port_protocol_B,
+                "offered_download_rate" : self.vi_port_offered_rx_rate_B,
+                "offered_upload_rate" : self.vi_port_offered_tx_rate_B,
+
             },
             "VO": {
+                "colors": ['green', 'lightgreen'],
+                "labels": ['Upload', 'Download'],
+
+                # A side
                 "clients_A": self.vo_clients_A,
                 "ul_A": self.vo_tos_ul_A,
                 "dl_A": self.vo_tos_dl_A,
+                "resourse": self.vo_resourse_host_A,
+                "port": self.vo_port_eid_A,
+                "mac": self.vo_port_mac_A,
+                "channel": self.vo_port_channel_A,
+                "mode": self.vo_port_mode_A,
+                "traffic_type": self.vo_port_traffic_type_A,
+                "traffic_protocol": self.vo_port_protocol_A,
+                "offered_download_rate" : self.vo_port_offered_rx_rate_A,
+                "offered_upload_rate" : self.vo_port_offered_tx_rate_A,
+
+                # B side
                 "clients_B": self.vo_clients_B,
                 "ul_B": self.vo_tos_ul_B,
                 "dl_B": self.vo_tos_dl_B,
-                "colors": ['green', 'lightgreen'],
-                "labels": ['Upload', 'Download']
+                "resourse": self.vo_resourse_host_B,
+                "port": self.vo_port_eid_B,
+                "mac": self.vo_port_mac_B,
+                "channel": self.vo_port_channel_B,
+                "mode": self.vo_port_mode_B,
+                "traffic_type": self.vo_port_traffic_type_B,
+                "traffic_protocol": self.vo_port_protocol_B,
+                "offered_download_rate" : self.vo_port_offered_rx_rate_B,
+                "offered_upload_rate" : self.vo_port_offered_tx_rate_B,
+
             }
         }
 
-        
-        # gather port information
-        self.port_response = self.json_get("/port/all")
-        for interface in self.port_response['interfaces']:
-            for port, port_data in interface.items():
-                if(port in self.station_profile.station_names):
-                    self.port_list.append(port)
-                    self.mac_list.append(port_data['mac'])
-                    self.channel_list.append(port_data['channel'])
-
-
+        '''        
         self.client_table_dict = {
             "y_axis_name": "Client names",
             "x_axis_name": "Throughput in Mbps",
             "min_bps_a": self.side_a_min_bps,
             "min_bps_b": self.side_b_min_bps,
             "BK": {
+                "colors": ['orange', 'wheat'],
+                "labels": ['Upload','Download'],
+
+                # side A
                 "clients_A": self.bk_clients_A,
                 "ul_A": self.bk_tos_ul_A,
                 "dl_A": self.bk_tos_dl_A,
+                "ports_A": self.bk_port_eid_A,
+                "mac_A":   self.bk_port_mac_A,
+                "channel_A": self.bk_port_channel_A,
+                "mode_A": self.bk_port_mode_A,
+                "traffic_type_A": self.bk_port_traffic_type_A,
+                "traffic_protocol_A": self.bk_port_protocol_A,
+
+                # side B
                 "clients_B": self.bk_clients_B,
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
-                "colors": ['orange', 'wheat'],
-                "labels": ['Upload','Download'],
-                "ports": self.port_list,
-                "mac":   self.mac_list,
-                "channel": self.channel_list
+                "ports_B": self.bk_port_eid_B,
+                "mac_B":   self.bk_port_mac_B,
+                "channel_B": self.bk_port_channel_B,
+                "mode_B": self.bk_port_mode_B,
+                "traffic_type_B": self.bk_port_traffic_type_B,
+                "traffic_protocol_B": self.bk_port_protocol_B
             },
             "BE": {
+                "colors": ['lightcoral', 'mistyrose'],
+                "labels": ['Upload','Download'],
+
+                # side A
                 "clients_A": self.be_clients_A,
                 "ul_A": self.be_tos_ul_A,
                 "dl_A": self.be_tos_dl_A,
+                "ports_A": self.be_port_eid_A,
+                "mac_A":   self.be_port_mac_A,
+                "channel_A": self.be_port_channel_A,
+                "mode_A": self.be_port_mode_A,
+                "traffic_type_A": self.be_port_traffic_type_A,
+                "traffic_protocol_A": self.be_port_protocol_A,
+
+                # side B
                 "clients_B": self.be_clients_B,
                 "ul_B": self.be_tos_ul_B,
                 "dl_B": self.be_tos_dl_B,
-                "colors": ['lightcoral', 'mistyrose'],
-                "labels": ['Upload','Download'],
-                "ports": self.port_list,
-                "mac":   self.mac_list,
-                "channel": self.channel_list
+                "ports_B": self.be_port_eid_B,
+                "mac_B":   self.be_port_mac_B,
+                "channel_B": self.be_port_channel_B,
+                "mode_B": self.be_port_mode_B,
+                "traffic_type_B": self.be_port_traffic_type_B,
+                "traffic_protocol_B": self.be_port_protocol_B
+
             },
             "VI": {
+                "colors": ['steelblue', 'lightskyblue'],
+                "labels": ['Upload', 'Download'],
+
+                # side A
                 "clients_A": self.vi_clients_A,
                 "ul_A": self.vi_tos_ul_A,
                 "dl_A": self.vi_tos_dl_A,
+                "ports_A": self.vi_port_eid_A,
+                "mac_A":   self.vi_port_mac_A,
+                "channel_A": self.vi_port_channel_A,
+                "mode_A": self.vi_port_mode_A,
+                "traffic_type_A": self.vi_port_traffic_type_A,
+                "traffic_protocol_A": self.vi_port_protocol_A,
+
+                # side B
                 "clients_B": self.vi_clients_B,
                 "ul_B": self.vi_tos_ul_B,
                 "dl_B": self.vi_tos_dl_B,
-                "colors": ['steelblue', 'lightskyblue'],
-                "labels": ['Upload', 'Download'],
-                "ports": self.port_list,
-                "mac":   self.mac_list,
-                "channel": self.channel_list
+                "ports_B": self.vi_port_eid_B,
+                "mac_B":   self.vi_port_mac_B,
+                "channel_B": self.vi_port_channel_B,
+                "mode_B": self.vi_port_mode_B,
+                "traffic_type_B": self.vi_port_traffic_type_B,
+                "traffic_protocol_B": self.vi_port_protocol_B
             },
             "VO": {
+                "colors": ['green', 'lightgreen'],
+                "labels": ['Upload', 'Download'],
+
+                # side A
                 "clients_A": self.vo_clients_A,
                 "ul_A": self.vo_tos_ul_A,
                 "dl_A": self.vo_tos_dl_A,
+                "ports_A": self.vo_port_eid_A,
+                "mac_A":   self.vo_port_mac_A,
+                "channel_A": self.vo_port_channel_A,
+                "mode_A": self.vo_port_mode_A,
+                "traffic_type_A": self.vo_port_traffic_type_A,
+                "traffic_protocol_A": self.vo_port_protocol_A,
+
+                # side B
                 "clients_B": self.vo_clients_B,
                 "ul_B": self.vo_tos_ul_B,
                 "dl_B": self.vo_tos_dl_B,
-                "colors": ['green', 'lightgreen'],
-                "labels": ['Upload', 'Download'],
-                "ports": self.port_list,
-                "mac":   self.mac_list,
-                "channel": self.channel_list
+                "ports_B": self.vo_port_eid_B,
+                "mac_B":   self.vo_port_mac_B,
+                "channel_B": self.vo_port_channel_B,
+                "mode_B": self.vo_port_mode_B,
+                "traffic_type_B": self.vo_port_traffic_type_B,
+                "traffic_protocol_B": self.vo_port_protocol_B
+
+                
             }
         }
+        '''
 
 
 
