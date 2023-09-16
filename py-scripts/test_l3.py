@@ -2591,8 +2591,8 @@ class L3VariableTime(Realm):
                                     self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
                                     self.bk_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_A.append(endp_data[endp_data_key]['tos'] )
-                                    self.bk_port_offered_rx_rate_A.append("NA")
-                                    self.bk_port_offered_tx_rate_A.append("NA")
+                                    self.bk_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps) # b side tx
+                                    self.bk_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                     
                                     try:
                                         self.bk_port_channel_A.append(port_data[port_data_key]["channel"])
@@ -4831,7 +4831,9 @@ INCLUDE_IN_README: False
                 " Mode " : ip_var_test.client_dict_A['BK']['mode_A'],
                 " Mac " : ip_var_test.client_dict_A['BK']['mac_A'],
                 " Channel " : ip_var_test.client_dict_A['BK']['channel_A'],
-                " Type of traffic " : ip_var_test.client_dict_A['BK']['traffic_type_A']
+                " Type of traffic " : ip_var_test.client_dict_A['BK']['traffic_type_A'],
+                " Offered Upload Rate Per Client" : ip_var_test.client_dict_A['min_bps_a'],
+                " Offered Download Rate Per Client" : ip_var_test.client_dict_A['min_bps_b']
                 #" Traffic Protocol " : 
             }
 
