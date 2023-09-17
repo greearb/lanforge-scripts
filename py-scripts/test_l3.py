@@ -1709,7 +1709,6 @@ class L3VariableTime(Realm):
                     (ul, dl, self.cx_count, self.rates_are_totals))
 
                 # Set rate and pdu size config
-                self.cx_profile.side_a_min_bps = ul
                 self.cx_profile.side_a_max_bps = ul
                 self.cx_profile.side_b_min_bps = dl
                 self.cx_profile.side_b_max_bps = dl
@@ -2471,6 +2470,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.bk_resource_host_A.append('NA')
@@ -2492,6 +2492,7 @@ class L3VariableTime(Realm):
                                     self.bk_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.bk_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.bk_port_mac_A.append('NA')
@@ -2520,6 +2521,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.bk_resource_host_B.append('NA')
@@ -2541,6 +2543,7 @@ class L3VariableTime(Realm):
                                     self.bk_port_offered_tx_rate_B.append(self.cx_profile.side_b_min_bps) # b side tx
                                     self.bk_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.bk_port_mac_B.append('NA')
@@ -2571,6 +2574,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.be_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.be_resource_host_A.append('NA')
@@ -2592,6 +2596,7 @@ class L3VariableTime(Realm):
                                     self.be_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.be_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.be_port_mac_A.append('NA')
@@ -2621,6 +2626,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.be_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.be_resource_host_B.append('NA')
@@ -2642,6 +2648,7 @@ class L3VariableTime(Realm):
                                     self.be_port_offered_tx_rate_B.append(self.cx_profile.side_b_min_bps) # b side tx
                                     self.be_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.be_port_mac_B.append('NA')
@@ -2672,6 +2679,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vi_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.vi_resource_host_A.append('NA')
@@ -2693,6 +2701,7 @@ class L3VariableTime(Realm):
                                     self.vi_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.vi_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.vi_port_mac_A.append('NA')
@@ -2721,6 +2730,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vi_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.vi_resource_host_B.append('NA')
@@ -2742,6 +2752,7 @@ class L3VariableTime(Realm):
                                     self.vi_port_offered_tx_rate_B.append(self.cx_profile.side_b_min_bps) # b side tx
                                     self.vi_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.vi_port_mac_B.append('NA')
@@ -2772,6 +2783,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vo_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.vo_resource_host_A.append('NA')
@@ -2793,6 +2805,7 @@ class L3VariableTime(Realm):
                                     self.vo_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.vo_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.vo_port_mac_A.append('NA')
@@ -2802,7 +2815,7 @@ class L3VariableTime(Realm):
                                     self.vo_port_offered_tx_rate_A.append("NA")
                                     self.vo_port_channel_A.append("NA")
 
-
+                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.vo_clients_B.append(endp_data[endp_data_key]['name'])
                             self.vo_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
@@ -2820,6 +2833,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vo_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.vo_resource_host_B.append('NA')
@@ -2841,6 +2855,7 @@ class L3VariableTime(Realm):
                                     self.vo_port_offered_tx_rate_B.append(self.cx_profile.side_b_min_bps) # b side tx
                                     self.vo_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.vo_port_mac_B.append('NA')
@@ -2876,6 +2891,7 @@ class L3VariableTime(Realm):
                             if resource_found is False:
                                 self.bk_resource_host_A.append('NA')
                                 self.bk_resource_hw_ver_A.append('NA')
+                                break
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -2893,6 +2909,7 @@ class L3VariableTime(Realm):
                                     self.bk_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.bk_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.bk_port_mac_A.append('NA')
@@ -2922,6 +2939,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.bk_resource_host_B.append('NA')
@@ -2943,6 +2961,7 @@ class L3VariableTime(Realm):
                                     self.bk_port_offered_tx_rate_B.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.bk_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.bk_port_mac_B.append('NA')
@@ -2974,6 +2993,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.be_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.be_resource_host_A.append('NA')
@@ -2995,6 +3015,7 @@ class L3VariableTime(Realm):
                                     self.be_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.be_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.be_port_mac_A.append('NA')
@@ -3021,12 +3042,13 @@ class L3VariableTime(Realm):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
-                                    self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
-                                    self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.be_resource_host_B.append(resource_data[resource_data_key]['hostname'])
+                                    self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
-                                self.bk_resource_host_B.append('NA')
-                                self.bk_resource_hw_ver_B.append('NA')
+                                self.be_resource_host_B.append('NA')
+                                self.be_resource_hw_ver_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3044,6 +3066,7 @@ class L3VariableTime(Realm):
                                     self.be_port_offered_tx_rate_B.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.be_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.be_port_mac_B.append('NA')
@@ -3073,6 +3096,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vi_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.vi_resource_host_A.append('NA')
@@ -3094,6 +3118,7 @@ class L3VariableTime(Realm):
                                     self.vi_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.vi_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.vi_port_mac_A.append('NA')
@@ -3122,6 +3147,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vi_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.vi_resource_host_B.append('NA')
@@ -3143,6 +3169,7 @@ class L3VariableTime(Realm):
                                     self.vi_port_offered_tx_rate_B.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.vi_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.vi_port_mac_B.append('NA')
@@ -3172,6 +3199,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vo_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.vo_resource_host_A.append('NA')
@@ -3182,7 +3210,7 @@ class L3VariableTime(Realm):
                             eid_tmp_port = eid_tmp_resource+'.'+eid_info[1]
                             
                             port_found = False
-                            self.bk_port_eid_A.append(eid_tmp_port)
+                            self.vo_port_eid_A.append(eid_tmp_port)
                             for port_data in self.port_data['interfaces']:
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
@@ -3193,6 +3221,7 @@ class L3VariableTime(Realm):
                                     self.vo_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.vo_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.vo_port_mac_A.append('NA')
@@ -3221,6 +3250,7 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vo_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    break
 
                             if resource_found is False:
                                 self.vo_resource_host_B.append('NA')
@@ -3242,6 +3272,7 @@ class L3VariableTime(Realm):
                                     self.vo_port_offered_tx_rate_B.append(self.cx_profile.side_a_min_bps) # a side tx
                                     self.vo_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
+                                    break
 
                             if port_found is False:
                                     self.vo_port_mac_B.append('NA')
@@ -3273,6 +3304,7 @@ class L3VariableTime(Realm):
                                 resource_found = True
                                 self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                 self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                break
 
                         if resource_found is False:
                             self.bk_resource_host_A.append('NA')
@@ -3294,6 +3326,7 @@ class L3VariableTime(Realm):
                                 self.bk_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                 self.bk_port_channel_A.append(port_data[port_data_key]["channel"])
                                 port_found = True
+                                break
 
                         if port_found is False:
                                 self.bk_port_mac_A.append('NA')
@@ -3322,6 +3355,7 @@ class L3VariableTime(Realm):
                                 resource_found = True
                                 self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                 self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                break
 
                         if resource_found is False:
                             self.bk_resource_host_B.append('NA')
@@ -3343,6 +3377,7 @@ class L3VariableTime(Realm):
                                 self.bk_port_offered_tx_rate_B.append(self.cx_profile.side_a_min_bps) # a side tx
                                 self.bk_port_channel_B.append(port_data[port_data_key]["channel"])
                                 port_found = True
+                                break
 
                         if port_found is False:
                                 self.bk_port_mac_B.append('NA')
@@ -3372,6 +3407,7 @@ class L3VariableTime(Realm):
                                 resource_found = True
                                 self.be_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                 self.be_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                break
 
                         if resource_found is False:
                             self.be_resource_host_A.append('NA')
@@ -3393,6 +3429,7 @@ class L3VariableTime(Realm):
                                 self.be_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                 self.be_port_channel_A.append(port_data[port_data_key]["channel"])
                                 port_found = True
+                                break
 
                         if port_found is False:
                                 self.be_port_mac_A.append('NA')
@@ -3419,12 +3456,13 @@ class L3VariableTime(Realm):
                             resource_data_key = list(resource_data.keys())[0]
                             if resource_data_key == eid_tmp_resource:
                                 resource_found = True
-                                self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
-                                self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                self.be_resource_host_B.append(resource_data[resource_data_key]['hostname'])
+                                self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                break
 
                         if resource_found is False:
-                            self.bk_resource_host_B.append('NA')
-                            self.bk_resource_hw_ver_B.append('NA')
+                            self.be_resource_host_B.append('NA')
+                            self.be_resource_hw_ver_B.append('NA')
 
                         # look up port information
                         eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3442,6 +3480,7 @@ class L3VariableTime(Realm):
                                 self.be_port_offered_tx_rate_B.append(self.cx_profile.side_a_min_bps) # a side tx
                                 self.be_port_channel_B.append(port_data[port_data_key]["channel"])
                                 port_found = True
+                                break
 
                         if port_found is False:
                                 self.be_port_mac_B.append('NA')
@@ -3471,6 +3510,7 @@ class L3VariableTime(Realm):
                                 resource_found = True
                                 self.vi_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                 self.vi_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                break
 
                         if resource_found is False:
                             self.vi_resource_host_A.append('NA')
@@ -3492,6 +3532,7 @@ class L3VariableTime(Realm):
                                 self.vi_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                 self.vi_port_channel_A.append(port_data[port_data_key]["channel"])
                                 port_found = True
+                                break
 
                         if port_found is False:
                                 self.vi_port_mac_A.append('NA')
@@ -3520,6 +3561,7 @@ class L3VariableTime(Realm):
                                 resource_found = True
                                 self.vi_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                 self.vi_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                break
 
                         if resource_found is False:
                             self.vi_resource_host_B.append('NA')
@@ -3541,6 +3583,7 @@ class L3VariableTime(Realm):
                                 self.vi_port_offered_tx_rate_B.append(self.cx_profile.side_a_min_bps) # a side tx
                                 self.vi_port_channel_B.append(port_data[port_data_key]["channel"])
                                 port_found = True
+                                break
 
                         if port_found is False:
                                 self.vi_port_mac_B.append('NA')
@@ -3571,6 +3614,7 @@ class L3VariableTime(Realm):
                                 resource_found = True
                                 self.vo_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                 self.vo_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                break
 
                         if resource_found is False:
                             self.vo_resource_host_A.append('NA')
@@ -3581,7 +3625,7 @@ class L3VariableTime(Realm):
                         eid_tmp_port = eid_tmp_resource+'.'+eid_info[1]
                         
                         port_found = False
-                        self.bk_port_eid_A.append(eid_tmp_port)
+                        self.vo_port_eid_A.append(eid_tmp_port)
                         for port_data in self.port_data['interfaces']:
                             port_data_key = list(port_data.keys())[0]
                             if port_data_key == eid_tmp_port:
@@ -3592,6 +3636,7 @@ class L3VariableTime(Realm):
                                 self.vo_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
                                 self.vo_port_channel_A.append(port_data[port_data_key]["channel"])
                                 port_found = True
+                                break
 
                         if port_found is False:
                                 self.vo_port_mac_A.append('NA')
@@ -3620,6 +3665,7 @@ class L3VariableTime(Realm):
                                 resource_found = True
                                 self.vo_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                 self.vo_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                break
 
                         if resource_found is False:
                             self.vo_resource_host_B.append('NA')
@@ -3641,6 +3687,7 @@ class L3VariableTime(Realm):
                                 self.vo_port_offered_tx_rate_B.append(self.cx_profile.side_a_min_bps) # a side tx
                                 self.vo_port_channel_B.append(port_data[port_data_key]["channel"])
                                 port_found = True
+                                break
 
                         if port_found is False:
                                 self.vo_port_mac_B.append('NA')
@@ -3813,6 +3860,7 @@ class L3VariableTime(Realm):
                 "ul_A": self.bk_tos_ul_A,
                 "dl_A": self.bk_tos_dl_A,
                 "resource_A": self.bk_resource_host_A,
+                "resource_hw_ver_A": self.bk_resource_hw_ver_A,
                 "port_A": self.bk_port_eid_A,
                 "mac_A": self.bk_port_mac_A,
                 "channel_A": self.bk_port_channel_A,
@@ -3827,6 +3875,7 @@ class L3VariableTime(Realm):
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
                 "resource_B": self.bk_resource_host_B,
+                "resource_hw_ver_B": self.bk_resource_hw_ver_B,
                 "port_B": self.bk_port_eid_B,
                 "mac_B": self.bk_port_mac_B,
                 "channel_B": self.bk_port_channel_B,
@@ -3846,6 +3895,7 @@ class L3VariableTime(Realm):
                 "ul_A": self.be_tos_ul_A,
                 "dl_A": self.be_tos_dl_A,
                 "resource_A": self.be_resource_host_A,
+                "resource_hw_ver_A": self.be_resource_hw_ver_A,
                 "port_A": self.be_port_eid_A,
                 "mac_A": self.be_port_mac_A,
                 "channel_A": self.be_port_channel_A,
@@ -3860,6 +3910,7 @@ class L3VariableTime(Realm):
                 "ul_B": self.be_tos_ul_B,
                 "dl_B": self.be_tos_dl_B,
                 "resource_B": self.be_resource_host_B,
+                "resource_hw_ver_B": self.be_resource_hw_ver_B,
                 "port_B": self.be_port_eid_B,
                 "mac_B": self.be_port_mac_B,
                 "channel_B": self.be_port_channel_B,
@@ -3879,6 +3930,7 @@ class L3VariableTime(Realm):
                 "ul_A": self.vi_tos_ul_A,
                 "dl_A": self.vi_tos_dl_A,
                 "resource_A": self.vi_resource_host_A,
+                "resource_hw_ver_A": self.vi_resource_hw_ver_A,
                 "port_A": self.vi_port_eid_A,
                 "mac_A": self.vi_port_mac_A,
                 "channel_A": self.vi_port_channel_A,
@@ -3892,15 +3944,16 @@ class L3VariableTime(Realm):
                 "clients_B": self.vi_clients_B,
                 "ul_B": self.vi_tos_ul_B,
                 "dl_B": self.vi_tos_dl_B,
-                "resource": self.vi_resource_host_B,
-                "port": self.vi_port_eid_B,
-                "mac": self.vi_port_mac_B,
-                "channel": self.vi_port_channel_B,
-                "mode": self.vi_port_mode_B,
-                "traffic_type": self.vi_port_traffic_type_B,
-                "traffic_protocol": self.vi_port_protocol_B,
-                "offered_download_rate" : self.vi_port_offered_tx_rate_B,
-                "offered_upload_rate" : self.vi_port_offered_rx_rate_B,
+                "resource_B": self.vi_resource_host_B,
+                "resource_hw_ver_B": self.vi_resource_hw_ver_B,
+                "port_B": self.vi_port_eid_B,
+                "mac_B": self.vi_port_mac_B,
+                "channel_B": self.vi_port_channel_B,
+                "mode_B": self.vi_port_mode_B,
+                "traffic_type_B": self.vi_port_traffic_type_B,
+                "traffic_protocol_B": self.vi_port_protocol_B,
+                "offered_download_rate_B" : self.vi_port_offered_tx_rate_B,
+                "offered_upload_rate_B" : self.vi_port_offered_rx_rate_B,
 
             },
             "VO": {
@@ -3911,29 +3964,31 @@ class L3VariableTime(Realm):
                 "clients_A": self.vo_clients_A,
                 "ul_A": self.vo_tos_ul_A,
                 "dl_A": self.vo_tos_dl_A,
-                "resource": self.vo_resource_host_A,
-                "port": self.vo_port_eid_A,
-                "mac": self.vo_port_mac_A,
-                "channel": self.vo_port_channel_A,
-                "mode": self.vo_port_mode_A,
-                "traffic_type": self.vo_port_traffic_type_A,
-                "traffic_protocol": self.vo_port_protocol_A,
-                "offered_download_rate" : self.vo_port_offered_rx_rate_A,
-                "offered_upload_rate" : self.vo_port_offered_tx_rate_A,
+                "resource_A": self.vo_resource_host_A,
+                "resource_hw_ver_A": self.vo_resource_hw_ver_A,
+                "port_A": self.vo_port_eid_A,
+                "mac_A": self.vo_port_mac_A,
+                "channel_A": self.vo_port_channel_A,
+                "mode_A": self.vo_port_mode_A,
+                "traffic_type_A": self.vo_port_traffic_type_A,
+                "traffic_protocol_A": self.vo_port_protocol_A,
+                "offered_download_rate_A" : self.vo_port_offered_rx_rate_A,
+                "offered_upload_rate_A" : self.vo_port_offered_tx_rate_A,
 
                 # B side
                 "clients_B": self.vo_clients_B,
                 "ul_B": self.vo_tos_ul_B,
                 "dl_B": self.vo_tos_dl_B,
-                "resource": self.vo_resource_host_B,
-                "port": self.vo_port_eid_B,
-                "mac": self.vo_port_mac_B,
-                "channel": self.vo_port_channel_B,
-                "mode": self.vo_port_mode_B,
-                "traffic_type": self.vo_port_traffic_type_B,
-                "traffic_protocol": self.vo_port_protocol_B,
-                "offered_download_rate" : self.vo_port_offered_tx_rate_B,
-                "offered_upload_rate" : self.vo_port_offered_rx_rate_B,
+                "resource_B": self.vo_resource_host_B,
+                "resource_hw_ver_B": self.vo_resource_hw_ver_B,
+                "port_B": self.vo_port_eid_B,
+                "mac_B": self.vo_port_mac_B,
+                "channel_B": self.vo_port_channel_B,
+                "mode_B": self.vo_port_mode_B,
+                "traffic_type_B": self.vo_port_traffic_type_B,
+                "traffic_protocol_B": self.vo_port_protocol_B,
+                "offered_download_rate_B" : self.vo_port_offered_tx_rate_B,
+                "offered_upload_rate_B" : self.vo_port_offered_rx_rate_B,
 
             }
         }
@@ -5797,10 +5852,11 @@ INCLUDE_IN_README: False
 
 
 
-            bk_dataframe = {
+            tos_dataframe_A = {
                 " Client Name " : ip_var_test.client_dict_A[tos]['resource_A'],
                 " HW Version " : ip_var_test.client_dict_A[tos]['resource_hw_ver_A'],
-                " Port Name " : ip_var_test.client_dict_A[tos]['port_A'],
+                # TODO : port A being set to many times
+                #" Port Name " : ip_var_test.client_dict_A[tos]['port_A'],
                 " Mode " : ip_var_test.client_dict_A[tos]['mode_A'],
                 " Mac " : ip_var_test.client_dict_A[tos]['mac_A'],
                 " Channel " : ip_var_test.client_dict_A[tos]['channel_A'],
@@ -5814,7 +5870,7 @@ INCLUDE_IN_README: False
             }
 
 
-            dataframe3 = pd.DataFrame(bk_dataframe)
+            dataframe3 = pd.DataFrame(tos_dataframe_A)
             report.set_table_dataframe(dataframe3)
             report.build_table()
 
@@ -5861,24 +5917,25 @@ INCLUDE_IN_README: False
             report.move_graph_image()
             report.build_graph()
 
-            bk_dataframe = {
-                " Client Name " : ip_var_test.client_dict_A[tos]['resource_B'],
-                " HW Version " : ip_var_test.client_dict_A[tos]['resource_hw_ver_B'],
-                " Port Name " : ip_var_test.client_dict_A[tos]['port_B'],
-                " Mode " : ip_var_test.client_dict_A[tos]['mode_B'],
-                " Mac " : ip_var_test.client_dict_A[tos]['mac_B'],
-                " Channel " : ip_var_test.client_dict_A[tos]['channel_B'],
-                " Type of traffic " : ip_var_test.client_dict_A[tos]['traffic_type_B'],
-                " Traffic Protocol " : ip_var_test.client_dict_A[tos]['traffic_protocol_B'],
-                " Offered Upload Rate Per Client" : ip_var_test.client_dict_A['min_bps_a'],
-                " Offered Download Rate Per Client" : ip_var_test.client_dict_A['min_bps_b'],
-                " Upload Rate Per Client" : ip_var_test.client_dict_A[tos]['ul_B'],
-                " Download Rate Per Client" : ip_var_test.client_dict_A[tos]['dl_B']
+            tos_dataframe_B = {
+                " Client Name " : ip_var_test.client_dict_B[tos]['resource_B'],
+                # TODO get correct size
+                " HW Version " : ip_var_test.client_dict_B[tos]['resource_hw_ver_B'],
+                " Port Name " : ip_var_test.client_dict_B[tos]['port_B'],
+                " Mode " : ip_var_test.client_dict_B[tos]['mode_B'],
+                " Mac " : ip_var_test.client_dict_B[tos]['mac_B'],
+                " Channel " : ip_var_test.client_dict_B[tos]['channel_B'],
+                " Type of traffic " : ip_var_test.client_dict_B[tos]['traffic_type_B'],
+                " Traffic Protocol " : ip_var_test.client_dict_B[tos]['traffic_protocol_B'],
+                " Offered Upload Rate Per Client" : ip_var_test.client_dict_B['min_bps_a'],
+                " Offered Download Rate Per Client" : ip_var_test.client_dict_B['min_bps_b'],
+                " Upload Rate Per Client" : ip_var_test.client_dict_B[tos]['ul_B'],
+                " Download Rate Per Client" : ip_var_test.client_dict_B[tos]['dl_B']
                 #" Traffic Protocol " : 
             }
 
 
-            dataframe3 = pd.DataFrame(bk_dataframe)
+            dataframe3 = pd.DataFrame(tos_dataframe_B)
             report.set_table_dataframe(dataframe3)
             report.build_table()
 
