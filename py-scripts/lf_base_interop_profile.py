@@ -603,7 +603,7 @@ class RealDevice(Realm):
         self.manager_ip = manager_ip
         self.manager_port = port
         self.devices = []
-        self.devices_data = []
+        self.devices_data = {}
         self.selected_device_eids = []
         self.selected_devices = []
         self.selected_macs = []
@@ -615,53 +615,88 @@ class RealDevice(Realm):
     
     # getting data of all real devices
     def get_devices(self):
-        real_stations = []
-        real_stations_with_data = {}
-        
-        # query all resources
-        resources = self.json_get('/resource/all')['resources']
-        non_phantom_resources = []
-        non_phantom_resources_with_data = []
-        for resource in resources:
-            port = list(resource.keys())[0]
-            
-            # filtering LANforges from mobiles and computers and checking the phantom state
-            #NOTE len(port)!=3 means that it checks for LANforge and clustered LANforges(1.1, 1.2, 1.3, .., 1.9).
-            #NOTE So, this logic needs modification if more than 8 LANforges are clustered (1.10, 1.11 ...).
-            if(len(port) != 3 and not resource[port]['phantom']):
-                non_phantom_resources.append(port)
-                non_phantom_resources_with_data.append(resource)
-        # print(non_phantom_resources)
+        devices            = []
+        devices_data       = {}
+        resources          = []
+        resources_os_types = {}
+        resources_data     = {}
 
-        # query all ports
-        valid_ports = []
-        valid_ports_with_data = {}
+        # Get resources and OS types
+        resources_list = self.json_get("/resource/all")["resources"]
+        for resource_data_dict in resources_list:
+            # Need to unpack resource data dict of encapsulating dict that contains it
+            resource_id = list(resource_data_dict.keys())[0]
+            resource_data_dict = resource_data_dict[resource_id]
+
+            if 'ct-kernel' not in resource_data_dict or 'hw version' not in resource_data_dict or 'eid' not in resource_data_dict:
+                logging.error('Malformed json response for endpoint /resource/all')
+                raise ValueError('Malformed json response for endpoint /resource/all')
+
+            if resource_data_dict['ct-kernel'] == True:
+                # Custom kernel indicates not a real device, so do not track this resource
+                continue
+
+            # TODO: iOS, Add OS version field to output (we keep track of that info already in the GUI)
+            # Get OS version based on 'hw version' field
+            hw_ver = resource_data_dict['hw version']
+            if 'Win/x86' in hw_ver:
+                os_type = 'windows'
+            elif 'Apple/x86' in hw_ver:
+                os_type = 'macos'
+            elif 'Linux/x86' in hw_ver:
+                os_type = 'linux'
+            else:
+                os_type = 'android'
+
+            resources.append(resource_id)
+            resources_os_types[resource_id] = os_type
+            resources_data[resource_id]     = resource_data_dict
+
+
+        # Get ports
+        # TODO: Add optional argument to function to allow the detection of down ports.
+        #       Currently only returns real device ports which are not phantom and are up
         ports = self.json_get('/ports/all')['interfaces']
-        for port_data in ports:
-            port = list(port_data.keys())[0]
+        for port_data_dict in ports:
+            port_id = list(port_data_dict.keys())[0]
 
-            #filtering non-phantom and non-down ports with parent dev as wiphy0
-            if(not (port_data[port]['phantom'] or port_data[port]['down']) and port_data[port]['parent dev'] == 'wiphy0'):
-                valid_ports.append(port)
-                valid_ports_with_data.update(port_data)
-        # print(valid_ports)
+            # Assume three components to port ID, each separated by a period (e.g. '1.1.wlan0')
+            # First two components is the resource ID (e.g. '1.1' for '1.1.wlan0')
+            port_id_parts = port_id.split('.')
+            resource_id   = port_id_parts[0] + '.' + port_id_parts[1]
 
-        # getting real stations data from resource mgr data
-        for station in valid_ports:
-            station_split = self.name_to_eid(station)
-            if('{}.{}'.format(station_split[0], station_split[1]) in non_phantom_resources):
-                real_stations.append(station)
+            # Skip any non-real devices we have decided to not track
+            if resource_id not in resources:
+                continue
 
-        # getting real stations data from resource mgr data
-        for station in real_stations:
-            for resource in non_phantom_resources_with_data:
-                station_split = self.name_to_eid(station)
-                if('{}.{}'.format(station_split[0], station_split[1]) in list(resource.keys())[0]):
-                    real_stations_with_data[station] = resource[list(resource.keys())[0]]
-                    real_stations_with_data[station].update(valid_ports_with_data[station])
-        self.devices = real_stations
-        self.devices_data = real_stations_with_data
-        return(self.devices)
+            # Need to unpack resource data dict of encapsulating dict that contains it
+            port_data_dict = port_data_dict[port_id]
+
+            if 'phantom' not in port_data_dict or 'down' not in port_data_dict or 'parent dev' not in port_data_dict:
+                logging.error('Malformed json response for endpoint /ports/all')
+                raise ValueError('Malformed json response for endpoint /ports/all')
+
+            # Skip phantom or down ports
+            if port_data_dict['phantom'] or port_data_dict['down']:
+                continue
+
+            # TODO: Support more than one station per real device
+            print(port_data_dict['parent dev'])
+            if port_data_dict['parent dev'] != 'wiphy0':
+                continue
+
+            # Sneak resource data into the port data dict
+            # This is smelly code, though. We should just keep track of the resource data instead
+            port_data_dict.update(resources_data[resource_id])
+
+            devices.append(port_id)
+            port_data_dict['ostype']  = resources_os_types[resource_id]
+            devices_data[port_id]     = port_data_dict
+
+        self.devices          = devices
+        self.devices_data     = devices_data
+
+        return self.devices
     
     # querying the user the required mobiles to test
     def query_user(self):
@@ -669,6 +704,7 @@ class RealDevice(Realm):
         # print('Port\t\thw version\t\t\tMAC')
         t_devices = {}
         for device, device_details in self.devices_data.items():
+            # 'eid' and 'hw version' originally comes from resource data. Snuck into port data to make life easier
             t_devices[device_details['eid']] = {
                 'Port Name': device,
                 'hw version': device_details['hw version'],
@@ -678,7 +714,7 @@ class RealDevice(Realm):
         df = pd.DataFrame(data=t_devices).transpose()
         print(df)
 
-        self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11):').split(',')
+        self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11): ').split(',')
         print('You have selected the below devices for testing')
         # print('Port\t\thw version\t\t\tMAC')
         selected_t_devices = {}
