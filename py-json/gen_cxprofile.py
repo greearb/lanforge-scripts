@@ -42,16 +42,10 @@ class GenCXProfile(LFCliBase):
         self.speedtest_min_up = 0
         self.speedtest_max_ping = 0
 
-    def parse_command(self, sta_name, gen_name, real_client=False):
+    # If not specified, default client_type is linux
+    def parse_command(self, sta_name, gen_name, client_type="linux"):
         if self.type == "lfping":
-            if self.dest and self.interval:
-                if not real_client:
-                    self.cmd = "%s  -i %s -I %s %s" % (self.type, self.interval, sta_name, self.dest)
-                else:
-                    self.cmd = "%s  -i %s %s" % (self.type, self.interval, self.dest)
-            else:
-                logger.critical("Please ensure dest and interval have been set correctly")
-                raise ValueError("Please ensure dest and interval have been set correctly")
+            self._parse_ping_cmd(sta_name=sta_name, client_type=client_type)
             
         elif self.type == "generic":
             if self.cmd == "":
@@ -79,6 +73,34 @@ class GenCXProfile(LFCliBase):
         else:
             logger.critical("Unknown command type")
             raise ValueError("Unknown command type")
+
+    # Matches ping command builder in GenCreationGUI.java
+    #
+    # Args:
+    #   client_type is one of "android", "linux", "macos", or "windows"
+    def _parse_ping_cmd(self, client_type, sta_name):
+        if not self.dest or not self.interval:
+            logger.critical("Please ensure dest and interval have been set correctly")
+            raise ValueError("Please ensure dest and interval have been set correctly")
+
+        if client_type != "android" and client_type != "linux" and client_type != "macos" \
+            and client_type != "windows":
+            logger.critical("Incorrect client type specified %s" % (client_type))
+            raise ValueError("Incorrect client type specified %s" % (client_type))
+
+        # TODO: Count, size, pattern for all client types
+        if client_type == "windows":
+            # NOTE: Unable to specify interval for Windows ping
+            self.cmd = "python lfping.py -S %s -dest_ip %s" % (sta_name, self.dest)
+
+        elif client_type == "macos":
+            self.cmd = "lfping -b %s -i %s %s" % (sta_name, self.interval, self.dest)
+
+        elif client_type == "android":
+            self.cmd = "ping -i %s %s" % (self.interval, self.dest)
+
+        else: # linux
+            self.cmd = "lfping -I %s -i %s %s" % (sta_name, self.interval, self.dest)
 
     def start_cx(self):
         logger.info("Starting CXs: %s" % self.created_cx)
@@ -308,18 +330,24 @@ class GenCXProfile(LFCliBase):
             })
         time.sleep(sleep_time)
 
-    def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, real_client=False):
+    def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, real_client_os_types=None):
+        if ports and real_client_os_types and len(real_client_os_types) == 0:
+            logging.error('Real client operating systems types is empty list')
+            raise ValueError('Real client operating systems types is empty list')
+
         if not ports:
             ports = []
+
         if self.debug:
             debug_ = True
+
         post_data = []
         endp_tpls = []
         for port_name in ports:
             port_info = self.local_realm.name_to_eid(port_name)
             resource = port_info[1]
             shelf = port_info[0]
-            if(real_client):
+            if real_client_os_types:
                 name = port_name
             else:
                 name = port_info[2]
@@ -332,7 +360,7 @@ class GenCXProfile(LFCliBase):
         for endp_tpl in endp_tpls:
             shelf = endp_tpl[0]
             resource = endp_tpl[1]
-            if(real_client):
+            if real_client_os_types:
                 name = endp_tpl[2].split('.')[2]
             else:
                 name = endp_tpl[2]
@@ -359,20 +387,25 @@ class GenCXProfile(LFCliBase):
         if sleep_time:
             time.sleep(sleep_time)
 
-        for endp_tpl in endp_tpls:
-            if(real_client):
+        # Assumes ordering of endpoint tuples matches ports passed
+        # That way can get OS type for port (and endpoint) w/ same index
+        for ix, endp_tpl in enumerate(endp_tpls):
+            gen_name_a = endp_tpl[3]
+
+            if real_client_os_types:
                 name = endp_tpl[2].split('.')[2]
+                self.parse_command(name, gen_name_a, client_type=real_client_os_types[ix])
             else:
                 name = endp_tpl[2]
-            gen_name_a = endp_tpl[3]
+                self.parse_command(name, gen_name_a)
             # gen_name_b  = endp_tpl[4]
-            self.parse_command(name, gen_name_a, real_client=real_client)
             self.set_cmd(gen_name_a, self.cmd)
+
         if sleep_time:
             time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
-            if(real_client):
+            if (real_client_os_types):
                 name = endp_tpl[2].split('.')[2]
             else:
                 name = endp_tpl[2]
