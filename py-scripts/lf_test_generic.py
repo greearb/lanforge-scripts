@@ -255,7 +255,7 @@ class GenTest():
         #at this point, all endpoints have been created, start all endpoints
         if self.created_endp:
             for endp_name in self.created_endp:
-                self.command.post_set_cx_state(cx_name= "CX_" + endp_name,
+                self.command.post_set_cx_state(cx_name= endp_name,
                                                cx_state="RUNNING",
                                                test_mgr="default_tm",
                                                debug=self.debug)
