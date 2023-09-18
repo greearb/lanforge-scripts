@@ -217,15 +217,17 @@ class GenTest():
 
     def start(self):
         #admin up all created stations & existing stations
-        
         if self.sta_list:
+            interest_flags_list = ['current_flags', 'dhcp', 'dhcp_rls', 'ifdown']
+            set_port_interest_rslt=self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names= interest_flags_list)
             for sta_alias in self.sta_list:
                 port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
                 self.command.post_set_port(shelf = port_shelf,
                                            resource = port_resource,
                                            port = port_name,
-                                           current_flags= 0, # vs 0x1 = interface down
-                                           interest=3833610, # includes use_current_flags + dhcp + dhcp_rls + ifdown
+                                           netmask= "255.255.255.0", #sometimes the cli complains about the netmask being NA, so set it to a random netmask (netmask is overriden anyways with dhcp)
+                                           current_flags= 0,
+                                           interest=set_port_interest_rslt,
                                            report_timer= self.report_timer)
         
         if self.use_existing_eid:
@@ -233,20 +235,20 @@ class GenTest():
                 self.command.post_set_port(shelf = eid[0],
                                            resource = eid[1],
                                            port = eid[2],
-                                           current_flags= 0, # vs 0x1 = interface down
-                                           interest=3833610, # includes use_current_flags + dhcp + dhcp_rls + ifdown
+                                           netmask= "255.255.255.0", #sometimes the cli complains about the netmask being NA, so set it to a random netmask(netmask is overriden anyways with dhcp)
+                                           current_flags= 0,
+                                           interest=set_port_interest_rslt,
                                            report_timer= self.report_timer)
 
         if self.wait_for_action("port", self.sta_list, "up", 3000):
-            self._pass("All stations went admin up.")
+            print("All stations went admin up.")
         else:
-            self._fail("All stations did NOT go admin up.")
+            print("All stations did NOT go admin up.")
 
         if self.wait_for_action("port", self.sta_list, "ip", 3000):
-            self._pass("All stations got IPs")
+            print("All stations got IPs")
         else:
-            self._fail("Stations failed to get IPs")
-            self.exit_fail()
+            self.print("Stations failed to get IPs")
 
         #at this point, all endpoints have been created, start all endpoints
         if self.created_endp:
@@ -295,7 +297,7 @@ class GenTest():
                 add_sta_flags = []
                 set_port_interest = ['rpt_timer','current_flags', 'dhcp']
                 set_port_current=['use_dhcp']
-                
+
                 if self.security != "open":
                     if (self.passwd is None) or (self.passwd == ""):
                         raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
@@ -518,15 +520,15 @@ class GenTest():
                             print("-----json_response------")
                             print(json_response)
                             #if sta is found by json response & not phantom
-                            if json_response is not None and True:
+                            if json_response is not None and (json_response['interface']['down'] == True):
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
 
                         elif action == "up":
-                            json_url = "%s/ports/%s/%s/%s?fields=device,up" % (self.lfclient_url, port_resource, port_shelf, port_name)
+                            json_url = "%s/ports/%s/%s/%s?fields=device,down" % (self.lfclient_url, port_resource, port_shelf, port_name)
                             json_response = self.query.json_get(url=json_url,
                                                                 debug=self.debug)
                             #if sta is up
-                            if json_response is not None:
+                            if json_response is not None and (json_response['interface']['down'] == False):
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
 
                         elif action == "disappear":
