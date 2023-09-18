@@ -1352,7 +1352,7 @@ class L3VariableTime(Realm):
         total_ul_ll = 0
         total_dl = 0
         total_dl_ll = 0
-
+ 
         # Multicast endpoints
         for e in self.multicast_profile.get_mc_names():
             our_endps[e] = e
@@ -5854,9 +5854,10 @@ INCLUDE_IN_README: False
 
             tos_dataframe_A = {
                 " Client Name " : ip_var_test.client_dict_A[tos]['resource_A'],
+                " Endp Name" : ip_var_test.client_dict_A[tos]["clients_A"],
                 " HW Version " : ip_var_test.client_dict_A[tos]['resource_hw_ver_A'],
                 # TODO : port A being set to many times
-                #" Port Name " : ip_var_test.client_dict_A[tos]['port_A'],
+                " Port Name " : ip_var_test.client_dict_A[tos]['port_A'],
                 " Mode " : ip_var_test.client_dict_A[tos]['mode_A'],
                 " Mac " : ip_var_test.client_dict_A[tos]['mac_A'],
                 " Channel " : ip_var_test.client_dict_A[tos]['channel_A'],
@@ -5919,6 +5920,7 @@ INCLUDE_IN_README: False
 
             tos_dataframe_B = {
                 " Client Name " : ip_var_test.client_dict_B[tos]['resource_B'],
+                " Endp Name" : ip_var_test.client_dict_B[tos]["clients_B"],
                 # TODO get correct size
                 " HW Version " : ip_var_test.client_dict_B[tos]['resource_hw_ver_B'],
                 " Port Name " : ip_var_test.client_dict_B[tos]['port_B'],
