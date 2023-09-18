@@ -252,13 +252,13 @@ class Ping(Realm):
                                         _title_size=16,
                                         _color=['lightgrey',
                                                 'orange', 'steelblue'],
-                                        _color_edge='black',
+                                        _color_edge=['black'],
                                         _bar_height=0.15,
                                         _figsize=(18, 10),
                                         _legend_loc="best",
                                         _legend_box=(1.0, 1.0),
                                         _dpi=96,
-                                        _show_bar_value=False,
+                                        _show_bar_value=True,
                                         _enable_csv=True,
                                         _color_name=['lightgrey', 'orange', 'steelblue'])
 
@@ -476,8 +476,12 @@ if __name__ == '__main__':
         Devices.get_devices()
 
         ping.real_sta_list = Devices.query_user()[0]
+        if(len(ping.real_sta_list) == 0):
+            print('There are no real devices in this testbed.')
+            print('Aborting the test/')
+            exit(0)
         print(ping.real_sta_list)
-        ping.anndroid = Devices.android
+        ping.android = Devices.android
         ping.windows = Devices.windows
         ping.mac = Devices.mac
         ping.linux = Devices.linux

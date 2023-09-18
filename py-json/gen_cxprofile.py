@@ -89,11 +89,11 @@ class GenCXProfile(LFCliBase):
                 "cx_name": cx_name,
                 "cx_state": "RUNNING"
             }, debug_=True)
-            print({
-                "test_mgr": "default_tm",
-                "cx_name": cx_name,
-                "cx_state": "RUNNING"
-            })
+            # print({
+            #     "test_mgr": "default_tm",
+            #     "cx_name": cx_name,
+            #     "cx_state": "RUNNING"
+            # })
             # this is for a visual affect someone watching the screen, leave as print
             print(".", end='')
         print("")
@@ -106,11 +106,11 @@ class GenCXProfile(LFCliBase):
                 "cx_name": cx_name,
                 "cx_state": "STOPPED"
             }, debug_=True)
-            print({
-                "test_mgr": "default_tm",
-                "cx_name": cx_name,
-                "cx_state": "STOPPED"
-            })
+            # print({
+            #     "test_mgr": "default_tm",
+            #     "cx_name": cx_name,
+            #     "cx_state": "STOPPED"
+            # })
             # this is for a visual affect someone watching the screen, leave as print
             print(".", end='')
         print("")
@@ -138,7 +138,7 @@ class GenCXProfile(LFCliBase):
             "flag": flag_name,
             "val": val
         }
-        print('Setting flags', data)
+        # print('Setting flags', data)
         self.json_post("cli-json/set_endp_flag", data, debug_=self.debug)
 
     def set_cmd(self, endp_name, cmd):
@@ -146,7 +146,7 @@ class GenCXProfile(LFCliBase):
             "name": endp_name,
             "command": cmd
         }
-        print('Setting cmd', data)
+        # print('Setting cmd', data)
         self.json_post("cli-json/set_gen_cmd", data, debug_=self.debug)
 
     def parse_command_gen(self, sta_name, dest):
@@ -346,7 +346,7 @@ class GenCXProfile(LFCliBase):
                 "type": "gen_generic"
             }
             logger.debug(pformat(data))
-            print('Adding endpoint ', data)
+            # print('Adding endpoint ', data)
             self.json_post("cli-json/add_gen_endp", data, debug_=self.debug)
 
         self.local_realm.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
@@ -393,7 +393,7 @@ class GenCXProfile(LFCliBase):
         for data in post_data:
             url = "/cli-json/add_cx"
             logger.info(pformat(data))
-            print('Adding cx', data)
+            # print('Adding cx', data)
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
             # time.sleep(2)
         if sleep_time:
@@ -565,7 +565,7 @@ class GenCXProfile(LFCliBase):
         prev_results = {}  # dict of dicts
         if must_increase_cols:
             for en in monitor_endps:
-                print("Monitoring Endpoint: %s" % (en))
+                # print("Monitoring Endpoint: %s" % (en))
                 prev_results[en] = {}  # dict of col names to values
                 for cn in must_increase_cols:
                     prev_results[en][cn] = 0
