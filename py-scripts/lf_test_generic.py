@@ -220,6 +220,8 @@ class GenTest():
         if self.sta_list:
             interest_flags_list = ['current_flags', 'dhcp', 'dhcp_rls', 'ifdown']
             set_port_interest_rslt=self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names= interest_flags_list)
+            print("SET PORT INTEREST FLAGS ")
+            print(set_port_interest_rslt)
             for sta_alias in self.sta_list:
                 port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
                 self.command.post_set_port(shelf = port_shelf,
@@ -227,7 +229,7 @@ class GenTest():
                                            port = port_name,
                                            netmask= "255.255.255.0", #sometimes the cli complains about the netmask being NA, so set it to a random netmask (netmask is overriden anyways with dhcp)
                                            current_flags= 0,
-                                           interest=set_port_interest_rslt,
+                                           interest=8388610,
                                            report_timer= self.report_timer)
         
         if self.use_existing_eid:
@@ -237,7 +239,7 @@ class GenTest():
                                            port = eid[2],
                                            netmask= "255.255.255.0", #sometimes the cli complains about the netmask being NA, so set it to a random netmask(netmask is overriden anyways with dhcp)
                                            current_flags= 0,
-                                           interest=set_port_interest_rslt,
+                                           interest=8388610,
                                            report_timer= self.report_timer)
 
         if self.wait_for_action("port", self.sta_list, "up", 3000):
@@ -263,7 +265,7 @@ class GenTest():
         logger.info("Stopping Test...")
         if self.created_endp:
             for endp_name in self.created_endp:
-                self.command.post_set_cx_state(cx_name= "CX_" + endp_name,
+                self.command.post_set_cx_state(cx_name= endp_name,
                                                cx_state="STOPPED",
                                                test_mgr="default_tm",
                                                debug=self.debug)
@@ -517,8 +519,6 @@ class GenTest():
                             json_url = "%s/ports/%s/%s/%s?fields=device,down" % (self.lfclient_url, port_resource, port_shelf, port_name)
                             json_response = self.query.json_get(url=json_url,
                                                                 debug=self.debug)
-                            print("-----json_response------")
-                            print(json_response)
                             #if sta is found by json response & not phantom
                             if json_response is not None and (json_response['interface']['down'] == True):
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
@@ -538,6 +538,14 @@ class GenTest():
                             #if device is not found
                             if json_response is None:
                                 passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
+                        elif action == "ip":
+                            json_url = "%s/ports/%s/%s/%s?fields=device,ip" % (self.lfclient_url, port_resource, port_shelf, port_name)
+                            json_response = self.query.json_get(url=json_url,
+                                                                debug=self.debug)
+                            #if device is not found
+                            if json_response is not None and (json_response['interface']['ip'] != "0.0.0.0"):
+                                passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
+
 
                 # Generic Tab Actions
                 else:
