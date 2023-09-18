@@ -64,6 +64,7 @@ class Ping(Realm):
         self.debug = debug
         self.sta_list = sta_list
         self.real_sta_list = []
+        self.real_sta_data_dict = {}
         self.enable_virtual = virtual
         self.enable_real = real
         self.duration = duration
@@ -109,6 +110,32 @@ class Ping(Realm):
         self.generic_endps_profile.created_endp = []
         print('Cleanup Successful')
 
+    # Args:
+    #   devices: Connected RealDevice object which has already populated tracked real device
+    #            resources through call to get_devices()
+    def select_real_devices(self, real_devices):
+        self.real_sta_list, _, _ = real_devices.query_user()
+
+        # Need real stations to run interop test
+        if(len(ping.real_sta_list) == 0):
+            logging.error('There are no real devices in this testbed. Aborting test')
+            exit(0)
+
+        print(self.real_sta_list)
+
+        for sta_name in self.real_sta_list:
+            if sta_name not in real_devices.devices_data:
+                logging.error('Real station not in devices data')
+                raise ValueError('Real station not in devices data')
+
+            self.real_sta_data_dict[sta_name] = real_devices.devices_data[sta_name]
+
+        # Track number of selected devices
+        self.android = Devices.android
+        self.windows = Devices.windows
+        self.mac     = Devices.mac
+        self.linux   = Devices.linux
+
     def buildstation(self):
         print('Creating Stations {}'.format(self.sta_list))
         for station_index in range(len(self.sta_list)):
@@ -136,14 +163,21 @@ class Ping(Realm):
             return True
 
     def create_generic_endp(self):
+        # Virtual stations are tracked in same list as real stations, so need to separate them
+        # in order to create generic endpoints for just the virtual stations
+        virtual_stations = list(set(self.sta_list).difference(set(self.real_sta_list)))
+
         if (self.enable_virtual):
-            if (self.generic_endps_profile.create(ports=list(set(self.sta_list).difference(set(self.real_sta_list))), sleep_time=.5)):
+            if (self.generic_endps_profile.create(ports=virtual_stations, sleep_time=.5)):
                 print('Virtual client generic endpoint creation completed.')
             else:
                 print('Virtual client generic endpoint creation failed.')
                 exit(0)
+
         if (self.enable_real):
-            if (self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client=True)):
+            real_sta_os_types = [self.real_sta_data_dict[real_sta_name]['ostype'] for real_sta_name in self.real_sta_data_dict]
+
+            if (self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client_os_types=real_sta_os_types)):
                 print('Real client generic endpoint creation completed.')
             else:
                 print('Real client generic endpoint creation failed.')
@@ -474,17 +508,7 @@ if __name__ == '__main__':
     if (args.real):
         Devices = RealDevice(manager_ip=mgr_ip)
         Devices.get_devices()
-
-        ping.real_sta_list = Devices.query_user()[0]
-        if(len(ping.real_sta_list) == 0):
-            print('There are no real devices in this testbed.')
-            print('Aborting the test/')
-            exit(0)
-        print(ping.real_sta_list)
-        ping.android = Devices.android
-        ping.windows = Devices.windows
-        ping.mac = Devices.mac
-        ping.linux = Devices.linux
+        ping.select_real_devices(real_devices=Devices)
 
     # station precleanup
     ping.cleanup()
