@@ -12,16 +12,21 @@ python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mg
 --security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 5G
 
 EXAMPLE-2:
+Command Line Interface to run upload scenario on 6GHz band for Virtual clients
+python3 lf_ftp.py --ssid Netgear-6g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+--security wpa3 --fiveg_radio wiphy2 --directions Upload --clients_type Virtual --ap_name Netgear --bands 6G --num_stations 2
+
+EXAMPLE-3:
 Command Line Interface to run download scenario on 5GHz band for Virtual clients
 python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
 --security wpa2 --fiveg_radio wiphy2 --directions Download --clients_type Virtual --ap_name Netgear --bands 5G --num_stations 2
 
-EXAMPLE-3:
+EXAMPLE-4:
 Command Line Interface to run upload scenario for Real clients
-python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
 --security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 2.4G
 
-EXAMPLE-4:
+EXAMPLE-5:
 Command Line Interface to run upload scenario on 2.4GHz band for Virtual clients
 python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
 --security wpa2 --twog_radio wiphy1 --directions Upload --clients_type Virtual --ap_name Netgear --bands 2.4G --num_stations 2 
@@ -86,7 +91,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 class FtpTest(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta=None,radio="",
                  dut_ssid=None, dut_security=None, dut_passwd=None, file_size=None, band=None, twog_radio=None,
-                 fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False,ap_name="",
+                 sixg_radio=None,fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False,ap_name="",
                  direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None,
                  lf_username="lanforge",lf_password="lanforge",clients_type= "Virtual",real_client_list=[],
                  working_resources_list=[],hw_list=[],windows_list=[],mac_list=[],linux_list=[],android_list=[],
@@ -115,6 +120,7 @@ class FtpTest(LFCliBase):
         self.direction = direction
         self.twog_radio = twog_radio
         self.fiveg_radio = fiveg_radio
+        self.sixg_radio = sixg_radio
         self.duration = duration
         self.traffic_duration = traffic_duration
         self.ssh_port = ssh_port
@@ -260,7 +266,8 @@ class FtpTest(LFCliBase):
 
     def set_values(self):
         '''This method will set values according user input'''
-
+        if self.band == "6G":
+            self.radio = [self.sixg_radio]
         if self.band == "5G":
             self.radio = [self.fiveg_radio]
         elif self.band == "2.4G":
@@ -289,16 +296,20 @@ class FtpTest(LFCliBase):
             print("Couldn't load 'BLANK' Test configurations")'''
 
         for rad in self.radio:
+            if rad == self.sixg_radio:
+                self.station_profile.mode = 15
+                self.count = self.count + 1
+                
             if rad == self.fiveg_radio:
 
                 # select mode(All stations will connects to 5G)
-                self.station_profile.mode = 9
+                self.station_profile.mode = 14
                 self.count = self.count + 1
 
             elif rad == self.twog_radio:
 
                 # select mode(All stations will connects to 2.4G)
-                self.station_profile.mode = 6
+                self.station_profile.mode = 13
                 self.count = self.count + 1
 
             # check Both band if both band then for 2G station id start with 20
@@ -307,7 +318,7 @@ class FtpTest(LFCliBase):
                 self.num_sta = 2 * (self.num_sta)
 
                 # if Both band then first 20 stations will connects to 5G
-                self.station_profile.mode = 9
+                self.station_profile.mode = 14
 
                 self.cx_profile.cleanup()
 
@@ -353,6 +364,8 @@ class FtpTest(LFCliBase):
                 self.station_profile.mode = 13
             elif self.band == "5G":
                 self.station_profile.mode = 14
+            elif self.band == "6G":
+                self.station_profile.mode = 15
             for rad in self.radio:
                 # station build
                 self.station_profile.use_security(self.security, self.ssid, self.password)
@@ -1408,16 +1421,21 @@ python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mg
 --security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 5G
 
 EXAMPLE-2:
+Command Line Interface to run upload scenario on 6GHz band for Virtual clients
+python3 lf_ftp.py --ssid Netgear-6g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+--security wpa3 --fiveg_radio wiphy2 --directions Upload --clients_type Virtual --ap_name Netgear --bands 6G --num_stations 2
+
+EXAMPLE-3:
 Command Line Interface to run download scenario on 5GHz band for Virtual clients
 python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
 --security wpa2 --fiveg_radio wiphy2 --directions Download --clients_type Virtual --ap_name Netgear --bands 5G --num_stations 2
 
-EXAMPLE-3:
+EXAMPLE-4:
 Command Line Interface to run upload scenario for Real clients
-python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
+python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
 --security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 2.4G
 
-EXAMPLE-4:
+EXAMPLE-5:
 Command Line Interface to run upload scenario on 2.4GHz band for Virtual clients
 python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
 --security wpa2 --twog_radio wiphy1 --directions Upload --clients_type Virtual --ap_name Netgear --bands 2.4G --num_stations 2 
@@ -1448,8 +1466,8 @@ Free to distribute and modify. LANforge systems must be licensed.
 INCLUDE_IN_README: False
 
                     ''')
-    required = parser.add_argument_group('Required arguments to run lf_interop_qos.py')
-    optional = parser.add_argument_group('Optional arguments to run lf_interop_qos.py')
+    required = parser.add_argument_group('Required arguments to run lf_ftp.py')
+    optional = parser.add_argument_group('Optional arguments to run lf_ftp.py')
 
     required.add_argument('--mgr', help='hostname for where LANforge GUI is running [default = localhost]', default='localhost')
     required.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on [default = 8080]', default=8080)
@@ -1462,8 +1480,9 @@ INCLUDE_IN_README: False
     optional.add_argument('--ap_ip', type=str, help='Enter ip of accesspoint or router')
     optional.add_argument('--twog_radio', type=str, help='specify radio for 2.4G clients [default = wiphy1]', default='wiphy1')
     optional.add_argument('--fiveg_radio', type=str, help='specify radio for 5G client [default = wiphy0]', default='wiphy0')
-    parser.add_argument('--lf_username',help="Enter the lanforge user name. Example : 'lanforge' ", default= "lanforge")
-    parser.add_argument('--lf_password',help="Enter the lanforge password. Example : 'lanforge' ",default="lanforge")
+    optional.add_argument('--sixg_radio', type=str, help='specify radio for 6G clients [default = wiphy2]', default='wiphy2')
+    optional.add_argument('--lf_username',help="Enter the lanforge user name. Example : 'lanforge' ", default= "lanforge")
+    optional.add_argument('--lf_password',help="Enter the lanforge password. Example : 'lanforge' ",default="lanforge")
     #parser.add_argument('--twog_duration', nargs="+", help='Pass and Fail duration for 2.4G band in minutes')
     #parser.add_argument('--fiveg_duration', nargs="+", help='Pass and Fail duration for 5G band in minutes')
     #parser.add_argument('--both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
@@ -1474,8 +1493,8 @@ INCLUDE_IN_README: False
     optional.add_argument('--ssh_port', type=int, help="specify the shh port: eg 22 [default = 22]", default=22)
 
     # Test variables
-    optional.add_argument('--bands', nargs="+", help='select bands for virtul clients Example : "5G","2.4G" ',
-                        default=["5G", "2.4G", "Both"])
+    optional.add_argument('--bands', nargs="+", help='select bands for virtul clients Example : "5G","2.4G","6G" ',
+                        default=["5G", "2.4G","6G" "Both"])
     required.add_argument('--directions', nargs="+", help='Enter the traffic direction. Example : "Download","Upload"',
                         default=["Download", "Upload"])
     required.add_argument('--file_sizes', nargs="+", help='File Size Example : "1000MB"',
@@ -1603,6 +1622,7 @@ INCLUDE_IN_README: False
                               direction=direction,
                               twog_radio=args.twog_radio,
                               fiveg_radio=args.fiveg_radio,
+                              sixg_radio = args.sixg_radio,
                               lf_username=args.lf_username,
                               lf_password=args.lf_password,
                               #duration=pass_fail_duration(band, file_size),
