@@ -219,7 +219,7 @@ class Ping(Realm):
             'Security': self.security,
             'Website': self.target,
             'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
-            'Duration': self.duration
+            'Duration (in minutes)': self.duration
         }
         report.test_setup_table(
             test_setup_data=test_setup_info, value='Test Setup Information')
@@ -271,12 +271,13 @@ class Ping(Realm):
             #     'Packets Received': device_data['recv'],
             #     'Packets Loss': device_data['dropped'],
             # }
-
-        graph = lf_bar_graph_horizontal(_data_set=[packets_dropped, packets_sent, packets_received],
+        x_fig_size = 15
+        y_fig_size = len(device_names) * .5 + 4
+        graph = lf_bar_graph_horizontal(_data_set=[packets_dropped, packets_received, packets_sent],
                                         _xaxis_name='Packets Count',
                                         _yaxis_name='Wireless Clients',
                                         _label=[
-                                            'Packets Loss', 'Packets Sent', 'Packets Received'],
+                                            'Packets Loss', 'Packets Received', 'Packets Sent'],
                                         _graph_image_name='Packets sent vs received vs dropped',
                                         _yaxis_label=device_names,
                                         _yaxis_categories=device_names,
@@ -288,11 +289,11 @@ class Ping(Realm):
                                                 'orange', 'steelblue'],
                                         _color_edge=['black'],
                                         _bar_height=0.15,
-                                        _figsize=(18, 10),
+                                        _figsize=(x_fig_size, y_fig_size),
                                         _legend_loc="best",
                                         _legend_box=(1.0, 1.0),
                                         _dpi=96,
-                                        _show_bar_value=True,
+                                        _show_bar_value=False,
                                         _enable_csv=True,
                                         _color_name=['lightgrey', 'orange', 'steelblue'])
 
@@ -337,7 +338,7 @@ class Ping(Realm):
                                                 'orange', 'steelblue'],
                                         _color_edge='black',
                                         _bar_height=0.15,
-                                        _figsize=(18, 10),
+                                        _figsize=(x_fig_size, y_fig_size),
                                         _legend_loc="best",
                                         _legend_box=(1.0, 1.0),
                                         _dpi=96,
@@ -389,10 +390,9 @@ if __name__ == '__main__':
                           help='hostname where LANforge GUI is running',
                           required=True)
 
-    required.add_argument('--ssid',
+    optional.add_argument('--ssid',
                           type=str,
-                          help='SSID for connecting the stations',
-                          required=True)
+                          help='SSID for connecting the stations')
 
     required.add_argument('--target',
                           type=str,
@@ -421,22 +421,24 @@ if __name__ == '__main__':
                           default='[BLANK]',
                           help='passphrase for the specified SSID')
 
-    optional.add_argument('--ping_interval',
+    required.add_argument('--ping_interval',
                           type=str,
-                          help='Interval (in seconds) between the echo requests')
+                          help='Interval (in seconds) between the echo requests',
+                          required=True)
 
-    optional.add_argument('--ping_duration',
-                          type=int,
-                          help='Duration (in minutes) to run the ping test')
+    required.add_argument('--ping_duration',
+                          type=float,
+                          help='Duration (in minutes) to run the ping test',
+                          required=True)
 
     optional.add_argument('--virtual',
                           action="store_true",
-                          help='specific this flag if the test should run on virtual clients')
+                          help='specify this flag if the test should run on virtual clients')
 
     optional.add_argument('--num_sta',
                           type=int,
                           default=1,
-                          help='specific the number of virtual stations to be created.')
+                          help='specify the number of virtual stations to be created.')
 
     optional.add_argument('--radio',
                           type=str,
@@ -444,7 +446,7 @@ if __name__ == '__main__':
 
     optional.add_argument('--real',
                           action="store_true",
-                          help='specific this flag if the test should run on real clients')
+                          help='specify this flag if the test should run on real clients')
 
     optional.add_argument('--debug',
                           action="store_true",
@@ -452,8 +454,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # input sanity
-    if (args.virtual is not None and args.radio is None):
+    if(args.virtual is False and args.real is False):
+        print('Atleast one of --real or --virtual is required')
+        exit(0)
+    if (args.virtual is True and args.radio is None):
         print('--radio required')
+        exit(0)
+    if (args.virtual is True and args.ssid is None):
+        print('--ssid required')
         exit(0)
     if (args.security != 'open' and args.passwd == '[BLANK]'):
         print('--passwd required')
@@ -561,30 +569,31 @@ if __name__ == '__main__':
                 if (station not in ping.real_sta_list):
                     current_device_data = ports_data[station]
                     if (station.split('.')[2] in result_data['name']):
-                        t_rtt = 0
-                        min_rtt = 10000
-                        max_rtt = 0
-                        for result in result_data['last results'].split('\n'):
-                            # print(result)
-                            if(result == ''):
-                                continue
-                            rt_time = result.split()[6]
-                            time_value = float(rt_time.split('time=')[1])
-                            t_rtt += time_value
-                            if(time_value < min_rtt):
-                                min_rtt = time_value
-                            if(max_rtt < time_value):
-                                max_rtt = time_value
-                        avg_rtt = t_rtt / float(result_data['rx pkts'])
+                        # t_rtt = 0
+                        # min_rtt = 10000
+                        # max_rtt = 0
+                        # for result in result_data['last results'].split('\n'):
+                        #     # print(result)
+                        #     if(result == ''):
+                        #         continue
+                        #     rt_time = result.split()[6]
+                        #     print(rt_time.split('time='))
+                        #     time_value = float(rt_time.split('time=')[1])
+                        #     t_rtt += time_value
+                        #     if(time_value < min_rtt):
+                        #         min_rtt = time_value
+                        #     if(max_rtt < time_value):
+                        #         max_rtt = time_value
+                        # avg_rtt = t_rtt / float(result_data['rx pkts'])
                         # print(t_rtt, min_rtt, max_rtt, avg_rtt)
                         ping.result_json[station] = {
                             'command': result_data['command'],
                             'sent': result_data['tx pkts'],
                             'recv': result_data['rx pkts'],
                             'dropped': result_data['dropped'],
-                            'min_rtt': min_rtt,
-                            'avg_rtt': avg_rtt,
-                            'max_rtt': max_rtt,
+                            'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(result_data['last results']) != 0 else '0'][0],
+                            'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(result_data['last results']) != 0 else '0'][0],
+                            'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(result_data['last results']) != 0 else '0'][0],
                             'mac': current_device_data['mac'],
                             'channel': current_device_data['channel'],
                             'mode': current_device_data['mode'],
@@ -599,29 +608,29 @@ if __name__ == '__main__':
                         ping_endp, ping_data = list(ping_device.keys())[
                             0], list(ping_device.values())[0]
                         if (station.split('.')[2] in ping_endp):
-                            t_rtt = 0
-                            min_rtt = 10000
-                            max_rtt = 0
-                            for result in ping_data['last results'].split('\n'):
-                                if(result == ''):
-                                    continue
-                                rt_time = result.split()[6]
-                                time_value = float(rt_time.split('time=')[1])
-                                t_rtt += time_value
-                                if(time_value < min_rtt):
-                                    min_rtt = time_value
-                                if(max_rtt < time_value):
-                                    max_rtt = time_value
-                            avg_rtt = t_rtt / float(ping_data['rx pkts'])
+                            # t_rtt = 0
+                            # min_rtt = 10000
+                            # max_rtt = 0
+                            # for result in ping_data['last results'].split('\n'):
+                            #     if(result == ''):
+                            #         continue
+                            #     rt_time = result.split()[6]
+                            #     time_value = float(rt_time.split('time=')[1])
+                            #     t_rtt += time_value
+                            #     if(time_value < min_rtt):
+                            #         min_rtt = time_value
+                            #     if(max_rtt < time_value):
+                            #         max_rtt = time_value
+                            # avg_rtt = t_rtt / float(ping_data['rx pkts'])
                             # print(t_rtt, min_rtt, max_rtt, avg_rtt)
                             ping.result_json[station] = {
                                 'command': ping_data['command'],
                                 'sent': ping_data['tx pkts'],
                                 'recv': ping_data['rx pkts'],
                                 'dropped': ping_data['dropped'],
-                                'min_rtt': min_rtt,
-                                'avg_rtt': avg_rtt,
-                                'max_rtt': max_rtt,
+                                'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(ping_data['last results']) != 0 else 0][0],
+                                'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(ping_data['last results']) != 0 else 0][0],
+                                'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(ping_data['last results']) != 0 else 0][0],
                                 'mac': current_device_data['mac'],
                                 'channel': current_device_data['channel'],
                                 'mode': current_device_data['mode'],
