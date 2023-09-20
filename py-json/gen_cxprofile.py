@@ -405,10 +405,7 @@ class GenCXProfile(LFCliBase):
             time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
-            if (real_client_os_types):
-                name = endp_tpl[2].split('.')[2]
-            else:
-                name = endp_tpl[2]
+            name = endp_tpl[2]
             gen_name_a = endp_tpl[3]
             cx_name = "CX_%s-%s" % (self.name_prefix, name)
             data = {
