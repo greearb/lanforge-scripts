@@ -682,6 +682,6 @@ if __name__ == '__main__':
     print(ping.result_json)
 
     # station post cleanup
-    ping.cleanup()
+    # ping.cleanup()
 
     ping.generate_report()
