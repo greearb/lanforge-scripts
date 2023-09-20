@@ -39,6 +39,52 @@ Example running traffic with two radios
 
          # The script now supports multiple radios, each specified with an individual --radio switch.
 
+        # Interopt example Creating stations
+            Interopt testing creating stations
+            ./test_l3.py --lfmgr 192.168.0.104\
+             --test_duration 60s\
+            --polling_interval 5s\
+            --upstream_port 1.1.eth2\
+            --radio radio==wiphy1,stations==2,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable\
+            --endp_type lf_udp,lf_tcp,mc_udp\
+            --rates_are_totals\
+            --side_a_min_bps=2000000\
+            --side_b_min_bps=3000000\
+            --test_rig CT-ID-004\
+            --test_tag test_l3\
+            --dut_model_num AXE11000\
+            --dut_sw_version 3.0.0.4.386_44266\
+            --dut_hw_version 1.0\
+            --dut_serial_num 123456\
+            --tos BX,BE,VI,VO\
+            --log_level info\
+            --no_cleanup\
+            --cleanup_cx         
+
+
+        # Interopt using existing stations
+            Interopt testing creating stations
+            ./test_l3.py --lfmgr 192.168.91.50\
+             --test_duration 60s\
+            --polling_interval 5s\
+            --upstream_port 1.50.eth2\
+            --endp_type lf_udp,lf_tcp,mc_udp\
+            --rates_are_totals\
+            --side_a_min_bps=2000000\
+            --side_b_min_bps=3000000\
+            --test_rig CT-ID-004\
+            --test_tag test_l3\
+            --dut_model_num AXE11000\
+            --dut_sw_version 3.0.0.4.386_44266\
+            --dut_hw_version 1.0\
+            --dut_serial_num 123456\
+            --tos BX,BE,VI,VO\
+            --use_existing_station_list\
+            --existing_station_list 1.83.en1,1.84.en1\
+            --log_level info\
+            --no_cleanup\
+            --cleanup_cx
+
            * UDP and TCP bi-directional test, no use of controller.
              ./test_l3.py --mgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --upstream_port 1.1.eth1
              --radio "radio==1.1.wiphy0 stations==5 ssid==Netgear2g ssid_pw==lanforge security==wpa2"
@@ -4633,6 +4679,52 @@ Example running traffic with two radios
 6. Create connections with TOS of BK and VI
 
          # The script now supports multiple radios, each specified with an individual --radio switch.
+
+        # Interopt example Creating stations
+            Interopt testing creating stations
+            ./test_l3.py --lfmgr 192.168.0.104\
+             --test_duration 60s\
+            --polling_interval 5s\
+            --upstream_port 1.1.eth2\
+            --radio radio==wiphy1,stations==2,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable\
+            --endp_type lf_udp,lf_tcp,mc_udp\
+            --rates_are_totals\
+            --side_a_min_bps=2000000\
+            --side_b_min_bps=3000000\
+            --test_rig CT-ID-004\
+            --test_tag test_l3\
+            --dut_model_num AXE11000\
+            --dut_sw_version 3.0.0.4.386_44266\
+            --dut_hw_version 1.0\
+            --dut_serial_num 123456\
+            --tos BX,BE,VI,VO\
+            --log_level info\
+            --no_cleanup\
+            --cleanup_cx
+
+
+        # Interopt using existing stations
+            Interopt testing creating stations
+            ./test_l3.py --lfmgr 192.168.91.50\
+             --test_duration 60s\
+            --polling_interval 5s\
+            --upstream_port 1.50.eth2\
+            --radio radio==wiphy1,stations==2,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable\
+            --endp_type lf_udp,lf_tcp,mc_udp\
+            --rates_are_totals\
+            --side_a_min_bps=2000000\
+            --side_b_min_bps=3000000\
+            --test_rig CT-ID-004\
+            --test_tag test_l3\
+            --dut_model_num AXE11000\
+            --dut_sw_version 3.0.0.4.386_44266\
+            --dut_hw_version 1.0\
+            --dut_serial_num 123456\
+            --tos BX,BE,VI,VO\
+            --log_level info\
+            --no_cleanup\
+            --cleanup_cx
+
 
            * UDP and TCP bi-directional test, no use of controller.
              ./test_l3.py --mgr 192.168.200.83 --endp_type 'lf_udp,lf_tcp' --upstream_port 1.1.eth1
