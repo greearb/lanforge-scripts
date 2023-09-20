@@ -1,3 +1,47 @@
+#!/usr/bin/env python3
+
+'''
+    NAME: lf_interop_ping.py
+
+    PURPOSE: lf_interop_ping.py will let the user select real devices, virtual devices or both and then allows them to run
+    ping test for user given duration and packet interval on the given target IP or domain name.
+
+    EXAMPLE-1:
+    Command Line Interface to run ping test with only virtual clients
+    python3 lf_interop_ping.py --mgr 192.168.200.103  --target 192.168.1.3 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
+    --passwd OpenWifi --ping_interval 1 --ping_duration 1 --debug
+
+    EXAMPLE-2:
+    Command Line Interface to run ping test with only real clients
+    python3 lf_interop_ping.py --mgr 192.168.200.103 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1
+
+    EXAMPLE-3:
+    Command Line Interface to run ping test with both real and virtual clients
+    python3 lf_interop_ping.py --mgr 192.168.200.103 --target 192.168.1.3 --real --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
+    --passwd OpenWifi --ping_interval 1 --ping_duration 1
+
+    SCRIPT_CLASSIFICATION : Test
+
+    SCRIPT_CATEGORIES: Performance, Functional, Report Generation
+
+    NOTES:
+    1.Use './lf_interop_ping.py --help' to see command line usage and options
+    2.Please pass ping_duration in minutes
+    3.Please pass ping_interval in seconds
+    4.After passing the cli, if --real flag is selected, then a list of available real devices will be displayed on the terminal.
+    5.Enter the real device resource numbers seperated by commas (,)
+
+    STATUS: BETA RELEASE
+
+    VERIFIED_ON:
+    Working date    - 20/09/2023
+    Build version   - 5.4.7
+    kernel version  - 6.2.16+
+
+    License: Free to distribute and modify. LANforge systems must be licensed.
+    Copyright 2023 Candela Technologies Inc.
+'''
+
 import argparse
 import time
 import sys
@@ -378,8 +422,52 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog='interop_ping.py',
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='',
-        description=''
+        epilog='''
+            Allows user to run the ping test on a target IP for the given duration and packet interval
+            with either selected number of virtual stations or provides the list of available real devices
+            and allows the user to select the real devices and run ping test on them.
+        ''',
+        description='''
+        NAME: lf_interop_ping.py
+
+        PURPOSE: lf_interop_ping.py will let the user select real devices, virtual devices or both and then allows them to run
+        ping test for user given duration and packet interval on the given target IP or domain name.
+
+        EXAMPLE-1:
+        Command Line Interface to run ping test with only virtual clients
+        python3 lf_interop_ping.py --mgr 192.168.200.103  --target 192.168.1.3 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
+        --passwd OpenWifi --ping_interval 1 --ping_duration 1 --debug
+
+        EXAMPLE-2:
+        Command Line Interface to run ping test with only real clients
+        python3 lf_interop_ping.py --mgr 192.168.200.103 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1
+
+        EXAMPLE-3:
+        Command Line Interface to run ping test with both real and virtual clients
+        python3 lf_interop_ping.py --mgr 192.168.200.103 --target 192.168.1.3 --real --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
+        --passwd OpenWifi --ping_interval 1 --ping_duration 1
+
+        SCRIPT_CLASSIFICATION : Test
+
+        SCRIPT_CATEGORIES: Performance, Functional, Report Generation
+
+        NOTES:
+        1.Use './lf_interop_ping.py --help' to see command line usage and options
+        2.Please pass ping_duration in minutes
+        3.Please pass ping_interval in seconds
+        4.After passing the cli, if --real flag is selected, then a list of available real devices will be displayed on the terminal.
+        5.Enter the real device resource numbers seperated by commas (,)
+
+        STATUS: BETA RELEASE
+
+        VERIFIED_ON:
+        Working date    - 20/09/2023
+        Build version   - 5.4.7
+        kernel version  - 6.2.16+
+
+        License: Free to distribute and modify. LANforge systems must be licensed.
+        Copyright 2023 Candela Technologies Inc.
+        '''
     )
     required = parser.add_argument_group('Required arguments')
     optional = parser.add_argument_group('Optional arguments')
@@ -390,16 +478,28 @@ if __name__ == '__main__':
                           help='hostname where LANforge GUI is running',
                           required=True)
 
-    optional.add_argument('--ssid',
-                          type=str,
-                          help='SSID for connecting the stations')
 
     required.add_argument('--target',
                           type=str,
                           help='Target URL for ping test',
                           required=True)
+    
+    required.add_argument('--ping_interval',
+                          type=str,
+                          help='Interval (in seconds) between the echo requests',
+                          required=True)
+
+    required.add_argument('--ping_duration',
+                          type=float,
+                          help='Duration (in minutes) to run the ping test',
+                          required=True)
 
     # optional arguments
+
+    optional.add_argument('--ssid',
+                          type=str,
+                          help='SSID for connecting the stations')
+    
     optional.add_argument('--mgr_port',
                           type=str,
                           default=8080,
@@ -420,16 +520,6 @@ if __name__ == '__main__':
                           type=str,
                           default='[BLANK]',
                           help='passphrase for the specified SSID')
-
-    required.add_argument('--ping_interval',
-                          type=str,
-                          help='Interval (in seconds) between the echo requests',
-                          required=True)
-
-    required.add_argument('--ping_duration',
-                          type=float,
-                          help='Duration (in minutes) to run the ping test',
-                          required=True)
 
     optional.add_argument('--virtual',
                           action="store_true",
