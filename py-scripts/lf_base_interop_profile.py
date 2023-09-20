@@ -681,7 +681,7 @@ class RealDevice(Realm):
                 continue
 
             # TODO: Support more than one station per real device
-            print(port_data_dict['parent dev'])
+            # print(port_data_dict['parent dev'])
             if port_data_dict['parent dev'] != 'wiphy0':
                 continue
 
@@ -733,7 +733,7 @@ class RealDevice(Realm):
                         self.windows += 1
                     elif('Lin' in 'Lin' in self.devices_data[device]['hw version']):
                         self.linux += 1
-                    elif('Mac' in self.devices_data[device]['hw version']):
+                    elif('Apple' in self.devices_data[device]['hw version']):
                         self.mac += 1
                     else:
                         self.android += 1
