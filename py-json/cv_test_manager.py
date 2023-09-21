@@ -10,6 +10,7 @@ import time
 import json
 from pprint import pprint
 import logging
+import traceback
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -391,6 +392,26 @@ class cv_test(Realm):
                 logger.info(dialog[0]["LAST"]["response"])
             else:
                 break
+
+    def kpi_results_present(self):
+        kpi_csv_data_present = False
+        kpi_csv = ''
+        if self.local_lf_report_dir is None:
+            logger.info("Report dir empty , No KPI")
+            return False
+        else:
+            kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
+            # the lf_report_dir is the parent directory,  need to get the directory name
+            kpi_csv = "{kpi_location}/kpi.csv".format(kpi_location=kpi_location)
+
+        if os.path.isfile(kpi_csv):
+            if os.path.getsize(kpi_csv) == 0:
+                logger.error("kpi_csv file empty {kpi_csv}".format(kpi_csv=kpi_csv))
+            else:
+                logger.info("kpi_csv file not empty {kpi_csv}".format(kpi_csv=kpi_csv))
+                kpi_csv_data_present = True
+
+        return kpi_csv_data_present 
 
     # Takes cmd-line args struct or something that looks like it.
     # See csv_to_influx.py::influx_add_parser_args for options, or --help.
