@@ -6423,17 +6423,16 @@ INCLUDE_IN_README: False
         else:
             ip_var_test.stop()
 
-    # Results
-
-    ip_var_test.set_dut_info(dut_model_num=args.dut_model_num,dut_hw_version=args.dut_hw_version,dut_sw_version=args.dut_sw_version,dut_serial_num=args.dut_serial_num)
-
-    ip_var_test.set_report_obj(report=report)
 
     # the banner will be set in Main since the test_l3 object may be imported
     csv_results_file = ip_var_test.get_results_csv()
     report.set_title("Test Layer 3 Cross-Connect Traffic: test_l3.py ")
     report.build_banner_left()
     report.start_content_div2()
+
+    # set dut information for reporting
+    ip_var_test.set_dut_info(dut_model_num=args.dut_model_num,dut_hw_version=args.dut_hw_version,dut_sw_version=args.dut_sw_version,dut_serial_num=args.dut_serial_num)
+    ip_var_test.set_report_obj(report=report)
 
     # generate report
     ip_var_test.generate_report()
