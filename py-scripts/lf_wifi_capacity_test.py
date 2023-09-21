@@ -753,5 +753,12 @@ INCLUDE_IN_README: False
     WFC_Test.check_influx_kpi(args)
 
 
+    if WFC_Test.kpi_results_present():
+        logger.info("lf_wifi_capacity_test generated kpi.csv")
+    else:
+        logger.info("FAILED: lf_wifi_capacity_test did not generate kpi.csv)")
+        exit(1)
+
+
 if __name__ == "__main__":
     main()
