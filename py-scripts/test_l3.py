@@ -609,6 +609,7 @@ class L3VariableTime(Realm):
                  use_existing_station_lists=False,
                  existing_station_lists=None,
                  wait_for_ip_sec="120s",
+                 csv_data_to_report=False,
 
                  # ap module
                  ap_read=False,
@@ -695,6 +696,7 @@ class L3VariableTime(Realm):
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
+        self.csv_data_to_report=csv_data_to_report
         self.kpi_csv = kpi_csv
         self.tos = tos.split(",")
         self.endp_types = endp_types.split(",")
@@ -722,6 +724,7 @@ class L3VariableTime(Realm):
         # self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
         self.polling_interval_seconds = self.duration_time_to_seconds(
             polling_interval)
+        self.polling_interval = polling_interval
         self.cx_profile = self.new_l3_cx_profile()
         self.multicast_profile = self.new_multicast_profile()
         self.multicast_profile.name_prefix = "MLT-"
@@ -1036,6 +1039,20 @@ class L3VariableTime(Realm):
 
         self.client_dict_A = {}
         self.client_dict_B = {}
+
+        # report object
+        self.report = ''  
+
+        # dut information
+        self.dut_model_num = 'Not Set'
+        self.dut_hw_version = 'Not Set'
+        self.dut_sw_version = 'Not Set'
+        self.dut_serial_num = 'Not Set'
+
+        # LANforge information 
+        self.lfmgr = self.lfclient_host
+        self.lfmgr_port = self.lfclient_port
+        self.upstream_port = self.side_b
 
         # AP information
         self.ap = None
@@ -4595,6 +4612,272 @@ class L3VariableTime(Realm):
             writer.writerow(row)
             csv_file.flush()
 
+    def set_report_obj(self,report):
+        self.report = report
+
+    def set_dut_info(self,dut_model_num='Not Set',dut_hw_version='Not Set',dut_sw_version='Not Set',dut_serial_num='Not Set'):
+        self.dut_model_num = dut_model_num
+        self.dut_hw_version = dut_hw_version
+        self.dut_sw_version = dut_sw_version
+        self.dut_serial_num = dut_serial_num
+
+    def generate_report(self,):
+        self.report.set_obj_html("Objective", "The Layer 3 Traffic Generation Test is designed to test the performance of the "
+                            "Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream "
+                            "of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints, "
+                            "each of which is associated with a particular Port (physical or virtual interface).")
+
+        self.report.build_objective()
+
+        test_setup_info = {
+            "DUT Name": self.dut_model_num,
+            "DUT Hardware Version": self.dut_hw_version,
+            "DUT Software Version": self.dut_sw_version,
+            "DUT Serial Number": self.dut_serial_num,
+        }
+
+        self.report.set_table_title("Device Under Test Information")
+        self.report.build_table_title()
+        self.report.test_setup_table(value="Device Under Test",
+                                test_setup_data=test_setup_info)
+
+        test_input_info = {
+            "LANforge ip": self.lfmgr,
+            "LANforge port": self.lfmgr_port,
+            "Upstream": self.upstream_port,
+            "Test Duration": self.test_duration,
+            "Polling Interval": self.polling_interval,
+        }
+
+        self.report.set_table_title("Test Configuration")
+        self.report.build_table_title()
+        self.report.test_setup_table(value="Test Configuration",
+                                test_setup_data=test_input_info)
+
+        self.report.set_table_title("Radio Configuration")
+        self.report.build_table_title()
+
+        wifi_mode_dict = {
+            0: 'AUTO',  # 802.11g
+            1: '802.11a',  # 802.11a
+            2: '802.11b',  # 802.11b
+            3: '802.11g',  # 802.11g
+            4: '802.11abg',  # 802.11abg
+            5: '802.11abgn',  # 802.11abgn
+            6: '802.11bgn',  # 802.11bgn
+            7: '802.11bg',  # 802.11bg
+            8: '802.11abgnAC',  # 802.11abgn-AC
+            9: '802.11anAC',  # 802.11an-AC
+            10: '802.11an',  # 802.11an
+            11: '802.11bgnAC',  # 802.11bgn-AC
+            12: '802.11abgnAX',  # 802.11abgn-A+
+            #     a/b/g/n/AC/AX (dual-band AX) support
+            13: '802.11bgnAX',  # 802.11bgn-AX
+            14: '802.11anAX',  # 802.11an-AX
+            15: '802.11aAX'  # 802.11a-AX (6E disables /n and /ac)
+        }
+
+        for (
+                radio_,
+                ssid_,
+                ssid_password_,  # do not print password
+                ssid_security_,
+                mode_,
+                wifi_enable_flags_list_,
+                reset_port_enable_,
+                reset_port_time_min_,
+                reset_port_time_max_) in zip(
+                self.radio_name_list,
+                self.ssid_list,
+                self.ssid_password_list,
+                self.ssid_security_list,
+                self.wifi_mode_list,
+                self.enable_flags_list,
+                self.reset_port_enable_list,
+                self.reset_port_time_min_list,
+                self.reset_port_time_max_list):
+
+            mode_value = wifi_mode_dict[int(mode_)]
+
+            radio_info = {
+                "SSID": ssid_,
+                "Security": ssid_security_,
+                "Wifi mode set": mode_value,
+                'Wifi Enable Flags': wifi_enable_flags_list_
+            }
+            self.report.test_setup_table(value=radio_, test_setup_data=radio_info)
+
+        # TODO move the graphing to the class so it may be called as a service
+
+        # Graph TOS data
+        # Once the data is stopped can collect the data for the cx's both multi cast and uni cast
+        # if the traffic is still running will gather the running traffic
+        self.evaluate_qos()
+
+        # graph BK A
+        # try to do as a loop
+        tos_list = ['BK','BE','VI','VO']
+
+        for tos in tos_list:
+            if (self.client_dict_A[tos]["ul_A"]  and self.client_dict_A[tos]["dl_A"]):
+                min_bps_a = self.client_dict_A["min_bps_a"]
+                min_bps_b = self.client_dict_A["min_bps_b"]
+
+                dataset_list = [self.client_dict_A[tos]["ul_A"], self.client_dict_A[tos]["dl_A"]]
+                # TODO possibly explain the wording for upload and download
+                dataset_length = len(self.client_dict_A[tos]["ul_A"])
+                x_fig_size = 15
+                y_fig_size = len(self.client_dict_A[tos]["clients_A"]) * .4 + 3
+
+
+                self.report.set_obj_html(
+                    _obj_title=f"Individual throughput measured at download endpoint with intended load upload bps: {min_bps_a} download bps: {min_bps_b} station for traffic {tos} (WiFi).",
+                    _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
+                        f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
+                        f"Throughput in Mbps”.")
+                self.report.build_objective()
+
+
+                graph= lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
+                                    _xaxis_name="Throughput in bps",
+                                    _yaxis_name="Client names",
+                                    _yaxis_categories=self.client_dict_A[tos]["clients_A"],
+                                    _graph_image_name=f"{tos}_A",
+                                    _label=self.client_dict_A[tos]['labels'],
+                                    _color_name=self.client_dict_A[tos]['colors'],
+                                    _color_edge=['black'],
+                                    _graph_title=f"Individual {tos} client side traffic measurement - side a (downstream)", # traditional station side -A
+                                    _title_size=10,
+                                    _figsize=(x_fig_size,y_fig_size),
+                                    _show_bar_value= True,
+                                    _enable_csv=True,
+                                    _text_font=8,
+                                    _legend_loc="best",
+                                    _legend_box=(1.0,1.0)
+                                    )
+                graph_png = graph.build_bar_graph_horizontal()
+                self.report.set_graph_image(graph_png)
+                self.report.move_graph_image()
+                self.report.build_graph()
+
+
+
+                tos_dataframe_A = {
+                    " Client Name " : self.client_dict_A[tos]['resource_A'],
+                    " Endp Name" : self.client_dict_A[tos]["clients_A"],
+                    " HW Version " : self.client_dict_A[tos]['resource_hw_ver_A'],
+                    # TODO : port A being set to many times
+                    " Port Name " : self.client_dict_A[tos]['port_A'],
+                    " Mode " : self.client_dict_A[tos]['mode_A'],
+                    " Mac " : self.client_dict_A[tos]['mac_A'],
+                    " Channel " : self.client_dict_A[tos]['channel_A'],
+                    " Type of traffic " : self.client_dict_A[tos]['traffic_type_A'],
+                    " Traffic Protocol " : self.client_dict_A[tos]['traffic_protocol_A'],
+                    " Offered Upload Rate Per Client" : self.client_dict_A['min_bps_a'],
+                    " Offered Download Rate Per Client" : self.client_dict_A['min_bps_b'],
+                    " Upload Rate Per Client" : self.client_dict_A[tos]['ul_A'],
+                    " Download Rate Per Client" : self.client_dict_A[tos]['dl_A']
+                    #" Traffic Protocol " : 
+                }
+
+
+                dataframe3 = pd.DataFrame(tos_dataframe_A)
+                self.report.set_table_dataframe(dataframe3)
+                self.report.build_table()
+
+
+        # TODO both client_dict_A and client_dict_B contains the same information
+        for tos in tos_list:
+            if (self.client_dict_B[tos]["ul_B"] and self.client_dict_B[tos]["dl_B"]):
+                min_bps_a = self.client_dict_B["min_bps_a"]
+                min_bps_b = self.client_dict_B["min_bps_b"]
+
+                dataset_list = [self.client_dict_B[tos]["ul_B"], self.client_dict_B[tos]["dl_B"]]
+                dataset_length = len(self.client_dict_B[tos]["ul_B"])
+
+                x_fig_size = 15
+                y_fig_size = len(self.client_dict_B[tos]["clients_B"]) * .4 + 3
+
+                self.report.set_obj_html(
+                    _obj_title=f"Individual throughput upstream endp,  offered upload bps: {min_bps_a} offered download bps: {min_bps_b} /station for traffic {tos} (WiFi).",
+                    _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
+                        f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
+                        f"Throughput in Mbps”.")
+                self.report.build_objective()
+
+
+                graph= lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
+                                    _xaxis_name="Throughput in bps",
+                                    _yaxis_name="Client names",
+                                    _yaxis_categories=self.client_dict_B[tos]["clients_B"],
+                                    _graph_image_name=f"{tos}_B",
+                                    _label=self.client_dict_B[tos]['labels'],
+                                    _color_name=self.client_dict_B[tos]['colors'],
+                                    _color_edge=['black'],
+                                    _graph_title=f"Individual {tos} upstream side traffic measurement - side b (WIFI) traffic",
+                                    _title_size=10,
+                                    _figsize=(x_fig_size,y_fig_size),
+                                    _show_bar_value= True,
+                                    _enable_csv=True,
+                                    _text_font=8,
+                                    _legend_loc="best",
+                                    _legend_box=(1.0,1.0)
+                                    )
+                graph_png = graph.build_bar_graph_horizontal()
+                self.report.set_graph_image(graph_png)
+                self.report.move_graph_image()
+                self.report.build_graph()
+
+                tos_dataframe_B = {
+                    " Client Name " : self.client_dict_B[tos]['resource_B'],
+                    " Endp Name" : self.client_dict_B[tos]["clients_B"],
+                    # TODO get correct size
+                    " HW Version " : self.client_dict_B[tos]['resource_hw_ver_B'],
+                    " Port Name " : self.client_dict_B[tos]['port_B'],
+                    " Mode " : self.client_dict_B[tos]['mode_B'],
+                    " Mac " : self.client_dict_B[tos]['mac_B'],
+                    " Channel " : self.client_dict_B[tos]['channel_B'],
+                    " Type of traffic " : self.client_dict_B[tos]['traffic_type_B'],
+                    " Traffic Protocol " : self.client_dict_B[tos]['traffic_protocol_B'],
+                    " Offered Upload Rate Per Client" : self.client_dict_B['min_bps_a'],
+                    " Offered Download Rate Per Client" : self.client_dict_B['min_bps_b'],
+                    " Upload Rate Per Client" : self.client_dict_B[tos]['ul_B'],
+                    " Download Rate Per Client" : self.client_dict_B[tos]['dl_B']
+                    #" Traffic Protocol " : 
+                }
+
+
+                dataframe3 = pd.DataFrame(tos_dataframe_B)
+                self.report.set_table_dataframe(dataframe3)
+                self.report.build_table()
+
+
+        # L3 total traffic # TODO csv_results_file present yet not readable
+        # self.report.set_table_title("Total Layer 3 Cross-Connect Traffic across all Stations")
+        # self.report.build_table_title()
+        # self.report.set_table_dataframe_from_csv(self.csv_results_file)
+        # self.report.build_table()
+
+        # empty dictionarys evaluate to false , placing tables in output
+        if bool(self.dl_port_csv_files):
+            for key, value in self.dl_port_csv_files.items():
+                if self.csv_data_to_report:
+                    # read the csv file
+                    self.report.set_table_title("Layer 3 Cx Traffic  {key}".format(key=key))
+                    self.report.build_table_title()
+                    self.report.set_table_dataframe_from_csv(value.name)
+                    self.report.build_table()
+
+                # read in column heading and last line
+                df = pd.read_csv(value.name)
+                last_row = df.tail(1)
+                self.report.set_table_title(
+                    "Layer 3 Cx Traffic Last Reporting Interval {key}".format(key=key))
+                self.report.build_table_title()
+                self.report.set_table_dataframe(last_row)
+                self.report.build_table()
+
+
     # End of the main class.
 
 # Check some input values.
@@ -4617,6 +4900,9 @@ def valid_endp_types(_endp_type):
                 endp_type)
             exit(1)
     return _endp_type
+
+
+
 
 
 # Starting point for running this from cmd line.
@@ -6138,269 +6424,21 @@ INCLUDE_IN_README: False
             ip_var_test.stop()
 
     # Results
+
+    ip_var_test.set_dut_info(dut_model_num=args.dut_model_num,dut_hw_version=args.dut_hw_version,dut_sw_version=args.dut_sw_version,dut_serial_num=args.dut_serial_num)
+
+    ip_var_test.set_report_obj(report=report)
+
+    # the banner will be set in Main since the test_l3 object may be imported
     csv_results_file = ip_var_test.get_results_csv()
     report.set_title("Test Layer 3 Cross-Connect Traffic: test_l3.py ")
     report.build_banner_left()
     report.start_content_div2()
 
-    report.set_obj_html("Objective", "The Layer 3 Traffic Generation Test is designed to test the performance of the "
-                        "Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream "
-                        "of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints, "
-                        "each of which is associated with a particular Port (physical or virtual interface).")
-
-    report.build_objective()
-
-    test_setup_info = {
-        "DUT Name": args.dut_model_num,
-        "DUT Hardware Version": args.dut_hw_version,
-        "DUT Software Version": args.dut_sw_version,
-        "DUT Serial Number": args.dut_serial_num,
-    }
-
-    report.set_table_title("Device Under Test Information")
-    report.build_table_title()
-    report.test_setup_table(value="Device Under Test",
-                            test_setup_data=test_setup_info)
-
-    test_input_info = {
-        "LANforge ip": args.lfmgr,
-        "LANforge port": args.lfmgr_port,
-        "Upstream": args.upstream_port,
-        "Test Duration": args.test_duration,
-        "Polling Interval": args.polling_interval,
-    }
-
-    report.set_table_title("Test Configuration")
-    report.build_table_title()
-    report.test_setup_table(value="Test Configuration",
-                            test_setup_data=test_input_info)
-
-    report.set_table_title("Radio Configuration")
-    report.build_table_title()
-
-    wifi_mode_dict = {
-        0: 'AUTO',  # 802.11g
-        1: '802.11a',  # 802.11a
-        2: '802.11b',  # 802.11b
-        3: '802.11g',  # 802.11g
-        4: '802.11abg',  # 802.11abg
-        5: '802.11abgn',  # 802.11abgn
-        6: '802.11bgn',  # 802.11bgn
-        7: '802.11bg',  # 802.11bg
-        8: '802.11abgnAC',  # 802.11abgn-AC
-        9: '802.11anAC',  # 802.11an-AC
-        10: '802.11an',  # 802.11an
-        11: '802.11bgnAC',  # 802.11bgn-AC
-        12: '802.11abgnAX',  # 802.11abgn-A+
-        #     a/b/g/n/AC/AX (dual-band AX) support
-        13: '802.11bgnAX',  # 802.11bgn-AX
-        14: '802.11anAX',  # 802.11an-AX
-        15: '802.11aAX'  # 802.11a-AX (6E disables /n and /ac)
-    }
-
-    for (
-            radio_,
-            ssid_,
-            ssid_password_,  # do not print password
-            ssid_security_,
-            mode_,
-            wifi_enable_flags_list_,
-            reset_port_enable_,
-            reset_port_time_min_,
-            reset_port_time_max_) in zip(
-            radio_name_list,
-            ssid_list,
-            ssid_password_list,
-            ssid_security_list,
-            wifi_mode_list,
-            wifi_enable_flags_list,
-            reset_port_enable_list,
-            reset_port_time_min_list,
-            reset_port_time_max_list):
-
-        mode_value = wifi_mode_dict[int(mode_)]
-
-        radio_info = {
-            "SSID": ssid_,
-            "Security": ssid_security_,
-            "Wifi mode set": mode_value,
-            'Wifi Enable Flags': wifi_enable_flags_list_
-        }
-        report.test_setup_table(value=radio_, test_setup_data=radio_info)
-
-    # TODO move the graphing to the class so it may be called as a service
-
-    # Graph TOS data
-    # Once the data is stopped can collect the data for the cx's both multi cast and uni cast
-    # if the traffic is still running will gather the running traffic
-    ip_var_test.evaluate_qos()
-
-    # graph BK A
-    # try to do as a loop
-    tos_list = ['BK','BE','VI','VO']
-
-    for tos in tos_list:
-        if (ip_var_test.client_dict_A[tos]["ul_A"]  and ip_var_test.client_dict_A[tos]["dl_A"]):
-            min_bps_a = ip_var_test.client_dict_A["min_bps_a"]
-            min_bps_b = ip_var_test.client_dict_A["min_bps_b"]
-
-            dataset_list = [ip_var_test.client_dict_A[tos]["ul_A"], ip_var_test.client_dict_A[tos]["dl_A"]]
-            # TODO possibly explain the wording for upload and download
-            dataset_length = len(ip_var_test.client_dict_A[tos]["ul_A"])
-            x_fig_size = 15
-            y_fig_size = len(ip_var_test.client_dict_A[tos]["clients_A"]) * .4 + 3
-
-
-            report.set_obj_html(
-                _obj_title=f"Individual throughput measured at download endpoint with intended load upload bps: {min_bps_a} download bps: {min_bps_b} station for traffic {tos} (WiFi).",
-                _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
-                    f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
-                    f"Throughput in Mbps”.")
-            report.build_objective()
-
-
-            graph= lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
-                                _xaxis_name="Throughput in bps",
-                                _yaxis_name="Client names",
-                                _yaxis_categories=ip_var_test.client_dict_A[tos]["clients_A"],
-                                _graph_image_name=f"{tos}_A",
-                                _label=ip_var_test.client_dict_A[tos]['labels'],
-                                _color_name=ip_var_test.client_dict_A[tos]['colors'],
-                                _color_edge=['black'],
-                                _graph_title=f"Individual {tos} client side traffic measurement - side a (downstream)", # traditional station side -A
-                                _title_size=10,
-                                _figsize=(x_fig_size,y_fig_size),
-                                _show_bar_value= True,
-                                _enable_csv=True,
-                                _text_font=8,
-                                _legend_loc="best",
-                                _legend_box=(1.0,1.0)
-                                )
-            graph_png = graph.build_bar_graph_horizontal()
-            report.set_graph_image(graph_png)
-            report.move_graph_image()
-            report.build_graph()
-
-
-
-            tos_dataframe_A = {
-                " Client Name " : ip_var_test.client_dict_A[tos]['resource_A'],
-                " Endp Name" : ip_var_test.client_dict_A[tos]["clients_A"],
-                " HW Version " : ip_var_test.client_dict_A[tos]['resource_hw_ver_A'],
-                # TODO : port A being set to many times
-                " Port Name " : ip_var_test.client_dict_A[tos]['port_A'],
-                " Mode " : ip_var_test.client_dict_A[tos]['mode_A'],
-                " Mac " : ip_var_test.client_dict_A[tos]['mac_A'],
-                " Channel " : ip_var_test.client_dict_A[tos]['channel_A'],
-                " Type of traffic " : ip_var_test.client_dict_A[tos]['traffic_type_A'],
-                " Traffic Protocol " : ip_var_test.client_dict_A[tos]['traffic_protocol_A'],
-                " Offered Upload Rate Per Client" : ip_var_test.client_dict_A['min_bps_a'],
-                " Offered Download Rate Per Client" : ip_var_test.client_dict_A['min_bps_b'],
-                " Upload Rate Per Client" : ip_var_test.client_dict_A[tos]['ul_A'],
-                " Download Rate Per Client" : ip_var_test.client_dict_A[tos]['dl_A']
-                #" Traffic Protocol " : 
-            }
-
-
-            dataframe3 = pd.DataFrame(tos_dataframe_A)
-            report.set_table_dataframe(dataframe3)
-            report.build_table()
-
-
-    # TODO both client_dict_A and client_dict_B contains the same information
-    for tos in tos_list:
-        if (ip_var_test.client_dict_B[tos]["ul_B"] and ip_var_test.client_dict_B[tos]["dl_B"]):
-            min_bps_a = ip_var_test.client_dict_B["min_bps_a"]
-            min_bps_b = ip_var_test.client_dict_B["min_bps_b"]
-
-            dataset_list = [ip_var_test.client_dict_B[tos]["ul_B"], ip_var_test.client_dict_B[tos]["dl_B"]]
-            dataset_length = len(ip_var_test.client_dict_B[tos]["ul_B"])
-
-            x_fig_size = 15
-            y_fig_size = len(ip_var_test.client_dict_B[tos]["clients_B"]) * .4 + 3
-
-            report.set_obj_html(
-                _obj_title=f"Individual throughput upstream endp,  offered upload bps: {min_bps_a} offered download bps: {min_bps_b} /station for traffic {tos} (WiFi).",
-                _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
-                    f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
-                    f"Throughput in Mbps”.")
-            report.build_objective()
-
-
-            graph= lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
-                                _xaxis_name="Throughput in bps",
-                                _yaxis_name="Client names",
-                                _yaxis_categories=ip_var_test.client_dict_B[tos]["clients_B"],
-                                _graph_image_name=f"{tos}_B",
-                                _label=ip_var_test.client_dict_B[tos]['labels'],
-                                _color_name=ip_var_test.client_dict_B[tos]['colors'],
-                                _color_edge=['black'],
-                                _graph_title=f"Individual {tos} upstream side traffic measurement - side b (WIFI) traffic",
-                                _title_size=10,
-                                _figsize=(x_fig_size,y_fig_size),
-                                _show_bar_value= True,
-                                _enable_csv=True,
-                                _text_font=8,
-                                _legend_loc="best",
-                                _legend_box=(1.0,1.0)
-                                )
-            graph_png = graph.build_bar_graph_horizontal()
-            report.set_graph_image(graph_png)
-            report.move_graph_image()
-            report.build_graph()
-
-            tos_dataframe_B = {
-                " Client Name " : ip_var_test.client_dict_B[tos]['resource_B'],
-                " Endp Name" : ip_var_test.client_dict_B[tos]["clients_B"],
-                # TODO get correct size
-                " HW Version " : ip_var_test.client_dict_B[tos]['resource_hw_ver_B'],
-                " Port Name " : ip_var_test.client_dict_B[tos]['port_B'],
-                " Mode " : ip_var_test.client_dict_B[tos]['mode_B'],
-                " Mac " : ip_var_test.client_dict_B[tos]['mac_B'],
-                " Channel " : ip_var_test.client_dict_B[tos]['channel_B'],
-                " Type of traffic " : ip_var_test.client_dict_B[tos]['traffic_type_B'],
-                " Traffic Protocol " : ip_var_test.client_dict_B[tos]['traffic_protocol_B'],
-                " Offered Upload Rate Per Client" : ip_var_test.client_dict_B['min_bps_a'],
-                " Offered Download Rate Per Client" : ip_var_test.client_dict_B['min_bps_b'],
-                " Upload Rate Per Client" : ip_var_test.client_dict_B[tos]['ul_B'],
-                " Download Rate Per Client" : ip_var_test.client_dict_B[tos]['dl_B']
-                #" Traffic Protocol " : 
-            }
-
-
-            dataframe3 = pd.DataFrame(tos_dataframe_B)
-            report.set_table_dataframe(dataframe3)
-            report.build_table()
-
-
-    # create graph
-
-
-    # L3 total traffic
-    report.set_table_title(
-        "Total Layer 3 Cross-Connect Traffic across all Stations")
-    report.build_table_title()
-    report.set_table_dataframe_from_csv(csv_results_file)
-    report.build_table()
-
-    # empty dictionarys evaluate to false , placing tables in output
-    if bool(ip_var_test.dl_port_csv_files):
-        for key, value in ip_var_test.dl_port_csv_files.items():
-            if args.csv_data_to_report:
-                # read the csv file
-                report.set_table_title("Layer 3 Cx Traffic  {key}".format(key=key))
-                report.build_table_title()
-                report.set_table_dataframe_from_csv(value.name)
-                report.build_table()
-
-            # read in column heading and last line
-            df = pd.read_csv(value.name)
-            last_row = df.tail(1)
-            report.set_table_title(
-                "Layer 3 Cx Traffic Last Reporting Interval {key}".format(key=key))
-            report.build_table_title()
-            report.set_table_dataframe(last_row)
-            report.build_table()
+    # generate report
+    ip_var_test.generate_report()
+    
+    # generate html and pdf
     report.write_report_location()
     report.write_html_with_timestamp()
     report.write_index_html()
