@@ -60,8 +60,7 @@ from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
 from lanforge_client.logg import Logg
 
-#to be deleted after using name_to_eid
-LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+
 
 #stand-alone (not dependent on realm)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -81,7 +80,7 @@ class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
                 name_prefix, num_stations, upstream=None, client_port = None,server_port=None,
                  host="localhost", port=8080, csv_outfile=None,use_existing_eid=None,
-                 test_duration="5m",test_type="ping", target=None, cmd=None, interval=1,
+                 test_duration="5m",test_type="ping", target=None, cmd=None, interval=0.1,
                  radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
                  file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
                  _debug_on=False, _exit_on_error=False, die_on_error = False,_exit_on_fail=False):
@@ -141,6 +140,7 @@ class GenTest():
         self.die_on_error = die_on_error
 
         self.created_endp = []
+        self.created_cx = []
 
         number_template = "000"
         if (int(self.num_stations) > 0):
@@ -253,9 +253,9 @@ class GenTest():
             self.print("Stations failed to get IPs")
 
         #at this point, all endpoints have been created, start all endpoints
-        if self.created_endp:
-            for endp_name in self.created_endp:
-                self.command.post_set_cx_state(cx_name= endp_name,
+        if self.created_cx:
+            for cx in self.created_cx:
+                self.command.post_set_cx_state(cx_name= cx,
                                                cx_state="RUNNING",
                                                test_mgr="default_tm",
                                                debug=self.debug)
@@ -263,9 +263,9 @@ class GenTest():
     def stop(self):
         # set_cx_state default_tm CX_ping-hi STOPPED
         logger.info("Stopping Test...")
-        if self.created_endp:
-            for endp_name in self.created_endp:
-                self.command.post_set_cx_state(cx_name= endp_name,
+        if self.created_cx:
+            for cx in self.created_cx:
+                self.command.post_set_cx_state(cx_name= cx,
                                                cx_state="STOPPED",
                                                test_mgr="default_tm",
                                                debug=self.debug)
@@ -376,22 +376,46 @@ class GenTest():
                 self.create_generic_endp(eid, self.test_type, unique_alias)
                 unique_alias-=1
 
+        #show all endps
+        self.command.post_nc_show_endpoints(endpoint= 'all', extra ='history')
+
         if self.wait_for_action("endp", self.created_endp, "appear", 3000):
             print("Generic endp creation completed.")
         else:
             print("Generic endps were not created.")
+
+        #create cross-connects
+        if self.created_endp is not None:
+            for endp in self.created_endp:
+                endp_cx_name = "CX_" + endp
+                self.command.post_add_cx(alias= endp_cx_name,
+                                         test_mgr="default_tm",
+                                         rx_endp= "D_"+endp,
+                                         tx_endp= endp,
+                                         debug=self.debug)
+                self.created_cx.append(endp_cx_name)
+
+        #self.command.post_show_cx(cross_connect='all',
+                                  #test_mgr= "default_tm",
+                                  #debug=self.debug)
+        
+        if self.wait_for_action("cx", self.created_endp, "appear", 3000):
+            print("Generic cx creation completed.")
+        else:
+            print("Generic cx creation was not completed.")
+
                     
     def create_generic_endp(self, eid, type, unique_num):
         #create initial generic endp
         #  add_gen_endp testing 1 1 sta0000 gen_generic
         print(unique_num)
-        unique_alias = "CX_" + type + "_" + str(unique_num)
+        unique_alias = type + "_" + str(unique_num)
         self.command.post_add_gen_endp(alias = unique_alias,
                                        shelf=eid[0],
                                        resource=eid[1],
                                        port=eid[2],
                                        p_type="gen_generic")
-        self.created_endp.append(unique_alias)
+
 
         #edit generic endp with type we actually want to run - construct  cmd 
         cmd = ""
@@ -434,8 +458,10 @@ class GenTest():
 
         else:
             raise ValueError("Was not able to identify type given in arguments.")
+        print("This is the generic cmd we are sending to server...:   " + cmd)
         self.command.post_set_gen_cmd(name = unique_alias,
                                       command= cmd)
+        self.created_endp.append(unique_alias)
         
     def do_iperf (self, type, alias, eid):
         cmd = "iperf3 --forceflush --format k --precision 4"
@@ -551,15 +577,23 @@ class GenTest():
                 else:
                     compared_pass = len(self.created_endp)
                     if action == "appear":
-                        for endp_name in self.created_endp:
-                            json_response = self.command.post_nc_show_endpoints(endpoint=endp_name, extra ='history')
-                            if  json_response is not None:
-                                passed.add(endp_name)
+                        for endp_name in type_list:
+                            json_url = "%s/generic/%s" % (self.lfclient_url, endp_name)
+                            json_response = self.query.json_get(url=json_url,
+                                                                debug=self.debug)
+                            if (lf_type == "endp"):
+                                if json_response is not None:
+                                    passed.add(endp_name)
+                            #cx check
+                            else:
+                                if json_response is not None and (json_response['endpoint']['status'] != "NO-CX"):
+                                    passed.add(endp_name)
+
                 if len(passed) < compared_pass:
                     time.sleep(2)
                     logger.info('Found %s out of %s %ss in %s out of %s tries in wait_until_%s_%s' % (len(passed), compared_pass, lf_type, attempt, int(secs_to_wait / 2), lf_type, action))
                 else:
-                    logger.info('All %s ports appeared' % len(passed))
+                    logger.info('All %s %ss appeared' % (len(passed), lf_type))
                     return True
         return False
 
@@ -864,14 +898,14 @@ def main():
     generic_test.start()
     time.sleep(5) # give traffic a chance to get started.
 
-    must_increase_cols = None
-    if args.type == "ping":
-        must_increase_cols = ["rx bytes"]
-    mon_endp = generic_test.generic_endps_profile.created_endp
-    generic_test.generate_report(test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
-                               dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
-                               dut_serial_num=args.dut_serial_num, test_id=args.test_id, csv_outfile=args.csv_outfile,
-                               monitor_endps=mon_endp, generic_cols=generic_cols)
+    # must_increase_cols = None
+    # if args.type == "ping":
+    #     must_increase_cols = ["rx bytes"]
+    # mon_endp = generic_test.generic_endps_profile.created_endp
+    # generic_test.generate_report(test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
+    #                            dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
+    #                            dut_serial_num=args.dut_serial_num, test_id=args.test_id, csv_outfile=args.csv_outfile,
+    #                            monitor_endps=mon_endp, generic_cols=generic_cols)
     # generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
     #                                            must_increase_cols=must_increase_cols,
     #                                            sta_list=sta_list,
@@ -888,26 +922,26 @@ def main():
     #                                            arguments=args,
     #                                            debug=args.debug)
 
-    logger.info("Done with connection monitoring")
+    #logger.info("Done with connection monitoring")
     generic_test.stop()
 
     generic_test.cleanup()
 
 
-    if len(generic_test.get_passed_result_list()) > 0:
-        logger.info("Test-Generic Passing results:\n%s" % "\n".join(generic_test.get_passed_result_list()))
-    if len(generic_test.generic_endps_profile.get_passed_result_list()) > 0:
-        logger.info("Test-Generic Monitor Passing results:\n%s" % "\n".join(generic_test.generic_endps_profile.get_passed_result_list()))
-    if len(generic_test.get_failed_result_list()) > 0:
-        logger.warning("Test-Generic Failing results:\n%s" % "\n".join(generic_test.get_failed_result_list()))
-    if len(generic_test.generic_endps_profile.get_failed_result_list()) > 0:
-        logger.warning("Test-Generic Monitor Failing results:\n%s" % "\n".join(generic_test.generic_endps_profile.get_failed_result_list()))
+    # if len(generic_test.get_passed_result_list()) > 0:
+    #     logger.info("Test-Generic Passing results:\n%s" % "\n".join(generic_test.get_passed_result_list()))
+    # if len(generic_test.generic_endps_profile.get_passed_result_list()) > 0:
+    #     logger.info("Test-Generic Monitor Passing results:\n%s" % "\n".join(generic_test.generic_endps_profile.get_passed_result_list()))
+    # if len(generic_test.get_failed_result_list()) > 0:
+    #     logger.warning("Test-Generic Failing results:\n%s" % "\n".join(generic_test.get_failed_result_list()))
+    # if len(generic_test.generic_endps_profile.get_failed_result_list()) > 0:
+    #     logger.warning("Test-Generic Monitor Failing results:\n%s" % "\n".join(generic_test.generic_endps_profile.get_failed_result_list()))
 
-    generic_test.generic_endps_profile.print_pass_fail()
-    if generic_test.passes() and generic_test.generic_endps_profile.passes():
-        generic_test.exit_success()
-    else:
-        generic_test.exit_fail()
+    # generic_test.generic_endps_profile.print_pass_fail()
+    # if generic_test.passes() and generic_test.generic_endps_profile.passes():
+    #     generic_test.exit_success()
+    # else:
+    #     generic_test.exit_fail()
 
 if __name__ == "__main__":
     main()
