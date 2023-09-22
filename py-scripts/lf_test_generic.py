@@ -487,7 +487,7 @@ class GenTest():
         if self.sta_list:
             for sta_name in self.sta_list:
                 if self.port_exists(sta_name, self.debug):
-                    port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_name) 
+                    port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_name)
                     self.command.post_rm_vlan(port= port_name,
                                               resource= port_resource,
                                               shelf= port_shelf,
@@ -511,7 +511,6 @@ class GenTest():
         :return: list of stations
         """
 
-        
         if radio is not None:
             radio_shelf, radio_resource, radio_name, *nil = self.name_to_eid(radio) 
 
