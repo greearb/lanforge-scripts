@@ -3,35 +3,33 @@
 NAME: lf_test_generic.py
 
 PURPOSE:
-test_generic.py will create stations and endpoints to generate traffic based on a command-line specified command type.
+lf_test_generic.py will create stations and endpoints to generate traffic based on a command-line specified command type.
 
 This script will create a variable number of stations to test generic endpoints. Multiple command types can be tested
-including ping, speedtest, generic types. The test will check the last-result attribute for different things
+including ping, speedtest, lfcurl, iperf, generic types. The test will check the last-result attribute for different things
 depending on what test is being run. Ping will test for successful pings, speedtest will test for download
-speed, upload speed, and ping time, generic will test for successful generic commands
+speed, upload speed, and ping time, generic will test for successful generic commands.
 
 SETUP:
-Enable the generic tab in LANforge GUI
-
-STATUS: UNDER DEVELOPMENT
+Make sure the generic tab is enabled in the GUI by going to the Port Manager, clicking the '+' tab, checking the 'generic' tab. 
 
 EXAMPLE:
 
-    LFPING:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
+    LFPING :
+        ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
         --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info 
         --report_file /home/lanforge/reports/LFPING.csv --test_duration 20s --upstream_port 1.1.eth2
-    LFCURL (under construction):
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
+    LFCURL :
+        ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
         --num_stations 2 --ssid Logan-Test-Net --passwd Logan-Test-Net --security wpa2 --type lfcurl --dest 192.168.1.1
-    GENERIC:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --num_stations 2 --ssid Logan-Test-Net 
+    GENERIC :
+        ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --num_stations 2 --ssid Logan-Test-Net 
         --report_file /home/lanforge/reports/GENERIC.csv --passwd Logan-Test-Net --security wpa2 --type generic
-    SPEEDTEST:
-        ./test_generic.py --radio 1.1.wiphy0 --num_stations 2 --report_file /home/lanforge/reports/SPEEDTEST.csv 
+    SPEEDTEST :
+        ./lf_test_generic.py --radio 1.1.wiphy0 --num_stations 2 --report_file /home/lanforge/reports/SPEEDTEST.csv 
         --ssid Logan-Test-Net --passwd Logan-Test-Net --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
-    IPERF3 (under construction):
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
+    IPERF3 :
+        ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
 
 Use './test_generic.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
@@ -59,8 +57,6 @@ from lanforge_client.lanforge_api import LFSession
 from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
 from lanforge_client.logg import Logg
-
-
 
 #stand-alone (not dependent on realm)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -117,8 +113,6 @@ class GenTest():
         self.lf_logger_json = lf_logger_json
 
         # create a session
-        # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
-        # session to use lanforge_api
         self.session = LFSession(lfclient_url="http://%s:8080" % self.host,
                                  debug=_debug_on,
                                  connection_timeout_sec=4.0,
@@ -261,8 +255,9 @@ class GenTest():
                                                debug=self.debug)
 
     def stop(self):
-        # set_cx_state default_tm CX_ping-hi STOPPED
         logger.info("Stopping Test...")
+        # set_cx_state default_tm CX_ping-hi STOPPED
+    
         if self.created_cx:
             for cx in self.created_cx:
                 self.command.post_set_cx_state(cx_name= cx,
@@ -358,7 +353,7 @@ class GenTest():
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
 
         #create endpoints
-        #this is how many endps need to be created : 1 for each eid.
+        #create 1 endp for each eid.
         unique_alias = 0
         if self.sta_list:
             unique_alias += len(self.sta_list)
@@ -394,10 +389,6 @@ class GenTest():
                                          tx_endp= endp,
                                          debug=self.debug)
                 self.created_cx.append(endp_cx_name)
-
-        #self.command.post_show_cx(cross_connect='all',
-                                  #test_mgr= "default_tm",
-                                  #debug=self.debug)
         
         if self.wait_for_action("cx", self.created_endp, "appear", 3000):
             print("Generic cx creation completed.")
