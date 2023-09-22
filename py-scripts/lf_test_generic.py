@@ -269,7 +269,7 @@ class GenTest():
                                                cx_state="STOPPED",
                                                test_mgr="default_tm",
                                                debug=self.debug)
-
+        #admin stations down
         if self.sta_list:
             for sta_alias in self.sta_list:
                 port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
@@ -279,7 +279,7 @@ class GenTest():
                                            current_flags= 1,  # vs 0x0 = interface up
                                            interest=8388610, # = current_flags + ifdown
                                            report_timer= self.report_timer)
-
+        #admin stations down
         if self.use_existing_eid:
             for eid in self.sta_list:
                 self.command.post_set_port(shelf = eid[0],
@@ -478,21 +478,21 @@ class GenTest():
 
     def cleanup(self):
         logger.info("Cleaning up all cxs and endpoints.")
-        #if self.created_cx:
-            #for cx_name in self.created_cx:
-                #self.command.post_rm_cx(cx_name=cx_name, test_mgr="default_tm", debug=self.debug)
+        if self.created_cx:
+            for cx_name in self.created_cx:
+                self.command.post_rm_cx(cx_name=cx_name, test_mgr="default_tm", debug=self.debug)
         if self.created_endp:
             for endp_name in self.created_endp:
                 self.command.post_rm_endp(endp_name=endp_name, debug=self.debug)
         if self.sta_list:
             for sta_name in self.sta_list:
-                if self.port_exists(self, self.name_to_eid(sta_name), self.debug):
+                if self.port_exists(self.name_to_eid(sta_name), self.debug):
                     self.command.post_rm_vlan(port=sta_name, debug=self.debug)
 
         if self.wait_for_action("port", self.sta_list, "disappear", 3000):
-            self._pass("Ports successfully cleaned up.")
+            print("Ports successfully cleaned up.")
         else:
-            self._fail("Ports NOT successfully cleaned up.")
+            print("Ports NOT successfully cleaned up.")
     
     def port_name_series(self, prefix="sta", start_id=0, end_id=1, padding_number=10000, radio=None):
         """
