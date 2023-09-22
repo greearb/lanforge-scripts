@@ -486,20 +486,23 @@ class GenTest():
                 self.command.post_rm_endp(endp_name=endp_name, debug=self.debug)
         if self.sta_list:
             for sta_name in self.sta_list:
-                if self.port_exists(self.name_to_eid(sta_name), self.debug):
-                    self.command.post_rm_vlan(port=sta_name, debug=self.debug)
+                if self.port_exists(sta_name, self.debug):
+                    port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_name) 
+                    self.command.post_rm_vlan(port= port_name,
+                                              resource= port_resource,
+                                              shelf= port_shelf,
+                                              debug=self.debug)
 
         if self.wait_for_action("port", self.sta_list, "disappear", 3000):
             print("Ports successfully cleaned up.")
         else:
-            print("Ports NOT successfully cleaned up.")
+            print("Ports were not successfully cleaned up.")
     
     def port_name_series(self, prefix="sta", start_id=0, end_id=1, padding_number=10000, radio=None):
         """
         This produces a named series similar to "sta000, sta001, sta002...sta0(end_id)"
         the padding_number is added to the start and end numbers and the resulting sum
         has the first digit trimmed, so f(0, 1, 10000) => {"0000", "0001"}
-        @deprecated -- please use port_name_series
         :param radio:
         :param prefix: defaults to 'sta'
         :param start_id: beginning id
@@ -508,22 +511,19 @@ class GenTest():
         :return: list of stations
         """
 
-        eid = None
+        
         if radio is not None:
-            eid = self.name_to_eid(radio)
+            radio_shelf, radio_resource, radio_name, *nil = self.name_to_eid(radio) 
 
         name_list = []
         for i in range((padding_number + start_id), (padding_number + end_id + 1)):
             sta_name = "%s%s" % (prefix, str(i)[1:])
-            if eid is None:
-                name_list.append(sta_name)
-            else:
-                name_list.append("%i.%i.%s" % (eid[0], eid[1], sta_name))
+            name_list.append("%i.%i.%s" % (radio_shelf, radio_resource, sta_name))
         return name_list
 
     def port_exists(self, port_eid, debug=None):
         if port_eid:
-            current_stations = self.query.get_port(list(port_eid), debug=debug)
+            current_stations = self.query.get_port(port_eid, debug=debug)
         if current_stations:
             return True
         return False
