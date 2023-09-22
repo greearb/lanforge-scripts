@@ -10,6 +10,8 @@ including ping, speedtest, lfcurl, iperf, generic types. The test will check the
 depending on what test is being run. Ping will test for successful pings, speedtest will test for download
 speed, upload speed, and ping time, generic will test for successful generic commands.
 
+This script also *does not* use any other file except lanforge_api.py. 
+
 SETUP:
 Make sure the generic tab is enabled in the GUI by going to the Port Manager, clicking the '+' tab, checking the 'generic' tab. 
 
@@ -44,10 +46,7 @@ import time
 import datetime
 import logging
 
-import requests
 from pandas import json_normalize
-import json
-import traceback
 from lf_json_util import standardize_json_results
 
 
