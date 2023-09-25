@@ -650,6 +650,13 @@ INCLUDE_IN_README: False
 
     CV_Test.check_influx_kpi(args)
 
+    if CV_Test.kpi_results_present():
+        logger.info("lf_dataplane_test generated kpi.csv")
+    else:
+        logger.info("FAILED: lf_dataplane_test did not generate kpi.csv)")
+        exit(1)
+
+
     if CV_Test.passes():
         CV_Test.exit_success()
     else:
