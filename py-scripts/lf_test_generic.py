@@ -369,6 +369,8 @@ class GenTest():
             for eid in self.use_existing_eid:
                 self.create_generic_endp(eid, self.test_type, unique_alias)
                 unique_alias-=1
+        if (self.test_type) == 'iperf': #server creation for 'iperf' type
+            self.create_generic_endp(self.server_port, 'iperf-server', unique_alias)
 
         #show all endps
         self.command.post_nc_show_endpoints(endpoint= 'all', extra ='history')
@@ -398,7 +400,6 @@ class GenTest():
     def create_generic_endp(self, eid, type, unique_num):
         #create initial generic endp
         #  add_gen_endp testing 1 1 sta0000 gen_generic
-        print(unique_num)
         unique_alias = type + "_" + str(unique_num)
         self.command.post_add_gen_endp(alias = unique_alias,
                                        shelf=eid[0],
@@ -409,10 +410,9 @@ class GenTest():
 
         #edit generic endp with type we actually want to run - construct  cmd 
         cmd = ""
-        cmd_iperf_server = ""
         if (self.cmd):
             cmd=self.cmd
-        elif (self.test_type == 'ping'):
+        elif (type == 'ping'):
             # lfping  -s 128 -i 0.1 -c 10000 -I sta0000 www.google.com
             cmd="lfping"
             if (self.interval):
@@ -423,21 +423,15 @@ class GenTest():
             if (self.target):
                 cmd = cmd + str(self.target)
   
-        elif (self.test_type == 'iperf3-client'):
+        elif (type == 'iperf3-client') or (type == 'iperf'):
             #  iperf3 --forceflush --format k --precision 4 -c 192.168.10.1 -t 60 --tos 0 -b 1K --bind_dev sta0000 
             # -i 5 --pidfile /tmp/lf_helper_iperf3_testing.pid -p 101
-            cmd = self.do_iperf(self, 'client', unique_alias, eid)
+            cmd = self.do_iperf('client', unique_alias, eid)
+
         elif (self.test_type == 'iperf3-server'):
             # iperf3 --forceflush --format k --precision 4 -s --bind_dev sta0000 
             # -i 5 --pidfile /tmp/lf_helper_iperf3_testing.pid -p 101
             cmd = self.do_iperf(self, 'server', unique_alias, eid)
-
-        elif (self.test_type == 'iperf'):
-            #TODO server part of 'iperf'
-            #cmd_iperf_server = self.do_iperf(self, 'server', self.server_port, eid)
-            cmd = self.do_iperf(self, 'client', unique_alias, eid)
-            #self.command.post_set_gen_cmd(name = self.,
-                                          #command= cmd_iperf_server)
 
         elif (self.test_type == 'lfcurl'):
             # ./scripts/lf_curl.sh  -p sta0000 -i 192.168.50.167 -o /dev/null -n 1 -d 8.8.8.8
@@ -449,8 +443,7 @@ class GenTest():
         else:
             raise ValueError("Was not able to identify type given in arguments.")
         print("This is the generic cmd we are sending to server...:   " + cmd)
-        self.command.post_set_gen_cmd(name = unique_alias,
-                                      command= cmd)
+
         self.created_endp.append(unique_alias)
         
     def do_iperf (self, type, alias, eid):
@@ -460,6 +453,7 @@ class GenTest():
             cmd = cmd + str("-c %s" % self.target) + " -t 60 --tos 0 -b 1K" + str("--bind_dev %s" % eid[2])
             cmd = cmd + " -i 5 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
             cmd = cmd + " -p %d" % self.client_port
+        #server
         else:
             cmd = cmd + str("--bind_dev %s" % eid[2])
             cmd = cmd + " -i 5 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
