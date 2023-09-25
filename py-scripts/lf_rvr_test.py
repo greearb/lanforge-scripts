@@ -530,6 +530,12 @@ def main():
 
     CV_Test.check_influx_kpi(args)
 
+    if CV_Test.kpi_results_present():
+        logger.info("lf_rvr_test_test generated kpi.csv")
+    else:
+        logger.info("FAILED: lf_rvr_test did not generate kpi.csv)")
+        exit(1)
+
 
 if __name__ == "__main__":
     main()
