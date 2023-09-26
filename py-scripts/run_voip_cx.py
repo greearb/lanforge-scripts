@@ -158,7 +158,7 @@ class VoipReport():
         if self.last_written_row >= (len(self.csv_data) - 1):
             print(f"write_row: row[{self.last_written_row}] already written, rows: {len(self.csv_data)} rows")
             return
-        for i in range(self.last_written_row, len(self.csv_data) - 1):
+        for i in range(self.last_written_row, len(self.csv_data)):
             # pprint(["i:", i, "csv:", self.csv_data[i]])
             row_strs: list = map(str, self.csv_data[i])
             self.csv_writer.writerow(row_strs)
@@ -189,6 +189,38 @@ class VoipReport():
         # lf_cmd: LFJsonCommand = self.lfsession.get_command()
         e_w_list: list = []
         response: list
+        old_mos_value_A = 0
+        old_mos_value_B = 0
+        append_row_zero_endp_A_flag = True
+        append_row_zero_endp_B_flag = True
+        wait_flag_A = True
+        wait_flag_B = True
+
+        # stop until endpoints actually starts the test else script terminates early.
+        while wait_flag_A or wait_flag_B:
+            response = lf_query.get_voip_endp(eid_list=self.voip_endp_list,
+                                                  debug=False,
+                                                  errors_warnings=e_w_list)
+
+            if not response:
+                    # pprint(e_w_list)
+                    raise ValueError("unable to find endpoint data")
+
+            for entry in response:
+                name = list(entry.keys())[0]
+                record = entry[name]
+
+                if "-A" in name: # endp A
+                    if "Stopped" != record['state']:
+                        wait_flag_A = False
+
+                if "-A" in name: # endp B
+                    if "Stopped" != record['state']:
+                        wait_flag_B = False
+
+                time.sleep(1)
+
+        print("Script is now running....")
 
         while num_running_ep > 0:
             time.sleep(1)
@@ -206,25 +238,59 @@ class VoipReport():
                     name = list(entry.keys())[0]
                     record = entry[name]
                     # print(f"checking {name}, ", end=None)
-                    self.append_to_csv(ep_name=name, ep_record=entry[name])
 
-                    # print(f"    state: {record['state']}")
-                    if "Stopped" == record['state']:
-                        num_running_ep -= 1
-                        # continue
-                    # print(f"running: {num_running_ep}, ", end=None)
-                self.write_rows()
+                    if "-A" in name: # endp A
+
+                        if (int(record['mos-lqo#']) == 0) and (float(record['mos-lqo']) != 0):
+                            if (append_row_zero_endp_A_flag):
+                                self.append_to_csv(ep_name=name, ep_record=record) # check record
+                                append_row_zero_endp_A_flag = False
+
+                        if int(record['mos-lqo#']) != old_mos_value_A:
+                            self.append_to_csv(ep_name=name, ep_record=record)
+                            old_mos_value_A = int(record['mos-lqo#'])
+
+                    if "-B" in name: # endp B
+
+                        if (int(record['mos-lqo#']) == 0) and (float(record['mos-lqo']) != 0):
+                            if append_row_zero_endp_B_flag:
+                                self.append_to_csv(ep_name=name, ep_record=record)
+                                append_row_zero_endp_B_flag = False
+
+                        if int(record['mos-lqo#']) != old_mos_value_B:
+                            self.append_to_csv(ep_name=name, ep_record=record)
+                            old_mos_value_B = int(record['mos-lqo#'])
+
+                    # print("Debug: int(record['calls completed']) " + str(record['calls completed']))
+                    # print("Debug: int(record['calls failed']) " + str(record['calls failed']))
+                    # print("Debug: int(record['mos-lqo#']) " + str(record['mos-lqo#']))
+                    # print("Debug: record['state'] " + str(record['state']))
+                    # print()
+
+                    # exit if endp is scoring polqa/pesq and test is stopped.
+                    # wait until last call data is fetched
+                    # both endp needs to stop separately as we are in a for loop.
+                    if int(record['calls completed']) + int(record['calls failed']) == int(record['mos-lqo#']) + 1:
+                        if "Stopped" == record['state']:
+                            num_running_ep -= 1
+
+                    # exit if other endp is not scoring polqa/pesq and test is stopped.
+                    if int(record['mos-lqo#']) == 0:
+                        if "Stopped" == record['state']:
+                            num_running_ep -= 1
+
             except Exception as e:
-                self.write_rows()
+                # self.write_rows()
                 traceback.print_exc()
                 pprint(['exception:', e, 'e_w_list:', e_w_list])
                 self.write_rows()
                 exit(1)
-            self.write_rows()
+            # self.write_rows()
 
     def report(self):
         self.write_rows()
         print(f"saved {self.csv_filename}")
+        print("Script is done....")
         self.csv_fileh.close()
 
 
