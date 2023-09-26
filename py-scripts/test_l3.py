@@ -4779,8 +4779,8 @@ class L3VariableTime(Realm):
                     " Channel " : self.client_dict_A[tos]['channel_A'],
                     " Type of traffic " : self.client_dict_A[tos]['traffic_type_A'],
                     " Traffic Protocol " : self.client_dict_A[tos]['traffic_protocol_A'],
-                    " Offered Upload Rate Per Client" : self.client_dict_A['min_bps_a'],
-                    " Offered Download Rate Per Client" : self.client_dict_A['min_bps_b'],
+                    " Offered Upload Rate Per Client" : self.client_dict_A[tos]['offered_upload_rate_A'],
+                    " Offered Download Rate Per Client" : self.client_dict_A[tos]['offered_download_rate_A'],
                     " Upload Rate Per Client" : self.client_dict_A[tos]['ul_A'],
                     " Download Rate Per Client" : self.client_dict_A[tos]['dl_A']
                     #" Traffic Protocol " : 
@@ -4845,8 +4845,8 @@ class L3VariableTime(Realm):
                     " Channel " : self.client_dict_B[tos]['channel_B'],
                     " Type of traffic " : self.client_dict_B[tos]['traffic_type_B'],
                     " Traffic Protocol " : self.client_dict_B[tos]['traffic_protocol_B'],
-                    " Offered Upload Rate Per Client" : self.client_dict_B['min_bps_a'],
-                    " Offered Download Rate Per Client" : self.client_dict_B['min_bps_b'],
+                    " Offered Upload Rate Per Client" : self.client_dict_B[tos]['offered_upload_rate_B'],
+                    " Offered Download Rate Per Client" : self.client_dict_B[tos]['offered_download_rate_B'],
                     " Upload Rate Per Client" : self.client_dict_B[tos]['ul_B'],
                     " Download Rate Per Client" : self.client_dict_B[tos]['dl_B']
                     #" Traffic Protocol " : 
