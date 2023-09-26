@@ -1295,11 +1295,11 @@ class L3VariableTime(Realm):
                 self.station_profiles.append(self.station_profile)
             # Use existing station list is similiar to no rebuild
             if self.use_existing_station_lists:
+                self.station_profile = self.new_station_profile()
                 for existing_station_list in self.existing_station_lists:
-                    self.station_profile = self.new_station_profile()
                     self.station_profile.station_names.append(
                         existing_station_list)
-                    self.station_profiles.append(self.station_profile)
+                self.station_profiles.append(self.station_profile)
         else:
             pass
 
