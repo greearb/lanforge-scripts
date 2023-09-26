@@ -2560,7 +2560,7 @@ class L3VariableTime(Realm):
                                     self.bk_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_A.append(endp_data[endp_data_key]['tos'] )
                                     self.bk_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps) # b side tx
-                                    self.bk_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
+                                    self.bk_port_offered_tx_rate_A.append('0') # a side tx side_a_min_bps
                                     self.bk_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
                                     break
@@ -2664,7 +2664,7 @@ class L3VariableTime(Realm):
                                     self.be_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.be_port_traffic_type_A.append(endp_data[endp_data_key]['tos'] )
                                     self.be_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps) # b side tx
-                                    self.be_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
+                                    self.be_port_offered_tx_rate_A.append('0') # a side tx  side_a_min_bps
                                     self.be_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
                                     break
@@ -2769,7 +2769,7 @@ class L3VariableTime(Realm):
                                     self.vi_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_A.append(endp_data[endp_data_key]['tos'] )
                                     self.vi_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps) # b side tx
-                                    self.vi_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
+                                    self.vi_port_offered_tx_rate_A.append('0') # a side tx, side_a_min_bps
                                     self.vi_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
                                     break
@@ -2873,7 +2873,7 @@ class L3VariableTime(Realm):
                                     self.vo_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.vo_port_traffic_type_A.append(endp_data[endp_data_key]['tos'] )
                                     self.vo_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps) # b side tx
-                                    self.vo_port_offered_tx_rate_A.append(self.cx_profile.side_a_min_bps) # a side tx
+                                    self.vo_port_offered_tx_rate_A.append('0') # a side tx  side_a_min_bps
                                     self.vo_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
                                     break
