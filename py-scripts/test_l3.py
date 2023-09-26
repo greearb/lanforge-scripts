@@ -4739,7 +4739,7 @@ class L3VariableTime(Realm):
 
 
                 self.report.set_obj_html(
-                    _obj_title=f"Individual throughput measured at download endpoint with intended load upload bps: {min_bps_a} download bps: {min_bps_b} station for traffic {tos} (WiFi).",
+                    _obj_title=f"Individual throughput measured at download upload bps: {min_bps_a} download bps: {min_bps_b} station for traffic {tos} (WiFi).",
                     _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
                         f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
                         f"Throughput in Mbps”.")
@@ -5603,8 +5603,11 @@ INCLUDE_IN_README: False
     test_l3_parser.add_argument(
         '-amr',
         '--side_a_min_bps',
-        help='--side_a_min_bps, requested downstream min tx rate, comma separated list for multiple iterations.  Default 256k',
-        default="256000")
+        '--upload_min_bps',
+        dest='side_a_min_bps',
+        help='''--side_a_min_bps, requested downstream min tx rate at stations / client, comma separated list for multiple iterations.  Default 0
+                When running with tcp/udp traffic along with mcast , mcast will ignore the upload value''',
+        default="0")
     test_l3_parser.add_argument(
         '-amp',
         '--side_a_min_pdu',
@@ -5612,8 +5615,12 @@ INCLUDE_IN_README: False
         default="MTU")
     test_l3_parser.add_argument(
         '-bmr',
+        '--download_min_bps',
         '--side_b_min_bps',
-        help='--side_b_min_bps, requested upstream min tx rate, comma separated list for multiple iterations.  Default 256000',
+        '--do',
+        dest='side_b_min_bps',
+        help='''--side_b_min_bps or --download_min_bps, requested upstream min tx rate, comma separated list for multiple iterations.  Default 256000
+                When runnign with tcp/udp and mcast will use this value''',
         default="256000")
     test_l3_parser.add_argument(
         '-bmp',
