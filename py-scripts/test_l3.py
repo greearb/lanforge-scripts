@@ -1615,6 +1615,8 @@ class L3VariableTime(Realm):
                     self.cx_names.append(these_cx)
 
         else:
+            # TODO for multicast when using single station there needs to be an interop mode
+            # with a single transmitter for all of the multi-cast  
             for station_profile in self.station_profiles:
                 if not rebuild and not self.use_existing_station_lists:
                     station_profile.use_security(
@@ -1637,8 +1639,9 @@ class L3VariableTime(Realm):
                 self.station_count += len(station_profile.station_names)
 
                 # Build/update connection types
+                # TODO build multicast once for each endp type
                 for etype in self.endp_types:
-                    # TODO multi cast does not work
+                    # TODO multi cast build each type only once
                     if etype == "mc_udp" or etype == "mc_udp6":
                         # TODO add multicast to name be passed in 
                         for _tos in self.tos:
@@ -1648,7 +1651,10 @@ class L3VariableTime(Realm):
                                 etype, self.side_b, tos=_tos, add_tos_to_name=True)
                             self.multicast_profile.create_mc_rx(
                                 etype, side_rx=station_profile.station_names, tos=_tos, add_tos_to_name=True)
-                    else:
+
+                # Multicast needs to have only one tx endpt, if only one profile needed
+                for etype in self.endp_types:
+                    if etype == "lf_udp" or etype == "lf_udp6" or etype == "lf_tcp" or etype == "lf_tcp6":
                         for _tos in self.tos:
                             logger.info("Creating connections for endpoint type: {etype} TOS: {tos}  cx-count: {cx_count}".format(
                                 etype=etype, tos=_tos, cx_count=self.cx_profile.get_cx_count()))
