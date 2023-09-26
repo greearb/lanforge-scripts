@@ -978,8 +978,8 @@ class JsonQuery(BaseLFJsonRequest):
 
     def __init__(self,
                  session_obj: 'BaseSession' = None,
-                 debug=False,
-                 exit_on_error=False):
+                 debug: bool = False,
+                 exit_on_error: bool = False):
         super().__init__(session_obj=session_obj,
                          debug=debug | session_obj.is_debug(),
                          exit_on_error=exit_on_error)
@@ -1460,7 +1460,7 @@ class LFJsonCommand(JsonCommand):
     def post_adb_bt(self, 
                     adb_id: str = None,                       # Android device identifier, use NA if it should not be
                     # used/specified. [W]
-                    keystrokes: str = None,                   # All remaining text after adb_id will be sent as keystrokes.
+                    keystrokes: str = None,                   # All remaining text after adb_bt will be sent as keystrokes.
                     # For example: [... {adb_id} ctrl h ctrl f s e t t...] <tt
                     # escapearg='false'>Unescaped Value</tt>
                     resource: int = None,                     # Resource number. [W]
@@ -6540,6 +6540,8 @@ class LFJsonCommand(JsonCommand):
                          # purposefully duplicate a packet.
                          extra_buffer: str = None,                 # The extra amount of bytes to buffer before dropping
                          # pkts, in units of 1024, use -1 for AUTO. [D:-1]
+                         follow_binomial: str = None,              # YES to have ok/drop burst lengths follow a binomial
+                         # distribution.
                          ignore_bandwidth: str = None,             # Should we ignore the bandwidth settings from the
                          # playback file? YES, NO, or NA.
                          ignore_dup: str = None,                   # Should we ignore the Duplicate Packet settings from the
@@ -6606,6 +6608,8 @@ class LFJsonCommand(JsonCommand):
             data["dup_freq"] = dup_freq
         if extra_buffer is not None:
             data["extra_buffer"] = extra_buffer
+        if follow_binomial is not None:
+            data["follow_binomial"] = follow_binomial
         if ignore_bandwidth is not None:
             data["ignore_bandwidth"] = ignore_bandwidth
         if ignore_dup is not None:
@@ -6679,6 +6683,7 @@ class LFJsonCommand(JsonCommand):
                               dup_every_xth_pkt=param_map.get("dup_every_xth_pkt"),
                               dup_freq=param_map.get("dup_freq"),
                               extra_buffer=param_map.get("extra_buffer"),
+                              follow_binomial=param_map.get("follow_binomial"),
                               ignore_bandwidth=param_map.get("ignore_bandwidth"),
                               ignore_dup=param_map.get("ignore_dup"),
                               ignore_latency=param_map.get("ignore_latency"),
@@ -12778,6 +12783,7 @@ class LFJsonCommand(JsonCommand):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        AdvLatency = "AdvLatency"                          # Enable Advanced Latency Reporting
         AutoHelper = "AutoHelper"                          # Automatically run on helper process
         BindSIP = "BindSIP"                                # if SIP is in DUT, true. Default is false.
         ClearPortOnStart = "ClearPortOnStart"              # clear stats on start
@@ -12792,6 +12798,8 @@ class LFJsonCommand(JsonCommand):
         EnableLinearSrcIPPort = "EnableLinearSrcIPPort"    # linearized IP ports
         EnableRndSrcIP = "EnableRndSrcIP"                  # randomize source IP
         EnableTcpNodelay = "EnableTcpNodelay"              # Enable no delay with TCP.
+        FollowBinomialDist = "FollowBinomialDist"          # Packet drop/ok burst lengths should follow a
+        # +binomial
         ForcePktGap = "ForcePktGap"                        # Force packet gap. Used by WANlinks currently.
         GetUrlsFromFile = "GetUrlsFromFile"                # Get URL's from file
         HWPassthroughMode = "HWPassthroughMode"            # Uses hardware pass through similar to
@@ -12807,6 +12815,7 @@ class LFJsonCommand(JsonCommand):
         NoBluetooth = "NoBluetooth"                        # If set, record and play audio options will be
         # +through a
         NoFastStart = "NoFastStart"                        # Set to disable h323 fast start
+        NoPlayAudioOverCall = "NoPlayAudioOverCall"        # if set, no audio will be played over call.
         NoSendRtp = "NoSendRtp"                            # Set to not send RTP
         NoTunneling = "NoTunneling"                        # Set to disable h323 tunneling
         OverrideSdp = "OverrideSdp"                        # Set to override conneciton info in SDP
@@ -16727,12 +16736,27 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_wifi_txo
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    class SetWifiTxoTxoFlags(Enum):
+    class SetWifiTxoTxoFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
+                int:flag_val = 0
+                flag_val = LFPost.set_flags(SetWifiTxoTxoFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-        block_traffic = 2      # Disable all tx/rx traffic for a given radio. This can only be
-        enable_agg = 1         # Enable aggregation. This can only be enabled on Intel radios.
+
+        block_traffic = 0x2      # Disable all tx/rx traffic for a given radio. This can only be
+        enable_agg = 0x1         # Enable aggregation. This can only be enabled on Intel radios.
+        enable_ldpc = 0x4        # Enable LDPC wifi feature, should help throughput.
+        enable_stbc = 0x8        # Enable STBC wifi feature.
+
+        # use to get in value of flag
+        @classmethod
+        def valueof(cls, name=None):
+            if name is None:
+                return name
+            if name not in cls.__members__:
+                raise ValueError("SetWifiTxoTxoFlags has no member:[%s]" % name)
+            return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_set_wifi_txo(self, 
                           port: str = None,                         # WiFi interface name or number. [W]
@@ -16991,6 +17015,7 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_adb
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_adb(self, 
+                      extra: str = None,                        # Optional command, see above.
                       resource: int = None,                     # Resource number, or 'all'. [W]
                       serno: str = None,                        # Serial number for requested ADB device, or 'all'. [W]
                       shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
@@ -17006,6 +17031,8 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if extra is not None:
+            data["extra"] = extra
         if resource is not None:
             data["resource"] = resource
         if serno is not None:
@@ -17033,7 +17060,8 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_show_adb(resource=param_map.get("resource"),
+        self.post_show_adb(extra=param_map.get("extra"),
+                           resource=param_map.get("resource"),
                            serno=param_map.get("serno"),
                            shelf=param_map.get("shelf"),
                            )
@@ -20933,7 +20961,7 @@ class LFJsonQuery(JsonQuery):
         delay, destination+addr, dropped, dup+pkts, eid, elapsed, entity+id, jitter, 
         max+pdu, max+rate, mcast+rx, min+pdu, min+rate, mng, name, ooo+pkts, pattern, 
         pdu%2Fs+rx, pdu%2Fs+tx, pps+rx+ll, pps+tx+ll, rcv+buf, replays, run, rx+ber, 
-        rx+bytes, rx+drop+%25, rx+dup+%25, rx+ooo+%25, rx+pdus, rx+pkts+ll, rx+rate, rx+rate+%281%C2%A0min%29, 
+        rx+bytes, rx+drop+%25, rx+dup+%25, rx+ooo+%25, rx+pdus, rx+pkts+ll, rx+rate, rx+rate+%281m%29, 
         rx+rate+%28last%29, rx+rate+ll, rx+wrong+dev, script, send+buf, source+addr, 
         tcp+mss, tcp+rtx, tx+bytes, tx+pdus, tx+pkts+ll, tx+rate, tx+rate+%281%C2%A0min%29, 
         tx+rate+%28last%29, tx+rate+ll, type        # hidden columns:
@@ -21024,7 +21052,7 @@ class LFJsonQuery(JsonQuery):
                                 # networks.
         'rx rate':              # Real receive rate (bps) for this run.This includes only the protocol
                                 # payload (goodput).
-        'rx rate (1&nbsp;min)': # Real receive rate (bps) over the last minute.This includes only the
+        'rx rate (1m)':         # Real receive rate (bps) over the last minute.This includes only the
                                 # protocol payload (goodput).
         'rx rate (last)':       # Real receive rate (bps) over the last report interval.This includes only
                                 # the protocol payload (goodput).
@@ -21587,10 +21615,9 @@ class LFJsonQuery(JsonQuery):
         dns-avg, dns-max, dns-min, eid, elapsed, entity+id, fb-avg, fb-max, fb-min, 
         frame-rate, ftp-host, ftp-port, ftp-stor, http-p, http-r, http-t, login-denied, 
         name, nf+%284xx%29, other-err, read, redir, rpt+timer, rslv-h, rslv-p, rx+rate, 
-        rx+rate+%281%C2%A0min%29, status, time-stamp, timeout, total-buffers, total-err, 
-        total-rebuffers, total-urls, total-wait-time, tx+rate, tx+rate+%281%C2%A0min%29, 
-        type, uc-avg, uc-max, uc-min, urls%2Fs, video-format-bitrate, video-quality, 
-        write        # hidden columns:
+        rx+rate+%281m%29, status, time-stamp, timeout, total-buffers, total-err, total-rebuffers, 
+        total-urls, total-wait-time, tx+rate, tx+rate+%281%C2%A0min%29, type, uc-avg, 
+        uc-max, uc-min, urls%2Fs, video-format-bitrate, video-quality, write        # hidden columns:
         rpt-time
     Example URL: /layer4?fields=%21conn,acc.+denied
 
@@ -21604,7 +21631,7 @@ class LFJsonQuery(JsonQuery):
         '!conn':                # Could not establish connection.
         'acc. denied':          # Access Access Denied Error.This could be password, user-name,
                                 # file-permissions or other error.
-        'audio-format-bitrate': # Audio Format BitRate which is reported from Video Server Side. It can be
+        'audio-format-bitrate': # Audio Format BitRate which is reported by video player.It can be
                                 # converted to Audio Quality depending upon Video Server Manifest file
                                 # configuration.
         'bad-proto':            # Bad protocol.
@@ -21626,7 +21653,7 @@ class LFJsonQuery(JsonQuery):
                                 # requests made in the last 30 seconds.
         'fb-min':               # Minimum time in milliseconds for receiving the first byte of the URLfor
                                 # requests made in the last 30 seconds.
-        'frame-rate':           # Frame Rate in fps which is reported from Video Server Side.
+        'frame-rate':           # Frame Rate in fps which is reported by video player.
         'ftp-host':             # FTP Host Error
         'ftp-port':             # FTP Port Error.
         'ftp-stor':             # FTP STOR Error.
@@ -21650,7 +21677,7 @@ class LFJsonQuery(JsonQuery):
         'rslv-h':               # Couldn't resolve host.
         'rslv-p':               # Couldn't resolve Proxy.
         'rx rate':              # Payload receive rate (bps).
-        'rx rate (1&nbsp;min)': # Payload receive rate over the last minute (bps).
+        'rx rate (1m)':         # Payload receive rate over the last minute (bps).
         'status':               # Current State of the connection.UninitializedHas not yet been
                                 # started/stopped.InitializingBeing set up.StartingStarting the
                                 # test.RunningTest is actively running.StoppedTest has been
@@ -21661,11 +21688,11 @@ class LFJsonQuery(JsonQuery):
                                 # is phantom, probably due to non-existent interface or resource.
         'time-stamp':           # Time-Stamp
         'timeout':              # Operation timed out.
-        'total-buffers':        # Total Buffer Count in Video Stream Test with InterOp.
+        'total-buffers':        # Amount of times the video player has reported it is buffering (waiting).
         'total-err':            # Total Errors. This is also total failed URLs.
-        'total-rebuffers':      # Total Rebuffers in Video Stream Test with InterOp
+        'total-rebuffers':      # Amount of Rebuffer events reported by video player.
         'total-urls':           # URLs processed and in process. This includes passed and failed URLs.
-        'total-wait-time':      # Total Time taken by video playback in miliseconds due to Initial
+        'total-wait-time':      # Amount of time taken by video playback in miliseconds due to Initial
                                 # Playback during Join Time and playback Buffering in Video Resume State.
         'tx rate':              # Payload transmit rate (bps).
         'tx rate (1&nbsp;min)': # Payload transmit rate over the last minute (bps).
@@ -21677,10 +21704,10 @@ class LFJsonQuery(JsonQuery):
         'uc-min':               # Minimum time in milliseconds to complete processing of the URLfor
                                 # requests made in the last 30 seconds.
         'urls/s':               # URLs processed per second over the last minute.
-        'video-format-bitrate': # Video Format BitRate which is reported from Video Server Side. It can be
+        'video-format-bitrate': # Video Format BitRate which is reported by video player.It can be
                                 # converted to Video Quality depending upon Video Server Manifest file
                                 # configuration.
-        'video-quality':        # Video Quality which is reported from Video Server.
+        'video-quality':        # Video Quality which is reported by video player.
         'write':                # Error attempting to write file or URL.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
