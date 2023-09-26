@@ -4738,11 +4738,20 @@ class L3VariableTime(Realm):
                 y_fig_size = len(self.client_dict_A[tos]["clients_A"]) * .4 + 3
 
 
-                self.report.set_obj_html(
-                    _obj_title=f"Individual throughput measured at download upload bps: {min_bps_a} download bps: {min_bps_b} station for traffic {tos} (WiFi).",
-                    _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
-                        f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
-                        f"Throughput in Mbps”.")
+                if int(min_bps_a) != 0:
+                    self.report.set_obj_html(
+                        _obj_title=f"Individual throughput measured  upload tcp or udp bps: {min_bps_a},  download tcp, udp, or mcast  bps: {min_bps_b} station for traffic {tos} (WiFi).",
+                        _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
+                            f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
+                            f"Throughput in Mbps”.")
+                else:
+                    self.report.set_obj_html(
+                        _obj_title=f"Individual throughput mcast download bps: {min_bps_b} traffic {tos} (WiFi).",
+                        _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
+                            f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
+                            f"Throughput in Mbps”.")
+
+
                 self.report.build_objective()
 
 
