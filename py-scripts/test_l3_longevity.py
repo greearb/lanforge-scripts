@@ -2689,6 +2689,16 @@ def main():
     lfjson_port = 8080
     endp_types = "lf_udp"
 
+    help_summary='''\
+The Layer 3 Traffic Generation Test is designed to test the performance of the
+Access Point by running layer 3 TCP and/or UDP Traffic.  Layer-3 Cross-Connects represent a stream
+of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints,
+each of which is associated with a particular Port (physical or virtual interface).
+
+The test will create stations, create CX traffic between upstream port and stations, run traffic
+and generate a report.
+'''
+
     parser = argparse.ArgumentParser(
         prog='test_l3_longevity.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -2712,9 +2722,8 @@ Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects r
 of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints,
 each of which is associated with a particular Port (physical or virtual interface).
 
-The test will create stations, create cx traffic between upstream port and stations,  run traffic.
-Verify the traffic is being transmitted and received
-
+The test will create stations, create cx traffic between upstream port and stations, run traffic
+and generate a report.
 
 Generic command layout:
 -----------------------
@@ -3031,6 +3040,10 @@ Note: for enable flags can us && as separator in vscode
 
         ''')
 
+    parser.add_argument('--help_summary',
+                        default=None,
+                        action="store_true",
+                        help='Show summary of what this script does')
     parser.add_argument(
         '--local_lf_report_dir',
         help='--local_lf_report_dir override the report path, primary use when running test in test suite',
@@ -3276,6 +3289,10 @@ Note: for enable flags can us && as separator in vscode
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()

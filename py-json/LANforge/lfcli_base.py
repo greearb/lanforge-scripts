@@ -705,6 +705,10 @@ class LFCliBase:
                               nargs='?',
                               default=None,  # action=ProxyAction,
                               help='Connection proxy like http://proxy.localnet:80 or https://user:pass@proxy.localnet:3128')
+        optional.add_argument('--help_summary',
+                              default=None,
+                              action="store_true",
+                              help='Show summary of what this script does')
 
         return parser
 
@@ -777,6 +781,10 @@ class LFCliBase:
                               help="Specify a file to send debug output to")
         optional.add_argument('--no_cleanup', help='Do not cleanup before exit',
                               action='store_true')
+        optional.add_argument('--help_summary',
+                              default=None,
+                              action="store_true",
+                              help='Show summary of what this script does')
         if more_optional is not None:
             for argument in more_optional:
                 if 'default' in argument.keys():
