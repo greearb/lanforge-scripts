@@ -76,7 +76,7 @@ class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
                 name_prefix, num_stations, client_port = None,server_port=None,
                  host="localhost", port=8080, csv_outfile=None, use_existing_eid=None, monitor_interval = "2s",
-                 test_duration="20s",test_type="ping", target=None, target_port_alias=None, cmd=None, interval=0.1,
+                 test_duration="20s",test_type="ping", target=None, cmd=None, interval=0.1,
                  radio=None, file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
                  _debug_on=False, _exit_on_error=False, die_on_error = False,_exit_on_fail=False):
         self.host=host
@@ -91,7 +91,6 @@ class GenTest():
         self.loop_count = loop_count
         self.test_type = test_type
         self.target = target
-        self.target_port_alias = target_port_alias
         self.cmd = cmd
         self.monitor_interval = monitor_interval
         self.interval = interval
@@ -145,6 +144,15 @@ class GenTest():
             self.use_existing_eid = use_existing_eid.split(",")
         else:
             self.use_existing_eid = use_existing_eid
+
+        # evaluate if iperf3-server on lanforge
+        if (self.target):
+            if re.match('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', self.target) == None:
+                #not an ip address
+                self.iperf3_target_lanforge = True
+            else: 
+                self.iperf3_target_lanforge = False
+
 
 
     def check_tab_exists(self):
@@ -382,18 +390,18 @@ class GenTest():
         if (self.test_type == 'iperf3'):
             #admin up server port, we need IP for client generic endp creation.
             # This code is only executed if we are NOT given a target ip address.
-            if (self.target_port_alias and not self.target):
-                server_eid = self.name_to_eid(self.target_port_alias)
+            if (self.iperf3_target_lanforge):
+                server_shelf, server_resource, server_port_name, *nil = self.name_to_eid(self.target)
                 set_port_interest_rslt=self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names= ['ifdown'])
-                self.command.post_set_port(shelf = server_eid[0],
-                                            resource = server_eid[1],
-                                            port = server_eid[2],
+                self.command.post_set_port(shelf = server_shelf,
+                                            resource = server_resource,
+                                            port = server_port_name,
                                             netmask= "255.255.255.0", #sometimes the cli complains about the netmask being NA, so set it to a random netmask(netmask is overriden anyways with dhcp)
                                             current_flags= 0,
                                             interest=set_port_interest_rslt,
                                             report_timer= self.report_timer)
-                self.wait_for_action("port", [self.target_port_alias], "up", 3000)
-                self.wait_for_action("port", [self.target_port_alias], "ip", 3000)
+                self.wait_for_action("port", [self.target], "up", 3000)
+                self.wait_for_action("port", [self.target], "ip", 3000)
 
 
         #create endpoints
@@ -435,7 +443,7 @@ class GenTest():
         else:
             print("Generic cx creation was not completed.")
 
-    def get_ip_address(self, eid):
+    def eid_to_ip(self, eid):
         json_url = "%s/ports/%s/%s/%s?fields=device,ip" % (self.lfclient_url, eid[1], eid[0], eid[2])
         json_response = self.query.json_get(url=json_url,
                                             debug=self.debug)
@@ -452,24 +460,23 @@ class GenTest():
         :return: no return
         """
         unique_alias = type + "-" + str(unique_num)
-
         #construct generic endp command
         cmd = ""
         if (self.cmd):
             cmd=self.cmd
         elif (type == 'iperf3'):
-            if (self.target_port_alias):
-                server_port_eid = self.name_to_eid(self.target_port_alias)
-                server_ip = self.get_ip_address(server_port_eid)
-                if (eid == server_port_eid):
+            if (self.iperf3_target_lanforge):
+                if (eid == self.name_to_eid(self.target)):
                     unique_alias = "server-" + unique_alias
-                    cmd = self.do_iperf('server', unique_alias, eid, server_ip)
+                    cmd = self.do_iperf('server', unique_alias, eid)
                 else:
                     unique_alias = "client-" + unique_alias
-                    cmd = self.do_iperf('client', unique_alias, eid, server_ip)
+                    cmd = self.do_iperf('client', unique_alias, eid)
             else:
-                #the case that user chose to not to use and create lanforge iperf server.
-                cmd = self.do_iperf('client', unique_alias, eid, self.target)
+                #the case that user chose to not to use and create lanforge iperf server 
+                unique_alias = "client-" + unique_alias
+                cmd = self.do_iperf('client', unique_alias, eid)
+
         elif (type == 'ping'):
             # lfping  -s 128 -i 0.1 -c 10000 -I sta0000 www.google.com
             cmd="lfping"
@@ -484,12 +491,12 @@ class GenTest():
         elif (type == 'iperf3-client'):
             #  iperf3 --forceflush --format k --precision 4 -c 192.168.10.1 -t 60 --tos 0 -b 1K --bind_dev sta0000 
             # -i 5 --pidfile /tmp/lf_helper_iperf3_testing.pid -p 101
-                cmd = self.do_iperf('client', unique_alias, eid, server_ip)
+            cmd = self.do_iperf('client', unique_alias, eid)
 
         elif (self.test_type == 'iperf3-server'):
             # iperf3 --forceflush --format k --precision 4 -s --bind_dev sta0000 
             # -i 5 --pidfile /tmp/lf_helper_iperf3_testing.pid -p 101
-            cmd = self.do_iperf('server', unique_alias, eid, server_ip)
+            cmd = self.do_iperf('server', unique_alias, eid)
 
         elif (self.test_type == 'lfcurl'):
             # ./scripts/lf_curl.sh  -p sta0000 -i 192.168.50.167 -o /dev/null -n 1 -d 8.8.8.8
@@ -527,16 +534,22 @@ class GenTest():
                                       command= cmd)
 
         
-    def do_iperf (self, type, alias, eid, server_ip_addr):
+    def do_iperf (self, type, alias, eid):
         """
         :param type: takes in options 'client' or 'server'
         :param alias: takes in alias. example: 'sta0000'
         :param eid: takes in eid list. ['1','1','sta0000']
         :return: returns constructed iperf command
         """
+        #TODO: allow for multiple ports to be passed in for multiple servers on 1 eth port or 1 virt sta (for example).
+        #TODO: allow for multiple targets to be passed in for multiple servers.
         cmd = "iperf3 --forceflush --format k --precision 4"
         #TODO check if dest, client_port and server_port are not empty
         if (type == 'client'):
+            if (self.iperf3_target_lanforge):
+                server_ip_addr = self.eid_to_ip(self.name_to_eid(self.target))
+            else:
+                server_ip_addr = self.target
             cmd = cmd + str(" -c %s" % server_ip_addr) + " -t 60 --tos 0 -b 1K " + str("--bind_dev %s" % eid[2])
             cmd = cmd + " -i 3 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
             if (self.client_port):
@@ -704,8 +717,9 @@ class GenTest():
 
     def check_args(self, args):
         #TODO validate all args, depending on which test is used.
-        if (self.target_port_alias and not (self.test_type == "iperf")):
-            raise ValueError("if --target_port_alias is specified, --test_type must be 'iperf' to tell script to create the iperf3-server on the lanforge as well. ")
+        if ((self.test_type == "iperf3" or self.test_type == "iperf3-client") and self.target is None):
+            raise ValueError ("To execute test type 'iperf3' or 'iperf3-client', a target must be specified as an IP address or port eid.")
+        print("check args")
 
     def name_to_eid(self, eid_input, non_port=False):
         rv = [1, 1, "", ""]
@@ -814,8 +828,8 @@ def main():
     optional.add_argument('--interval', help='interval to use when running lfping. in seconds', default=1)
     optional.add_argument('--file_output_lfcurl', help='location to output results of lf_curl, absolute path preferred', default=None)
     optional.add_argument('--loop_count', help='determines the number of loops to use in lf_curl and lfping', default=None)
-    optional.add_argument('--target', help='Target for lfping (ex: www.google.com). ALSO used for iperf3-client target IF iperf3-server is NOT on lanforge. Example: 192.168.1.151', default=None)
-    optional.add_argument('--target_port_alias', help='Target for iperf-server port alias eid. Use this if iperf_server is on lanforge. Example: 1.1.eth2', default=None)
+    optional.add_argument('--target',
+                          help='Target for lfping (ex: www.google.com). ALSO ip address or LANforge eid of iperf3 server used for iperf3-client target . Example: 192.168.1.151 OR 1.1.eth2', default=None)
     optional.add_argument('--client_port', help="the port number of the iperf client endpoint. example: -p 5011",default=None)
     optional.add_argument('--server_port', help="the port number of the iperf server endpoint. example: -p 5011",default=None)
 
@@ -877,7 +891,6 @@ def main():
                            name_prefix="GT",
                            test_type=args.test_type,
                            target=args.target,
-                           target_port_alias=args.target_port_alias,
                            cmd=args.cmd,
                            interval=args.interval,
                            ssid=args.ssid,
