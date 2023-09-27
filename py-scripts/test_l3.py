@@ -4830,7 +4830,7 @@ class L3VariableTime(Realm):
                 graph= lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
                                     _xaxis_name="Throughput in bps",
                                     _yaxis_name="Client names",
-                                    _yaxis_categories=self.client_dict_A[tos]["clients_A"],
+                                    _yaxis_categories=self.client_dict_A[tos]["clients_A"],  
                                     _graph_image_name=f"{tos}_A",
                                     _label=self.client_dict_A[tos]['labels'],
                                     _color_name=self.client_dict_A[tos]['colors'],
@@ -4852,6 +4852,7 @@ class L3VariableTime(Realm):
 
 
                 tos_dataframe_A = {
+                    " Host eid " : self.client_dict_A[tos]['resource_eid_A'],
                     " Host Name " : self.client_dict_A[tos]['resource_host_A'],
                     " Device Type / Hw Ver " : self.client_dict_A[tos]['resource_hw_ver_A'],
                     " Endp Name" : self.client_dict_A[tos]["clients_A"],
@@ -4918,6 +4919,7 @@ class L3VariableTime(Realm):
                 self.report.build_graph()
 
                 tos_dataframe_B = {
+                    " Host eid " : self.client_dict_B[tos]['resource_eid_B'],
                     " Host Name " : self.client_dict_B[tos]['resource_host_B'],
                     " Device Type / HW Ver " : self.client_dict_B[tos]['resource_hw_ver_B'],
                     " Endp Name" : self.client_dict_B[tos]["clients_B"],
