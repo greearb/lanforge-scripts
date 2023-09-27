@@ -379,7 +379,7 @@ class GenTest():
                     
             else:
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
-        if (self.test_type == 'iperf'):
+        if (self.test_type == 'iperf3'):
             #admin up server port, we need IP for client generic endp creation.
             # This code is only executed if we are NOT given a target ip address.
             if (self.target_port_alias and not self.target):
@@ -457,7 +457,7 @@ class GenTest():
         cmd = ""
         if (self.cmd):
             cmd=self.cmd
-        elif (type == 'iperf'):
+        elif (type == 'iperf3'):
             if (self.target_port_alias):
                 server_port_eid = self.name_to_eid(self.target_port_alias)
                 server_ip = self.get_ip_address(server_port_eid)
@@ -468,7 +468,7 @@ class GenTest():
                     unique_alias = "client-" + unique_alias
                     cmd = self.do_iperf('client', unique_alias, eid, server_ip)
             else:
-                #the case that user chooses not to use and create lanforge iperf server.  
+                #the case that user chose to not to use and create lanforge iperf server.  
                 cmd = self.do_iperf('client', unique_alias, eid, self.target)
         elif (type == 'ping'):
             # lfping  -s 128 -i 0.1 -c 10000 -I sta0000 www.google.com
@@ -703,8 +703,9 @@ class GenTest():
         return False
 
     def check_args(self, args):
-        print(args)
         #TODO validate all args, depending on which test is used.
+        if (self.target_port_alias and not (self.test_type == "iperf")):
+            raise ValueError("if --target_port_alias is specified, --test_type must be 'iperf' to tell script to create the iperf3-server on the lanforge as well. ")
 
     def name_to_eid(self, eid_input, non_port=False):
         rv = [1, 1, "", ""]
@@ -803,7 +804,7 @@ def main():
 
     required.add_argument("--lf_user", type=str, help="user: lanforge", default=None)
     required.add_argument("--lf_passwd", type=str, help="passwd: lanforge", default=None)
-    required.add_argument('--type', type=str, help='type of command to run: ping, iperf3-client, iperf3-server, iperf, lfcurl', required=True)
+    required.add_argument('--test_type', type=str, help='type of command to run. Options: ping, iperf3-client, iperf3-server, iperf3, lfcurl', required=True)
 
     optional.add_argument('--mgr', help='ip address of lanforge script should be run on. example: 192.168.102.211', default=None)
     optional.add_argument('--mgr_port', help='port which lanforge is running on, on lanforge machine script should be run on. example: 8080', default=8080)
@@ -874,7 +875,7 @@ def main():
                            num_stations = args.num_stations,
                            use_existing_eid=args.use_existing_eid,
                            name_prefix="GT",
-                           test_type=args.type,
+                           test_type=args.test_type,
                            target=args.target,
                            target_port_alias=args.target_port_alias,
                            cmd=args.cmd,
