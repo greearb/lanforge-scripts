@@ -338,6 +338,15 @@ class BaseLFJsonRequest:
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Extract fields from this response using the expected keys:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        if not singular_key and not plural_key:
+            #print("extracting all values")
+            rv : dict = {}
+            for key in response.keys():
+                if key == "uri" or key == "handler":
+                    continue
+                rv[key] = response[key]
+            return rv
+
         if not singular_key:
             raise ValueError("extract_values wants non-empty singular_key")
         if not plural_key:
