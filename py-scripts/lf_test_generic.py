@@ -152,7 +152,7 @@ class GenTest():
         if json_response is None:
             return False
         return True
- 
+
     def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version, 
                         dut_model_num, dut_serial_num, test_id, csv_outfile,
                         monitor_endps, generic_cols):
@@ -213,11 +213,15 @@ class GenTest():
         print("csv output file : {}".format(csv_outfile))
 
     def monitor_test(self):
-        print("starting monitoring")
-        end_time = datetime.datetime.now() + self.duration_time_to_seconds()
-        while (datetime.datetime.now() < end_time):
-            time.sleep(self.monitor_interval)
+        print("Starting monitoring")
+        #TODO: add checking if stations have disconnected, try to reconnect
+        #TODO: add checking if cross-connects have stopped. figure out why (if due to test being done, or if just randomly stopped.)
+        #TODO: add reporting-- save data at same intervals as sleeping?
+        monitor_interval = self.duration_time_to_seconds(self.monitor_interval)
+        end_time = datetime.datetime.now().timestamp() + self.duration_time_to_seconds(self.test_duration)
 
+        while (datetime.datetime.now().timestamp() < end_time):
+            time.sleep(monitor_interval)
 
     def start(self):
         #admin up all created stations & existing stations
