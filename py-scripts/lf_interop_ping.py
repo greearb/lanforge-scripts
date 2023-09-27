@@ -270,7 +270,11 @@ class Ping(Realm):
 
         # objective and description
         report.set_obj_html(_obj_title='Objective',
-                            _obj='Objective')
+                            _obj='''The objective of the ping test is to evaluate network connectivity and measure the round-trip time taken for 
+                            data packets to travel from the source to the destination and back. It helps assess the reliability and latency of the network, 
+                            identifying any packet loss, delays, or variations in response times. The test aims to ensure that devices can communicate 
+                            effectively over the network and pinpoint potential issues affecting connectivity.
+                            ''')
         report.build_objective()
 
         # packets sent vs received vs dropped
@@ -740,9 +744,9 @@ if __name__ == '__main__':
                         'sent': result_data['tx pkts'],
                         'recv': result_data['rx pkts'],
                         'dropped': result_data['dropped'],
-                        'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(result_data['last results']) != 0 else '0'][0],
-                        'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(result_data['last results']) != 0 else '0'][0],
-                        'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(result_data['last results']) != 0 else '0'][0],
+                        'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(result_data['last results']) != 0 else '0'][0],
+                        'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(result_data['last results']) != 0 else '0'][0],
+                        'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 else '0'][0],
                         'mac': current_device_data['mac'],
                         'channel': current_device_data['channel'],
                         'mode': current_device_data['mode'],
@@ -760,9 +764,9 @@ if __name__ == '__main__':
                             'sent': ping_data['tx pkts'],
                             'recv': ping_data['rx pkts'],
                             'dropped': ping_data['dropped'],
-                            'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(ping_data['last results']) != 0 else 0][0],
-                            'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(ping_data['last results']) != 0 else 0][0],
-                            'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(ping_data['last results']) != 0 else 0][0],
+                            'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(ping_data['last results']) != 0 else 0][0],
+                            'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(ping_data['last results']) != 0 else 0][0],
+                            'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(ping_data['last results']) != 0 else 0][0],
                             'mac': current_device_data['mac'],
                             'channel': current_device_data['channel'],
                             'mode': current_device_data['mode'],
