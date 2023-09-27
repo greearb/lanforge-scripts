@@ -150,7 +150,9 @@ class GenTest():
             if re.match('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', self.target) == None:
                 #not an ip address
                 self.iperf3_target_lanforge = True
-            else: 
+            else:
+                #TODO add check to self.target. ip address of lanforge port may be given by user, 
+                # which specifies if lanforge server is wanted. 
                 self.iperf3_target_lanforge = False
 
 
