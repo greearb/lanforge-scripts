@@ -104,8 +104,13 @@ class CxMonitor:
         print(f"cxnames len: {len(self.cxnames)}, z:{self.cxnames[0]}")
         if len(self.cxnames) == 1 and self.cxnames[0] == "all":
             items = self.query.get_cx(eid_list=['all'], requested_col_names=["name"])
-            pprint.pprint(["items", items])
-            self.endp_names : dict = {}
+            #pprint.pprint(["items", items])
+            #endp_nl : list = []
+            for cxname in items.keys():
+              self.endp_names[f"{cxname}-A"]=1
+              self.endp_names[f"{cxname}-B"]=1
+              
+            #pprint.pprint(["endp_nl", endp_nl])
         else:
             pprint.pprint(["cxnames", self.cxnames])
             for name in self.cxnames:
@@ -118,32 +123,41 @@ class CxMonitor:
 
     def monitor(self):
         quitting_time: bool = False
+        #revised_endp_names = None
+        #if "all" in self.endp_names.keys():
+        #    revised_endp_names = []
         default_col_names = (
-          'name',
+          #'name',
           'type',
           'run',
           'tos',
           'tx rate',
           'rx rate',
-          'pdu/s tx',
-          'pdu/s rx',
-          'tx bytes',
-          'rx bytes',
-          'rx drop %',
-          'tx pdus',
-          'rx pdus',
-          'dropped'
+          #'pdu/s tx',
+          #'pdu/s rx',
+          #'tx bytes',
+          #'rx bytes',
+          #'rx drop %',
+          #'tx pdus',
+          #'rx pdus',
+          #'dropped'
         )
+        print("starting to monitor:")
         while not quitting_time:
             time.sleep(1)
             eidlist: list = list(self.endp_names.keys())
-            pprint.pprint(["eidlist", eidlist])
+            #pprint.pprint(["eidlist", eidlist])
             items = self.query.get_endp(eid_list=eidlist,
-                                        requested_col_names=default_col_names,
-                                        debug=True)
-            pprint.pprint(["items", items])
-            for cx in items:
-                pprint.pprint(cx)
+                                        requested_col_names=default_col_names)
+            #pprint.pprint(["items", items])
+            for endp in items:
+                pprint.pprint(["endp_k", list(endp.keys())[0]]  )
+                row : list = []
+                row.append(list(endp.keys())[0])
+                endp_vals : dict = list(endp.values())[0]
+                for col in default_col_names:
+                    row.append(endp_vals[col])
+                pprint.pprint(["row:", row])
 
     def save(self):
         pass
