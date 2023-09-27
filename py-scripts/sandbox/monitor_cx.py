@@ -52,11 +52,11 @@ class QuitWhen(Enum):
     TIME_ELAPSED = "time_elapsed"
 
     @staticmethod
-    def parse(word: str = None) -> str:
+    def parse(criteria: str = None) -> str:
         # print(f"word <{word}>")
-        if not word:
-            raise ValueError(f"empty <{word}> will not parse")
-        lc_word = word.lower()
+        if not criteria:
+            raise ValueError(f"empty <{criteria}> will not parse")
+        lc_word = str(criteria).lower()
 
         if lc_word.endswith("never"):
             return QuitWhen.NEVER
@@ -65,20 +65,21 @@ class QuitWhen(Enum):
         if lc_word.endswith("time_elapsed"):
             return QuitWhen.TIME_ELAPSED
         else:
-            raise ValueError(f"Unknown value: {word}")
+            raise ValueError(f"Unknown value: {criteria}")
 
 
 class CxMonitor:
     def __init__(self,
-                 session: LFSession = None,
-                 cxnames: list = None,
-                 filename: str = None,
-                 quit_when: str = None):
-        self.command: LFJsonCommand
-        self.command = session.get_command()
+                session: LFSession = None,
+                cxnames: list = None,
+                filename: str = None,
+                quit_when: str = None):
+        self.command: LFJsonCommand = session.get_command()
         self.command.debug_on = True
-        self.query: LFJsonQuery
-        self.query = session.get_query()
+        self.query: LFJsonQuery = session.get_query()
+        self.query.debug_on = True
+        self.cxnames: list = []
+        self.endp_names: dict = {}
 
         if not filename:
             raise ValueError("Please specify a filename")
@@ -87,14 +88,29 @@ class CxMonitor:
         self.csvfile = filename
 
         if isinstance(cxnames, str):
-            if cxnames == "ALL" or "all":
-                self.cxnames = ("all")
+            if cxnames.lower() == "all":
+                print(f"ALL:{cxnames}")
+                self.cxnames = ["all"]
             elif cxnames.find(",") > 0:
+                print("COMMA")
                 self.cxnames = ",".split(cxnames)
             else:
-                self.cxnames = (cxnames)
-        if isinstance(cxnames, list):
-            self.cxnames = cxnames
+                self.cxnames = cxnames
+        elif isinstance(cxnames, list):
+            print("LIST ")
+            self.cxnames.extend(cxnames)
+
+        # turn cxnames into endpoint unique names:
+        print(f"cxnames len: {len(self.cxnames)}, z:{self.cxnames[0]}")
+        if len(self.cxnames) == 1 and self.cxnames[0] == "all":
+            items = self.query.get_cx(eid_list=['all'], requested_col_names=["name"])
+            pprint.pprint(["items", items])
+            self.endp_names : dict = {}
+        else:
+            pprint.pprint(["cxnames", self.cxnames])
+            for name in self.cxnames:
+                self.endp_names[f"{name}-A"] = 1
+                self.endp_names[f"{name}-B"] = 1
 
         self.quit_when: QuitWhen = quit_when
         if not quit_when:
@@ -103,21 +119,28 @@ class CxMonitor:
     def monitor(self):
         quitting_time: bool = False
         default_col_names = (
-            "name",
-            "state",
-            "bps rx b",
-            "pkt rx a",
-            "pkt rx b",
-            "rx drop % a",
-            "rx drop % b",
-            "drop pkts a",
-            "drop pkts b",
+          'name',
+          'type',
+          'run',
+          'tos',
+          'tx rate',
+          'rx rate',
+          'pdu/s tx',
+          'pdu/s rx',
+          'tx bytes',
+          'rx bytes',
+          'rx drop %',
+          'tx pdus',
+          'rx pdus',
+          'dropped'
         )
         while not quitting_time:
             time.sleep(1)
-            items = self.query.get_cx(eid_list=self.cxnames,
-                                      requested_col_names=default_col_names,
-                                      debug=True)
+            eidlist: list = list(self.endp_names.keys())
+            pprint.pprint(["eidlist", eidlist])
+            items = self.query.get_endp(eid_list=eidlist,
+                                        requested_col_names=default_col_names,
+                                        debug=True)
             pprint.pprint(["items", items])
             for cx in items:
                 pprint.pprint(cx)
@@ -130,14 +153,21 @@ def main():
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
-        description='monitors connections and prints data to a csv file')
-    parser.add_argument("--host", "--mgr", help='specify the GUI to connect to, assumes port 8080')
-    parser.add_argument("--cx_names", help='comma separated list of cx names, or ALL')
-    parser.add_argument("--csv_file", help='csv filename to save data to')
-    parser.add_argument("--quit", default=QuitWhen.ALL_CX_STOPPED,
-                        help='when to exit the script: never, a number of minutes, or when all connections stop')
-    parser.add_argument("--debug", action="store_true", default=False,
-                        help='turn on debugging')
+        description="monitors connections and prints data to a csv file",
+    )
+    parser.add_argument(
+        "--host", "--mgr", help="specify the GUI to connect to, assumes port 8080"
+    )
+    parser.add_argument("--cx_names", help="comma separated list of cx names, or ALL")
+    parser.add_argument("--csv_file", help="csv filename to save data to")
+    parser.add_argument(
+        "--quit",
+        default=QuitWhen.ALL_CX_STOPPED,
+        help="when to exit the script: never, a number of minutes, or when all connections stop",
+    )
+    parser.add_argument(
+        "--debug", action="store_true", default=False, help="turn on debugging"
+    )
     parser.add_argument("--log_level")
 
     args = parser.parse_args()
@@ -151,18 +181,22 @@ def main():
         logger.setLevel(args.log_level)
         # lf_logger_config.set_level(level=args.log_level)
 
-    session = lanforge_api.LFSession(lfclient_url="http://%s:8080" % args.host,
-                                     debug=args.debug,
-                                     connection_timeout_sec=2.0,
-                                     stream_errors=True,
-                                     stream_warnings=True,
-                                     require_session=True,
-                                     exit_on_error=True)
-    #print(f"quit: {args.quit}")
-    cx_monitor = CxMonitor(session,
-                           cxnames=args.cx_names,
-                           filename=args.csv_file,
-                           quit_when=QuitWhen.parse(word=args.quit))
+    session = lanforge_api.LFSession(
+        lfclient_url="http://%s:8080" % args.host,
+        debug=args.debug,
+        connection_timeout_sec=2.0,
+        stream_errors=True,
+        stream_warnings=True,
+        require_session=True,
+        exit_on_error=True,
+    )
+    # print(f"quit: {args.quit}")
+    cx_monitor = CxMonitor(
+        session,
+        cxnames=args.cx_names,
+        filename=args.csv_file,
+        quit_when=QuitWhen.parse(criteria=args.quit),
+    )
     cx_monitor.monitor()
     cx_monitor.save()
 
