@@ -216,9 +216,9 @@ class GenTest():
 
     def start(self):
         #admin up all created stations & existing stations
+        interest_flags_list = ['ifdown']
+        set_port_interest_rslt=self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names= interest_flags_list)
         if self.sta_list:
-            interest_flags_list = ['current_flags', 'dhcp', 'dhcp_rls', 'ifdown']
-            set_port_interest_rslt=self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names= interest_flags_list)
             print("SET PORT INTEREST FLAGS ")
             print(set_port_interest_rslt)
             for sta_alias in self.sta_list:
@@ -228,30 +228,43 @@ class GenTest():
                                            port = port_name,
                                            netmask= "255.255.255.0", #sometimes the cli complains about the netmask being NA, so set it to a random netmask (netmask is overriden anyways with dhcp)
                                            current_flags= 0,
-                                           interest=8388610,
+                                           interest=set_port_interest_rslt,
                                            report_timer= self.report_timer)
         
         if self.use_existing_eid:
             for eid in self.use_existing_eid:
-                #do this for all stations EXCEPT eth port iperf server?
                 port_shelf, port_resource, port_name, *nil = self.name_to_eid(eid)
                 self.command.post_set_port(shelf = port_shelf ,
-                                           resource = port_resource,
-                                           port = port_name,
-                                           netmask= "255.255.255.0", #sometimes the cli complains about the netmask being NA, so set it to a random netmask(netmask is overriden anyways with dhcp)
-                                           current_flags= 0,
-                                           interest=8388610,
-                                           report_timer= self.report_timer)
+                                        resource = port_resource,
+                                        port = port_name,
+                                        netmask= "255.255.255.0", #sometimes the cli complains about the netmask being NA, so set it to a random netmask(netmask is overriden anyways with dhcp)
+                                        current_flags= 0,
+                                        interest=set_port_interest_rslt,
+                                        report_timer= self.report_timer)
 
-        if self.wait_for_action("port", self.sta_list, "up", 3000):
-            print("All stations went admin up.")
-        else:
-            print("All stations did NOT go admin up.")
+        #Check if created stations admin-up and have ips
+        if (self.sta_list):
+            if self.wait_for_action("port", self.sta_list, "up", 3000):
+                print("All created stations went admin up.")
+            else:
+                print("All creation stations  did not admin up.")
 
-        if self.wait_for_action("port", self.sta_list, "ip", 3000):
-            print("All stations got IPs")
-        else:
-            self.print("Stations failed to get IPs")
+            if self.wait_for_action("port", self.sta_list, "ip", 3000):
+                print("All creation stations got IPs")
+            else:
+                self.print("Stations failed to get IPs")
+
+        #Check if existing ports admin-up and got ips
+        if (self.use_existing_eid):
+            if self.wait_for_action("port", self.use_existing_eid, "up", 3000):
+                print("All exiting ports went admin up.")
+            else:
+                print("All existing ports did not admin up.")
+
+            if self.wait_for_action("port", self.use_existing_eid, "ip", 3000):
+                print("All existing ports got IPs")
+            else:
+                self.print("All existing ports failed to get IPs")
 
         #at this point, all endpoints have been created, start all endpoints
         if self.created_cx:
@@ -283,17 +296,17 @@ class GenTest():
                                            report_timer= self.report_timer)
         #admin stations down
         if self.use_existing_eid:
-            for eid in self.sta_list:
-                self.command.post_set_port(shelf = eid[0],
-                                           resource = eid[1],
-                                           port = eid[2],
+            for eid in self.use_existing_eid:
+                port_shelf, port_resource, port_name, *nil = self.name_to_eid(eid)
+                self.command.post_set_port(shelf = port_shelf,
+                                           resource = port_resource,
+                                           port = port_name,
                                            current_flags= 1, # vs 0x0 = interface up
                                            interest=8388610, # = current_flags + ifdown
                                            report_timer= self.report_timer)
 
     def build(self):
         #TODO move arg validation to validate_sort_args
-
         #create stations
         if self.sta_list:
             logger.info("Creating stations")
@@ -399,11 +412,6 @@ class GenTest():
         #show all endps
         self.command.post_nc_show_endpoints(endpoint= 'all', extra ='history')
 
-        if self.wait_for_action("endp", self.created_endp, "appear", 3000):
-            print("Generic endp creation completed.")
-        else:
-            print("Generic endps were not created.")
-
         #create cross-connects
         if self.created_endp is not None:
             for endp in self.created_endp:
@@ -432,21 +440,13 @@ class GenTest():
     def create_generic_endp(self, eid, type, unique_num):
         """
         :param eid: list format of eid. example: ['1', '1', 'sta0010']
-        :param type: takes type of generic test: 'ping', 'iperf3-client', 'iperf3-server', 'lfcurl', 'speedtest'
+        :param type: takes type of generic test: 'ping', 'iperf3-client', 'iperf3-server', 'lfcurl', 'speedtest', 'iperf'
         :param unique_num: takes in unique ending prefix. example: 3
         :return: no return
         """
-        #create initial generic endp
-        #  add_gen_endp testing 1 1 sta0000 gen_generic
-        unique_alias = type + "_" + str(unique_num)
-        self.command.post_add_gen_endp(alias = unique_alias,
-                                       shelf=eid[0],
-                                       resource=eid[1],
-                                       port=eid[2],
-                                       p_type="gen_generic")
+        unique_alias = type + "-" + str(unique_num)
 
-
-        #edit generic endp with type we actually want to run - construct  cmd 
+        #construct generic endp command
         cmd = ""
         if (self.cmd):
             cmd=self.cmd
@@ -455,8 +455,10 @@ class GenTest():
                 server_port_eid = self.name_to_eid(self.target_port_alias)
                 server_ip = self.get_ip_address(server_port_eid)
                 if (eid == server_port_eid):
+                    unique_alias = "server-" + unique_alias
                     cmd = self.do_iperf('server', unique_alias, eid, server_ip)
                 else:
+                    unique_alias = "client-" + unique_alias
                     cmd = self.do_iperf('client', unique_alias, eid, server_ip)
             else:
                 #the case that user chooses not to use and create lanforge iperf server.  
@@ -480,7 +482,7 @@ class GenTest():
         elif (self.test_type == 'iperf3-server'):
             # iperf3 --forceflush --format k --precision 4 -s --bind_dev sta0000 
             # -i 5 --pidfile /tmp/lf_helper_iperf3_testing.pid -p 101
-            cmd = self.do_iperf(self, 'server', unique_alias, eid, server_ip)
+            cmd = self.do_iperf('server', unique_alias, eid, server_ip)
 
         elif (self.test_type == 'lfcurl'):
             # ./scripts/lf_curl.sh  -p sta0000 -i 192.168.50.167 -o /dev/null -n 1 -d 8.8.8.8
@@ -491,12 +493,27 @@ class GenTest():
 
         else:
             raise ValueError("Was not able to identify type given in arguments.")
+
+        #create initial generic endp
+        #  add_gen_endp testing 1 1 sta0000 gen_generic
+        self.command.post_add_gen_endp(alias = unique_alias,
+                                       shelf=eid[0],
+                                       resource=eid[1],
+                                       port=eid[2],
+                                       p_type="gen_generic")
+
+        self.created_endp.append(unique_alias)
+        
+        #did generic endp appear in port manager?
+        if self.wait_for_action("endp", self.created_endp, "appear", 3000):
+            print("Generic endp creation completed.")
+        else:
+            print("Generic endps were not created.")
+
         print("This is the generic cmd we are sending to server...:   " + cmd)
         self.command.post_set_gen_cmd(name = unique_alias,
                                       command= cmd)
 
-
-        self.created_endp.append(unique_alias)
         
     def do_iperf (self, type, alias, eid, server_ip_addr):
         """
@@ -508,18 +525,18 @@ class GenTest():
         cmd = "iperf3 --forceflush --format k --precision 4"
         #TODO check if dest, client_port and server_port are not empty
         if (type == 'client'):
-            cmd = cmd + str("-c %s" % server_ip_addr) + " -t 60 --tos 0 -b 1K" + str("--bind_dev %s" % eid[2])
-            cmd = cmd + " -i 5 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
+            cmd = cmd + str(" -c %s" % server_ip_addr) + " -t 60 --tos 0 -b 1K " + str("--bind_dev %s" % eid[2])
+            cmd = cmd + " -i 3 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
             if (self.client_port):
                 #add port that should match server_port
-                cmd = cmd + " -p %d" % self.client_port
+                cmd = cmd + " -p %s" % self.client_port
         #server
         else:
-            cmd = cmd + str("--bind_dev %s" % eid[2])
-            cmd = cmd + " -i 5 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
+            #iperf3 --forceflush --format k --precision 4 -s --bind_dev eth2 -i 5 --pidfile /tmp/lf_helper_iperf3_server_iperf_1.pid eth2
+            cmd = cmd + " -s" + str(" --bind_dev %s" % eid[2]) + " -i 3 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
             if (self.server_port):
                 #add port that should match client port
-                cmd = cmd + " -p %d" % self.server_port
+                cmd = cmd + " -p %s" % self.server_port
         return cmd
 
     def cleanup(self):
@@ -638,7 +655,8 @@ class GenTest():
                             if (lf_type == "endp"):
                                 if json_response is not None:
                                     passed.add(endp_name)
-                            #cx check
+
+                            #check if cross-connect appears
                             else:
                                 if json_response is not None and (json_response['endpoint']['status'] != "NO-CX"):
                                     passed.add(endp_name)
