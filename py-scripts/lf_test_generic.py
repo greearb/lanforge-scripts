@@ -468,7 +468,7 @@ class GenTest():
                     unique_alias = "client-" + unique_alias
                     cmd = self.do_iperf('client', unique_alias, eid, server_ip)
             else:
-                #the case that user chose to not to use and create lanforge iperf server.  
+                #the case that user chose to not to use and create lanforge iperf server.
                 cmd = self.do_iperf('client', unique_alias, eid, self.target)
         elif (type == 'ping'):
             # lfping  -s 128 -i 0.1 -c 10000 -I sta0000 www.google.com
