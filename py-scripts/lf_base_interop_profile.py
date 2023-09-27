@@ -720,7 +720,7 @@ class RealDevice(Realm):
         selected_t_devices = {}
         for selected_device in self.selected_device_eids:
             for device, device_details in self.devices_data.items():
-                if(selected_device in device):
+                if(selected_device + '.' in device):
                     selected_t_devices[device] = {
                         'Eid': selected_device,
                         'hw version': self.devices_data[device]['hw version'],
