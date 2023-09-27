@@ -45,6 +45,7 @@ import argparse
 import time
 import datetime
 import logging
+import re
 
 from pandas import json_normalize
 from lf_json_util import standardize_json_results
@@ -74,10 +75,9 @@ if sys.version_info[0] != 3:
 class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
                 name_prefix, num_stations, client_port = None,server_port=None,
-                 host="localhost", port=8080, csv_outfile=None, use_existing_eid=None,
-                 test_duration="5m",test_type="ping", target=None, target_port_alias=None, cmd=None, interval=0.1,
-                 radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
-                 file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
+                 host="localhost", port=8080, csv_outfile=None, use_existing_eid=None, monitor_interval = "2s",
+                 test_duration="20s",test_type="ping", target=None, target_port_alias=None, cmd=None, interval=0.1,
+                 radio=None, file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
                  _debug_on=False, _exit_on_error=False, die_on_error = False,_exit_on_fail=False):
         self.host=host
         self.port=port
@@ -87,15 +87,13 @@ class GenTest():
         self.radio = radio
         self.num_stations = num_stations
         self.security = security
-        self.speedtest_min_up = speedtest_min_up
-        self.speedtest_min_dl = speedtest_min_dl
-        self.speedtest_max_ping = speedtest_max_ping
         self.file_output_lfcurl = file_output_lfcurl
         self.loop_count = loop_count
         self.test_type = test_type
         self.target = target
         self.target_port_alias = target_port_alias
         self.cmd = cmd
+        self.monitor_interval = monitor_interval
         self.interval = interval
         self.client_port = client_port
         self.server_port = server_port
@@ -214,13 +212,18 @@ class GenTest():
             csv_outfile = report.file_add_path(csv_outfile)
         print("csv output file : {}".format(csv_outfile))
 
+    def monitor_test(self):
+        print("starting monitoring")
+        end_time = datetime.datetime.now() + self.duration_time_to_seconds()
+        while (datetime.datetime.now() < end_time):
+            time.sleep(self.monitor_interval)
+
+
     def start(self):
         #admin up all created stations & existing stations
         interest_flags_list = ['ifdown']
         set_port_interest_rslt=self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names= interest_flags_list)
         if self.sta_list:
-            print("SET PORT INTEREST FLAGS ")
-            print(set_port_interest_rslt)
             for sta_alias in self.sta_list:
                 port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
                 self.command.post_set_port(shelf = port_shelf,
@@ -490,7 +493,12 @@ class GenTest():
             # cmd = cmd + "-i %s" % str(self.target) TODO: get ip address of -i (sta0000) if i is a station, but not if eth port.
             #TODO add -o
             cmd = cmd + "-o /dev/null -n 1 -d %s" % str(self.target)
-
+        elif (self.test_type == 'speedtest'):
+            # vrf_exec.bash eth3 speedtest-cli --csv --share --single --debug
+            # vrf_exec.bash eth3 speedtest-cli --csv --no-upload
+            # vrf_exec.bash eth3 speedtest-cli --csv
+            # Ookla (with license) : # speedtest --interface=eth3 --format=csv
+            cmd = cmd + "vrf_exec.bash %s speedtest-cli --csv" % eid[2]
         else:
             raise ValueError("Was not able to identify type given in arguments.")
 
@@ -560,6 +568,27 @@ class GenTest():
             print("Ports successfully cleaned up.")
         else:
             print("Ports were not successfully cleaned up.")
+
+    def duration_time_to_seconds(self, time_string):
+        if isinstance(time_string, str):
+            pattern = re.compile("^(\d+)([dhms]$)")
+            td = pattern.match(time_string)
+            if td:
+                dur_time = int(td.group(1))
+                dur_measure = str(td.group(2))
+                if dur_measure == "d":
+                    duration_sec = dur_time * 24 * 60 * 60
+                elif dur_measure == "h":
+                    duration_sec = dur_time * 60 * 60
+                elif dur_measure == "m":
+                    duration_sec = dur_time * 60
+                else:
+                    duration_sec = dur_time * 1
+            else:
+                raise ValueError("Unknown value for time_string: %s" % time_string)
+        else:
+            raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
+        return duration_sec
     
     def port_name_series(self, prefix="sta", start_id=0, end_id=1, padding_number=10000, radio=None):
         """
@@ -669,73 +698,9 @@ class GenTest():
                     return True
         return False
 
-    def validate_sort_args(self, args):
+    def check_args(self, args):
         print(args)
         #TODO validate all args, depending on which test is used.
-        # if (args.target):
-        #     # get ip upstream port
-        #     rv = self.name_to_eid(args.upstream_port)
-        #     shelf = rv[0]
-        #     resource = rv[1]
-        #     port_name = rv[2]
-        #     request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
-        #     lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
-        #     logger.info("port request command: {request_command}".format(request_command=request_command))
-
-        #     request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
-        #     logger.info("port request status_code {status}".format(status=request.status_code))
-
-        #     lanforge_json = request.json()
-        #     lanforge_json_formatted = json.dumps(lanforge_json, indent=4)        
-        #     try: 
-        #         key = 'interface'
-        #         df = json_normalize(lanforge_json[key])
-        #         args.dest = df['ip'].iloc[0]
-        #     except Exception as x:
-        #         traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-        #         logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
-
-            # if file path with output file extension is not given...
-            # check if home/lanforge/report-data exists. if not, save
-            # in new folder based in current file's directory
-
-        systeminfopath = None
-        if args.report_file is None:
-            new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-') + '-test_generic'  # create path name
-            if os.path.exists('/home/lanforge/report-data/'):
-                path = os.path.join('/home/lanforge/report-data/', new_file_path)
-                os.mkdir(path)
-            else:
-                curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                path = os.path.join(curr_dir_path, new_file_path)
-                os.mkdir(path)
-            systeminfopath = str(path) + '/systeminfo.txt'
-
-            if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'xlsx']:
-                report_f = str(path) + '/data.' + args.output_format
-                output = args.output_format
-            else:
-                logger.info('Not supporting report format: %s. Defaulting to csv data file output type, naming it data.csv.' % args.output_format)
-                report_f = str(path) + '/data.csv'
-                output = 'csv'
-        else:
-            systeminfopath = str(args.report_file).split('/')[-1]
-            report_f = args.report_file
-            if args.output_format is None:
-                output = str(args.report_file).split('.')[-1]
-            else:
-                output = args.output_format
-        logger.warning("Saving final report data in: " + report_f)
-
-        # Retrieve last data file
-        compared_rept = None
-        if args.compared_report:
-            compared_report_format = args.compared_report.split('.')[-1]
-            # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','h5']:
-            if compared_report_format != 'csv':
-                raise ValueError("Cannot process this file type. Please select a different file and re-run script.")
-            else:
-                compared_rept = args.compared_report
 
     def name_to_eid(self, eid_input, non_port=False):
         rv = [1, 1, "", ""]
@@ -823,14 +788,10 @@ def main():
                 --report_file /home/lanforge/reports/LFPING.csv --test_duration 20s --upstream_port 1.1.eth2
             LFCURL:
                 ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
-                --num_stations 2 --ssid Logan-Test-Net --passwd Log
-                sta_names_ = LFUtils.portNameSeries(prefix_="sta",
-                                                start_id_=int(self.number_template),
-                                                end_id_=num_stations + int(self.number_template) - 1,
-                                                padding_number_=10000,
-                                                radio=radio)e speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
-            IPERF3 (under construction):
+            IPERF:
                 ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
+            SPEEDTEST:
+
         ''',
     )
     required = parser.add_argument_group('Arguments that must be defined by user:')
@@ -840,20 +801,16 @@ def main():
     required.add_argument("--lf_passwd", type=str, help="passwd: lanforge", default=None)
     required.add_argument('--type', type=str, help='type of command to run: ping, iperf3-client, iperf3-server, iperf, lfcurl', required=True)
 
-    optional.add_argument('--mgr', help='specifies command to be run by generic type endp', default=None)
-    optional.add_argument('--mgr_port', help='specifies command to be run by generic type endp', default=8080)
+    optional.add_argument('--mgr', help='ip address of lanforge script should be run on. example: 192.168.102.211', default=None)
+    optional.add_argument('--mgr_port', help='port which lanforge is running on, on lanforge machine script should be run on. example: 8080', default=8080)
     optional.add_argument('--cmd', help='specifies command to be run by generic type endp', default=None)
 
     #generic endpoint configurations
     optional.add_argument('--interval', help='interval to use when running lfping. in seconds', default=1)
-    optional.add_argument('--speedtest_min_up', help='sets the minimum upload threshold for the speedtest type', default=None)
-    optional.add_argument('--speedtest_min_dl', help='sets the minimum download threshold for the speedtest type', default=None)
-    optional.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type', default=None)
     optional.add_argument('--file_output_lfcurl', help='location to output results of lf_curl, absolute path preferred', default=None)
     optional.add_argument('--loop_count', help='determines the number of loops to use in lf_curl and lfping', default=None)
     optional.add_argument('--target', help='Target for lfping (ex: www.google.com). ALSO used for iperf3-client target IF iperf3-server is NOT on lanforge. Example: 192.168.1.151', default=None)
     optional.add_argument('--target_port_alias', help='Target for iperf-server port alias eid. Use this if iperf_server is on lanforge. Example: 1.1.eth2', default=None)
-
     optional.add_argument('--client_port', help="the port number of the iperf client endpoint. example: -p 5011",default=None)
     optional.add_argument('--server_port', help="the port number of the iperf server endpoint. example: -p 5011",default=None)
 
@@ -881,12 +838,12 @@ def main():
     optional.add_argument('--output_format', help= 'choose either csv or xlsx',default='csv')
     optional.add_argument('--csv_outfile', help="output file for csv data", default="test_generic_kpi")
     optional.add_argument('--report_file', help='where you want to store results', default=None)
-    optional.add_argument( '--a_min', help= '--a_min bps rate minimum for side_a', default=256000)
-    optional.add_argument('--b_min', help= '--b_min bps rate minimum for side_b', default= 256000)
     optional.add_argument( '--gen_cols', help='Columns wished to be monitored from layer 3 endpoint tab',default= ['name', 'tx bytes', 'rx bytes'])
     optional.add_argument( '--port_mgr_cols', help='Columns wished to be monitored from port manager tab',default= ['ap', 'ip', 'parent dev'])
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',default= None)
-    optional.add_argument('--monitor_interval',help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',default='2s')
+
+    # args for test duration & monitor interval
+    optional.add_argument('--monitor_interval',help='frequency of monitors measurements;example: 250ms, 35s, 2h',default='2s')
     optional.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
 
     #debug and logger
@@ -922,9 +879,7 @@ def main():
                            passwd=args.passwd,
                            security=args.security,
                            test_duration=args.test_duration,
-                           speedtest_min_up=args.speedtest_min_up,
-                           speedtest_min_dl=args.speedtest_min_dl,
-                           speedtest_max_ping=args.speedtest_max_ping,
+                           monitor_interval=args.monitor_interval,
                            file_output_lfcurl=args.file_output_lfcurl,
                            csv_outfile=args.csv_outfile,
                            loop_count=args.loop_count,
@@ -937,86 +892,20 @@ def main():
     if not generic_test.check_tab_exists():
         raise ValueError("Error received from GUI when trying to request generic tab information, please ensure generic tab is enabled")
     
-    generic_test.validate_sort_args(args)
-    #generic_test.cleanup(sta_list)
+    generic_test.check_args(args)
+    #generic_test.cleanup()
     generic_test.build()
-    #if not generic_test.passes():
-        #logger.error(generic_test.get_fail_message())
-        #generic_test.exit_fail()
-    generic_test.start()
-    #if not generic_test.passes():
-        #logger.error(generic_test.get_fail_message())
-        #generic_test.exit_fail()
 
-    # if type(args.gen_cols) is not list:
-    #     generic_cols = list(args.gen_cols.split(","))
-    #     # send col names here to file to reformat
-    # else:
-    #     generic_cols = args.gen_cols
-    #     # send col names here to file to reformat
-    # if type(args.port_mgr_cols) is not list:
-    #     port_mgr_cols = list(args.port_mgr_cols.split(","))
-    #     # send col names here to file to reformat
-    # else:
-    #     port_mgr_cols = args.port_mgr_cols
-        # send col names here to file to reformat
-    # logger.info("Generic Endp column names are...")
-    # logger.info(generic_cols)
-    # logger.info("Port Manager column names are...")
-    # logger.info(port_mgr_cols)
-    # try:
-    #     monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
-    # except ValueError as error:
-    #     raise ValueError("The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. %s" % error)
+    generic_test.start()
 
     logger.info("Starting connections with 5 second settle time.")
     generic_test.start()
     time.sleep(5) # give traffic a chance to get started.
 
-    # must_increase_cols = None
-    # if args.type == "ping":
-    #     must_increase_cols = ["rx bytes"]
-    # mon_endp = generic_test.generic_endps_profile.created_endp
-    # generic_test.generate_report(test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
-    #                            dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
-    #                            dut_serial_num=args.dut_serial_num, test_id=args.test_id, csv_outfile=args.csv_outfile,
-    #                            monitor_endps=mon_endp, generic_cols=generic_cols)
-    # generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
-    #                                            must_increase_cols=must_increase_cols,
-    #                                            sta_list=sta_list,
-    #                                            resource_id=resource_id,
-    #                                            # port_mgr_cols=port_mgr_cols,
-    #                                            report_file=report_f,
-    #                                            systeminfopath=systeminfopath,
-    #                                            duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
-    #                                            monitor_interval=monitor_interval,
-    #                                            monitor_endps=mon_endp,
-    #                                            output_format=output,
-    #                                            compared_report=compared_rept,
-    #                                            script_name='test_generic',
-    #                                            arguments=args,
-    #                                            debug=args.debug)
-
-    #logger.info("Done with connection monitoring")
+    generic_test.monitor_test()
+    print("Done with connection monitoring")
     generic_test.stop()
-
     generic_test.cleanup()
-
-
-    # if len(generic_test.get_passed_result_list()) > 0:
-    #     logger.info("Test-Generic Passing results:\n%s" % "\n".join(generic_test.get_passed_result_list()))
-    # if len(generic_test.generic_endps_profile.get_passed_result_list()) > 0:
-    #     logger.info("Test-Generic Monitor Passing results:\n%s" % "\n".join(generic_test.generic_endps_profile.get_passed_result_list()))
-    # if len(generic_test.get_failed_result_list()) > 0:
-    #     logger.warning("Test-Generic Failing results:\n%s" % "\n".join(generic_test.get_failed_result_list()))
-    # if len(generic_test.generic_endps_profile.get_failed_result_list()) > 0:
-    #     logger.warning("Test-Generic Monitor Failing results:\n%s" % "\n".join(generic_test.generic_endps_profile.get_failed_result_list()))
-
-    # generic_test.generic_endps_profile.print_pass_fail()
-    # if generic_test.passes() and generic_test.generic_endps_profile.passes():
-    #     generic_test.exit_success()
-    # else:
-    #     generic_test.exit_fail()
 
 if __name__ == "__main__":
     main()
