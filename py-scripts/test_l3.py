@@ -817,6 +817,7 @@ class L3VariableTime(Realm):
         # resource data BK -A
         self.bk_resource_host_A = []
         self.bk_resource_hw_ver_A = []
+        self.bk_resource_eid_A = []
 
         self.bk_request_dl_A = []
         self.bk_request_ul_A = []
@@ -845,6 +846,7 @@ class L3VariableTime(Realm):
         # resource data BK -B
         self.bk_resource_host_B = []
         self.bk_resource_hw_ver_B = []
+        self.bk_resource_eid_B = []
 
         self.bk_request_dl_B = []
         self.bk_request_ul_B = []
@@ -875,6 +877,7 @@ class L3VariableTime(Realm):
         # resource data BE -A
         self.be_resource_host_A = []
         self.be_resource_hw_ver_A = []
+        self.be_resource_eid_A = []
 
         self.be_request_dl_A = []
         self.be_request_ul_A = []
@@ -905,6 +908,7 @@ class L3VariableTime(Realm):
         # resource data BE -B
         self.be_resource_host_B = []
         self.be_resource_hw_ver_B = []
+        self.be_resource_eid_B = []
 
         self.be_request_dl_B = []
         self.be_request_ul_B = []
@@ -933,6 +937,7 @@ class L3VariableTime(Realm):
         # resource data VI -A
         self.vi_resource_host_A = []
         self.vi_resource_hw_ver_A = []
+        self.vi_resource_eid_A = []
 
 
         self.vi_request_dl_A = []
@@ -963,6 +968,7 @@ class L3VariableTime(Realm):
         # resource data VI -B
         self.vi_resource_host_B = []
         self.vi_resource_hw_ver_B = []
+        self.vi_resource_eid_B = []
 
         self.vi_request_dl_B = []
         self.vi_request_ul_B = []
@@ -999,6 +1005,7 @@ class L3VariableTime(Realm):
         # resource data VO -A
         self.vo_resource_host_A = []
         self.vo_resource_hw_ver_A = []
+        self.vo_resource_eid_A = []
 
 
         self.vo_request_dl_A = []
@@ -1028,6 +1035,7 @@ class L3VariableTime(Realm):
         # resource data VO -B
         self.vo_resource_host_B = []
         self.vo_resource_hw_ver_B = []
+        self.vo_resource_eid_B = []
 
 
         self.vo_request_dl_B = []
@@ -2472,7 +2480,7 @@ class L3VariableTime(Realm):
         logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
 
 
-        self.resource_data = self.json_get('resource/all?fields=hostname,hw+version')
+        self.resource_data = self.json_get('resource/all?fields=eid,hostname,hw+version')
         # self.resource_data = self.json_get('resource/all')
         self.resource_data.pop("handler")
         self.resource_data.pop("uri")
@@ -2542,11 +2550,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_eid_A.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.bk_resource_host_A.append('NA')
                                 self.bk_resource_hw_ver_A.append('NA')
+                                self.bk_resource_eid_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -2593,11 +2603,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.bk_resource_host_B.append('NA')
                                 self.bk_resource_hw_ver_B.append('NA')
+                                self.bk_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -2646,11 +2658,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.be_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.be_resource_eid_A.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.be_resource_host_A.append('NA')
                                 self.be_resource_hw_ver_A.append('NA')
+                                self.be_resource_eid_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -2698,11 +2712,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.be_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.be_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.be_resource_host_B.append('NA')
                                 self.be_resource_hw_ver_B.append('NA')
+                                self.be_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -2751,11 +2767,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vi_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.vi_resource_eid_A.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vi_resource_host_A.append('NA')
                                 self.vi_resource_hw_ver_A.append('NA')
+                                self.vi_resource_eid_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -2802,11 +2820,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vi_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.vi_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vi_resource_host_B.append('NA')
                                 self.vi_resource_hw_ver_B.append('NA')
+                                self.vi_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -2855,11 +2875,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vo_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.vo_resource_eid_A.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vo_resource_host_A.append('NA')
                                 self.vo_resource_hw_ver_A.append('NA')
+                                self.vo_resource_eid_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -2905,11 +2927,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vo_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.vo_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vo_resource_host_B.append('NA')
                                 self.vo_resource_hw_ver_B.append('NA')
+                                self.vo_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -2960,10 +2984,12 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_eid_A.append(resource_data[resource_data_key]['eid'])
 
                             if resource_found is False:
                                 self.bk_resource_host_A.append('NA')
                                 self.bk_resource_hw_ver_A.append('NA')
+                                self.bk_resource_eid_A.append('NA')
                                 break
 
                             # look up port information
@@ -3012,11 +3038,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.bk_resource_host_B.append('NA')
                                 self.bk_resource_hw_ver_B.append('NA')
+                                self.bk_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3066,11 +3094,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.be_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.be_resource_eid_A.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.be_resource_host_A.append('NA')
                                 self.be_resource_hw_ver_A.append('NA')
+                                self.be_resource_eid_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3117,11 +3147,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.be_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.be_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.be_resource_host_B.append('NA')
                                 self.be_resource_hw_ver_B.append('NA')
+                                self.be_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3169,11 +3201,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vi_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.vi_resource_eid_A.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vi_resource_host_A.append('NA')
                                 self.vi_resource_hw_ver_A.append('NA')
+                                self.vi_resource_eid_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3220,11 +3254,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vi_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.vi_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vi_resource_host_B.append('NA')
                                 self.vi_resource_hw_ver_B.append('NA')
+                                self.vi_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3272,11 +3308,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vo_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.vo_resource_eid_A.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vo_resource_host_A.append('NA')
                                 self.vo_resource_hw_ver_A.append('NA')
+                                self.vo_resource_eid_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3323,11 +3361,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vo_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.vo_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vo_resource_host_B.append('NA')
                                 self.vo_resource_hw_ver_B.append('NA')
+                                self.vo_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3378,11 +3418,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_eid_A.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.bk_resource_host_A.append('NA')
                                 self.bk_resource_hw_ver_A.append('NA')
+                                self.bk_resource_eid_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3429,11 +3471,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.bk_resource_host_B.append('NA')
                                 self.bk_resource_hw_ver_B.append('NA')
+                                self.bk_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3482,11 +3526,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.be_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.be_resource_eid_A.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.be_resource_host_A.append('NA')
                                 self.be_resource_hw_ver_A.append('NA')
+                                self.be_resource_eid_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3534,11 +3580,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.be_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.be_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.be_resource_host_B.append('NA')
                                 self.be_resource_hw_ver_B.append('NA')
+                                self.be_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3586,11 +3634,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vi_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.vi_resource_eid_A.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vi_resource_host_A.append('NA')
                                 self.vi_resource_hw_ver_A.append('NA')
+                                self.vi_resource_eid_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3637,11 +3687,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vi_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.vi_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vi_resource_host_B.append('NA')
                                 self.vi_resource_hw_ver_B.append('NA')
+                                self.vi_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3690,11 +3742,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vo_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.vo_resource_eid_A.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vo_resource_host_A.append('NA')
                                 self.vo_resource_hw_ver_A.append('NA')
+                                self.vo_resource_eid_A.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -3740,11 +3794,13 @@ class L3VariableTime(Realm):
                                     resource_found = True
                                     self.vo_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.vo_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     break
 
                             if resource_found is False:
                                 self.vo_resource_host_B.append('NA')
                                 self.vo_resource_hw_ver_B.append('NA')
+                                self.vo_resource_eid_B.append('NA')
 
                             # look up port information
                             eid_info =  endp_data[endp_data_key]['name'].split('-')
@@ -4121,8 +4177,9 @@ class L3VariableTime(Realm):
                 "clients_A": self.bk_clients_A,
                 "ul_A": self.bk_tos_ul_A,
                 "dl_A": self.bk_tos_dl_A,
-                "resource_A": self.bk_resource_host_A,
+                "resource_host_A": self.bk_resource_host_A,
                 "resource_hw_ver_A": self.bk_resource_hw_ver_A,
+                "resource_eid_A": self.bk_resource_eid_A,
                 "port_A": self.bk_port_eid_A,
                 "mac_A": self.bk_port_mac_A,
                 "channel_A": self.bk_port_channel_A,
@@ -4136,8 +4193,9 @@ class L3VariableTime(Realm):
                 "clients_B": self.bk_clients_B,
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
-                "resource_B": self.bk_resource_host_B,
+                "resource_host_B": self.bk_resource_host_B,
                 "resource_hw_ver_B": self.bk_resource_hw_ver_B,
+                "resource_eid_B": self.bk_resource_eid_B,
                 "port_B": self.bk_port_eid_B,
                 "mac_B": self.bk_port_mac_B,
                 "channel_B": self.bk_port_channel_B,
@@ -4156,8 +4214,9 @@ class L3VariableTime(Realm):
                 "clients_A": self.be_clients_A,
                 "ul_A": self.be_tos_ul_A,
                 "dl_A": self.be_tos_dl_A,
-                "resource_A": self.be_resource_host_A,
+                "resource_host_A": self.be_resource_host_A,
                 "resource_hw_ver_A": self.be_resource_hw_ver_A,
+                "resource_eid_A": self.be_resource_eid_A,
                 "port_A": self.be_port_eid_A,
                 "mac_A": self.be_port_mac_A,
                 "channel_A": self.be_port_channel_A,
@@ -4171,8 +4230,9 @@ class L3VariableTime(Realm):
                 "clients_B": self.be_clients_B,
                 "ul_B": self.be_tos_ul_B,
                 "dl_B": self.be_tos_dl_B,
-                "resource_B": self.be_resource_host_B,
+                "resource_host_B": self.be_resource_host_B,
                 "resource_hw_ver_B": self.be_resource_hw_ver_B,
+                "resource_eid_B": self.be_resource_hw_ver_B,
                 "port_B": self.be_port_eid_B,
                 "mac_B": self.be_port_mac_B,
                 "channel_B": self.be_port_channel_B,
@@ -4191,8 +4251,9 @@ class L3VariableTime(Realm):
                 "clients_A": self.vi_clients_A,
                 "ul_A": self.vi_tos_ul_A,
                 "dl_A": self.vi_tos_dl_A,
-                "resource_A": self.vi_resource_host_A,
+                "resource_host_A": self.vi_resource_host_A,
                 "resource_hw_ver_A": self.vi_resource_hw_ver_A,
+                "resource_eid_A": self.vi_resource_eid_A,
                 "port_A": self.vi_port_eid_A,
                 "mac_A": self.vi_port_mac_A,
                 "channel_A": self.vi_port_channel_A,
@@ -4206,8 +4267,9 @@ class L3VariableTime(Realm):
                 "clients_B": self.vi_clients_B,
                 "ul_B": self.vi_tos_ul_B,
                 "dl_B": self.vi_tos_dl_B,
-                "resource_B": self.vi_resource_host_B,
+                "resource_host_B": self.vi_resource_host_B,
                 "resource_hw_ver_B": self.vi_resource_hw_ver_B,
+                "resource_eid_B": self.vi_resource_eid_B,
                 "port_B": self.vi_port_eid_B,
                 "mac_B": self.vi_port_mac_B,
                 "channel_B": self.vi_port_channel_B,
@@ -4226,8 +4288,9 @@ class L3VariableTime(Realm):
                 "clients_A": self.vo_clients_A,
                 "ul_A": self.vo_tos_ul_A,
                 "dl_A": self.vo_tos_dl_A,
-                "resource_A": self.vo_resource_host_A,
+                "resource_host_A": self.vo_resource_host_A,
                 "resource_hw_ver_A": self.vo_resource_hw_ver_A,
+                "resource_eid_A": self.vo_resource_eid_A,
                 "port_A": self.vo_port_eid_A,
                 "mac_A": self.vo_port_mac_A,
                 "channel_A": self.vo_port_channel_A,
@@ -4241,8 +4304,9 @@ class L3VariableTime(Realm):
                 "clients_B": self.vo_clients_B,
                 "ul_B": self.vo_tos_ul_B,
                 "dl_B": self.vo_tos_dl_B,
-                "resource_B": self.vo_resource_host_B,
+                "resource_host_B": self.vo_resource_host_B,
                 "resource_hw_ver_B": self.vo_resource_hw_ver_B,
+                "resource_eid_B": self.vo_resource_eid_B,
                 "port_B": self.vo_port_eid_B,
                 "mac_B": self.vo_port_mac_B,
                 "channel_B": self.vo_port_channel_B,
@@ -4269,8 +4333,9 @@ class L3VariableTime(Realm):
                 "clients_A": self.bk_clients_A,
                 "ul_A": self.bk_tos_ul_A,
                 "dl_A": self.bk_tos_dl_A,
-                "resource_A": self.bk_resource_host_A,
+                "resource_host_A": self.bk_resource_host_A,
                 "resource_hw_ver_A": self.bk_resource_hw_ver_A,
+                "resource_eid_A": self.bk_resource_eid_A,
                 "port_A": self.bk_port_eid_A,
                 "mac_A": self.bk_port_mac_A,
                 "channel_A": self.bk_port_channel_A,
@@ -4284,8 +4349,9 @@ class L3VariableTime(Realm):
                 "clients_B": self.bk_clients_B,
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
-                "resource_B": self.bk_resource_host_B,
+                "resource_host_B": self.bk_resource_host_B,
                 "resource_hw_ver_B": self.bk_resource_hw_ver_B,
+                "resource_eid_B": self.bk_resource_eid_B,
                 "port_B": self.bk_port_eid_B,
                 "mac_B": self.bk_port_mac_B,
                 "channel_B": self.bk_port_channel_B,
@@ -4304,8 +4370,9 @@ class L3VariableTime(Realm):
                 "clients_A": self.be_clients_A,
                 "ul_A": self.be_tos_ul_A,
                 "dl_A": self.be_tos_dl_A,
-                "resource_A": self.be_resource_host_A,
+                "resource_host_A": self.be_resource_host_A,
                 "resource_hw_ver_A": self.be_resource_hw_ver_A,
+                "resource_eid_A": self.be_resource_eid_A,
                 "port_A": self.be_port_eid_A,
                 "mac_A": self.be_port_mac_A,
                 "channel_A": self.be_port_channel_A,
@@ -4319,8 +4386,9 @@ class L3VariableTime(Realm):
                 "clients_B": self.be_clients_B,
                 "ul_B": self.be_tos_ul_B,
                 "dl_B": self.be_tos_dl_B,
-                "resource_B": self.be_resource_host_B,
+                "resource_host_B": self.be_resource_host_B,
                 "resource_hw_ver_B": self.be_resource_hw_ver_B,
+                "resource_eid_B": self.be_resource_eid_B,
                 "port_B": self.be_port_eid_B,
                 "mac_B": self.be_port_mac_B,
                 "channel_B": self.be_port_channel_B,
@@ -4339,8 +4407,9 @@ class L3VariableTime(Realm):
                 "clients_A": self.vi_clients_A,
                 "ul_A": self.vi_tos_ul_A,
                 "dl_A": self.vi_tos_dl_A,
-                "resource_A": self.vi_resource_host_A,
+                "resource_host_A": self.vi_resource_host_A,
                 "resource_hw_ver_A": self.vi_resource_hw_ver_A,
+                "resource_eid_A": self.vi_resource_eid_A,
                 "port_A": self.vi_port_eid_A,
                 "mac_A": self.vi_port_mac_A,
                 "channel_A": self.vi_port_channel_A,
@@ -4354,8 +4423,9 @@ class L3VariableTime(Realm):
                 "clients_B": self.vi_clients_B,
                 "ul_B": self.vi_tos_ul_B,
                 "dl_B": self.vi_tos_dl_B,
-                "resource_B": self.vi_resource_host_B,
+                "resource_host_B": self.vi_resource_host_B,
                 "resource_hw_ver_B": self.vi_resource_hw_ver_B,
+                "resource_eid_B": self.vi_resource_eid_B,
                 "port_B": self.vi_port_eid_B,
                 "mac_B": self.vi_port_mac_B,
                 "channel_B": self.vi_port_channel_B,
@@ -4374,8 +4444,9 @@ class L3VariableTime(Realm):
                 "clients_A": self.vo_clients_A,
                 "ul_A": self.vo_tos_ul_A,
                 "dl_A": self.vo_tos_dl_A,
-                "resource_A": self.vo_resource_host_A,
+                "resource_host_A": self.vo_resource_host_A,
                 "resource_hw_ver_A": self.vo_resource_hw_ver_A,
+                "resource_eid_A": self.vo_resource_eid_A,
                 "port_A": self.vo_port_eid_A,
                 "mac_A": self.vo_port_mac_A,
                 "channel_A": self.vo_port_channel_A,
@@ -4389,8 +4460,9 @@ class L3VariableTime(Realm):
                 "clients_B": self.vo_clients_B,
                 "ul_B": self.vo_tos_ul_B,
                 "dl_B": self.vo_tos_dl_B,
-                "resource_B": self.vo_resource_host_B,
+                "resource_host_B": self.vo_resource_host_B,
                 "resource_hw_ver_B": self.vo_resource_hw_ver_B,
+                "resource_eid_B": self.vo_resource_eid_B,
                 "port_B": self.vo_port_eid_B,
                 "mac_B": self.vo_port_mac_B,
                 "channel_B": self.vo_port_channel_B,
@@ -4780,9 +4852,9 @@ class L3VariableTime(Realm):
 
 
                 tos_dataframe_A = {
-                    " Client Name " : self.client_dict_A[tos]['resource_A'],
+                    " Host Name " : self.client_dict_A[tos]['resource_host_A'],
+                    " Device Type / Hw Ver " : self.client_dict_A[tos]['resource_hw_ver_A'],
                     " Endp Name" : self.client_dict_A[tos]["clients_A"],
-                    " HW Version " : self.client_dict_A[tos]['resource_hw_ver_A'],
                     # TODO : port A being set to many times
                     " Port Name " : self.client_dict_A[tos]['port_A'],
                     " Mode " : self.client_dict_A[tos]['mode_A'],
@@ -4846,10 +4918,10 @@ class L3VariableTime(Realm):
                 self.report.build_graph()
 
                 tos_dataframe_B = {
-                    " Client Name " : self.client_dict_B[tos]['resource_B'],
+                    " Host Name " : self.client_dict_B[tos]['resource_host_B'],
+                    " Device Type / HW Ver " : self.client_dict_B[tos]['resource_hw_ver_B'],
                     " Endp Name" : self.client_dict_B[tos]["clients_B"],
                     # TODO get correct size
-                    " HW Version " : self.client_dict_B[tos]['resource_hw_ver_B'],
                     " Port Name " : self.client_dict_B[tos]['port_B'],
                     " Mode " : self.client_dict_B[tos]['mode_B'],
                     " Mac " : self.client_dict_B[tos]['mac_B'],
