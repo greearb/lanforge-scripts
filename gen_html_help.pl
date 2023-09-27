@@ -20,6 +20,10 @@ my $footer = "<?php require_once(\"footer.php\"); ?>
 </html>
 ";
 
+my %reports = (
+    "py-scripts/lf_interop_ping.py" => "interop_ping.pdf"
+    );
+
 
 my $i;
 
@@ -32,19 +36,40 @@ for ($i = 0; $i<@ARGV; $i++) {
     my $script = $ARGV[$i];
     my $script_printable = $script;
     $script_printable =~ s/\//_/g;
-    my $script_help_content = `./$script --help`;
+    my $exe = $script;
+    my $cd = 0;
+    if ($exe =~ /^py-scripts\/(.*)/) {
+	$exe = $1;
+	$cd = 1;
+	chdir("py-scripts");
+    }
+    my $script_help_content = `./$exe --help`;
     $script_help_content =~ s/</&lt;/g;
     $script_help_content =~ s/>/&gt;/g;
 
-    my $summary = `./$script --help_summary`;
+    my $summary = `./$exe --help_summary`;
     if ($summary =~ /unrecognized arguments/) {
 	$summary = "";
     }
     $summary =~ s/\n\n/<P>/g;
 
-    $toc .= "<dt><a href=\"#$script_printable\"</a>$script</a></dt><dd>$summary</dd>\n";
+    if ($cd) {
+	chdir("..");
+    }
+
+    my $rpt = $reports{$script};
+    #print("rpt: $rpt  script: $script\n");
+    if ($rpt eq undef) {
+	$rpt = "";
+    }
+    else {
+	$rpt = "<a href=\"examples/script_results/$rpt\">Example report: $rpt</a><br>";
+    }
+    #print("rpt2: $rpt  script: $script\n");
+
+    $toc .= "<dt><a href=\"#$script_printable\"</a>$script</a></dt><dd>$rpt " . "$summary</dd>\n";
     $script_help .= "<dt><a name=\"$script_printable\">$script</dt>\n";
-    $script_help .= "<dd><pre>$script_help_content</pre></dd>\n";
+    $script_help .= "<dd>$rpt<pre>$script_help_content</pre></dd>\n";
 }
 
 print "Script Table of Contents<br><dl>
