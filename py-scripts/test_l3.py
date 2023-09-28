@@ -2757,7 +2757,7 @@ class L3VariableTime(Realm):
                                 self.be_resource_host_B.append('NA')
                                 self.be_resource_hw_ver_B.append('NA')
                                 self.be_resource_eid_B.append('NA')
-                                self.bk_resource_alias_B.append('NA')
+                                self.be_resource_alias_B.append('NA')
 
 
                             # look up port information
@@ -3223,7 +3223,7 @@ class L3VariableTime(Realm):
                                     self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.be_resource_eid_B.append(resource_data[resource_data_key]['eid'])
                                     client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'],host=resource_data[resource_data_key]['hostname'],hw_version=resource_data[resource_data_key]['hw version'])
-                                    self.be_resource_alias_A.append(client_alias)
+                                    self.be_resource_alias_B.append(client_alias)
 
                                     break
 
@@ -4310,6 +4310,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.bk_clients_A,
                 "ul_A": self.bk_tos_ul_A,
                 "dl_A": self.bk_tos_dl_A,
+                "resource_alias_A": self.bk_resource_alias_A,
                 "resource_host_A": self.bk_resource_host_A,
                 "resource_hw_ver_A": self.bk_resource_hw_ver_A,
                 "resource_eid_A": self.bk_resource_eid_A,
@@ -4326,6 +4327,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.bk_clients_B,
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
+                "resource_alias_B": self.bk_resource_alias_B,
                 "resource_host_B": self.bk_resource_host_B,
                 "resource_hw_ver_B": self.bk_resource_hw_ver_B,
                 "resource_eid_B": self.bk_resource_eid_B,
@@ -4347,6 +4349,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.be_clients_A,
                 "ul_A": self.be_tos_ul_A,
                 "dl_A": self.be_tos_dl_A,
+                "resource_alias_A": self.be_resource_alias_A,
                 "resource_host_A": self.be_resource_host_A,
                 "resource_hw_ver_A": self.be_resource_hw_ver_A,
                 "resource_eid_A": self.be_resource_eid_A,
@@ -4363,6 +4366,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.be_clients_B,
                 "ul_B": self.be_tos_ul_B,
                 "dl_B": self.be_tos_dl_B,
+                "resource_alias_B": self.be_resource_alias_B,
                 "resource_host_B": self.be_resource_host_B,
                 "resource_hw_ver_B": self.be_resource_hw_ver_B,
                 "resource_eid_B": self.be_resource_hw_ver_B,
@@ -4384,6 +4388,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.vi_clients_A,
                 "ul_A": self.vi_tos_ul_A,
                 "dl_A": self.vi_tos_dl_A,
+                "resource_alias_A": self.vi_resource_alias_A,
                 "resource_host_A": self.vi_resource_host_A,
                 "resource_hw_ver_A": self.vi_resource_hw_ver_A,
                 "resource_eid_A": self.vi_resource_eid_A,
@@ -4400,6 +4405,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.vi_clients_B,
                 "ul_B": self.vi_tos_ul_B,
                 "dl_B": self.vi_tos_dl_B,
+                "resource_alias_B": self.vi_resource_alias_B,
                 "resource_host_B": self.vi_resource_host_B,
                 "resource_hw_ver_B": self.vi_resource_hw_ver_B,
                 "resource_eid_B": self.vi_resource_eid_B,
@@ -4421,6 +4427,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.vo_clients_A,
                 "ul_A": self.vo_tos_ul_A,
                 "dl_A": self.vo_tos_dl_A,
+                "resource_alias_A": self.vo_resource_alias_A,
                 "resource_host_A": self.vo_resource_host_A,
                 "resource_hw_ver_A": self.vo_resource_hw_ver_A,
                 "resource_eid_A": self.vo_resource_eid_A,
@@ -4437,6 +4444,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.vo_clients_B,
                 "ul_B": self.vo_tos_ul_B,
                 "dl_B": self.vo_tos_dl_B,
+                "resource_alias_B": self.vo_resource_host_B,
                 "resource_host_B": self.vo_resource_host_B,
                 "resource_hw_ver_B": self.vo_resource_hw_ver_B,
                 "resource_eid_B": self.vo_resource_eid_B,
@@ -4466,6 +4474,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.bk_clients_A,
                 "ul_A": self.bk_tos_ul_A,
                 "dl_A": self.bk_tos_dl_A,
+                "resource_alias_A": self.bk_resource_alias_A,
                 "resource_host_A": self.bk_resource_host_A,
                 "resource_hw_ver_A": self.bk_resource_hw_ver_A,
                 "resource_eid_A": self.bk_resource_eid_A,
@@ -4482,6 +4491,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.bk_clients_B,
                 "ul_B": self.bk_tos_ul_B,
                 "dl_B": self.bk_tos_dl_B,
+                "resource_alias_B": self.bk_resource_alias_B,
                 "resource_host_B": self.bk_resource_host_B,
                 "resource_hw_ver_B": self.bk_resource_hw_ver_B,
                 "resource_eid_B": self.bk_resource_eid_B,
@@ -4503,6 +4513,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.be_clients_A,
                 "ul_A": self.be_tos_ul_A,
                 "dl_A": self.be_tos_dl_A,
+                "resource_alias_A": self.be_resource_alias_A,
                 "resource_host_A": self.be_resource_host_A,
                 "resource_hw_ver_A": self.be_resource_hw_ver_A,
                 "resource_eid_A": self.be_resource_eid_A,
@@ -4519,6 +4530,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.be_clients_B,
                 "ul_B": self.be_tos_ul_B,
                 "dl_B": self.be_tos_dl_B,
+                "resource_alias_B": self.be_resource_alias_B,
                 "resource_host_B": self.be_resource_host_B,
                 "resource_hw_ver_B": self.be_resource_hw_ver_B,
                 "resource_eid_B": self.be_resource_eid_B,
@@ -4540,6 +4552,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.vi_clients_A,
                 "ul_A": self.vi_tos_ul_A,
                 "dl_A": self.vi_tos_dl_A,
+                "resource_alias_A": self.vi_resource_alias_A,
                 "resource_host_A": self.vi_resource_host_A,
                 "resource_hw_ver_A": self.vi_resource_hw_ver_A,
                 "resource_eid_A": self.vi_resource_eid_A,
@@ -4556,6 +4569,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.vi_clients_B,
                 "ul_B": self.vi_tos_ul_B,
                 "dl_B": self.vi_tos_dl_B,
+                "resource_alias_B": self.vi_resource_alias_B,
                 "resource_host_B": self.vi_resource_host_B,
                 "resource_hw_ver_B": self.vi_resource_hw_ver_B,
                 "resource_eid_B": self.vi_resource_eid_B,
@@ -4577,6 +4591,7 @@ class L3VariableTime(Realm):
                 "clients_A": self.vo_clients_A,
                 "ul_A": self.vo_tos_ul_A,
                 "dl_A": self.vo_tos_dl_A,
+                "resource_alias_A": self.vo_resource_alias_A,
                 "resource_host_A": self.vo_resource_host_A,
                 "resource_hw_ver_A": self.vo_resource_hw_ver_A,
                 "resource_eid_A": self.vo_resource_eid_A,
@@ -4593,6 +4608,7 @@ class L3VariableTime(Realm):
                 "clients_B": self.vo_clients_B,
                 "ul_B": self.vo_tos_ul_B,
                 "dl_B": self.vo_tos_dl_B,
+                "resource_alias_B": self.vo_resource_alias_B,
                 "resource_host_B": self.vo_resource_host_B,
                 "resource_hw_ver_B": self.vo_resource_hw_ver_B,
                 "resource_eid_B": self.vo_resource_eid_B,
@@ -4941,7 +4957,10 @@ class L3VariableTime(Realm):
                 dataset_length = len(self.client_dict_A[tos]["ul_A"])
                 x_fig_size = 15
                 y_fig_size = len(self.client_dict_A[tos]["clients_A"]) * .4 + 3
-
+                logger.debug("length of clients_A {clients} resource_alias_A {alias_A}".format(
+                    clients=len(self.client_dict_A[tos]["clients_A"]),alias_A=len(self.client_dict_A[tos]["resource_alias_A"])))
+                logger.debug("clients_A {clients}".format(clients=self.client_dict_A[tos]["clients_A"]))
+                logger.debug("resource_alias_A {alias_A}".format(alias_A=self.client_dict_A[tos]["resource_alias_A"]))
 
                 if int(min_bps_a) != 0:
                     self.report.set_obj_html(
@@ -4963,7 +4982,8 @@ class L3VariableTime(Realm):
                 graph= lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
                                     _xaxis_name="Throughput in bps",
                                     _yaxis_name="Client names",
-                                    _yaxis_categories=self.client_dict_A[tos]["clients_A"],  
+                                    #_yaxis_categories=self.client_dict_A[tos]["clients_A"],
+                                    _yaxis_categories=self.client_dict_A[tos]["resource_alias_A"],
                                     _graph_image_name=f"{tos}_A",
                                     _label=self.client_dict_A[tos]['labels'],
                                     _color_name=self.client_dict_A[tos]['colors'],
@@ -4985,6 +5005,7 @@ class L3VariableTime(Realm):
 
 
                 tos_dataframe_A = {
+                    " Client Alias " : self.client_dict_A[tos]['resource_alias_A'],
                     " Host eid " : self.client_dict_A[tos]['resource_eid_A'],
                     " Host Name " : self.client_dict_A[tos]['resource_host_A'],
                     " Device Type / Hw Ver " : self.client_dict_A[tos]['resource_hw_ver_A'],
@@ -5032,7 +5053,8 @@ class L3VariableTime(Realm):
                 graph= lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
                                     _xaxis_name="Throughput in bps",
                                     _yaxis_name="Client names",
-                                    _yaxis_categories=self.client_dict_B[tos]["clients_B"],
+                                    #_yaxis_categories=self.client_dict_B[tos]["clients_B"],
+                                    _yaxis_categories=self.client_dict_B[tos]["resource_alias_B"],
                                     _graph_image_name=f"{tos}_B",
                                     _label=self.client_dict_B[tos]['labels'],
                                     _color_name=self.client_dict_B[tos]['colors'],
@@ -5052,6 +5074,7 @@ class L3VariableTime(Realm):
                 self.report.build_graph()
 
                 tos_dataframe_B = {
+                    " Client Alias " : self.client_dict_B[tos]['resource_alias_B'],
                     " Host eid " : self.client_dict_B[tos]['resource_eid_B'],
                     " Host Name " : self.client_dict_B[tos]['resource_host_B'],
                     " Device Type / HW Ver " : self.client_dict_B[tos]['resource_hw_ver_B'],
