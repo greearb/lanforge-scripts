@@ -243,6 +243,41 @@ class Ping(Realm):
             results = results['endpoint']
         return (results)
 
+    def generate_remarks(self, station_ping_data):
+        remarks = []
+
+        #NOTE if there are any more ping failure cases that are missed, add them here.
+
+        # checking if ping output is not empty
+        if(station_ping_data['last_result'] == ""):
+            remarks.append('No output for ping')
+
+        # illegal division by zero error. Issue with arguments.
+        if('Illegal division by zero' in station_ping_data['last_result']):
+            remarks.append('Illegal division by zero error. Please re-check the arguments passed.')
+
+        # unknown host
+        if('Totals:  *** dropped: 0  received: 0  failed: 0  bytes: 0' in station_ping_data['last_result'] or 'unknown host' in station_ping_data['last_result']):
+            remarks.append('Unknown host. Please re-check the target')
+
+        # checking if IP is existing in the ping command or not for Windows device
+        if(station_ping_data['os'] == 'Windows'):
+            if('None' in station_ping_data['command'] or station_ping_data['command'].split('-n')[0].split('-S')[-1] == "  "):
+                remarks.append('Station has no IP')
+
+        # checking for no ping states
+        if(float(station_ping_data['min_rtt']) == 0 and float(station_ping_data['max_rtt']) == 0 and float(station_ping_data['avg_rtt']) == 0):
+
+            # Destination Host Unreachable state
+            if('Destination Host Unreachable' in station_ping_data['last_result']):
+                remarks.append('Destination Host Unrechable')
+
+            # Name or service not known state
+            if('Name or service not known' in station_ping_data['last_result']):
+                remarks.append('Name or service not known')
+
+        return(remarks)
+
     def generate_report(self):
         print('Generating Report')
 
@@ -261,7 +296,7 @@ class Ping(Realm):
         test_setup_info = {
             'SSID': self.ssid,
             'Security': self.security,
-            'Website': self.target,
+            'Website / IP': self.target,
             'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
             'Duration (in minutes)': self.duration
         }
@@ -292,6 +327,10 @@ class Ping(Realm):
         device_max = []
         device_avg = []
         device_mac = []
+        device_names_with_errors = []
+        devices_with_errors = []
+        report_names = []
+        remarks = []
         # packet_count_data = {}
         for device, device_data in self.result_json.items():
             packets_sent.append(device_data['sent'])
@@ -304,6 +343,14 @@ class Ping(Realm):
             device_min.append(float(device_data['min_rtt']))
             device_max.append(float(device_data['max_rtt']))
             device_avg.append(float(device_data['avg_rtt']))
+            if(device_data['os'] == 'Virtual'):
+                report_names.append('{} {}'.format(device, device_data['os'])[0:25])
+            else:
+                report_names.append('{} {} {}'.format(device, device_data['os'], device_data['name'])[0:25])
+            if(device_data['remarks'] != []):
+                device_names_with_errors.append(device_data['name'])
+                devices_with_errors.append(device)
+                remarks.append(','.join(device_data['remarks']))
             print(packets_sent,
                   packets_received,
                   packets_dropped)
@@ -327,8 +374,8 @@ class Ping(Realm):
                                         _label=[
                                             'Packets Loss', 'Packets Received', 'Packets Sent'],
                                         _graph_image_name='Packets sent vs received vs dropped',
-                                        _yaxis_label=device_names,
-                                        _yaxis_categories=device_names,
+                                        _yaxis_label=report_names,
+                                        _yaxis_categories=report_names,
                                         _yaxis_step=1,
                                         _yticks_font=8,
                                         _graph_title='Packets sent vs received vs dropped',
@@ -376,8 +423,8 @@ class Ping(Realm):
                                         _label=[
                                             'Min Latency (ms)', 'Average Latency (ms)', 'Max Latency (ms)'],
                                         _graph_image_name='Ping Latency per client',
-                                        _yaxis_label=device_names,
-                                        _yaxis_categories=device_names,
+                                        _yaxis_label=report_names,
+                                        _yaxis_categories=report_names,
                                         _yaxis_step=1,
                                         _yticks_font=8,
                                         _graph_title='Ping Latency per client',
@@ -414,6 +461,18 @@ class Ping(Realm):
         })
         report.set_table_dataframe(dataframe2)
         report.build_table()
+
+        # check if there are remarks for any device. If there are remarks, build table else don't
+        if(remarks != []):
+            report.set_table_title('Notes')
+            report.build_table_title()
+            dataframe3 = pd.DataFrame({
+                'Wireless Client': device_names_with_errors,
+                'Port': devices_with_errors,
+                'Remarks': remarks
+            })
+            report.set_table_dataframe(dataframe3)
+            report.build_table()
 
         # closing
         report.build_custom()
@@ -685,14 +744,18 @@ if __name__ == '__main__':
                             'sent': result_data['tx pkts'],
                             'recv': result_data['rx pkts'],
                             'dropped': result_data['dropped'],
-                            'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(result_data['last results']) != 0 else '0'][0],
-                            'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(result_data['last results']) != 0 else '0'][0],
-                            'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(result_data['last results']) != 0 else '0'][0],
+                            'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
+                            'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
+                            'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                             'mac': current_device_data['mac'],
                             'channel': current_device_data['channel'],
                             'mode': current_device_data['mode'],
-                            'name': station
+                            'name': station,
+                            'os': 'Virtual',
+                            'remarks': [],
+                            'last_result': [result_data['last results'].split('\n')[-2] if len(result_data['last results']) != 0 else ""][0]
                         }
+                        ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
 
         else:
             for station in ping.sta_list:
@@ -722,14 +785,18 @@ if __name__ == '__main__':
                                 'sent': ping_data['tx pkts'],
                                 'recv': ping_data['rx pkts'],
                                 'dropped': ping_data['dropped'],
-                                'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(ping_data['last results']) != 0 else 0][0],
-                                'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(ping_data['last results']) != 0 else 0][0],
-                                'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(ping_data['last results']) != 0 else 0][0],
+                                'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else 0][0],
+                                'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else 0][0],
+                                'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else 0][0],
                                 'mac': current_device_data['mac'],
                                 'channel': current_device_data['channel'],
                                 'mode': current_device_data['mode'],
-                                'name': station
+                                'name': station,
+                                'os': 'Virtual',
+                                'remarks': [],
+                                'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]
                             }
+                            ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
 
 
     if (args.real):
@@ -744,14 +811,18 @@ if __name__ == '__main__':
                         'sent': result_data['tx pkts'],
                         'recv': result_data['rx pkts'],
                         'dropped': result_data['dropped'],
-                        'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(result_data['last results']) != 0 else '0'][0],
-                        'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(result_data['last results']) != 0 else '0'][0],
-                        'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 else '0'][0],
+                        'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
+                        'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
+                        'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                         'mac': current_device_data['mac'],
                         'channel': current_device_data['channel'],
                         'mode': current_device_data['mode'],
-                        'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0]
+                        'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
+                        'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
+                        'remarks': [],
+                        'last_result': [result_data['last results'].split('\n')[-2] if len(result_data['last results']) != 0 else ""][0]
                     }
+                    ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
         else:
             for station in ping.real_sta_list:
                 current_device_data = Devices.devices_data[station]
@@ -764,14 +835,18 @@ if __name__ == '__main__':
                             'sent': ping_data['tx pkts'],
                             'recv': ping_data['rx pkts'],
                             'dropped': ping_data['dropped'],
-                            'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(ping_data['last results']) != 0 else 0][0],
-                            'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(ping_data['last results']) != 0 else 0][0],
-                            'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(ping_data['last results']) != 0 else 0][0],
+                            'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else 0][0],
+                            'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else 0][0],
+                            'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else 0][0],
                             'mac': current_device_data['mac'],
                             'channel': current_device_data['channel'],
                             'mode': current_device_data['mode'],
-                            'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0]
+                            'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
+                            'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
+                            'remarks': [],
+                            'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]
                         }
+                        ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
 
     print(ping.result_json)
 
