@@ -151,9 +151,9 @@ class CxMonitor:
                                         requested_col_names=default_col_names)
             #pprint.pprint(["items", items])
             for endp in items:
-                pprint.pprint(["endp_k", list(endp.keys())[0]]  )
+                pprint.pprint(["endp_k", list(endp.keys())[0]])
                 row : list = []
-                row.append(list(endp.keys())[0])
+                row.extend([list(endp.keys())[0], time.time()])
                 endp_vals : dict = list(endp.values())[0]
                 for col in default_col_names:
                     row.append(endp_vals[col])
