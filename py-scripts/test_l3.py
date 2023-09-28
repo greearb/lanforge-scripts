@@ -2476,7 +2476,7 @@ class L3VariableTime(Realm):
             elif "Apple" in hw_version:
                 hardware = "Apple"
             else:
-                hardware = hw_version
+                hardware = "Android"
             alias = eid + "_" + host + "_" + hardware
 
             return alias
