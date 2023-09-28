@@ -9,13 +9,23 @@ times the file is downloaded.
 
 EXAMPLE-1:
 Command Line Interface to run download scenario for Real clients
-python3 lf_webpage.py --mgr 192.168.200.165 --fiveg_ssid Netgear-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret 
---upstream_port eth1 --duration 10 --bands 5G --client_type Real --file_size 2MB
+python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.200.165 --ssid Cisco-5g --security wpa2 --passwd sharedsecret 
+--upstream_port eth1 --duration 10m --bands 5G --client_type Real --file_size 2MB
 
 EXAMPLE-2:
 Command Line Interface to run download scenario on 5GHz band for Virtual clients
-python3 lf_webpage.py --mgr 192.168.200.165 --fiveg_ssid Netgear-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret 
---fiveg_radio wiphy0 --upstream_port eth1 --duration 1 --bands 5G --client_type Virtual --file_size 2MB --num_stations 3
+python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.200.165 --fiveg_ssid Cisco-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret 
+--fiveg_radio wiphy0 --upstream_port eth1 --duration 1h --bands 5G --client_type Virtual --file_size 2MB --num_stations 3
+
+EXAMPLE-3:
+Command Line Interface to run download scenario on 2.4GHz band for Virtual clients
+python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.200.165 --twog_ssid Cisco-2g --twog_security wpa2 --twog_passwd sharedsecret 
+--twog_radio wiphy0 --upstream_port eth1 --duration 1h --bands 2.4G --client_type Virtual --file_size 2MB --num_stations 3
+
+EXAMPLE-4:
+Command Line Interface to run download scenario on 6GHz band for Virtual clients
+python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.200.165 --sixg_ssid Cisco-6g --sixg_security wpa3 --sixg_passwd sharedsecret 
+--sixg_radio wiphy0 --upstream_port eth1 --duration 1h --bands 6G --client_type Virtual --file_size 2MB --num_stations 3
 
 SCRIPT_CLASSIFICATION : Test
 
@@ -73,7 +83,7 @@ from lf_interop_qos import ThroughputQOS
 
 class HttpDownload(Realm):
     def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password,ap_name,
-                 target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None, _debug_on=False, _exit_on_error=False,
+                 target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None,sixg_radio=None, _debug_on=False, _exit_on_error=False,
                  _exit_on_fail=False,client_type="",port_list=[],devices_list=[],macid_list=[],lf_username="lanforge",lf_password="lanforge"):
         self.host = lfclient_host
         self.port = lfclient_port
@@ -85,18 +95,21 @@ class HttpDownload(Realm):
         self.password = password
         self.twog_radio = twog_radio
         self.fiveg_radio = fiveg_radio
+        self.sixg_radio = sixg_radio
         self.target_per_ten = target_per_ten
         self.file_size = file_size
         self.bands = bands
         self.debug = _debug_on
         self.port_list = port_list
+        self.eid_list = []
         self.devices_list = devices_list
         self.macid_list = macid_list
         self.client_type = client_type
         self.lf_username = lf_username
         self.lf_password = lf_password
         self.ap_name = ap_name
-
+        self.windows_ports = []
+        self.windows_eids = []
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.http_profile = self.local_realm.new_http_profile()
@@ -122,6 +135,18 @@ class HttpDownload(Realm):
                             tos="BK"
                             )
         self.port_list,self.devices_list,self.macid_list=object.phantom_check()
+        for port in self.port_list:
+            eid=self.name_to_eid(port)
+            self.eid_list.append(str(eid[0])+'.'+str(eid[1]))
+        for eid in self.eid_list:
+            for device in self.devices_list:
+                if ("Win" in device) and (eid + ' ' in device):
+                    self.windows_eids.append(eid)
+
+        for eid in self.windows_eids:
+            for port in self.port_list:
+                if eid + '.' in port:
+                    self.windows_ports.append(port)
         return self.port_list,self.devices_list,self.macid_list
 
     def set_values(self):
@@ -131,6 +156,11 @@ class HttpDownload(Realm):
             self.station_list = [LFUtils.portNameSeries(prefix_="http_sta", start_id_=self.sta_start_id,
                                                             end_id_=self.num_sta - 1, padding_number_=10000,
                                                             radio=self.fiveg_radio)]
+        elif self.bands == "6G":
+            self.radio = [self.sixg_radio]
+            self.station_list = [LFUtils.portNameSeries(prefix_="http_sta", start_id_=self.sta_start_id,
+                                                            end_id_=self.num_sta - 1, padding_number_=10000,
+                                                            radio=self.sixg_radio)]
         elif self.bands == "2.4G":
             self.radio = [self.twog_radio]
             self.station_list = [LFUtils.portNameSeries(prefix_="http_sta", start_id_=self.sta_start_id,
@@ -153,11 +183,15 @@ class HttpDownload(Realm):
         for rad in range(len(self.radio)):
             if self.radio[rad] == self.fiveg_radio:
                 # select an mode
-                self.station_profile.mode = 10
+                self.station_profile.mode = 14
+                self.count = self.count + 1
+            elif self.radio[rad] == self.sixg_radio:
+                # select an mode
+                self.station_profile.mode = 15
                 self.count = self.count + 1
             elif self.radio[rad] == self.twog_radio:
                 # select an mode
-                self.station_profile.mode = 6
+                self.station_profile.mode = 13
                 self.count = self.count + 1
 
             if self.count == 2:
@@ -191,6 +225,8 @@ class HttpDownload(Realm):
                 self.station_profile.mode = 13
             elif self.bands == "5G":
                 self.station_profile.mode = 14
+            elif self.bands == "6G":
+                self.station_profile.mode = 15
             for rad in range(len(self.radio)):
                 self.station_profile.use_security(self.security[rad], self.ssid[rad], self.password[rad])
                 self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
@@ -225,7 +261,6 @@ class HttpDownload(Realm):
         else:
             if self.client_type == "Real": 
                 self.http_profile.direction = 'dl'
-                self.http_profile.dest = '/dev/null'
                 data = self.local_realm.json_get("ports/list?fields=IP")
 
                     # getting eth ip
@@ -239,7 +274,7 @@ class HttpDownload(Realm):
                 self.http_profile.create(ports=self.port_list, sleep_time=.5,
                                     suppress_related_commands_=None, http=True,interop=True,
                                     user=self.lf_username, passwd=self.lf_password,
-                                    http_ip=ip_upstream + "/webpage.html",proxy_auth_type=0x200,timeout = 1000)
+                                    http_ip=ip_upstream + "/webpage.html",proxy_auth_type=0x200,timeout = 1000,windows_list=self.windows_ports)
                     
         print("Test Build done")
 
@@ -320,9 +355,18 @@ class HttpDownload(Realm):
         lst = []
         lst1 = []
         lst2 = []
+        lst3 = []
         dwnld_time = dict.fromkeys(result_data.keys())
         dataset = []
         for i in download_time:
+            if i == "6G":
+                print("download time[i]",download_time[i])
+                for j in download_time[i]:
+                    x = (j / 1000)
+                    y = round(x, 1)
+                    lst3.append(y)
+                dwnld_time["6G"] = lst3
+                dataset.append(dwnld_time["6G"])
             if i == "5G":
                 print("download time[i]",download_time[i])
                 for j in download_time[i]:
@@ -459,6 +503,8 @@ class HttpDownload(Realm):
         elif self.client_type == "Virtual":
             lis=self.station_list[0]
         print(dataset,lis)
+        x_fig_size = 18
+        y_fig_size = len(lis)*.5 + 4
         # graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Time in Seconds",
         #                               _xaxis_categories=lis, _label=bands, _xticks_font=8,
         #                               _graph_image_name="webpage download time graph",
@@ -478,7 +524,7 @@ class HttpDownload(Realm):
                                             _yticks_rotation=None,
                                             _graph_title="Average time taken to Download file",
                                             _title_size=16,
-                                            _figsize= (18, 10),
+                                            _figsize= (x_fig_size,y_fig_size),
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
                                             _color_name=['steelblue'],
@@ -498,6 +544,8 @@ class HttpDownload(Realm):
             lis = self.station_list[0]
         print(dataset2)
         print(lis)
+        x_fig_size = 18
+        y_fig_size = len(lis)*.5 + 4
         graph_2 = lf_bar_graph_horizontal(_data_set=[dataset2], _xaxis_name="No of times file Download",
                                             _yaxis_name="Client names",
                                             _yaxis_categories=[i for i in lis],
@@ -507,7 +555,7 @@ class HttpDownload(Realm):
                                             _yticks_rotation=None,
                                             _graph_title="No of times file Download (Count)",
                                             _title_size=16,
-                                            _figsize= (18, 10),
+                                            _figsize= (x_fig_size,y_fig_size),
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
                                             _color_name=['orange'],
@@ -735,20 +783,31 @@ def main():
 
     EXAMPLE-1:
     Command Line Interface to run download scenario for Real clients
-    python3 lf_webpage.py --mgr 192.168.200.165 --fiveg_ssid Netgear-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret 
-    --upstream_port eth1 --duration 10 --bands 5G --client_type Real --file_size 2MB
+    python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.200.165 --ssid Cisco-5g --security wpa2 --passwd sharedsecret 
+    --upstream_port eth1 --duration 10m --bands 5G --client_type Real --file_size 2MB
 
     EXAMPLE-2:
     Command Line Interface to run download scenario on 5GHz band for Virtual clients
-    python3 lf_webpage.py --mgr 192.168.200.165 --fiveg_ssid Netgear-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret 
-    --fiveg_radio wiphy0 --upstream_port eth1 --duration 1 --bands 5G --client_type Virtual --file_size 2MB --num_stations 3
+    python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.200.165 --fiveg_ssid Cisco-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret 
+    --fiveg_radio wiphy0 --upstream_port eth1 --duration 1h --bands 5G --client_type Virtual --file_size 2MB --num_stations 3
+
+    EXAMPLE-3:
+    Command Line Interface to run download scenario on 2.4GHz band for Virtual clients
+    python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.200.165 --twog_ssid Cisco-2g --twog_security wpa2 --twog_passwd sharedsecret 
+    --twog_radio wiphy0 --upstream_port eth1 --duration 1h --bands 2.4G --client_type Virtual --file_size 2MB --num_stations 3
+
+    EXAMPLE-4:
+    Command Line Interface to run download scenario on 6GHz band for Virtual clients
+    python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.200.165 --sixg_ssid Cisco-6g --sixg_security wpa3 --sixg_passwd sharedsecret 
+    --sixg_radio wiphy0 --upstream_port eth1 --duration 1h --bands 6G --client_type Virtual --file_size 2MB --num_stations 3
 
     SCRIPT_CLASSIFICATION : Test
 
     SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
 
     NOTES:
-    After passing cli, a list will be displayed on terminal which contains available resources to run test.
+    1.Please enter the duration in s,m,h (seconds or minutes or hours).Eg: 30s,5m,48h.
+    2.After passing cli, a list will be displayed on terminal which contains available resources to run test.
     The following sentence will be displayed
     Enter the desired resources to run the test:
     Please enter the port numbers seperated by commas ','.
@@ -769,45 +828,52 @@ def main():
     INCLUDE_IN_README: False   
         
         ''')
-    parser.add_argument('--mgr', help='hostname for where LANforge GUI is running', default='localhost')
-    parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
-    parser.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1', default='eth2')
-    parser.add_argument('--num_stations', type=int, help='number of stations to create', default=0)
-    parser.add_argument('--twog_radio', help='specify radio for 2.4G clients', default='wiphy3')
-    parser.add_argument('--fiveg_radio', help='specify radio for 5 GHz client', default='wiphy0')
-    parser.add_argument('--twog_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 2.4G clients')
-    parser.add_argument('--twog_ssid', help='WiFi SSID for script object to associate for 2.4G clients')
-    parser.add_argument('--twog_passwd', help='WiFi passphrase/password/key for 2.4G clients')
-    parser.add_argument('--fiveg_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 5G clients')
-    parser.add_argument('--fiveg_ssid', help='WiFi SSID for script object to associate for 5G clients')
-    parser.add_argument('--fiveg_passwd', help='WiFi passphrase/password/key for 5G clients')
-    parser.add_argument('--target_per_ten', help='number of request per 10 minutes', default=100)
-    parser.add_argument('--file_size', type=str, help='specify the size of file you want to download', default='5MB')
-    parser.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G OR 2.4G',
-                        default=["5G", "2.4G"])
-    parser.add_argument('--duration', help='Please enter the duration in s,m,h (seconds or minutes or hours).Eg: 30s,5m,48h')
-    parser.add_argument('--client_type', help='Enter the type of client. Example:"Real","Virtual"')
-    parser.add_argument('--threshold_5g', help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
-    parser.add_argument('--threshold_2g', help="Enter the threshold value for 2.4G Pass/Fail criteria", default="90")
-    parser.add_argument('--threshold_both', help="Enter the threshold value for Both Pass/Fail criteria", default="50")
-    parser.add_argument('--ap_name', help="specify the ap model ", default="TestAP")
-    parser.add_argument('--lf_username',help="Enter the lanforge user name. Example : 'lanforge' ", default= "lanforge")
-    parser.add_argument('--lf_password',help="Enter the lanforge password. Example : 'lanforge' ",default="lanforge")
-    parser.add_argument('--ssh_port', type=int, help="specify the ssh port eg 22", default=22)
-    parser.add_argument("--test_rig", default="", help="test rig for kpi.csv, testbed that the tests are run on")
-    parser.add_argument("--test_tag", default="",
+    required = parser.add_argument_group('Required arguments to run lf_webpage.py')
+    optional = parser.add_argument_group('Optional arguments to run lf_webpage.py')
+
+    required.add_argument('--mgr', help='hostname for where LANforge GUI is running', default='localhost')
+    required.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
+    required.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1', default='eth2')
+    optional.add_argument('--num_stations', type=int, help='number of stations to create for virtual clients', default=0)
+    optional.add_argument('--twog_radio', help='specify radio for 2.4G clients', default='wiphy3')
+    optional.add_argument('--fiveg_radio', help='specify radio for 5 GHz client', default='wiphy0')
+    optional.add_argument('--sixg_radio', help='Specify radio for 6GHz client',default='wiphy2')
+    optional.add_argument('--twog_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 2.4G clients')
+    optional.add_argument('--twog_ssid', help='WiFi SSID for script object to associate for 2.4G clients')
+    optional.add_argument('--twog_passwd', help='WiFi passphrase/password/key for 2.4G clients')
+    optional.add_argument('--fiveg_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 5G clients')
+    optional.add_argument('--fiveg_ssid', help='WiFi SSID for script object to associate for 5G clients')
+    optional.add_argument('--fiveg_passwd', help='WiFi passphrase/password/key for 5G clients')
+    optional.add_argument('--sixg_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 2.4G clients')
+    optional.add_argument('--sixg_ssid', help='WiFi SSID for script object to associate for 2.4G clients')
+    optional.add_argument('--sixg_passwd', help='WiFi passphrase/password/key for 2.4G clients')
+    optional.add_argument('--target_per_ten', help='number of request per 10 minutes', default=100)
+    required.add_argument('--file_size', type=str, help='specify the size of file you want to download', default='5MB')
+    required.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G, 2.4G, 6G',
+                        default=["5G", "2.4G", "6G"])
+    required.add_argument('--duration', help='Please enter the duration in s,m,h (seconds or minutes or hours).Eg: 30s,5m,48h')
+    required.add_argument('--client_type', help='Enter the type of client. Example:"Real","Virtual"')
+    optional.add_argument('--threshold_5g', help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
+    optional.add_argument('--threshold_2g', help="Enter the threshold value for 2.4G Pass/Fail criteria", default="90")
+    optional.add_argument('--threshold_both', help="Enter the threshold value for Both Pass/Fail criteria", default="50")
+    required.add_argument('--ap_name', help="specify the ap model ", default="TestAP")
+    optional.add_argument('--lf_username',help="Enter the lanforge user name. Example : 'lanforge' ", default= "lanforge")
+    optional.add_argument('--lf_password',help="Enter the lanforge password. Example : 'lanforge' ",default="lanforge")
+    optional.add_argument('--ssh_port', type=int, help="specify the ssh port eg 22", default=22)
+    optional.add_argument("--test_rig", default="", help="test rig for kpi.csv, testbed that the tests are run on")
+    optional.add_argument("--test_tag", default="",
                         help="test tag for kpi.csv,  test specific information to differentiate the test")
-    parser.add_argument("--dut_hw_version", default="",
+    optional.add_argument("--dut_hw_version", default="",
                         help="dut hw version for kpi.csv, hardware version of the device under test")
-    parser.add_argument("--dut_sw_version", default="",
+    optional.add_argument("--dut_sw_version", default="",
                         help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument("--dut_model_num", default="",
+    optional.add_argument("--dut_model_num", default="",
                         help="dut model for kpi.csv,  model number / name of the device under test")
-    parser.add_argument("--dut_serial_num", default="",
+    optional.add_argument("--dut_serial_num", default="",
                         help="dut serial for kpi.csv, serial number / serial number of the device under test")
-    parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
-    parser.add_argument("--test_id", default="lf_webpage", help="test-id for kpi.csv,  script or test name")
-    parser.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
+    optional.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
+    optional.add_argument("--test_id", default="lf_webpage", help="test-id for kpi.csv,  script or test name")
+    optional.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
 
     args = parser.parse_args()
     args.bands.sort()
@@ -819,7 +885,7 @@ def main():
             args.bands[band] = "Both"
 
     # Error checking for non-existent bands
-    valid_bands = ['2.4G', '5G', 'Both']
+    valid_bands = ['2.4G', '5G', '6G', 'Both']
     for band in args.bands:
         if band not in valid_bands:
             raise ValueError("Invalid band '%s' used in bands argument!" % band)
@@ -837,6 +903,7 @@ def main():
     elif args.duration.endswith(''):
         args.duration = int(args.duration)
 
+    list6G,list6G_bytes,list6G_speed,list6G_urltimes = [],[],[],[]
     list5G,list5G_bytes,list5G_speed,list5G_urltimes = [],[],[],[]
     list2G,list2G_bytes,list2G_speed,list2G_urltimes = [],[],[],[]
     Both,Both_bytes,Both_speed,Both_urltimes = [],[],[],[]
@@ -850,12 +917,15 @@ def main():
     for i in final_dict:
         final_dict[i] = dict.fromkeys(dict1_keys)
     print(final_dict)
+    min6 = []
     min5 = []
     min2 = []
     min_both = []
+    max6 = []
     max5 = []
     max2 = []
     max_both = []
+    avg6 = []
     avg2 = []
     avg5 = []
     avg_both = []
@@ -869,6 +939,10 @@ def main():
             security = [args.fiveg_security]
             ssid = [args.fiveg_ssid]
             passwd = [args.fiveg_passwd]
+        elif bands == "6G":
+            security = [args.sixg_security]
+            ssid = [args.sixg_ssid]
+            passwd = [args.sixg_passwd]
         elif bands == "Both":
             security = [args.twog_security, args.fiveg_security]
             ssid = [args.twog_ssid, args.fiveg_ssid]
@@ -881,6 +955,7 @@ def main():
                             file_size=args.file_size, bands=bands,
                             twog_radio=args.twog_radio,
                             fiveg_radio=args.fiveg_radio,
+                            sixg_radio=args.sixg_radio,
                             client_type=args.client_type,
                             lf_username=args.lf_username,lf_password=args.lf_password
                             )
@@ -918,6 +993,21 @@ def main():
             final_dict['5G']['bytes_rd'] = list5G_bytes
             final_dict['5G']['speed'] = list5G_speed
             final_dict['5G']['url_times'] = list5G_urltimes
+        elif bands == "6G":
+            list6G.extend(uc_avg_val)
+            list6G_bytes.extend(rx_bytes_val)
+            list6G_speed.extend(rx_rate_val)
+            list6G_urltimes.extend(url_times)
+            final_dict['6G']['dl_time'] = list6G
+            min6.append(min(list6G))
+            final_dict['6G']['min'] = min6
+            max6.append(max(list6G))
+            final_dict['6G']['max'] = max6
+            avg6.append((sum(list6G) / args.num_stations))
+            final_dict['6G']['avg'] = avg6
+            final_dict['6G']['bytes_rd'] = list6G_bytes
+            final_dict['6G']['speed'] = list6G_speed
+            final_dict['6G']['url_times'] = list6G_urltimes
         elif bands == "2.4G":
             list2G.extend(uc_avg_val)
             list2G_bytes.extend(rx_bytes_val)
@@ -970,6 +1060,9 @@ def main():
         elif band == "5G":
             info_ssid.append(args.fiveg_ssid)
             info_security.append(args.fiveg_security)
+        elif band == "6G":
+            info_ssid.append(args.sixg_ssid)
+            info_security.append(args.sixg_security)
         elif band == "Both":
             info_ssid.append(args.fiveg_ssid)
             info_security.append(args.fiveg_security)
