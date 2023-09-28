@@ -97,7 +97,6 @@ import re
 import random
 
 # - - - - deployed import references - - - - -
-from .logg import Logg
 from .strutil import nott, iss
 
 SESSION_HEADER = 'X-LFJson-Session'
@@ -245,7 +244,9 @@ class BaseLFJsonRequest:
             logging.getLogger(__name__).warning("BaseLFJsonRequest: no session instance")
         else:
             self.session_instance = session_obj
-            self.session_id = session_obj.get_session_id()
+            #print(f"BaseSession-session-id: [{BaseSession.session_id}]")
+            if not self.session_instance.session_id:
+                logging.info("session_obj lacks session_id")
             self.proxies_installed = session_obj.proxies_installed
 
         self.die_on_error: bool
@@ -457,9 +458,9 @@ class BaseLFJsonRequest:
         die_on_error |= self.die_on_error
         if not self.session_instance:
             self.logger.warning("json_post: no session_instance!")
-        if self.session_id != self.session_instance.get_session_id():
+        if BaseSession.session_id != self.session_instance.get_session_id():
             self.logger.error("BaseLFJsonRequest.session_id[%s] != session.get_session_id: [%s]"
-                              % (self.session_id, self.session_instance.get_session_id()))
+                              % (BaseSession.session_id, self.session_instance.get_session_id()))
             if die_on_error:
                 exit(1)
         responses: list = []  # p3.9 list[HTTPResponse]
@@ -577,8 +578,8 @@ class BaseLFJsonRequest:
                 jzon_data = None
                 if debug and die_on_error:
                     self.logger.debug(__name__ +
-                                        " ----- json_post: %d debug: --------------------------------------------" %
-                                        attempt)
+                                      " ----- json_post: %d debug: --------------------------------------------" %
+                                      attempt)
                     self.logger.debug("URL: <%s> status:%d " % (url, response.status))
                     self.logger.debug(" ----- headers --------------------------------------------------")
                     self.logger.debug(__name__ + "submitted: "+pformat(post_data))
@@ -594,9 +595,9 @@ class BaseLFJsonRequest:
                     self.logger.debug(pformat(header_items))
 
                 if SESSION_HEADER in header_items:
-                    if self.session_id != response.getheader(SESSION_HEADER):
+                    if BaseSession.session_id != response.getheader(SESSION_HEADER):
                         self.logger.warning("established session header [%s] different from response session header[%s]"
-                                            % (self.session_id, response.getheader(SESSION_HEADER)))
+                                            % (BaseSession.session_id, response.getheader(SESSION_HEADER)))
                 if errors_warnings:
                     for header in header_items:
                         if header[0].startswith("X-Error") == 0:
@@ -783,6 +784,9 @@ class BaseLFJsonRequest:
 
         requested_url = self.get_corrected_url(url,
                                                debug=debug | self.debug_on)
+        #pprint(["get,default_headers", self.default_headers])
+        if BaseSession.session_id:
+            self.default_headers[SESSION_HEADER] = BaseSession.session_id
         myrequest = request.Request(url=requested_url,
                                     headers=self.default_headers,
                                     method=method_)
@@ -907,6 +911,8 @@ class BaseLFJsonRequest:
             if wait_sec:
                 time.sleep(wait_sec)
             try:
+                if not BaseSession.session_id:
+                    logging.info("json_get lacks session_id")
                 json_response = self.get_as_json(url=url,
                                                  debug=debug,
                                                  die_on_error=False,
@@ -1138,8 +1144,9 @@ class JsonCommand(BaseLFJsonRequest):
                 sys.exit(1)
             return False
 
-        self.session_id = first_response.getheader(SESSION_HEADER)
-        self.session_instance.session_id = first_response.getheader(SESSION_HEADER)
+        BaseSession.session_id = first_response.getheader(SESSION_HEADER)
+        #print(f"BASESESSION SESSION_ID: {BaseSession.session_id}")
+        self.default_headers[SESSION_HEADER] = BaseSession.session_id
         return True
 
 
@@ -1154,6 +1161,7 @@ class BaseSession:
     Default_Request_Timeout_Sec: float = 120.0
     Default_Max_Timeout_Sec: float = 240.0
     subclasses = []
+    session_id : str = None
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -1192,8 +1200,6 @@ class BaseSession:
         self.retry_sec: float
         self.retry_sec = retry_sec
         self.session_error_list: list = []
-        self.session_id: str
-        self.session_id = None
         self.session_warnings_list: list = []
         self.stream_errors: bool
         self.stream_errors = True
@@ -1292,9 +1298,9 @@ class BaseSession:
         if not self.session_connection_check:
             self.logger.warning("%s no connection established, exiting" % self.session_connection_check)
             return
-        self.logger.debug("%s: asking for session %s to end" % (__name__, self.session_id))
+        self.logger.debug("%s: asking for session %s to end" % (__name__, BaseSession.session_id))
         BaseSession.end_session(command_obj=self.command_instance,
-                                session_id_=self.session_id,
+                                session_id_=BaseSession.session_id,
                                 debug=False)
 
     def get_command(self) -> 'JsonCommand':
@@ -1342,7 +1348,7 @@ class BaseSession:
         return self.debug_on
 
     def get_session_id(self) -> str:
-        return self.session_id
+        return BaseSession.session_id
 
     def get_session_based_key(self) -> str:
         """
@@ -1350,8 +1356,8 @@ class BaseSession:
         :return: modestly random string prefixed with the alphanumeric characters of the existing session
         """
         short_session : str = None
-        if self.session_id:
-            short_session = re.sub("[^A-Za-z0-9]", "", self.session_id)
+        if BaseSession.session_id:
+            short_session = re.sub("[^A-Za-z0-9]", "", BaseSession.session_id)
         else:
             short_session = "00000"
         return short_session+"KEY"+''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(12))
@@ -24239,17 +24245,17 @@ class LFSession(BaseSession):
                          stream_warnings=stream_warnings,
                          exit_on_error=exit_on_error)
         self.command_instance = LFJsonCommand(session_obj=self, debug=debug, exit_on_error=exit_on_error)
-        self.query_instance = LFJsonQuery(session_obj=self, debug=debug, exit_on_error=exit_on_error)
         self.session_connection_check = \
             self.command_instance.start_session(debug=debug,
                                                 die_without_session_id_=require_session)
         if self.session_connection_check:
-            self.session_id = self.command_instance.session_id
-            self.query_instance.session_id = self.session_id
+            if not BaseSession.session_id:
+                self.logger.info("BaseSession.session_id absent")
         else:
             self.logger.error('LFSession failed to establish session_id') 
-        if require_session and ((not self.command_instance.session_id) or (not self.session_id)):
+        if require_session and (not BaseSession.session_id):
             self.logger.error('LFSession failed to setup session_id correctly') 
+        self.query_instance = LFJsonQuery(session_obj=self, debug=debug, exit_on_error=exit_on_error)
 
     def get_command(self) -> LFJsonCommand:
         """
@@ -24266,6 +24272,8 @@ class LFSession(BaseSession):
             Remember to override this method with your session subclass, it should return LFJsonQuery
             :return: registered instance of JsonQuery
         """
+        if not BaseSession.session_id:
+            self.logger.info("get_query basesession lacks sessionid")
         if self.query_instance:
             return self.query_instance
         self.query_instance = LFJsonQuery(session_obj=self, debug=self.debug_on, exit_on_error=self.exit_on_error)
