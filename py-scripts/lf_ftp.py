@@ -134,6 +134,8 @@ class FtpTest(LFCliBase):
         self.working_resources_list = working_resources_list
         self.hw_list = hw_list
         self.windows_list = windows_list
+        self.windows_eid_list = []
+        self.windows_ports = []
         self.mac_list = mac_list
         self.linux_list = linux_list
         self.android_list = android_list
@@ -180,6 +182,7 @@ class FtpTest(LFCliBase):
                             if "Win" in b['hw version']:
                                 self.eid_list.append(b['eid'])
                                 self.windows_list.append(b['hw version'])
+                                self.windows_eid_list.append(b['eid'])
                                 #self.hostname_list.append(b['eid']+ " " +b['hostname'])
                                 self.devices_available.append(b['eid'] +" " +'Win'+" "+ b['hostname'] )
                             elif "Linux" in b['hw version']:
@@ -248,7 +251,10 @@ class FtpTest(LFCliBase):
         print("INPUT DEVICES LIST",self.input_devices_list)
         
         # user desired real client list 1.1 wlan0 ---
-        
+        for port in self.input_devices_list:
+            for eid in self.windows_eid_list:
+                if eid +'.' in port:
+                    self.windows_ports.append(port)
         for i in resource_eid_list2:
             for j in range(len(self.devices_available)):
                 if i in self.devices_available[j]:
@@ -476,11 +482,11 @@ class FtpTest(LFCliBase):
                 if ip_upstream is not None:
                     # print("station:{station_names}".format(station_names=self.station_profile.station_names))
                     # print("ip_upstream:{ip_upstream}".format(ip_upstream=ip_upstream))
-                        self.cx_profile.create(ports=self.input_devices_list, ftp_ip=ip_upstream +
-                                                "/ftp_test.txt",
-                                                sleep_time=.5, debug_=self.debug, suppress_related_commands_=True, interop=True,timeout=1000,ftp=True,
-                                                user=self.lf_username,
-                                                passwd=self.lf_password, source="",proxy_auth_type=0x200)
+                    self.cx_profile.create(ports=self.input_devices_list, ftp_ip=ip_upstream +
+                                            "/ftp_test.txt",
+                                            sleep_time=.5, debug_=self.debug, suppress_related_commands_=True, interop=True,timeout=1000,ftp=True,
+                                            user=self.lf_username,
+                                            passwd=self.lf_password, source="",proxy_auth_type=0x200,windows_list=self.windows_ports)
 
             elif self.direction == "Upload":
                 # list of upstream port
@@ -1056,6 +1062,8 @@ class FtpTest(LFCliBase):
                         csv_outfile, local_lf_report_dir):
         no_of_stations = ""
         duration=""
+        x_fig_size = 18
+        y_fig_size = len(self.real_client_list1)*.5 + 4
         if int(self.traffic_duration) < 60 :
             duration = str(self.traffic_duration) + "s"
         elif int(self.traffic_duration == 60) or (int(self.traffic_duration) > 60 and int(self.traffic_duration) < 3600) :
@@ -1131,7 +1139,7 @@ class FtpTest(LFCliBase):
                                             _yticks_rotation=None,
                                             _graph_title=f"No of times file {self.direction} (Count)",
                                             _title_size=16,
-                                            _figsize= (18, 10),
+                                            _figsize= (x_fig_size, y_fig_size),
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
                                             _color_name=['orange'],
@@ -1164,7 +1172,7 @@ class FtpTest(LFCliBase):
                                             _yticks_rotation=None,
                                             _graph_title=f"Average time taken to {self.direction} file",
                                             _title_size=16,
-                                            _figsize= (18, 10),
+                                            _figsize= (x_fig_size ,y_fig_size),
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
                                             _color_name=['steelblue'],
@@ -1423,7 +1431,7 @@ python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mg
 EXAMPLE-2:
 Command Line Interface to run upload scenario on 6GHz band for Virtual clients
 python3 lf_ftp.py --ssid Netgear-6g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
---security wpa3 --fiveg_radio wiphy2 --directions Upload --clients_type Virtual --ap_name Netgear --bands 6G --num_stations 2
+--security wpa3 --sixg_radio wiphy2 --directions Upload --clients_type Virtual --ap_name Netgear --bands 6G --num_stations 2
 
 EXAMPLE-3:
 Command Line Interface to run download scenario on 5GHz band for Virtual clients
