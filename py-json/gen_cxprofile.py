@@ -43,9 +43,9 @@ class GenCXProfile(LFCliBase):
         self.speedtest_max_ping = 0
 
     # If not specified, default client_type is linux
-    def parse_command(self, sta_name, gen_name, client_type="linux"):
+    def parse_command(self, sta_name, gen_name, client_type="linux", ip=None):
         if self.type == "lfping":
-            self._parse_ping_cmd(sta_name=sta_name, client_type=client_type)
+            self._parse_ping_cmd(sta_name=sta_name, client_type=client_type, ip=ip)
             
         elif self.type == "generic":
             if self.cmd == "":
@@ -78,7 +78,7 @@ class GenCXProfile(LFCliBase):
     #
     # Args:
     #   client_type is one of "android", "linux", "macos", or "windows"
-    def _parse_ping_cmd(self, client_type, sta_name):
+    def _parse_ping_cmd(self, client_type, sta_name, ip=None):
         if not self.dest or not self.interval:
             logger.critical("Please ensure dest and interval have been set correctly")
             raise ValueError("Please ensure dest and interval have been set correctly")
@@ -91,7 +91,7 @@ class GenCXProfile(LFCliBase):
         # TODO: Count, size, pattern for all client types
         if client_type == "windows":
             # NOTE: Unable to specify interval for Windows ping
-            self.cmd = "python lfping.py -S %s -dest_ip %s" % (sta_name, self.dest)
+            self.cmd = "py lfping.py -S %s -n -1 -dest_ip %s" % (ip, self.dest)
 
         elif client_type == "macos":
             self.cmd = "lfping -b %s -i %s %s" % (sta_name, self.interval, self.dest)
@@ -99,7 +99,7 @@ class GenCXProfile(LFCliBase):
         elif client_type == "android":
             self.cmd = "ping -i %s %s" % (self.interval, self.dest)
 
-        else: # linux
+        else: # linux and virtual stations
             self.cmd = "lfping -I %s -i %s %s" % (sta_name, self.interval, self.dest)
 
     def start_cx(self):
@@ -394,7 +394,19 @@ class GenCXProfile(LFCliBase):
 
             if real_client_os_types:
                 name = endp_tpl[2].split('.')[2]
-                self.parse_command(name, gen_name_a, client_type=real_client_os_types[ix])
+                ip_response = self.json_get('/port/{}/{}/{}?fields=ip'.format(endp_tpl[0], endp_tpl[1], name))
+                if(ip_response == None or ip_response == "" or ip_response == " " or (type(ip_response) is dict and 'interface' not in ip_response.keys())):
+                    logger.critical('Client {} not found'.format(endp_tpl[2]))
+                    logger.info('Consider upgrading LANforge to 5.4.7 or later versions')
+                else:
+                    if('ip' not in ip_response['interface']):
+                        logger.critical('Client {} has no attribute IP'.format(endp_tpl[2]))
+                    else:
+                        current_device_ip = ip_response['interface']['ip']
+                        if(current_device_ip == "" or current_device_ip is None):
+                            logger.critical('IP Address not found for the Client {}'.format(endp_tpl[2]))
+                            current_device_ip = None
+                self.parse_command(name, gen_name_a, client_type=real_client_os_types[ix], ip=current_device_ip)
             else:
                 name = endp_tpl[2]
                 self.parse_command(name, gen_name_a)
