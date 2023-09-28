@@ -113,7 +113,7 @@ class HTTPProfile(LFCliBase):
 
     def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
                https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None,
-               https_ip=None, interop=None,timeout=10,proxy_auth_type=0x2200):
+               https_ip=None, interop=None,timeout=10,proxy_auth_type=0x2200,windows_list=[]):
         if ports is None:
             ports = []
         cx_post_data = []
@@ -133,6 +133,11 @@ class HTTPProfile(LFCliBase):
 
             if (ip_addr is None) or (ip_addr == ""):
                 raise ValueError("HTTPProfile::create encountered blank ip/hostname")
+            if interop:
+                if list(self.ip_map)[i] in windows_list:
+                    self.dest = 'NUL'
+                if list(self.ip_map)[i] not in windows_list:
+                        self.dest = '/dev/null'
 
             # print("http_profile - port_name:{port_name}".format(port_name=port_name))
             rv = self.local_realm.name_to_eid(port_name)
