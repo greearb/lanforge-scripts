@@ -5001,7 +5001,8 @@ class L3VariableTime(Realm):
                 self.report.set_graph_image(graph_png)
                 self.report.move_graph_image()
                 self.report.build_graph()
-
+                self.report.set_csv_filename(graph_png)
+                self.report.move_csv_file()
 
 
                 tos_dataframe_A = {
@@ -5072,6 +5073,9 @@ class L3VariableTime(Realm):
                 self.report.set_graph_image(graph_png)
                 self.report.move_graph_image()
                 self.report.build_graph()
+                self.report.set_csv_filename(graph_png)
+                self.report.move_csv_file()
+
 
                 tos_dataframe_B = {
                     " Client Alias " : self.client_dict_B[tos]['resource_alias_B'],
