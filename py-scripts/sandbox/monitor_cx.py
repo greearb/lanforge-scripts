@@ -25,6 +25,8 @@ import importlib
 import argparse
 import pprint
 import logging
+import io
+import csv
 
 sys.path.insert(1, "../../")
 
@@ -49,7 +51,7 @@ logger = logging.getLogger(__name__)
 class QuitWhen(Enum):
     NEVER = "never"
     ALL_CX_STOPPED = "all_cx_stopped"
-    TIME_ELAPSED = "time_elapsed"
+    # TIME_ELAPSED = "time_elapsed" # not implemented
 
     @staticmethod
     def parse(criteria: str = None) -> str:
@@ -58,22 +60,22 @@ class QuitWhen(Enum):
             raise ValueError(f"empty <{criteria}> will not parse")
         lc_word = str(criteria).lower()
 
-        if lc_word.endswith("never"):
-            return QuitWhen.NEVER
+        #if lc_word.endswith("never"):
+        #    return QuitWhen.NEVER
         if lc_word.endswith("all_cx_stopped"):
             return QuitWhen.ALL_CX_STOPPED
-        if lc_word.endswith("time_elapsed"):
-            return QuitWhen.TIME_ELAPSED
+        #if lc_word.endswith("time_elapsed"):
+        #    return QuitWhen.TIME_ELAPSED
         else:
             raise ValueError(f"Unknown value: {criteria}")
 
 
 class CxMonitor:
     def __init__(self,
-                session: LFSession = None,
-                cxnames: list = None,
-                filename: str = None,
-                quit_when: str = None):
+                 session: LFSession = None,
+                 cxnames: list = None,
+                 filename: str = None,
+                 quit_when: str = None):
         self.command: LFJsonCommand = session.get_command()
         self.command.debug_on = True
         self.query: LFJsonQuery = session.get_query()
@@ -86,10 +88,11 @@ class CxMonitor:
         if not cxnames:
             raise ValueError("Please specify connection names, or ALL")
         self.csvfile = filename
+        self.csv_fh: io.TextIOWrapper = None
 
         if isinstance(cxnames, str):
             if cxnames.lower() == "all":
-                print(f"ALL:{cxnames}")
+                #print(f"ALL:{cxnames}")
                 self.cxnames = ["all"]
             elif cxnames.find(",") > 0:
                 print("COMMA")
@@ -104,64 +107,148 @@ class CxMonitor:
         print(f"cxnames len: {len(self.cxnames)}, z:{self.cxnames[0]}")
         if len(self.cxnames) == 1 and self.cxnames[0] == "all":
             items = self.query.get_cx(eid_list=['all'], requested_col_names=["name"])
-            #pprint.pprint(["items", items])
-            #endp_nl : list = []
+            # pprint.pprint(["items", items])
+            # endp_nl : list = []
             for cxname in items.keys():
-              self.endp_names[f"{cxname}-A"]=1
-              self.endp_names[f"{cxname}-B"]=1
-              
-            #pprint.pprint(["endp_nl", endp_nl])
+                self.endp_names[f"{cxname}-A"] = 1
+                self.endp_names[f"{cxname}-B"] = 1
+
+            # pprint.pprint(["endp_nl", endp_nl])
         else:
             pprint.pprint(["cxnames", self.cxnames])
             for name in self.cxnames:
                 self.endp_names[f"{name}-A"] = 1
                 self.endp_names[f"{name}-B"] = 1
 
-        self.quit_when: QuitWhen = quit_when
+        self.quit_when: str = quit_when
         if not quit_when:
             self.quit_when = QuitWhen.ALL_CX_STOPPED
 
+    def open_save_file(self):
+        if not self.csvfile:
+            raise ValueError("CxMonitor: open_save_file lacks filename")
+        self.csv_fh = open(self.csvfile, "w")
+        if not self.csv_fh:
+            raise ValueError(f"unable to open file for writing: [{self.csvfile}]")
+
     def monitor(self):
         quitting_time: bool = False
-        #revised_endp_names = None
-        #if "all" in self.endp_names.keys():
+        # revised_endp_names = None
+        # if "all" in self.endp_names.keys():
         #    revised_endp_names = []
         default_col_names = (
-          #'name',
-          'type',
-          'run',
-          'tos',
-          'tx rate',
-          'rx rate',
-          #'pdu/s tx',
-          #'pdu/s rx',
-          #'tx bytes',
-          #'rx bytes',
-          #'rx drop %',
-          #'tx pdus',
-          #'rx pdus',
-          #'dropped'
+            # 'name',
+            'type',
+            'run',
+            #"1st rx",
+            #"_links",
+            #"a/b",
+            #"bursty",
+            #"crc fail",
+            #"cwnd",
+            "cx active",
+            "cx estab",
+            "cx estab/s",
+            "cx to",
+            "delay",
+            #"destination addr",
+            "drop-count-5m",
+            "dropped",
+            "dup pkts",
+            #"eid",
+            "elapsed",
+            #"entity id",
+            "jitter",
+            "latency-5m",
+            "max pdu",
+            "max rate",
+            "mcast rx",
+            "min pdu",
+            "min rate",
+            #"mng",
+            #"name",
+            "ooo pkts",
+            "pattern",
+            "pdu/s rx",
+            "pdu/s tx",
+            "pps rx ll",
+            "pps tx ll",
+            "rcv buf",
+            #"replays",
+            "rt-latency-5m",
+            #"run",
+            "rx ber",
+            "rx bytes",
+            "rx drop %",
+            "rx dup %",
+            "rx ooo %",
+            "rx pdus",
+            "rx pkts ll",
+            "rx rate",
+            "rx rate (1m)",
+            "rx rate (last)",
+            "rx rate ll",
+            "rx wrong dev",
+            "rx-silence-3s",
+            #"script",
+            #"send buf",
+            #"source addr",
+            #"tcp mss",
+            "tcp rtx",
+            "tos",
+            "tx bytes",
+            "tx pdus",
+            "tx pkts ll",
+            "tx rate",
+            "tx rate (1&nbsp;min)",
+            "tx rate (last)",
+            "tx rate ll",
         )
+        # output header of csv file
+        column_title: list = ["Time", "Endpoint"]
+        column_title.extend(default_col_names)
+        self.csv_fh.write(",".join(column_title)+"\n")
+        self.csv_fh.close()
+
         print("starting to monitor:")
         while not quitting_time:
-            time.sleep(1)
-            eidlist: list = list(self.endp_names.keys())
-            #pprint.pprint(["eidlist", eidlist])
-            items = self.query.get_endp(eid_list=eidlist,
-                                        requested_col_names=default_col_names)
-            #pprint.pprint(["items", items])
-            for endp in items:
-                pprint.pprint(["endp_k", list(endp.keys())[0]])
-                row : list = []
-                row.extend([list(endp.keys())[0], time.time()])
-                endp_vals : dict = list(endp.values())[0]
-                for col in default_col_names:
-                    row.append(endp_vals[col])
-                pprint.pprint(["row:", row])
+            try:
+                time.sleep(1)
+                eidlist: list = list(self.endp_names.keys())
+                # pprint.pprint(["eidlist", eidlist])
+                items = self.query.get_endp(eid_list=eidlist,
+                                            requested_col_names=default_col_names)
+                rows: list = []
+                possibly_running :int = len(items)
+                for endp in items:
+                    #pprint.pprint(["endp_k", list(endp.keys())[0]])
+                    row: list = []
+                    row.extend([int(time.time()), list(endp.keys())[0]])
+                    endp_vals: dict = list(endp.values())[0]
+                    if not "run" in endp_vals:
+                        pprint.pprint( list(endp_vals))
+                        quitting_time = True
+                        raise ValueError("cannot find run column for endpoint, please list the *run* column")
+                    if not bool(endp_vals["run"]):
+                        possibly_running -= 1
+                    for col in default_col_names:
+                        row.append(endp_vals[col])
+                    rows.append(row)
+                with open(self.csvfile, "a") as csv_fh:
+                    writer = csv.writer(csv_fh)
+                    writer.writerows(rows)
+                if possibly_running < 1:
+                    quitting_time = True
+            except KeyboardInterrupt as k:
+                quitting_time = True
 
-    def save(self):
-        pass
-
+    def close(self):
+        if self.csv_fh and not self.csv_fh.closed:
+            try:
+                self.csv_fh.flush()
+                self.csv_fh.close()
+            finally:
+                pass
 
 def main():
     parser = argparse.ArgumentParser(
@@ -177,7 +264,7 @@ def main():
     parser.add_argument(
         "--quit",
         default=QuitWhen.ALL_CX_STOPPED,
-        help="when to exit the script: never, a number of minutes, or when all connections stop",
+        help="when to exit the script: never, a time, or when all connections stop",
     )
     parser.add_argument(
         "--debug", action="store_true", default=False, help="turn on debugging"
@@ -211,8 +298,14 @@ def main():
         filename=args.csv_file,
         quit_when=QuitWhen.parse(criteria=args.quit),
     )
-    cx_monitor.monitor()
-    cx_monitor.save()
+    try:
+        cx_monitor.open_save_file()
+        cx_monitor.monitor()
+    except Exception as e:
+        print(e)
+    finally:
+        cx_monitor.close()
+    exit(0)
 
 
 if __name__ == "__main__":
