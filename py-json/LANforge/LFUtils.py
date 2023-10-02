@@ -645,6 +645,10 @@ def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=F
     """
     return wait_until_ports_appear(base_url, port_list, debug=debug)
 
+def eid_to_str(eid_list : list = None, shrink_zeros: bool = True) -> str:
+    if shrink_zeros:
+        return f"{int(eid_list[0])}.{int(eid_list[1])}.{int(eid_list[2])}"
+    return f"{eid_list[0]}.{eid_list[1]}.{eid_list[2]}"
 
 def name_to_eid(eid_input, non_port=False):
     rv = [1, 1, "", ""]
