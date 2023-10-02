@@ -778,8 +778,8 @@ Allure Report:
 """
         self.message_txt += """
 
-junit.xml: allure serve {junit}
-junit.xml path: allure serve {junit_path}
+junit.xml: allure generate {junit}
+junit.xml path: allure generate {junit_path}
 """.format(junit=self.junit_results,junit_path=self.junit_path_only)        
 
         try:
@@ -2500,8 +2500,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     check.send_results_email(report_file=html_report)
 
                 # print later so shows up last
-                logger.info("junit.xml: allure serve {}".format(junit_xml))
-                logger.info("junit.xml path: allure serve {}".format(junit_path_only))
+                logger.info("junit.xml: allure generate {}".format(junit_xml))
+                logger.info("junit.xml path: allure generate {}".format(junit_path_only))
 
 
 
