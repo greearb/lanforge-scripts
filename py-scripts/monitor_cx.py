@@ -165,7 +165,7 @@ class CxMonitor:
             'run',
             #"1st rx",
             #"_links",
-            #"a/b",
+            "a/b", # A-side or B-size
             #"bursty",
             #"crc fail",
             #"cwnd",
@@ -175,21 +175,21 @@ class CxMonitor:
             "cx to",
             "delay",
             #"destination addr",
-            "drop-count-5m",
+            # "drop-count-5m", # this is a URL
             "dropped",
             "dup pkts",
-            #"eid",
+            #"eid", # eid is ephemeral, not useful to save
             "elapsed",
-            #"entity id",
+            #"entity id", # eid is ephemeral, not useful to save
             "jitter",
-            "latency-5m",
+            # "latency-5m", # this is a URL
             "max pdu",
             "max rate",
-            "mcast rx",
+            # "mcast rx",
             "min pdu",
             "min rate",
             #"mng",
-            #"name",
+            #"name", # listed above
             "ooo pkts",
             "pattern",
             "pdu/s rx",
@@ -198,8 +198,8 @@ class CxMonitor:
             "pps tx ll",
             "rcv buf",
             #"replays",
-            "rt-latency-5m",
-            #"run",
+            # "rt-latency-5m", # this is a URL
+            #"run", # listed above
             "rx ber",
             "rx bytes",
             "rx drop %",
@@ -212,11 +212,11 @@ class CxMonitor:
             "rx rate (last)",
             "rx rate ll",
             "rx wrong dev",
-            "rx-silence-3s",
+            #"rx-silence-3s", # this is a URL
             #"script",
             #"send buf",
             #"source addr",
-            #"tcp mss",
+            "tcp mss",
             "tcp rtx",
             "tos",
             "tx bytes",
@@ -254,9 +254,12 @@ class CxMonitor:
                         raise ValueError("cannot find run column for endpoint, please list the *run* column")
                     if not bool(endp_vals["run"]):
                         possibly_running -= 1
+                    #pprint.pprint(endp_vals)
                     for col in default_col_names:
+                        #print(f"    [{col}]=> [{endp_vals[col]}]")
                         row.append(endp_vals[col])
                     rows.append(row)
+
                 with open(self.csvfile, "a") as csv_fh:
                     writer = csv.writer(csv_fh)
                     writer.writerows(rows)
