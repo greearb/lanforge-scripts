@@ -1861,6 +1861,8 @@ class L3VariableTime(Realm):
                     total_ul_ll_bps = 0
                     reset_timer = 0
 
+
+                    # Monitor loop 
                     while cur_time < end_time:
                         # interval_time = cur_time + datetime.timedelta(seconds=5)
                         interval_time = cur_time + \
@@ -1868,6 +1870,9 @@ class L3VariableTime(Realm):
                                 seconds=self.polling_interval_seconds)
                         # logger.info("polling_interval_seconds {}".format(self.polling_interval_seconds))
 
+                        # Gather interop data
+
+                        # Holds off for the interval and allows for port reset
                         while cur_time < interval_time:
                             cur_time = datetime.datetime.now()
                             time.sleep(.2)
