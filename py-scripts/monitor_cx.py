@@ -77,6 +77,7 @@ class QuitWhen(Enum):
     """
     # NEVER = "never"
     ALL_CX_STOPPED = "all_cx_stopped"
+
     # TIME_ELAPSED = "time_elapsed" # not implemented
 
     @staticmethod
@@ -86,11 +87,11 @@ class QuitWhen(Enum):
             raise ValueError(f"empty <{criteria}> will not parse")
         lc_word = str(criteria).lower()
 
-        #if lc_word.endswith("never"):
+        # if lc_word.endswith("never"):
         #    return QuitWhen.NEVER
         if lc_word.endswith("all_cx_stopped"):
             return QuitWhen.ALL_CX_STOPPED
-        #if lc_word.endswith("time_elapsed"):
+        # if lc_word.endswith("time_elapsed"):
         #    return QuitWhen.TIME_ELAPSED
         else:
             raise ValueError(f"Unknown value: {criteria}")
@@ -108,7 +109,7 @@ class CxMonitor:
         self.query.debug_on = True
         self.cxnames: list = []
         self.endp_names: dict = {}
-        self.lines_written : int = 0;
+        self.lines_written: int = 0;
 
         if not filename:
             raise ValueError("Please specify a filename")
@@ -119,7 +120,7 @@ class CxMonitor:
 
         if isinstance(cxnames, str):
             if cxnames.lower() == "all":
-                #print(f"ALL:{cxnames}")
+                # print(f"ALL:{cxnames}")
                 self.cxnames = ["all"]
             elif cxnames.find(",") > 0:
                 print("COMMA")
@@ -165,24 +166,24 @@ class CxMonitor:
             # 'name',
             'type',
             'run',
-            #"1st rx",
-            #"_links",
-            "a/b", # A-side or B-size
-            #"bursty",
-            #"crc fail",
-            #"cwnd",
+            # "1st rx",
+            # "_links",
+            "a/b",  # A-side or B-size
+            # "bursty",
+            # "crc fail",
+            # "cwnd",
             "cx active",
             "cx estab",
             "cx estab/s",
             "cx to",
             "delay",
-            #"destination addr",
+            # "destination addr",
             # "drop-count-5m", # this is a URL
             "dropped",
             "dup pkts",
-            #"eid", # eid is ephemeral, not useful to save
+            # "eid", # eid is ephemeral, not useful to save
             "elapsed",
-            #"entity id", # eid is ephemeral, not useful to save
+            # "entity id", # eid is ephemeral, not useful to save
             "jitter",
             # "latency-5m", # this is a URL
             "max pdu",
@@ -190,8 +191,8 @@ class CxMonitor:
             # "mcast rx",
             "min pdu",
             "min rate",
-            #"mng",
-            #"name", # listed above
+            # "mng",
+            # "name", # listed above
             "ooo pkts",
             "pattern",
             "pdu/s rx",
@@ -199,9 +200,9 @@ class CxMonitor:
             "pps rx ll",
             "pps tx ll",
             "rcv buf",
-            #"replays",
+            # "replays",
             # "rt-latency-5m", # this is a URL
-            #"run", # listed above
+            # "run", # listed above
             "rx ber",
             "rx bytes",
             "rx drop %",
@@ -214,10 +215,10 @@ class CxMonitor:
             "rx rate (last)",
             "rx rate ll",
             "rx wrong dev",
-            #"rx-silence-3s", # this is a URL
-            #"script",
-            #"send buf",
-            #"source addr",
+            # "rx-silence-3s", # this is a URL
+            # "script",
+            # "send buf",
+            # "source addr",
             "tcp mss",
             "tcp rtx",
             "tos",
@@ -252,7 +253,7 @@ class CxMonitor:
                                         requested_col_names=["port", "alias"])
         for port in port_list:
             port_eidn = list(port.keys())[0]
-            port_eid = LFUtils.eid_to_str(LFUtils.name_to_eid( list(port.values())[0]["port"] ))
+            port_eid = LFUtils.eid_to_str(LFUtils.name_to_eid(list(port.values())[0]["port"]))
             endp_name_to_alias[port_eid] = port_eidn
 
         print("Starting to monitor:")
@@ -273,7 +274,7 @@ class CxMonitor:
                     ])
                     endp_vals: dict = list(endp.values())[0]
                     if not "run" in endp_vals:
-                        pprint.pprint( list(endp_vals))
+                        pprint.pprint(list(endp_vals))
                         quitting_time = True
                         raise ValueError("cannot find run column for endpoint, please include the *run* column")
                     if not bool(endp_vals["run"]):
