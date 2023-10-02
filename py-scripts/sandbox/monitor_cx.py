@@ -2,15 +2,43 @@
 """
 NAME: monitor_cx.py
 
-PURPOSE: polls connections and saves data to a csv file
+PURPOSE: The Monitor CX script is for collecting CSV data from running Layer 3 connections. It reports data for each
+        endpoint. Start this script after beginning traffic in the GUI or other means. When all connections have
+        stopped, this script will exit. If this script is run before connections are started, it will immediately
+        exit.
 
 EXAMPLE:
-$ ./monitor_cx.py --host ct521a-jana --cx_names cx1,cx2,... --csv_file connections.csv --quit=cx_stop
+#########################################
+# Examples
+#########################################
+
+Begin by starting traffic in the GUI or other means.
+
+Example monitoring one connection:
+$ ./monitor_cx.py --host ct521a-jana --cx_names cx1 --csv_file connections.csv
+
+Example monitoring all connections:
+$ ./monitor_cx.py --host ct521a-jana --cx_names all --csv_file connections.csv
+
+
+SCRIPT_CLASSIFICATION:  Monitors Traffic
+
+SCRIPT_CATEGORIES:  CSV Generation
 
 NOTES:
+        This script is purposely simple. It should serve as a reasonable basis for querying connections
+        in general. Please make a copy of this script and edit it to customize which columns you wish to collect.
 
+STATUS: functional
 
-TO DO NOTES:
+VERIFIED_ON: Sep 28, 2023 jed@candelatech 
+
+LICENSE
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: True
+
 
 """
 import os
