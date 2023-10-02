@@ -31,7 +31,7 @@ NOTES:
 
 STATUS: functional
 
-VERIFIED_ON: Sep 28, 2023 jed@candelatech 
+VERIFIED_ON: Oct 2, 2023 jed@candelatech
 
 LICENSE
           Free to distribute and modify. LANforge systems must be licensed.
@@ -58,19 +58,24 @@ import csv
 from enum import Enum
 
 sys.path.insert(1, "../")
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
 from lanforge_client.lanforge_api import LFSession
 from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
 
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+
 logger = logging.getLogger(__name__)
 
 
-# lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
-
-
 class QuitWhen(Enum):
-    NEVER = "never"
+    """
+    QuitWhen is a utility Enum placed here to define a quit time policy.
+    Right now we only define when all connections stop.
+    """
+    # NEVER = "never"
     ALL_CX_STOPPED = "all_cx_stopped"
     # TIME_ELAPSED = "time_elapsed" # not implemented
 
@@ -126,16 +131,12 @@ class CxMonitor:
             self.cxnames.extend(cxnames)
 
         # turn cxnames into endpoint unique names:
-        print(f"cxnames len: {len(self.cxnames)}, z:{self.cxnames[0]}")
         if len(self.cxnames) == 1 and self.cxnames[0] == "all":
             items = self.query.get_cx(eid_list=['all'], requested_col_names=["name"])
-            # pprint.pprint(["items", items])
-            # endp_nl : list = []
             for cxname in items.keys():
                 self.endp_names[f"{cxname}-A"] = 1
                 self.endp_names[f"{cxname}-B"] = 1
 
-            # pprint.pprint(["endp_nl", endp_nl])
         else:
             pprint.pprint(["cxnames", self.cxnames])
             for name in self.cxnames:
@@ -156,9 +157,10 @@ class CxMonitor:
 
     def monitor(self):
         quitting_time: bool = False
-        # revised_endp_names = None
-        # if "all" in self.endp_names.keys():
-        #    revised_endp_names = []
+
+        # The column names below are commented out on purpose. Not all data columns are useful for the majority
+        # of test cases, and some columns are not data but URLs pointing to more specific queries. If you copy
+        # modify this script, this is the area we expect you to customize first.
         default_col_names = (
             # 'name',
             'type',
@@ -225,44 +227,65 @@ class CxMonitor:
             "tx rate",
             "tx rate (1&nbsp;min)",
             "tx rate (last)",
-            "tx rate ll",
+            "tx rate ll"
         )
         # output header of csv file
-        column_title: list = ["Time", "Endpoint"]
+        column_title: list = ["Time", "Endpoint", "Port"]
         column_title.extend(default_col_names)
-        self.csv_fh.write(",".join(column_title)+"\n")
+        self.csv_fh.write(",".join(column_title) + "\n")
         self.csv_fh.close()
+
+        # determine port alias for each endpoint
+        endp_eid_list: list = list(self.endp_names.keys())
+        endp_eid_items = self.query.get_endp(eid_list=endp_eid_list,
+                                             requested_col_names=["name", "eid"])
+
+        endp_name_to_alias: dict = {}
+        for endp in endp_eid_items:
+            endp_vals: dict = list(endp.values())[0]
+            # eid_to_str() introduced recently, it is functionally:
+            #       f"{port_eid_slice[0]}.{int(port_eid_slice[1])}.{int(port_eid_slice[2])}"
+            port_eid: str = LFUtils.eid_to_str(LFUtils.name_to_eid(endp_vals["eid"]))
+            endp_name_to_alias[port_eid] = "-"
+
+        port_list = self.query.get_port(eid_list=list(endp_name_to_alias.keys()),
+                                        requested_col_names=["port", "alias"])
+        for port in port_list:
+            port_eidn = list(port.keys())[0]
+            port_eid = LFUtils.eid_to_str(LFUtils.name_to_eid( list(port.values())[0]["port"] ))
+            endp_name_to_alias[port_eid] = port_eidn
 
         print("Starting to monitor:")
         while not quitting_time:
             try:
                 time.sleep(1)
-                eidlist: list = list(self.endp_names.keys())
-                # pprint.pprint(["eidlist", eidlist])
-                items = self.query.get_endp(eid_list=eidlist,
-                                            requested_col_names=default_col_names)
+                endp_eid_items = self.query.get_endp(eid_list=endp_eid_list,
+                                                     requested_col_names=default_col_names)
                 rows: list = []
-                possibly_running :int = len(items)
-                for endp in items:
-                    #pprint.pprint(["endp_k", list(endp.keys())[0]])
+                possibly_running: int = len(endp_eid_items)
+                for endp in endp_eid_items:
+                    endp_vals: dict = list(endp.values())[0]
                     row: list = []
-                    row.extend([int(time.time()), list(endp.keys())[0]])
+                    row.extend([
+                        int(time.time()),
+                        list(endp.keys())[0],
+                        endp_name_to_alias[LFUtils.eid_to_str(LFUtils.name_to_eid(endp_vals["eid"]))]
+                    ])
                     endp_vals: dict = list(endp.values())[0]
                     if not "run" in endp_vals:
                         pprint.pprint( list(endp_vals))
                         quitting_time = True
-                        raise ValueError("cannot find run column for endpoint, please list the *run* column")
+                        raise ValueError("cannot find run column for endpoint, please include the *run* column")
                     if not bool(endp_vals["run"]):
                         possibly_running -= 1
-                    #pprint.pprint(endp_vals)
                     for col in default_col_names:
-                        #print(f"    [{col}]=> [{endp_vals[col]}]")
                         row.append(endp_vals[col])
                     rows.append(row)
 
                 with open(self.csvfile, "a") as csv_fh:
                     writer = csv.writer(csv_fh)
                     writer.writerows(rows)
+                    # this is status output so that we don't think the script is dead
                     print(".", end="", flush=True)
                     self.lines_written += len(rows)
 
@@ -279,6 +302,7 @@ class CxMonitor:
             finally:
                 pass
 
+
 def main():
     parser = argparse.ArgumentParser(
         prog=__file__,
@@ -293,7 +317,7 @@ def main():
     parser.add_argument(
         "--quit",
         default=QuitWhen.ALL_CX_STOPPED,
-        help="when to exit the script: never, a time, or when all connections stop",
+        help="when to exit the script: all_cx_stopped: when all connections stop",
     )
     parser.add_argument(
         "--debug", action="store_true", default=False, help="turn on debugging"
@@ -309,7 +333,6 @@ def main():
         exit(1)
     if args.log_level:
         logger.setLevel(args.log_level)
-        # lf_logger_config.set_level(level=args.log_level)
 
     session = lanforge_api.LFSession(
         lfclient_url="http://%s:8080" % args.host,
@@ -320,7 +343,6 @@ def main():
         require_session=True,
         exit_on_error=True,
     )
-    # print(f"quit: {args.quit}")
     cx_monitor = CxMonitor(
         session,
         cxnames=args.cx_names,
