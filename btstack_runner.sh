@@ -4,8 +4,8 @@
 echo "arg1: selected USB adapter path: $1"
 echo "arg2: target device's BT MAC addr: $2"
 
-if [ ! -d "btstack/" ]; then
-    mkdir -p btstack
+if [ ! -d "/home/lanforge/btstack/" ]; then
+    mkdir -p /home/lanforge/btstack
 fi
 
 for (( ; ; ))
