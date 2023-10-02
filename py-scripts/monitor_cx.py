@@ -261,7 +261,7 @@ class CxMonitor:
                     writer = csv.writer(csv_fh)
                     writer.writerows(rows)
                     print(".", end="", flush=True)
-                    self.lines_written += len(rows);
+                    self.lines_written += len(rows)
 
                 if possibly_running < 1:
                     quitting_time = True
