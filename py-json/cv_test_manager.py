@@ -405,10 +405,11 @@ class cv_test(Realm):
             kpi_csv = "{kpi_location}/kpi.csv".format(kpi_location=kpi_location)
 
         if os.path.isfile(kpi_csv):
-            if os.path.getsize(kpi_csv) == 0:
-                logger.error("kpi_csv file empty {kpi_csv}".format(kpi_csv=kpi_csv))
+            kpi_size = os.path.getsize(kpi_csv)
+            if kpi_size < 210:
+                logger.error("kpi_csv file may only have column headers size: {kpi_size} file: {kpi_csv}".format(kpi_size=kpi_size,kpi_csv=kpi_csv))
             else:
-                logger.info("kpi_csv file not empty {kpi_csv}".format(kpi_csv=kpi_csv))
+                logger.info("kpi_csv file not empty size: {kpi_size} {kpi_csv}".format(kpi_size=kpi_size,kpi_csv=kpi_csv))
                 kpi_csv_data_present = True
 
         return kpi_csv_data_present 
