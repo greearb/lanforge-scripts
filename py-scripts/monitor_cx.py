@@ -55,20 +55,13 @@ import pprint
 import logging
 import io
 import csv
-
-sys.path.insert(1, "../../")
-
-if "SHELL" in os.environ.keys():
-    lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-    from lanforge_client.lanforge_api import LFSession
-    from lanforge_client.lanforge_api import LFJsonCommand
-    from lanforge_client.lanforge_api import LFJsonQuery
-else:
-    import lanforge_api
-    from lanforge_api import LFJsonCommand
-    from lanforge_api import LFJsonQuery
-
 from enum import Enum
+
+sys.path.insert(1, "../")
+lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+from lanforge_client.lanforge_api import LFSession
+from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFJsonQuery
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +103,7 @@ class CxMonitor:
         self.query.debug_on = True
         self.cxnames: list = []
         self.endp_names: dict = {}
+        self.lines_written : int = 0;
 
         if not filename:
             raise ValueError("Please specify a filename")
@@ -158,6 +152,7 @@ class CxMonitor:
         self.csv_fh = open(self.csvfile, "w")
         if not self.csv_fh:
             raise ValueError(f"unable to open file for writing: [{self.csvfile}]")
+        self.lines_written += 1
 
     def monitor(self):
         quitting_time: bool = False
@@ -238,7 +233,7 @@ class CxMonitor:
         self.csv_fh.write(",".join(column_title)+"\n")
         self.csv_fh.close()
 
-        print("starting to monitor:")
+        print("Starting to monitor:")
         while not quitting_time:
             try:
                 time.sleep(1)
@@ -265,6 +260,9 @@ class CxMonitor:
                 with open(self.csvfile, "a") as csv_fh:
                     writer = csv.writer(csv_fh)
                     writer.writerows(rows)
+                    print(".", end="", flush=True)
+                    self.lines_written += len(rows);
+
                 if possibly_running < 1:
                     quitting_time = True
             except KeyboardInterrupt as k:
@@ -333,6 +331,7 @@ def main():
         print(e)
     finally:
         cx_monitor.close()
+        print(f"Wrote {cx_monitor.lines_written} lines to {cx_monitor.csvfile}")
     exit(0)
 
 
