@@ -147,6 +147,8 @@ class FtpTest(LFCliBase):
         self.mac_id_list = mac_id_list
         self.real_client_list1 = real_client_list1
         self.uc_avg = uc_avg
+        self.uc_min = []
+        self.uc_max = []
         self.url_data = url_data
         self.channel_list = channel_list
         self.mode_list = mode_list
@@ -274,7 +276,7 @@ class FtpTest(LFCliBase):
         '''This method will set values according user input'''
         if self.band == "6G":
             self.radio = [self.sixg_radio]
-        if self.band == "5G":
+        elif self.band == "5G":
             self.radio = [self.fiveg_radio]
         elif self.band == "2.4G":
             self.radio = [self.twog_radio]
@@ -306,7 +308,7 @@ class FtpTest(LFCliBase):
                 self.station_profile.mode = 15
                 self.count = self.count + 1
                 
-            if rad == self.fiveg_radio:
+            elif rad == self.fiveg_radio:
 
                 # select mode(All stations will connects to 5G)
                 self.station_profile.mode = 14
@@ -620,6 +622,8 @@ class FtpTest(LFCliBase):
         # data in json format
         #data = self.json_get("layer4/list?fields=bytes-rd")
         uc_avg_data = self.json_get("layer4/list?fields=uc-avg")
+        uc_max_data = self.json_get("layer4/list?fields=uc-max")
+        uc_min_data = self.json_get("layer4/list?fields=uc-min")
         total_url_data = self.json_get("layer4/list?fields=total-urls")
         print(uc_avg_data)
         print(total_url_data)
@@ -628,6 +632,8 @@ class FtpTest(LFCliBase):
             # list of layer 4 connections name
             if type(uc_avg_data['endpoint']) is dict:
                 self.uc_avg.append(uc_avg_data['endpoint']['uc-avg'])
+                self.uc_max.append(uc_max_data['endpoint']['uc-max'])
+                self.uc_min.append(uc_min_data['endpoint']['uc-min'])
                 #reading uc-avg data in json format
                 self.url_data.append(total_url_data['endpoint']['total-urls'])
             else:
@@ -636,12 +642,22 @@ class FtpTest(LFCliBase):
                         for created_cx in self.cx_list:
                             if CX == created_cx:
                                 self.uc_avg.append(cx[CX]['uc-avg'])
+                for cx in uc_max_data['endpoint']:
+                    for CX in cx:
+                        for created_cx in self.cx_list:
+                            if CX == created_cx:
+                                self.uc_max.append(cx[CX]['uc-max'])
+                for cx in uc_min_data['endpoint']:
+                    for CX in cx:
+                        for created_cx in self.cx_list:
+                            if CX == created_cx:
+                                self.uc_min.append(cx[CX]['uc-min'])
                 for cx in total_url_data['endpoint']:
                     for CX in cx:
                         for created_cx in self.cx_list:
                             if CX == created_cx:                
                                 self.url_data.append(cx[CX]['total-urls'])
-            print("uc_avg",self.uc_avg)
+            logger.info("uc_min,uc_max,uc_avg",self.uc_min,self.uc_max,self.uc_avg)
             print("total urls",self.url_data)
         else:
             logger.info("No layer 4-7 endpoints")
@@ -1189,6 +1205,18 @@ class FtpTest(LFCliBase):
         self.report.set_csv_filename(graph_png)
         self.report.move_csv_file()
         self.report.build_graph()
+        self.report.set_obj_html("File Download/Upload Time (sec)", "The below table will provide information of "
+                             "minimum, maximum and the average time taken by clients to download/upload a file in seconds")
+        self.report.build_objective()
+        dataframe2 ={
+               "Band" : self.band,
+               "Minimum" : [str(round(min(self.uc_min)/1000,1))],
+               "Maximum" : [str(round(max(self.uc_max)/1000,1))],
+               "Average" : [str(round((sum(self.uc_avg)/len(client_list))/1000,1))]
+               }
+        dataframe3 = pd.DataFrame(dataframe2)
+        self.report.set_table_dataframe(dataframe3)
+        self.report.build_table()
         self.report.set_table_title("Overall Results")
         self.report.build_table_title()
         #self.report.test_setup_table(value="Information", test_setup_data=input_setup_info)
