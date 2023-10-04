@@ -607,7 +607,7 @@ class ThroughputQOS(Realm):
             res_copy.update({"graph_df": graph_df})
         return res_copy
 
-    def generate_report(self,data, input_setup_info):
+    def generate_graph_data_set(self, data):
         data_set,overall_list=[],[]
         overall_throughput = [[],[],[],[]]
         load=''
@@ -634,7 +634,15 @@ class ThroughputQOS(Realm):
             data_set=overall_throughput
         else:
             data_set=list(res["graph_df"].values())[0]
-        report = lf_report(_output_pdf="throughput_qos.pdf", _output_html="throughput_qos.html")
+        return data_set, load, res
+
+    def generate_report(self, data, input_setup_info, report_path='', result_dir_name='Qos_Test_report',
+                        selected_real_clients_names=None):
+        if selected_real_clients_names is not None:
+            self.num_stations = selected_real_clients_names
+        data_set, load, res = self.generate_graph_data_set(data)
+        report = lf_report(_output_pdf="throughput_qos.pdf", _output_html="throughput_qos.html", _path=report_path,
+                           _results_dir_name=result_dir_name)
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
         print("path: {}".format(report_path))
@@ -790,8 +798,7 @@ class ThroughputQOS(Realm):
                     report.set_obj_html(
                         _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic BK(WiFi).",
                         _obj=f"The below graph represents individual throughput for {len(self.input_devices_list)} clients running BK "
-                                f"(WiFi) traffic.  X- axis shows “number of clients” and Y-axis shows “"
-                                f"Throughput in Mbps”.")
+                                f"(WiFi) traffic.  X- axis shows “Throughput in Mbps” and Y-axis shows “number of clients”.")
                     report.build_objective()
                     print(upload_list,download_list,individual_download_list,individual_upload_list)
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _xaxis_name="Throughput in Mbps",
