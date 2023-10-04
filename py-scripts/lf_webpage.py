@@ -85,6 +85,9 @@ class HttpDownload(Realm):
     def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password,ap_name,
                  target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None,sixg_radio=None, _debug_on=False, _exit_on_error=False,
                  _exit_on_fail=False,client_type="",port_list=[],devices_list=[],macid_list=[],lf_username="lanforge",lf_password="lanforge"):
+        self.devices = []
+        self.mode_list = []
+        self.channel_list = []
         self.host = lfclient_host
         self.port = lfclient_port
         self.upstream = upstream
@@ -571,9 +574,9 @@ class HttpDownload(Realm):
                         threshold_5g, threshold_both, dataset2, #summary_table_value,
                         result_data, test_rig,
                         test_tag, dut_hw_version, dut_sw_version, dut_model_num, dut_serial_num, test_id,
-                        test_input_infor, csv_outfile):
-        channel_list,mode_list,devices = [],[],[]
-        report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html", _output_pdf="Webpage.pdf")
+                        test_input_infor, csv_outfile, _results_dir_name='webpage_test', report_path=''):
+        report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html",
+                                     _output_pdf="Webpage.pdf", _path=report_path)
 
         if bands == "Both":
             num_stations = num_stations * 2
@@ -629,23 +632,23 @@ class HttpDownload(Realm):
                              "minimum, maximum and the average time taken by clients to download a webpage in seconds")
 
         report.build_objective()
-        response_port = self.local_realm.json_get("/port/all")
+        self.response_port = self.local_realm.json_get("/port/all")
         #print(response_port)
         print("port list",self.port_list)
         if self.client_type == "Real":
-            devices = self.devices_list
-            for interface in response_port['interfaces']:
+            self.devices = self.devices_list
+            for interface in self.response_port['interfaces']:
                 for port,port_data in interface.items():
                     if port in self.port_list:
-                        channel_list.append(str(port_data['channel']))
-                        mode_list.append(str(port_data['mode']))
+                        self.channel_list.append(str(port_data['channel']))
+                        self.mode_list.append(str(port_data['mode']))
         elif self.client_type == "Virtual":
-            devices = self.station_list[0]
-            for interface in response_port['interfaces']:
-                for port,port_data in interface.items():       
+            self.devices = self.station_list[0]
+            for interface in self.response_port['interfaces']:
+                for port, port_data in interface.items():
                     if port in self.station_list[0]:
-                        channel_list.append(str(port_data['channel']))
-                        mode_list.append(str(port_data['mode']))
+                        self.channel_list.append(str(port_data['channel']))
+                        self.mode_list.append(str(port_data['mode']))
                         self.macid_list.append(str(port_data['mac']))
 
         x = []
@@ -748,12 +751,11 @@ class HttpDownload(Realm):
         report.build_table()
         report.set_table_title("Overall Results")
         report.build_table_title()
-        print("details",mode_list,channel_list,devices,self.macid_list,dataset,dataset2)
         dataframe = {
-                        " Clients" : devices,
+                        " Clients" : self.devices,
                         " MAC " : self.macid_list,
-                        " Channel" : channel_list,
-                        " Mode" : mode_list,
+                        " Channel" : self.channel_list,
+                        " Mode" : self.mode_list,
                         " No of times File downloaded " : dataset2,
                         " Average time taken to Download file (ms)" : dataset
                     }
@@ -764,7 +766,7 @@ class HttpDownload(Realm):
         html_file = report.write_html()
         print("returned file {}".format(html_file))
         print(html_file)
-        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+        report.write_pdf()
 
 
 def main():
