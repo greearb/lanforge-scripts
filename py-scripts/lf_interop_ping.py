@@ -122,6 +122,7 @@ class Ping(Realm):
         self.generic_endps_profile.type = 'lfping'
         self.generic_endps_profile.dest = self.target
         self.generic_endps_profile.interval = self.interval
+        self.Devices = None
 
     def cleanup(self):
 
@@ -157,11 +158,16 @@ class Ping(Realm):
     # Args:
     #   devices: Connected RealDevice object which has already populated tracked real device
     #            resources through call to get_devices()
-    def select_real_devices(self, real_devices):
-        self.real_sta_list, _, _ = real_devices.query_user()
+    def select_real_devices(self, real_devices, real_sta_list=None, base_interop_obj=None):
+        if real_sta_list is None:
+            self.real_sta_list, _, _ = real_devices.query_user()
+        else:
+            self.real_sta_list = real_sta_list
+        if base_interop_obj is not None:
+            self.Devices = base_interop_obj
 
         # Need real stations to run interop test
-        if(len(ping.real_sta_list) == 0):
+        if (len(self.real_sta_list) == 0):
             logging.error('There are no real devices in this testbed. Aborting test')
             exit(0)
 
@@ -175,10 +181,10 @@ class Ping(Realm):
             self.real_sta_data_dict[sta_name] = real_devices.devices_data[sta_name]
 
         # Track number of selected devices
-        self.android = Devices.android
-        self.windows = Devices.windows
-        self.mac     = Devices.mac
-        self.linux   = Devices.linux
+        self.android = self.Devices.android
+        self.windows = self.Devices.windows
+        self.mac = self.Devices.mac
+        self.linux = self.Devices.linux
 
     def buildstation(self):
         print('Creating Stations {}'.format(self.sta_list))
@@ -278,11 +284,15 @@ class Ping(Realm):
 
         return(remarks)
 
-    def generate_report(self):
+    def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path=''):
+        if result_json is not None:
+            self.result_json = result_json
         print('Generating Report')
 
         report = lf_report(_output_pdf='interop_ping.pdf',
-                           _output_html='interop_ping.html')
+                           _output_html='interop_ping.html',
+                           _results_dir_name=result_dir,
+                           _path=report_path)
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
         print('path: {}'.format(report_path))
@@ -317,46 +327,46 @@ class Ping(Realm):
             'Packets sent vs packets received vs packets dropped')
         report.build_table_title()
         # graph for the above
-        packets_sent = []
-        packets_received = []
-        packets_dropped = []
-        device_names = []
-        device_modes = []
-        device_channels = []
-        device_min = []
-        device_max = []
-        device_avg = []
-        device_mac = []
-        device_names_with_errors = []
-        devices_with_errors = []
-        report_names = []
-        remarks = []
+        self.packets_sent = []
+        self.packets_received = []
+        self.packets_dropped = []
+        self.device_names = []
+        self.device_modes = []
+        self.device_channels = []
+        self.device_min = []
+        self.device_max = []
+        self.device_avg = []
+        self.device_mac = []
+        self.device_names_with_errors = []
+        self.devices_with_errors = []
+        self.report_names = []
+        self.remarks = []
         # packet_count_data = {}
         for device, device_data in self.result_json.items():
-            packets_sent.append(device_data['sent'])
-            packets_received.append(device_data['recv'])
-            packets_dropped.append(device_data['dropped'])
-            device_names.append(device_data['name'])
-            device_modes.append(device_data['mode'])
-            device_channels.append(device_data['channel'])
-            device_mac.append(device_data['mac'])
-            device_min.append(float(device_data['min_rtt']))
-            device_max.append(float(device_data['max_rtt']))
-            device_avg.append(float(device_data['avg_rtt']))
+            self.packets_sent.append(device_data['sent'])
+            self.packets_received.append(device_data['recv'])
+            self.packets_dropped.append(device_data['dropped'])
+            self.device_names.append(device_data['name'])
+            self.device_modes.append(device_data['mode'])
+            self.device_channels.append(device_data['channel'])
+            self.device_mac.append(device_data['mac'])
+            self.device_min.append(float(device_data['min_rtt']))
+            self.device_max.append(float(device_data['max_rtt']))
+            self.device_avg.append(float(device_data['avg_rtt']))
             if(device_data['os'] == 'Virtual'):
-                report_names.append('{} {}'.format(device, device_data['os'])[0:25])
+                self.report_names.append('{} {}'.format(device, device_data['os'])[0:25])
             else:
-                report_names.append('{} {} {}'.format(device, device_data['os'], device_data['name'])[0:25])
-            if(device_data['remarks'] != []):
-                device_names_with_errors.append(device_data['name'])
-                devices_with_errors.append(device)
-                remarks.append(','.join(device_data['remarks']))
-            print(packets_sent,
-                  packets_received,
-                  packets_dropped)
-            print(device_min,
-                  device_max,
-                  device_avg)
+                self.report_names.append('{} {} {}'.format(device, device_data['os'], device_data['name'])[0:25])
+            if (device_data['remarks'] != []):
+                self.device_names_with_errors.append(device_data['name'])
+                self.devices_with_errors.append(device)
+                self.remarks.append(','.join(device_data['remarks']))
+            print(self.packets_sent,
+                  self.packets_received,
+                  self.packets_dropped)
+            print(self.device_min,
+                  self.device_max,
+                  self.device_avg)
 
             # packet_count_data[device] = {
             #     'MAC': device_data['mac'],
@@ -367,15 +377,15 @@ class Ping(Realm):
             #     'Packets Loss': device_data['dropped'],
             # }
         x_fig_size = 15
-        y_fig_size = len(device_names) * .5 + 4
-        graph = lf_bar_graph_horizontal(_data_set=[packets_dropped, packets_received, packets_sent],
+        y_fig_size = len(self.device_names) * .5 + 4
+        graph = lf_bar_graph_horizontal(_data_set=[self.packets_dropped, self.packets_received, self.packets_sent],
                                         _xaxis_name='Packets Count',
                                         _yaxis_name='Wireless Clients',
                                         _label=[
                                             'Packets Loss', 'Packets Received', 'Packets Sent'],
                                         _graph_image_name='Packets sent vs received vs dropped',
-                                        _yaxis_label=report_names,
-                                        _yaxis_categories=report_names,
+                                        _yaxis_label=self.report_names,
+                                        _yaxis_categories=self.report_names,
                                         _yaxis_step=1,
                                         _yticks_font=8,
                                         _graph_title='Packets sent vs received vs dropped',
@@ -402,13 +412,13 @@ class Ping(Realm):
         report.build_graph()
 
         dataframe1 = pd.DataFrame({
-            'Wireless Client': device_names,
-            'MAC': device_mac,
-            'Channel': device_channels,
-            'Mode': device_modes,
-            'Packets Sent': packets_sent,
-            'Packets Received': packets_received,
-            'Packets Loss': packets_dropped
+            'Wireless Client': self.device_names,
+            'MAC': self.device_mac,
+            'Channel': self.device_channels,
+            'Mode': self.device_modes,
+            'Packets Sent': self.packets_sent,
+            'Packets Received': self.packets_received,
+            'Packets Loss': self.packets_dropped
         })
         report.set_table_dataframe(dataframe1)
         report.build_table()
@@ -417,14 +427,14 @@ class Ping(Realm):
         report.set_table_title('Ping Latency Graph')
         report.build_table_title()
 
-        graph = lf_bar_graph_horizontal(_data_set=[device_min, device_avg, device_max],
+        graph = lf_bar_graph_horizontal(_data_set=[self.device_min, self.device_avg, self.device_max],
                                         _xaxis_name='Time (ms)',
                                         _yaxis_name='Wireless Clients',
                                         _label=[
                                             'Min Latency (ms)', 'Average Latency (ms)', 'Max Latency (ms)'],
                                         _graph_image_name='Ping Latency per client',
-                                        _yaxis_label=report_names,
-                                        _yaxis_categories=report_names,
+                                        _yaxis_label=self.report_names,
+                                        _yaxis_categories=self.report_names,
                                         _yaxis_step=1,
                                         _yticks_font=8,
                                         _graph_title='Ping Latency per client',
@@ -451,25 +461,25 @@ class Ping(Realm):
         report.build_graph()
 
         dataframe2 = pd.DataFrame({
-            'Wireless Client': device_names,
-            'MAC': device_mac,
-            'Channel': device_channels,
-            'Mode': device_modes,
-            'Min Latency (ms)': device_min,
-            'Average Latency (ms)': device_avg,
-            'Max Latency (ms)': device_max
+            'Wireless Client': self.device_names,
+            'MAC': self.device_mac,
+            'Channel': self.device_channels,
+            'Mode': self.device_modes,
+            'Min Latency (ms)': self.device_min,
+            'Average Latency (ms)': self.device_avg,
+            'Max Latency (ms)': self.device_max
         })
         report.set_table_dataframe(dataframe2)
         report.build_table()
 
         # check if there are remarks for any device. If there are remarks, build table else don't
-        if(remarks != []):
+        if(self.remarks != []):
             report.set_table_title('Notes')
             report.build_table_title()
             dataframe3 = pd.DataFrame({
-                'Wireless Client': device_names_with_errors,
-                'Port': devices_with_errors,
-                'Remarks': remarks
+                'Wireless Client': self.device_names_with_errors,
+                'Port': self.devices_with_errors,
+                'Remarks': self.remarks
             })
             report.set_table_dataframe(dataframe3)
             report.build_table()
@@ -669,6 +679,7 @@ if __name__ == '__main__':
     if (args.real):
         Devices = RealDevice(manager_ip=mgr_ip)
         Devices.get_devices()
+        ping.Devices = Devices
         ping.select_real_devices(real_devices=Devices)
 
     # station precleanup
