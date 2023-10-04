@@ -691,7 +691,7 @@ class ThroughputQOS(Realm):
                         print("table_df",table_df)
         return res_copy
 
-    def generate_report(self, data, input_setup_info):
+    def generate_graph_data_set(self, data):
         load=''
         data_set,overall_list=[],[]
         overall_throughput = [[],[],[],[]]
@@ -719,7 +719,13 @@ class ThroughputQOS(Realm):
         else:
             data_set=list(res["graph_df"].values())[0]
         print("data set",data_set)
-        report = lf_report(_output_pdf="throughput_qos.pdf", _output_html="throughput_qos.html")
+        return data_set, load, res
+
+    def generate_report(self, data, input_setup_info, report_path='', result_dir_name='Throughput_Qos_Test_report'):
+        data_set, load, res = self.generate_graph_data_set(data)
+
+        report = lf_report(_output_pdf="throughput_qos.pdf", _output_html="throughput_qos.html", _path=report_path,
+                           _results_dir_name=result_dir_name)
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
         print("path: {}".format(report_path))
