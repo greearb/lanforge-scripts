@@ -89,7 +89,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class FtpTest(LFCliBase):
-    def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta=None,radio="",
+    def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta=0,radio="",
                  dut_ssid=None, dut_security=None, dut_passwd=None, file_size=None, band=None, twog_radio=None,
                  sixg_radio=None,fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False,ap_name="",
                  direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None,
@@ -1075,7 +1075,7 @@ class FtpTest(LFCliBase):
 
     def generate_report(self, ftp_data, date, input_setup_info, test_rig, test_tag, dut_hw_version,
                         dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
-                        csv_outfile, local_lf_report_dir):
+                        csv_outfile, local_lf_report_dir, _results_dir_name='ftp_test', report_path=''):
         no_of_stations = ""
         duration=""
         x_fig_size = 18
@@ -1096,7 +1096,7 @@ class FtpTest(LFCliBase):
         else:
             if self.clients_type == "Virtual":
                 client_list = self.station_list
-        self.report = lf_report.lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
+        self.report = lf_report.lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf", _path=report_path)
 
         self.report.set_title("FTP Test")
         self.report.set_date(date)
@@ -1422,20 +1422,6 @@ class FtpTest(LFCliBase):
                 csv_outfile, current_time)
             csv_outfile = self.report.file_add_path(csv_outfile)
             logger.info("csv output file : {}".format(csv_outfile))
-
-        exit()
-
-        test_setup = pd.DataFrame(download_table_value)
-        self.report.set_table_dataframe(test_setup)
-        self.report.build_table()
-        self.report.set_table_title("Test input Information")
-        self.report.build_table_title()
-        self.report.test_setup_table(value="Information", test_setup_data=input_setup_info)
-        self.report.build_footer()
-        html_file = self.report.write_html()
-        logger.info("returned file {}".format(html_file))
-        logger.info(html_file)
-        self.report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
 
 def main():
