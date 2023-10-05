@@ -418,7 +418,7 @@ class GenTest():
         if self.sta_list:
             for sta_alias in self.sta_list:
                 sta_eid = self.name_to_eid(sta_alias)
-                self.create_generic_endp(sta_eid, self.test_type, unique_alias, existing_station=False)
+                self.create_generic_endp(sta_eid, self.test_type, unique_alias, interop_device=False)
                 unique_alias-=1
         #check if these are interop devices..
         if self.use_existing_eid: #use existing eid will have iperf3-server eid, if we are using lanforge iperf3-server.
@@ -577,7 +577,7 @@ class GenTest():
         #TODO: allow for multiple targets to be passed in for multiple servers.
         cmd = "iperf3 --forceflush --format k --precision 4"
         #TODO check if dest, client_port and server_port are not empty
-        eid_shelf, eid_resource, eid_name, *nil = self.name_to_eid(eid) 
+        eid_shelf, eid_resource, eid_name, *nil = self.name_to_eid(eid)
         if (type == 'client'):
             if (self.iperf3_target_lanforge):
                 server_ip_addr = self.eid_to_ip(self.name_to_eid(self.target))
