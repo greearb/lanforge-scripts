@@ -64,6 +64,10 @@ lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 
+from lf_graph import lf_bar_graph_horizontal
+from lf_graph import lf_bar_graph
+from lf_report import lf_report
+
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +79,7 @@ if sys.version_info[0] != 3:
 class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
                 name_prefix, num_stations, client_port = None,server_port=None,
-                 host="localhost", port=8080, csv_outfile=None, use_existing_eid=None, monitor_interval = "2s",
+                 host="localhost", port=8080, csv_outfile=None, create_report = False, use_existing_eid=None, monitor_interval = "2s",
                  test_duration="20s",test_type="ping", target=None, cmd=None, interval=0.1,
                  radio=None, file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
                  _debug_on=False, _exit_on_error=False, die_on_error = False,_exit_on_fail=False):
@@ -102,11 +106,14 @@ class GenTest():
         self.debug = _debug_on
         self.exit_on_error = _exit_on_error
         self.exit_on_fail = _exit_on_fail
-        self.csv_outfile = csv_outfile
         self.lfclient_url = "http://%s:%s" % (self.host, self.port)
         self.report_timer = 1500
         self.log_level = log_level
         self.lf_logger_json = lf_logger_json
+
+        #Reporting
+        self.csv_outfile = csv_outfile
+        self.create_report = create_report
 
         # create a session
         self.session = LFSession(lfclient_url="http://%s:8080" % self.host,
@@ -163,64 +170,258 @@ class GenTest():
             return False
         return True
 
-    def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version, 
-                        dut_model_num, dut_serial_num, test_id, csv_outfile,
-                        monitor_endps, generic_cols):
-        report = lf_report.lf_report(_results_dir_name="test_generic_test")
-        kpi_path = report.get_report_path()
-        print("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
-        kpi_csv = lf_kpi_csv.lf_kpi_csv(
-            _kpi_path=kpi_path,
-            _kpi_test_rig=test_rig,
-            _kpi_test_tag=test_tag,
-            _kpi_dut_hw_version=dut_hw_version,
-            _kpi_dut_sw_version=dut_sw_version,
-            _kpi_dut_model_num=dut_model_num,
-            _kpi_dut_serial_num=dut_serial_num,
-            _kpi_test_id=test_id)
-        kpi_csv.kpi_dict['Units'] = "Mbps"
+    #REPORTING
 
-        generic_cols = [self.replace_special_char(x) for x in generic_cols]
-        generic_cols.append('last results')
-        generic_fields = ",".join(generic_cols)
-        
-        gen_url = "/generic/%s?fields=%s" % (",".join(monitor_endps), generic_fields)
-        endps = standardize_json_results(self.json_get(gen_url))
+    def get_results(self):
+        #print(self.generic_endps_profile.created_endp)
+        results = self.json_get(
+            "/generic/{}".format(','.join(self.generic_endps_profile.created_endp)))
+        if (len(self.generic_endps_profile.created_endp) > 1):
+            results = results['endpoints']
+        else:
+            results = results['endpoint']
+        return (results)
 
-        data = {}
-        for endp in endps:
-            data[list(endp.keys())[0]] = list(endp.values())[0]
-        for endpoint in data:
-            kpi_csv.kpi_csv_get_dict_update_time()
-            kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
-                endp_name=data[endpoint]['name'])
-            kpi_csv.kpi_dict['numeric-score'] = "{endp_tx}".format(
-                endp_tx=data[endpoint]['tx bytes'])
-            kpi_csv.kpi_dict['Units'] = "bps"
-            kpi_csv.kpi_dict['Graph-Group'] = "Endpoint TX bytes"
-            kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
+    def generate_remarks(self, station_ping_data):
+        remarks = []
 
-            kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
-                endp_name=data[endpoint]['name'])
-            kpi_csv.kpi_dict['numeric-score'] = "{endp_rx}".format(
-                endp_rx=data[endpoint]['rx bytes'])
-            kpi_csv.kpi_dict['Units'] = "bps"
-            kpi_csv.kpi_dict['Graph-Group'] = "Endpoint RX bytes"
+        #NOTE if there are any more ping failure cases that are missed, add them here.
 
-            kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
-                endp_name=data[endpoint]['name'])
-            kpi_csv.kpi_dict['numeric-score'] = "{last_results}".format(
-                last_results=data[endpoint]['last results'])
-            kpi_csv.kpi_dict['Units'] = ""
-            kpi_csv.kpi_dict['Graph-Group'] = "Endpoint Last Results"
-            kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)      
+        # checking if ping output is not empty
+        if(station_ping_data['last_result'] == ""):
+            remarks.append('No output for ping')
 
-        if csv_outfile is not None:
-            current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-            csv_outfile = "{}_{}-sta_connect.csv".format(
-                csv_outfile, current_time)
-            csv_outfile = report.file_add_path(csv_outfile)
-        print("csv output file : {}".format(csv_outfile))
+        # illegal division by zero error. Issue with arguments.
+        if('Illegal division by zero' in station_ping_data['last_result']):
+            remarks.append('Illegal division by zero error. Please re-check the arguments passed.')
+
+        # unknown host
+        if('Totals:  *** dropped: 0  received: 0  failed: 0  bytes: 0' in station_ping_data['last_result'] or 'unknown host' in station_ping_data['last_result']):
+            remarks.append('Unknown host. Please re-check the target')
+
+        # checking if IP is existing in the ping command or not for Windows device
+        if(station_ping_data['os'] == 'Windows'):
+            if('None' in station_ping_data['command'] or station_ping_data['command'].split('-n')[0].split('-S')[-1] == "  "):
+                remarks.append('Station has no IP')
+
+        # checking for no ping states
+        if(float(station_ping_data['min_rtt']) == 0 and float(station_ping_data['max_rtt']) == 0 and float(station_ping_data['avg_rtt']) == 0):
+
+            # Destination Host Unreachable state
+            if('Destination Host Unreachable' in station_ping_data['last_result']):
+                remarks.append('Destination Host Unrechable')
+
+            # Name or service not known state
+            if('Name or service not known' in station_ping_data['last_result']):
+                remarks.append('Name or service not known')
+
+        return(remarks)
+
+    def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path=''):
+        if result_json is not None:
+            self.result_json = result_json
+        print('Generating Report')
+
+        report = lf_report(_output_pdf='interop_ping.pdf',
+                           _output_html='interop_ping.html',
+                           _results_dir_name=result_dir,
+                           _path=report_path)
+        report_path = report.get_path()
+        report_path_date_time = report.get_path_date_time()
+        print('path: {}'.format(report_path))
+        print('path_date_time: {}'.format(report_path_date_time))
+
+        # setting report title
+        report.set_title('Generic Test Report')
+        report.build_banner()
+
+        # test setup info
+        test_setup_info = {
+            'SSID': self.ssid,
+            'Security': self.security,
+            'Website / IP': self.target,
+            'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
+            'Duration (in minutes)': self.duration
+        }
+        report.test_setup_table(
+            test_setup_data=test_setup_info, value='Test Setup Information')
+
+        # objective and description
+        report.set_obj_html(_obj_title='Objective',
+                            _obj='''The objective of the ping test is to evaluate network connectivity and measure the round-trip time taken for 
+                            data packets to travel from the source to the destination and back. It helps assess the reliability and latency of the network, 
+                            identifying any packet loss, delays, or variations in response times. The test aims to ensure that devices can communicate 
+                            effectively over the network and pinpoint potential issues affecting connectivity.
+                            ''')
+        report.build_objective()
+
+        # packets sent vs received vs dropped
+        report.set_table_title(
+            'Packets sent vs packets received vs packets dropped')
+        report.build_table_title()
+        # graph for the above
+        self.packets_sent = []
+        self.packets_received = []
+        self.packets_dropped = []
+        self.device_names = []
+        self.device_modes = []
+        self.device_channels = []
+        self.device_min = []
+        self.device_max = []
+        self.device_avg = []
+        self.device_mac = []
+        self.device_names_with_errors = []
+        self.devices_with_errors = []
+        self.report_names = []
+        self.remarks = []
+        # packet_count_data = {}
+        for device, device_data in self.result_json.items():
+            self.packets_sent.append(device_data['sent'])
+            self.packets_received.append(device_data['recv'])
+            self.packets_dropped.append(device_data['dropped'])
+            self.device_names.append(device_data['name'])
+            self.device_modes.append(device_data['mode'])
+            self.device_channels.append(device_data['channel'])
+            self.device_mac.append(device_data['mac'])
+            self.device_min.append(float(device_data['min_rtt']))
+            self.device_max.append(float(device_data['max_rtt']))
+            self.device_avg.append(float(device_data['avg_rtt']))
+            if(device_data['os'] == 'Virtual'):
+                self.report_names.append('{} {}'.format(device, device_data['os'])[0:25])
+            else:
+                self.report_names.append('{} {} {}'.format(device, device_data['os'], device_data['name'])[0:25])
+            if (device_data['remarks'] != []):
+                self.device_names_with_errors.append(device_data['name'])
+                self.devices_with_errors.append(device)
+                self.remarks.append(','.join(device_data['remarks']))
+            print(self.packets_sent,
+                  self.packets_received,
+                  self.packets_dropped)
+            print(self.device_min,
+                  self.device_max,
+                  self.device_avg)
+
+            # packet_count_data[device] = {
+            #     'MAC': device_data['mac'],
+            #     'Channel': device_data['channel'],
+            #     'Mode': device_data['mode'],
+            #     'Packets Sent': device_data['sent'],
+            #     'Packets Received': device_data['recv'],
+            #     'Packets Loss': device_data['dropped'],
+            # }
+        x_fig_size = 15
+        y_fig_size = len(self.device_names) * .5 + 4
+        graph = lf_bar_graph_horizontal(_data_set=[self.packets_dropped, self.packets_received, self.packets_sent],
+                                        _xaxis_name='Packets Count',
+                                        _yaxis_name='Wireless Clients',
+                                        _label=[
+                                            'Packets Loss', 'Packets Received', 'Packets Sent'],
+                                        _graph_image_name='Packets sent vs received vs dropped',
+                                        _yaxis_label=self.report_names,
+                                        _yaxis_categories=self.report_names,
+                                        _yaxis_step=1,
+                                        _yticks_font=8,
+                                        _graph_title='Packets sent vs received vs dropped',
+                                        _title_size=16,
+                                        _color=['lightgrey',
+                                                'orange', 'steelblue'],
+                                        _color_edge=['black'],
+                                        _bar_height=0.15,
+                                        _figsize=(x_fig_size, y_fig_size),
+                                        _legend_loc="best",
+                                        _legend_box=(1.0, 1.0),
+                                        _dpi=96,
+                                        _show_bar_value=False,
+                                        _enable_csv=True,
+                                        _color_name=['lightgrey', 'orange', 'steelblue'])
+
+        graph_png = graph.build_bar_graph_horizontal()
+        print('graph name {}'.format(graph_png))
+        report.set_graph_image(graph_png)
+        # need to move the graph image to the results directory
+        report.move_graph_image()
+        report.set_csv_filename(graph_png)
+        report.move_csv_file()
+        report.build_graph()
+
+        dataframe1 = pd.DataFrame({
+            'Wireless Client': self.device_names,
+            'MAC': self.device_mac,
+            'Channel': self.device_channels,
+            'Mode': self.device_modes,
+            'Packets Sent': self.packets_sent,
+            'Packets Received': self.packets_received,
+            'Packets Loss': self.packets_dropped
+        })
+        report.set_table_dataframe(dataframe1)
+        report.build_table()
+
+        # packets latency graph
+        report.set_table_title('Ping Latency Graph')
+        report.build_table_title()
+
+        graph = lf_bar_graph_horizontal(_data_set=[self.device_min, self.device_avg, self.device_max],
+                                        _xaxis_name='Time (ms)',
+                                        _yaxis_name='Wireless Clients',
+                                        _label=[
+                                            'Min Latency (ms)', 'Average Latency (ms)', 'Max Latency (ms)'],
+                                        _graph_image_name='Ping Latency per client',
+                                        _yaxis_label=self.report_names,
+                                        _yaxis_categories=self.report_names,
+                                        _yaxis_step=1,
+                                        _yticks_font=8,
+                                        _graph_title='Ping Latency per client',
+                                        _title_size=16,
+                                        _color=['lightgrey',
+                                                'orange', 'steelblue'],
+                                        _color_edge='black',
+                                        _bar_height=0.15,
+                                        _figsize=(x_fig_size, y_fig_size),
+                                        _legend_loc="best",
+                                        _legend_box=(1.0, 1.0),
+                                        _dpi=96,
+                                        _show_bar_value=False,
+                                        _enable_csv=True,
+                                        _color_name=['lightgrey', 'orange', 'steelblue'])
+
+        graph_png = graph.build_bar_graph_horizontal()
+        print('graph name {}'.format(graph_png))
+        report.set_graph_image(graph_png)
+        # need to move the graph image to the results directory
+        report.move_graph_image()
+        report.set_csv_filename(graph_png)
+        report.move_csv_file()
+        report.build_graph()
+
+        dataframe2 = pd.DataFrame({
+            'Wireless Client': self.device_names,
+            'MAC': self.device_mac,
+            'Channel': self.device_channels,
+            'Mode': self.device_modes,
+            'Min Latency (ms)': self.device_min,
+            'Average Latency (ms)': self.device_avg,
+            'Max Latency (ms)': self.device_max
+        })
+        report.set_table_dataframe(dataframe2)
+        report.build_table()
+
+        # check if there are remarks for any device. If there are remarks, build table else don't
+        if(self.remarks != []):
+            report.set_table_title('Notes')
+            report.build_table_title()
+            dataframe3 = pd.DataFrame({
+                'Wireless Client': self.device_names_with_errors,
+                'Port': self.devices_with_errors,
+                'Remarks': self.remarks
+            })
+            report.set_table_dataframe(dataframe3)
+            report.build_table()
+
+        # closing
+        report.build_custom()
+        report.build_footer()
+        report.write_html()
+        report.write_pdf()
 
     def monitor_test(self):
         print("Starting monitoring")
@@ -890,9 +1091,10 @@ def main():
     optional.add_argument('--output_format', help= 'choose either csv or xlsx',default='csv')
     optional.add_argument('--csv_outfile', help="output file for csv data", default="test_generic_kpi")
     optional.add_argument('--report_file', help='where you want to store results', default=None)
-    optional.add_argument( '--gen_cols', help='Columns wished to be monitored from layer 3 endpoint tab',default= ['name', 'tx bytes', 'rx bytes'])
+    optional.add_argument( '--gen_cols', help='Columns wished to be monitored from generic endpoint tab',default= ['name', 'tx bytes', 'rx bytes'])
     optional.add_argument( '--port_mgr_cols', help='Columns wished to be monitored from port manager tab',default= ['ap', 'ip', 'parent dev'])
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',default= None)
+    optional.add_argument('--create_report',action="store_true", help='specify this flag if test should create report')
 
     # args for test duration & monitor interval
     optional.add_argument('--monitor_interval',help='frequency of monitors measurements;example: 250ms, 35s, 2h',default='2s')
