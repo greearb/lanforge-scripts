@@ -46,6 +46,8 @@ import time
 import datetime
 import logging
 import re
+import csv
+import pandas as pd
 
 from pandas import json_normalize
 from lf_json_util import standardize_json_results
@@ -78,7 +80,7 @@ if sys.version_info[0] != 3:
 
 class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
-                name_prefix, num_stations, client_port = None,server_port=None,
+                name_prefix, num_stations, port_mgr_cols, gen_tab_cols, client_port = None,server_port=None,
                  host="localhost", port=8080, csv_outfile=None, create_report = False, use_existing_eid=None, monitor_interval = "2s",
                  test_duration="20s",test_type="ping", target=None, cmd=None, interval=0.1,
                  radio=None, file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
@@ -110,10 +112,10 @@ class GenTest():
         self.report_timer = 1500
         self.log_level = log_level
         self.lf_logger_json = lf_logger_json
-
-        #Reporting
         self.csv_outfile = csv_outfile
         self.create_report = create_report
+        self.gen_tab_cols = gen_tab_cols
+        self.port_mgr_cols = port_mgr_cols
 
         # create a session
         self.session = LFSession(lfclient_url="http://%s:8080" % self.host,
@@ -133,11 +135,25 @@ class GenTest():
         self.command = self.session.get_command()
         self.query: LFJsonQuery
         self.query = self.session.get_query()
-        #TODO add this to args
-        self.die_on_error = die_on_error
+
+        self.die_on_error = die_on_error #TODO add this to args
 
         self.created_endp = []
         self.created_cx = []
+
+        #CSV data collection
+        self.port_csv_files = {}
+        self.port_csv_writers = {}
+
+        self.gen_csv_files = {}
+        self.gen_csv_writers = {}
+
+        if self.outfile is not None:
+            # create csv results writer and open results file to be written to.
+            results = self.outfile[:-4]  # take off .csv part of outfile
+            results = results + "-results.csv"
+            self.csv_results_file = open(results, "w")
+            self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
 
         number_template = "000"
         if (int(self.num_stations) > 0):
@@ -162,18 +178,37 @@ class GenTest():
                 # which specifies if lanforge server is wanted. 
                 self.iperf3_target_lanforge = False
 
-
-
     def check_tab_exists(self):
         json_response = self.command.json_get(self.lfclient_url+"/generic/")
         if json_response is None:
             return False
         return True
 
-    #REPORTING
+    # Write initial headers to port csv file (all ports used, created & existing ports)
+    def csv_add_port_column_headers(self, port_eid):
+        # if self.csv_file is not None:
+        fname = self.outfile[:-4]  # Strip '.csv' from file name
+        fname = fname + "-port-" + port_eid + ".csv"
+        pfile = open(fname, "w")
+        port_csv_writer = csv.writer(pfile, delimiter=",")
+        self.port_csv_files[port_eid] = pfile
+        self.port_csv_writers[port_eid] = port_csv_writer
+
+        port_csv_writer.writerow(self.port_mgr_cols)
+        pfile.flush()
+
+    # write initial headers to gen cx files
+    def csv_add_l3_column_headers(self, gen_cx):
+        fname = self.outfile[:-4]  # String '.csv' from file name
+        fname = fname + "-" + gen_cx + "-gen-cx.csv"
+        pfile = open(fname, "w")
+        gen_csv_writer = csv.writer(pfile, delimiter=",")
+        self.gen_csv_files[gen_cx] = pfile
+        self.gen_csv_writers[gen_cx] = gen_csv_writer
+        gen_csv_writer.writerow(self.gen_tab_cols)
+        pfile.flush()
 
     def get_results(self):
-        #print(self.generic_endps_profile.created_endp)
         results = self.json_get(
             "/generic/{}".format(','.join(self.generic_endps_profile.created_endp)))
         if (len(self.generic_endps_profile.created_endp) > 1):
@@ -182,48 +217,13 @@ class GenTest():
             results = results['endpoint']
         return (results)
 
-    def generate_remarks(self, station_ping_data):
-        remarks = []
-
-        #NOTE if there are any more ping failure cases that are missed, add them here.
-
-        # checking if ping output is not empty
-        if(station_ping_data['last_result'] == ""):
-            remarks.append('No output for ping')
-
-        # illegal division by zero error. Issue with arguments.
-        if('Illegal division by zero' in station_ping_data['last_result']):
-            remarks.append('Illegal division by zero error. Please re-check the arguments passed.')
-
-        # unknown host
-        if('Totals:  *** dropped: 0  received: 0  failed: 0  bytes: 0' in station_ping_data['last_result'] or 'unknown host' in station_ping_data['last_result']):
-            remarks.append('Unknown host. Please re-check the target')
-
-        # checking if IP is existing in the ping command or not for Windows device
-        if(station_ping_data['os'] == 'Windows'):
-            if('None' in station_ping_data['command'] or station_ping_data['command'].split('-n')[0].split('-S')[-1] == "  "):
-                remarks.append('Station has no IP')
-
-        # checking for no ping states
-        if(float(station_ping_data['min_rtt']) == 0 and float(station_ping_data['max_rtt']) == 0 and float(station_ping_data['avg_rtt']) == 0):
-
-            # Destination Host Unreachable state
-            if('Destination Host Unreachable' in station_ping_data['last_result']):
-                remarks.append('Destination Host Unrechable')
-
-            # Name or service not known state
-            if('Name or service not known' in station_ping_data['last_result']):
-                remarks.append('Name or service not known')
-
-        return(remarks)
-
     def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path=''):
         if result_json is not None:
             self.result_json = result_json
         print('Generating Report')
 
-        report = lf_report(_output_pdf='interop_ping.pdf',
-                           _output_html='interop_ping.html',
+        report = lf_report(_output_pdf='lf_test_generic.pdf',
+                           _output_html='lf_test_generic.html',
                            _results_dir_name=result_dir,
                            _path=report_path)
         report_path = report.get_path()
@@ -404,18 +404,6 @@ class GenTest():
         })
         report.set_table_dataframe(dataframe2)
         report.build_table()
-
-        # check if there are remarks for any device. If there are remarks, build table else don't
-        if(self.remarks != []):
-            report.set_table_title('Notes')
-            report.build_table_title()
-            dataframe3 = pd.DataFrame({
-                'Wireless Client': self.device_names_with_errors,
-                'Port': self.devices_with_errors,
-                'Remarks': self.remarks
-            })
-            report.set_table_dataframe(dataframe3)
-            report.build_table()
 
         # closing
         report.build_custom()
@@ -621,6 +609,7 @@ class GenTest():
                 sta_eid = self.name_to_eid(sta_alias)
                 self.create_generic_endp(sta_eid, self.test_type, unique_alias, interop_device=False)
                 unique_alias-=1
+
         #check if these are interop devices..
         if self.use_existing_eid: #use existing eid will have iperf3-server eid, if we are using lanforge iperf3-server.
             for eid_alias in self.use_existing_eid:
@@ -647,7 +636,7 @@ class GenTest():
             print("Generic cx creation completed.")
         else:
             print("Generic cx creation was not completed.")
-
+ 
     def eid_to_ip(self, eid):
         json_url = "%s/ports/%s/%s/%s?fields=device,ip" % (self.lfclient_url, eid[1], eid[0], eid[2])
         json_response = self.query.json_get(url=json_url,
@@ -1091,7 +1080,7 @@ def main():
     optional.add_argument('--output_format', help= 'choose either csv or xlsx',default='csv')
     optional.add_argument('--csv_outfile', help="output file for csv data", default="test_generic_kpi")
     optional.add_argument('--report_file', help='where you want to store results', default=None)
-    optional.add_argument( '--gen_cols', help='Columns wished to be monitored from generic endpoint tab',default= ['name', 'tx bytes', 'rx bytes'])
+    optional.add_argument( '--gen_tab_cols', help='Columns wished to be monitored from generic endpoint tab',default= ['name', 'tx bytes', 'rx bytes'])
     optional.add_argument( '--port_mgr_cols', help='Columns wished to be monitored from port manager tab',default= ['ap', 'ip', 'parent dev'])
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',default= None)
     optional.add_argument('--create_report',action="store_true", help='specify this flag if test should create report')
