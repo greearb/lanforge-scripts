@@ -414,16 +414,18 @@ class GenTest():
         if self.use_existing_eid:
             unique_alias += len(self.use_existing_eid)
 
+        #these cannot be interop clients
         if self.sta_list:
             for sta_alias in self.sta_list:
                 sta_eid = self.name_to_eid(sta_alias)
-                self.create_generic_endp(sta_eid, self.test_type, unique_alias)
+                self.create_generic_endp(sta_eid, self.test_type, unique_alias, existing_station=False)
                 unique_alias-=1
-
+        #check if these are interop devices..
         if self.use_existing_eid: #use existing eid will have iperf3-server eid, if we are using lanforge iperf3-server.
             for eid_alias in self.use_existing_eid:
                 eid_list = self.name_to_eid(eid_alias)
-                self.create_generic_endp(eid_list, self.test_type, unique_alias)
+                is_interop = self.is_device_interop(eid_list)
+                self.create_generic_endp(eid_list, self.test_type, unique_alias, interop_device = is_interop)
                 unique_alias-=1
 
         #show all endps
@@ -453,56 +455,84 @@ class GenTest():
             return json_response['interface']['ip']
         else:
             return None
+
+    def is_device_interop(self, eid_list):
+        device_shelf, device_resource, device_port_name, *nil = eid_list
+        json_url = "%s/ports/%s/%s/%s?fields=hw version" % (self.lfclient_url, device_shelf, device_resource, device_port_name)
+        json_response = self.query.json_get(url=json_url,
+                                            debug=self.debug)
+        if json_response is not None:
+            return json_response['hw version']
+        else:
+            return False
                     
-    def create_generic_endp(self, eid, type, unique_num):
+    def create_generic_endp(self, eid_list, type, unique_num, interop_device):
         """
         :param eid: list format of eid. example: ['1', '1', 'sta0010']
         :param type: takes type of generic test: 'ping', 'iperf3-client', 'iperf3-server', 'lfcurl', 'speedtest', 'iperf'
         :param unique_num: takes in unique ending prefix. example: 3
+        :param interop device: is this station interop?
         :return: no return
         """
         unique_alias = type + "-" + str(unique_num)
         #construct generic endp command
+
         cmd = ""
+        eid_shelf, eid_resource, eid_name, *nil = eid_list
         if (self.cmd):
             cmd=self.cmd
         elif (type == 'iperf3'):
             if (self.iperf3_target_lanforge):
-                if (eid == self.name_to_eid(self.target)):
+                if (eid_list == self.name_to_eid(self.target)):
                     unique_alias = "server-" + unique_alias
-                    cmd = self.do_iperf('server', unique_alias, eid)
+                    cmd = self.do_iperf('server', unique_alias, eid_list)
                 else:
                     unique_alias = "client-" + unique_alias
-                    cmd = self.do_iperf('client', unique_alias, eid)
+                    cmd = self.do_iperf('client', unique_alias, eid_list)
             else:
                 #the case that user chose to not to use and create lanforge iperf server 
                 unique_alias = "client-" + unique_alias
-                cmd = self.do_iperf('client', unique_alias, eid)
+                cmd = self.do_iperf('client', unique_alias, eid_list)
 
         elif (type == 'ping'):
-            # lfping  -s 128 -i 0.1 -c 10000 -I sta0000 www.google.com
-            cmd="lfping"
-            if (self.interval):
-                cmd = cmd + " -i %d" % self.interval
-            if (self.loop_count):
-                cmd = cmd + " -c %d" % self.loop_count
-            cmd = cmd + " -I %s " % eid[2]
-            if (self.target):
-                cmd = cmd + str(self.target)
+            standard_ping = True
+            if (interop_device):
+                standard_ping = False
+                os_type = interop_device
+                if 'Win/x86' in os_type:
+                    cmd = "py lfping.py -S %s -n -1 -dest_ip %s" % (self.eid_to_ip(eid_name), self.target)
+                elif 'Apple/x86' in os_type:
+                    cmd = "lfping -b %s -i %s %s" % (eid_name, self.interval, self.target)
+                elif 'Linux/x86' in os_type:
+                    standard_ping = True
+                else:
+                    #Android
+                    cmd = "ping -i %s %s" % (self.interval, self.dest)
+
+            if (standard_ping):
+                # lfping  -s 128 -i 0.1 -c 10000 -I sta0000 www.google.com
+                cmd="lfping"
+                if (self.interval):
+                    cmd = cmd + " -i %d" % self.interval
+                if (self.loop_count):
+                    cmd = cmd + " -c %d" % self.loop_count
+                cmd = cmd + " -I %s " % eid_name
+                if (self.target):
+                    cmd = cmd + str(self.target)
   
         elif (type == 'iperf3-client'):
             #  iperf3 --forceflush --format k --precision 4 -c 192.168.10.1 -t 60 --tos 0 -b 1K --bind_dev sta0000 
             # -i 5 --pidfile /tmp/lf_helper_iperf3_testing.pid -p 101
-            cmd = self.do_iperf('client', unique_alias, eid)
+            cmd = self.do_iperf('client', unique_alias, eid_list)
 
         elif (self.test_type == 'iperf3-server'):
             # iperf3 --forceflush --format k --precision 4 -s --bind_dev sta0000 
             # -i 5 --pidfile /tmp/lf_helper_iperf3_testing.pid -p 101
-            cmd = self.do_iperf('server', unique_alias, eid)
+            cmd = self.do_iperf('server', unique_alias, eid_list)
 
         elif (self.test_type == 'lfcurl'):
             # ./scripts/lf_curl.sh  -p sta0000 -i 192.168.50.167 -o /dev/null -n 1 -d 8.8.8.8
-            cmd = cmd + str("./scripts/lf_curl.sh -p %s" % eid[2])
+            cmd = cmd + str("./scripts/lf_curl.sh -p %s" % eid_name)
             # cmd = cmd + "-i %s" % str(self.target) TODO: get ip address of -i (sta0000) if i is a station, but not if eth port.
             #TODO add -o
             cmd = cmd + "-o /dev/null -n 1 -d %s" % str(self.target)
@@ -511,16 +541,16 @@ class GenTest():
             # vrf_exec.bash eth3 speedtest-cli --csv --no-upload
             # vrf_exec.bash eth3 speedtest-cli --csv
             # Ookla (with license) : # speedtest --interface=eth3 --format=csv
-            cmd = cmd + "vrf_exec.bash %s speedtest-cli --csv" % eid[2]
+            cmd = cmd + "vrf_exec.bash %s speedtest-cli --csv" % eid_name
         else:
             raise ValueError("Was not able to identify type given in arguments.")
 
         #create initial generic endp
         #  add_gen_endp testing 1 1 sta0000 gen_generic
         self.command.post_add_gen_endp(alias = unique_alias,
-                                       shelf=eid[0],
-                                       resource=eid[1],
-                                       port=eid[2],
+                                       shelf=eid_shelf,
+                                       resource=eid_resource,
+                                       port=eid_name,
                                        p_type="gen_generic")
 
         self.created_endp.append(unique_alias)
@@ -547,12 +577,13 @@ class GenTest():
         #TODO: allow for multiple targets to be passed in for multiple servers.
         cmd = "iperf3 --forceflush --format k --precision 4"
         #TODO check if dest, client_port and server_port are not empty
+        eid_shelf, eid_resource, eid_name, *nil = self.name_to_eid(eid) 
         if (type == 'client'):
             if (self.iperf3_target_lanforge):
                 server_ip_addr = self.eid_to_ip(self.name_to_eid(self.target))
             else:
                 server_ip_addr = self.target
-            cmd = cmd + str(" -c %s" % server_ip_addr) + " -t 60 --tos 0 -b 1K " + str("--bind_dev %s" % eid[2])
+            cmd = cmd + str(" -c %s" % server_ip_addr) + " -t 60 --tos 0 -b 1K " + str("--bind_dev %s" % eid_name)
             cmd = cmd + " -i 3 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
             if (self.client_port):
                 #add port that should match server_port
@@ -560,7 +591,7 @@ class GenTest():
         #server
         else:
             #iperf3 --forceflush --format k --precision 4 -s --bind_dev eth2 -i 5 --pidfile /tmp/lf_helper_iperf3_server_iperf_1.pid eth2
-            cmd = cmd + " -s" + str(" --bind_dev %s" % eid[2]) + " -i 3 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
+            cmd = cmd + " -s" + str(" --bind_dev %s" % eid_name) + " -i 3 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
             if (self.server_port):
                 #add port that should match client port
                 cmd = cmd + " -p %s" % self.server_port
