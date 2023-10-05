@@ -198,7 +198,7 @@ class GenTest():
         pfile.flush()
 
     # write initial headers to gen cx files
-    def csv_add_l3_column_headers(self, gen_cx):
+    def csv_add_gen_column_headers(self, gen_cx):
         fname = self.outfile[:-4]  # String '.csv' from file name
         fname = fname + "-" + gen_cx + "-gen-cx.csv"
         pfile = open(fname, "w")
