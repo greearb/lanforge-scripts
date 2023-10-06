@@ -1646,11 +1646,15 @@ junit.xml path: allure generate {junit_path}
         # junit results
         # need to remove quotes from commands in junit
         # https://gist.github.com/ix4/344cdfce79cb5510094e5005d5db2c70
+        # 
+        # examples
+        # https://github.com/testmoapp/junitxml#structure
+        #
         command_quotes_removed = command.replace('"', '&quot;')
         summary_output_updated = summary_output.replace('&', 'and').replace('<', '&lt;').replace('>', '&gt;')
         self.junit_results += """
-            <testcase name="{name}" id="{command}" time="{time}">
-            """.format(name=self.test, command=short_cmd, time=self.duration_sec_us)
+            <testcase name="{name}" classname="{suite}" id="{command}" time="{time}">
+            """.format(name=self.test, suite=self.test_suite, command=short_cmd, time=self.duration_sec_us)
 
         self.junit_results += """
             <system-out>
