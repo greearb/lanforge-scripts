@@ -271,6 +271,7 @@ class lf_check():
         self.test_end_time = ""
         self.duration = ""
         self.duration_sec_us = ""
+        self.allure_time_stamp = ""
 
         self.http_test_ip = ""
         self.ftp_test_ip = ""
@@ -346,7 +347,6 @@ class lf_check():
         self.interation = 0
         self.lf_check_link = ''
 
-
     def set_junit_results(self, junit_results):
         self.junit_results = junit_results
 
@@ -357,7 +357,7 @@ class lf_check():
         self.radio_firmware_list = radio_firmware_list.copy()
 
     def set_radio_fw_dict(self, radio_fw_dict):
-        self.radio_fw_dict =  copy.deepcopy(radio_fw_dict)       
+        self.radio_fw_dict = copy.deepcopy(radio_fw_dict)
 
     def get_test_rig(self):
         return self.test_rig
@@ -400,9 +400,11 @@ class lf_check():
             "radio request status_code {status}".format(
                 status=request.status_code))
         lanforge_radio_json = request.json()
-        self.logger.info("radio request.json: {json}".format(json=lanforge_radio_json))
+        self.logger.info("radio request.json: {json}".format(
+            json=lanforge_radio_json))
         lanforge_radio_text = request.text
-        self.logger.info("radio request.test: {text}".format(text=lanforge_radio_text))
+        self.logger.info("radio request.test: {text}".format(
+            text=lanforge_radio_text))
         return lanforge_radio_json, lanforge_radio_text
 
     def get_lanforge_system_ip(self):
@@ -499,7 +501,6 @@ class lf_check():
         time.sleep(1)
         return self.lanforge_server_build_info
 
-
     def get_lanforge_gui_version(self):
         # creating shh client object we use this object to connect to router
         ssh = paramiko.SSHClient()
@@ -520,17 +521,20 @@ class lf_check():
                 self.lanforge_gui_version = ver_str.split(
                     ':', maxsplit=1)[-1].replace(',', '')
                 self.lanforge_gui_version = self.lanforge_gui_version.strip().replace('"', '')
-                self.logger.info("BuildVersion {}".format(self.lanforge_gui_version))
+                self.logger.info("BuildVersion {}".format(
+                    self.lanforge_gui_version))
             if "BuildDate" in element:
                 gui_str = str(element)
                 self.lanforge_gui_build_date = gui_str.split(
                     ':', maxsplit=1)[-1].replace(',', '')
-                self.logger.info("BuildDate {}".format(self.lanforge_gui_build_date))
+                self.logger.info("BuildDate {}".format(
+                    self.lanforge_gui_build_date))
             if "GitVersion" in element:
                 git_sha_str = str(element)
                 self.lanforge_gui_git_sha = git_sha_str.split(
                     ':', maxsplit=1)[-1].replace(',', '')
-                self.logger.info("GitVersion {}".format(self.lanforge_gui_git_sha))
+                self.logger.info("GitVersion {}".format(
+                    self.lanforge_gui_git_sha))
 
         ssh.close()
         time.sleep(1)
@@ -562,8 +566,8 @@ class lf_check():
         # a hostname lacking dots by definition lacks a domain name
         # this is not useful for hyperlinks outside the known domain, so an IP
         # address should be preferred
-        #if self.hostname.find('.') < 1:
-            # 5/25/2023 - use IP for now
+        # if self.hostname.find('.') < 1:
+        # 5/25/2023 - use IP for now
         #    self.hostname = ip
 
         self.message_txt = ""
@@ -579,9 +583,9 @@ Dut SN: {dut_sn}
 
 lf_check Test Suite Report:
 http://{hostname}/{report}
-""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, 
-    suite=self.test_suite, db=self.database_sqlite, hostname=self.server_ip, report=report_url,
-    dut_model=self.use_dut_name,dut_hw=self.dut_hw,dut_sw=self.dut_sw,dut_sn=self.dut_serial)
+""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip,
+                suite=self.test_suite, db=self.database_sqlite, hostname=self.server_ip, report=report_url,
+                dut_model=self.use_dut_name, dut_hw=self.dut_hw, dut_sw=self.dut_sw, dut_sn=self.dut_serial)
 
         else:
             self.message_txt = """Results from {hostname}:
@@ -596,12 +600,12 @@ Dut SN: {dut_sn}
 lf_check Test Suite Report:
 http://{hostname}/{report}
 """.format(hostname=self.server_ip, suite=self.test_suite, db=self.database_sqlite, report=report_url,
-    dut_model=self.use_dut_name,dut_hw=self.dut_hw,dut_sw=self.dut_sw,dut_sn=self.dut_serial)
-
+                dut_model=self.use_dut_name, dut_hw=self.dut_hw, dut_sw=self.dut_sw, dut_sn=self.dut_serial)
 
         # For Multiple Suites save the link for multiple lf_check results  lf_qa and lf_inspect alread keep the aggragate
-        # TODO maybe have an aggragate result emailed out after 
-        self.lf_check_link = "http://{hostname}/{report}".format(hostname=self.server_ip, report=report_url)
+        # TODO maybe have an aggragate result emailed out after
+        self.lf_check_link = "http://{hostname}/{report}".format(
+            hostname=self.server_ip, report=report_url)
 
         # Put in report information current two methods supported,
         if "NA" not in self.qa_report_html:
@@ -633,8 +637,7 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
 
         server_version = platform.platform()
 
-
-        # get the Fedora platform 
+        # get the Fedora platform
         if (self.email_title_txt != ""):
 
             self.mail_subject = "{iteration} of {total_iterations} QA Rig: {email} Suite: {suite} Duration: {duration} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  Tests:{tests}   Server IP: {hostname}  DB: {db} Server Ver:{server_ver} Date: {date}".format(
@@ -643,23 +646,23 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
                 email=self.email_title_txt,
                 duration=self.suite_duration,
                 suite=self.test_suite,
-                tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
+                tests=self.tests_run, finished=self.tests_success, fail=self.tests_failure, timeout=self.tests_timeout, partial=self.tests_some_failure,
                 hostname=self.server_ip,
                 server_ver=server_version,
-                db=self.database_sqlite, 
+                db=self.database_sqlite,
                 date=datetime.datetime.now())
         else:
             self.mail_subject = "Suite: {suite} Duration: {duration} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial} Suite: {suite} Tests:{tests}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(
                 # email=self.email_title_txt,
                 duration=self.suite_duration,
-                suite=self.test_suite, 
-                tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
+                suite=self.test_suite,
+                tests=self.tests_run, finished=self.tests_success, fail=self.tests_failure, timeout=self.tests_timeout, partial=self.tests_some_failure,
                 hostname=self.server_ip,
                 server_ver=server_version,
-                db=self.database_sqlite, 
+                db=self.database_sqlite,
                 date=datetime.datetime.now())
 
-        # Add email title summary 
+        # Add email title summary
         self.message_txt += """
 
 Summary: 
@@ -697,28 +700,28 @@ Server Ver: {server_ver}
 Server IP: {hostname}  
 DB: {db} 
 Date: {date}""".format(
-                email=self.email_title_txt,    
-                suite=self.test_suite,
-                duration=self.suite_duration,
-                start=self.suite_start_time,
-                stop=self.suite_end_time, 
-                tests=self.tests_run, 
-                finished=self.tests_success,
-                fail=self.tests_failure,
-                timeout=self.tests_timeout,
-                partial=self.tests_some_failure,
-                dut_json=self.json_dut_file,
-                rig_json=self.json_rig_file,
-                test_json=self.json_test_file,
-                json_test_name=self.json_test_name,
-                hostname=self.hostname,
-                server_ver=server_version,
-                db=self.database_sqlite, 
-                date=datetime.datetime.now(),
-                server=self.server_hostname,
-                server_ip=self.server_ip)
+            email=self.email_title_txt,
+            suite=self.test_suite,
+            duration=self.suite_duration,
+            start=self.suite_start_time,
+            stop=self.suite_end_time,
+            tests=self.tests_run,
+            finished=self.tests_success,
+            fail=self.tests_failure,
+            timeout=self.tests_timeout,
+            partial=self.tests_some_failure,
+            dut_json=self.json_dut_file,
+            rig_json=self.json_rig_file,
+            test_json=self.json_test_file,
+            json_test_name=self.json_test_name,
+            hostname=self.hostname,
+            server_ver=server_version,
+            db=self.database_sqlite,
+            date=datetime.datetime.now(),
+            server=self.server_hostname,
+            server_ip=self.server_ip)
 
-            # Add information about about GUI and Kernel Versions
+        # Add information about about GUI and Kernel Versions
         self.message_txt += """
 
 
@@ -749,7 +752,7 @@ Server_Build_Info:{server_build_info}
         self.message_txt += """
 Tests Failed:
 =============
-""" 
+"""
         if self.test_fail_list:
             for failed_cmd in self.test_fail_list:
                 self.message_txt += """ 
@@ -778,9 +781,9 @@ Allure Report:
 """
         self.message_txt += """
 
-junit.xml: allure generate {junit}
-junit.xml path: allure generate {junit_path}
-""".format(junit=self.junit_results,junit_path=self.junit_path_only)        
+junit.xml: allure serve {junit}
+junit.xml path: allure serve {junit_path}
+""".format(junit=self.junit_results, junit_path=self.junit_path_only)
 
         try:
             if self.production_run:
@@ -833,8 +836,8 @@ junit.xml path: allure generate {junit_path}
 
     def start_junit_testsuite(self):
         self.junit_results += """
-        <testsuite name="{suite}  time="{duration}" timestamp="{start}">
-        """.format(suite=self.test_suite, duration=self.suite_duration,start=self.suite_start_time)
+        <testsuite name="{suite}" timestamp="{start}">
+        """.format(suite=self.test_suite, start=self.allure_time_stamp)
 
     def finish_junit_testsuite(self):
         self.junit_results += """
@@ -895,7 +898,8 @@ junit.xml path: allure generate {junit_path}
                     "EXITING ERROR test_rig_parameters not in rig json")
                 exit(1)
         else:
-            self.logger.info("rig json file not present, Are you running with only a test.json file")
+            self.logger.info(
+                "rig json file not present, Are you running with only a test.json file")
 
     # read dut configuration
     def read_json_dut(self):
@@ -910,7 +914,8 @@ junit.xml path: allure generate {junit_path}
                 self.logger.info("EXITING ERROR test_dut not in dut json {}")
                 exit(1)
         else:
-            self.logger.info("dut json file not present, Are you running with only a test.json file")
+            self.logger.info(
+                "dut json file not present, Are you running with only a test.json file")
 
     # Top Level for reading the tests to run
 
@@ -930,13 +935,14 @@ junit.xml path: allure generate {junit_path}
                         suite=self.test_suite, suites=self.json_test["test_suites"]))
                 self.logger.info(
                     "EXITING ERROR test_suite {suite} Not Present in json tests {json_test_name}".format(
-                        suite=self.test_suite,json_test_name=self.json_test_name))
+                        suite=self.test_suite, json_test_name=self.json_test_name))
                 exit(1)
         else:
             self.logger.info(
                 "EXITING test_suites not in json {}".format(
                     self.json_test))
-            self.logger.info("EXITING ERROR test_suites not in json test {json_test}".format(json_test=self.json_test))
+            self.logger.info("EXITING ERROR test_suites not in json test {json_test}".format(
+                json_test=self.json_test))
             exit(1)
 
     def read_test_rig_parameters(self):
@@ -1040,11 +1046,13 @@ junit.xml path: allure generate {junit_path}
         if "UPSTREAM_PORT" in self.json_dut["test_dut"]:
             self.upstream_port = self.json_dut["test_dut"]["UPSTREAM_PORT"]
         else:
-            self.logger.info("UPSTREAM_PORT not in test_dut json so so may be in rig json")
+            self.logger.info(
+                "UPSTREAM_PORT not in test_dut json so so may be in rig json")
         if "UPSTREAM_ALIAS" in self.json_dut["test_dut"]:
             self.upstream_alias = self.json_dut["test_dut"]["UPSTREAM_ALIAS"]
         else:
-            self.logger.info("UPSTREAM_ALIAS not in test_dut json so so may be in rig json")
+            self.logger.info(
+                "UPSTREAM_ALIAS not in test_dut json so so may be in rig json")
         if "DUT_SET_NAME" in self.json_dut["test_dut"]:
             self.dut_set_name = self.json_dut["test_dut"]["DUT_SET_NAME"]
         else:
@@ -1094,7 +1102,8 @@ junit.xml path: allure generate {junit_path}
         try:
             os.chdir(self.scripts_wd)
         except Exception as x:
-            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             self.logger.info("failed to change to {}".format(self.scripts_wd))
 
         # WARNING do not simplify the following constructed command
@@ -1220,9 +1229,11 @@ junit.xml path: allure generate {junit_path}
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'DUT_SN', self.dut_serial)
         if 'UPSTREAM_PORT' in self.test_dict[self.test]['args']:
-            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace('UPSTREAM_PORT', self.upstream_port)
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'UPSTREAM_PORT', self.upstream_port)
         if 'UPSTREAM_ALIAS' in self.test_dict[self.test]['args']:
-            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace('UPSTREAM_ALIAS', self.upstream_alias)
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'UPSTREAM_ALIAS', self.upstream_alias)
         # lf_dataplane_test.py and lf_wifi_capacity_test.py use a parameter --local_path for the location
         # of the reports when the reports are pulled.
         if 'REPORT_PATH' in self.test_dict[self.test]['args']:
@@ -1255,7 +1266,8 @@ junit.xml path: allure generate {junit_path}
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'USE_BATCH_TX_POWER', self.tx_power)
 
-        self.logger.info("self.test_dict[self.test]['args']: {}".format(self.test_dict[self.test]['args']))
+        self.logger.info("self.test_dict[self.test]['args']: {}".format(
+            self.test_dict[self.test]['args']))
 
         # END of command line arg processing
         # if self.test_dict[self.test]['args'] == "":
@@ -1280,15 +1292,18 @@ junit.xml path: allure generate {junit_path}
                     self.load_custom_database(
                         self.test_dict[self.test]['load_db'])
                 except Exception as x:
-                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                    traceback.print_exception(
+                        Exception, x, x.__traceback__, chain=True)
                     self.logger.info("custom database failed to load check existance and location: {}".format(
                         self.test_dict[self.test]['load_db']))
         try:
             os.chdir(self.scripts_wd)
-            self.logger.info("Current Working Directory {}".format(os.getcwd()))
+            self.logger.info(
+                "Current Working Directory {}".format(os.getcwd()))
 
         except Exception as x:
-            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             self.logger.info(
                 "failed to change to {}".format(
                     self.scripts_wd))
@@ -1346,17 +1361,21 @@ junit.xml path: allure generate {junit_path}
         # TODO the looks one directory higher,  there needs to be a way to execute from higher directory.
         except FileNotFoundError:
             # TODO tx_power is one directory up from py-scripts
-            self.logger.info("FileNotFoundError will try to execute from lanforge Top directory")
+            self.logger.info(
+                "FileNotFoundError will try to execute from lanforge Top directory")
             os.chdir(self.lanforge_wd)
-            self.logger.info("Changed Current Working Directory to {}".format(os.getcwd()))
+            self.logger.info(
+                "Changed Current Working Directory to {}".format(os.getcwd()))
             summary = subprocess.Popen(command_to_run, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                        universal_newlines=True)
 
         except PermissionError:
-            self.logger.info("PermissionError on execution of {command}".format(command=command_to_run))
+            self.logger.info("PermissionError on execution of {command}".format(
+                command=command_to_run))
 
         except IsADirectoryError:
-            self.logger.info("IsADirectoryError on execution of {command}".format(command=command_to_run))
+            self.logger.info("IsADirectoryError on execution of {command}".format(
+                command=command_to_run))
 
         # This code will read the output as the script is running and log
         for line in iter(summary.stdout.readline, ''):
@@ -1379,12 +1398,15 @@ junit.xml path: allure generate {junit_path}
         try:
             return_code = summary.returncode
             if return_code == 0:
-                self.logger.info("Script returned pass return code: {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
+                self.logger.info("Script returned pass return code: {return_code} for test: {command}".format(
+                    return_code=return_code, command=command_to_run))
             else:
-                self.logger.info("Script returned non-zero return code: {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
+                self.logger.info("Script returned non-zero return code: {return_code} for test: {command}".format(
+                    return_code=return_code, command=command_to_run))
 
         except BaseException as err:
-            self.logger.info("issue reading return code err:{err}".format(err=err))
+            self.logger.info(
+                "issue reading return code err:{err}".format(err=err))
 
         self.logger.info(summary_output)
         stdout_log.write(summary_output)
@@ -1396,7 +1418,8 @@ junit.xml path: allure generate {junit_path}
             "Test end time {time}".format(
                 time=self.test_end_time))
         time_delta = end_time - start_time
-        self.duration_sec_us = "{seconds}.{micro_sec}".format(seconds=time_delta.seconds, micro_sec=time_delta.microseconds)
+        self.duration_sec_us = "{seconds}.{micro_sec}".format(
+            seconds=time_delta.seconds, micro_sec=time_delta.microseconds)
         minutes, seconds = divmod(time_delta.seconds, 60)
         hours, minutes = divmod(minutes, 60)
         self.duration = "{day}d {hours}h {minutes}m {seconds}s {msec} us".format(
@@ -1477,10 +1500,12 @@ junit.xml path: allure generate {junit_path}
                         lanforge_kernel_version=self.lanforge_kernel_version[0]))
 
                 meta_data_fd.write(
-                    "$ radio_firmware:  {radio_firmware}\n".format(radio_firmware=self.radio_firmware_list)
+                    "$ radio_firmware:  {radio_firmware}\n".format(
+                        radio_firmware=self.radio_firmware_list)
                 )
                 meta_data_fd.write(
-                    "$ radio_fw_dict: {radio_fw_dict}\n".format(radio_fw_dict=self.radio_fw_dict)
+                    "$ radio_fw_dict: {radio_fw_dict}\n".format(
+                        radio_fw_dict=self.radio_fw_dict)
                 )
                 meta_data_fd.write(
                     "$ lanforge_fedora_version: {lanforge_fedora_version}\n".format(
@@ -1494,9 +1519,11 @@ junit.xml path: allure generate {junit_path}
 
                 meta_data_fd.close()
             except ValueError as err:
-                self.logger.critical("unable to write meta {meta_data_path} : {err})".format(meta_data_path=meta_data_path, err=err))
+                self.logger.critical("unable to write meta {meta_data_path} : {err})".format(
+                    meta_data_path=meta_data_path, err=err))
             except BaseException as err:
-                self.logger.critical("BaseException unable to write meta {meta_data_path} : {err}".format(meta_data_path=meta_data_path, err=err))
+                self.logger.critical("BaseException unable to write meta {meta_data_path} : {err}".format(
+                    meta_data_path=meta_data_path, err=err))
 
         # Code for checking if the script passed or failed much of the
         # code is checking the output.
@@ -1507,16 +1534,20 @@ junit.xml path: allure generate {junit_path}
             self.test_result = "Time Out"
             background = self.background_purple
         elif return_code == 1:
-            self.logger.error("Test returne fail  return code {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
+            self.logger.error("Test returne fail  return code {return_code} for test: {command}".format(
+                return_code=return_code, command=command_to_run))
             self.test_result = "Script returned Fail"
             background = self.background_red
         elif return_code == 2:
-            self.logger.error("Incorrect args:  return code {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
+            self.logger.error("Incorrect args:  return code {return_code} for test: {command}".format(
+                return_code=return_code, command=command_to_run))
             self.test_result = "Incorrect args"
             background = self.background_orange
         elif return_code != 0:
-            self.logger.error("None zero return code:  return code {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
-            self.test_result = "Error return code {return_code}".format(return_code=return_code)
+            self.logger.error("None zero return code:  return code {return_code} for test: {command}".format(
+                return_code=return_code, command=command_to_run))
+            self.test_result = "Error return code {return_code}".format(
+                return_code=return_code)
             background = self.background_orange
         else:
             # TODO use summary returned from subprocess
@@ -1565,7 +1596,7 @@ junit.xml path: allure generate {junit_path}
                     self.test_result = "Finished"
                     background = self.background_purple
                 # if stdout empty that is a failure also
-                else:                
+                else:
                     self.test_result = "Failure"
                     background = self.background_red
         # Total up test, tests success, tests failure, tests
@@ -1608,15 +1639,14 @@ junit.xml path: allure generate {junit_path}
                         "html_report: {report}".format(
                             report=self.inspect_report_html))
                     break
-            self.inspect_report_html = self.inspect_report_html.replace('html report: ', '')
-
+            self.inspect_report_html = self.inspect_report_html.replace(
+                'html report: ', '')
 
         if self.test_result != 'Finished':
             if self.test_result == "TIMEOUT":
                 self.test_timeout_list.append(command)
             else:
                 self.test_fail_list.append(command)
-
 
         # stdout_log_link is used for the email reporting to have
         # the corrected path
@@ -1630,12 +1660,14 @@ junit.xml path: allure generate {junit_path}
         else:
             stdout_log_basename = os.path.basename(stdout_log_txt)
             stdout_log_parent_path = os.path.dirname(stdout_log_txt)
-            stdout_log_parent_basename = os.path.basename(stdout_log_parent_path)
+            stdout_log_parent_basename = os.path.basename(
+                stdout_log_parent_path)
             stdout_log_link = "./" + stdout_log_parent_basename + "/" + stdout_log_basename
 
             stderr_log_basename = os.path.basename(stderr_log_txt)
             stderr_log_parent_path = os.path.dirname(stderr_log_txt)
-            stderr_log_parent_basename = os.path.basename(stderr_log_parent_path)
+            stderr_log_parent_basename = os.path.basename(
+                stderr_log_parent_path)
             stderr_log_link = "./" + stderr_log_parent_basename + "/" + stderr_log_basename
 
         if command.find(' ') > 1:
@@ -1646,12 +1678,13 @@ junit.xml path: allure generate {junit_path}
         # junit results
         # need to remove quotes from commands in junit
         # https://gist.github.com/ix4/344cdfce79cb5510094e5005d5db2c70
-        # 
+        #
         # examples
         # https://github.com/testmoapp/junitxml#structure
         #
         command_quotes_removed = command.replace('"', '&quot;')
-        summary_output_updated = summary_output.replace('&', 'and').replace('<', '&lt;').replace('>', '&gt;')
+        summary_output_updated = summary_output.replace(
+            '&', 'and').replace('<', '&lt;').replace('>', '&gt;')
         self.junit_results += """
             <testcase name="{name}" classname="{suite}" id="{command}" time="{time}">
             """.format(name=self.test, suite=self.test_suite, command=short_cmd, time=self.duration_sec_us)
@@ -1730,13 +1763,16 @@ junit.xml path: allure generate {junit_path}
         self.start_html_results()
         self.start_csv_results()
         self.start_junit_testsuites()
-        self.start_junit_testsuite()
         # Suite start time
         suite_start_time = datetime.datetime.now()
         self.suite_start_time = str(datetime.datetime.now().strftime(
-            "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
+            "%Y-%m-%d %H:%M:%S")).replace(':', '-')
         self.logger.info("Suite Start Time {suite_time}".format(
             suite_time=self.suite_start_time))
+
+        self.allure_time_stamp =  str(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
+
+        self.start_junit_testsuite()
 
         # Configure Tests
         for self.test in self.test_dict:
@@ -1754,34 +1790,45 @@ junit.xml path: allure generate {junit_path}
                         if 'user_prompt' in self.test_dict[self.test]:
                             user_prompt = self.test_dict[self.test]['user_prompt']
                         else:
-                            user_prompt = 'Default prompt User Intervention requested for test: {test}, hit enter to continue: '.format(test=self.test)
+                            user_prompt = 'Default prompt User Intervention requested for test: {test}, hit enter to continue: '.format(
+                                test=self.test)
 
                         user_input = input(user_prompt)
-                        logger.info("user input received {input}".format(input=user_input))
+                        logger.info(
+                            "user input received {input}".format(input=user_input))
 
                 # TODO Place test interations here
                 if 'iterations' in self.test_dict[self.test]:
-                    self.logger.info("iterations : {}".format(self.test_dict[self.test]['iterations']))
+                    self.logger.info("iterations : {}".format(
+                        self.test_dict[self.test]['iterations']))
                     self.test_iterations = int(
                         self.test_dict[self.test]['iterations'])
                 else:
                     self.test_iterations = self.test_iterations_default
 
                 if 'batch_channel' in self.test_dict[self.test]:
-                    self.logger.info("batch_channel : {batch_channel}".format(batch_channel=self.test_dict[self.test]['batch_channel']))
-                    self.channel_list = self.test_dict[self.test]['batch_channel'].split()
+                    self.logger.info("batch_channel : {batch_channel}".format(
+                        batch_channel=self.test_dict[self.test]['batch_channel']))
+                    self.channel_list = self.test_dict[self.test]['batch_channel'].split(
+                    )
 
                 if 'batch_nss' in self.test_dict[self.test]:
-                    self.logger.info("batch_nss : {batch_nss}".format(batch_nss=self.test_dict[self.test]['batch_nss']))
-                    self.nss_list = self.test_dict[self.test]['batch_nss'].split()
+                    self.logger.info("batch_nss : {batch_nss}".format(
+                        batch_nss=self.test_dict[self.test]['batch_nss']))
+                    self.nss_list = self.test_dict[self.test]['batch_nss'].split(
+                    )
 
                 if 'batch_bandwidth' in self.test_dict[self.test]:
-                    self.logger.info("batch_bandwidth : {batch_bandwidth}".format(batch_bandwidth=self.test_dict[self.test]['batch_bandwidth']))
-                    self.bandwidth_list = self.test_dict[self.test]['batch_bandwidth'].split()
+                    self.logger.info("batch_bandwidth : {batch_bandwidth}".format(
+                        batch_bandwidth=self.test_dict[self.test]['batch_bandwidth']))
+                    self.bandwidth_list = self.test_dict[self.test]['batch_bandwidth'].split(
+                    )
 
                 if 'batch_tx_power' in self.test_dict[self.test]:
-                    self.logger.info("batch_tx_power : {batch_tx_power}".format(batch_tx_power=self.test_dict[self.test]['batch_tx_power']))
-                    self.tx_power_list = self.test_dict[self.test]['batch_tx_power'].split()
+                    self.logger.info("batch_tx_power : {batch_tx_power}".format(
+                        batch_tx_power=self.test_dict[self.test]['batch_tx_power']))
+                    self.tx_power_list = self.test_dict[self.test]['batch_tx_power'].split(
+                    )
 
                 # TODO have addional methods
                 # TODO refactor
@@ -1858,11 +1905,13 @@ junit.xml path: allure generate {junit_path}
 
             # Using use_test_list is True and test is not in test_list
             elif self.use_test_list is True and self.test not in self.test_list:
-                self.logger.info("use_test_list set TRUE test: {test} not in {list} skipping".format(test=self.test, list=self.test_list))
+                self.logger.info("use_test_list set TRUE test: {test} not in {list} skipping".format(
+                    test=self.test, list=self.test_list))
 
             # Test disabled
             elif self.test_dict[self.test]['enabled'] == "FALSE":
-                self.logger.info("test: {}  enabled set FALSE test skipped ".format(self.test))
+                self.logger.info(
+                    "test: {}  enabled set FALSE test skipped ".format(self.test))
 
             # enabled flag missing in json
             else:
@@ -1956,7 +2005,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
         ''',
         default=[]
     )
-    parser.add_argument('--flat_dir', help="--flat_dir , will place the results in the top directory", action='store_true')
+    parser.add_argument(
+        '--flat_dir', help="--flat_dir , will place the results in the top directory", action='store_true')
     parser.add_argument(
         '--server_override',
         help="--server_override http://<server ip>/  example: http://192.168.95.6/",
@@ -1967,7 +2017,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
         default=None)
     parser.add_argument('--production', help="--production  stores true, sends email results to production email list",
                         action='store_true')
-    parser.add_argument('--no_send_email', help="--no_send_email  stores true, to not send emails results to engineer or production email list", action='store_true')
+    parser.add_argument(
+        '--no_send_email', help="--no_send_email  stores true, to not send emails results to engineer or production email list", action='store_true')
 
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated",
                         default="")
@@ -1977,6 +2028,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
         '--update_latest',
         help="--update_latest  copy latest results to top dir",
         action='store_true')
+
     # logging configuration:
     parser.add_argument('--log_level',
                         default=None,
@@ -1998,11 +2050,10 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-
-    # TODO Here is where the multiple suite and multiple json may be added 
-    if ((args.json_rig is None )
+    # TODO Here is where the multiple suite and multiple json may be added
+    if ((args.json_rig is None)
         or (args.json_dut is None)
-        or (args.json_test is None)):
+            or (args.json_test is None)):
         logger.error("Must enter json_rig, json_dut, json_tests and suite")
         exit(1)
 
@@ -2018,48 +2069,55 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 json_test_list.append(test_suite_tmp[0])
                 suite_list.append(test_suite_tmp[1])
             else:
-                logger.error("Is there a suite or test json missing? syntax is <test_json:suite_name> {test_suite} ".format(test_suite=args.json_test))
+                logger.error("Is there a suite or test json missing? syntax is <test_json:suite_name> {test_suite} ".format(
+                    test_suite=args.json_test))
                 exit(1)
     else:
-        suite_list =  args.suite.split(',')
-        json_test_list =  args.json_test.split(',')
+        suite_list = args.suite.split(',')
+        json_test_list = args.json_test.split(',')
 
-    json_rig_list =  args.json_rig.split(',')
-    json_dut_list =  args.json_dut.split(',')
+    json_rig_list = args.json_rig.split(',')
+    json_dut_list = args.json_dut.split(',')
 
     if(len(json_test_list) != len(suite_list)):
-        logger.error("Currently the suite and the test_json need to have the same number of entries in the list, either add suite names or test_json names")
-
+        logger.error(
+            "Currently the suite and the test_json need to have the same number of entries in the list, either add suite names or test_json names")
 
     # Save away the current working directory
     current_working_directory = os.getcwd()
-    logger.debug("current working directory {cwd}".format(cwd=current_working_directory))
+    logger.debug("current working directory {cwd}".format(
+        cwd=current_working_directory))
 
     # Validate the the test suites are in the tests json
     # for test json and suite
     test_suite_validation_error = 0
-    for (json_test_name,suite_name) in zip(json_test_list,suite_list):
+    for (json_test_name, suite_name) in zip(json_test_list, suite_list):
         try:
-            logger.info("Validating suite: {suite_name} json_test: {json_test}".format(suite_name=suite_name,json_test=json_test_name))
+            logger.info("Validating suite: {suite_name} json_test: {json_test}".format(
+                suite_name=suite_name, json_test=json_test_name))
             with open(json_test_name, 'r') as json_test_config:
                 json_test = json.load(json_test_config)
         except json.JSONDecodeError as err:
-            logger.error("In Validating tests ERROR reading {json}, ERROR: {error} ".format(json=json_test_name, error=err))
+            logger.error("In Validating tests ERROR reading {json}, ERROR: {error} ".format(
+                json=json_test_name, error=err))
             exit(1)
 
         if "test_suites" in json_test:
-            logger.debug("Validating read test_suites looking for: {}".format(suite_name))
+            logger.debug(
+                "Validating read test_suites looking for: {}".format(suite_name))
             # self.logger.info("test_suites {}".format(self.json_test["test_suites"]))
             if suite_name in json_test["test_suites"]:
-                logger.info("Validating test suite {suite} found in {json_test}".format(suite=suite_name,json_test=json_test["test_suites"]))
+                logger.info("Validating test suite {suite} found in {json_test}".format(
+                    suite=suite_name, json_test=json_test["test_suites"]))
             else:
                 logger.error("ERROR test_suite {suite} Not Present in json test_suites: {suites} ".format(
-                        suite=suite_name, suites=json_test["test_suites"]))
+                    suite=suite_name, suites=json_test["test_suites"]))
                 logger.error("EXITING ERROR test_suite {suite} Not Present in json tests {json_test_name}".format(
-                        suite=suite_name,json_test_name=json_test_name))
+                    suite=suite_name, json_test_name=json_test_name))
                 exit(1)
         else:
-            logger.info("EXITING test_suites KEY not in json {}".format(json_test_name))
+            logger.info(
+                "EXITING test_suites KEY not in json {}".format(json_test_name))
             exit(1)
 
     # Determine the number of iterations
@@ -2068,9 +2126,9 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     for json_rig_name in json_rig_list:
 
         # for test json and suite
-        for (json_test_name,suite_name) in zip(json_test_list,suite_list):
+        for (json_test_name, suite_name) in zip(json_test_list, suite_list):
 
-            # for dut json 
+            # for dut json
             for (json_dut_name) in json_dut_list:
                 total_iterations += 1
 
@@ -2080,42 +2138,47 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     for json_rig_name in json_rig_list:
 
         # for test json and suite
-        for (json_test_name,suite_name) in zip(json_test_list,suite_list):
+        for (json_test_name, suite_name) in zip(json_test_list, suite_list):
 
-            # for dut json 
+            # for dut json
             for (json_dut_name) in json_dut_list:
                 iteration += 1
 
                 # change back to the original working directory
                 os.chdir(current_working_directory)
                 try:
-                    logger.info("reading json_rig: {rig}".format(rig=json_rig_name))
+                    logger.info("reading json_rig: {rig}".format(
+                        rig=json_rig_name))
                     with open(json_rig_name, 'r') as json_rig_config:
                         json_rig = json.load(json_rig_config)
                 except json.JSONDecodeError as err:
-                    logger.error("ERROR reading {json}, ERROR: {error} ".format(json=json_rig, error=err))
+                    logger.error("ERROR reading {json}, ERROR: {error} ".format(
+                        json=json_rig, error=err))
                     exit(1)
 
                 try:
-                    logger.info("reading json_test:  {}".format(json_test_name))
+                    logger.info(
+                        "reading json_test:  {}".format(json_test_name))
                     with open(json_test_name, 'r') as json_test_config:
                         json_test = json.load(json_test_config)
                 except json.JSONDecodeError as err:
-                    logger.error("ERROR reading {json}, ERROR: {error} ".format(json=json_test_name, error=err))
+                    logger.error("ERROR reading {json}, ERROR: {error} ".format(
+                        json=json_test_name, error=err))
                     exit(1)
 
                 try:
-                    logger.info("reading json_dut: {dut}".format(dut=json_dut_name))
+                    logger.info("reading json_dut: {dut}".format(
+                        dut=json_dut_name))
                     with open(json_dut_name, 'r') as json_dut_config:
                         json_dut = json.load(json_dut_config)
                 except json.JSONDecodeError as err:
-                    logger.error("ERROR reading {json}, ERROR: {error} ".format(json=json_dut_name, error=err))
+                    logger.error("ERROR reading {json}, ERROR: {error} ".format(
+                        json=json_dut_name, error=err))
                     exit(1)
-
 
                 # Test-rig information information
                 lanforge_system_node_version = 'NO_LF_NODE_VER'
-                lanforge_system_ip ='NO_LF_IP'
+                lanforge_system_ip = 'NO_LF_IP'
                 scripts_git_sha = 'NO_GIT_SHA'
                 lanforge_fedora_version = 'NO_FEDORA_VER'
                 lanforge_kernel_version = 'NO_KERNEL_VER'
@@ -2127,13 +2190,15 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     if args.outfile == "":
                         __dir = "lf_check_{suite}".format(suite=test_suite)
                     else:
-                        __dir = "lf_ch_{outfile}_{suite}".format(outfile=args.outfile, suite=test_suite)
+                        __dir = "lf_ch_{outfile}_{suite}".format(
+                            outfile=args.outfile, suite=test_suite)
 
                 else:
                     if args.outfile == "":
                         __dir = args.dir
                     else:
-                        __dir = "{dir}_{outfile}_{suite}".format(dir=args.dir, outfile=args.outfile, suite=test_suite)
+                        __dir = "{dir}_{outfile}_{suite}".format(
+                            dir=args.dir, outfile=args.outfile, suite=test_suite)
 
                 __path = args.path
 
@@ -2149,14 +2214,18 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
                 # create report class for reporting
                 report = lf_report.lf_report(_path=__path,
-                                            _results_dir_name=__dir,
-                                            _output_html="{dir}.html".format(dir=__dir),
-                                            _output_pdf="{dir}.pdf".format(dir=__dir))
+                                             _results_dir_name=__dir,
+                                             _output_html="{dir}.html".format(
+                                                 dir=__dir),
+                                             _output_pdf="{dir}.pdf".format(dir=__dir))
 
-                current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-                csv_results = "{dir}-{outfile}-{current_time}.csv".format(dir=__dir, outfile=args.outfile, current_time=current_time)
+                current_time = time.strftime(
+                    "%Y-%m-%d-%H-%M-%S", time.localtime())
+                csv_results = "{dir}-{outfile}-{current_time}.csv".format(
+                    dir=__dir, outfile=args.outfile, current_time=current_time)
                 csv_results = report.file_add_path(csv_results)
-                outfile_name = "{dir}-{outfile}-{current_time}".format(dir=__dir, outfile=args.outfile, current_time=current_time)
+                outfile_name = "{dir}-{outfile}-{current_time}".format(
+                    dir=__dir, outfile=args.outfile, current_time=current_time)
                 outfile = report.file_add_path(outfile_name)
                 if args.flat_dir:
                     report_path = report.get_flat_dir_report_path()
@@ -2173,30 +2242,32 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     # if the test_list is empty should probably exit?
                     if test_list == []:
                         use_test_list = False
-                        logger.warning("use_testlist set to True yet test list was empty")
+                        logger.warning(
+                            "use_testlist set to True yet test list was empty")
                     else:
                         test_list = args.test_list.split(',')
-                        logger.info("use_testlist set True test list : {list}".format(list=test_list))
+                        logger.info(
+                            "use_testlist set True test list : {list}".format(list=test_list))
 
                 # lf_check() class created
                 check = lf_check(_json_rig=json_rig,
-                                _json_dut=json_dut,
-                                _json_test=json_test,
-                                _test_suite=test_suite,
-                                _json_rig_file=args.json_rig,
-                                _json_dut_file=args.json_dut,
-                                _json_test_file=args.json_test,
-                                _use_test_list=use_test_list,
-                                _test_list=test_list,
-                                _server_override=server_override,
-                                _db_override=db_override,
-                                _production=production,
-                                _csv_results=csv_results,
-                                _outfile=outfile,
-                                _outfile_name=outfile_name,
-                                _report_path=report_path,
-                                _log_path=log_path,
-                                _json_test_name=json_test_name)
+                                 _json_dut=json_dut,
+                                 _json_test=json_test,
+                                 _test_suite=test_suite,
+                                 _json_rig_file=args.json_rig,
+                                 _json_dut_file=args.json_dut,
+                                 _json_test_file=args.json_test,
+                                 _use_test_list=use_test_list,
+                                 _test_list=test_list,
+                                 _server_override=server_override,
+                                 _db_override=db_override,
+                                 _production=production,
+                                 _csv_results=csv_results,
+                                 _outfile=outfile,
+                                 _outfile_name=outfile_name,
+                                 _report_path=report_path,
+                                 _log_path=log_path,
+                                 _json_test_name=json_test_name)
 
                 # set up logging
                 logfile = args.logfile[:-4]
@@ -2216,15 +2287,18 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     scripts_git_sha = check.get_scripts_git_sha()
                     logger.info("git_sha {sha}".format(sha=scripts_git_sha))
                 except BaseException:
-                    logger.warning("WARNING: git_sha read exception unable to read")
+                    logger.warning(
+                        "WARNING: git_sha read exception unable to read")
 
                 try:
                     lanforge_system_node_version = check.get_lanforge_system_node_version()
                     logger.info("lanforge_system_node_version {system_node_ver}".format(
                         system_node_ver=lanforge_system_node_version))
                 except Exception as x:
-                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                    logger.warning("WARNING: lanforge_system_node_version exception")
+                    traceback.print_exception(
+                        Exception, x, x.__traceback__, chain=True)
+                    logger.warning(
+                        "WARNING: lanforge_system_node_version exception")
 
                 lanforge_system_ip = check.get_lanforge_system_ip()
 
@@ -2233,8 +2307,10 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     logger.info("lanforge_fedora_version {fedora_ver}".format(
                         fedora_ver=lanforge_fedora_version))
                 except Exception as x:
-                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                    logger.error("ERROR: lanforge_fedora_version exception, tests aborted check lanforge ip")
+                    traceback.print_exception(
+                        Exception, x, x.__traceback__, chain=True)
+                    logger.error(
+                        "ERROR: lanforge_fedora_version exception, tests aborted check lanforge ip")
                     exit(1)
 
                 try:
@@ -2242,8 +2318,10 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     logger.info("lanforge_kernel_version {kernel_ver}".format(
                         kernel_ver=lanforge_kernel_version))
                 except Exception as x:
-                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                    logger.error("ERROR: lanforge_kernel_version exception, tests aborted check lanforge ip")
+                    traceback.print_exception(
+                        Exception, x, x.__traceback__, chain=True)
+                    logger.error(
+                        "ERROR: lanforge_kernel_version exception, tests aborted check lanforge ip")
                     exit(1)
 
                 try:
@@ -2251,8 +2329,10 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     logger.info("lanforge_server_version_full {lanforge_server_version_full}".format(
                         lanforge_server_version_full=lanforge_server_version_full))
                 except Exception as x:
-                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                    logger.error("ERROR: lanforge_server_version exception, tests aborted check lanforge ip")
+                    traceback.print_exception(
+                        Exception, x, x.__traceback__, chain=True)
+                    logger.error(
+                        "ERROR: lanforge_server_version exception, tests aborted check lanforge ip")
                     exit(1)
 
                 try:
@@ -2260,19 +2340,21 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     logger.info("lanforge_server_build_info {lanforge_server_build_info}".format(
                         lanforge_server_build_info=lanforge_server_build_info))
                 except Exception as x:
-                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                    logger.error("ERROR: lanforge_server_build_info exception, tests aborted check lanforge ip")
+                    traceback.print_exception(
+                        Exception, x, x.__traceback__, chain=True)
+                    logger.error(
+                        "ERROR: lanforge_server_build_info exception, tests aborted check lanforge ip")
                     exit(1)
-
-
 
                 try:
                     lanforge_gui_version_full, lanforge_gui_version, lanforge_gui_build_date, lanforge_gui_git_sha = check.get_lanforge_gui_version()
                     logger.info("lanforge_gui_version_full {lanforge_gui_version_full}".format(
                         lanforge_gui_version_full=lanforge_gui_version_full))
                 except Exception as x:
-                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                    logger.error("ERROR: lanforge_gui_version exception, tests aborted check lanforge ip")
+                    traceback.print_exception(
+                        Exception, x, x.__traceback__, chain=True)
+                    logger.error(
+                        "ERROR: lanforge_gui_version exception, tests aborted check lanforge ip")
                     exit(1)
 
                 try:
@@ -2303,27 +2385,32 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                                 'Driver:', maxsplit=1)[-1].split(maxsplit=1)[0]
                             try:
                                 firmware_version = lanforge_radio_json[key]['firmware version']
-                                firmware_version = firmware_version.replace('release/','')
+                                firmware_version = firmware_version.replace(
+                                    'release/', '')
                                 radio_firmware_list.append(firmware_version)
-                                radio_fw_dict[key] = firmware_version.replace('release/','')
+                                radio_fw_dict[key] = firmware_version.replace(
+                                    'release/', '')
                             except Exception as x:
-                                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                                logger.info("5.4.3 radio fw version not in /radiostatus/all ")
+                                traceback.print_exception(
+                                    Exception, x, x.__traceback__, chain=True)
+                                logger.info(
+                                    "5.4.3 radio fw version not in /radiostatus/all ")
                                 firmware_version = "5.4.3 N/A"
                                 #radio_firmware_list = radio_firmware_list.append("NA")
 
                             lf_radio_df = lf_radio_df.append(
                                 {'Radio': lanforge_radio_json[key]['entity id'],
-                                'WIFI-Radio Driver': driver,
-                                'Radio Capabilities': lanforge_radio_json[key]['capabilities'],
-                                'Firmware Version': firmware_version,
-                                'max_clients': lanforge_radio_json[key]['max_sta'],
-                                'max_vap': lanforge_radio_json[key]['max_vap'],
-                                'max_sta': lanforge_radio_json[key]['max_vifs']}, ignore_index=True)
+                                 'WIFI-Radio Driver': driver,
+                                 'Radio Capabilities': lanforge_radio_json[key]['capabilities'],
+                                 'Firmware Version': firmware_version,
+                                 'max_clients': lanforge_radio_json[key]['max_sta'],
+                                 'max_vap': lanforge_radio_json[key]['max_vap'],
+                                 'max_sta': lanforge_radio_json[key]['max_vifs']}, ignore_index=True)
 
-
-                    logger.info("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
-                    logger.info("radio_fw_dict:: {radio_fw_dict}".format(radio_fw_dict=radio_fw_dict))
+                    logger.info("lf_radio_df:: {lf_radio_df}".format(
+                        lf_radio_df=lf_radio_df))
+                    logger.info("radio_fw_dict:: {radio_fw_dict}".format(
+                        radio_fw_dict=radio_fw_dict))
 
                     # using set() to remove duplicated entries
                     radio_firmware_list = list(set(radio_firmware_list))
@@ -2335,8 +2422,9 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     logger.error("print_exc(): {error}".format(error=error))
                     traceback.print_exc(file=sys.stdout)
                     lf_radio_df = pd.DataFrame()
-                    logger.info("get_lanforge_radio_json exception, no radio data, is radio admin down, a windows radio, or check for LANforge GUI running")
-                    # TODO should we exit or should it be a work around 
+                    logger.info(
+                        "get_lanforge_radio_json exception, no radio data, is radio admin down, a windows radio, or check for LANforge GUI running")
+                    # TODO should we exit or should it be a work around
                     # exit(1)
 
                 # LANforge and scripts config for results
@@ -2345,7 +2433,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 lf_test_setup['LANforg IP'] = lanforge_system_ip
                 lf_test_setup['fedora version'] = lanforge_fedora_version
                 lf_test_setup['kernel version'] = lanforge_kernel_version
-                lf_test_setup['server version'] = lanforge_server_version_full 
+                lf_test_setup['server version'] = lanforge_server_version_full
                 lf_test_setup['gui version'] = lanforge_gui_version
                 lf_test_setup['gui build date'] = lanforge_gui_build_date
                 lf_test_setup['gui git sha'] = lanforge_gui_git_sha
@@ -2384,7 +2472,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 lf_test_summary = pd.DataFrame()
                 lf_test_summary['Tests Run'] = [check.tests_run]
                 lf_test_summary['Finished'] = [check.tests_success]
-                lf_test_summary['Some Tests Failed'] = [check.tests_some_failure]
+                lf_test_summary['Some Tests Failed'] = [
+                    check.tests_some_failure]
                 lf_test_summary['Failure'] = [check.tests_failure]
                 lf_test_summary['Timeout'] = [check.tests_timeout]
 
@@ -2397,11 +2486,12 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 test_rig = check.get_test_rig()
                 report.set_title(
                     "LF Test Check: {test_rig}: {suite}: {ip}".format(
-                        test_rig=test_rig, suite=test_suite, ip=lanforge_system_ip ))
-                #report.build_banner_left()
+                        test_rig=test_rig, suite=test_suite, ip=lanforge_system_ip))
+                # report.build_banner_left()
                 report.build_banner_left_h2_font()
                 report.start_content_div2()
-                report.set_obj_html("Objective", "Execution of test_suite {suite}".format(suite=test_suite))
+                report.set_obj_html(
+                    "Objective", "Execution of test_suite {suite}".format(suite=test_suite))
                 report.build_objective()
                 report.set_table_title("Test Input Files")
                 report.build_table_title()
@@ -2436,7 +2526,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     abs_path = False
                     if abs_path:
                         qa_url = qa_report_html.replace('/home/lanforge', '')
-                        logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
+                        logger.info(
+                            "QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
                         report.build_link("QA Test Results", qa_url)
                     else:
                         # try relative path
@@ -2445,7 +2536,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                         qa_report_base_name = os.path.basename(qa_report_html)
 
                         qa_url = './' + parent_name + '/' + qa_report_base_name
-                        logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
+                        logger.info(
+                            "QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
                         report.build_link("QA Test Results", qa_url)
 
                 if "NA" not in inspect_report_html:
@@ -2455,14 +2547,16 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     # try relative path
                     parent_path = os.path.dirname(inspect_report_html)
                     parent_name = os.path.basename(parent_path)
-                    inspect_report_base_name = os.path.basename(inspect_report_html)
+                    inspect_report_base_name = os.path.basename(
+                        inspect_report_html)
 
                     inspect_url = './' + parent_name + '/' + inspect_report_base_name
-                    logger.info("QA Test Results inspect_run custom: {inspect_url}".format(inspect_url=inspect_url))
+                    logger.info("QA Test Results inspect_run custom: {inspect_url}".format(
+                        inspect_url=inspect_url))
                     report.build_link("Inspect Test Results", inspect_url)
 
-
-                report.set_table_title("LF Check Suite Summary: {suite}".format(suite=test_suite))
+                report.set_table_title(
+                    "LF Check Suite Summary: {suite}".format(suite=test_suite))
                 report.build_table_title()
                 report.set_table_dataframe(lf_test_summary)
                 report.build_table()
@@ -2479,35 +2573,38 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 try:
                     report.write_pdf_with_timestamp()
                 except Exception as x:
-                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                    traceback.print_exception(
+                        Exception, x, x.__traceback__, chain=True)
                     logger.info("exception write_pdf_with_timestamp()")
 
                 logger.info("lf_check_html_report: " + html_report)
-
 
                 # save the juni.xml file
                 junit_results = check.get_junit_results()
                 report.set_junit_results(junit_results)
                 junit_xml = report.write_junit_results()
-                junit_path_only = junit_xml.replace('junit.xml','')
+                junit_path_only = junit_xml.replace('junit.xml', '')
 
                 check.set_junit_results(junit_xml)
                 check.set_junit_path_only(junit_path_only)
 
+                # TODO
+                report.update_allure_results_history()
+                report.generate_allure_report()
 
                 # Send email
                 if args.no_send_email or check.email_list_test == "":
-                    logger.info("send email not set or email_list_test not set")
+                    logger.info(
+                        "send email not set or email_list_test not set")
                 else:
                     check.total_iterations = total_iterations
                     check.iteration = iteration
                     check.send_results_email(report_file=html_report)
 
                 # print later so shows up last
-                logger.info("junit.xml: allure generate {}".format(junit_xml))
-                logger.info("junit.xml path: allure generate {}".format(junit_path_only))
-
-
+                logger.info("junit.xml: allure serve {}".format(junit_xml))
+                logger.info(
+                    "junit.xml path: allure serve {}".format(junit_path_only))
 
                 if args.update_latest:
                     report_path = os.path.dirname(html_report)
@@ -2515,12 +2612,14 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
                     # copy results to lastest so someone may see the latest.
                     # duplicates html_report file up one directory is the destination
-                    html_report_latest = parent_report_dir + "/{dir}_latest.html".format(dir=__dir)
+                    html_report_latest = parent_report_dir + \
+                        "/{dir}_latest.html".format(dir=__dir)
 
                     banner_src_png = report_path + "/banner.png"
                     banner_dest_png = parent_report_dir + "/banner.png"
                     CandelaLogo_src_png = report_path + "/CandelaLogo2-90dpi-200x90-trans.png"
-                    CandelaLogo_dest_png = parent_report_dir + "/CandelaLogo2-90dpi-200x90-trans.png"
+                    CandelaLogo_dest_png = parent_report_dir + \
+                        "/CandelaLogo2-90dpi-200x90-trans.png"
                     CandelaLogo_small_src_png = report_path + "/candela_swirl_small-72h.png"
                     CandelaLogo_small_dest_png = parent_report_dir + "/candela_swirl_small-72h.png"
                     report_src_css = report_path + "/report.css"
@@ -2543,9 +2642,12 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     try:
                         shutil.copyfile(html_report, html_report_latest)
                     except Exception as x:
-                        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                        logger.info("unable to copy results from {html} to {html_latest}".format(html=html_report, html_latest=html_report_latest))
-                        logger.info("check permissions on {html_report_latest}".format(html_report_latest=html_report_latest))
+                        traceback.print_exception(
+                            Exception, x, x.__traceback__, chain=True)
+                        logger.info("unable to copy results from {html} to {html_latest}".format(
+                            html=html_report, html_latest=html_report_latest))
+                        logger.info("check permissions on {html_report_latest}".format(
+                            html_report_latest=html_report_latest))
 
                     # copy banner and logo up one directory,
                     shutil.copyfile(banner_src_png, banner_dest_png)
@@ -2553,10 +2655,12 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     shutil.copyfile(report_src_css, report_dest_css)
                     shutil.copyfile(custom_src_css, custom_dest_css)
                     shutil.copyfile(font_src_woff, font_dest_woff)
-                    shutil.copyfile(CandelaLogo_small_src_png, CandelaLogo_small_dest_png)
+                    shutil.copyfile(CandelaLogo_small_src_png,
+                                    CandelaLogo_small_dest_png)
 
                     # print out locations of results
-                    logger.info("html_report_latest: {latest}".format(latest=html_report_latest))
+                    logger.info("html_report_latest: {latest}".format(
+                        latest=html_report_latest))
 
 
 if __name__ == '__main__':
