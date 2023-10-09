@@ -517,7 +517,7 @@
                 "args_list":[
                     "--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --num_stations 2",
                     " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
-                    " --test_duration 30s",
+                    " --test_duration 15s",
                     " --url 'dl http://upstream_port_ip /dev/null'",
                     " --local_lf_report_dir REPORT_PATH"
                 ]
