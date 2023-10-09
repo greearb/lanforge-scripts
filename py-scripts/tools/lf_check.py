@@ -1686,7 +1686,7 @@ junit.xml path: allure serve {junit_path}
         summary_output_updated = summary_output.replace(
             '&', 'and').replace('<', '&lt;').replace('>', '&gt;')
         self.junit_results += """
-            <testcase name="{name}" classname="{suite}" id="{command}" time="{time}">
+            <testcase name="{name}" classname="{suite}" time="{time}">
             """.format(name=self.test, suite=self.test_suite, command=short_cmd, time=self.duration_sec_us)
 
         self.junit_results += """
