@@ -135,8 +135,8 @@ class inspect_sql:
 
     def start_junit_testsuite(self):
         self.junit_results += """
-        <testsuite name="{suite}">
-        """.format(suite=self.test_suite)
+        <testsuite name="{suite}  time="{duration}" timestamp="{start}">
+        """.format(suite=self.test_suite, duration=self.suite_duration,start=self.suite_start_time)
 
     def finish_junit_testsuite(self):
         self.junit_results += """
