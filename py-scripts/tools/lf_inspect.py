@@ -20,6 +20,7 @@ import re
 import csv
 import traceback
 import math
+import datetime
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
@@ -86,7 +87,7 @@ class inspect_sql:
         self.junit_test = ''
         # TODO the comparison needs to have a name based
         # on the type of comparison
-        self.test_suite = 'Compare Current Run to Previous Run'
+        self.test_suite = 'Lanforge Inspect Compare'
 
         # Used for csv results
         self.csv_results = _csv_results
@@ -112,6 +113,7 @@ class inspect_sql:
         # Allure information
         self.junit_results = ""
         self.junit_path_only = ""
+        self.allure_time_stamp =  str(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
 
     def set_junit_results(self, junit_results):
         self.junit_results = junit_results
@@ -136,7 +138,8 @@ class inspect_sql:
     def start_junit_testsuite(self):
         self.junit_results += """
         <testsuite name="{suite}  time="{duration}" timestamp="{start}">
-        """.format(suite=self.test_suite, duration=self.suite_duration,start=self.suite_start_time)
+        """.format(suite=self.test_suite, duration=self.suite_duration,start=self.allure_time_stamp
+)
 
     def finish_junit_testsuite(self):
         self.junit_results += """
@@ -472,8 +475,8 @@ class inspect_sql:
                                 test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'], description=df_data_1['short-description'])
                             # record the junit results
                             self.junit_results += """
-                                <testcase name="{name}" id="{description}">
-                                """.format(name=self.junit_test, description=description)
+                                <testcase name="{name}" classname="{suite} id="{description}">
+                                """.format(name=self.junit_test, suite=test_suite, description=description)
 
                             # remove junit xml characters
                             str_df_data_1 = str(df_data_1).replace('<', '').replace('>', '')
