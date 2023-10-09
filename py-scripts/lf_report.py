@@ -39,6 +39,7 @@ import importlib
 
 from matplotlib import pyplot as plt
 import platform
+import subprocess
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -69,7 +70,8 @@ class lf_report:
                  _output_format='html',  # pass in on the write functionality, current not used
                  _dataframe="",
                  _path_date_time="",
-                 _custom_css='custom-example.css'):  # this is where the final report is placed.
+                 _custom_css='custom-example.css',
+                 _allure_report_dir_name="allure_report"):  # this is where the final report is placed.
         # other report paths,
 
         # _path is where the directory with the data time will be created
@@ -82,6 +84,18 @@ class lf_report:
         else:
             self.path = _path
             logger.info("path set: {}".format(self.path))
+
+        # allure report is the allure report directory
+        self.allure_report_dir_name = _allure_report_dir_name
+        self.allure_report_dir = os.path.join(self.path,self.allure_report_dir_name)
+
+        allure_report_history = format("{allure_report}/history".format(allure_report=self.allure_report_dir_name))
+        self.allure_report_history = os.path.join(self.path,allure_report_history)
+
+            
+        self.allure_results_history = ""
+        self.allure_result_dir = ""
+        self.allure_report_timeout = 120 #TODO have configurable or allow process to complete and not wait.
 
         self.dataframe = _dataframe
         self.text = ""
@@ -403,6 +417,37 @@ class lf_report:
             logger.warning("write_junit failed")
         return self.write_output_junit
 
+    def update_allure_results_history(self):
+        # TODO abiltiy to set the Allure results dir
+        self.allure_results_history = os.path.join(self.path_date_time,"history")
+
+        logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history,allure_results=self.allure_results_history))
+        # allure_report directory
+        try:
+            shutil.copytree(self.allure_report_history,self.allure_results_history)
+
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.info("Either no allure report present or the copy of history failed.")
+        
+
+    def generate_allure_report(self):
+        # TODO current the junit.xml is placed in the base directory 
+        self.allure_results = "{allure_results_path}/".format(allure_results_path=self.path_date_time)
+        allure_command = "allure generate {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
+        # allure_command = "allure serve {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
+        try:
+            process = subprocess.Popen(allure_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                       universal_newlines=True)
+            # have email on separate timeout
+            process.wait(timeout=120) # TODO have this be configurable
+        #except subprocess.TimeoutExpired:
+        #    logger.info("Allure report generation timeout")
+        #    process.terminate() # only kill on 
+
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.info("allure command: {allure_command} failed or timed out".format(allure_command=allure_command))
 
     # https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
     # page_size A4, A3, Letter, Legal
