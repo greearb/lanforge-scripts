@@ -148,9 +148,9 @@ class GenTest():
         self.gen_csv_files = {}
         self.gen_csv_writers = {}
 
-        if self.outfile is not None:
+        if self.csv_outfile is not None:
             # create csv results writer and open results file to be written to.
-            results = self.outfile[:-4]  # take off .csv part of outfile
+            results = self.csv_outfile[:-4]  # take off .csv part of outfile
             results = results + "-results.csv"
             self.csv_results_file = open(results, "w")
             self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
@@ -187,7 +187,7 @@ class GenTest():
     # Write initial headers to port csv file (all ports used, created & existing ports)
     def csv_add_port_column_headers(self, port_eid):
         # if self.csv_file is not None:
-        fname = self.outfile[:-4]  # Strip '.csv' from file name
+        fname = self.csv_outfile[:-4]  # Strip '.csv' from file name
         fname = fname + "-port-" + port_eid + ".csv"
         pfile = open(fname, "w")
         port_csv_writer = csv.writer(pfile, delimiter=",")
@@ -199,7 +199,7 @@ class GenTest():
 
     # write initial headers to gen cx files
     def csv_add_gen_column_headers(self, gen_cx):
-        fname = self.outfile[:-4]  # String '.csv' from file name
+        fname = self.csv_outfile[:-4]  # String '.csv' from file name
         fname = fname + "-" + gen_cx + "-gen-cx.csv"
         pfile = open(fname, "w")
         gen_csv_writer = csv.writer(pfile, delimiter=",")
@@ -207,6 +207,36 @@ class GenTest():
         self.gen_csv_writers[gen_cx] = gen_csv_writer
         gen_csv_writer.writerow(self.gen_tab_cols)
         pfile.flush()
+    
+    def write_port_csv(self, eid):
+        # get writer
+        port_csv_writer = self.port_csv_writers[eid]
+        port_csv_file = self.port_csv_files[eid]
+        # fetch data
+        json_url = "%s/ports/%s/?fields=device,down" % (self.lfclient_url)
+        json_response = self.query.json_get(url=json_url,
+                                            debug=self.debug)
+        row = ""
+        # post data to csv file on disk
+        port_csv_writer.writerow(row)
+        port_csv_file.flush()
+
+    def write_gen_csv(self, cx):
+        # get writer
+        gen_csv_writer = self.gen_csv_writers[cx]
+        gen_csv_file = self.gen_csv_files[cx]
+
+        # fetch data
+        print(self.gen_tab_cols)
+        json_url = "%s/generic/%s" % (self.lfclient_url, cx)
+        json_response = self.query.json_get(url=json_url,
+                                            debug=self.debug)
+
+        row = ""
+        # post data to csv file on disk
+        gen_csv_writer.writerow(row)
+        gen_csv_file.flush()
+
 
     def get_results(self):
         results = self.json_get(
@@ -217,7 +247,7 @@ class GenTest():
             results = results['endpoint']
         return (results)
 
-    def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path=''):
+    def generate_report(self, result_json=None, result_dir='Generic_Test_Report', report_path=''):
         if result_json is not None:
             self.result_json = result_json
         print('Generating Report')
@@ -420,6 +450,16 @@ class GenTest():
         end_time = datetime.datetime.now().timestamp() + self.duration_time_to_seconds(self.test_duration)
 
         while (datetime.datetime.now().timestamp() < end_time):
+            #write to all csv files
+            if (self.sta_list):
+                for sta_alias in self.sta_list:
+                    self.write_port_csv(sta_alias)
+            if (self.use_existing_eid):
+                for eid in self.use_existing_eid:
+                    self.write_port_csv(eid)
+            if self.created_cx:
+                for cx in self.created_cx:
+                    self.write_gen_csv(cx)
             time.sleep(monitor_interval)
 
     def start(self):
@@ -429,6 +469,8 @@ class GenTest():
         if self.sta_list:
             for sta_alias in self.sta_list:
                 port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
+                #write headers to csv
+                self.csv_add_port_column_headers(sta_alias)
                 self.command.post_set_port(shelf = port_shelf,
                                            resource = port_resource,
                                            port = port_name,
@@ -440,6 +482,8 @@ class GenTest():
         if self.use_existing_eid:
             for eid in self.use_existing_eid:
                 port_shelf, port_resource, port_name, *nil = self.name_to_eid(eid)
+                #write headers to csv
+                self.csv_add_port_column_headers(eid)
                 self.command.post_set_port(shelf = port_shelf ,
                                         resource = port_resource,
                                         port = port_name,
@@ -475,6 +519,8 @@ class GenTest():
         #at this point, all endpoints have been created, start all endpoints
         if self.created_cx:
             for cx in self.created_cx:
+                #write headers to csv
+                self.csv_add_gen_column_headers(cx)
                 self.command.post_set_cx_state(cx_name= cx,
                                                cx_state="RUNNING",
                                                test_mgr="default_tm",
@@ -483,7 +529,6 @@ class GenTest():
     def stop(self):
         logger.info("Stopping Test...")
         # set_cx_state default_tm CX_ping-hi STOPPED
-    
         if self.created_cx:
             for cx in self.created_cx:
                 self.command.post_set_cx_state(cx_name= cx,
@@ -1004,10 +1049,10 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''Create generic endpoints and test for their ability to execute chosen commands\n''',
         description='''
-        test_generic.py
+        lf_test_generic.py
         --------------------
         Generic command example:
-        python3 ./test_generic.py 
+        python3 ./lf_test_generic.py
             --mgr localhost (optional)
             --mgr_port 4122 (optional)
             --upstream_port eth1 (optional)
@@ -1078,7 +1123,7 @@ def main():
 
     # args for reporting
     optional.add_argument('--output_format', help= 'choose either csv or xlsx',default='csv')
-    optional.add_argument('--csv_outfile', help="output file for csv data", default="test_generic_kpi")
+    optional.add_argument('--csv_outfile', help="output file for csv data", default="lf_test_generic_kpi")
     optional.add_argument('--report_file', help='where you want to store results', default=None)
     optional.add_argument( '--gen_tab_cols', help='Columns wished to be monitored from generic endpoint tab',default= ['name', 'tx bytes', 'rx bytes'])
     optional.add_argument( '--port_mgr_cols', help='Columns wished to be monitored from port manager tab',default= ['ap', 'ip', 'parent dev'])
@@ -1119,6 +1164,9 @@ def main():
                            interval=args.interval,
                            ssid=args.ssid,
                            passwd=args.passwd,
+                           create_report=args.create_report,
+                           port_mgr_cols=args.port_mgr_cols,
+                           gen_tab_cols=args.gen_tab_cols,
                            security=args.security,
                            test_duration=args.test_duration,
                            monitor_interval=args.monitor_interval,
