@@ -198,54 +198,62 @@ class GenTest():
         pfile.flush()
 
     # write initial headers to gen cx files
-    def csv_add_gen_column_headers(self, gen_cx):
+    def csv_add_gen_column_headers(self, gen_endp):
         fname = self.csv_outfile[:-4]  # String '.csv' from file name
-        fname = fname + "-" + gen_cx + "-gen-cx.csv"
+        fname = fname + "-" + gen_endp + "-gen-endp.csv"
         pfile = open(fname, "w")
         gen_csv_writer = csv.writer(pfile, delimiter=",")
-        self.gen_csv_files[gen_cx] = pfile
-        self.gen_csv_writers[gen_cx] = gen_csv_writer
+        self.gen_csv_files[gen_endp] = pfile
+        self.gen_csv_writers[gen_endp] = gen_csv_writer
         gen_csv_writer.writerow(self.gen_tab_cols)
         pfile.flush()
     
     def write_port_csv(self, eid):
+        port_shelf, port_resource, port_name, *nil = self.name_to_eid(eid)
         # get writer
         port_csv_writer = self.port_csv_writers[eid]
         port_csv_file = self.port_csv_files[eid]
+
         # fetch data
-        json_url = "%s/ports/%s/?fields=device,down" % (self.lfclient_url)
+        fields_str = "fields="
+        for cols in self.port_mgr_cols[:-1]:
+            fields_str = fields_str + "" + cols +","
+        fields_str = fields_str + self.port_mgr_cols[-1] #add last field
+        json_url = "%s/ports/%s/%s/%s?%s" % (self.lfclient_url, port_shelf, port_resource, port_name, fields_str)
         json_response = self.query.json_get(url=json_url,
                                             debug=self.debug)
-        row = ""
+        row = []
+        if (json_response is not None):
+            json_re_intf = json_response['interface']
+            for field in self.port_mgr_cols:
+                row.append(json_re_intf[field])
+
         # post data to csv file on disk
         port_csv_writer.writerow(row)
         port_csv_file.flush()
 
-    def write_gen_csv(self, cx):
+    def write_gen_csv(self, endp):
         # get writer
-        gen_csv_writer = self.gen_csv_writers[cx]
-        gen_csv_file = self.gen_csv_files[cx]
+        gen_csv_writer = self.gen_csv_writers[endp]
+        gen_csv_file = self.gen_csv_files[endp]
 
         # fetch data
-        print(self.gen_tab_cols)
-        json_url = "%s/generic/%s" % (self.lfclient_url, cx)
+        fields_str = "fields="
+        for cols in self.gen_tab_cols[:-1]:
+            fields_str = fields_str + "" + cols +","
+        fields_str = fields_str + self.gen_tab_cols[-1] #add last field
+        json_url = "%s/generic/%s?%s" % (self.lfclient_url, endp, fields_str)
         json_response = self.query.json_get(url=json_url,
                                             debug=self.debug)
+        row = []
+        if (json_response is not None):
+            json_re_intf = json_response['endpoint']
+            for field in self.gen_tab_cols:
+                row.append(json_re_intf[field])
 
-        row = ""
         # post data to csv file on disk
         gen_csv_writer.writerow(row)
         gen_csv_file.flush()
-
-
-    def get_results(self):
-        results = self.json_get(
-            "/generic/{}".format(','.join(self.generic_endps_profile.created_endp)))
-        if (len(self.generic_endps_profile.created_endp) > 1):
-            results = results['endpoints']
-        else:
-            results = results['endpoint']
-        return (results)
 
     def generate_report(self, result_json=None, result_dir='Generic_Test_Report', report_path=''):
         if result_json is not None:
@@ -451,15 +459,16 @@ class GenTest():
 
         while (datetime.datetime.now().timestamp() < end_time):
             #write to all csv files
-            if (self.sta_list):
-                for sta_alias in self.sta_list:
-                    self.write_port_csv(sta_alias)
-            if (self.use_existing_eid):
-                for eid in self.use_existing_eid:
-                    self.write_port_csv(eid)
-            if self.created_cx:
-                for cx in self.created_cx:
-                    self.write_gen_csv(cx)
+            if (self.create_report):
+                if (self.sta_list and self.port_mgr_cols):
+                    for sta_alias in self.sta_list:
+                        self.write_port_csv(sta_alias)
+                if (self.use_existing_eid and self.port_mgr_cols):
+                    for eid in self.use_existing_eid:
+                        self.write_port_csv(eid)
+                if (self.created_endp and self.gen_tab_cols):
+                    for endp in self.created_endp:
+                        self.write_gen_csv(endp)
             time.sleep(monitor_interval)
 
     def start(self):
@@ -519,8 +528,6 @@ class GenTest():
         #at this point, all endpoints have been created, start all endpoints
         if self.created_cx:
             for cx in self.created_cx:
-                #write headers to csv
-                self.csv_add_gen_column_headers(cx)
                 self.command.post_set_cx_state(cx_name= cx,
                                                cx_state="RUNNING",
                                                test_mgr="default_tm",
@@ -799,6 +806,10 @@ class GenTest():
         print("This is the generic cmd we are sending to server...:   " + cmd)
         self.command.post_set_gen_cmd(name = unique_alias,
                                       command= cmd)
+
+        #add headers to endp file if user asks to create report
+        if (self.create_report):
+            self.csv_add_gen_column_headers(unique_alias)
 
         
     def do_iperf (self, type, alias, eid):
@@ -1128,7 +1139,7 @@ def main():
     optional.add_argument( '--gen_tab_cols', help='Columns wished to be monitored from generic endpoint tab',default= ['name', 'tx bytes', 'rx bytes'])
     optional.add_argument( '--port_mgr_cols', help='Columns wished to be monitored from port manager tab',default= ['ap', 'ip', 'parent dev'])
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',default= None)
-    optional.add_argument('--create_report',action="store_true", help='specify this flag if test should create report')
+    optional.add_argument('--create_report',action="store_true", help='specify this flag if test should create report. This means that html, pdf, and csv data is saved and created.')
 
     # args for test duration & monitor interval
     optional.add_argument('--monitor_interval',help='frequency of monitors measurements;example: 250ms, 35s, 2h',default='2s')
@@ -1195,6 +1206,7 @@ def main():
     generic_test.monitor_test()
     print("Done with connection monitoring")
     generic_test.stop()
+    generic_test.generate_report()
     generic_test.cleanup()
 
 if __name__ == "__main__":
