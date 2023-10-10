@@ -864,6 +864,8 @@ class ThroughputQOS(Realm):
                     list[1].append(res[case]['test_results'][0][1][key]['VO'])
                     list[2].append(res[case]['test_results'][0][1][key]['BK'])
                     list[3].append(res[case]['test_results'][0][1][key]['BE'])
+            x_fig_size = 15
+            y_fig_size = self.num_stations * .5 + 4
             if len(res.keys()) > 0:
                 if "throughput_table_df" in res:
                     res.pop("throughput_table_df")
@@ -904,7 +906,7 @@ class ThroughputQOS(Realm):
                                             _graph_title="Individual {} throughput for BK(WIFI) traffic - {} clients".format(
                                                 self.direction,key),
                                             _title_size=16,
-                                            _figsize= (18, 12),
+                                            _figsize=(x_fig_size, y_fig_size),
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
                                             _color_name=colors,
@@ -971,7 +973,7 @@ class ThroughputQOS(Realm):
                                                 self.direction,key),
                                             _title_size=16, 
                                             _yticks_rotation=None,
-                                            _figsize=(18, 12),
+                                            _figsize=(x_fig_size, y_fig_size),
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
                                             _color_name=colors,
@@ -1038,7 +1040,7 @@ class ThroughputQOS(Realm):
                                                 self.direction,key),
                                             _title_size=16,
                                             _yticks_rotation=None,
-                                            _figsize=(18, 10),
+                                            _figsize=(x_fig_size, y_fig_size),
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
                                             _show_bar_value=True,
@@ -1104,7 +1106,7 @@ class ThroughputQOS(Realm):
                                             _graph_title="Individual {} throughput for VO(WIFI) traffic - {} clients".format(
                                                 self.direction,key),
                                             _title_size=16,
-                                            _figsize=(18, 10),
+                                            _figsize=(x_fig_size, y_fig_size),
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
                                             _show_bar_value=True,
