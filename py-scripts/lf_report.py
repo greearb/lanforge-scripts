@@ -94,6 +94,7 @@ class lf_report:
 
             
         self.allure_results_history = ""
+        self.allure_results = ""
         self.allure_result_dir = ""
         self.allure_report_timeout = 120 #TODO have configurable or allow process to complete and not wait.
 
@@ -120,6 +121,7 @@ class lf_report:
         self.html = ""
         self.junit = ""
         self.write_output_junit = ""
+        self.junit_dir = ""
         self.custom_html = ""
         self.pdf_link_html = ""
         self.objective = _obj
@@ -405,9 +407,14 @@ class lf_report:
     def set_junit_results(self,junit_results):
         self.junit = junit_results
 
-    def write_junit_results(self):
-        self.write_output_junit = "{}/junit.xml".format(self.path_date_time)
+    def write_junit_results(self,test_suite=""):
+        self.junit_dir ="{}".format(self.path_date_time)
+        if test_suite == "":
+            self.write_output_junit = "{}/junit.xml".format(self.path_date_time)
+        else:
+            self.write_output_junit = "{dir}/{suite}_junit.xml".format(dir=self.path_date_time,suite=test_suite)
         logger.info("write_output_html: {}".format(self.write_output_html))
+        logger.info("junit_dir: {}".format(self.junit_dir))
         try:
             test_file = open(self.write_output_junit, "w")
             test_file.write(self.junit)
@@ -415,11 +422,18 @@ class lf_report:
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.warning("write_junit failed")
-        return self.write_output_junit
+        return self.write_output_junit, self.junit_dir
 
-    def update_allure_results_history(self):
+    def update_allure_results_history(self,allure_results=""):
         # TODO abiltiy to set the Allure results dir
-        self.allure_results_history = os.path.join(self.path_date_time,"history")
+        if allure_results == "":
+            self.allure_results_history = os.path.join(self.path_date_time,"history")
+            self.allure_results = "{allure_results_path}/".format(allure_results_path=self.path_date_time)
+
+        else:
+            #TODO check if the path is passed in for allure results
+            self.allure_results = allure_results
+            self.allure_results_history = os.path.join(self.allure_results,"history")
 
         logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history,allure_results=self.allure_results_history))
         # allure_report directory
@@ -433,7 +447,6 @@ class lf_report:
 
     def generate_allure_report(self):
         # TODO current the junit.xml is placed in the base directory 
-        self.allure_results = "{allure_results_path}/".format(allure_results_path=self.path_date_time)
         allure_command = "allure generate {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         # allure_command = "allure serve {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         try:
