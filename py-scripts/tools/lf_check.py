@@ -2582,14 +2582,21 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 # save the juni.xml file
                 junit_results = check.get_junit_results()
                 report.set_junit_results(junit_results)
-                junit_xml = report.write_junit_results()
-                junit_path_only = junit_xml.replace('junit.xml', '')
+                junit_xml, junit_path_only = report.write_junit_results(test_suite=test_suite)
+
+                # TODO path in the allure results path
+                allure_results_path = str(report.get_path()) + "/allure_results"
+
+                if not os.path.isdir(allure_results_path):
+                    os.mkdir(allure_results_path)
+
+                shutil.copy2(junit_xml,allure_results_path)
 
                 check.set_junit_results(junit_xml)
                 check.set_junit_path_only(junit_path_only)
 
                 # TODO
-                report.update_allure_results_history()
+                report.update_allure_results_history(allure_results=allure_results_path)
                 report.generate_allure_report()
 
                 # Send email
