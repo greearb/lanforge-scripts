@@ -9,27 +9,30 @@ some amount of file data from the FTP server while measuring the time taken by c
 EXAMPLE-1:
 Command Line Interface to run download scenario for Real clients
 python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
---security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 5G
+--security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 5G --upstream_port eth1
 
 EXAMPLE-2:
 Command Line Interface to run upload scenario on 6GHz band for Virtual clients
 python3 lf_ftp.py --ssid Netgear-6g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
 --security wpa3 --fiveg_radio wiphy2 --directions Upload --clients_type Virtual --ap_name Netgear --bands 6G --num_stations 2
+--upstream_port eth1
 
 EXAMPLE-3:
 Command Line Interface to run download scenario on 5GHz band for Virtual clients
 python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
 --security wpa2 --fiveg_radio wiphy2 --directions Download --clients_type Virtual --ap_name Netgear --bands 5G --num_stations 2
+--upstream_port eth1
 
 EXAMPLE-4:
 Command Line Interface to run upload scenario for Real clients
 python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
---security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 2.4G
+--security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 2.4G --upstream_port eth1
 
 EXAMPLE-5:
 Command Line Interface to run upload scenario on 2.4GHz band for Virtual clients
 python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
 --security wpa2 --twog_radio wiphy1 --directions Upload --clients_type Virtual --ap_name Netgear --bands 2.4G --num_stations 2 
+--upstream_port eth1
 
 SCRIPT_CLASSIFICATION : Test
 
@@ -657,7 +660,7 @@ class FtpTest(LFCliBase):
                         for created_cx in self.cx_list:
                             if CX == created_cx:                
                                 self.url_data.append(cx[CX]['total-urls'])
-            logger.info("uc_min,uc_max,uc_avg",self.uc_min,self.uc_max,self.uc_avg)
+            logger.info(f"uc_min,uc_max,uc_avg {self.uc_min},{self.uc_max},{self.uc_avg}")
             print("total urls",self.url_data)
         else:
             logger.info("No layer 4-7 endpoints")
@@ -1440,27 +1443,30 @@ some amount of file data from the FTP server while measuring the time taken by c
 EXAMPLE-1:
 Command Line Interface to run download scenario for Real clients
 python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
---security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 5G
+--security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 5G --upstream_port eth1
 
 EXAMPLE-2:
 Command Line Interface to run upload scenario on 6GHz band for Virtual clients
 python3 lf_ftp.py --ssid Netgear-6g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
---security wpa3 --sixg_radio wiphy2 --directions Upload --clients_type Virtual --ap_name Netgear --bands 6G --num_stations 2
+--security wpa3 --fiveg_radio wiphy2 --directions Upload --clients_type Virtual --ap_name Netgear --bands 6G --num_stations 2
+--upstream_port eth1
 
 EXAMPLE-3:
 Command Line Interface to run download scenario on 5GHz band for Virtual clients
 python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
 --security wpa2 --fiveg_radio wiphy2 --directions Download --clients_type Virtual --ap_name Netgear --bands 5G --num_stations 2
+--upstream_port eth1
 
 EXAMPLE-4:
 Command Line Interface to run upload scenario for Real clients
 python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
---security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 2.4G
+--security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 2.4G --upstream_port eth1
 
 EXAMPLE-5:
 Command Line Interface to run upload scenario on 2.4GHz band for Virtual clients
 python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.200.165 --traffic_duration 1m 
 --security wpa2 --twog_radio wiphy1 --directions Upload --clients_type Virtual --ap_name Netgear --bands 2.4G --num_stations 2 
+--upstream_port eth1
 
 SCRIPT_CLASSIFICATION : Test
 
