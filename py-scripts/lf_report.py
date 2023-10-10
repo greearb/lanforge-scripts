@@ -438,7 +438,7 @@ class lf_report:
         logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history,allure_results=self.allure_results_history))
         # allure_report directory
         try:
-            shutil.copytree(self.allure_report_history,self.allure_results_history)
+            shutil.copy(self.allure_report_history,self.allure_results_history)
 
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
