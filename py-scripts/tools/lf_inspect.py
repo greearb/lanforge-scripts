@@ -1431,8 +1431,7 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     # save the juni.xml file
     junit_results = inspect_db.get_junit_results()
     report.set_junit_results(junit_results)
-    junit_xml = report.write_junit_results()
-    junit_path_only = junit_xml.replace('junit.xml', '')
+    junit_xml, junit_path_only = report.write_junit_results()
 
     inspect_db.set_junit_results(junit_xml)
     inspect_db.set_junit_path_only(junit_path_only)
