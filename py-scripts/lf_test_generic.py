@@ -255,6 +255,8 @@ class GenTest():
         gen_csv_writer.writerow(row)
         gen_csv_file.flush()
 
+    #TODO: This is an example and is only configured for iperf3 currently. 
+    # This can be edited and added to if the user wants reporting and the test they are running is not iperf3.
     def generate_report(self, result_json=None, result_dir='Generic_Test_Report', report_path=''):
         if result_json is not None:
             self.result_json = result_json
@@ -1163,7 +1165,7 @@ def main():
 
 
     #TODO edit name_prefix
-    generic_test = GenTest(host=args.mgr, port=args.mgr_port,
+    lf_generic_test = GenTest(host=args.mgr, port=args.mgr_port,
                            lf_user=args.lf_user, lf_passwd=args.lf_passwd,
                            radio=args.radio,
                            num_stations = args.num_stations,
@@ -1190,24 +1192,24 @@ def main():
                            log_level=args.log_level,
                            lf_logger_json = args.lf_logger_json)
 
-    if not generic_test.check_tab_exists():
+    if not lf_generic_test.check_tab_exists():
         raise ValueError("Error received from GUI when trying to request generic tab information, please ensure generic tab is enabled")
     
-    generic_test.check_args(args)
-    #generic_test.cleanup()
-    generic_test.build()
+    lf_generic_test.check_args(args)
+    
+    lf_generic_test.build()
 
-    generic_test.start()
+    lf_generic_test.start()
 
     logger.info("Starting connections with 5 second settle time.")
-    generic_test.start()
+    lf_generic_test.start()
     time.sleep(5) # give traffic a chance to get started.
 
-    generic_test.monitor_test()
+    lf_generic_test.monitor_test()
     print("Done with connection monitoring")
-    generic_test.stop()
-    generic_test.generate_report()
-    generic_test.cleanup()
+    lf_generic_test.stop()
+    lf_generic_test.generate_report()
+    lf_generic_test.cleanup()
 
 if __name__ == "__main__":
     main()
