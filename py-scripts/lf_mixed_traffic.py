@@ -3,21 +3,24 @@
 NAME: lf_mixed_traffic.py
 
 PURPOSE:
-        Need to update
+        Mixed traffic test is designed to measure the access point performance and stability by running multiple traffic
+        on both virtual & real clients like Android, Linux, Windows, and IOS connected to the access point.
+        This test allows the user to choose multiple types of traffic like client ping test, qos test, ftp test, http test,
+        multicast test.
 
 EXAMPLE:
         # CLI To run the MIXED TRAFFIC Test with Virtual Clients
 
-         python3 lf_mixed_traffic.py --mgr 192.168.200.133 --ssid Netgear5g --password lanforge --security wpa2 --band 5G
-          --num_stations 5 --radio wiphy2 --tests 1 2 3 4 5 --target 192.168.200.173 --ping_interval 1 --upstream_port eth1
+         python3 lf_mixed_traffic.py --mgr 192.168.200.57 --ssid Netgear5g --password lanforge --security wpa2 --band 5G
+          --num_stations 15 --radio wiphy0 --tests 1 2 3 4 5 --target 192.168.200.211 --ping_interval 1 --upstream_port eth1
           --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB
-          --http_file_size 5MB --direction Download --mc_tos "VI" --side_b_min_bps 3000000 --real --qos_serial
+          --http_file_size 5MB --direction Download --mc_tos "VI" --side_b_min_bps 3000000 --virtual --qos_serial
           --ping_test_duration 1m --qos_test_duration 1m --ftp_test_duration 1m --http_test_duration 1m --multicast_test_duration 1m
 
         # CLI To run the MIXED TRAFFIC Test with Real Clients
 
-          python3 lf_mixed_traffic.py --mgr 192.168.200.133 --ssid Netgear5g --password lanforge --security wpa2 --band 5G
-           --num_stations 5 --radio wiphy2 --tests 1 2 3 4 5 --target 192.168.200.173 --ping_interval 1 --upstream_port eth1
+          python3 lf_mixed_traffic.py --mgr 192.168.200.57 --ssid Netgear5g --password lanforge --security wpa2 --band 5G
+           --num_stations 15 --radio wiphy0 --tests 1 2 3 4 5 --target 192.168.200.211 --ping_interval 1 --upstream_port eth1
            --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB
            --http_file_size 5MB --direction Download --mc_tos "VI" --side_b_min_bps 3000000 --real --qos_serial
            --ping_test_duration 1m --qos_test_duration 1m --ftp_test_duration 1m --http_test_duration 1m --multicast_test_duration 1m
@@ -27,11 +30,13 @@ SCRIPT_CLASSIFICATION:  Creation, Report Generation (Both individual & Overall)
 SCRIPT_CATEGORIES:  Set of tests mixed and able to run each test one after another.
 
 NOTES:
+        The primary goal of the script is to execute a series of tests and group their individual test reports into a unified report.
 
 STATUS: Functional
 
 VERIFIED_ON:   4-OCT-2023,
              GUI Version:  5.4.7
+             Build Date :  Tue 03 Oct 2023 06:59:41 PM PDT
              Kernel Version: 6.2.16+
 
 LICENSE:
@@ -1121,7 +1126,7 @@ class Mixed_Traffic(Realm):
                 logger.info("clean up any existing cxs on LANforge")
                 self.multicast_test_obj.pre_cleanup()
         # cleaning the existing layer4 endpoints
-        self.cleanup.layer4_endp_clean()
+        self.cleanup.layer3_endp_clean()
 
         logger.info("create stations or use passed in station_list, build the test")
         # building the endpoints
@@ -1615,21 +1620,24 @@ def main():
 NAME: lf_mixed_traffic.py
 
 PURPOSE:
-        Need to update 
+        Mixed traffic test is designed to measure the access point performance and stability by running multiple traffic 
+        on both virtual & real clients like Android, Linux, Windows, and IOS connected to the access point.
+        This test allows the user to choose multiple types of traffic like client ping test, qos test, ftp test, http test,
+        multicast test.
 
 EXAMPLE:
         # CLI To run the MIXED TRAFFIC Test with Virtual Clients
         
-         python3 lf_mixed_traffic.py --mgr 192.168.200.133 --ssid Netgear5g --password lanforge --security wpa2 --band 5G
-          --num_stations 5 --radio wiphy2 --tests 1 2 3 4 5 --target 192.168.200.173 --ping_interval 1 --upstream_port eth1 
+         python3 lf_mixed_traffic.py --mgr 192.168.200.57 --ssid Netgear5g --password lanforge --security wpa2 --band 5G
+          --num_stations 15 --radio wiphy0 --tests 1 2 3 4 5 --target 192.168.200.211 --ping_interval 1 --upstream_port eth1 
           --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB 
-          --http_file_size 5MB --direction Download --mc_tos "VI" --side_b_min_bps 3000000 --real --qos_serial 
+          --http_file_size 5MB --direction Download --mc_tos "VI" --side_b_min_bps 3000000 --virtual --qos_serial 
           --ping_test_duration 1m --qos_test_duration 1m --ftp_test_duration 1m --http_test_duration 1m --multicast_test_duration 1m
           
         # CLI To run the MIXED TRAFFIC Test with Real Clients
         
-          python3 lf_mixed_traffic.py --mgr 192.168.200.133 --ssid Netgear5g --password lanforge --security wpa2 --band 5G
-           --num_stations 5 --radio wiphy2 --tests 1 2 3 4 5 --target 192.168.200.173 --ping_interval 1 --upstream_port eth1 
+          python3 lf_mixed_traffic.py --mgr 192.168.200.57 --ssid Netgear5g --password lanforge --security wpa2 --band 5G
+           --num_stations 15 --radio wiphy0 --tests 1 2 3 4 5 --target 192.168.200.211 --ping_interval 1 --upstream_port eth1 
            --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB 
            --http_file_size 5MB --direction Download --mc_tos "VI" --side_b_min_bps 3000000 --real --qos_serial 
            --ping_test_duration 1m --qos_test_duration 1m --ftp_test_duration 1m --http_test_duration 1m --multicast_test_duration 1m
@@ -1639,11 +1647,13 @@ SCRIPT_CLASSIFICATION:  Creation, Report Generation (Both individual & Overall)
 SCRIPT_CATEGORIES:  Set of tests mixed and able to run each test one after another.
 
 NOTES: 
+        The primary goal of the script is to execute a series of tests and group their individual test reports into a unified report.
 
 STATUS: Functional
 
 VERIFIED_ON:   4-OCT-2023,
              GUI Version:  5.4.7
+             Build Date :  Tue 03 Oct 2023 06:59:41 PM PDT
              Kernel Version: 6.2.16+
 
 LICENSE:
