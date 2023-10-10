@@ -641,7 +641,7 @@ class ThroughputQOS(Realm):
         if selected_real_clients_names is not None:
             self.num_stations = selected_real_clients_names
         data_set, load, res = self.generate_graph_data_set(data)
-        report = lf_report(_output_pdf="throughput_qos.pdf", _output_html="throughput_qos.html", _path=report_path,
+        report = lf_report(_output_pdf="interop_qos.pdf", _output_html="interop_qos.html", _path=report_path,
                            _results_dir_name=result_dir_name)
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
@@ -772,6 +772,8 @@ class ThroughputQOS(Realm):
                 list[1].append(res['test_results'][0][1][key]['VO'])
                 list[2].append(res['test_results'][0][1][key]['BK'])
                 list[3].append(res['test_results'][0][1][key]['BE'])
+        x_fig_size = 15
+        y_fig_size = len(self.real_client_list1) * .5 + 4
         if len(res.keys()) > 0:
             if "throughput_table_df" in res:
                 res.pop("throughput_table_df")
@@ -811,7 +813,7 @@ class ThroughputQOS(Realm):
                                             _yticks_rotation=None,
                                             _graph_title=f"Individual {self.direction} throughput for BK(WIFI) traffic",
                                             _title_size=16,
-                                            _figsize= (18, 10),
+                                            _figsize=(x_fig_size, y_fig_size),
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
                                             _color_name=colors,
@@ -875,7 +877,7 @@ class ThroughputQOS(Realm):
                                             _yticks_rotation=None,
                                             _graph_title=f"Individual {self.direction} throughput for BE(WIFI) traffic",
                                             _title_size=16,
-                                            _figsize=(18, 10),
+                                            _figsize=(x_fig_size, y_fig_size),
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
                                             _color_name=colors,
@@ -938,7 +940,7 @@ class ThroughputQOS(Realm):
                                             _yticks_rotation=None,
                                             _graph_title=f"Individual {self.direction} throughput for VI(WIFI) traffic",
                                             _title_size=16,
-                                            _figsize=(18, 10),
+                                            _figsize=(x_fig_size, y_fig_size),
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
                                             _show_bar_value=True,
@@ -1001,7 +1003,7 @@ class ThroughputQOS(Realm):
                                             _yticks_font=8,
                                             _graph_title=f"Individual {self.direction} throughput for VO(WIFI) traffic",
                                             _title_size=16,
-                                            _figsize=(18, 10),
+                                            _figsize=(x_fig_size, y_fig_size),
                                             _yticks_rotation=None,
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
