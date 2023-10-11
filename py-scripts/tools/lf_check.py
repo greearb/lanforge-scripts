@@ -1179,6 +1179,9 @@ junit.xml path: allure serve {junit_path}
         if 'DATABASE_SQLITE' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'DATABASE_SQLITE', self.database_sqlite)
+        if 'TEST_SUITE' in self.test_dict[self.test]['args']:
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'TEST_SUITE', self.test_suite)
         if 'HTTP_TEST_IP' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'HTTP_TEST_IP', self.http_test_ip)
