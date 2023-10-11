@@ -48,7 +48,8 @@ class inspect_sql:
                  _outfile_name='',
                  _report_path='',
                  _log_path='',
-                 _lf_inspect_report_path=''
+                 _lf_inspect_report_path='',
+                 _test_suite='db_compare'
                  ):
         self.path = _path
         self.dir = _dir
@@ -88,7 +89,7 @@ class inspect_sql:
         self.junit_test = ''
         # TODO the comparison needs to have a name based
         # on the type of comparison
-        self.test_suite = 'Lanforge Inspect Compare'
+        self.test_suite = _test_suite
 
         # Used for csv results
         self.csv_results = _csv_results
@@ -1254,6 +1255,9 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     __dir = args.dir
     __path = args.path
     __table = args.table
+    # TODO the test suite junit_xml for lf_check may conflict with this test suite name
+    # prepend lf_inspect_ to differenciate
+    __test_suite = "lf_inspect_" + str(args.test_suite)
 
     if __path == '':
         logger.info("--path may be used ")
@@ -1291,7 +1295,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
         _outfile_name=outfile_name,
         _report_path=report_path,
         _log_path=log_path,
-        _lf_inspect_report_path=__lf_inspect_report_path
+        _lf_inspect_report_path=__lf_inspect_report_path,
+        _test_suite = __test_suite
     )
 
     # TODO add abilit to pass in unique names
@@ -1435,7 +1440,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     junit_name = args.outfile
     junit_results = inspect_db.get_junit_results()
     report.set_junit_results(junit_results)
-    junit_xml, junit_path_only = report.write_junit_results(test_suite=args.test_suite)
+    test_suite = str(__test_suite)
+    junit_xml, junit_path_only = report.write_junit_results(test_suite=test_suite)
 
     # TODO path in the allure results path
     # Need to go up one directory
