@@ -1500,12 +1500,10 @@ junit.xml path: allure serve {junit_path}
                         lanforge_kernel_version=self.lanforge_kernel_version[0]))
 
                 meta_data_fd.write(
-                    "$ radio_firmware:  {radio_firmware}\n".format(
-                        radio_firmware=self.radio_firmware_list)
+                    "$ radio_firmware:  {radio_firmware}\n".format(radio_firmware=self.radio_firmware_list)
                 )
                 meta_data_fd.write(
-                    "$ radio_fw_dict: {radio_fw_dict}\n".format(
-                        radio_fw_dict=self.radio_fw_dict)
+                    "$ radio_fw_dict: {radio_fw_dict}\n".format(radio_fw_dict=self.radio_fw_dict)
                 )
                 meta_data_fd.write(
                     "$ lanforge_fedora_version: {lanforge_fedora_version}\n".format(
@@ -1639,8 +1637,7 @@ junit.xml path: allure serve {junit_path}
                         "html_report: {report}".format(
                             report=self.inspect_report_html))
                     break
-            self.inspect_report_html = self.inspect_report_html.replace(
-                'html report: ', '')
+            self.inspect_report_html = self.inspect_report_html.replace('html report: ', '')
 
         if self.test_result != 'Finished':
             if self.test_result == "TIMEOUT":
@@ -1660,14 +1657,12 @@ junit.xml path: allure serve {junit_path}
         else:
             stdout_log_basename = os.path.basename(stdout_log_txt)
             stdout_log_parent_path = os.path.dirname(stdout_log_txt)
-            stdout_log_parent_basename = os.path.basename(
-                stdout_log_parent_path)
+            stdout_log_parent_basename = os.path.basename(stdout_log_parent_path)
             stdout_log_link = "./" + stdout_log_parent_basename + "/" + stdout_log_basename
 
             stderr_log_basename = os.path.basename(stderr_log_txt)
             stderr_log_parent_path = os.path.dirname(stderr_log_txt)
-            stderr_log_parent_basename = os.path.basename(
-                stderr_log_parent_path)
+            stderr_log_parent_basename = os.path.basename(stderr_log_parent_path)
             stderr_log_link = "./" + stderr_log_parent_basename + "/" + stderr_log_basename
 
         if command.find(' ') > 1:
