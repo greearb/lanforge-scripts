@@ -1046,6 +1046,9 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         '--dir',
         help="--dir <results directory> default lf_qa",
         default="lf_qa")
+
+    parser.add_argument('--test_suite', help="--test_suite , the test suite is to help identify which suite was run ", default="lf_qa")
+
     # logging configuration:
     parser.add_argument('--log_level',
                         default=None,
