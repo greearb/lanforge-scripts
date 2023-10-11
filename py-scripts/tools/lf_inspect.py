@@ -1450,6 +1450,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     if not os.path.isdir(allure_results_path):
         os.mkdir(allure_results_path)
 
+    logger.info("copy junit from {junit} to {allure_junit}".format(junit=junit_xml,allure_junit=allure_results_path))
+
     shutil.copy2(junit_xml,allure_results_path)
 
 
