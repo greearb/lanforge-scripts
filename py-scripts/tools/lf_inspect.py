@@ -21,6 +21,7 @@ import csv
 import traceback
 import math
 import datetime
+import shutil
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
@@ -1211,6 +1212,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="lf_inspect")
     parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_inspect.log")
     parser.add_argument('--flat_dir', help="--flat_dir , will place the results in the top directory", action='store_true')
+    parser.add_argument('--test_suite', help="--test_suite , the test suite is to help identify the tests run for the lf_inspect comparison", default="lf_inspect_compare")
+
 
     # logging configuration:
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
@@ -1429,9 +1432,20 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)    
 
     # save the juni.xml file
+    junit_name = args.outfile
     junit_results = inspect_db.get_junit_results()
     report.set_junit_results(junit_results)
-    junit_xml, junit_path_only = report.write_junit_results()
+    junit_xml, junit_path_only = report.write_junit_results(test_suite=args.test_suite)
+
+    # TODO path in the allure results path
+    # Need to go up one directory
+    allure_results_path = str(os.path.dirname(report.get_path())) + "/allure_results"
+
+    if not os.path.isdir(allure_results_path):
+        os.mkdir(allure_results_path)
+
+    shutil.copy2(junit_xml,allure_results_path)
+
 
     inspect_db.set_junit_results(junit_xml)
     inspect_db.set_junit_path_only(junit_path_only)
