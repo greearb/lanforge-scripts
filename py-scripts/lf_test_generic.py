@@ -70,6 +70,10 @@ from lf_graph import lf_bar_graph_horizontal
 from lf_graph import lf_bar_graph
 from lf_report import lf_report
 
+lf_bar_graph = lf_graph.lf_bar_graph
+lf_scatter_graph = lf_graph.lf_scatter_graph
+lf_stacked_graph = lf_graph.lf_stacked_graph
+lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +84,8 @@ if sys.version_info[0] != 3:
 
 class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
-                name_prefix, num_stations, port_mgr_cols, gen_tab_cols, client_port = None,server_port=None,
-                 host="localhost", port=8080, csv_outfile=None, create_report = False, use_existing_eid=None, monitor_interval = "2s",
+                name_prefix, num_stations, port_mgr_cols, gen_tab_cols, report_file_path, output_format = "csv", client_port = None,server_port=None,
+                 host="localhost", port=8080, create_report = False, use_existing_eid=None, monitor_interval = "2s",
                  test_duration="20s",test_type="ping", target=None, cmd=None, interval=0.1,
                  radio=None, file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
                  _debug_on=False, _exit_on_error=False, die_on_error = False,_exit_on_fail=False):
@@ -112,7 +116,8 @@ class GenTest():
         self.report_timer = 1500
         self.log_level = log_level
         self.lf_logger_json = lf_logger_json
-        self.csv_outfile = csv_outfile
+        self.output_format = output_format
+        self.report_file_path = report_file_path
         self.create_report = create_report
         self.gen_tab_cols = gen_tab_cols
         self.port_mgr_cols = port_mgr_cols
@@ -148,10 +153,10 @@ class GenTest():
         self.gen_csv_files = {}
         self.gen_csv_writers = {}
 
-        if self.csv_outfile is not None:
-            # create csv results writer and open results file to be written to.
-            results = self.csv_outfile[:-4]  # take off .csv part of outfile
-            results = results + "-results.csv"
+        if self.create_report:
+            # create csv results writer and open results file to be written to
+            #TODO add to results.csv as a 'combined' results.
+            results = self.report_file_path + "/results." + self.output_format
             self.csv_results_file = open(results, "w")
             self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
 
@@ -186,9 +191,7 @@ class GenTest():
 
     # Write initial headers to port csv file (all ports used, created & existing ports)
     def csv_add_port_column_headers(self, port_eid):
-        # if self.csv_file is not None:
-        fname = self.csv_outfile[:-4]  # Strip '.csv' from file name
-        fname = fname + "-port-" + port_eid + ".csv"
+        fname = self.report_file_path + "/port-" + port_eid + "." + self.output_format
         pfile = open(fname, "w")
         port_csv_writer = csv.writer(pfile, delimiter=",")
         self.port_csv_files[port_eid] = pfile
@@ -199,8 +202,7 @@ class GenTest():
 
     # write initial headers to gen cx files
     def csv_add_gen_column_headers(self, gen_endp):
-        fname = self.csv_outfile[:-4]  # String '.csv' from file name
-        fname = fname + "-" + gen_endp + "-gen-endp.csv"
+        fname = self.report_file_path + "/gen-endp-" + gen_endp + "." + self.output_format
         pfile = open(fname, "w")
         gen_csv_writer = csv.writer(pfile, delimiter=",")
         self.gen_csv_files[gen_endp] = pfile
@@ -255,195 +257,68 @@ class GenTest():
         gen_csv_writer.writerow(row)
         gen_csv_file.flush()
 
-    #TODO: This is an example and is only configured for iperf3 currently. 
-    # This can be edited and added to if the user wants reporting and the test they are running is not iperf3.
-    def generate_report(self, result_json=None, result_dir='Generic_Test_Report', report_path=''):
-        if result_json is not None:
-            self.result_json = result_json
-        print('Generating Report')
+    #TODO: This is an example and is only configured for ping currently.
+    # This can be edited and added to if the user wants reporting and the test they are running is not ping.
+    def generate_report(self, result_dir='Generic_Test_Report', report_path=''):
 
+        print('Generating Report')
         report = lf_report(_output_pdf='lf_test_generic.pdf',
                            _output_html='lf_test_generic.html',
-                           _results_dir_name=result_dir,
-                           _path=report_path)
+                           _results_dir_name='lf_test_generic_report',
+                           _path=self.report_file_path)
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
         print('path: {}'.format(report_path))
         print('path_date_time: {}'.format(report_path_date_time))
 
         # setting report title
-        report.set_title('Generic Test Report')
+        report.set_title('Generic Test Report: Ping')
         report.build_banner()
+
+        total_devices = 0
+        if (self.sta_list):
+            total_devices += len(self.sta_list)
+        if (self.use_existing_eid):
+            total_devices += len(self.use_existing_eid)
 
         # test setup info
         test_setup_info = {
             'SSID': self.ssid,
             'Security': self.security,
             'Website / IP': self.target,
-            'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
-            'Duration (in minutes)': self.duration
+            'Number of clients (virtual and real)': total_devices,
+            'Duration': self.test_duration
         }
-        report.test_setup_table(
-            test_setup_data=test_setup_info, value='Test Setup Information')
+
+        report.test_setup_table(test_setup_data=test_setup_info, value='Test Setup Information')
 
         # objective and description
         report.set_obj_html(_obj_title='Objective',
-                            _obj='''The objective of the ping test is to evaluate network connectivity and measure the round-trip time taken for 
-                            data packets to travel from the source to the destination and back. It helps assess the reliability and latency of the network, 
-                            identifying any packet loss, delays, or variations in response times. The test aims to ensure that devices can communicate 
+                            _obj='''The objective of the Generic Ping Test is to evaluate network connectivity and measure the round-trip time taken for
+                            data packets to travel from the source to the destination and back. This test helps assess the reliability and latency of the network,
+                            packet loss, packet delays, or variations in response times to ensure that devices can communicate
                             effectively over the network and pinpoint potential issues affecting connectivity.
                             ''')
         report.build_objective()
+        graph = lf_horizontal_stacked_graph(_seg=2,
+                                        _yaxis_set=('A', 'B'),
+                                        _xaxis_set1=[12, 65],
+                                        _xaxis_set2=[23, 34],
+                                        _unit="",
+                                        _xaxis_name="Stations",
+                                        _label=['Success', 'Fail'],
+                                        _graph_image_name="image_name_pass_fail",
+                                        _color=["r", "g"],
+                                        _figsize=(9, 4),
+                                        _enable_csv=False)
 
-        # packets sent vs received vs dropped
-        report.set_table_title(
-            'Packets sent vs packets received vs packets dropped')
-        report.build_table_title()
-        # graph for the above
-        self.packets_sent = []
-        self.packets_received = []
-        self.packets_dropped = []
-        self.device_names = []
-        self.device_modes = []
-        self.device_channels = []
-        self.device_min = []
-        self.device_max = []
-        self.device_avg = []
-        self.device_mac = []
-        self.device_names_with_errors = []
-        self.devices_with_errors = []
-        self.report_names = []
-        self.remarks = []
-        # packet_count_data = {}
-        for device, device_data in self.result_json.items():
-            self.packets_sent.append(device_data['sent'])
-            self.packets_received.append(device_data['recv'])
-            self.packets_dropped.append(device_data['dropped'])
-            self.device_names.append(device_data['name'])
-            self.device_modes.append(device_data['mode'])
-            self.device_channels.append(device_data['channel'])
-            self.device_mac.append(device_data['mac'])
-            self.device_min.append(float(device_data['min_rtt']))
-            self.device_max.append(float(device_data['max_rtt']))
-            self.device_avg.append(float(device_data['avg_rtt']))
-            if(device_data['os'] == 'Virtual'):
-                self.report_names.append('{} {}'.format(device, device_data['os'])[0:25])
-            else:
-                self.report_names.append('{} {} {}'.format(device, device_data['os'], device_data['name'])[0:25])
-            if (device_data['remarks'] != []):
-                self.device_names_with_errors.append(device_data['name'])
-                self.devices_with_errors.append(device)
-                self.remarks.append(','.join(device_data['remarks']))
-            print(self.packets_sent,
-                  self.packets_received,
-                  self.packets_dropped)
-            print(self.device_min,
-                  self.device_max,
-                  self.device_avg)
+        graph_png = graph.build_horizontal_stacked_graph()
 
-            # packet_count_data[device] = {
-            #     'MAC': device_data['mac'],
-            #     'Channel': device_data['channel'],
-            #     'Mode': device_data['mode'],
-            #     'Packets Sent': device_data['sent'],
-            #     'Packets Received': device_data['recv'],
-            #     'Packets Loss': device_data['dropped'],
-            # }
-        x_fig_size = 15
-        y_fig_size = len(self.device_names) * .5 + 4
-        graph = lf_bar_graph_horizontal(_data_set=[self.packets_dropped, self.packets_received, self.packets_sent],
-                                        _xaxis_name='Packets Count',
-                                        _yaxis_name='Wireless Clients',
-                                        _label=[
-                                            'Packets Loss', 'Packets Received', 'Packets Sent'],
-                                        _graph_image_name='Packets sent vs received vs dropped',
-                                        _yaxis_label=self.report_names,
-                                        _yaxis_categories=self.report_names,
-                                        _yaxis_step=1,
-                                        _yticks_font=8,
-                                        _graph_title='Packets sent vs received vs dropped',
-                                        _title_size=16,
-                                        _color=['lightgrey',
-                                                'orange', 'steelblue'],
-                                        _color_edge=['black'],
-                                        _bar_height=0.15,
-                                        _figsize=(x_fig_size, y_fig_size),
-                                        _legend_loc="best",
-                                        _legend_box=(1.0, 1.0),
-                                        _dpi=96,
-                                        _show_bar_value=False,
-                                        _enable_csv=True,
-                                        _color_name=['lightgrey', 'orange', 'steelblue'])
+        print("graph name {}".format(graph_png))
 
-        graph_png = graph.build_bar_graph_horizontal()
-        print('graph name {}'.format(graph_png))
         report.set_graph_image(graph_png)
-        # need to move the graph image to the results directory
         report.move_graph_image()
-        report.set_csv_filename(graph_png)
-        report.move_csv_file()
         report.build_graph()
-
-        dataframe1 = pd.DataFrame({
-            'Wireless Client': self.device_names,
-            'MAC': self.device_mac,
-            'Channel': self.device_channels,
-            'Mode': self.device_modes,
-            'Packets Sent': self.packets_sent,
-            'Packets Received': self.packets_received,
-            'Packets Loss': self.packets_dropped
-        })
-        report.set_table_dataframe(dataframe1)
-        report.build_table()
-
-        # packets latency graph
-        report.set_table_title('Ping Latency Graph')
-        report.build_table_title()
-
-        graph = lf_bar_graph_horizontal(_data_set=[self.device_min, self.device_avg, self.device_max],
-                                        _xaxis_name='Time (ms)',
-                                        _yaxis_name='Wireless Clients',
-                                        _label=[
-                                            'Min Latency (ms)', 'Average Latency (ms)', 'Max Latency (ms)'],
-                                        _graph_image_name='Ping Latency per client',
-                                        _yaxis_label=self.report_names,
-                                        _yaxis_categories=self.report_names,
-                                        _yaxis_step=1,
-                                        _yticks_font=8,
-                                        _graph_title='Ping Latency per client',
-                                        _title_size=16,
-                                        _color=['lightgrey',
-                                                'orange', 'steelblue'],
-                                        _color_edge='black',
-                                        _bar_height=0.15,
-                                        _figsize=(x_fig_size, y_fig_size),
-                                        _legend_loc="best",
-                                        _legend_box=(1.0, 1.0),
-                                        _dpi=96,
-                                        _show_bar_value=False,
-                                        _enable_csv=True,
-                                        _color_name=['lightgrey', 'orange', 'steelblue'])
-
-        graph_png = graph.build_bar_graph_horizontal()
-        print('graph name {}'.format(graph_png))
-        report.set_graph_image(graph_png)
-        # need to move the graph image to the results directory
-        report.move_graph_image()
-        report.set_csv_filename(graph_png)
-        report.move_csv_file()
-        report.build_graph()
-
-        dataframe2 = pd.DataFrame({
-            'Wireless Client': self.device_names,
-            'MAC': self.device_mac,
-            'Channel': self.device_channels,
-            'Mode': self.device_modes,
-            'Min Latency (ms)': self.device_min,
-            'Average Latency (ms)': self.device_avg,
-            'Max Latency (ms)': self.device_max
-        })
-        report.set_table_dataframe(dataframe2)
-        report.build_table()
 
         # closing
         report.build_custom()
@@ -1135,9 +1010,8 @@ def main():
     optional.add_argument("--test_tag", help="test tag for kpi.csv,  test specific information to differentiate the test", default="")
 
     # args for reporting
-    optional.add_argument('--output_format', help= 'choose either csv or xlsx',default='csv')
-    optional.add_argument('--csv_outfile', help="output file for csv data", default="lf_test_generic_kpi")
-    optional.add_argument('--report_file', help='where you want to store results', default=None)
+    optional.add_argument('--output_format', help= 'choose either csv or xlsx. currently xlsx is under construction.',default='csv')
+    optional.add_argument('--report_file_path', help='directory to store results in. example: /home/lanforge/reporting/file_name_wanted', default=None)
     optional.add_argument( '--gen_tab_cols', help='Columns wished to be monitored from generic endpoint tab',default= ['name', 'tx bytes', 'rx bytes'])
     optional.add_argument( '--port_mgr_cols', help='Columns wished to be monitored from port manager tab',default= ['ap', 'ip', 'parent dev'])
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',default= None)
@@ -1162,7 +1036,28 @@ def main():
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_json)
+    if args.create_report:
+        if args.report_file_path is None:
+            new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
+                                                                                                    '-') + '-lf_test_generic'  # create path name
+            if os.path.exists('/home/lanforge/report-data/'):
+                rpt_file_path = os.path.join('/home/lanforge/report-data/', new_file_path)
+                os.mkdir(rpt_file_path)
+            else:
+                curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                rpt_file_path = os.path.join(curr_dir_path, new_file_path)
+                os.mkdir(rpt_file_path)
+                #create correct file path
+        else:
+            if not os.path.exists(args.report_file_path):
+                os.mkdir(args.report_file_path)
+            rpt_file_path = args.report_file_path
 
+        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'xlsx']:
+            output = args.output_format
+        else:
+            logger.info('Not supporting report format: %s. Defaulting to csv data file output type, naming it data.csv.' % args.output_format)
+            output = 'csv'
 
     #TODO edit name_prefix
     lf_generic_test = GenTest(host=args.mgr, port=args.mgr_port,
@@ -1184,7 +1079,8 @@ def main():
                            test_duration=args.test_duration,
                            monitor_interval=args.monitor_interval,
                            file_output_lfcurl=args.file_output_lfcurl,
-                           csv_outfile=args.csv_outfile,
+                           report_file_path = rpt_file_path,
+                           output_format = output,
                            loop_count=args.loop_count,
                            client_port=args.client_port,
                            server_port=args.server_port,
