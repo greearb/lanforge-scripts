@@ -283,12 +283,18 @@ class Mixed_Traffic(Realm):
     def convert_seconds(self, seconds):
         if seconds < 60:
             return f"{seconds} sec"
-        elif seconds < 3600:
-            minutes = seconds // 60
-            return f"{minutes} min"
+        elif 60 <= seconds < 3600:
+            minutes = seconds / 60
+            if minutes == 1.0:
+                return f"{str(round(abs(minutes), 1))} minute"
+            else:
+                return f"{str(round(abs(minutes), 1))} minutes"
         else:
-            hours = seconds // 3600
-            return f"{hours} hour"
+            hours = seconds / 3600
+            if hours == 1.0:
+                return f"{str(round(abs(hours), 1))} hour"
+            else:
+                return f"{str(round(abs(hours), 1))} hours"
 
     def selecting_devices_from_available(self):
         self.available_device_list = self.base_interop_profile.get_devices()
