@@ -1445,7 +1445,7 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
 
     # TODO path in the allure results path
     # Need to go up one directory
-    allure_results_path = str(os.path.dirname(report.get_path())) + "/allure_results"
+    allure_results_path = str(os.path.dirname(report.get_path())) + "/allure-results"
 
     if not os.path.isdir(allure_results_path):
         os.mkdir(allure_results_path)
