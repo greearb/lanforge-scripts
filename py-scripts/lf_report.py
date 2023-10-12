@@ -449,7 +449,9 @@ class lf_report:
 
     def generate_allure_report(self):
         # TODO current the junit.xml is placed in the base directory 
-        allure_command = "allure generate {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
+        # allure report directory needs to be allure-report
+        allure_command = "allure generate {allure_results} --clean".format(allure_results=self.allure_results)
+        # allure_command = "allure generate {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         # allure_command = "allure serve {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         try:
             process = subprocess.Popen(allure_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
