@@ -2583,7 +2583,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 junit_xml, junit_path_only = report.write_junit_results(test_suite=test_suite)
 
                 # TODO path in the allure results path
-                allure_results_path = str(report.get_path()) + "/allure_results"
+                allure_results_path = str(report.get_path()) + "/allure-results"
 
                 if not os.path.isdir(allure_results_path):
                     os.mkdir(allure_results_path)
