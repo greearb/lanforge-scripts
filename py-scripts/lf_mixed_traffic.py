@@ -710,7 +710,7 @@ class Mixed_Traffic(Realm):
         interation_num = 0
         ftp_data = {}
 
-        twog_radio, fiveg_radio = "whipy1", "whipy2"
+        twog_radio, fiveg_radio, sixg_radio = "whipy0", "whipy1", "whipy2"
         client_type = ""
         if self.real:
             client_type = "Real"
@@ -720,6 +720,8 @@ class Mixed_Traffic(Realm):
                 twog_radio = self.radio
             if "5G" in self.band or "5g" in self.band:
                 fiveg_radio = self.radio
+            if "6G" in self.band or "6g" in self.band:
+                sixg_radio = self.radio
         # For all combinations ftp_data of directions, file size and client counts, run the test
         for band in bands:
             for direction in directions:
@@ -736,6 +738,7 @@ class Mixed_Traffic(Realm):
                                                          direction=direction,
                                                          twog_radio=twog_radio,
                                                          fiveg_radio=fiveg_radio,
+                                                         sixg_radio=sixg_radio,
                                                          lf_username=self.lf_username,
                                                          lf_password=self.lf_password,
                                                          traffic_duration=self.ftp_test_duration,
@@ -795,7 +798,7 @@ class Mixed_Traffic(Realm):
                 self.band[bands] = "Both"
 
         # Error checking for non-existent bands
-        valid_bands = ['2.4G', '5G', 'Both']
+        valid_bands = ['2.4G', '5G', '6G', 'Both']
         for bands in self.band:
             if bands not in valid_bands:
                 raise ValueError("Invalid band '%s' used in bands argument!" % bands)
@@ -804,8 +807,10 @@ class Mixed_Traffic(Realm):
         if len(self.band) > 1 and "Both" in self.band:
             raise ValueError("'Both' test type must be used independently!")
 
-        list5G, list5G_bytes, list5G_speed, list5G_urltimes = [], [], [], []
+
         list2G, list2G_bytes, list2G_speed, list2G_urltimes = [], [], [], []
+        list5G, list5G_bytes, list5G_speed, list5G_urltimes = [], [], [], []
+        list6G, list6G_bytes, list6G_speed, list6G_urltimes = [], [], [], []
         Both, Both_bytes, Both_speed, Both_urltimes = [], [], [], []
         dict_keys = []
         dict_keys.extend(self.band)
@@ -813,14 +818,11 @@ class Mixed_Traffic(Realm):
         dict1_keys = ['dl_time', 'min', 'max', 'avg', 'bytes_rd', 'speed', 'url_times']
         for i in final_dict:
             final_dict[i] = dict.fromkeys(dict1_keys)
-        min5 = []
-        min2 = []
+        min2, min5, min6 = [], [], []
         min_both = []
-        max5 = []
-        max2 = []
+        max2, max5, max6 = [], [], []
         max_both = []
-        avg2 = []
-        avg5 = []
+        avg2, avg5, avg6 = [], [], []
         avg_both = []
         test_time = ""
         client_type = ""
@@ -902,7 +904,22 @@ class Mixed_Traffic(Realm):
             rx_bytes_val = self.http_obj.my_monitor('bytes-rd')
             rx_rate_val = self.http_obj.my_monitor('rx rate')
 
-            if bands == "5G":
+            if bands == "2.4G":
+                list2G.extend(uc_avg_val)
+                list2G_bytes.extend(rx_bytes_val)
+                list2G_speed.extend(rx_rate_val)
+                list2G_urltimes.extend(url_times)
+                final_dict['2.4G']['dl_time'] = list2G
+                min2.append(min(list2G))
+                final_dict['2.4G']['min'] = min2
+                max2.append(max(list2G))
+                final_dict['2.4G']['max'] = max2
+                avg2.append((sum(list2G) / num_stations))
+                final_dict['2.4G']['avg'] = avg2
+                final_dict['2.4G']['bytes_rd'] = list2G_bytes
+                final_dict['2.4G']['speed'] = list2G_speed
+                final_dict['2.4G']['url_times'] = list2G_urltimes
+            elif bands == "5G":
                 list5G.extend(uc_avg_val)
                 list5G_bytes.extend(rx_bytes_val)
                 list5G_speed.extend(rx_rate_val)
@@ -918,22 +935,21 @@ class Mixed_Traffic(Realm):
                 final_dict['5G']['bytes_rd'] = list5G_bytes
                 final_dict['5G']['speed'] = list5G_speed
                 final_dict['5G']['url_times'] = list5G_urltimes
-            elif bands == "2.4G":
-                list2G.extend(uc_avg_val)
-                list2G_bytes.extend(rx_bytes_val)
-                list2G_speed.extend(rx_rate_val)
-                list2G_urltimes.extend(url_times)
-                print(list2G, list2G_bytes, list2G_speed)
-                final_dict['2.4G']['dl_time'] = list2G
-                min2.append(min(list2G))
-                final_dict['2.4G']['min'] = min2
-                max2.append(max(list2G))
-                final_dict['2.4G']['max'] = max2
-                avg2.append((sum(list2G) / num_stations))
-                final_dict['2.4G']['avg'] = avg2
-                final_dict['2.4G']['bytes_rd'] = list2G_bytes
-                final_dict['2.4G']['speed'] = list2G_speed
-                final_dict['2.4G']['url_times'] = list2G_urltimes
+            elif bands == "6G":
+                list6G.extend(uc_avg_val)
+                list6G_bytes.extend(rx_bytes_val)
+                list6G_speed.extend(rx_rate_val)
+                list6G_urltimes.extend(url_times)
+                final_dict['6G']['dl_time'] = list6G
+                min6.append(min(list6G))
+                final_dict['6G']['min'] = min6
+                max6.append(max(list6G))
+                final_dict['6G']['max'] = max6
+                avg6.append((sum(list6G) / num_stations))
+                final_dict['6G']['avg'] = avg6
+                final_dict['6G']['bytes_rd'] = list6G_bytes
+                final_dict['6G']['speed'] = list6G_speed
+                final_dict['6G']['url_times'] = list6G_urltimes
             elif bands == "Both":
                 Both.extend(uc_avg_val)
                 Both_bytes.extend(rx_bytes_val)
