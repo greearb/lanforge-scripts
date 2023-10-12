@@ -441,7 +441,6 @@ class GenTest():
                                            report_timer= self.report_timer)
 
     def build(self):
-        #TODO move arg validation to validate_sort_args
         #create stations
         if self.sta_list:
             logger.info("Creating stations")
@@ -871,7 +870,7 @@ class GenTest():
                     return True
         return False
 
-    def check_args(self, args):
+    def check_args(self):
         #TODO validate all args, depending on which test is used.
         if ((self.test_type == "iperf3" or self.test_type == "iperf3-client") and self.target is None):
             raise ValueError ("To execute test type 'iperf3' or 'iperf3-client', a target must be specified as an IP address or port eid.")
@@ -1187,7 +1186,7 @@ def main():
     if not lf_generic_test.check_tab_exists():
         raise ValueError("Error received from GUI when trying to request generic tab information, please ensure generic tab is enabled")
     
-    lf_generic_test.check_args(args)
+    lf_generic_test.check_args()
     
     lf_generic_test.build()
 
