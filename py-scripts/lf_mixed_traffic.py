@@ -202,8 +202,11 @@ class Mixed_Traffic(Realm):
             else:
                 self.test_duration = int(self.test_duration)
             # Setting overall time formatting for report
-            self.total_all_test_druration = int(self.test_duration * len(self.tests))
-            time_obj = time.gmtime(self.total_all_test_druration)
+            if self.qos_serial_run:
+                self.total_all_test_duration = int(self.test_duration * (len(self.tests) - 1 + len(self.qos_tos_list)))
+            else:
+                self.total_all_test_duration = int(self.test_duration * len(self.tests))
+            time_obj = time.gmtime(self.total_all_test_duration)
             self.time_formate = time.strftime("%H:%M:%S", time_obj)
         elif self.ping_test_duration or self.qos_test_duration or self.ftp_test_duration or self.http_test_duration or self.multicast_test_duration:
             if self.ping_test_duration.endswith(tuple(duration_suffixes.keys())) or self.qos_test_duration.endswith(
@@ -234,12 +237,12 @@ class Mixed_Traffic(Realm):
             else:
                 logger.info("Please provide the test duration for at least one single test scenario to run...")
             if self.qos_serial_run:
-                self.total_all_test_druration = int(self.ping_test_duration + (self.qos_test_duration * len(
+                self.total_all_test_duration = int(self.ping_test_duration + (self.qos_test_duration * len(
                     self.qos_tos_list)) + self.ftp_test_duration + self.http_test_duration + self.multicast_test_duration)
             else:
-                self.total_all_test_druration = int(
+                self.total_all_test_duration = int(
                     self.ping_test_duration + self.qos_test_duration + self.ftp_test_duration + self.http_test_duration + self.multicast_test_duration)
-            time_obj = time.gmtime(self.total_all_test_druration)
+            time_obj = time.gmtime(self.total_all_test_duration)
             self.time_formate = time.strftime("%H:%M:%S", time_obj)
 
     def pre_cleanup(self):
@@ -1227,7 +1230,10 @@ class Mixed_Traffic(Realm):
                         self.test_duration1 = self.convert_seconds(self.ping_test_duration)
                 if test_option == '2':
                     if self.test_duration:
-                        self.test_duration1 = self.convert_seconds(self.test_duration)
+                        if self.qos_serial_run:
+                            self.test_duration1 = self.convert_seconds(self.test_duration * len(self.qos_tos_list))
+                        else:
+                            self.test_duration1 = self.convert_seconds(self.test_duration)
                     else:
                         if self.qos_serial_run:
                             self.test_duration1 = self.convert_seconds(self.qos_test_duration * len(self.qos_tos_list))
