@@ -350,9 +350,9 @@ class Ping(Realm):
             self.device_modes.append(device_data['mode'])
             self.device_channels.append(device_data['channel'])
             self.device_mac.append(device_data['mac'])
-            self.device_min.append(float(device_data['min_rtt']))
-            self.device_max.append(float(device_data['max_rtt']))
-            self.device_avg.append(float(device_data['avg_rtt']))
+            self.device_min.append(float(device_data['min_rtt'].replace(',', '')))
+            self.device_max.append(float(device_data['max_rtt'].replace(',', '')))
+            self.device_avg.append(float(device_data['avg_rtt'].replace(',', '')))
             if(device_data['os'] == 'Virtual'):
                 self.report_names.append('{} {}'.format(device, device_data['os'])[0:25])
             else:
