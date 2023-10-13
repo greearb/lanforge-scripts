@@ -71,7 +71,7 @@ class lf_report:
                  _dataframe="",
                  _path_date_time="",
                  _custom_css='custom-example.css',
-                 _allure_report_dir_name="allure_report"):  # this is where the final report is placed.
+                 _allure_report_dir_name="allure-report"):  # this is where the final report is placed.
         # other report paths,
 
         # _path is where the directory with the data time will be created
@@ -91,6 +91,7 @@ class lf_report:
 
         allure_report_history = format("{allure_report}/history".format(allure_report=self.allure_report_dir_name))
         self.allure_report_history = os.path.join(self.path,allure_report_history)
+        self.allure_report_history_path = str(self.allure_report_history)+'/'
 
             
         self.allure_results_history = ""
@@ -433,14 +434,14 @@ class lf_report:
         else:
             #TODO check if the path is passed in for allure results
             self.allure_results = allure_results
-            self.allure_results_history = os.path.join(self.allure_results,"history")
+            self.allure_results_history = os.path.join(self.allure_results,"history/")
 
         logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history,allure_results=self.allure_results_history))
         # allure_report directory
         try:
             files = os.listdir(self.allure_report_history)
             for fname in files:
-                shutil.copy2(os.path.join(self.allure_report_history,fname),self.allure_results_history)
+                shutil.copy2(os.path.join(self.allure_report_history_path,fname),self.allure_results_history)
 
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
@@ -454,6 +455,7 @@ class lf_report:
         # allure_command = "allure generate {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         # allure_command = "allure serve {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         try:
+            logger.info("allure command: {allure_command} failed or timed out".format(allure_command=allure_command))
             process = subprocess.Popen(allure_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                        universal_newlines=True)
             # have email on separate timeout
