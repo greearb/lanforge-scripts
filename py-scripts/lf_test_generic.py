@@ -332,7 +332,7 @@ class GenTest():
                             _color=['darkorange', 'forestgreen', 'blueviolet'],
                             _color_edge='red',
                             _grp_title="Rx Pkts vs Tx Pkts vs Dropped Pkts",
-                            _xaxis_step=5,
+                            _xaxis_step=1,
                             _show_bar_value=True,
                             _text_font=7,
                             _text_rotation=45,
