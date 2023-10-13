@@ -173,7 +173,7 @@ class GenTest():
         self.created_endp = []
         self.created_cx = []
 
-        #CSV data collection
+        #CSV data collection, add files and writers
         self.port_csv_files = {}
         self.port_csv_writers = {}
 
@@ -218,24 +218,45 @@ class GenTest():
 
     # Write initial headers to port csv file (all ports used, created & existing ports)
     def csv_add_port_column_headers(self, port_eid):
-        fname = self.report_file_path + "/port-" + port_eid + "." + self.output_format
-        file_io = open(fname, "w")
-        port_csv_writer = csv.writer(file_io, delimiter=",")
-        self.port_csv_files[port_eid] = file_io
+        #create file name
+        file_name = self.report_file_path + "/port-" + port_eid + "." + self.outpu_format
+
+        #open file in write mode, returns TextIOWrapper
+        txt_strm = open(file_name, "w")
+
+        #create writer
+        port_csv_writer = csv.writer(txt_strm, delimiter=",")
+
+        #save writer and TextIOWrapper
+        self.port_csv_files[port_eid] = txt_strm
         self.port_csv_writers[port_eid] = port_csv_writer
 
+        #write headers
         port_csv_writer.writerow(self.port_mgr_cols)
-        file_io.flush()
+
+        #flush stream
+        txt_strm.flush()
 
     # write initial headers to gen cx files
     def csv_add_gen_column_headers(self, gen_endp):
+        #create file name
         file_name = self.report_file_path + "/gen-endp-" + gen_endp + "." + self.output_format
-        io_file = open(file_name, "w")
-        gen_csv_writer = csv.writer(io_file, delimiter=",")
-        self.gen_csv_files[gen_endp] = io_file
+
+        #open file in write mode, returns TextIOWrapper
+        txt_strm = open(file_name, "w")
+
+        #create writer
+        gen_csv_writer = csv.writer(txt_strm, delimiter=",")
+
+        #save writer and TextIOWrapper
+        self.gen_csv_files[gen_endp] = txt_strm
         self.gen_csv_writers[gen_endp] = gen_csv_writer
+
+        #write headers
         gen_csv_writer.writerow(self.gen_tab_cols)
-        io_file.flush()
+
+        #flush stream
+        txt_strm.flush()
     
     def write_port_csv(self, eid):
         port_shelf, port_resource, port_name, *nil = self.name_to_eid(eid)
@@ -243,14 +264,18 @@ class GenTest():
         port_csv_writer = self.port_csv_writers[eid]
         port_csv_file = self.port_csv_files[eid]
 
-        # fetch data
+        #write fields to string, to add to json_get command
         fields_str = "fields="
         for cols in self.port_mgr_cols[:-1]:
             fields_str = fields_str + "" + cols +","
         fields_str = fields_str + self.port_mgr_cols[-1] #add last field
+
+        # fetch data w/json
         json_url = "%s/ports/%s/%s/%s?%s" % (self.lfclient_url, port_shelf, port_resource, port_name, fields_str)
         json_response = self.query.json_get(url=json_url,
                                             debug=self.debug)
+        
+        #append fetched data to row, to add to csv file
         row = []
         if (json_response is not None):
             json_re_intf = json_response['interface']
@@ -266,14 +291,17 @@ class GenTest():
         gen_csv_writer = self.gen_csv_writers[endp]
         gen_csv_file = self.gen_csv_files[endp]
 
-        # fetch data
+        #write fields to string, to add to json_get command
         fields_str = "fields="
         for cols in self.gen_tab_cols[:-1]:
             fields_str = fields_str + "" + cols +","
         fields_str = fields_str + self.gen_tab_cols[-1] #add last field
+        # fetch data w/json
         json_url = "%s/generic/%s?%s" % (self.lfclient_url, endp, fields_str)
         json_response = self.query.json_get(url=json_url,
                                             debug=self.debug)
+        
+        #append fetched data to row, to add to csv file
         row = []
         if (json_response is not None):
             json_re_intf = json_response['endpoint']
@@ -287,8 +315,7 @@ class GenTest():
     #TODO: This is an example and is only configured for ping currently.
     # This can be edited and added to if the user wants reporting and the test they are running is not ping.
     def generate_report(self, result_dir='Generic_Test_Report', report_path=''):
-
-        print('Generating Report')
+        print('Generating Report for lf_test_generic...')
         report = lf_report(_output_pdf='lf_test_generic.pdf',
                            _output_html='lf_test_generic.html',
                            _results_dir_name='lf_test_generic_report',
@@ -377,7 +404,7 @@ class GenTest():
         report.move_graph_image()
         report.build_graph()
 
-        # closing
+        # close report, add final touches
         report.build_custom()
         report.build_footer()
         report.write_html()
@@ -506,12 +533,11 @@ class GenTest():
                 add_sta_flags = []
                 set_port_interest = ['rpt_timer','current_flags', 'dhcp']
                 set_port_current=['use_dhcp']
-
+                #add appropriate flags for security
                 if self.security != "open":
-                    if (self.passwd is None) or (self.passwd == ""):
-                        raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
-                    else:
-                        add_sta_flags.extend([types[self.security], "create_admin_down"])
+                    add_sta_flags.extend([types[self.security], "create_admin_down"])
+
+                #go through each test-created station and create station in lanforge
                 for sta_alias in self.sta_list:
                     port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
                     sta_flags_rslt = self.command.set_flags(LFJsonCommand.AddStaFlags, starting_value=0, flag_names= add_sta_flags)
@@ -543,15 +569,16 @@ class GenTest():
                                                 ssid=self.ssid,
                                                 sta_name=port_name,
                                                 debug=self.debug)
-
+                    #tell lanforge to show ports
                     self.command.post_nc_show_ports(port=port_name,
                                                     resource=port_resource,
                                                     shelf=port_shelf)
 
-                    #wait until port appears, then set use_dhcp and rpt_timer
+                    #wait until port appears
                     wfa_list = [sta_alias]
                     self.wait_for_action("port", wfa_list, "appear", 3000)
 
+                    # set use_dhcp and rpt_timer
                     self.command.post_set_port(alias=port_name,
                                                port=port_name,
                                                shelf=port_shelf,
@@ -565,7 +592,7 @@ class GenTest():
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
         if (self.test_type == 'iperf3'):
             #admin up server port, we need IP for client generic endp creation.
-            # This code is only executed if we are NOT given a target ip address.
+            # This code is only executed if we are NOT given a target ip address. (e.g. given 1.1.eth2 instead of 192.168.101.3)
             if (self.iperf3_target_lanforge):
                 server_shelf, server_resource, server_port_name, *nil = self.name_to_eid(self.target)
                 set_port_interest_rslt=self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names= ['ifdown'])
@@ -616,14 +643,17 @@ class GenTest():
                                          tx_endp= endp,
                                          debug=self.debug)
                 self.created_cx.append(endp_cx_name)
-        
+
+        #wait for cross-connects to appear
         if self.wait_for_action("cx", self.created_endp, "appear", 3000):
             print("Generic cx creation completed.")
         else:
             print("Generic cx creation was not completed.")
- 
-    def eid_to_ip(self, eid):
-        json_url = "%s/ports/%s/%s/%s?fields=device,ip" % (self.lfclient_url, eid[1], eid[0], eid[2])
+    
+    #This function takes an eid list and returns an ip address.
+    def eid_to_ip(self, eid_list):
+        device_shelf, device_resource, device_port_name, *nil = eid_list
+        json_url = "%s/ports/%s/%s/%s?fields=device,ip" % (self.lfclient_url, device_shelf, device_resource, device_port_name)
         json_response = self.query.json_get(url=json_url,
                                             debug=self.debug)
         if json_response is not None and (json_response['interface']['ip'] != "0.0.0.0"):
@@ -631,6 +661,7 @@ class GenTest():
         else:
             return None
 
+    #This function takes eid_list and returns interop device type or False.
     def is_device_interop(self, eid_list):
         device_shelf, device_resource, device_port_name, *nil = eid_list
         json_url = "%s/ports/%s/%s/%s?fields=hw version" % (self.lfclient_url, device_shelf, device_resource, device_port_name)
@@ -674,6 +705,7 @@ class GenTest():
             if (interop_device):
                 standard_ping = False
                 os_type = interop_device
+                #construct ping command based on interop device type
                 if 'Win/x86' in os_type:
                     cmd = "py lfping.py -S %s -n -1 -dest_ip %s" % (self.eid_to_ip(eid_name), self.target)
                 elif 'Apple/x86' in os_type:
@@ -716,13 +748,13 @@ class GenTest():
             if (self.destination_url_lfcurl):
                 cmd = cmd + " -d %s" % self.destination_url_lfcurl
         elif (self.test_type == 'speedtest'):
-            # vrf_exec.bash eth3 speedtest-cli --csv --share --single --debug
-            # vrf_exec.bash eth3 speedtest-cli --csv --no-upload
-            # vrf_exec.bash eth3 speedtest-cli --csv
             if (self.spdtest_ookla):
                 cmd = "speedtest --interface=%s --format=csv" % eid_name
             else:
                 #do lanforge speedtest
+                # vrf_exec.bash eth3 speedtest-cli --csv --share --single --debug
+                # vrf_exec.bash eth3 speedtest-cli --csv --no-upload
+                # vrf_exec.bash eth3 speedtest-cli --csv
                 cmd = cmd + "vrf_exec.bash %s speedtest-cli --csv" % eid_name # bas command
                 if (self.spdtest_enable_report):
                     cmd = cmd + " --share"
@@ -794,7 +826,8 @@ class GenTest():
         return cmd
 
     def cleanup(self):
-        logger.info("Cleaning up all cxs and endpoints.")
+        #delete all created endps, cross-connects and created stations
+        logger.info("Cleaning up all cxs, endpoints, and created stations")
         if self.created_cx:
             for cx_name in self.created_cx:
                 self.command.post_rm_cx(cx_name=cx_name, test_mgr="default_tm", debug=self.debug)
@@ -816,6 +849,7 @@ class GenTest():
             print("Ports were not successfully cleaned up.")
 
     def duration_time_to_seconds(self, time_string):
+        #this function is used to convert self.test_duration to seconds
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
             td = pattern.match(time_string)
@@ -858,6 +892,7 @@ class GenTest():
             name_list.append("%i.%i.%s" % (radio_shelf, radio_resource, sta_name))
         return name_list
 
+    # This function takes in eid '1.1.sta0000' and returns a boolean (true or false)
     def port_exists(self, port_eid, debug=None):
         if port_eid:
             current_stations = self.query.get_port(port_eid, debug=debug)
@@ -875,6 +910,7 @@ class GenTest():
         :return: no returns
 
         """
+        #TODO allow test config of secs_to_wait
         if type(type_list) is not list:
             raise Exception("wait_for_action: type_list is not a list")
         else: 
@@ -945,12 +981,16 @@ class GenTest():
         return False
 
     def check_args(self):
+        print("Checking args passed into test")
         #TODO validate all args, depending on which test is used.
         #TODO: in args, check if file_out_lfcurl and destination_url_lfcurl is None. then state that defaults are being used and apply defaults
+        if self.security != "open":
+            if (self.passwd is None) or (self.passwd == ""):
+                raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
         if ((self.test_type == "iperf3" or self.test_type == "iperf3-client") and self.target is None):
             raise ValueError ("To execute test type 'iperf3' or 'iperf3-client', a target must be specified as an IP address or port eid.")
-        print("check args")
-
+        
+    #This takes in a eid string (e.g. '1.1.sta000') and returns an eid list in list order of [shelf, resource, port name]
     def name_to_eid(self, eid_input, non_port=False):
         rv = [1, 1, "", ""]
         if (eid_input is None) or (eid_input == ""):
@@ -1286,6 +1326,7 @@ def main():
 
     lf_generic_test.monitor_test()
     print("Done with connection monitoring")
+    
     lf_generic_test.stop()
     lf_generic_test.generate_report()
     lf_generic_test.cleanup()
