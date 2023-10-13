@@ -48,6 +48,7 @@ import logging
 import re
 import csv
 import pandas as pd
+import numpy as np
 
 from pandas import json_normalize
 from lf_json_util import standardize_json_results
@@ -192,23 +193,23 @@ class GenTest():
     # Write initial headers to port csv file (all ports used, created & existing ports)
     def csv_add_port_column_headers(self, port_eid):
         fname = self.report_file_path + "/port-" + port_eid + "." + self.output_format
-        pfile = open(fname, "w")
-        port_csv_writer = csv.writer(pfile, delimiter=",")
-        self.port_csv_files[port_eid] = pfile
+        file_io = open(fname, "w")
+        port_csv_writer = csv.writer(file_io, delimiter=",")
+        self.port_csv_files[port_eid] = file_io
         self.port_csv_writers[port_eid] = port_csv_writer
 
         port_csv_writer.writerow(self.port_mgr_cols)
-        pfile.flush()
+        file_io.flush()
 
     # write initial headers to gen cx files
     def csv_add_gen_column_headers(self, gen_endp):
-        fname = self.report_file_path + "/gen-endp-" + gen_endp + "." + self.output_format
-        pfile = open(fname, "w")
-        gen_csv_writer = csv.writer(pfile, delimiter=",")
-        self.gen_csv_files[gen_endp] = pfile
+        file_name = self.report_file_path + "/gen-endp-" + gen_endp + "." + self.output_format
+        io_file = open(file_name, "w")
+        gen_csv_writer = csv.writer(io_file, delimiter=",")
+        self.gen_csv_files[gen_endp] = io_file
         self.gen_csv_writers[gen_endp] = gen_csv_writer
         gen_csv_writer.writerow(self.gen_tab_cols)
-        pfile.flush()
+        io_file.flush()
     
     def write_port_csv(self, eid):
         port_shelf, port_resource, port_name, *nil = self.name_to_eid(eid)
@@ -300,19 +301,49 @@ class GenTest():
                             effectively over the network and pinpoint potential issues affecting connectivity.
                             ''')
         report.build_objective()
-        graph = lf_horizontal_stacked_graph(_seg=2,
-                                        _yaxis_set=('A', 'B'),
-                                        _xaxis_set1=[12, 65],
-                                        _xaxis_set2=[23, 34],
-                                        _unit="",
-                                        _xaxis_name="Stations",
-                                        _label=['Success', 'Fail'],
-                                        _graph_image_name="image_name_pass_fail",
-                                        _color=["r", "g"],
-                                        _figsize=(9, 4),
-                                        _enable_csv=False)
+        
+        #TODO make graph creation customizable via command line
+        #get data from saved csv.
+        gen_endp_names = []
+        dataset = []
+        for endp_name in self.created_endp:
+            gen_endp_names.append(endp_name)
+            io_file = self.gen_csv_files[endp_name]
+            #get csv and convert to pandas, take last row of pandas.
+            #csv_df = pd.read_csv("/home/diptidhond/test_generic_1/gen-endp-ping-3.csv")
+            csv_df = pd.read_csv(io_file.name)
+            #edit df with columns & rows we want
+            #take last row
+            last_row_df = csv_df.tail(1)
+            #take out all other un-necessary columns if needed
+            #last_row = last_row_df[["tx pkts", "rx pkts", "dropped"]]
 
-        graph_png = graph.build_horizontal_stacked_graph()
+            #convert dataframe to 1 dimensional array, to reg list, take idx 0, append to dataset array
+            array = last_row_df.to_numpy().tolist()[0]
+            array_but_first = array[1:]
+            dataset.append(array_but_first)
+
+        graph = lf_bar_graph(_data_set=dataset,
+                            _xaxis_name="Generic Cross-Connects",
+                            _yaxis_name="Pkt Count",
+                            _xaxis_categories=gen_endp_names,
+                            _graph_image_name="Rx vs Tx Vs Dropped",
+                            _label=["rx pkts", "tx pkts", "dropped pkts"],
+                            _color=['darkorange', 'forestgreen', 'blueviolet'],
+                            _color_edge='red',
+                            _grp_title="Rx Pkts vs Tx Pkts vs Dropped Pkts",
+                            _xaxis_step=5,
+                            _show_bar_value=True,
+                            _text_font=7,
+                            _text_rotation=45,
+                            _xticks_font=7,
+                            _legend_loc="best",
+                            _legend_box=(1, 1),
+                            _legend_ncol=1,
+                            _legend_fontsize=None,
+                            _enable_csv=True)
+
+        graph_png = graph.build_bar_graph()
 
         print("graph name {}".format(graph_png))
 
@@ -957,13 +988,13 @@ def main():
 
             Example commands: 
             LFPING:
-                ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
+                ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
                 --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info 
                 --report_file /home/lanforge/reports/LFPING.csv --test_duration 20s --upstream_port 1.1.eth2
             LFCURL:
-                ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
+                ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
             IPERF:
-                ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
+                ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
             SPEEDTEST:
 
             Port Mgr Cols available to be reported:
