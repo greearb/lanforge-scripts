@@ -16,22 +16,18 @@ SETUP:
 Make sure the generic tab is enabled in the GUI by going to the Port Manager, clicking the '+' tab, checking the 'generic' tab. 
 
 EXAMPLE:
-
     LFPING :
-        ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
-        --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info 
-        --report_file /home/lanforge/reports/LFPING.csv --test_duration 20s --upstream_port 1.1.eth2
+        ./lf_test_generic.py --mgr 192.168.102.211 --test_type ping --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
+                    --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target www.google.com --test_duration", "4s", "--create_report",
+                    --report_file_path "/home/diptidhond/test_generic_1"
     LFCURL :
-        ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
-        --num_stations 2 --ssid Logan-Test-Net --passwd Logan-Test-Net --security wpa2 --type lfcurl --dest 192.168.1.1
-    GENERIC :
-        ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --num_stations 2 --ssid Logan-Test-Net 
-        --report_file /home/lanforge/reports/GENERIC.csv --passwd Logan-Test-Net --security wpa2 --type generic
+        ./lf_test_generic.py --mgr 192.168.102.211 --test_type lfcurl --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug 
+                    --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration", "4s", "--create_report", 
+                    --report_file_path "/home/diptidhond/test_generic_1"
     SPEEDTEST :
-        ./lf_test_generic.py --radio 1.1.wiphy0 --num_stations 2 --report_file /home/lanforge/reports/SPEEDTEST.csv 
-        --ssid Logan-Test-Net --passwd Logan-Test-Net --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
+        
     IPERF3 :
-        ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
+        
 
 Use './test_generic.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
@@ -87,7 +83,8 @@ class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
                 name_prefix, num_stations, port_mgr_cols, gen_tab_cols, report_file_path, output_format = "csv", client_port = None,server_port=None,
                  host="localhost", port=8080, create_report = False, use_existing_eid=None, monitor_interval = "2s",
-                 test_duration="20s",test_type="ping", target=None, cmd=None, interval=0.1,
+                 test_duration="20s",test_type="ping", target=None, cmd=None, spdtest_no_download = False, spdtest_no_upload = False, spdtest_single_connection = False, 
+                 spdtest_enable_debug = False, spdtest_enable_report= False, spdtest_ookla = False, interval=0.1, destination_url_lfcurl = None,
                  radio=None, file_output_lfcurl=None, lf_logger_json = None, log_level = "debug", loop_count=None,
                  _debug_on=False, _exit_on_error=False, die_on_error = False,_exit_on_fail=False):
         self.host=host
@@ -98,25 +95,44 @@ class GenTest():
         self.radio = radio
         self.num_stations = num_stations
         self.security = security
-        self.file_output_lfcurl = file_output_lfcurl
-        self.loop_count = loop_count
-        self.test_type = test_type
-        self.target = target
+        self.passwd = passwd
+        self.name_prefix = name_prefix
+
+        #Generic test args
         self.cmd = cmd
-        self.monitor_interval = monitor_interval
+        self.test_type = test_type
+        self.file_output_lfcurl = file_output_lfcurl
+        self.destination_url_lfcurl = destination_url_lfcurl
+
+        #speedtest specific
+        self.spdtest_no_download = spdtest_no_download
+        self.spdtest_no_upload = spdtest_no_upload
+        self.spdtest_single_connection = spdtest_single_connection
+        self.spdtest_enable_debug = spdtest_enable_debug
+        self.spdtest_enable_report = spdtest_enable_report
+        self.spdtest_ookla = spdtest_ookla
+
+        self.loop_count = loop_count
+        self.target = target
         self.interval = interval
         self.client_port = client_port
         self.server_port = server_port
-        self.passwd = passwd
-        self.name_prefix = name_prefix
+
+        #Test duration, sleep interval for monitoring/data collection, logging/debugging
+        self.monitor_interval = monitor_interval
+        self.lfclient_url = "http://%s:%s" % (self.host, self.port)
         self.test_duration = test_duration
         self.debug = _debug_on
-        self.exit_on_error = _exit_on_error
-        self.exit_on_fail = _exit_on_fail
-        self.lfclient_url = "http://%s:%s" % (self.host, self.port)
         self.report_timer = 1500
         self.log_level = log_level
         self.lf_logger_json = lf_logger_json
+
+        #TODO currently un-used args. Add to test below.
+        self.exit_on_error = _exit_on_error
+        self.exit_on_fail = _exit_on_fail
+        self.die_on_error = die_on_error
+
+        #reporting
         self.output_format = output_format
         self.report_file_path = report_file_path
         self.create_report = create_report
@@ -141,8 +157,6 @@ class GenTest():
         self.command = self.session.get_command()
         self.query: LFJsonQuery
         self.query = self.session.get_query()
-
-        self.die_on_error = die_on_error #TODO add this to args
 
         self.created_endp = []
         self.created_cx = []
@@ -656,11 +670,11 @@ class GenTest():
                     standard_ping = True
                 else:
                     #Android
-                    cmd = "ping -i %s %s" % (self.interval, self.dest)
+                    cmd = "ping -i %s %s" % (self.interval, self.target)
 
             if (standard_ping):
                 # lfping  -s 128 -i 0.1 -c 10000 -I sta0000 www.google.com
-                cmd="lfping"
+                cmd = "lfping"
                 if (self.interval):
                     cmd = cmd + " -i %d" % self.interval
                 if (self.loop_count):
@@ -682,15 +696,32 @@ class GenTest():
         elif (self.test_type == 'lfcurl'):
             # ./scripts/lf_curl.sh  -p sta0000 -i 192.168.50.167 -o /dev/null -n 1 -d 8.8.8.8
             cmd = cmd + str("./scripts/lf_curl.sh -p %s" % eid_name)
-            # cmd = cmd + "-i %s" % str(self.target) TODO: get ip address of -i (sta0000) if i is a station, but not if eth port.
-            #TODO add -o
-            cmd = cmd + "-o /dev/null -n 1 -d %s" % str(self.target)
+            #TODO: get ip address of -i (sta0000) if i is a station, but not if eth port.
+            if (self.file_output_lfcurl):
+                cmd = cmd + " -o %s" % self.file_output_lfcurl
+            if (self.loop_count):
+                cmd = cmd + " -n %i" % self.loop_count
+            if (self.destination_url_lfcurl):
+                cmd = cmd + " -d %s" % self.destination_url_lfcurl
         elif (self.test_type == 'speedtest'):
             # vrf_exec.bash eth3 speedtest-cli --csv --share --single --debug
             # vrf_exec.bash eth3 speedtest-cli --csv --no-upload
             # vrf_exec.bash eth3 speedtest-cli --csv
-            # Ookla (with license) : # speedtest --interface=eth3 --format=csv
-            cmd = cmd + "vrf_exec.bash %s speedtest-cli --csv" % eid_name
+            if (self.spdtest_ookla):
+                cmd = "speedtest --interface=%s --format=csv" % eid_name
+            else:
+                #do lanforge speedtest
+                cmd = cmd + "vrf_exec.bash %s speedtest-cli --csv" % eid_name # bas command
+                if (self.spdtest_enable_report):
+                    cmd = cmd + " --share"
+                if (self.spdtest_no_download):
+                    cmd = cmd + " --no_download"
+                if (self.spdtest_no_upload):
+                    cmd = cmd + " --no_upload"
+                if (self.spdtest_single_connection):
+                    cmd = cmd + " --single"
+                if (self.spdtest_enable_debug):
+                    cmd = cmd + " --debug"
         else:
             raise ValueError("Was not able to identify type given in arguments.")
 
@@ -903,6 +934,7 @@ class GenTest():
 
     def check_args(self):
         #TODO validate all args, depending on which test is used.
+        #TODO: in args, check if file_out_lfcurl and destination_url_lfcurl is None. then state that defaults are being used and apply defaults
         if ((self.test_type == "iperf3" or self.test_type == "iperf3-client") and self.target is None):
             raise ValueError ("To execute test type 'iperf3' or 'iperf3-client', a target must be specified as an IP address or port eid.")
         print("check args")
@@ -1107,8 +1139,14 @@ def main():
     optional.add_argument('--cmd', help='specifies command to be run by generic type endp', default=None)
 
     #generic endpoint configurations
-    optional.add_argument('--interval', help='interval to use when running lfping. in seconds', default=1)
+    optional.add_argument('--spdtest_enable_debug', action="store_true", help='check enable debug box for speedtest cross connect(s)')
+    optional.add_argument('--spdtest_enable_report', action="store_true", help='check enable report box for speedtest cross connect(s)')
+    optional.add_argument('--spdtest_no_download', action="store_true", help='do not run download for speedtest cross connect')
+    optional.add_argument('--spdtest_no_upload', action="store_true", help='do not run upload for speedtest cross connect')
+    optional.add_argument('--spdtest_single_connection', action="store_true", help='run speedtest single connection')
+    optional.add_argument('--spdtest_ookla', action="store_true", help='run ookla speedtest. ookla license must be on machine in order for this test to run.')
     optional.add_argument('--file_output_lfcurl', help='location to output results of lf_curl, absolute path preferred', default=None)
+    optional.add_argument('--destination_url_lfcurl', help='destination url for lfcurl', default=None)
     optional.add_argument('--loop_count', help='determines the number of loops to use in lf_curl and lfping', default=None)
     optional.add_argument('--target',
                           help='Target for lfping (ex: www.google.com). ALSO ip address or LANforge eid of iperf3 server used for iperf3-client target . Example: 192.168.1.151 OR 1.1.eth2', default=None)
@@ -1187,32 +1225,39 @@ def main():
 
     #TODO edit name_prefix
     lf_generic_test = GenTest(host=args.mgr, port=args.mgr_port,
-                           lf_user=args.lf_user, lf_passwd=args.lf_passwd,
-                           radio=args.radio,
-                           num_stations = args.num_stations,
-                           use_existing_eid=args.use_existing_eid,
-                           name_prefix="GT",
-                           test_type=args.test_type,
-                           target=args.target,
-                           cmd=args.cmd,
-                           interval=args.interval,
-                           ssid=args.ssid,
-                           passwd=args.passwd,
-                           create_report=args.create_report,
-                           port_mgr_cols=args.port_mgr_cols,
-                           gen_tab_cols=args.gen_tab_cols,
-                           security=args.security,
-                           test_duration=args.test_duration,
-                           monitor_interval=args.monitor_interval,
-                           file_output_lfcurl=args.file_output_lfcurl,
-                           report_file_path = rpt_file_path,
-                           output_format = output,
-                           loop_count=args.loop_count,
-                           client_port=args.client_port,
-                           server_port=args.server_port,
-                           _debug_on=args.debug,
-                           log_level=args.log_level,
-                           lf_logger_json = args.lf_logger_json)
+                             lf_user=args.lf_user, lf_passwd=args.lf_passwd,
+                             radio=args.radio,
+                             num_stations = args.num_stations,
+                             use_existing_eid=args.use_existing_eid,
+                             name_prefix="GT",
+                             test_type=args.test_type,
+                             target=args.target,
+                             cmd=args.cmd,
+                             interval=args.interval,
+                             ssid=args.ssid,
+                             passwd=args.passwd,
+                             create_report=args.create_report,
+                             port_mgr_cols=args.port_mgr_cols,
+                             gen_tab_cols=args.gen_tab_cols,
+                             security=args.security,
+                             test_duration=args.test_duration,
+                             monitor_interval=args.monitor_interval,
+                             file_output_lfcurl=args.file_output_lfcurl,
+                             destination_url_lfcurl = args.destination_url_lfcurl,
+                             spdtest_enable_debug= args.spdtest_enable_debug,
+                             spdtest_enable_report= args.spdtest_enable_report,
+                             spdtest_no_download= args.spdtest_no_download,
+                             spdtest_no_upload= args.spdtest_no_upload,
+                             spdtest_single_connection= args.spdtest_single_connection,
+                             spdtest_ookla= args.spdtest_ookla,
+                             report_file_path = rpt_file_path,
+                             output_format = output,
+                             loop_count=args.loop_count,
+                             client_port=args.client_port,
+                             server_port=args.server_port,
+                             _debug_on=args.debug,
+                             log_level=args.log_level,
+                             lf_logger_json = args.lf_logger_json)
 
     if not lf_generic_test.check_tab_exists():
         raise ValueError("Error received from GUI when trying to request generic tab information, please ensure generic tab is enabled")
