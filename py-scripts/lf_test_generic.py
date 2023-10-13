@@ -15,21 +15,33 @@ This script also *does not* use any other file except lanforge_api.py.
 SETUP:
 Make sure the generic tab is enabled in the GUI by going to the Port Manager, clicking the '+' tab, checking the 'generic' tab. 
 
-EXAMPLE:
+EXAMPLES:
     LFPING :
         ./lf_test_generic.py --mgr 192.168.102.211 --test_type ping --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
                     --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target www.google.com --test_duration", "4s", "--create_report",
                     --report_file_path "/home/diptidhond/test_generic_1"
     LFCURL :
         ./lf_test_generic.py --mgr 192.168.102.211 --test_type lfcurl --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug 
-                    --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration", "4s", "--create_report", 
-                    --report_file_path "/home/diptidhond/test_generic_1"
+                    --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration", "4s", "--create_report",
+                    --report_file_path "/home/lanforge/test_generic_1"
     SPEEDTEST :
+        ./lf_test_generic.py --mgr 192.168.102.211 --test_type speedtest --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
+                    --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration", "4s", "--create_report", "--no_upload", "--single_connection",
+                    --report_file_path "/home/lanforge/test_generic_1"
         
     IPERF3 :
-        
+        iperf -- client only: creates 3 client : 2 clients on sta, 1 on eth port (with existing eid):
 
-Use './test_generic.py --help' to see command line usage and options
+            ./lf_test_generic.py: --mgr 192.168.102.211 --test_type iperf3-client --lf_user lanforge --lf_passwd lanforge --num_stations 2 --log_level debug --test_duration 20s
+                --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target 192.168.3.3 --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191 --create_report --report_file_path "/home/lanforge/iperf3_reports"
+
+        iperf -- server only: creates 3 servers : 2 servers on sta, 1 on eth port (with existing eid):
+
+            ./lf_test_generic.py --mgr 192.168.102.211 --test_type iperf3-server --lf_user lanforge --lf_passwd lanforge --num_stations 2 --log_level debug --test_duration 20s
+                --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191 --create_report --report_file_path "/home/lanforge/iperf3_reports"
+
+Use './test_generic.py --help' to see command line usage and options.
+
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
