@@ -40,6 +40,8 @@ import importlib
 from matplotlib import pyplot as plt
 import platform
 import subprocess
+from psutil import TimeoutExpired
+
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -91,13 +93,15 @@ class lf_report:
 
         allure_report_history = format("{allure_report}/history".format(allure_report=self.allure_report_dir_name))
         self.allure_report_history = os.path.join(self.path,allure_report_history)
-        self.allure_report_history_path = str(self.allure_report_history)+'/'
+        self.allure_report_history_path = str(self.allure_report_history)
 
             
         self.allure_results_history = ""
         self.allure_results = ""
         self.allure_result_dir = ""
         self.allure_report_timeout = 120 #TODO have configurable or allow process to complete and not wait.
+        self.allure_result = "SUCCESS"
+
 
         self.dataframe = _dataframe
         self.text = ""
@@ -429,19 +433,21 @@ class lf_report:
         # TODO abiltiy to set the Allure results dir
         if allure_results == "":
             self.allure_results_history = os.path.join(self.path_date_time,"history")
-            self.allure_results = "{allure_results_path}/".format(allure_results_path=self.path_date_time)
+            self.allure_results = "{allure_results_path}".format(allure_results_path=self.path_date_time)
 
         else:
             #TODO check if the path is passed in for allure results
             self.allure_results = allure_results
-            self.allure_results_history = os.path.join(self.allure_results,"history/")
+            self.allure_results_history_path = os.path.join(self.allure_results,"history")
 
         logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history,allure_results=self.allure_results_history))
         # allure_report directory
         try:
             files = os.listdir(self.allure_report_history)
             for fname in files:
-                shutil.copy2(os.path.join(self.allure_report_history_path,fname),self.allure_results_history)
+                allure_report_history_file =  str(self.allure_report_history_path) + '/' + str(fname)
+                allure_results_history_file = str(self.allure_results_history_path) + '/' + str(fname)
+                shutil.copy(allure_report_history_file,allure_results_history_file)
 
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
@@ -452,21 +458,40 @@ class lf_report:
         # TODO current the junit.xml is placed in the base directory 
         # allure report directory needs to be allure-report
         allure_command = "allure generate {allure_results} --clean".format(allure_results=self.allure_results)
+        summary_output = ''
         # allure_command = "allure generate {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         # allure_command = "allure serve {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         try:
             logger.info("allure command: {allure_command} failed or timed out".format(allure_command=allure_command))
-            process = subprocess.Popen(allure_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                       universal_newlines=True)
-            # have email on separate timeout
-            process.wait(timeout=120) # TODO have this be configurable
-        #except subprocess.TimeoutExpired:
-        #    logger.info("Allure report generation timeout")
-        #    process.terminate() # only kill on 
+            summary = subprocess.Popen(allure_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        except PermissionError:
+            logger.info("PermissionError on execution of {command}".format(command=allure_command))
+
+        except IsADirectoryError:
+            logger.info("IsADirectoryError on execution of {command}".format(command=allure_command))
 
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("allure command: {allure_command} failed or timed out".format(allure_command=allure_command))
+
+
+        # This code will read the output as the script is running and log
+        for line in iter(summary.stdout.readline, ''):
+            logger.info(line)
+            summary_output += line
+        try:
+            if int(self.allure_report_timeout != 0):
+                summary.wait(timeout=int(self.allure_report_timeout))
+            else:
+                summary.wait()
+        except TimeoutExpired:
+            summary.terminate
+            self.allure_result = "TIMEOUT"
+
+        #except subprocess.TimeoutExpired:
+        #    logger.info("Allure report generation timeout")
+        #    process.terminate() # only kill on 
+
 
     # https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
     # page_size A4, A3, Letter, Legal
