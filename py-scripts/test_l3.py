@@ -5224,7 +5224,7 @@ Example running traffic with two radios
 
         # Interopt example Creating stations
             Interopt testing creating stations
-            ./test_l3.py --lfmgr 192.168.0.104\
+            ./test_l3.py --lfmgr 192.168.0.103\
              --test_duration 60s\
             --polling_interval 5s\
             --upstream_port 1.1.eth2\
@@ -5252,6 +5252,10 @@ Example running traffic with two radios
             --polling_interval 5s\
             --upstream_port 1.50.eth2\
             --radio radio==wiphy1,stations==2,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable\
+            --radio radio==wiphy4,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
+            --radio radio==wiphy5,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
+            --radio radio==wiphy6,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
+            --radio radio==wiphy7,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
             --endp_type lf_udp,lf_tcp,mc_udp\
             --rates_are_totals\
             --side_a_min_bps=2000000\
