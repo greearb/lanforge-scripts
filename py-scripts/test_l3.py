@@ -5228,11 +5228,10 @@ Example running traffic with two radios
              --test_duration 60s\
             --polling_interval 5s\
             --upstream_port 1.1.eth2\
-            --radio radio==wiphy1,stations==2,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable\
-            --radio radio==wiphy4,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
-            --radio radio==wiphy5,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
-            --radio radio==wiphy6,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
-            --radio radio==wiphy7,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
+            --radio 'radio==wiphy4,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down'\
+            --radio 'radio==wiphy5,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down'\
+            --radio 'radio==wiphy6,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down'\
+            --radio 'radio==wiphy7,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down'\
             --endp_type lf_udp,lf_tcp,mc_udp\
             --rates_are_totals\
             --side_a_min_bps=2000000\
@@ -5249,6 +5248,28 @@ Example running traffic with two radios
             --cleanup_cx
 
 
+            ./test_l3.py --lfmgr 192.168.0.103\
+            --local_lf_report_dir /home/lanforge/html-reports/ct_id_004\
+            --test_duration 30s\
+            --polling_interval 5s\
+            --upstream_port 1.1.eth2\
+            --radio 'radio==wiphy4,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down'\
+            --radio 'radio==wiphy5,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down'\
+            --radio 'radio==wiphy6,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down'\
+            --radio 'radio==wiphy7,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down'\
+            --endp_type lf_udp,lf_tcp,mc_udp\
+            --side_a_min_bps=1000000\
+            --side_b_min_bps=0\
+            --side_a_min_pdu MTU\
+            --side_b_min_pdu MTU\
+            --test_rig CT-US-001\
+            --test_tag 'TEST_L3_LONGEVITY_ENABLE_FLAGS_2G_W4_W5_W6_W7'\
+            --dut_model_num ASUSRT-AX88U\
+            --dut_sw_version 3.0.0.4.386_44266\
+            --dut_hw_version 1.0\
+            --dut_serial_num 12345678
+
+
         # Interopt using existing stations
             Interopt testing creating stations
             ./test_l3.py --lfmgr 192.168.91.50\
@@ -5256,10 +5277,10 @@ Example running traffic with two radios
             --polling_interval 5s\
             --upstream_port 1.50.eth2\
             --radio radio==wiphy1,stations==2,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable\
-            --radio radio==wiphy4,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
-            --radio radio==wiphy5,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
-            --radio radio==wiphy6,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
-            --radio radio==wiphy7,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable|wpa2_enable|80211u_enable|create_admin_down\
+            --radio radio==wiphy4,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable\
+            --radio radio==wiphy5,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable\
+            --radio radio==wiphy6,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable\
+            --radio radio==wiphy7,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable\
             --endp_type lf_udp,lf_tcp,mc_udp\
             --rates_are_totals\
             --side_a_min_bps=2000000\
