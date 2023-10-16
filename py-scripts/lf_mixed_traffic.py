@@ -316,7 +316,6 @@ class Mixed_Traffic(Realm):
             for port in self.user_query[0]:
                 if eid + '.' in port:
                     self.windows_ports.append(port)
-        print("aa", self.windows_ports)
         return self.available_device_list, self.user_query
 
     def ping_test(self, target='', interval='', _ping_test=ping_test):
@@ -355,6 +354,8 @@ class Mixed_Traffic(Realm):
                 self.ping_test_obj.generic_endps_profile.created_endp.append(
                     'generic-{}'.format(station.split('.')[2]))
             self.ping_test_obj.generic_endps_profile.cleanup()
+            self.ping_test_obj.generic_endps_profile.created_cx = []
+            self.ping_test_obj.generic_endps_profile.created_endp = []
         # creating generic endpoints
         self.ping_test_obj.create_generic_endp()
         logger.info("Generic Cross-Connection List: {}".format(self.ping_test_obj.generic_endps_profile.created_cx))
