@@ -1441,7 +1441,15 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     junit_results = inspect_db.get_junit_results()
     report.set_junit_results(junit_results)
     test_suite = str(__test_suite)
-    junit_xml, junit_path_only = report.write_junit_results(test_suite=test_suite)
+
+    # junit_xml, junit_path_only = report.write_junit_results(test_suite=test_suite)
+    if(len(self.database_list)) == 1:
+        lf_inspect_database_name=str(self.database_list[0])
+    # for now assume 2, TODO loop though list
+    else:
+        lf_inspect_databas_name = str(self.database_name[0])+"_"+str(self.database_name[1])
+    junit_xml, junit_path_only = report.write_junit_results(test_suite=lf_inspect_database_name)
+
 
     # TODO path in the allure results path
     # Need to go up one directory
