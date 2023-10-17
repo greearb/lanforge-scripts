@@ -106,7 +106,7 @@ class HttpDownload(Realm):
         self.port_list = port_list
         self.eid_list = []
         self.devices_list = devices_list
-        self.macid_list = macid_list
+        self.macid_list = []
         self.client_type = client_type
         self.lf_username = lf_username
         self.lf_password = lf_password
