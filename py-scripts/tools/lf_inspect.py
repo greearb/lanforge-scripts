@@ -1443,11 +1443,11 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     test_suite = str(__test_suite)
 
     # junit_xml, junit_path_only = report.write_junit_results(test_suite=test_suite)
-    if(len(self.database_list)) == 1:
-        lf_inspect_database_name=str(self.database_list[0])
+    if(len(__database_list)) == 1:
+        lf_inspect_database_name=str(__database_list[0])
     # for now assume 2, TODO loop though list
     else:
-        lf_inspect_databas_name = str(self.database_name[0])+"_"+str(self.database_name[1])
+        lf_inspect_database_name = str(__database_list[0])+"_"+str(__database_list[1])
     junit_xml, junit_path_only = report.write_junit_results(test_suite=lf_inspect_database_name)
 
 
