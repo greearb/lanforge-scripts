@@ -136,12 +136,31 @@ class inspect_sql:
         self.junit_results += """
         </testsuites>
         """
-
+    # TODO have the suite name be the DB
     def start_junit_testsuite(self):
+        if(len(self.database_list)) == 1:
+            # remove file extenstion from db name
+            lf_inspect_database_name = os.path.splitext(str(os.path.basename(self.database_list[0])))[0]
+            # for now assume 2, TODO loop though list
+        else:
+            lf_inspect_database_name = os.path.splitext(str(os.path.basename(self.database_list[0])))[0]+"_"+os.path.spliter(str(os.path.basename(self.database_list[1])))[0]
+
+        #self.junit_results += """
+        #<testsuite name="{suite}  time="{duration}" timestamp="{start}">
+        #""".format(suite=lf_inspect_database_name, duration=self.suite_duration,start=self.allure_time_stamp)
+
         self.junit_results += """
-        <testsuite name="{suite}  time="{duration}" timestamp="{start}">
-        """.format(suite=self.test_suite, duration=self.suite_duration,start=self.allure_time_stamp
-)
+        <testsuite name="{suite} timestamp="{start}">
+        """.format(suite=lf_inspect_database_name, start=self.allure_time_stamp)
+
+
+    # TODO
+    #def start_junit_testsuite(self):
+    #    self.junit_results += """
+    #    <testsuite name="{suite}  time="{duration}" timestamp="{start}">
+    #    """.format(suite=self.test_suite, duration=self.suite_duration,start=self.allure_time_stamp)
+
+
 
     def finish_junit_testsuite(self):
         self.junit_results += """
@@ -188,10 +207,10 @@ class inspect_sql:
         </testsuites>
         """
 
-    def start_junit_testsuite(self):
-        self.junit_results += """
-        <testsuite name="{suite}">
-        """.format(suite=self.test_suite)
+    #def start_junit_testsuite(self):
+    #    self.junit_results += """
+    #    <testsuite name="{suite}">
+    #    """.format(suite=self.test_suite)
 
     def finish_junit_testsuite(self):
         self.junit_results += """
