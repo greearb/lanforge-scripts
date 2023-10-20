@@ -659,7 +659,8 @@ class L3VariableTime(Realm):
                  ipaddr_type_avail_list=[],
                  network_auth_type_list=[],
                  anqp_3gpp_cell_net_list=[],
-                 ieee80211w_list=[]
+                 ieee80211w_list=[],
+                 interopt_mode=False
                  ):
 
         self.eth_endps = []
@@ -696,6 +697,7 @@ class L3VariableTime(Realm):
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
+        self.interopt_mode=interopt_mode
         self.csv_data_to_report=csv_data_to_report
         self.kpi_csv = kpi_csv
         self.tos = tos.split(",")
@@ -1736,7 +1738,10 @@ class L3VariableTime(Realm):
             # No reason to continue
             logger.critical(
                 "ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
-            exit(1)
+            if self.interopt_mode:
+                pass # continue to try to run
+            else:
+                exit(1)
 
         # self.csv_generate_column_headers()
         # logger.debug(csv_header)
@@ -5844,6 +5849,12 @@ INCLUDE_IN_README: False
     test_l3_parser.add_argument('--log_level',
                                 default=None,
                                 help='Set logging level: debug | info | warning | error | critical')
+
+    test_l3_parser.add_argument('--interopt_mode',  
+        help="For Interopt continue to try running even if some clients do not get an IP.",
+        action='store_true')
+
+
     test_l3_parser.add_argument(
         '-t',
         '--endp_type',
@@ -6035,6 +6046,8 @@ INCLUDE_IN_README: False
     dut_serial_num = args.dut_serial_num
     # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
+
+    interopt_mode = args.interopt_mode
 
     if args.test_duration:
         test_duration = args.test_duration
@@ -6680,7 +6693,8 @@ INCLUDE_IN_README: False
         ipaddr_type_avail_list=ipaddr_type_avail_list,
         network_auth_type_list=network_auth_type_list,
         anqp_3gpp_cell_net_list=anqp_3gpp_cell_net_list,
-        ieee80211w_list=ieee80211w_list
+        ieee80211w_list=ieee80211w_list,
+        interopt_mode=interopt_mode
     )
 
     if args.no_pre_cleanup or args.use_existing_station_list:
