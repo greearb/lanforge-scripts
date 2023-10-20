@@ -4714,6 +4714,7 @@ class LFJsonCommand(JsonCommand):
         be320_enable = 0x4000000000000                 # Enable 320Mhz mode.
         create_admin_down = 0x1000000000               # Station should be created admin-down.
         custom_conf = 0x20                             # Use Custom wpa_supplicant config file.
+        disable_mlo = 0x8000000000000                  # Disable OFDMA
         disable_obss_scan = 0x400000000000             # Disable OBSS SCAN feature in supplicant.
         disable_ofdma = 0x200000000000                 # Disable OFDMA mode
         disable_twt = 0x100000000000                   # Disable TWT mode
@@ -12798,7 +12799,7 @@ class LFJsonCommand(JsonCommand):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-        AdvLatency = "AdvLatency"                          # Enable Advanced Latency Reporting
+        AdvLatency = "AdvLatency"                          # Enable Advanced Latency Reporting, only valid for L3
         AutoHelper = "AutoHelper"                          # Automatically run on helper process
         BindSIP = "BindSIP"                                # if SIP is in DUT, true. Default is false.
         ClearPortOnStart = "ClearPortOnStart"              # clear stats on start
@@ -12837,6 +12838,8 @@ class LFJsonCommand(JsonCommand):
         PESQ = "PESQ"                                      # Enable PESQ
         PassthroughMode = "PassthroughMode"                # Disable and pass packets through one side of WANlink
         PeerNotAuto = "PeerNotAuto"                        # Set if peer phone number is not auto
+        PingPong = "PingPong"                              # if set, audio will be played in pingpong manner over
+        # +Continuous call.
         PlayAudio = "PlayAudio"                            # Enable to play sound to audio card
         QuiesceAfterDuration = "QuiesceAfterDuration"      # quiesce after time period
         QuiesceAfterRange = "QuiesceAfterRange"            # quiesce after range of bytes
@@ -20978,9 +20981,9 @@ class LFJsonQuery(JsonQuery):
         pdu%2Fs+rx, pdu%2Fs+tx, pps+rx+ll, pps+tx+ll, rcv+buf, replays, run, rx+ber, 
         rx+bytes, rx+drop+%25, rx+dup+%25, rx+ooo+%25, rx+pdus, rx+pkts+ll, rx+rate, rx+rate+%281m%29, 
         rx+rate+%28last%29, rx+rate+ll, rx+wrong+dev, script, send+buf, source+addr, 
-        tcp+mss, tcp+rtx, tx+bytes, tx+pdus, tx+pkts+ll, tx+rate, tx+rate+%281%C2%A0min%29, 
+        tcp+mss, tcp+rtx, tos, tx+bytes, tx+pdus, tx+pkts+ll, tx+rate, tx+rate+%281%C2%A0min%29, 
         tx+rate+%28last%29, tx+rate+ll, type        # hidden columns:
-        drop-count-5m, latency-5m, rt-latency-5m, rx-silence-3s, tos
+        drop-count-5m, latency-5m, rt-latency-5m, rx-silence-3s
     Example URL: /endp?fields=1st+rx,a%2Fb
 
     Example py-json call (it knows the URL):
@@ -21083,6 +21086,7 @@ class LFJsonQuery(JsonQuery):
                                 # limit TCP packet size.
         'tcp rtx':              # Total packets retransmitted by the TCP stack for this connection.These
                                 # were likely dropped or corrupted in transit.
+        'tos':                  # TOS
         'tx bytes':             # Total transmitted bytes count.
         'tx pdus':              # Total transmitted PDU count.This counts the protocol writes, such as UDP
                                 # PDUs (aka goodput).
@@ -21450,7 +21454,7 @@ class LFJsonQuery(JsonQuery):
         /generic/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
-        bps+rx, bps+tx, command, dropped, eid, elapsed, entity+id, last+results, 
+        bps+rx, bps+tx, command, delay, dropped, eid, elapsed, entity+id, last+results, 
         name, pdu%2Fs+rx, pdu%2Fs+tx, rpt+timer, rpt%23, rx+bytes, rx+pkts, status, tx+bytes, 
         tx+pkts, type
     Example URL: /generic?fields=bps+rx,bps+tx
@@ -21465,6 +21469,7 @@ class LFJsonQuery(JsonQuery):
         'bps rx':       # Receive rate reported by this endpoint.
         'bps tx':       # Transmit rate reported by this endpoint.
         'command':      # The command that this endpoint executes.
+        'delay':        # Last Round-Trip-Time (latency) for this endpoint (microseconds).
         'dropped':      # Dropped PDUs reported by this endpoint.
         'eid':          # Entity ID
         'elapsed':      # Amount of time (seconds) this endpoint has been running (or ran.)
@@ -22491,9 +22496,10 @@ class LFJsonQuery(JsonQuery):
 
     When requesting specific column names, they need to be URL encoded:
         app-id, bps-rx-3s, bps-tx-3s, build+date, cli-port, cpu, ct-kernel, ctrl-ip, 
-        ctrl-port, eid, entity+id, free+mem, free+swap, gps, hostname, hw+version, 
-        kernel, load, max+if-up, max+staged, mem, phantom, ports, rf-path, rx+bytes, 
-        shelf, sta+up, sw+version, swap, tx+bytes, user        # hidden columns:
+        ctrl-port, df-boot, df-home, df-root, eid, entity+id, free+mem, free+swap, 
+        gps, hostname, hw+version, kernel, load, max+if-up, max+staged, mem, phantom, 
+        ports, rf-path, rx+bytes, shelf, sta+up, sw+version, swap, tx+bytes, user, 
+              # hidden columns:
         timestamp
     Example URL: /resource?fields=app-id,bps-rx-3s
 
@@ -22518,6 +22524,12 @@ class LFJsonQuery(JsonQuery):
                       # used by automation logic to make better decisions.
         'ctrl-ip':    # IP Address of the Control Interface.
         'ctrl-port':  # Binary interface IP Port.
+        'df-boot':    # Free-space (MB) in /boot file system.If actual value is greater than
+                      # 65535, 65535 will be shown.
+        'df-home':    # Free-space (MB) in /home file sysytem.If actual value is greater than
+                      # 65535, 65535 will be shown.
+        'df-root':    # Free-space (MB) in / file system.If actual value is greater than 65535,
+                      # 65535 will be shown.
         'eid':        # Resource EID (Shelf.Resource).
         'entity id':  # Entity ID
         'free mem':   # Free Memory (Kbytes) in the machine.  If this is too low, performance
@@ -23215,8 +23227,8 @@ class LFJsonQuery(JsonQuery):
         attenuation+%28agc%29, avg+delay, calls+answered, calls+attempted, calls+completed, 
         calls+failed, cf+404, cf+408, cf+busy, cf+canceled, delay, destination+addr, 
         dropped, dup+pkts, eid, elapsed, entity+id, jb+cur, jb+over, jb+silence, 
-        jb+under, jitter, mng, mos-lqo, mos-lqo%23, name, ooo+pkts, reg+state, rst, 
-        rtp+rtt, run, rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, source+addr, 
+        jb+under, jitter, mng, mos-lqo, mos-lqo%23, name, ooo+pkts, pingpong, reg+state, 
+        rst, rtp+rtt, run, rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, source+addr, 
         state, tx+bytes, tx+pkts, vad+pkts
     Example URL: /voip-endp?fields=attenuation+%28agc%29,avg+delay
 
@@ -23263,6 +23275,7 @@ class LFJsonQuery(JsonQuery):
         'name':              # Endpoint's Name.
         'ooo pkts':          # Total out-of-order packets, as identified by RTP sequence numbers (pre
                              # jitter buffer).
+        'pingpong':          # Number of PingPongs of audio play and record over Continuous call.
         'reg state':         # Current State of the Endpoint.
         'rst':               # How many times has the endpoint been restarted due to abnormal
                              # termination.
