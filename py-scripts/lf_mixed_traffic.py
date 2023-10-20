@@ -1077,6 +1077,7 @@ class Mixed_Traffic(Realm):
                                         _kpi_dut_serial_num=dut_serial_num,
                                         _kpi_test_id=test_id)
 
+        # TODO: Add try/except if fails
         self.multicast_test_obj = multicast_test.L3VariableTime(endp_types=self.endp_types,
                                                                 args="",
                                                                 tos=self.mc_tos,
@@ -1177,6 +1178,7 @@ class Mixed_Traffic(Realm):
             logger.critical(self.multicast_test_obj.get_fail_message())
             exit(1)
         logger.info("Start the test and run for a duration")
+        # TODO: Check return value of start()
         self.multicast_test_obj.start(False)
         csv_results_file = self.multicast_test_obj.get_results_csv()
         report.set_title("Multicast Test")

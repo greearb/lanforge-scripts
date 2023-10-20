@@ -561,6 +561,7 @@ logger = logging.getLogger(__name__)
 
 # This class handles running the test and generating reports.
 class L3VariableTime(Realm):
+    # May raise an exception if incorrect values specified
     def __init__(self,
                  endp_types,
                  args,
@@ -765,7 +766,7 @@ class L3VariableTime(Realm):
                 self.atten_vals[0] != -1) and (len(self.attenuators) == 0)):
             logger.error(
                 "ERROR:  Attenuation values configured, but no Attenuator EIDs specified.\n")
-            exit(1)
+            raise ValueError("Attenuation values configured, but no Attenuator EIDs specified.")
 
         self.cx_profile.mconn = mconn
         self.cx_profile.side_a_min_bps = side_a_min_rate[0]
@@ -1701,6 +1702,7 @@ class L3VariableTime(Realm):
     # sta_json = super().json_get(
     #   "port/1/{resource}/list?field=alias".format(resource=self.resource))['interfaces']
 
+    # Returns 0 on success, non-zero on error
     def start(self, print_pass=False):
         logger.info("Bringing up stations")
         self.admin_up(self.side_b)
@@ -1741,7 +1743,7 @@ class L3VariableTime(Realm):
             if self.interopt_mode:
                 pass # continue to try to run
             else:
-                exit(1)
+                return 1
 
         # self.csv_generate_column_headers()
         # logger.debug(csv_header)
@@ -2248,6 +2250,8 @@ class L3VariableTime(Realm):
                         self._pass(
                             "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
                             (ul, dl, ul_pdu, dl_pdu), print_pass)
+
+        return 0
 
     def write_dl_port_csv(
             self,
@@ -5144,6 +5148,7 @@ class L3VariableTime(Realm):
 # Check some input values.
 
 
+# Only used by argparser, so safe to exit in this function
 def valid_endp_types(_endp_type):
     etypes = _endp_type.split(',')
     for endp_type in etypes:
@@ -5169,6 +5174,8 @@ def valid_endp_types(_endp_type):
 # Starting point for running this from cmd line.
 # note: when adding command line delimiters : +,=@
 # https://stackoverflow.com/questions/37304799/cross-platform-safe-to-use-command-line-string-separator
+#
+# Safe to exit in this function, as this should only be called by this script
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
