@@ -432,7 +432,7 @@ class lf_report:
     def update_allure_results_history(self,allure_results=""):
         # TODO abiltiy to set the Allure results dir
         if allure_results == "":
-            self.allure_results_history = os.path.join(self.path_date_time,"history")
+            self.allure_results_history_path = os.path.join(self.path_date_time,"history")
             self.allure_results = "{allure_results_path}".format(allure_results_path=self.path_date_time)
 
         else:
@@ -440,7 +440,7 @@ class lf_report:
             self.allure_results = allure_results
             self.allure_results_history_path = os.path.join(self.allure_results,"history")
 
-        logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history,allure_results=self.allure_results_history))
+        logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history,allure_results=self.allure_results_history_path))
         # allure_report directory
         try:
             files = os.listdir(self.allure_report_history)
@@ -457,40 +457,27 @@ class lf_report:
     def generate_allure_report(self):
         # TODO current the junit.xml is placed in the base directory 
         # allure report directory needs to be allure-report
-        allure_command = "allure generate {allure_results} --clean".format(allure_results=self.allure_results)
+        allure_command = "allure generate {allure_results} --report-dir {allure_report} --clean".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         summary_output = ''
         # allure_command = "allure generate {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         # allure_command = "allure serve {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         try:
-            logger.info("allure command: {allure_command} failed or timed out".format(allure_command=allure_command))
-            summary = subprocess.Popen(allure_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        except PermissionError:
-            logger.info("PermissionError on execution of {command}".format(command=allure_command))
+            logger.info("allure command: {allure_command}".format(allure_command=allure_command))
+            #summary = subprocess.Popen((allure_command).split(' '), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)            
+            summary = subprocess.Popen((allure_command), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)            
 
-        except IsADirectoryError:
-            logger.info("IsADirectoryError on execution of {command}".format(command=allure_command))
+            out, err = summary.communicate()
+            errcode = summary.returncode
+            logger.info("allure out: {out} errcode: {errcode} err: {err}".format(
+                out=out,
+                errcode=errcode,
+                err=err
+            ))            
 
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("allure command: {allure_command} failed or timed out".format(allure_command=allure_command))
 
-
-        # This code will read the output as the script is running and log
-        for line in iter(summary.stdout.readline, ''):
-            logger.info(line)
-            summary_output += line
-        try:
-            if int(self.allure_report_timeout != 0):
-                summary.wait(timeout=int(self.allure_report_timeout))
-            else:
-                summary.wait()
-        except TimeoutExpired:
-            summary.terminate
-            self.allure_result = "TIMEOUT"
-
-        #except subprocess.TimeoutExpired:
-        #    logger.info("Allure report generation timeout")
-        #    process.terminate() # only kill on 
 
 
     # https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
