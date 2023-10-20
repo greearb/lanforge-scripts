@@ -2593,7 +2593,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 check.set_junit_results(junit_xml)
                 check.set_junit_path_only(junit_path_only)
 
-                # TODO
+                # Allure report history
                 report.update_allure_results_history(allure_results=allure_results_path)
                 report.generate_allure_report()
 
@@ -2608,8 +2608,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
                 # print later so shows up last
                 logger.info("junit.xml: allure serve {}".format(junit_xml))
-                logger.info(
-                    "junit.xml path: allure serve {}".format(junit_path_only))
+                logger.info("junit.xml path: allure serve {}".format(junit_path_only))
 
                 if args.update_latest:
                     report_path = os.path.dirname(html_report)
