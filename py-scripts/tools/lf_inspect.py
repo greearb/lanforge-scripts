@@ -150,7 +150,7 @@ class inspect_sql:
         #""".format(suite=lf_inspect_database_name, duration=self.suite_duration,start=self.allure_time_stamp)
 
         self.junit_results += """
-        <testsuite name="{suite} timestamp="{start}">
+        <testsuite name="{suite}" timestamp="{start}">
         """.format(suite=lf_inspect_database_name, start=self.allure_time_stamp)
 
 
