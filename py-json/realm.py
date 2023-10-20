@@ -831,7 +831,6 @@ class Realm(LFCliBase):
             if debug:
                 logger.debug("Waiting for ips, timeout: %i..." % timeout_sec)
         else:
-            timeout_auto = True
             timeout_sec = 60 + len(station_list) * 5
             if debug:
                 logger.debug("Auto-Timeout requested, using: %s" % timeout_sec)
@@ -840,17 +839,16 @@ class Realm(LFCliBase):
         stas_without_ip6s = {}
 
         sec_elapsed = 0
-        time_extended = False
+        start_time = int(time.time())
         # logger.info(station_list)
         waiting_states = ["0.0.0.0", "NA", "", 'DELETED', 'AUTO']
         if (station_list is None) or (len(station_list) < 1):
             logger.critical("wait_for_ip: expects non-empty list of ports")
             raise ValueError("wait_for_ip: expects non-empty list of ports")
-        wait_more = True
 
-        while wait_more and (sec_elapsed <= timeout_sec):
+        wait_more = True
+        while wait_more:
             wait_more = False
-            some_passed = False
             stas_without_ip4s = {}
             stas_without_ip6s = {}
 
@@ -875,7 +873,6 @@ class Realm(LFCliBase):
                         if debug:
                             logger.debug("Waiting for port %s to get IPv4 Address try %s / %s" % (sta_eid, sec_elapsed, timeout_sec))
                     else:
-                        some_passed = True
                         if debug:
                             logger.debug("Found IP: %s on port: %s" % (v['ip'], sta_eid))
 
@@ -884,7 +881,6 @@ class Realm(LFCliBase):
                     # logger.info(v)
                     ip6a = v['ipv6_address']
                     if ip6a != 'DELETED' and not ip6a.startswith('fe80') and ip6a != 'AUTO':
-                        some_passed = True
                         if debug:
                             logger.debug("Found IPv6: %s on port: %s" % (ip6a, sta_eid))
                     else:
@@ -893,12 +889,11 @@ class Realm(LFCliBase):
                         if debug:
                             logger.debug("Waiting for port %s to get IPv6 Address try %s / %s, reported: %s." % (sta_eid, sec_elapsed, timeout_sec, ip6a))
 
-            if wait_more:
-                if timeout_auto and not some_passed:
-                    if sec_elapsed > 60:
-                        # Nothing has gotten IP for 60 seconds, consider timeout reached.
-                        break
-                time.sleep(1)
+            # Check if we need to wait more but timed out. Otherwise, continue polling
+            cur_time = int(time.time())
+            if wait_more and (cur_time - start_time) > timeout_sec:
+                break # Timed out. Exit while loop
+            else:
                 sec_elapsed += 1
 
         # If not all ports got IP addresses before timeout, and debugging is enabled, then
