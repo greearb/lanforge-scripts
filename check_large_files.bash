@@ -830,10 +830,25 @@ survey_core_files() {
 # downloads
 lf_downloads=()
 survey_lf_downloads() {
-    debug "Surveying /home/lanforge downloads"
-    [ ! -d "/home/lanforge/Downloads" ] && note "No downloads folder " && return 0
-    cd /home/lanforge/Downloads
-    mapfile -t lf_downloads < <(ls *gz *z2 *-Installer.exe *firmware* kinst_* *Docs* 2>/dev/null)
+    debug "Surveying /home/lanforge, /var/www/html downloads,"
+    #echo "*************************************************************"
+    mapfile -t lf_downloads < <(find /home/lanforge/Downloads /var/www/html \
+      -mindepth 1 -maxdepth 1 -type f -a \( \
+           -iname '*gz'         \
+        -o -iname '*z2'         \
+        -o -iname '*.exe'       \
+        -o -iname '*firmware*'  \
+        -o -iname 'kinst_*'     \
+        -o -iname '*Docs*'      \
+        -o -iname 'ct*z'        \
+        -o -iname 'interop*'    \
+        -o -iname 'gnu*'        \
+        -o -iname 'LANforge*'   \
+        -o -iname 'xorp*'       \
+      \))
+    #printf '     %s\n' "${lf_downloads[@]}"
+    #echo "*************************************************************"
+
     if [[ ${lf_downloads+x} = x ]]; then
         totals[d]=$(du -hc "${lf_downloads[@]}" | awk '/total/{print $1}')
         [[ x${totals[d]} = x ]] && totals[d]=0
