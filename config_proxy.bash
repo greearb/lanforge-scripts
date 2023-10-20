@@ -2,7 +2,8 @@
 # please read the below:
 # https://unix.stackexchange.com/questions/212894/whats-the-right-format-for-the-http-proxy-environment-variable-caps-or-no-ca
 # https://about.gitlab.com/blog/2021/01/27/we-need-to-talk-no-proxy/
-#
+# For git proxies:
+# https://gist.github.com/evantoli/f8c23a37eb3558ab8765
 
 if [[ -z "${1:-}" ]]; then
   echo "Temporarily configure your proxy environment:"
@@ -28,6 +29,8 @@ case "$1" in
   print)
     echo "Proxies:"
     printenv | grep -i proxy
+    echo "Your current git proxies:"
+    git config --global --get-regexp http.* ||:
     exit 0
     ;;
   blank)
@@ -41,8 +44,12 @@ case "$1" in
     echo "export http_proxy=${q}$1${q} https_proxy=${q}$1${q} HTTP_PROXY=${q}$1${q} HTTPS_PROXY=${q}$1${q} ALL_PROXY=${q}$1${q} PROXY_ALL=${q}$1${q}" > $HOME/.proxy_rc
     echo "export no_proxy=${q}$no_proxy${q} NO_PROXY=${q}$no_proxy${q}" >> $HOME/.proxy_rc
     echo "Not proxying [$no_proxy]"
-    #export http_proxy="$1" https_proxy="$1" HTTP_PROXY="$1" HTTPS_PROXY="$1" ALL_PROXY="$1" PROXY_ALL="$1"
-    #export NO_PROXY="$no_proxy"
+    echo "You might want to configure a git proxy, example:"
+    echo "  git config --global http.proxy $1"
+    echo "  git config --global http.https://domain.com.proxy $1"
+    echo "Your current git proxies:"
+    git config --global --get-regexp http.* ||:
+
     printenv | grep PS
     echo "export PS1=${qq}[+proxy] \u@\$(hostname) \$ ${qq}" >> $HOME/.proxy_rc
     bash --rcfile $HOME/.proxy_rc -i
