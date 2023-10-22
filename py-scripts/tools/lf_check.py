@@ -2596,8 +2596,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
                 # Allure report history
                 # TODO move to generation being at the end of all suites
-                report.update_allure_results_history(allure_results=allure_results_path)
-                report.generate_allure_report()
+                # report.update_allure_results_history(allure_results=allure_results_path)
+                # report.generate_allure_report()
 
                 # Send email
                 if args.no_send_email or check.email_list_test == "":
