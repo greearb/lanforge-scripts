@@ -2588,12 +2588,14 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 if not os.path.isdir(allure_results_path):
                     os.mkdir(allure_results_path)
 
+                # copy junit_xml from suite to results
                 shutil.copy2(junit_xml,allure_results_path)
 
                 check.set_junit_results(junit_xml)
                 check.set_junit_path_only(junit_path_only)
 
                 # Allure report history
+                # TODO move to generation being at the end of all suites
                 report.update_allure_results_history(allure_results=allure_results_path)
                 report.generate_allure_report()
 
@@ -2665,6 +2667,10 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     # print out locations of results
                     logger.info("html_report_latest: {latest}".format(
                         latest=html_report_latest))
+
+    # Update allure one time
+    report.update_allure_results_history(allure_results=allure_results_path)
+    report.generate_allure_report()
 
 
 if __name__ == '__main__':
