@@ -21,9 +21,9 @@ PORT="4001"
 tn = telnetlib.Telnet(MGR,port=PORT) # Telnet(host=None, port=0[, timeout])
 
 # sample commands
-CMD=b'set_endp_tx_bounds LT-sta0001-0-BE-A 200000 300000'
-#CMD=b"set_endp_tx_bounds LT-sta0001-0-BE-A 200000 0"
-#CMD=b'set_endp_tx_bounds LT-sta0001-0-BE-A 0 300000'
+CMD=b'set_endp_tx_bounds LT-sta0000-0-BE-A 300000'
+#CMD=b"set_endp_tx_bounds LT-sta0000-0-BE-A 200000 0"
+#CMD=b'set_endp_tx_bounds LT-sta0000-0-BE-A 0 300000'
 
 # reading login information
 # tn.read_until("login: ")
@@ -32,9 +32,9 @@ CMD=b'set_endp_tx_bounds LT-sta0001-0-BE-A 200000 300000'
 #    tn.read_until("Password: ")
 #    tn.write(password + "\n")
 tn.read_until(b">>")
-# tn.write(b"set_endp_tx_bounds LT-sta0000-0-BE-A 2000000 0" +b"\n")
+# tn.write(b"set_endp_tx_bounds LT-sta0000-0-BE-A 2000000" +b"\n")
 tn.write(CMD +b"\n")
-#tn.write(b"set_endp_tx_bounds LT-sta0000-0-BE-A 0 3000000" +b"\n")
+#tn.write(b"set_endp_tx_bounds LT-sta0000-0-BE-A 3000000" +b"\n")
 tn.write(b"exit\n")
 
 print(tn.read_all().decode('ascii'))
