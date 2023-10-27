@@ -311,7 +311,7 @@ class IPVariableTime(Realm):
                  output_format=None,
                  layer3_cols=None,
                  port_mgr_cols=None,
-                 monitor_interval='10s',
+                 monitor_interval='1s',
                  kpi_csv=None,
                  kpi_path=None,
                  outfile=None,
@@ -1391,7 +1391,7 @@ INCLUDE_IN_README: False
                         default=None)
     optional.add_argument('--monitor_interval',
                         help='how frequently do you want your monitor function to take measurements, 35s, 2h',
-                        default='10s')
+                        default='1s')
     optional.add_argument('--ipv6', help='Sets the test to use IPv6 traffic instead of IPv4', action='store_true')
     optional.add_argument('--influx_host')
     optional.add_argument('--influx_token', help='Username for your Influx database')
