@@ -59,9 +59,8 @@ def main():
     parser.add_argument("--debug", "-d", help='turn on debugging', action="store_true")
 
     args = parser.parse_args()
-    #print( dir(args))
-    if not args.cmd:
-        print("No CLI command provided")
+    if not (args.cmd or args.raw):
+        print("No --raw or --cmd command provided")
         exit(1)
 
     session = lanforge_api.LFSession(lfclient_url="http://%s:8080" % args.host,
