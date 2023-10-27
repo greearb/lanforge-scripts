@@ -649,14 +649,18 @@ class LFCliBase:
                     duration_time = datetime.timedelta(hours=dur_time)
                 elif dur_measure == "m":
                     duration_time = datetime.timedelta(minutes=dur_time)
-                elif dur_measure == "ms":
-                    duration_time = datetime.timedelta(milliseconds=dur_time)
+                # elif dur_measure == "ms":
+                #    duration_time = datetime.timedelta(milliseconds=dur_time)
                 elif dur_measure == "w":
                     duration_time = datetime.timedelta(weeks=dur_time)
                 else:
                     duration_time = datetime.timedelta(seconds=dur_time)
             else:
-                raise ValueError("Cannot compute time string provided: %s" % time_string)
+                if 'ms' in time_string:
+                    dur_time = int(time_string.replace("ms",""))
+                    duration_time = datetime.timedelta(microseconds=dur_time)
+                else:
+                    raise ValueError("Cannot compute time string provided: %s" % time_string)
         else:
             raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
         return duration_time
