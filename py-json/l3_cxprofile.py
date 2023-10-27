@@ -373,6 +373,7 @@ class L3CXProfile(LFCliBase):
                 timestamp_df['Duration elapsed'] = time_elapsed
                 timestamp_data.append(timestamp_df)
                 time.sleep(monitor_interval_ms)
+                logger.info("Monitor: {}".format(datetime.datetime.now()))
             else:
                 logger.info("port probe dataframe list is empty.")
         if len(timestamp_data) > 0:
