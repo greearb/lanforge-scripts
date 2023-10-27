@@ -129,7 +129,7 @@ class L3CXProfile(LFCliBase):
 
     def monitor(self,
                 duration_sec=60,
-                monitor_interval_ms=1,
+                monitor_interval_ms=1, # monitor interval is seconds 
                 sta_list=None,
                 layer3_cols=None,
                 port_mgr_cols=None,
@@ -853,7 +853,7 @@ class L3CXProfile(LFCliBase):
 
     def monitor_without_disturbing_other_monitor(self,
                 duration_sec=60,
-                monitor_interval_ms=1,
+                monitor_interval_ms=1, # monitor_insterval is seconds
                 sta_list=None,
                 layer3_cols=None,
                 port_mgr_cols=None,
