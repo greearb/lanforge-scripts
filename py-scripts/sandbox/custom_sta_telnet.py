@@ -12,14 +12,14 @@ import telnetlib
 MGR="192.168.102.211"
 PORT="4001"
 RESOURCE = 1
-RADIO = "wiphy1"
-STA_NAME = "sta00011"
+RADIO = "wiphy4"
+STA_NAME = "sta000"
 
 #add sta args
-SSID= 'ssid'
-KEY = 'ssid-key'
+SSID= "ssid-eap-ap"
+KEY = '[BLANK]'
 AP = 'DEFAULT'
-MAC = '00:11:22:33:44:55'
+MAC = '00:11:22:33:41:55'
 MODE = 12
 ADD_STA_FLAGS = 33555456
 
@@ -30,23 +30,23 @@ REPORT_TIMER = 1000
 
 #set wifi extra
 KEY_MANAGEMENT = "WPA-EAP"
-PAIRWISE_CIPHERS = "DEFAULT"
-GROUP_CIPHERS = "DEFAULT"
-EAP_METHODS = "EAP-TTLS"
-EAP_IDENTITY = "lanforge-eap"
+PAIRWISE_CIPHERS = "'TKIP CCMP'"
+GROUP_CIPHERS = "'TKIP CCMP'"
+EAP_METHODS = "TTLS"
+EAP_IDENTITY = "testuser"
 EAP_ANON_IDENTITY = "anonymous@anon.net"
-EAP_PASSWORD = "password1"
-PHASE_2 = "PHASE_2"
+EAP_PASSWORD = "testpasswd"
+PHASE_2 = "auth=MSCHAPV2"
 
 #set wifi custom
-CUSTOM_TEXT = 'openssl_ciphers=LANFORGE-123V-456'
+CUSTOM_TEXT = ' '
 
 
 ADD_STA = "add_sta 1 " + str(RESOURCE) + " " + RADIO + " " + STA_NAME + " " + str(ADD_STA_FLAGS) + " " + SSID + " NA " + KEY + " " + AP + " NA " + MAC + " " + str(MODE)
 SET_PORT= "set_port 1 " + str(RESOURCE) + " " + STA_NAME + " NA NA NA NA " + str(CURRENT_FLAGS) + " " + MAC + " NA NA NA " + str(INTEREST_FLAGS) + " " + str(REPORT_TIMER)
 SET_WIFI_EXTRA = "set_wifi_extra 1 " + str(RESOURCE) + " " + STA_NAME + " " + KEY_MANAGEMENT + " " + PAIRWISE_CIPHERS + " " + GROUP_CIPHERS + " NA NA NA " +  EAP_METHODS + " " + EAP_IDENTITY + " " + EAP_ANON_IDENTITY + " NA " + PHASE_2 + " " + EAP_PASSWORD
-SET_WIFI_CUSTOM =  "set_wifi_custom 1 " + str(RESOURCE) + " " + STA_NAME + " NA " + CUSTOM_TEXT
-
+#SET_WIFI_CUSTOM =  "set_wifi_custom 1 " + str(RESOURCE) + " " + STA_NAME + " NA " + CUSTOM_TEXT
+RESET_PORT = "reset_port 1 " + str(RESOURCE) + " " + STA_NAME + " NA NA"
 # commented out lines are for if password is needed
 # user = raw_input("Enter your remote account: ")
 # password = getpass.getpass()
@@ -63,8 +63,8 @@ tn = telnetlib.Telnet(MGR,port=PORT) # Telnet(host=None, port=0[, timeout])
 # if password:
 #    tn.read_until("Password: ")
 #    tn.write(password + "\n")
-for cmd in [ADD_STA, SET_PORT, SET_WIFI_EXTRA, SET_WIFI_CUSTOM]:
-    #print(cmd)
+for cmd in [ADD_STA, SET_PORT, SET_WIFI_EXTRA, RESET_PORT]:
+    print(cmd)
     cmd_as_bytes = str.encode(cmd)
     tn.read_until(b">>")
     # tn.write(b"set_endp_tx_bounds LT-sta0000-0-BE-A 2000000" +b"\n")
