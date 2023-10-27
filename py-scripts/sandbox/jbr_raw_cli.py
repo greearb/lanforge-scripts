@@ -30,6 +30,8 @@ if sys.version_info[0] != 3:
 import importlib
 import argparse
 import pprint
+import inspect
+import collections
 sys.path.insert(1, "../../")
 
 if "SHELL" in os.environ.keys():
@@ -110,26 +112,28 @@ def main():
     method_name = session.method_map[args.cmd];
     print(f"cmd[{args.cmd}] could be processed: [{method_name}]")
     # compose the dict of args to pass into the eval
-    #print( f"typeof args.arg:{type(args.arg)}")
+    # print( f"typeof args.arg:{type(args.arg)}")
     cli_data_params : dict = {}
     for parameter in args.arg:
         k_v : list = []
         if isinstance(parameter, list):
-            print("    *LIST*")
+            # print("    *LIST*")
             k_v = (parameter)
         elif isinstance(parameter, str):
-            print("    *STR*")
+            # print("    *STR*")
             k_v = parameter.split(' ', 1)
         else:
             raise ValueError("Unable to handle value of 'parameter' from args.arg")
-        pprint.pprint(["k_v", k_v, "parameter", parameter])
-        #cli_data_params[k_v[0]] = k_v[1]
+        # pprint.pprint(["k_v", k_v, "parameter", parameter])
+        # cli_data_params[k_v[0]] = k_v[1]
 
     pprint.pprint(["CliDataPrams", cli_data_params])
     print(f"""
     Next we do something like this:
     eval({method_name}, (data={args.arg})
     """)
+    dir(inspect.signature(eval(method_name)))
+
 
 
 if __name__ == "__main__":
