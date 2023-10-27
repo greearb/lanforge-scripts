@@ -244,7 +244,7 @@ class BaseLFJsonRequest:
             logging.getLogger(__name__).warning("BaseLFJsonRequest: no session instance")
         else:
             self.session_instance = session_obj
-            #print(f"BaseSession-session-id: [{BaseSession.session_id}]")
+            # print(f"BaseSession-session-id: [{BaseSession.session_id}]")
             if not self.session_instance.session_id:
                 logging.info("session_obj lacks session_id")
             self.proxies_installed = session_obj.proxies_installed
@@ -340,7 +340,7 @@ class BaseLFJsonRequest:
             Extract fields from this response using the expected keys:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         if not singular_key and not plural_key:
-            #print("extracting all values")
+            # print("extracting all values")
             rv : dict = {}
             for key in response.keys():
                 if key == "uri" or key == "handler":
@@ -510,7 +510,8 @@ class BaseLFJsonRequest:
                     if key.endswith(BaseLFJsonRequest.BASE64_SUFFIX):
                         self.logger.warning(f"Post_data: {pformat(post_data)}")
                         self.logger.error(f"Misformatted post_data key: {key}")
-                        raise ValueError(f"Complex value submitted in a base64 tagged parameter [{key}]. Cannot continue")
+                        raise ValueError(
+                            f"Complex value submitted in a base64 tagged parameter [{key}]. Cannot continue")
                     change_list.append(key)
 
             if change_list:
@@ -523,8 +524,8 @@ class BaseLFJsonRequest:
                     new_key = key + BaseLFJsonRequest.BASE64_SUFFIX
                     del post_data[key]
                     post_data[new_key] = new_value
-                    self.logger.info("replaced key[%s] with new key: %s"%(key, new_key))
-                    self.logger.info("new value [%s]"%(new_value))
+                    self.logger.info("replaced key[%s] with new key: %s" % (key, new_key))
+                    self.logger.info("new value [%s]" % (new_value))
 
             myrequest = request.Request(url=url,
                                         method=method_,
@@ -573,7 +574,7 @@ class BaseLFJsonRequest:
                 response = urllib.request.urlopen(myrequest)
                 resp_data = response.read().decode('utf-8')
                 if self.receives_async_feedback and (response_json_list is None and resp_data):
-                    self.logger.warning("json_post: POST to URL has data: "+url)
+                    self.logger.warning("json_post: POST to URL has data: " + url)
                     raise ValueError("json_post: not returning post data, no response_json_list provided")
                 jzon_data = None
                 if debug and die_on_error:
@@ -959,7 +960,7 @@ class BaseLFJsonRequest:
             self.logger.debug("---------- no errors ----------")
             return
         for err in self.error_list:
-            Logg.error("error: %s" % err)
+            self.logger.error("error: %s" % err)
 
     @staticmethod
     def create_port_eid_url(eid_list: list = None) -> str:
@@ -1145,7 +1146,7 @@ class JsonCommand(BaseLFJsonRequest):
             return False
 
         BaseSession.session_id = first_response.getheader(SESSION_HEADER)
-        #print(f"BASESESSION SESSION_ID: {BaseSession.session_id}")
+        # print(f"BASESESSION SESSION_ID: {BaseSession.session_id}")
         self.default_headers[SESSION_HEADER] = BaseSession.session_id
         return True
 
@@ -24291,3 +24292,303 @@ class LFSession(BaseSession):
             return self.query_instance
         self.query_instance = LFJsonQuery(session_obj=self, debug=self.debug_on, exit_on_error=self.exit_on_error)
         return self.query_instance
+
+
+    """    ---- ---- ---- ----
+        Method_Map is used to correlate the name of the CLI command to the 
+        class and method used by a python script. This provides a dyanmic approach 
+        to assembling method calls at runtime.
+    ---- ---- ---- ---- """
+    method_map : dict = {
+        "adb": "LFJsonCommand.post_adb",
+        "adb_bt": "LFJsonCommand.post_adb_bt",
+        "adb_gui": "LFJsonCommand.post_adb_gui",
+        "adb_timeout": "LFJsonCommand.post_adb_timeout",
+        "adb_wifi_event": "LFJsonCommand.post_adb_wifi_event",
+        "add_adb": "LFJsonCommand.post_add_adb",
+        "add_arm_endp": "LFJsonCommand.post_add_arm_endp",
+        "add_bgp_peer": "LFJsonCommand.post_add_bgp_peer",
+        "add_bond": "LFJsonCommand.post_add_bond",
+        "add_br": "LFJsonCommand.post_add_br",
+        "add_cd": "LFJsonCommand.post_add_cd",
+        "add_cd_endp": "LFJsonCommand.post_add_cd_endp",
+        "add_cd_vr": "LFJsonCommand.post_add_cd_vr",
+        "add_chamber": "LFJsonCommand.post_add_chamber",
+        "add_chamber_cx": "LFJsonCommand.post_add_chamber_cx",
+        "add_chamber_path": "LFJsonCommand.post_add_chamber_path",
+        "add_channel_group": "LFJsonCommand.post_add_channel_group",
+        "add_cx": "LFJsonCommand.post_add_cx",
+        "add_dut": "LFJsonCommand.post_add_dut",
+        "add_dut_notes": "LFJsonCommand.post_add_dut_notes",
+        "add_dut_ssid": "LFJsonCommand.post_add_dut_ssid",
+        "add_endp": "LFJsonCommand.post_add_endp",
+        "add_event": "LFJsonCommand.post_add_event",
+        "add_file_endp": "LFJsonCommand.post_add_file_endp",
+        "add_gen_endp": "LFJsonCommand.post_add_gen_endp",
+        "add_gre": "LFJsonCommand.post_add_gre",
+        "add_group": "LFJsonCommand.post_add_group",
+        "add_l4_endp": "LFJsonCommand.post_add_l4_endp",
+        "add_monitor": "LFJsonCommand.post_add_monitor",
+        "add_mvlan": "LFJsonCommand.post_add_mvlan",
+        "add_ppp_link": "LFJsonCommand.post_add_ppp_link",
+        "add_profile": "LFJsonCommand.post_add_profile",
+        "add_profile_notes": "LFJsonCommand.post_add_profile_notes",
+        "add_rdd": "LFJsonCommand.post_add_rdd",
+        "add_sec_ip": "LFJsonCommand.post_add_sec_ip",
+        "add_sta": "LFJsonCommand.post_add_sta",
+        "add_t1_span": "LFJsonCommand.post_add_t1_span",
+        "add_text_blob": "LFJsonCommand.post_add_text_blob",
+        "add_tgcx": "LFJsonCommand.post_add_tgcx",
+        "add_threshold": "LFJsonCommand.post_add_threshold",
+        "add_tm": "LFJsonCommand.post_add_tm",
+        "add_traffic_profile": "LFJsonCommand.post_add_traffic_profile",
+        "add_traffic_profile_notes": "LFJsonCommand.post_add_traffic_profile_notes",
+        "add_vap": "LFJsonCommand.post_add_vap",
+        "add_venue": "LFJsonCommand.post_add_venue",
+        "add_vlan": "LFJsonCommand.post_add_vlan",
+        "add_voip_endp": "LFJsonCommand.post_add_voip_endp",
+        "add_vr": "LFJsonCommand.post_add_vr",
+        "add_vr_bgp": "LFJsonCommand.post_add_vr_bgp",
+        "add_vrcx": "LFJsonCommand.post_add_vrcx",
+        "add_vrcx2": "LFJsonCommand.post_add_vrcx2",
+        "add_wanpath": "LFJsonCommand.post_add_wanpath",
+        "add_wl_endp": "LFJsonCommand.post_add_wl_endp",
+        "admin": "LFJsonCommand.post_admin",
+        "apply_vr_cfg": "LFJsonCommand.post_apply_vr_cfg",
+        "blink_attenuator": "LFJsonCommand.post_blink_attenuator",
+        "c_show_ports": "LFJsonCommand.post_c_show_ports",
+        "cancel_vr_cfg": "LFJsonCommand.post_cancel_vr_cfg",
+        "clear_cd_counters": "LFJsonCommand.post_clear_cd_counters",
+        "clear_cx_counters": "LFJsonCommand.post_clear_cx_counters",
+        "clear_endp_counters": "LFJsonCommand.post_clear_endp_counters",
+        "clear_group": "LFJsonCommand.post_clear_group",
+        "clear_port_counters": "LFJsonCommand.post_clear_port_counters",
+        "clear_resource_counters": "LFJsonCommand.post_clear_resource_counters",
+        "clear_wifi_profiles": "LFJsonCommand.post_clear_wifi_profiles",
+        "clear_wp_counters": "LFJsonCommand.post_clear_wp_counters",
+        "create_client": "LFJsonCommand.post_create_client",
+        "diag": "LFJsonCommand.post_diag",
+        "discover": "LFJsonCommand.post_discover",
+        "do_pesq": "LFJsonCommand.post_do_pesq",
+        "file": "LFJsonCommand.post_file",
+        "flash_attenuator": "LFJsonCommand.post_flash_attenuator",
+        "getavglatency": "LFJsonCommand.post_getavglatency",
+        "getinrxbps": "LFJsonCommand.post_getinrxbps",
+        "getinrxrate": "LFJsonCommand.post_getinrxrate",
+        "getintxrate": "LFJsonCommand.post_getintxrate",
+        "getipadd": "LFJsonCommand.post_getipadd",
+        "getmac": "LFJsonCommand.post_getmac",
+        "getmask": "LFJsonCommand.post_getmask",
+        "getpktdrops": "LFJsonCommand.post_getpktdrops",
+        "getrxendperrpkts": "LFJsonCommand.post_getrxendperrpkts",
+        "getrxpkts": "LFJsonCommand.post_getrxpkts",
+        "getrxporterrpkts": "LFJsonCommand.post_getrxporterrpkts",
+        "gettxpkts": "LFJsonCommand.post_gettxpkts",
+        "gossip": "LFJsonCommand.post_gossip",
+        "help": "LFJsonCommand.post_help",
+        "init_wiser": "LFJsonCommand.post_init_wiser",
+        "ios": "LFJsonCommand.post_ios",
+        "licenses": "LFJsonCommand.post_licenses",
+        "load": "LFJsonCommand.post_load",
+        "log_capture": "LFJsonCommand.post_log_capture",
+        "log_level": "LFJsonCommand.post_log_level",
+        "log_msg": "LFJsonCommand.post_log_msg",
+        "login": "LFJsonCommand.post_login",
+        "motd": "LFJsonCommand.post_motd",
+        "nc_show_cd": "LFJsonCommand.post_nc_show_cd",
+        "nc_show_channel_groups": "LFJsonCommand.post_nc_show_channel_groups",
+        "nc_show_endpoints": "LFJsonCommand.post_nc_show_endpoints",
+        "nc_show_pesq": "LFJsonCommand.post_nc_show_pesq",
+        "nc_show_ports": "LFJsonCommand.post_nc_show_ports",
+        "nc_show_ppp_links": "LFJsonCommand.post_nc_show_ppp_links",
+        "nc_show_spans": "LFJsonCommand.post_nc_show_spans",
+        "nc_show_vr": "LFJsonCommand.post_nc_show_vr",
+        "nc_show_vrcx": "LFJsonCommand.post_nc_show_vrcx",
+        "notify_dhcp": "LFJsonCommand.post_notify_dhcp",
+        "port_reset_completed": "LFJsonCommand.post_port_reset_completed",
+        "probe_port": "LFJsonCommand.post_probe_port",
+        "probe_ports": "LFJsonCommand.post_probe_ports",
+        "quiesce_endp": "LFJsonCommand.post_quiesce_endp",
+        "quiesce_group": "LFJsonCommand.post_quiesce_group",
+        "quit": "LFJsonCommand.post_quit",
+        "reboot_os": "LFJsonCommand.post_reboot_os",
+        "report": "LFJsonCommand.post_report",
+        "reset_port": "LFJsonCommand.post_reset_port",
+        "reset_serial_span": "LFJsonCommand.post_reset_serial_span",
+        "rm_adb": "LFJsonCommand.post_rm_adb",
+        "rm_attenuator": "LFJsonCommand.post_rm_attenuator",
+        "rm_cd": "LFJsonCommand.post_rm_cd",
+        "rm_cd_endp": "LFJsonCommand.post_rm_cd_endp",
+        "rm_cd_vr": "LFJsonCommand.post_rm_cd_vr",
+        "rm_chamber": "LFJsonCommand.post_rm_chamber",
+        "rm_chamber_path": "LFJsonCommand.post_rm_chamber_path",
+        "rm_channel_group": "LFJsonCommand.post_rm_channel_group",
+        "rm_client": "LFJsonCommand.post_rm_client",
+        "rm_cx": "LFJsonCommand.post_rm_cx",
+        "rm_db": "LFJsonCommand.post_rm_db",
+        "rm_dut": "LFJsonCommand.post_rm_dut",
+        "rm_endp": "LFJsonCommand.post_rm_endp",
+        "rm_event": "LFJsonCommand.post_rm_event",
+        "rm_group": "LFJsonCommand.post_rm_group",
+        "rm_ppp_link": "LFJsonCommand.post_rm_ppp_link",
+        "rm_profile": "LFJsonCommand.post_rm_profile",
+        "rm_resource": "LFJsonCommand.post_rm_resource",
+        "rm_rfgen": "LFJsonCommand.post_rm_rfgen",
+        "rm_sec_ip": "LFJsonCommand.post_rm_sec_ip",
+        "rm_span": "LFJsonCommand.post_rm_span",
+        "rm_test_mgr": "LFJsonCommand.post_rm_test_mgr",
+        "rm_text_blob": "LFJsonCommand.post_rm_text_blob",
+        "rm_tgcx": "LFJsonCommand.post_rm_tgcx",
+        "rm_threshold": "LFJsonCommand.post_rm_threshold",
+        "rm_traffic_profile": "LFJsonCommand.post_rm_traffic_profile",
+        "rm_venue": "LFJsonCommand.post_rm_venue",
+        "rm_vlan": "LFJsonCommand.post_rm_vlan",
+        "rm_vr": "LFJsonCommand.post_rm_vr",
+        "rm_vrcx": "LFJsonCommand.post_rm_vrcx",
+        "rm_wanpath": "LFJsonCommand.post_rm_wanpath",
+        "rpt_script": "LFJsonCommand.post_rpt_script",
+        "scan_wifi": "LFJsonCommand.post_scan_wifi",
+        "set_arm_info": "LFJsonCommand.post_set_arm_info",
+        "set_attenuator": "LFJsonCommand.post_set_attenuator",
+        "set_chamber": "LFJsonCommand.post_set_chamber",
+        "set_cx_report_timer": "LFJsonCommand.post_set_cx_report_timer",
+        "set_cx_state": "LFJsonCommand.post_set_cx_state",
+        "set_endp_addr": "LFJsonCommand.post_set_endp_addr",
+        "set_endp_details": "LFJsonCommand.post_set_endp_details",
+        "set_endp_file": "LFJsonCommand.post_set_endp_file",
+        "set_endp_flag": "LFJsonCommand.post_set_endp_flag",
+        "set_endp_payload": "LFJsonCommand.post_set_endp_payload",
+        "set_endp_pld_bounds": "LFJsonCommand.post_set_endp_pld_bounds",
+        "set_endp_proxy": "LFJsonCommand.post_set_endp_proxy",
+        "set_endp_quiesce": "LFJsonCommand.post_set_endp_quiesce",
+        "set_endp_report_timer": "LFJsonCommand.post_set_endp_report_timer",
+        "set_endp_tos": "LFJsonCommand.post_set_endp_tos",
+        "set_endp_tx_bounds": "LFJsonCommand.post_set_endp_tx_bounds",
+        "set_event_interest": "LFJsonCommand.post_set_event_interest",
+        "set_event_priority": "LFJsonCommand.post_set_event_priority",
+        "set_fe_info": "LFJsonCommand.post_set_fe_info",
+        "set_flag": "LFJsonCommand.post_set_flag",
+        "set_gen_cmd": "LFJsonCommand.post_set_gen_cmd",
+        "set_gps_info": "LFJsonCommand.post_set_gps_info",
+        "set_ifup_script": "LFJsonCommand.post_set_ifup_script",
+        "set_l4_endp": "LFJsonCommand.post_set_l4_endp",
+        "set_license": "LFJsonCommand.post_set_license",
+        "set_mc_endp": "LFJsonCommand.post_set_mc_endp",
+        "set_password": "LFJsonCommand.post_set_password",
+        "set_poll_mode": "LFJsonCommand.post_set_poll_mode",
+        "set_port": "LFJsonCommand.post_set_port",
+        "set_port2": "LFJsonCommand.post_set_port2",
+        "set_port_alias": "LFJsonCommand.post_set_port_alias",
+        "set_ppp_link_state": "LFJsonCommand.post_set_ppp_link_state",
+        "set_resource": "LFJsonCommand.post_set_resource",
+        "set_rfgen": "LFJsonCommand.post_set_rfgen",
+        "set_script": "LFJsonCommand.post_set_script",
+        "set_sec_ip": "LFJsonCommand.post_set_sec_ip",
+        "set_test_id": "LFJsonCommand.post_set_test_id",
+        "set_voip_info": "LFJsonCommand.post_set_voip_info",
+        "set_vrcx_cost": "LFJsonCommand.post_set_vrcx_cost",
+        "set_wanlink_info": "LFJsonCommand.post_set_wanlink_info",
+        "set_wanlink_pcap": "LFJsonCommand.post_set_wanlink_pcap",
+        "set_wanpath_corruption": "LFJsonCommand.post_set_wanpath_corruption",
+        "set_wanpath_filter": "LFJsonCommand.post_set_wanpath_filter",
+        "set_wanpath_running": "LFJsonCommand.post_set_wanpath_running",
+        "set_wifi_corruptions": "LFJsonCommand.post_set_wifi_corruptions",
+        "set_wifi_custom": "LFJsonCommand.post_set_wifi_custom",
+        "set_wifi_extra": "LFJsonCommand.post_set_wifi_extra",
+        "set_wifi_extra2": "LFJsonCommand.post_set_wifi_extra2",
+        "set_wifi_radio": "LFJsonCommand.post_set_wifi_radio",
+        "set_wifi_txo": "LFJsonCommand.post_set_wifi_txo",
+        "set_wl_corruption": "LFJsonCommand.post_set_wl_corruption",
+        "set_wl_qdisc": "LFJsonCommand.post_set_wl_qdisc",
+        "show_adb": "LFJsonCommand.post_show_adb",
+        "show_alerts": "LFJsonCommand.post_show_alerts",
+        "show_attenuators": "LFJsonCommand.post_show_attenuators",
+        "show_cd": "LFJsonCommand.post_show_cd",
+        "show_chamber": "LFJsonCommand.post_show_chamber",
+        "show_channel_groups": "LFJsonCommand.post_show_channel_groups",
+        "show_clients": "LFJsonCommand.post_show_clients",
+        "show_cx": "LFJsonCommand.post_show_cx",
+        "show_cxe": "LFJsonCommand.post_show_cxe",
+        "show_dbs": "LFJsonCommand.post_show_dbs",
+        "show_dut": "LFJsonCommand.post_show_dut",
+        "show_endp_payload": "LFJsonCommand.post_show_endp_payload",
+        "show_endpoints": "LFJsonCommand.post_show_endpoints",
+        "show_err": "LFJsonCommand.post_show_err",
+        "show_event_interest": "LFJsonCommand.post_show_event_interest",
+        "show_events": "LFJsonCommand.post_show_events",
+        "show_files": "LFJsonCommand.post_show_files",
+        "show_group": "LFJsonCommand.post_show_group",
+        "show_pesq": "LFJsonCommand.post_show_pesq",
+        "show_ports": "LFJsonCommand.post_show_ports",
+        "show_ppp_links": "LFJsonCommand.post_show_ppp_links",
+        "show_profile": "LFJsonCommand.post_show_profile",
+        "show_resources": "LFJsonCommand.post_show_resources",
+        "show_rfgen": "LFJsonCommand.post_show_rfgen",
+        "show_rt": "LFJsonCommand.post_show_rt",
+        "show_script_results": "LFJsonCommand.post_show_script_results",
+        "show_spans": "LFJsonCommand.post_show_spans",
+        "show_text_blob": "LFJsonCommand.post_show_text_blob",
+        "show_tm": "LFJsonCommand.post_show_tm",
+        "show_traffic_profile": "LFJsonCommand.post_show_traffic_profile",
+        "show_venue": "LFJsonCommand.post_show_venue",
+        "show_vr": "LFJsonCommand.post_show_vr",
+        "show_vrcx": "LFJsonCommand.post_show_vrcx",
+        "show_wanpaths": "LFJsonCommand.post_show_wanpaths",
+        "shutdown": "LFJsonCommand.post_shutdown",
+        "shutdown_os": "LFJsonCommand.post_shutdown_os",
+        "shutdown_resource": "LFJsonCommand.post_shutdown_resource",
+        "sniff_port": "LFJsonCommand.post_sniff_port",
+        "start_endp": "LFJsonCommand.post_start_endp",
+        "start_group": "LFJsonCommand.post_start_group",
+        "start_ppp_link": "LFJsonCommand.post_start_ppp_link",
+        "stop_endp": "LFJsonCommand.post_stop_endp",
+        "stop_group": "LFJsonCommand.post_stop_group",
+        "stop_ppp_link": "LFJsonCommand.post_stop_ppp_link",
+        "tail": "LFJsonCommand.post_tail",
+        "tm_register": "LFJsonCommand.post_tm_register",
+        "tm_unregister": "LFJsonCommand.post_tm_unregister",
+        "version": "LFJsonCommand.post_version",
+        "who": "LFJsonCommand.post_who",
+        "wifi_cli_cmd": "LFJsonCommand.post_wifi_cli_cmd",
+        "wifi_event": "LFJsonCommand.post_wifi_event",
+        "wiser_reset": "LFJsonCommand.post_wiser_reset",
+        "write": "LFJsonCommand.post_write",
+        "/adb": "LFJsonQuery.get_adb",
+        "/alerts": "LFJsonQuery.get_alerts",
+        "/arm": "LFJsonQuery.get_arm",
+        "/arm-endp": "LFJsonQuery.get_arm_endp",
+        "/attenuator": "LFJsonQuery.get_attenuator",
+        "/chamber": "LFJsonQuery.get_chamber",
+        "/control": "LFJsonQuery.get_control",
+        "/cx": "LFJsonQuery.get_cx",
+        "/dut": "LFJsonQuery.get_dut",
+        "/endp": "LFJsonQuery.get_endp",
+        "/endsession": "LFJsonQuery.get_endsession",
+        "/events": "LFJsonQuery.get_events",
+        "/fileio": "LFJsonQuery.get_fileio",
+        "/generic": "LFJsonQuery.get_generic",
+        "/gui-cli": "LFJsonQuery.get_gui_cli",
+        "/layer4": "LFJsonQuery.get_layer4",
+        "/newsession": "LFJsonQuery.get_newsession",
+        "/port": "LFJsonQuery.get_port",
+        "/probe": "LFJsonQuery.get_probe",
+        "/profile": "LFJsonQuery.get_profile",
+        "/profiles": "LFJsonQuery.get_profiles",
+        "/quit": "LFJsonQuery.get_quit",
+        "/radiostatus": "LFJsonQuery.get_radiostatus",
+        "/resource": "LFJsonQuery.get_resource",
+        "/scan": "LFJsonQuery.get_scan",
+        "/stations": "LFJsonQuery.get_stations",
+        "/status-msg": "LFJsonQuery.get_status_msg",
+        "/test-group": "LFJsonQuery.get_test_group",
+        "/text": "LFJsonQuery.get_text",
+        "/voip": "LFJsonQuery.get_voip",
+        "/voip-endp": "LFJsonQuery.get_voip_endp",
+        "/vr": "LFJsonQuery.get_vr",
+        "/vrcx": "LFJsonQuery.get_vrcx",
+        "/wifi-msg": "LFJsonQuery.get_wifi_msg",
+        "/wifi-stats": "LFJsonQuery.get_wifi_stats",
+        "/wl": "LFJsonQuery.get_wl",
+        "/wl-endp": "LFJsonQuery.get_wl_endp",
+        "/ws-msg": "LFJsonQuery.get_ws_msg",
+        }
