@@ -18,6 +18,7 @@ This method of executing CLI commands does NOT report errors presently.
 TO DO NOTES:
 
 """
+import logging
 import os
 import sys
 import time
@@ -50,11 +51,15 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='tests creating raw command')
     parser.add_argument("--host", "--mgr", help='specify the GUI to connect to, assumes port 8080')
-    parser.add_argument("--cmd", help='raw cli command to test')
-    parser.add_argument("--debug", help='turn on debugging', action="store_true")
+
+    parser.add_argument("--raw", help='full CLI command to execute, including all arguments')
+    parser.add_argument("--cmd", help='CLI command, where arguments to the command are provided using --arg parameters')
+    parser.add_argument("--arg", action='append', nargs='+',
+                        help='paramets with value, eg: --arg "alias bartleby" --arg "max-txbps 1000000" ')
+    parser.add_argument("--debug", "-d", help='turn on debugging', action="store_true")
 
     args = parser.parse_args()
-
+    #print( dir(args))
     if not args.cmd:
         print("No CLI command provided")
         exit(1)
@@ -71,27 +76,62 @@ def main():
     query: LFJsonQuery
     query = session.get_query()
 
-    session.logger.enable(reserved_tag="json_get")
-    session.logger.enable(reserved_tag="json_post")
-
     txt_cmd = args.cmd
-    if (not args.cmd) or (args.cmd == "saved01"):
-        txt_cmd = "takes a village to ruin \"a\" ''stuffy''"
+    if args.raw:
+        if args.arg:
+            raise ValueError("do not use --args with --raw");
+        if not (" " in args.raw):
+            logging.info("Unlikely use of --raw argument without spaces")
+        txt_cmd = args.raw
+        data={
+            "cmd": txt_cmd
+        };
+        command.json_post(url="/cli-json/raw",
+                          post_data=data,
+                          debug=args.debug,
+                          suppress_related_commands=True)
 
-    # Is it possible that the post_add_text_blob can detect any kind of \r \n combo and
-    # split it up into lines, multiplying the command?
+        command.json_post_raw(post_data=data,
+                              debug=args.debug,
+                              suppress_related_commands=True)
+        exit(0)
+    if not args.cmd:
+        raise ValueError("--cmd required, please use a CLI command, followed by --args 'parameter value' as necessary")
 
-    # command.post_rm_adb(shelf=1, resource=1, adb_id=args.id, debug=args.debug, suppress_related_commands=True)
-    data={
-        "cmd": txt_cmd
-    };
-    command.json_post(url="/cli-json/raw", post_data=data, debug=args.debug, suppress_related_commands=True)
+    if not args.arg:
+        raise ValueError("There appear to be no --arg parameters provided.")
 
-    print("Next, using command.json_post_raw")
+    # look up the cmd from the session method_map
+    if not (args.cmd in session.method_map):
+        print(f"Unable to find cmd[{args.cmd}] in method_map:\n")
+        print("    method_map keys:")
+        for key in list(session.method_map.keys()).sort():
+            print(f"        {key}")
+        exit(1)
+    method_name = session.method_map[args.cmd];
+    print(f"cmd[{args.cmd}] could be processed: [{method_name}]")
+    # compose the dict of args to pass into the eval
+    #print( f"typeof args.arg:{type(args.arg)}")
+    cli_data_params : dict = {}
+    for parameter in args.arg:
+        k_v : list = []
+        if isinstance(parameter, list):
+            print("    *LIST*")
+            k_v = (parameter)
+        elif isinstance(parameter, str):
+            print("    *STR*")
+            k_v = parameter.split(' ', 1)
+        else:
+            raise ValueError("Unable to handle value of 'parameter' from args.arg")
+        pprint.pprint(["k_v", k_v, "parameter", parameter])
+        #cli_data_params[k_v[0]] = k_v[1]
 
-    command.json_post_raw(post_data=data, debug=args.debug, suppress_related_commands=True)
+    pprint.pprint(["CliDataPrams", cli_data_params])
+    print(f"""
+    Next we do something like this:
+    eval({method_name}, (data={args.arg})
+    """)
 
-    #localrealm =
 
 if __name__ == "__main__":
     main()
