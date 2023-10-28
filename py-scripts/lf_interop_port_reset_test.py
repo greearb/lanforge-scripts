@@ -3,38 +3,33 @@
 NAME: lf_interop_port_reset_test.py
 
 PURPOSE:
-         The LANforge interop port reset test enables users to use numerous real Wi-Fi stations and connect them to the
-         Access Point (AP) being tested. It then randomly disconnects and reconnects a variable number of stations at
+         The LANforge interop port reset test enables users to use real Wi-Fi stations and connect them to the
+         Access Point (AP) being tested. It then disconnects and reconnects a given number of stations at
          different time intervals. This test helps evaluate how well the AP handles a dynamic and busy network environment
          with devices joining and leaving the network at random times.
 
 EXAMPLE:
-        # To run port-reset test on all active devices with specified number of WIFI resets.
+        # To run port-reset test on specified real devices (android, laptops)
 
-            ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.156  --dut TestDut --ssid Netgear5g
-            --passwd lanforge --encryp psk2 --reset 5 --time_int 5 --wait_time 5 --release 11
+            ./lf_interop_port_reset_test.py --host 192.168.200.192 --mgr_ip 192.168.1.161 --dut TestDut --ssid OpenWifi
+            --passwd OpenWifi --encryp psk2 --reset 10 --time_int 5 --wait_time 5 --release 11
 
-        # To run port-reset test on specified number of devices with specified number of WIFI resets.
-
-            ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.156  --dut TestDut --ssid Netgear5g
-            --passwd lanforge --encryp psk2 --reset 2 --time_int 5 --wait_time 5 --release 11 --clients 1
-
-SCRIPT_CLASSIFICATION:  Toggling, Report Generation
+SCRIPT_CLASSIFICATION:  Toggling, Report Generation, Each Reset Wifi Messages
 
 SCRIPT_CATEGORIES: Interop Port-Reset Test
 
 NOTES:
-       The primary objective of this script is to automate the process of toggling WiFi on real devices with the
-      InterOp Application, evaluating their performance with an access point. It achieves this by simulating multiple
-      WiFi resets as specified by the user.
+        The primary objective of this script is to automate the process of toggling WiFi on real devices with the
+       InterOp Application, evaluating their performance with an access point. It achieves this by simulating multiple
+       WiFi resets as specified by the user.
 
-      * Currently the script will work for the android devices with version 11.
+      * Currently the script will work for the REAL CLIENTS (android with version 11+, laptop devices).
 
 STATUS: Functional
 
-VERIFIED_ON:   23-AUG-2023,
-             GUI Version:  5.4.6
-             Kernel Version: 5.19.17+
+VERIFIED_ON:   28-OCT-2023,
+             GUI Version:  5.4.7
+             Kernel Version: 6.2.16+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
@@ -1146,38 +1141,33 @@ def main():
 NAME: lf_interop_port_reset_test.py
 
 PURPOSE:
-         The LANforge interop port reset test enables users to use numerous real Wi-Fi stations and connect them to the 
-         Access Point (AP) being tested. It then randomly disconnects and reconnects a variable number of stations at 
+         The LANforge interop port reset test enables users to use real Wi-Fi stations and connect them to the 
+         Access Point (AP) being tested. It then disconnects and reconnects a given number of stations at 
          different time intervals. This test helps evaluate how well the AP handles a dynamic and busy network environment 
          with devices joining and leaving the network at random times.
 
 EXAMPLE:
-        # To run port-reset test on all active devices with specified number of WIFI resets.
+        # To run port-reset test on specified real devices (android, laptops)
 
-            ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.156  --dut TestDut --ssid Netgear5g
-            --passwd lanforge --encryp psk2 --reset 5 --time_int 5 --wait_time 10 --release 11
+            ./lf_interop_port_reset_test.py --host 192.168.200.192 --mgr_ip 192.168.1.161 --dut TestDut --ssid OpenWifi 
+            --passwd OpenWifi --encryp psk2 --reset 10 --time_int 5 --wait_time 5 --release 11
 
-        # To run port-reset test on specified number of devices with specified number of WIFI resets.
-
-            ./lf_interop_port_reset_test.py --host 192.168.200.83 --mgr_ip 192.168.200.156  --dut TestDut --ssid Netgear5g
-            --passwd lanforge --encryp psk2 --reset 2 --time_int 5 --wait_time 10 --release 11 12 --clients 1
-
-SCRIPT_CLASSIFICATION:  Toggling, Report Generation
+SCRIPT_CLASSIFICATION:  Toggling, Report Generation, Each Reset Wifi Messages
 
 SCRIPT_CATEGORIES: Interop Port-Reset Test
 
 NOTES:      
-       The primary objective of this script is to automate the process of toggling WiFi on real devices with the
-      InterOp Application, evaluating their performance with an access point. It achieves this by simulating multiple
-      WiFi resets as specified by the user.
+        The primary objective of this script is to automate the process of toggling WiFi on real devices with the
+       InterOp Application, evaluating their performance with an access point. It achieves this by simulating multiple
+       WiFi resets as specified by the user.
      
-      * Currently the script will work for the android devices with version 11.
+      * Currently the script will work for the REAL CLIENTS (android with version 11+, laptop devices).
  
 STATUS: Functional
 
-VERIFIED_ON:   23-AUG-2023,
-             GUI Version:  5.4.6
-             Kernel Version: 5.19.17+
+VERIFIED_ON:   28-OCT-2023,
+             GUI Version:  5.4.7
+             Kernel Version: 6.2.16+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
