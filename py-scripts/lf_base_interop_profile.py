@@ -65,6 +65,7 @@ class BaseInteropWifi(Realm):
         self.screen_size_prcnt = screen_size_prcnt
         self.supported_sdk = ["11", "12", "13"]
         self.supported_devices_names = []
+        self.supported_devices_resource_id = None
         self.log_dur = log_dur
         self.log_destination = log_destination
         self.session = LFSession(lfclient_url=self.manager_ip,
@@ -85,22 +86,22 @@ class BaseInteropWifi(Realm):
         stdout, stderr = process.communicate()
         output = (stdout.decode("utf-8"))
         out = json.loads(output)
-        # print(out)
         final = out["devices"]
-        value = []
+        value, resource_id = [], {}
         if type(final) == list:
-            # print(len(final))
             keys_lst = []
             for i in range(len(final)):
                 keys_lst.append(list(final[i].keys())[0])
-            # print(keys_lst)
             for i, j in zip(range(len(keys_lst)), keys_lst):
                 value.append(final[i][j]["name"])
+                resource_id[final[i][j]["resource-id"]] = final[i][j]["name"]
         else:
             #  only one device is present
             value.append(final["name"])
+            resource_id[final["resource-id"]] = final["name"]
         self.supported_devices_names = value
-        print("List of all Available Devices Serial Numbers in Interop Tab:", self.supported_devices_names)
+        self.supported_devices_resource_id = resource_id
+        logging.info("List of all Available Devices Serial Numbers in Interop Tab:".format(self.supported_devices_names))
         logging.info(self.supported_devices_names)
 
     def get_device_details(self, query="name", device="1.1.RZ8N70TVABP"):
@@ -113,16 +114,12 @@ class BaseInteropWifi(Realm):
         output = (stdout.decode("utf-8"))
         out = json.loads(output)
         final = out["devices"]
-        # print("response", final)
         if type(final) == list:
-            # print(len(final))
             keys_lst = []
             for i in range(len(final)):
                 keys_lst.append(list(final[i].keys())[0])
-            # print(keys_lst)
             for i, j in zip(range(len(keys_lst)), keys_lst):
                 if j == device:
-                    # print("Getting " + str(query) + " details for " + str(device) + " device.")
                     logging.info("Getting " + str(query) + " details for " + str(device) + " device.")
                     value = final[i][j][query]
         else:
@@ -130,38 +127,73 @@ class BaseInteropWifi(Realm):
             value = final[query]
         return value
 
+    def get_laptop_devices_details(self, query, device):
+        lf_query_resource = self.json_get("/resource/all")
+        keys = list(lf_query_resource.keys())
+        if "resources" in keys:
+            res = lf_query_resource["resources"]
+            if type(res) is list:
+                sec_key = []
+                for i in res:
+                    sec_key.append(list(i.keys()))
+                new_list = []
+                for z in sec_key:
+                    for y in z:
+                        new_list.append(y)
+                loc_dict = dict.fromkeys(new_list)
+                for i in loc_dict:
+                    lst = ["host_name", "hw_version"] # you can add the keys to the loc_dict if you want in feature.
+                    loc_dict[i] = dict.fromkeys(lst)
+                for n, m in zip(range(len(new_list)), new_list):
+                    loc_dict[m]['host_name'] = res[n][m]['hostname']
+                    loc_dict[m]['hw_version'] = res[n][m]['hw version']
+                value = ""
+                for i in loc_dict:
+                    if i + "." in device:
+                        value = loc_dict[i][query]
+                return value
+        else:
+            logging.info("No resources present")
+
     # check list of adb devices are in phantom state or not if not return list of active devices
     def check_phantom(self):
         active_device = []
         for i in self.supported_devices_names:
             phantom = self.get_device_details(query="phantom", device=i)
             if not phantom:
-                print("Device " + str(i) + " is active")
+                logging.info("Device " + str(i) + " is active")
                 logging.info("Device " + str(i) + " is active")
                 active_device.append(i)
             else:
-                print("Device " + str(i) + " is in phantom state")
+                logging.info("Device " + str(i) + " is in phantom state")
                 logging.info("Device " + str(i) + " is in phantom state")
         self.supported_devices_names = active_device
         return self.supported_devices_names
 
     # check if active devices are of expected release and return list of devices
-    def check_sdk_release(self):
-        devices = self.check_phantom()
+    def check_sdk_release(self, selected_android_devices=None):
+        if selected_android_devices is None:
+            selected_android_devices = []
+        if selected_android_devices:
+            devices = selected_android_devices
+        elif not selected_android_devices:
+            devices = []
+        else:
+            devices = self.check_phantom()  # will take the available devices list
         rel_dev = []
-        print("Active Device list:", devices)
+        logging.info(f"Active Device list: {devices}")
         for i in devices:
             release_ver = self.get_device_details(query="release", device=i)
             for j in self.release:
                 if release_ver == j:
                     # check if the release is supported in supported sdk  version
                     if release_ver in self.supported_sdk:
-                        print("The Device " + str(
+                        logging.info("The Device " + str(
                             i) + " has " + j + " sdk release, which is in available sdk versions list: %s" % self.supported_sdk)
                         # logging.info("device " + str(i) + " has " + j + " sdk release")
                         rel_dev.append(i)
                 else:
-                    print("The Device " + str(
+                    logging.info("The Device " + str(
                         i) + " has different sdk release, which is not in available sdk versions list: %s" % self.supported_sdk)
                     # logging.info("Device " + str(i) + " has different sdk release")
         self.supported_devices_names = rel_dev
@@ -171,7 +203,6 @@ class BaseInteropWifi(Realm):
     def launch_interop_ui(self, device=None):
         if device is None:
             devices = self.check_sdk_release()
-            print(devices)
             logging.info(devices)
         else:
             devices = [device]
@@ -213,7 +244,6 @@ class BaseInteropWifi(Realm):
     def enable_or_disable_wifi(self, wifi=None, device=None):
         if device is None:
             devices = self.check_sdk_release()
-            print(devices)
             logging.info(devices)
         else:
             devices = [device]
@@ -222,18 +252,16 @@ class BaseInteropWifi(Realm):
             raise ValueError("wifi arg value must either be enable or disable")
         cmd = "shell svc wifi " + wifi
         for i in devices:
-            print(wifi + " wifi for " + i)
-            logging.info(wifi + " wifi  " + i)
+            logging.info(wifi + " wifi for " + i)
             self.post_adb_(device=i, cmd=cmd)
 
     # set username
     def set_user_name(self, device=None, user_name=None):
-        print("Name of the device:", device)
+        logging.info(f"Name of the device: {device}")
         logging.info("device " + str(device))
         user_name_ = []
         if device is None:
             devices = self.check_sdk_release()
-            print(devices)
             logging.info(devices)
         else:
             if type(device) is list:
@@ -246,13 +274,12 @@ class BaseInteropWifi(Realm):
                     # print(user_name)
                     logging.info(user_name)
                     user_name_.append(user_name)
-                print("Modified adb device user-name:", user_name)
+                logging.info(f"Modified adb device user-name: {user_name}")
                 logging.info(user_name)
             else:
                 user_name_.append(user_name)
-        print("Available Devices List:", devices)
-        logging.info("devices " + str(devices))
-        print("Modified USER-NAME List:", user_name_)
+        logging.info(f"Available Devices List: {devices}")
+        logging.info(f"Modified USER-NAME List: {user_name_}")
         logging.info(user_name_)
 
         for i, x in zip(devices, range(len(devices))):
@@ -274,7 +301,6 @@ class BaseInteropWifi(Realm):
             mgr_ip = manager_ip
         if device is None:
             devices = self.check_sdk_release()
-            print(devices)
             logging.info(devices)
             self.set_user_name()
         else:
@@ -311,7 +337,6 @@ class BaseInteropWifi(Realm):
     def start(self, device=None):
         if device is None:
             devices = self.check_sdk_release()
-            print(devices)
             logging.info(devices)
         else:
             devices = [device]
@@ -323,7 +348,6 @@ class BaseInteropWifi(Realm):
     def stop(self, device=None):
         if device is None:
             devices = self.check_sdk_release()
-            print(devices)
             logging.info(devices)
         else:
             devices = [device]
@@ -335,7 +359,6 @@ class BaseInteropWifi(Realm):
     def scan_results(self, device=None):
         if device is None:
             devices = self.check_sdk_release()
-            print(devices)
             logging.info(devices)
         else:
             devices = [device]
@@ -352,15 +375,14 @@ class BaseInteropWifi(Realm):
 
     def clean_phantom_resources(self):
         lf_query_resource = self.json_get("/resource/all")
-        print(lf_query_resource)
-        print("\n Now validating Resource manager ports \n")
+        logging.info("\n Now validating Resource manager ports \n")
         if 'resources' in list(lf_query_resource):
             for i in range(len(list(lf_query_resource['resources']))):
                 id = (list(list(lf_query_resource['resources'])[i])[0])
                 resource = list(lf_query_resource['resources'])[i].get(id)["phantom"]
-                print('The', id, 'port is in PHANTOM:-', resource)
+                logging.info(f"The {id} port is in PHANTOM:- {resource}")
                 while resource:
-                    print('Deleting the resource', id)
+                    logging.info('Deleting the resource', id)
                     info = id.split('.')
                     req_url = "cli-json/rm_resource"
                     data = {
@@ -370,17 +392,15 @@ class BaseInteropWifi(Realm):
                     self.json_post(req_url, data)
                     break
         else:
-            print("No phantom resources")
+            logging.info("No phantom resources")
 
         lf_query_resource = self.json_get("/resource/all")
-        print(lf_query_resource)
         # time.sleep(1)
 
     # get eid username and phantom state of resources from resource manager
     # output {'1.1': {'user_name': '', 'phantom': False}, '1.16': {'user_name': 'device_0', 'phantom': True}}
     def get_resource_id_phantom_user_name(self):
         lf_query_resource = self.json_get("/resource/all")
-        print(lf_query_resource)
         keys = list(lf_query_resource.keys())
         if "resources" in keys:
             res = lf_query_resource["resources"]
@@ -399,10 +419,9 @@ class BaseInteropWifi(Realm):
                 for n, m in zip(range(len(new_list)), new_list):
                     loc_dict[m]['user_name'] = res[n][m]['user']
                     loc_dict[m]['phantom'] = res[n][m]['phantom']
-                print(loc_dict)
                 return loc_dict
         else:
-            print("No resources present")
+            logging.info("No resources present")
 
     def get_mac_address_from_port_mgr(self, eid="1.16.wlan0"):
         resources = self.json_get("port/all")
@@ -418,10 +437,9 @@ class BaseInteropWifi(Realm):
             for i,z in zip(range(len(new_keys)), new_keys):
                 if z == eid:
                     mac = resources['interfaces'][i][z]['ap']
-                    print(mac)
                     return mac
         else:
-            print("interfaces is not present")
+            logging.info("interfaces is not present")
         # print(resources["interfaces"].key())
 
     def get_log_batch_modify(self, device=None):
@@ -431,8 +449,7 @@ class BaseInteropWifi(Realm):
                 raise ValueError("adb log capture requires log_destination")
         user_key = self.session.get_session_based_key()
         if self.debug:
-            print("====== ====== destination [%s] dur[%s] user_key[%s] " %
-                  (self.log_destination, self.log_dur, user_key))
+            logging.info("Destination [%s] dur[%s] user_key[%s] " % (self.log_destination, self.log_dur, user_key))
             # self.session.logger.register_method_name("json_post")
         json_response = []
         self.command.post_log_capture(shelf=eid[0],
@@ -444,7 +461,6 @@ class BaseInteropWifi(Realm):
                                       user_key=self.session.get_session_based_key(),
                                       response_json_list=json_response,
                                       debug=True)
-        print(json_response)
 
 
 
@@ -471,7 +487,6 @@ class UtilityInteropWifi(BaseInteropWifi):
             state = st
 
         else:
-            print("state is not present")
             logging.info("state is not present")
             state = "NA"
         return state
@@ -494,7 +509,6 @@ class UtilityInteropWifi(BaseInteropWifi):
             logging.info("ssid " + ssid_2)
             ssid = ssid_2
         else:
-            print("ssid is not present")
             logging.info("ssid is not present")
             ssid = "NA"
         return ssid
@@ -514,36 +528,30 @@ class UtilityInteropWifi(BaseInteropWifi):
             ind = z.index('"' + ssid + '"' + "\n")
             # print(z[271])
             m = z[ind:]
-            print(m)
             logging.info(m)
             if "ConnectAttempt:" in m:
                 connect_ind = m.index("ConnectAttempt:")
                 connect_attempt = m[connect_ind + 1]
-                print("connection attempts", connect_attempt)
                 logging.info("connection attempts " + connect_attempt)
                 return_dict["ConnectAttempt"] = connect_attempt
             if 'ConnectFailure:' in m:
                 connect_fail_ind = m.index('ConnectFailure:')
                 connect_failure = m[connect_fail_ind + 1]
-                print("connection failure ", connect_failure)
                 logging.info("connection failure " + connect_failure)
                 return_dict["ConnectFailure"] = connect_failure
             if 'AssocRej:' in m:
                 ass_rej_ind = m.index('AssocRej:')
                 assocrej = m[ass_rej_ind + 1]
-                print("association rejection ", assocrej)
                 logging.info("association rejection " + assocrej)
                 return_dict["AssocRej"] = assocrej
             if 'AssocTimeout:' in m:
                 ass_ind = m.index('AssocTimeout:')
                 asso_timeout = m[ass_ind + 1]
-                print("association timeout ", asso_timeout)
                 logging.info("association timeout " +  asso_timeout)
                 return_dict["AssocTimeout"] = asso_timeout
         else:
-            print(f"Given {ssid} ssid is not present in the 'ConnectAttempt', 'ConnectFailure', 'AssocRej', 'AssocTimeout' States")
+            logging.info(f"Given {ssid} ssid is not present in the 'ConnectAttempt', 'ConnectFailure', 'AssocRej', 'AssocTimeout' States")
             logging.info("ssid is not present")
-        # print(return_dict)
         return return_dict
 
     # forget network based on the network id
@@ -554,7 +562,7 @@ class UtilityInteropWifi(BaseInteropWifi):
         else:
             network_id = network_id
         for ntwk_id in network_id:
-            print(f"Forgetting network for {device} with network id : {ntwk_id}")
+            logging.info(f"Forgetting network for {device} with network id : {ntwk_id}")
             cmd = f"-s {separating_device_name[2]} shell cmd -w wifi forget-network " + ntwk_id
             # print("CMD", cmd)
             self.post_adb_(device=device, cmd=cmd)
@@ -575,7 +583,7 @@ class UtilityInteropWifi(BaseInteropWifi):
         else:
             values = resp[0]['LAST']['callback_message'].split('\n')[1:]
             # print("The Saved Profiles List:", values)
-            print("Number of saved profiles:", len(values))
+            print(f"Number of saved profiles:  {len(values)}")
             network_ids, saved_ssid, saved_security = [], [], []
             for i in range(len(values)):
                 network_info = values[i].split()
@@ -608,6 +616,10 @@ class RealDevice(Realm):
         self.selected_devices = []
         self.selected_macs = []
         self.report_labels = []
+        self.windows_list = []
+        self.linux_list = []
+        self.mac_list = []
+        self.android_list = []
         self.android = 0
         self.linux = 0
         self.windows = 0
@@ -731,12 +743,16 @@ class RealDevice(Realm):
                     self.report_labels.append('{} {} {}'.format(selected_device, [ 'Win' if 'Win' in self.devices_data[device]['hw version'] else 'Lin' if 'Lin' in self.devices_data[device]['hw version'] else 'Mac' if 'Mac' in self.devices_data[device]['hw version'] else 'android'][0], [ self.devices_data[device]['user'] if self.devices_data[device]['user'] != '' else self.devices_data[device]['hostname'] ][0])[:25])
                     if('Win' in 'Win' in self.devices_data[device]['hw version']):
                         self.windows += 1
+                        self.windows_list.append(device)
                     elif('Lin' in 'Lin' in self.devices_data[device]['hw version']):
                         self.linux += 1
+                        self.linux_list.append(device)
                     elif('Apple' in self.devices_data[device]['hw version']):
                         self.mac += 1
+                        self.mac_list.append(device)
                     else:
                         self.android += 1
+                        self.android_list.append(device)
         df = pd.DataFrame(data=selected_t_devices).transpose()
         print(df)
         return [self.selected_devices, self.report_labels, self.selected_macs]
