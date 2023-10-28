@@ -71,7 +71,7 @@
                 "command":"./tools/lf_inspect.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 0,1"
                 ]
             }
         },
@@ -140,7 +140,7 @@
                 "command":"./tools/lf_inspect.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 0,1"
                 ]
             }
         },
@@ -209,7 +209,7 @@
                 "command":"./tools/lf_inspect.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 0,1"
                 ]
             }
         },
@@ -278,7 +278,7 @@
                 "command":"./tools/lf_inspect.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 0,1"
                 ]
             }
         },
@@ -347,7 +347,7 @@
                 "command":"./tools/lf_inspect.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 0,1"
                 ]
             }
         },
@@ -416,7 +416,7 @@
                 "command":"./tools/lf_inspect.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 0,1"
                 ]
             }
         },
@@ -485,7 +485,7 @@
                 "command":"./tools/lf_inspect.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 0,1"
                 ]
             }
         },
@@ -554,7 +554,7 @@
                 "command":"./tools/lf_inspect.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 0,1"
                 ]
             }
         },
