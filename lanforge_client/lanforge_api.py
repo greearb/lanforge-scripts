@@ -72,6 +72,8 @@
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 import os.path
 import sys
+from pprint import pprint
+from pprint import pformat
 from urllib.parse import urlparse, ParseResult
 
 if sys.version_info[0] != 3:
@@ -1440,7 +1442,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/adb",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -1449,7 +1451,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_adb_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -1502,7 +1503,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/adb_bt",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -1511,7 +1512,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_adb_bt_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -1593,7 +1593,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/adb_gui",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -1602,7 +1602,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_adb_gui_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -1665,7 +1664,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/adb_timeout",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -1674,7 +1673,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_adb_timeout_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -1728,7 +1726,7 @@ class LFJsonCommand(JsonCommand):
         if status2 is not None:
             data["status2"] = status2
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/adb_wifi_event",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -1737,7 +1735,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_adb_wifi_event_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -1811,7 +1808,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_adb",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -1820,7 +1817,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_adb_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -1896,7 +1892,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_arm_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -1905,7 +1901,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_arm_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2008,7 +2003,7 @@ class LFJsonCommand(JsonCommand):
         if vr_id is not None:
             data["vr_id"] = vr_id
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_bgp_peer",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -2017,7 +2012,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_bgp_peer_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2075,7 +2069,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_bond",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -2084,7 +2078,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_bond_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2160,7 +2153,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_br",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -2169,7 +2162,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_br_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2246,7 +2238,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_cd",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -2255,7 +2247,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_cd_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2302,7 +2293,7 @@ class LFJsonCommand(JsonCommand):
         if endp is not None:
             data["endp"] = endp
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_cd_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -2311,7 +2302,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_cd_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2352,7 +2342,7 @@ class LFJsonCommand(JsonCommand):
         if vr is not None:
             data["vr"] = vr
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_cd_vr",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -2361,7 +2351,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_cd_vr_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2501,7 +2490,7 @@ class LFJsonCommand(JsonCommand):
         if y is not None:
             data["y"] = y
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_chamber",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -2510,7 +2499,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_chamber_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2614,7 +2602,7 @@ class LFJsonCommand(JsonCommand):
         if zrssi5 is not None:
             data["zrssi5"] = zrssi5
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_chamber_cx",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -2623,7 +2611,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_chamber_cx_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2678,7 +2665,7 @@ class LFJsonCommand(JsonCommand):
         if path is not None:
             data["path"] = path
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_chamber_path",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -2687,7 +2674,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_chamber_path_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2770,7 +2756,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_channel_group",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -2779,7 +2765,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_channel_group_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2832,7 +2817,7 @@ class LFJsonCommand(JsonCommand):
         if tx_endp is not None:
             data["tx_endp"] = tx_endp
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_cx",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -2841,7 +2826,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_cx_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -2996,7 +2980,7 @@ class LFJsonCommand(JsonCommand):
         if wan_port is not None:
             data["wan_port"] = wan_port
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_dut",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -3005,7 +2989,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_dut_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -3074,7 +3057,7 @@ class LFJsonCommand(JsonCommand):
         if text is not None:
             data["text"] = text
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_dut_notes",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -3083,7 +3066,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_dut_notes_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -3165,7 +3147,7 @@ class LFJsonCommand(JsonCommand):
         if ssid_idx is not None:
             data["ssid_idx"] = ssid_idx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_dut_ssid",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -3174,7 +3156,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_dut_ssid_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -3307,7 +3288,7 @@ class LFJsonCommand(JsonCommand):
         if use_checksum is not None:
             data["use_checksum"] = use_checksum
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -3316,7 +3297,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -3380,7 +3360,7 @@ class LFJsonCommand(JsonCommand):
         if priority is not None:
             data["priority"] = priority
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_event",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -3389,7 +3369,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_event_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -3557,7 +3536,7 @@ class LFJsonCommand(JsonCommand):
         if volume is not None:
             data["volume"] = volume
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_file_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -3566,7 +3545,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_file_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -3632,7 +3610,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_gen_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -3641,7 +3619,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_gen_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -3699,7 +3676,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_gre",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -3708,7 +3685,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_gre_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -3778,7 +3754,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_group",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -3787,7 +3763,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_group_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -3972,7 +3947,7 @@ class LFJsonCommand(JsonCommand):
         if user_agent is not None:
             data["user_agent"] = user_agent
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_l4_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -3981,7 +3956,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_l4_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -4084,7 +4058,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_monitor",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -4093,7 +4067,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_monitor_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -4162,7 +4135,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_mvlan",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -4171,7 +4144,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_mvlan_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -4284,7 +4256,7 @@ class LFJsonCommand(JsonCommand):
         if unit is not None:
             data["unit"] = unit
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_ppp_link",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -4293,7 +4265,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_ppp_link_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -4472,7 +4443,7 @@ class LFJsonCommand(JsonCommand):
         if wifi_mode is not None:
             data["wifi_mode"] = wifi_mode
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_profile",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -4481,7 +4452,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_profile_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -4538,7 +4508,7 @@ class LFJsonCommand(JsonCommand):
         if text is not None:
             data["text"] = text
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_profile_notes",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -4547,7 +4517,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_profile_notes_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -4598,7 +4567,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_rdd",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -4607,7 +4576,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_rdd_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -4658,7 +4626,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_sec_ip",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -4667,7 +4635,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_sec_ip_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -4885,7 +4852,7 @@ class LFJsonCommand(JsonCommand):
         if z_coord is not None:
             data["z_coord"] = z_coord
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_sta",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -4894,7 +4861,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_sta_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -5013,7 +4979,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_t1_span",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -5022,7 +4988,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_t1_span_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -5080,7 +5045,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_text_blob",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -5089,7 +5054,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_text_blob_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -5131,7 +5095,7 @@ class LFJsonCommand(JsonCommand):
         if tgname is not None:
             data["tgname"] = tgname
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_tgcx",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -5140,7 +5104,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_tgcx_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -5213,7 +5176,7 @@ class LFJsonCommand(JsonCommand):
         if thresh_type is not None:
             data["thresh_type"] = thresh_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_threshold",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -5222,7 +5185,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_threshold_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -5264,7 +5226,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_tm",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -5273,7 +5235,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_tm_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -5372,7 +5333,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_traffic_profile",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -5381,7 +5342,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_traffic_profile_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -5432,7 +5392,7 @@ class LFJsonCommand(JsonCommand):
         if text is not None:
             data["text"] = text
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_traffic_profile_notes",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -5441,7 +5401,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_traffic_profile_notes_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -5625,7 +5584,7 @@ class LFJsonCommand(JsonCommand):
         if z_coord is not None:
             data["z_coord"] = z_coord
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vap",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -5634,7 +5593,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_vap_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -5787,7 +5745,7 @@ class LFJsonCommand(JsonCommand):
         if y2 is not None:
             data["y2"] = y2
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_venue",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -5796,7 +5754,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_venue_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -5859,7 +5816,7 @@ class LFJsonCommand(JsonCommand):
         if vid is not None:
             data["vid"] = vid
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vlan",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -5868,7 +5825,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_vlan_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -5968,7 +5924,7 @@ class LFJsonCommand(JsonCommand):
         if vad_timer is not None:
             data["vad_timer"] = vad_timer
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_voip_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -5977,7 +5933,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_voip_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -6091,7 +6046,7 @@ class LFJsonCommand(JsonCommand):
         if y is not None:
             data["y"] = y
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vr",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -6100,7 +6055,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_vr_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -6205,7 +6159,7 @@ class LFJsonCommand(JsonCommand):
         if vr_id is not None:
             data["vr_id"] = vr_id
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vr_bgp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -6214,7 +6168,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_vr_bgp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -6391,7 +6344,7 @@ class LFJsonCommand(JsonCommand):
         if y is not None:
             data["y"] = y
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vrcx",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -6400,7 +6353,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_vrcx_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -6505,7 +6457,7 @@ class LFJsonCommand(JsonCommand):
         if vr_name is not None:
             data["vr_name"] = vr_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vrcx2",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -6514,7 +6466,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_vrcx2_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -6672,7 +6623,7 @@ class LFJsonCommand(JsonCommand):
         if wanlink is not None:
             data["wanlink"] = wanlink
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_wanpath",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -6681,7 +6632,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_wanpath_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -6782,7 +6732,7 @@ class LFJsonCommand(JsonCommand):
         if wle_flags is not None:
             data["wle_flags"] = wle_flags
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_wl_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -6791,7 +6741,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_add_wl_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -6852,7 +6801,7 @@ class LFJsonCommand(JsonCommand):
         if cmd is not None:
             data["cmd"] = cmd
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/admin",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -6861,7 +6810,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_admin_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -6906,7 +6854,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/apply_vr_cfg",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -6915,7 +6863,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_apply_vr_cfg_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -6960,7 +6907,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/blink_attenuator",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -6969,7 +6916,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_blink_attenuator_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7044,7 +6990,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/c_show_ports",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7053,7 +6999,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_c_show_ports_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7097,7 +7042,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/cancel_vr_cfg",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7106,7 +7051,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_cancel_vr_cfg_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7145,7 +7089,7 @@ class LFJsonCommand(JsonCommand):
         if cd_name is not None:
             data["cd_name"] = cd_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_cd_counters",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7154,7 +7098,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_clear_cd_counters_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7203,7 +7146,7 @@ class LFJsonCommand(JsonCommand):
         if cx_name is not None:
             data["cx_name"] = cx_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_cx_counters",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7212,7 +7155,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_clear_cx_counters_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7271,7 +7213,7 @@ class LFJsonCommand(JsonCommand):
         if just_latency is not None:
             data["just_latency"] = just_latency
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_endp_counters",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7280,7 +7222,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_clear_endp_counters_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7328,7 +7269,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_group",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7337,7 +7278,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_clear_group_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7396,7 +7336,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_port_counters",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7405,7 +7345,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_clear_port_counters_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7450,7 +7389,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_resource_counters",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7459,7 +7398,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_clear_resource_counters_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7510,7 +7448,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_wifi_profiles",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7519,7 +7457,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_clear_wifi_profiles_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7563,7 +7500,7 @@ class LFJsonCommand(JsonCommand):
         if wp_name is not None:
             data["wp_name"] = wp_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_wp_counters",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7572,7 +7509,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_clear_wp_counters_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7619,7 +7555,7 @@ class LFJsonCommand(JsonCommand):
         if super_user is not None:
             data["super_user"] = super_user
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/create_client",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7628,7 +7564,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_create_client_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7686,7 +7621,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/diag",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7695,7 +7630,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_diag_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7740,7 +7674,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/discover",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7749,7 +7683,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_discover_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7791,7 +7724,7 @@ class LFJsonCommand(JsonCommand):
         if result_file_name is not None:
             data["result_file_name"] = result_file_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/do_pesq",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7800,7 +7733,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_do_pesq_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7865,7 +7797,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/file",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7874,7 +7806,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_file_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7927,7 +7858,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/flash_attenuator",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7936,7 +7867,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_flash_attenuator_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -7979,7 +7909,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/getavglatency",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -7988,7 +7918,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_getavglatency_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8029,7 +7958,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/getinrxbps",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8038,7 +7967,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_getinrxbps_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8079,7 +8007,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/getinrxrate",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8088,7 +8016,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_getinrxrate_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8129,7 +8056,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/getintxrate",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8138,7 +8065,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_getintxrate_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8179,7 +8105,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/getipadd",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8188,7 +8114,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_getipadd_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8229,7 +8154,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/getmac",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8238,7 +8163,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_getmac_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8279,7 +8203,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/getmask",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8288,7 +8212,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_getmask_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8329,7 +8252,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/getpktdrops",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8338,7 +8261,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_getpktdrops_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8379,7 +8301,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/getrxendperrpkts",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8388,7 +8310,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_getrxendperrpkts_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8429,7 +8350,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/getrxpkts",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8438,7 +8359,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_getrxpkts_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8479,7 +8399,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/getrxporterrpkts",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8488,7 +8408,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_getrxporterrpkts_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8529,7 +8448,7 @@ class LFJsonCommand(JsonCommand):
         if cx is not None:
             data["cx"] = cx
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/gettxpkts",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8538,7 +8457,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_gettxpkts_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8577,7 +8495,7 @@ class LFJsonCommand(JsonCommand):
         if message is not None:
             data["message"] = message
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/gossip",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8586,7 +8504,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_gossip_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8623,7 +8540,7 @@ class LFJsonCommand(JsonCommand):
         if command is not None:
             data["command"] = command
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/help",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8632,7 +8549,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_help_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8680,7 +8596,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/init_wiser",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8689,7 +8605,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_init_wiser_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8789,7 +8704,7 @@ class LFJsonCommand(JsonCommand):
         if cmd is not None:
             data["cmd"] = cmd
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/ios",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8798,7 +8713,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_ios_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8860,7 +8774,7 @@ class LFJsonCommand(JsonCommand):
         if show_file is not None:
             data["show_file"] = show_file
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/licenses",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8869,7 +8783,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_licenses_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -8922,7 +8835,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/load",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -8931,7 +8844,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_load_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9006,7 +8918,7 @@ class LFJsonCommand(JsonCommand):
         if user_key is not None:
             data["user_key"] = user_key
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/log_capture",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9015,7 +8927,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_log_capture_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9097,7 +9008,7 @@ class LFJsonCommand(JsonCommand):
         if target is not None:
             data["target"] = target
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/log_level",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9106,7 +9017,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_log_level_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9145,7 +9055,7 @@ class LFJsonCommand(JsonCommand):
         if message is not None:
             data["message"] = message
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/log_msg",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9154,7 +9064,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_log_msg_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9196,7 +9105,7 @@ class LFJsonCommand(JsonCommand):
         if password is not None:
             data["password"] = password
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/login",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9205,7 +9114,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_login_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9247,7 +9155,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_motd_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9289,7 +9196,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_cd",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9298,7 +9205,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_nc_show_cd_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9343,7 +9249,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_channel_groups",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9352,7 +9258,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_nc_show_channel_groups_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9394,7 +9299,7 @@ class LFJsonCommand(JsonCommand):
         if extra is not None:
             data["extra"] = extra
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_endpoints",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9403,7 +9308,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_nc_show_endpoints_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9441,7 +9345,7 @@ class LFJsonCommand(JsonCommand):
         if endpoint is not None:
             data["endpoint"] = endpoint
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_pesq",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9450,7 +9354,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_nc_show_pesq_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9523,7 +9426,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_ports",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9532,7 +9435,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_nc_show_ports_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9578,7 +9480,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_ppp_links",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9587,7 +9489,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_nc_show_ppp_links_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9632,7 +9533,7 @@ class LFJsonCommand(JsonCommand):
         if span_number is not None:
             data["span_number"] = span_number
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_spans",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9641,7 +9542,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_nc_show_spans_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9686,7 +9586,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_vr",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9695,7 +9595,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_nc_show_vr_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9740,7 +9639,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_vrcx",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9749,7 +9648,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_nc_show_vrcx_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9814,7 +9712,7 @@ class LFJsonCommand(JsonCommand):
         if reason is not None:
             data["reason"] = reason
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/notify_dhcp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9823,7 +9721,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_notify_dhcp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9875,7 +9772,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/port_reset_completed",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9884,7 +9781,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_port_reset_completed_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9934,7 +9830,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/probe_port",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9943,7 +9839,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_probe_port_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -9986,7 +9881,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/probe_ports",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -9995,7 +9890,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_probe_ports_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10033,7 +9927,7 @@ class LFJsonCommand(JsonCommand):
         if endp_name is not None:
             data["endp_name"] = endp_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/quiesce_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10042,7 +9936,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_quiesce_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10079,7 +9972,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/quiesce_group",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10088,7 +9981,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_quiesce_group_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10129,7 +10021,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_quit_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10168,7 +10059,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/reboot_os",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10177,7 +10068,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_reboot_os_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10227,7 +10117,7 @@ class LFJsonCommand(JsonCommand):
         if save_resource is not None:
             data["save_resource"] = save_resource
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/report",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10236,7 +10126,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_report_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10299,7 +10188,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/reset_port",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10308,7 +10197,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_reset_port_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10355,7 +10243,7 @@ class LFJsonCommand(JsonCommand):
         if span is not None:
             data["span"] = span
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/reset_serial_span",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10364,7 +10252,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_reset_serial_span_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10409,7 +10296,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_adb",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10418,7 +10305,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_adb_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10463,7 +10349,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_attenuator",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10472,7 +10358,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_attenuator_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10511,7 +10396,7 @@ class LFJsonCommand(JsonCommand):
         if cd is not None:
             data["cd"] = cd
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_cd",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10520,7 +10405,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_cd_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10560,7 +10444,7 @@ class LFJsonCommand(JsonCommand):
         if endp is not None:
             data["endp"] = endp
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_cd_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10569,7 +10453,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_cd_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10610,7 +10493,7 @@ class LFJsonCommand(JsonCommand):
         if endp is not None:
             data["endp"] = endp
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_cd_vr",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10619,7 +10502,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_cd_vr_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10657,7 +10539,7 @@ class LFJsonCommand(JsonCommand):
         if chamber is not None:
             data["chamber"] = chamber
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_chamber",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10666,7 +10548,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_chamber_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10706,7 +10587,7 @@ class LFJsonCommand(JsonCommand):
         if path is not None:
             data["path"] = path
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_chamber_path",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10715,7 +10596,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_chamber_path_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10759,7 +10639,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_channel_group",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10768,7 +10648,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_channel_group_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10810,7 +10689,7 @@ class LFJsonCommand(JsonCommand):
         if client_password is not None:
             data["client_password"] = client_password
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_client",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10819,7 +10698,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_client_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10860,7 +10738,7 @@ class LFJsonCommand(JsonCommand):
         if test_mgr is not None:
             data["test_mgr"] = test_mgr
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_cx",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10869,7 +10747,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_cx_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10907,7 +10784,7 @@ class LFJsonCommand(JsonCommand):
         if db_name is not None:
             data["db_name"] = db_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_db",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10916,7 +10793,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_db_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10953,7 +10829,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_dut",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -10962,7 +10838,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_dut_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -10999,7 +10874,7 @@ class LFJsonCommand(JsonCommand):
         if endp_name is not None:
             data["endp_name"] = endp_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11008,7 +10883,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11045,7 +10919,7 @@ class LFJsonCommand(JsonCommand):
         if event_id is not None:
             data["event_id"] = event_id
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_event",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11054,7 +10928,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_event_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11091,7 +10964,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_group",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11100,7 +10973,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_group_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11143,7 +11015,7 @@ class LFJsonCommand(JsonCommand):
         if unit_num is not None:
             data["unit_num"] = unit_num
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_ppp_link",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11152,7 +11024,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_ppp_link_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11191,7 +11062,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_profile",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11200,7 +11071,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_profile_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11240,7 +11110,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_resource",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11249,7 +11119,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_resource_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11293,7 +11162,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_rfgen",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11302,7 +11171,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_rfgen_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11351,7 +11219,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_sec_ip",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11360,7 +11228,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_sec_ip_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11406,7 +11273,7 @@ class LFJsonCommand(JsonCommand):
         if span_num is not None:
             data["span_num"] = span_num
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_span",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11415,7 +11282,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_span_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11454,7 +11320,7 @@ class LFJsonCommand(JsonCommand):
         if test_mgr is not None:
             data["test_mgr"] = test_mgr
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_test_mgr",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11463,7 +11329,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_test_mgr_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11503,7 +11368,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_text_blob",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11512,7 +11377,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_text_blob_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11553,7 +11417,7 @@ class LFJsonCommand(JsonCommand):
         if tgname is not None:
             data["tgname"] = tgname
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_tgcx",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11562,7 +11426,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_tgcx_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11603,7 +11466,7 @@ class LFJsonCommand(JsonCommand):
         if thresh_id is not None:
             data["thresh_id"] = thresh_id
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_threshold",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11612,7 +11475,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_threshold_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11650,7 +11512,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_traffic_profile",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11659,7 +11521,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_traffic_profile_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11703,7 +11564,7 @@ class LFJsonCommand(JsonCommand):
         if venu_id is not None:
             data["venu_id"] = venu_id
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_venue",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11712,7 +11573,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_venue_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11757,7 +11617,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_vlan",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11766,7 +11626,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_vlan_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11811,7 +11670,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_vr",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11820,7 +11679,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_vr_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11874,7 +11732,7 @@ class LFJsonCommand(JsonCommand):
         if vrcx_only is not None:
             data["vrcx_only"] = vrcx_only
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_vrcx",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11883,7 +11741,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_vrcx_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11927,7 +11784,7 @@ class LFJsonCommand(JsonCommand):
         if wp_name is not None:
             data["wp_name"] = wp_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_wanpath",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -11936,7 +11793,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rm_wanpath_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -11992,7 +11848,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/rpt_script",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12001,7 +11857,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_rpt_script_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -12065,7 +11920,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/scan_wifi",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12074,7 +11929,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_scan_wifi_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -12200,7 +12054,7 @@ class LFJsonCommand(JsonCommand):
         if udp_src_min is not None:
             data["udp_src_min"] = udp_src_min
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_arm_info",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12209,7 +12063,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_arm_info_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -12312,7 +12165,7 @@ class LFJsonCommand(JsonCommand):
         if val is not None:
             data["val"] = val
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_attenuator",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12321,7 +12174,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_attenuator_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -12386,7 +12238,7 @@ class LFJsonCommand(JsonCommand):
         if turntable is not None:
             data["turntable"] = turntable
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_chamber",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12395,7 +12247,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_chamber_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -12449,7 +12300,7 @@ class LFJsonCommand(JsonCommand):
         if test_mgr is not None:
             data["test_mgr"] = test_mgr
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_cx_report_timer",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12458,7 +12309,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_cx_report_timer_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -12516,7 +12366,7 @@ class LFJsonCommand(JsonCommand):
         if test_mgr is not None:
             data["test_mgr"] = test_mgr
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_cx_state",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12525,7 +12375,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_cx_state_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -12579,7 +12428,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_addr",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12588,7 +12437,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_endp_addr_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -12688,7 +12536,7 @@ class LFJsonCommand(JsonCommand):
         if tcp_mss is not None:
             data["tcp_mss"] = tcp_mss
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_details",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12697,7 +12545,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_endp_details_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -12764,7 +12611,7 @@ class LFJsonCommand(JsonCommand):
         if playback is not None:
             data["playback"] = playback
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_file",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12773,7 +12620,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_endp_file_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -12886,7 +12732,7 @@ class LFJsonCommand(JsonCommand):
         if val is not None:
             data["val"] = val
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_flag",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12895,7 +12741,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_endp_flag_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -12960,7 +12805,7 @@ class LFJsonCommand(JsonCommand):
         if payload_type is not None:
             data["payload_type"] = payload_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_payload",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -12969,7 +12814,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_endp_payload_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13022,7 +12866,7 @@ class LFJsonCommand(JsonCommand):
         if use_checksum is not None:
             data["use_checksum"] = use_checksum
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_pld_bounds",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13031,7 +12875,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_endp_pld_bounds_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13081,7 +12924,7 @@ class LFJsonCommand(JsonCommand):
         if proxy_ip_port is not None:
             data["proxy_ip_port"] = proxy_ip_port
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_proxy",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13090,7 +12933,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_endp_proxy_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13134,7 +12976,7 @@ class LFJsonCommand(JsonCommand):
         if quiesce is not None:
             data["quiesce"] = quiesce
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_quiesce",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13143,7 +12985,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_endp_quiesce_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13185,7 +13026,7 @@ class LFJsonCommand(JsonCommand):
         if milliseconds is not None:
             data["milliseconds"] = milliseconds
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_report_timer",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13194,7 +13035,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_endp_report_timer_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13248,7 +13088,7 @@ class LFJsonCommand(JsonCommand):
         if tos is not None:
             data["tos"] = tos
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_tos",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13257,7 +13097,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_endp_tos_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13307,7 +13146,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_tx_bounds",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13316,7 +13155,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_endp_tx_bounds_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13480,7 +13318,7 @@ class LFJsonCommand(JsonCommand):
         if var1 is not None:
             data["var1"] = var1
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_event_interest",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13489,7 +13327,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_event_interest_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13575,7 +13412,7 @@ class LFJsonCommand(JsonCommand):
         if priority is not None:
             data["priority"] = priority
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_event_priority",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13584,7 +13421,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_event_priority_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13651,7 +13487,7 @@ class LFJsonCommand(JsonCommand):
         if quiesce_after_files is not None:
             data["quiesce_after_files"] = quiesce_after_files
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_fe_info",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13660,7 +13496,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_fe_info_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13726,7 +13561,7 @@ class LFJsonCommand(JsonCommand):
         if val is not None:
             data["val"] = val
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_flag",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13735,7 +13570,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_flag_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13778,7 +13612,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_gen_cmd",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13787,7 +13621,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_gen_cmd_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13844,7 +13677,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_gps_info",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13853,7 +13686,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_gps_info_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13911,7 +13743,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_ifup_script",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13920,7 +13752,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_ifup_script_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -13979,7 +13810,7 @@ class LFJsonCommand(JsonCommand):
         if media_source is not None:
             data["media_source"] = media_source
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_l4_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -13988,7 +13819,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_l4_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -14032,7 +13862,7 @@ class LFJsonCommand(JsonCommand):
         if licenses is not None:
             data["licenses"] = licenses
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_license",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -14041,7 +13871,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_license_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -14091,7 +13920,7 @@ class LFJsonCommand(JsonCommand):
         if ttl is not None:
             data["ttl"] = ttl
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_mc_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -14100,7 +13929,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_mc_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -14148,7 +13976,7 @@ class LFJsonCommand(JsonCommand):
         if old_password is not None:
             data["old_password"] = old_password
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_password",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -14157,7 +13985,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_password_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -14204,7 +14031,7 @@ class LFJsonCommand(JsonCommand):
         if mode is not None:
             data["mode"] = mode
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_poll_mode",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -14213,7 +14040,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_poll_mode_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -14566,7 +14392,7 @@ class LFJsonCommand(JsonCommand):
         if tx_queue_len is not None:
             data["tx_queue_len"] = tx_queue_len
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_port",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -14575,7 +14401,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_port_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -14658,7 +14483,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_port2",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -14667,7 +14492,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_port2_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -14721,7 +14545,7 @@ class LFJsonCommand(JsonCommand):
         if vport is not None:
             data["vport"] = vport
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_port_alias",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -14730,7 +14554,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_port_alias_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -14780,7 +14603,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_ppp_link_state",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -14789,7 +14612,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_ppp_link_state_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -14879,7 +14701,7 @@ class LFJsonCommand(JsonCommand):
         if user_name is not None:
             data["user_name"] = user_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_resource",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -14888,7 +14710,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_resource_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -15069,7 +14890,7 @@ class LFJsonCommand(JsonCommand):
         if uut_channel is not None:
             data["uut_channel"] = uut_channel
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_rfgen",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -15078,7 +14899,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_rfgen_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -15216,7 +15036,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_script",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -15225,7 +15045,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_script_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -15278,7 +15097,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_sec_ip",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -15287,7 +15106,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_sec_ip_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -15333,7 +15151,7 @@ class LFJsonCommand(JsonCommand):
         if test_id is not None:
             data["test_id"] = test_id
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_test_id",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -15342,7 +15160,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_test_id_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -15440,7 +15257,7 @@ class LFJsonCommand(JsonCommand):
         if sound_dev is not None:
             data["sound_dev"] = sound_dev
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_voip_info",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -15449,7 +15266,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_voip_info_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -15531,7 +15347,7 @@ class LFJsonCommand(JsonCommand):
         if wanlink is not None:
             data["wanlink"] = wanlink
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_vrcx_cost",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -15540,7 +15356,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_vrcx_cost_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -15640,7 +15455,7 @@ class LFJsonCommand(JsonCommand):
         if speed is not None:
             data["speed"] = speed
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wanlink_info",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -15649,7 +15464,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wanlink_info_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -15715,7 +15529,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wanlink_pcap",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -15724,7 +15538,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wanlink_pcap_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -15812,7 +15625,7 @@ class LFJsonCommand(JsonCommand):
         if rate is not None:
             data["rate"] = rate
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wanpath_corruption",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -15821,7 +15634,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wanpath_corruption_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -15891,7 +15703,7 @@ class LFJsonCommand(JsonCommand):
         if wp_name is not None:
             data["wp_name"] = wp_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wanpath_filter",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -15900,7 +15712,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wanpath_filter_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -15961,7 +15772,7 @@ class LFJsonCommand(JsonCommand):
         if wp_name is not None:
             data["wp_name"] = wp_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wanpath_running",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -15970,7 +15781,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wanpath_running_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -16088,7 +15898,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_corruptions",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -16097,7 +15907,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wifi_corruptions_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -16161,7 +15970,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_custom",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -16170,7 +15979,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wifi_custom_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -16317,7 +16125,7 @@ class LFJsonCommand(JsonCommand):
         if venue_type is not None:
             data["venue_type"] = venue_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_extra",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -16326,7 +16134,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wifi_extra_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -16452,7 +16259,7 @@ class LFJsonCommand(JsonCommand):
         if venue_id is not None:
             data["venue_id"] = venue_id
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_extra2",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -16461,7 +16268,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wifi_extra2_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -16693,7 +16499,7 @@ class LFJsonCommand(JsonCommand):
         if vdev_count is not None:
             data["vdev_count"] = vdev_count
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_radio",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -16702,7 +16508,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wifi_radio_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -16836,7 +16641,7 @@ class LFJsonCommand(JsonCommand):
         if txo_txpower is not None:
             data["txo_txpower"] = txo_txpower
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_txo",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -16845,7 +16650,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wifi_txo_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -16940,7 +16744,7 @@ class LFJsonCommand(JsonCommand):
         if rate is not None:
             data["rate"] = rate
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wl_corruption",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -16949,7 +16753,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wl_corruption_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17003,7 +16806,7 @@ class LFJsonCommand(JsonCommand):
         if qdisc is not None:
             data["qdisc"] = qdisc
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wl_qdisc",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17012,7 +16815,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_set_wl_qdisc_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17059,7 +16861,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_adb",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17068,7 +16870,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_adb_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17141,7 +16942,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_alerts",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17150,7 +16951,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_alerts_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17199,7 +16999,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_attenuators",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17208,7 +17008,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_attenuators_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17253,7 +17052,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_cd",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17262,7 +17061,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_cd_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17301,7 +17099,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_chamber",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17310,7 +17108,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_chamber_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17353,7 +17150,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_channel_groups",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17362,7 +17159,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_channel_groups_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17405,7 +17201,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_clients_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17444,7 +17239,7 @@ class LFJsonCommand(JsonCommand):
         if test_mgr is not None:
             data["test_mgr"] = test_mgr
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_cx",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17453,7 +17248,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_cx_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17494,7 +17288,7 @@ class LFJsonCommand(JsonCommand):
         if test_mgr is not None:
             data["test_mgr"] = test_mgr
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_cxe",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17503,7 +17297,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_cxe_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17545,7 +17338,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_dbs_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17581,7 +17373,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_dut",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17590,7 +17382,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_dut_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17631,7 +17422,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_endp_payload",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17640,7 +17431,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_endp_payload_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17681,7 +17471,7 @@ class LFJsonCommand(JsonCommand):
         if extra is not None:
             data["extra"] = extra
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_endpoints",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17690,7 +17480,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_endpoints_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17729,7 +17518,7 @@ class LFJsonCommand(JsonCommand):
         if message is not None:
             data["message"] = message
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_err",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17738,7 +17527,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_err_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17779,7 +17567,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_event_interest_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17848,7 +17635,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_events",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17857,7 +17644,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_events_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17915,7 +17701,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_files",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17924,7 +17710,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_files_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -17967,7 +17752,7 @@ class LFJsonCommand(JsonCommand):
         if group is not None:
             data["group"] = group
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_group",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -17976,7 +17761,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_group_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18013,7 +17797,7 @@ class LFJsonCommand(JsonCommand):
         if endpoint is not None:
             data["endpoint"] = endpoint
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_pesq",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18022,7 +17806,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_pesq_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18069,7 +17852,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_ports",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18078,7 +17861,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_ports_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18124,7 +17906,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_ppp_links",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18133,7 +17915,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_ppp_links_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18173,7 +17954,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_profile",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18182,7 +17963,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_profile_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18222,7 +18002,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_resources",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18231,7 +18011,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_resources_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18275,7 +18054,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_rfgen",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18284,7 +18063,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_rfgen_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18332,7 +18110,7 @@ class LFJsonCommand(JsonCommand):
         if virtual_router is not None:
             data["virtual_router"] = virtual_router
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_rt",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18341,7 +18119,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_rt_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18385,7 +18162,7 @@ class LFJsonCommand(JsonCommand):
         if key is not None:
             data["key"] = key
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_script_results",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18394,7 +18171,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_script_results_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18438,7 +18214,7 @@ class LFJsonCommand(JsonCommand):
         if span_number is not None:
             data["span_number"] = span_number
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_spans",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18447,7 +18223,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_spans_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18493,7 +18268,7 @@ class LFJsonCommand(JsonCommand):
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_text_blob",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18502,7 +18277,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_text_blob_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18541,7 +18315,7 @@ class LFJsonCommand(JsonCommand):
         if test_mgr is not None:
             data["test_mgr"] = test_mgr
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_tm",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18550,7 +18324,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_tm_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18587,7 +18360,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_traffic_profile",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18596,7 +18369,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_traffic_profile_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18640,7 +18412,7 @@ class LFJsonCommand(JsonCommand):
         if venu_id is not None:
             data["venu_id"] = venu_id
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_venue",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18649,7 +18421,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_venue_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18694,7 +18465,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_vr",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18703,7 +18474,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_vr_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18748,7 +18518,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_vrcx",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18757,7 +18527,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_vrcx_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18799,7 +18568,7 @@ class LFJsonCommand(JsonCommand):
         if wanpath is not None:
             data["wanpath"] = wanpath
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_wanpaths",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18808,7 +18577,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_show_wanpaths_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18854,7 +18622,7 @@ class LFJsonCommand(JsonCommand):
         if serverctl is not None:
             data["serverctl"] = serverctl
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/shutdown",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18863,7 +18631,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_shutdown_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18905,7 +18672,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/shutdown_os",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18914,7 +18681,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_shutdown_os_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -18955,7 +18721,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/shutdown_resource",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -18964,7 +18730,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_shutdown_resource_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19050,7 +18815,7 @@ class LFJsonCommand(JsonCommand):
         if snaplen is not None:
             data["snaplen"] = snaplen
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/sniff_port",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19059,7 +18824,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_sniff_port_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19103,7 +18867,7 @@ class LFJsonCommand(JsonCommand):
         if endp_name is not None:
             data["endp_name"] = endp_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/start_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19112,7 +18876,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_start_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19149,7 +18912,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/start_group",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19158,7 +18921,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_start_group_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19201,7 +18963,7 @@ class LFJsonCommand(JsonCommand):
         if unit_num is not None:
             data["unit_num"] = unit_num
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/start_ppp_link",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19210,7 +18972,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_start_ppp_link_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19249,7 +19010,7 @@ class LFJsonCommand(JsonCommand):
         if endp_name is not None:
             data["endp_name"] = endp_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/stop_endp",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19258,7 +19019,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_stop_endp_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19295,7 +19055,7 @@ class LFJsonCommand(JsonCommand):
         if name is not None:
             data["name"] = name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/stop_group",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19304,7 +19064,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_stop_group_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19347,7 +19106,7 @@ class LFJsonCommand(JsonCommand):
         if unit_num is not None:
             data["unit_num"] = unit_num
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/stop_ppp_link",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19356,7 +19115,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_stop_ppp_link_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19408,7 +19166,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/tail",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19417,7 +19175,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_tail_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19462,7 +19219,7 @@ class LFJsonCommand(JsonCommand):
         if test_mgr is not None:
             data["test_mgr"] = test_mgr
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/tm_register",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19471,7 +19228,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_tm_register_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19513,7 +19269,7 @@ class LFJsonCommand(JsonCommand):
         if test_mgr is not None:
             data["test_mgr"] = test_mgr
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/tm_unregister",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19522,7 +19278,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_tm_unregister_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19564,7 +19319,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_version_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19604,7 +19358,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_who_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19651,7 +19404,7 @@ class LFJsonCommand(JsonCommand):
         if wpa_cli_cmd is not None:
             data["wpa_cli_cmd"] = wpa_cli_cmd
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/wifi_cli_cmd",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19660,7 +19413,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_wifi_cli_cmd_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19709,7 +19461,7 @@ class LFJsonCommand(JsonCommand):
         if status is not None:
             data["status"] = status
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/wifi_event",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19718,7 +19470,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_wifi_event_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19761,7 +19512,7 @@ class LFJsonCommand(JsonCommand):
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/wiser_reset",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19770,7 +19521,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_wiser_reset_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -19808,7 +19558,7 @@ class LFJsonCommand(JsonCommand):
         if db_name is not None:
             data["db_name"] = db_name
         if len(data) < 1:
-            raise ValueError(__name__+": no parameters to submit")
+            raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/write",
                                   post_data=data,
                                   response_json_list=response_json_list,
@@ -19817,7 +19567,6 @@ class LFJsonCommand(JsonCommand):
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
-    #
 
     def post_write_map(self, cli_cmd: str = None, param_map: dict = None):
         if not cli_cmd:
@@ -24270,6 +24019,7 @@ class LFSession(BaseSession):
         if require_session and (not BaseSession.session_id):
             self.logger.error('LFSession failed to setup session_id correctly') 
         self.query_instance = LFJsonQuery(session_obj=self, debug=debug, exit_on_error=exit_on_error)
+        self.method_map : dict = {}
 
     def get_command(self) -> LFJsonCommand:
         """
@@ -24294,301 +24044,309 @@ class LFSession(BaseSession):
         return self.query_instance
 
 
-    """    ---- ---- ---- ----
-        Method_Map is used to correlate the name of the CLI command to the 
-        class and method used by a python script. This provides a dyanmic approach 
-        to assembling method calls at runtime.
-    ---- ---- ---- ---- """
-    method_map : dict = {
-        "adb": "LFJsonCommand.post_adb",
-        "adb_bt": "LFJsonCommand.post_adb_bt",
-        "adb_gui": "LFJsonCommand.post_adb_gui",
-        "adb_timeout": "LFJsonCommand.post_adb_timeout",
-        "adb_wifi_event": "LFJsonCommand.post_adb_wifi_event",
-        "add_adb": "LFJsonCommand.post_add_adb",
-        "add_arm_endp": "LFJsonCommand.post_add_arm_endp",
-        "add_bgp_peer": "LFJsonCommand.post_add_bgp_peer",
-        "add_bond": "LFJsonCommand.post_add_bond",
-        "add_br": "LFJsonCommand.post_add_br",
-        "add_cd": "LFJsonCommand.post_add_cd",
-        "add_cd_endp": "LFJsonCommand.post_add_cd_endp",
-        "add_cd_vr": "LFJsonCommand.post_add_cd_vr",
-        "add_chamber": "LFJsonCommand.post_add_chamber",
-        "add_chamber_cx": "LFJsonCommand.post_add_chamber_cx",
-        "add_chamber_path": "LFJsonCommand.post_add_chamber_path",
-        "add_channel_group": "LFJsonCommand.post_add_channel_group",
-        "add_cx": "LFJsonCommand.post_add_cx",
-        "add_dut": "LFJsonCommand.post_add_dut",
-        "add_dut_notes": "LFJsonCommand.post_add_dut_notes",
-        "add_dut_ssid": "LFJsonCommand.post_add_dut_ssid",
-        "add_endp": "LFJsonCommand.post_add_endp",
-        "add_event": "LFJsonCommand.post_add_event",
-        "add_file_endp": "LFJsonCommand.post_add_file_endp",
-        "add_gen_endp": "LFJsonCommand.post_add_gen_endp",
-        "add_gre": "LFJsonCommand.post_add_gre",
-        "add_group": "LFJsonCommand.post_add_group",
-        "add_l4_endp": "LFJsonCommand.post_add_l4_endp",
-        "add_monitor": "LFJsonCommand.post_add_monitor",
-        "add_mvlan": "LFJsonCommand.post_add_mvlan",
-        "add_ppp_link": "LFJsonCommand.post_add_ppp_link",
-        "add_profile": "LFJsonCommand.post_add_profile",
-        "add_profile_notes": "LFJsonCommand.post_add_profile_notes",
-        "add_rdd": "LFJsonCommand.post_add_rdd",
-        "add_sec_ip": "LFJsonCommand.post_add_sec_ip",
-        "add_sta": "LFJsonCommand.post_add_sta",
-        "add_t1_span": "LFJsonCommand.post_add_t1_span",
-        "add_text_blob": "LFJsonCommand.post_add_text_blob",
-        "add_tgcx": "LFJsonCommand.post_add_tgcx",
-        "add_threshold": "LFJsonCommand.post_add_threshold",
-        "add_tm": "LFJsonCommand.post_add_tm",
-        "add_traffic_profile": "LFJsonCommand.post_add_traffic_profile",
-        "add_traffic_profile_notes": "LFJsonCommand.post_add_traffic_profile_notes",
-        "add_vap": "LFJsonCommand.post_add_vap",
-        "add_venue": "LFJsonCommand.post_add_venue",
-        "add_vlan": "LFJsonCommand.post_add_vlan",
-        "add_voip_endp": "LFJsonCommand.post_add_voip_endp",
-        "add_vr": "LFJsonCommand.post_add_vr",
-        "add_vr_bgp": "LFJsonCommand.post_add_vr_bgp",
-        "add_vrcx": "LFJsonCommand.post_add_vrcx",
-        "add_vrcx2": "LFJsonCommand.post_add_vrcx2",
-        "add_wanpath": "LFJsonCommand.post_add_wanpath",
-        "add_wl_endp": "LFJsonCommand.post_add_wl_endp",
-        "admin": "LFJsonCommand.post_admin",
-        "apply_vr_cfg": "LFJsonCommand.post_apply_vr_cfg",
-        "blink_attenuator": "LFJsonCommand.post_blink_attenuator",
-        "c_show_ports": "LFJsonCommand.post_c_show_ports",
-        "cancel_vr_cfg": "LFJsonCommand.post_cancel_vr_cfg",
-        "clear_cd_counters": "LFJsonCommand.post_clear_cd_counters",
-        "clear_cx_counters": "LFJsonCommand.post_clear_cx_counters",
-        "clear_endp_counters": "LFJsonCommand.post_clear_endp_counters",
-        "clear_group": "LFJsonCommand.post_clear_group",
-        "clear_port_counters": "LFJsonCommand.post_clear_port_counters",
-        "clear_resource_counters": "LFJsonCommand.post_clear_resource_counters",
-        "clear_wifi_profiles": "LFJsonCommand.post_clear_wifi_profiles",
-        "clear_wp_counters": "LFJsonCommand.post_clear_wp_counters",
-        "create_client": "LFJsonCommand.post_create_client",
-        "diag": "LFJsonCommand.post_diag",
-        "discover": "LFJsonCommand.post_discover",
-        "do_pesq": "LFJsonCommand.post_do_pesq",
-        "file": "LFJsonCommand.post_file",
-        "flash_attenuator": "LFJsonCommand.post_flash_attenuator",
-        "getavglatency": "LFJsonCommand.post_getavglatency",
-        "getinrxbps": "LFJsonCommand.post_getinrxbps",
-        "getinrxrate": "LFJsonCommand.post_getinrxrate",
-        "getintxrate": "LFJsonCommand.post_getintxrate",
-        "getipadd": "LFJsonCommand.post_getipadd",
-        "getmac": "LFJsonCommand.post_getmac",
-        "getmask": "LFJsonCommand.post_getmask",
-        "getpktdrops": "LFJsonCommand.post_getpktdrops",
-        "getrxendperrpkts": "LFJsonCommand.post_getrxendperrpkts",
-        "getrxpkts": "LFJsonCommand.post_getrxpkts",
-        "getrxporterrpkts": "LFJsonCommand.post_getrxporterrpkts",
-        "gettxpkts": "LFJsonCommand.post_gettxpkts",
-        "gossip": "LFJsonCommand.post_gossip",
-        "help": "LFJsonCommand.post_help",
-        "init_wiser": "LFJsonCommand.post_init_wiser",
-        "ios": "LFJsonCommand.post_ios",
-        "licenses": "LFJsonCommand.post_licenses",
-        "load": "LFJsonCommand.post_load",
-        "log_capture": "LFJsonCommand.post_log_capture",
-        "log_level": "LFJsonCommand.post_log_level",
-        "log_msg": "LFJsonCommand.post_log_msg",
-        "login": "LFJsonCommand.post_login",
-        "motd": "LFJsonCommand.post_motd",
-        "nc_show_cd": "LFJsonCommand.post_nc_show_cd",
-        "nc_show_channel_groups": "LFJsonCommand.post_nc_show_channel_groups",
-        "nc_show_endpoints": "LFJsonCommand.post_nc_show_endpoints",
-        "nc_show_pesq": "LFJsonCommand.post_nc_show_pesq",
-        "nc_show_ports": "LFJsonCommand.post_nc_show_ports",
-        "nc_show_ppp_links": "LFJsonCommand.post_nc_show_ppp_links",
-        "nc_show_spans": "LFJsonCommand.post_nc_show_spans",
-        "nc_show_vr": "LFJsonCommand.post_nc_show_vr",
-        "nc_show_vrcx": "LFJsonCommand.post_nc_show_vrcx",
-        "notify_dhcp": "LFJsonCommand.post_notify_dhcp",
-        "port_reset_completed": "LFJsonCommand.post_port_reset_completed",
-        "probe_port": "LFJsonCommand.post_probe_port",
-        "probe_ports": "LFJsonCommand.post_probe_ports",
-        "quiesce_endp": "LFJsonCommand.post_quiesce_endp",
-        "quiesce_group": "LFJsonCommand.post_quiesce_group",
-        "quit": "LFJsonCommand.post_quit",
-        "reboot_os": "LFJsonCommand.post_reboot_os",
-        "report": "LFJsonCommand.post_report",
-        "reset_port": "LFJsonCommand.post_reset_port",
-        "reset_serial_span": "LFJsonCommand.post_reset_serial_span",
-        "rm_adb": "LFJsonCommand.post_rm_adb",
-        "rm_attenuator": "LFJsonCommand.post_rm_attenuator",
-        "rm_cd": "LFJsonCommand.post_rm_cd",
-        "rm_cd_endp": "LFJsonCommand.post_rm_cd_endp",
-        "rm_cd_vr": "LFJsonCommand.post_rm_cd_vr",
-        "rm_chamber": "LFJsonCommand.post_rm_chamber",
-        "rm_chamber_path": "LFJsonCommand.post_rm_chamber_path",
-        "rm_channel_group": "LFJsonCommand.post_rm_channel_group",
-        "rm_client": "LFJsonCommand.post_rm_client",
-        "rm_cx": "LFJsonCommand.post_rm_cx",
-        "rm_db": "LFJsonCommand.post_rm_db",
-        "rm_dut": "LFJsonCommand.post_rm_dut",
-        "rm_endp": "LFJsonCommand.post_rm_endp",
-        "rm_event": "LFJsonCommand.post_rm_event",
-        "rm_group": "LFJsonCommand.post_rm_group",
-        "rm_ppp_link": "LFJsonCommand.post_rm_ppp_link",
-        "rm_profile": "LFJsonCommand.post_rm_profile",
-        "rm_resource": "LFJsonCommand.post_rm_resource",
-        "rm_rfgen": "LFJsonCommand.post_rm_rfgen",
-        "rm_sec_ip": "LFJsonCommand.post_rm_sec_ip",
-        "rm_span": "LFJsonCommand.post_rm_span",
-        "rm_test_mgr": "LFJsonCommand.post_rm_test_mgr",
-        "rm_text_blob": "LFJsonCommand.post_rm_text_blob",
-        "rm_tgcx": "LFJsonCommand.post_rm_tgcx",
-        "rm_threshold": "LFJsonCommand.post_rm_threshold",
-        "rm_traffic_profile": "LFJsonCommand.post_rm_traffic_profile",
-        "rm_venue": "LFJsonCommand.post_rm_venue",
-        "rm_vlan": "LFJsonCommand.post_rm_vlan",
-        "rm_vr": "LFJsonCommand.post_rm_vr",
-        "rm_vrcx": "LFJsonCommand.post_rm_vrcx",
-        "rm_wanpath": "LFJsonCommand.post_rm_wanpath",
-        "rpt_script": "LFJsonCommand.post_rpt_script",
-        "scan_wifi": "LFJsonCommand.post_scan_wifi",
-        "set_arm_info": "LFJsonCommand.post_set_arm_info",
-        "set_attenuator": "LFJsonCommand.post_set_attenuator",
-        "set_chamber": "LFJsonCommand.post_set_chamber",
-        "set_cx_report_timer": "LFJsonCommand.post_set_cx_report_timer",
-        "set_cx_state": "LFJsonCommand.post_set_cx_state",
-        "set_endp_addr": "LFJsonCommand.post_set_endp_addr",
-        "set_endp_details": "LFJsonCommand.post_set_endp_details",
-        "set_endp_file": "LFJsonCommand.post_set_endp_file",
-        "set_endp_flag": "LFJsonCommand.post_set_endp_flag",
-        "set_endp_payload": "LFJsonCommand.post_set_endp_payload",
-        "set_endp_pld_bounds": "LFJsonCommand.post_set_endp_pld_bounds",
-        "set_endp_proxy": "LFJsonCommand.post_set_endp_proxy",
-        "set_endp_quiesce": "LFJsonCommand.post_set_endp_quiesce",
-        "set_endp_report_timer": "LFJsonCommand.post_set_endp_report_timer",
-        "set_endp_tos": "LFJsonCommand.post_set_endp_tos",
-        "set_endp_tx_bounds": "LFJsonCommand.post_set_endp_tx_bounds",
-        "set_event_interest": "LFJsonCommand.post_set_event_interest",
-        "set_event_priority": "LFJsonCommand.post_set_event_priority",
-        "set_fe_info": "LFJsonCommand.post_set_fe_info",
-        "set_flag": "LFJsonCommand.post_set_flag",
-        "set_gen_cmd": "LFJsonCommand.post_set_gen_cmd",
-        "set_gps_info": "LFJsonCommand.post_set_gps_info",
-        "set_ifup_script": "LFJsonCommand.post_set_ifup_script",
-        "set_l4_endp": "LFJsonCommand.post_set_l4_endp",
-        "set_license": "LFJsonCommand.post_set_license",
-        "set_mc_endp": "LFJsonCommand.post_set_mc_endp",
-        "set_password": "LFJsonCommand.post_set_password",
-        "set_poll_mode": "LFJsonCommand.post_set_poll_mode",
-        "set_port": "LFJsonCommand.post_set_port",
-        "set_port2": "LFJsonCommand.post_set_port2",
-        "set_port_alias": "LFJsonCommand.post_set_port_alias",
-        "set_ppp_link_state": "LFJsonCommand.post_set_ppp_link_state",
-        "set_resource": "LFJsonCommand.post_set_resource",
-        "set_rfgen": "LFJsonCommand.post_set_rfgen",
-        "set_script": "LFJsonCommand.post_set_script",
-        "set_sec_ip": "LFJsonCommand.post_set_sec_ip",
-        "set_test_id": "LFJsonCommand.post_set_test_id",
-        "set_voip_info": "LFJsonCommand.post_set_voip_info",
-        "set_vrcx_cost": "LFJsonCommand.post_set_vrcx_cost",
-        "set_wanlink_info": "LFJsonCommand.post_set_wanlink_info",
-        "set_wanlink_pcap": "LFJsonCommand.post_set_wanlink_pcap",
-        "set_wanpath_corruption": "LFJsonCommand.post_set_wanpath_corruption",
-        "set_wanpath_filter": "LFJsonCommand.post_set_wanpath_filter",
-        "set_wanpath_running": "LFJsonCommand.post_set_wanpath_running",
-        "set_wifi_corruptions": "LFJsonCommand.post_set_wifi_corruptions",
-        "set_wifi_custom": "LFJsonCommand.post_set_wifi_custom",
-        "set_wifi_extra": "LFJsonCommand.post_set_wifi_extra",
-        "set_wifi_extra2": "LFJsonCommand.post_set_wifi_extra2",
-        "set_wifi_radio": "LFJsonCommand.post_set_wifi_radio",
-        "set_wifi_txo": "LFJsonCommand.post_set_wifi_txo",
-        "set_wl_corruption": "LFJsonCommand.post_set_wl_corruption",
-        "set_wl_qdisc": "LFJsonCommand.post_set_wl_qdisc",
-        "show_adb": "LFJsonCommand.post_show_adb",
-        "show_alerts": "LFJsonCommand.post_show_alerts",
-        "show_attenuators": "LFJsonCommand.post_show_attenuators",
-        "show_cd": "LFJsonCommand.post_show_cd",
-        "show_chamber": "LFJsonCommand.post_show_chamber",
-        "show_channel_groups": "LFJsonCommand.post_show_channel_groups",
-        "show_clients": "LFJsonCommand.post_show_clients",
-        "show_cx": "LFJsonCommand.post_show_cx",
-        "show_cxe": "LFJsonCommand.post_show_cxe",
-        "show_dbs": "LFJsonCommand.post_show_dbs",
-        "show_dut": "LFJsonCommand.post_show_dut",
-        "show_endp_payload": "LFJsonCommand.post_show_endp_payload",
-        "show_endpoints": "LFJsonCommand.post_show_endpoints",
-        "show_err": "LFJsonCommand.post_show_err",
-        "show_event_interest": "LFJsonCommand.post_show_event_interest",
-        "show_events": "LFJsonCommand.post_show_events",
-        "show_files": "LFJsonCommand.post_show_files",
-        "show_group": "LFJsonCommand.post_show_group",
-        "show_pesq": "LFJsonCommand.post_show_pesq",
-        "show_ports": "LFJsonCommand.post_show_ports",
-        "show_ppp_links": "LFJsonCommand.post_show_ppp_links",
-        "show_profile": "LFJsonCommand.post_show_profile",
-        "show_resources": "LFJsonCommand.post_show_resources",
-        "show_rfgen": "LFJsonCommand.post_show_rfgen",
-        "show_rt": "LFJsonCommand.post_show_rt",
-        "show_script_results": "LFJsonCommand.post_show_script_results",
-        "show_spans": "LFJsonCommand.post_show_spans",
-        "show_text_blob": "LFJsonCommand.post_show_text_blob",
-        "show_tm": "LFJsonCommand.post_show_tm",
-        "show_traffic_profile": "LFJsonCommand.post_show_traffic_profile",
-        "show_venue": "LFJsonCommand.post_show_venue",
-        "show_vr": "LFJsonCommand.post_show_vr",
-        "show_vrcx": "LFJsonCommand.post_show_vrcx",
-        "show_wanpaths": "LFJsonCommand.post_show_wanpaths",
-        "shutdown": "LFJsonCommand.post_shutdown",
-        "shutdown_os": "LFJsonCommand.post_shutdown_os",
-        "shutdown_resource": "LFJsonCommand.post_shutdown_resource",
-        "sniff_port": "LFJsonCommand.post_sniff_port",
-        "start_endp": "LFJsonCommand.post_start_endp",
-        "start_group": "LFJsonCommand.post_start_group",
-        "start_ppp_link": "LFJsonCommand.post_start_ppp_link",
-        "stop_endp": "LFJsonCommand.post_stop_endp",
-        "stop_group": "LFJsonCommand.post_stop_group",
-        "stop_ppp_link": "LFJsonCommand.post_stop_ppp_link",
-        "tail": "LFJsonCommand.post_tail",
-        "tm_register": "LFJsonCommand.post_tm_register",
-        "tm_unregister": "LFJsonCommand.post_tm_unregister",
-        "version": "LFJsonCommand.post_version",
-        "who": "LFJsonCommand.post_who",
-        "wifi_cli_cmd": "LFJsonCommand.post_wifi_cli_cmd",
-        "wifi_event": "LFJsonCommand.post_wifi_event",
-        "wiser_reset": "LFJsonCommand.post_wiser_reset",
-        "write": "LFJsonCommand.post_write",
-        "/adb": "LFJsonQuery.get_adb",
-        "/alerts": "LFJsonQuery.get_alerts",
-        "/arm": "LFJsonQuery.get_arm",
-        "/arm-endp": "LFJsonQuery.get_arm_endp",
-        "/attenuator": "LFJsonQuery.get_attenuator",
-        "/chamber": "LFJsonQuery.get_chamber",
-        "/control": "LFJsonQuery.get_control",
-        "/cx": "LFJsonQuery.get_cx",
-        "/dut": "LFJsonQuery.get_dut",
-        "/endp": "LFJsonQuery.get_endp",
-        "/endsession": "LFJsonQuery.get_endsession",
-        "/events": "LFJsonQuery.get_events",
-        "/fileio": "LFJsonQuery.get_fileio",
-        "/generic": "LFJsonQuery.get_generic",
-        "/gui-cli": "LFJsonQuery.get_gui_cli",
-        "/layer4": "LFJsonQuery.get_layer4",
-        "/newsession": "LFJsonQuery.get_newsession",
-        "/port": "LFJsonQuery.get_port",
-        "/probe": "LFJsonQuery.get_probe",
-        "/profile": "LFJsonQuery.get_profile",
-        "/profiles": "LFJsonQuery.get_profiles",
-        "/quit": "LFJsonQuery.get_quit",
-        "/radiostatus": "LFJsonQuery.get_radiostatus",
-        "/resource": "LFJsonQuery.get_resource",
-        "/scan": "LFJsonQuery.get_scan",
-        "/stations": "LFJsonQuery.get_stations",
-        "/status-msg": "LFJsonQuery.get_status_msg",
-        "/test-group": "LFJsonQuery.get_test_group",
-        "/text": "LFJsonQuery.get_text",
-        "/voip": "LFJsonQuery.get_voip",
-        "/voip-endp": "LFJsonQuery.get_voip_endp",
-        "/vr": "LFJsonQuery.get_vr",
-        "/vrcx": "LFJsonQuery.get_vrcx",
-        "/wifi-msg": "LFJsonQuery.get_wifi_msg",
-        "/wifi-stats": "LFJsonQuery.get_wifi_stats",
-        "/wl": "LFJsonQuery.get_wl",
-        "/wl-endp": "LFJsonQuery.get_wl_endp",
-        "/ws-msg": "LFJsonQuery.get_ws_msg",
-        }
+    def find_method(self, cli_name: str = None):
+        """---- ---- ---- ----
+            `find_method` is used to correlate the name of the CLI command to the 
+            class and method used by a python script. This provides a dyanmic approach 
+            to assembling method calls at runtime.
+        ---- ---- ---- ---- """
+        if not self.method_map or len(self.method_map) < 100:
+            self.method_map = {
+                "adb": self.command_instance.post_adb,
+                "adb_bt": self.command_instance.post_adb_bt,
+                "adb_gui": self.command_instance.post_adb_gui,
+                "adb_timeout": self.command_instance.post_adb_timeout,
+                "adb_wifi_event": self.command_instance.post_adb_wifi_event,
+                "add_adb": self.command_instance.post_add_adb,
+                "add_arm_endp": self.command_instance.post_add_arm_endp,
+                "add_bgp_peer": self.command_instance.post_add_bgp_peer,
+                "add_bond": self.command_instance.post_add_bond,
+                "add_br": self.command_instance.post_add_br,
+                "add_cd": self.command_instance.post_add_cd,
+                "add_cd_endp": self.command_instance.post_add_cd_endp,
+                "add_cd_vr": self.command_instance.post_add_cd_vr,
+                "add_chamber": self.command_instance.post_add_chamber,
+                "add_chamber_cx": self.command_instance.post_add_chamber_cx,
+                "add_chamber_path": self.command_instance.post_add_chamber_path,
+                "add_channel_group": self.command_instance.post_add_channel_group,
+                "add_cx": self.command_instance.post_add_cx,
+                "add_dut": self.command_instance.post_add_dut,
+                "add_dut_notes": self.command_instance.post_add_dut_notes,
+                "add_dut_ssid": self.command_instance.post_add_dut_ssid,
+                "add_endp": self.command_instance.post_add_endp,
+                "add_event": self.command_instance.post_add_event,
+                "add_file_endp": self.command_instance.post_add_file_endp,
+                "add_gen_endp": self.command_instance.post_add_gen_endp,
+                "add_gre": self.command_instance.post_add_gre,
+                "add_group": self.command_instance.post_add_group,
+                "add_l4_endp": self.command_instance.post_add_l4_endp,
+                "add_monitor": self.command_instance.post_add_monitor,
+                "add_mvlan": self.command_instance.post_add_mvlan,
+                "add_ppp_link": self.command_instance.post_add_ppp_link,
+                "add_profile": self.command_instance.post_add_profile,
+                "add_profile_notes": self.command_instance.post_add_profile_notes,
+                "add_rdd": self.command_instance.post_add_rdd,
+                "add_sec_ip": self.command_instance.post_add_sec_ip,
+                "add_sta": self.command_instance.post_add_sta,
+                "add_t1_span": self.command_instance.post_add_t1_span,
+                "add_text_blob": self.command_instance.post_add_text_blob,
+                "add_tgcx": self.command_instance.post_add_tgcx,
+                "add_threshold": self.command_instance.post_add_threshold,
+                "add_tm": self.command_instance.post_add_tm,
+                "add_traffic_profile": self.command_instance.post_add_traffic_profile,
+                "add_traffic_profile_notes": self.command_instance.post_add_traffic_profile_notes,
+                "add_vap": self.command_instance.post_add_vap,
+                "add_venue": self.command_instance.post_add_venue,
+                "add_vlan": self.command_instance.post_add_vlan,
+                "add_voip_endp": self.command_instance.post_add_voip_endp,
+                "add_vr": self.command_instance.post_add_vr,
+                "add_vr_bgp": self.command_instance.post_add_vr_bgp,
+                "add_vrcx": self.command_instance.post_add_vrcx,
+                "add_vrcx2": self.command_instance.post_add_vrcx2,
+                "add_wanpath": self.command_instance.post_add_wanpath,
+                "add_wl_endp": self.command_instance.post_add_wl_endp,
+                "admin": self.command_instance.post_admin,
+                "apply_vr_cfg": self.command_instance.post_apply_vr_cfg,
+                "blink_attenuator": self.command_instance.post_blink_attenuator,
+                "c_show_ports": self.command_instance.post_c_show_ports,
+                "cancel_vr_cfg": self.command_instance.post_cancel_vr_cfg,
+                "clear_cd_counters": self.command_instance.post_clear_cd_counters,
+                "clear_cx_counters": self.command_instance.post_clear_cx_counters,
+                "clear_endp_counters": self.command_instance.post_clear_endp_counters,
+                "clear_group": self.command_instance.post_clear_group,
+                "clear_port_counters": self.command_instance.post_clear_port_counters,
+                "clear_resource_counters": self.command_instance.post_clear_resource_counters,
+                "clear_wifi_profiles": self.command_instance.post_clear_wifi_profiles,
+                "clear_wp_counters": self.command_instance.post_clear_wp_counters,
+                "create_client": self.command_instance.post_create_client,
+                "diag": self.command_instance.post_diag,
+                "discover": self.command_instance.post_discover,
+                "do_pesq": self.command_instance.post_do_pesq,
+                "file": self.command_instance.post_file,
+                "flash_attenuator": self.command_instance.post_flash_attenuator,
+                "getavglatency": self.command_instance.post_getavglatency,
+                "getinrxbps": self.command_instance.post_getinrxbps,
+                "getinrxrate": self.command_instance.post_getinrxrate,
+                "getintxrate": self.command_instance.post_getintxrate,
+                "getipadd": self.command_instance.post_getipadd,
+                "getmac": self.command_instance.post_getmac,
+                "getmask": self.command_instance.post_getmask,
+                "getpktdrops": self.command_instance.post_getpktdrops,
+                "getrxendperrpkts": self.command_instance.post_getrxendperrpkts,
+                "getrxpkts": self.command_instance.post_getrxpkts,
+                "getrxporterrpkts": self.command_instance.post_getrxporterrpkts,
+                "gettxpkts": self.command_instance.post_gettxpkts,
+                "gossip": self.command_instance.post_gossip,
+                "help": self.command_instance.post_help,
+                "init_wiser": self.command_instance.post_init_wiser,
+                "ios": self.command_instance.post_ios,
+                "licenses": self.command_instance.post_licenses,
+                "load": self.command_instance.post_load,
+                "log_capture": self.command_instance.post_log_capture,
+                "log_level": self.command_instance.post_log_level,
+                "log_msg": self.command_instance.post_log_msg,
+                "login": self.command_instance.post_login,
+                "motd": self.command_instance.post_motd,
+                "nc_show_cd": self.command_instance.post_nc_show_cd,
+                "nc_show_channel_groups": self.command_instance.post_nc_show_channel_groups,
+                "nc_show_endpoints": self.command_instance.post_nc_show_endpoints,
+                "nc_show_pesq": self.command_instance.post_nc_show_pesq,
+                "nc_show_ports": self.command_instance.post_nc_show_ports,
+                "nc_show_ppp_links": self.command_instance.post_nc_show_ppp_links,
+                "nc_show_spans": self.command_instance.post_nc_show_spans,
+                "nc_show_vr": self.command_instance.post_nc_show_vr,
+                "nc_show_vrcx": self.command_instance.post_nc_show_vrcx,
+                "notify_dhcp": self.command_instance.post_notify_dhcp,
+                "port_reset_completed": self.command_instance.post_port_reset_completed,
+                "probe_port": self.command_instance.post_probe_port,
+                "probe_ports": self.command_instance.post_probe_ports,
+                "quiesce_endp": self.command_instance.post_quiesce_endp,
+                "quiesce_group": self.command_instance.post_quiesce_group,
+                "quit": self.command_instance.post_quit,
+                "reboot_os": self.command_instance.post_reboot_os,
+                "report": self.command_instance.post_report,
+                "reset_port": self.command_instance.post_reset_port,
+                "reset_serial_span": self.command_instance.post_reset_serial_span,
+                "rm_adb": self.command_instance.post_rm_adb,
+                "rm_attenuator": self.command_instance.post_rm_attenuator,
+                "rm_cd": self.command_instance.post_rm_cd,
+                "rm_cd_endp": self.command_instance.post_rm_cd_endp,
+                "rm_cd_vr": self.command_instance.post_rm_cd_vr,
+                "rm_chamber": self.command_instance.post_rm_chamber,
+                "rm_chamber_path": self.command_instance.post_rm_chamber_path,
+                "rm_channel_group": self.command_instance.post_rm_channel_group,
+                "rm_client": self.command_instance.post_rm_client,
+                "rm_cx": self.command_instance.post_rm_cx,
+                "rm_db": self.command_instance.post_rm_db,
+                "rm_dut": self.command_instance.post_rm_dut,
+                "rm_endp": self.command_instance.post_rm_endp,
+                "rm_event": self.command_instance.post_rm_event,
+                "rm_group": self.command_instance.post_rm_group,
+                "rm_ppp_link": self.command_instance.post_rm_ppp_link,
+                "rm_profile": self.command_instance.post_rm_profile,
+                "rm_resource": self.command_instance.post_rm_resource,
+                "rm_rfgen": self.command_instance.post_rm_rfgen,
+                "rm_sec_ip": self.command_instance.post_rm_sec_ip,
+                "rm_span": self.command_instance.post_rm_span,
+                "rm_test_mgr": self.command_instance.post_rm_test_mgr,
+                "rm_text_blob": self.command_instance.post_rm_text_blob,
+                "rm_tgcx": self.command_instance.post_rm_tgcx,
+                "rm_threshold": self.command_instance.post_rm_threshold,
+                "rm_traffic_profile": self.command_instance.post_rm_traffic_profile,
+                "rm_venue": self.command_instance.post_rm_venue,
+                "rm_vlan": self.command_instance.post_rm_vlan,
+                "rm_vr": self.command_instance.post_rm_vr,
+                "rm_vrcx": self.command_instance.post_rm_vrcx,
+                "rm_wanpath": self.command_instance.post_rm_wanpath,
+                "rpt_script": self.command_instance.post_rpt_script,
+                "scan_wifi": self.command_instance.post_scan_wifi,
+                "set_arm_info": self.command_instance.post_set_arm_info,
+                "set_attenuator": self.command_instance.post_set_attenuator,
+                "set_chamber": self.command_instance.post_set_chamber,
+                "set_cx_report_timer": self.command_instance.post_set_cx_report_timer,
+                "set_cx_state": self.command_instance.post_set_cx_state,
+                "set_endp_addr": self.command_instance.post_set_endp_addr,
+                "set_endp_details": self.command_instance.post_set_endp_details,
+                "set_endp_file": self.command_instance.post_set_endp_file,
+                "set_endp_flag": self.command_instance.post_set_endp_flag,
+                "set_endp_payload": self.command_instance.post_set_endp_payload,
+                "set_endp_pld_bounds": self.command_instance.post_set_endp_pld_bounds,
+                "set_endp_proxy": self.command_instance.post_set_endp_proxy,
+                "set_endp_quiesce": self.command_instance.post_set_endp_quiesce,
+                "set_endp_report_timer": self.command_instance.post_set_endp_report_timer,
+                "set_endp_tos": self.command_instance.post_set_endp_tos,
+                "set_endp_tx_bounds": self.command_instance.post_set_endp_tx_bounds,
+                "set_event_interest": self.command_instance.post_set_event_interest,
+                "set_event_priority": self.command_instance.post_set_event_priority,
+                "set_fe_info": self.command_instance.post_set_fe_info,
+                "set_flag": self.command_instance.post_set_flag,
+                "set_gen_cmd": self.command_instance.post_set_gen_cmd,
+                "set_gps_info": self.command_instance.post_set_gps_info,
+                "set_ifup_script": self.command_instance.post_set_ifup_script,
+                "set_l4_endp": self.command_instance.post_set_l4_endp,
+                "set_license": self.command_instance.post_set_license,
+                "set_mc_endp": self.command_instance.post_set_mc_endp,
+                "set_password": self.command_instance.post_set_password,
+                "set_poll_mode": self.command_instance.post_set_poll_mode,
+                "set_port": self.command_instance.post_set_port,
+                "set_port2": self.command_instance.post_set_port2,
+                "set_port_alias": self.command_instance.post_set_port_alias,
+                "set_ppp_link_state": self.command_instance.post_set_ppp_link_state,
+                "set_resource": self.command_instance.post_set_resource,
+                "set_rfgen": self.command_instance.post_set_rfgen,
+                "set_script": self.command_instance.post_set_script,
+                "set_sec_ip": self.command_instance.post_set_sec_ip,
+                "set_test_id": self.command_instance.post_set_test_id,
+                "set_voip_info": self.command_instance.post_set_voip_info,
+                "set_vrcx_cost": self.command_instance.post_set_vrcx_cost,
+                "set_wanlink_info": self.command_instance.post_set_wanlink_info,
+                "set_wanlink_pcap": self.command_instance.post_set_wanlink_pcap,
+                "set_wanpath_corruption": self.command_instance.post_set_wanpath_corruption,
+                "set_wanpath_filter": self.command_instance.post_set_wanpath_filter,
+                "set_wanpath_running": self.command_instance.post_set_wanpath_running,
+                "set_wifi_corruptions": self.command_instance.post_set_wifi_corruptions,
+                "set_wifi_custom": self.command_instance.post_set_wifi_custom,
+                "set_wifi_extra": self.command_instance.post_set_wifi_extra,
+                "set_wifi_extra2": self.command_instance.post_set_wifi_extra2,
+                "set_wifi_radio": self.command_instance.post_set_wifi_radio,
+                "set_wifi_txo": self.command_instance.post_set_wifi_txo,
+                "set_wl_corruption": self.command_instance.post_set_wl_corruption,
+                "set_wl_qdisc": self.command_instance.post_set_wl_qdisc,
+                "show_adb": self.command_instance.post_show_adb,
+                "show_alerts": self.command_instance.post_show_alerts,
+                "show_attenuators": self.command_instance.post_show_attenuators,
+                "show_cd": self.command_instance.post_show_cd,
+                "show_chamber": self.command_instance.post_show_chamber,
+                "show_channel_groups": self.command_instance.post_show_channel_groups,
+                "show_clients": self.command_instance.post_show_clients,
+                "show_cx": self.command_instance.post_show_cx,
+                "show_cxe": self.command_instance.post_show_cxe,
+                "show_dbs": self.command_instance.post_show_dbs,
+                "show_dut": self.command_instance.post_show_dut,
+                "show_endp_payload": self.command_instance.post_show_endp_payload,
+                "show_endpoints": self.command_instance.post_show_endpoints,
+                "show_err": self.command_instance.post_show_err,
+                "show_event_interest": self.command_instance.post_show_event_interest,
+                "show_events": self.command_instance.post_show_events,
+                "show_files": self.command_instance.post_show_files,
+                "show_group": self.command_instance.post_show_group,
+                "show_pesq": self.command_instance.post_show_pesq,
+                "show_ports": self.command_instance.post_show_ports,
+                "show_ppp_links": self.command_instance.post_show_ppp_links,
+                "show_profile": self.command_instance.post_show_profile,
+                "show_resources": self.command_instance.post_show_resources,
+                "show_rfgen": self.command_instance.post_show_rfgen,
+                "show_rt": self.command_instance.post_show_rt,
+                "show_script_results": self.command_instance.post_show_script_results,
+                "show_spans": self.command_instance.post_show_spans,
+                "show_text_blob": self.command_instance.post_show_text_blob,
+                "show_tm": self.command_instance.post_show_tm,
+                "show_traffic_profile": self.command_instance.post_show_traffic_profile,
+                "show_venue": self.command_instance.post_show_venue,
+                "show_vr": self.command_instance.post_show_vr,
+                "show_vrcx": self.command_instance.post_show_vrcx,
+                "show_wanpaths": self.command_instance.post_show_wanpaths,
+                "shutdown": self.command_instance.post_shutdown,
+                "shutdown_os": self.command_instance.post_shutdown_os,
+                "shutdown_resource": self.command_instance.post_shutdown_resource,
+                "sniff_port": self.command_instance.post_sniff_port,
+                "start_endp": self.command_instance.post_start_endp,
+                "start_group": self.command_instance.post_start_group,
+                "start_ppp_link": self.command_instance.post_start_ppp_link,
+                "stop_endp": self.command_instance.post_stop_endp,
+                "stop_group": self.command_instance.post_stop_group,
+                "stop_ppp_link": self.command_instance.post_stop_ppp_link,
+                "tail": self.command_instance.post_tail,
+                "tm_register": self.command_instance.post_tm_register,
+                "tm_unregister": self.command_instance.post_tm_unregister,
+                "version": self.command_instance.post_version,
+                "who": self.command_instance.post_who,
+                "wifi_cli_cmd": self.command_instance.post_wifi_cli_cmd,
+                "wifi_event": self.command_instance.post_wifi_event,
+                "wiser_reset": self.command_instance.post_wiser_reset,
+                "write": self.command_instance.post_write,
+                "/adb": self.query_instance.get_adb,
+                "/alerts": self.query_instance.get_alerts,
+                "/arm": self.query_instance.get_arm,
+                "/arm-endp": self.query_instance.get_arm_endp,
+                "/attenuator": self.query_instance.get_attenuator,
+                "/chamber": self.query_instance.get_chamber,
+                "/control": self.query_instance.get_control,
+                "/cx": self.query_instance.get_cx,
+                "/dut": self.query_instance.get_dut,
+                "/endp": self.query_instance.get_endp,
+                "/endsession": self.query_instance.get_endsession,
+                "/events": self.query_instance.get_events,
+                "/fileio": self.query_instance.get_fileio,
+                "/generic": self.query_instance.get_generic,
+                "/gui-cli": self.query_instance.get_gui_cli,
+                "/layer4": self.query_instance.get_layer4,
+                "/newsession": self.query_instance.get_newsession,
+                "/port": self.query_instance.get_port,
+                "/probe": self.query_instance.get_probe,
+                "/profile": self.query_instance.get_profile,
+                "/profiles": self.query_instance.get_profiles,
+                "/quit": self.query_instance.get_quit,
+                "/radiostatus": self.query_instance.get_radiostatus,
+                "/resource": self.query_instance.get_resource,
+                "/scan": self.query_instance.get_scan,
+                "/stations": self.query_instance.get_stations,
+                "/status-msg": self.query_instance.get_status_msg,
+                "/test-group": self.query_instance.get_test_group,
+                "/text": self.query_instance.get_text,
+                "/voip": self.query_instance.get_voip,
+                "/voip-endp": self.query_instance.get_voip_endp,
+                "/vr": self.query_instance.get_vr,
+                "/vrcx": self.query_instance.get_vrcx,
+                "/wifi-msg": self.query_instance.get_wifi_msg,
+                "/wifi-stats": self.query_instance.get_wifi_stats,
+                "/wl": self.query_instance.get_wl,
+                "/wl-endp": self.query_instance.get_wl_endp,
+                "/ws-msg": self.query_instance.get_ws_msg,
+            }
+        if cli_name not in self.method_map:
+            print(f"command '{cli_name}' not present")
+            self.print_method_map()
+
+    def print_method_map(self):
+        pprint(self.method_map)
