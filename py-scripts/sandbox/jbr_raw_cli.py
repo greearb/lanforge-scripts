@@ -103,36 +103,36 @@ def main():
         raise ValueError("There appear to be no --arg parameters provided.")
 
     # look up the cmd from the session method_map
-    if not (args.cmd in session.method_map):
+    if not (session.find_method(args.cmd)):
         print(f"Unable to find cmd[{args.cmd}] in method_map:\n")
         print("    method_map keys:")
-        for key in list(session.method_map.keys()).sort():
-            print(f"        {key}")
+        session.print_method_map();
         exit(1)
-    method_name = session.method_map[args.cmd];
-    print(f"cmd[{args.cmd}] could be processed: [{method_name}]")
+    method_ref = session.method_map[args.cmd];
+    print(f"cmd[{args.cmd}] could be processed: [{method_ref}]")
     # compose the dict of args to pass into the eval
     # print( f"typeof args.arg:{type(args.arg)}")
-    cli_data_params : dict = {}
+    cli_data_params : dict = {
+        "self": command,
+        "debug": True,
+        "response_json_list": [],
+        "errors_warnings": [],
+        "suppress_related_commands": False
+    }
     for parameter in args.arg:
         k_v : list = []
-        if isinstance(parameter, list):
-            # print("    *LIST*")
+        if isinstance(parameter[0], list):
+            print("    *LIST*")
             k_v = (parameter)
-        elif isinstance(parameter, str):
-            # print("    *STR*")
-            k_v = parameter.split(' ', 1)
+        elif isinstance(parameter[0], str):
+            print("    *STR*")
+            k_v = parameter[0].split(' ', 1)
         else:
             raise ValueError("Unable to handle value of 'parameter' from args.arg")
-        # pprint.pprint(["k_v", k_v, "parameter", parameter])
-        # cli_data_params[k_v[0]] = k_v[1]
-
+        pprint.pprint(["k_v", k_v, "parameter", parameter])
+        cli_data_params[k_v[0]] = k_v[1]
     pprint.pprint(["CliDataPrams", cli_data_params])
-    print(f"""
-    Next we do something like this:
-    eval({method_name}, (data={args.arg})
-    """)
-    dir(inspect.signature(eval(method_name)))
+    method_ref(cli_data_params)
 
 
 
