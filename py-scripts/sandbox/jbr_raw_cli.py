@@ -101,6 +101,11 @@ def main():
 
     if not args.arg:
         raise ValueError("There appear to be no --arg parameters provided.")
+    # command.post_rm_adb(shelf=1, resource=1, adb_id=args.id, debug=args.debug, suppress_related_commands=True)
+    data={
+        "cmd": txt_cmd
+    }
+    command.json_post(url="/cli-json/raw", post_data=data, debug=args.debug, suppress_related_commands=True)
 
     # look up the cmd from the session method_map
     if not (session.find_method(args.cmd)):
