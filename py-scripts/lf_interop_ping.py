@@ -9,17 +9,22 @@
     EXAMPLE-1:
     Command Line Interface to run ping test with only virtual clients
     python3 lf_interop_ping.py --mgr 192.168.200.103  --target 192.168.1.3 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
-    --passwd OpenWifi --ping_interval 1 --ping_duration 1 --debug
+    --passwd OpenWifi --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --debug
 
     EXAMPLE-2:
     Command Line Interface to run ping test with only real clients
-    python3 lf_interop_ping.py --mgr 192.168.200.103 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1
+    python3 lf_interop_ping.py --mgr 192.168.200.103 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --ssid RDT_wpa2 --security wpa2_personal
+    --passwd OpenWifi
 
     EXAMPLE-3:
     Command Line Interface to run ping test with both real and virtual clients
     python3 lf_interop_ping.py --mgr 192.168.200.103 --target 192.168.1.3 --real --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
-    --passwd OpenWifi --ping_interval 1 --ping_duration 1
+    --passwd OpenWifi --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61
 
+    EXAMPLE-4:
+    Command Line Interface to run ping test with existing Wi-Fi configuration on the real devices
+    python3 lf_interop_ping.py --mgr 192.168.200.63 --real --target 192.168.1.61 --ping_interval 5 --ping_duration 1 --passwd OpenWifi --use_default_config
+    
     SCRIPT_CLASSIFICATION : Test
 
     SCRIPT_CATEGORIES: Performance, Functional, Report Generation
@@ -64,9 +69,11 @@ from lf_graph import lf_bar_graph_horizontal
 from lf_graph import lf_bar_graph
 from lf_report import lf_report
 from station_profile import StationProfile
+import interop_connectivity
 from LANforge import LFUtils
 
 logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -129,7 +136,7 @@ class Ping(Realm):
         if (self.enable_virtual):
             # removing virtual stations if existing
             for station in self.sta_list:
-                print('Removing the station {} if exists'.format(station))
+                logging.info('Removing the station {} if exists'.format(station))
                 self.generic_endps_profile.created_cx.append(
                     'CX_generic-{}'.format(station.split('.')[2]))
                 self.generic_endps_profile.created_endp.append(
@@ -137,8 +144,8 @@ class Ping(Realm):
                 self.rm_port(station, check_exists=True)
 
             if (not LFUtils.wait_until_ports_disappear(base_url=self.host, port_list=self.sta_list, debug=self.debug)):
-                print('All stations are not removed or a timeout occured.')
-                print('Aborting the test.')
+                logging.info('All stations are not removed or a timeout occured.')
+                logging.error('Aborting the test.')
                 exit(0)
 
         if (self.enable_real):
@@ -149,11 +156,11 @@ class Ping(Realm):
                 self.generic_endps_profile.created_endp.append(
                     'generic-{}'.format(station))
 
-        print('Cleaning up generic endpoints if exists')
+        logging.info('Cleaning up generic endpoints if exists')
         self.generic_endps_profile.cleanup()
         self.generic_endps_profile.created_cx = []
         self.generic_endps_profile.created_endp = []
-        print('Cleanup Successful')
+        logging.info('Cleanup Successful')
 
     # Args:
     #   devices: Connected RealDevice object which has already populated tracked real device
@@ -168,14 +175,14 @@ class Ping(Realm):
 
         # Need real stations to run interop test
         if (len(self.real_sta_list) == 0):
-            logging.error('There are no real devices in this testbed. Aborting test')
+            logger.error('There are no real devices in this testbed. Aborting test')
             exit(0)
 
-        print(self.real_sta_list)
+        logging.info(self.real_sta_list)
 
         for sta_name in self.real_sta_list:
             if sta_name not in real_devices.devices_data:
-                logging.error('Real station not in devices data')
+                logger.error('Real station not in devices data')
                 raise ValueError('Real station not in devices data')
 
             self.real_sta_data_dict[sta_name] = real_devices.devices_data[sta_name]
@@ -187,10 +194,10 @@ class Ping(Realm):
         self.linux = self.Devices.linux
 
     def buildstation(self):
-        print('Creating Stations {}'.format(self.sta_list))
+        logging.info('Creating Stations {}'.format(self.sta_list))
         for station_index in range(len(self.sta_list)):
             shelf, resource, port = self.sta_list[station_index].split('.')
-            print(shelf, resource, port)
+            logging.info('{} {} {}'.format(shelf, resource, port))
             station_object = StationProfile(lfclient_url='http://{}:{}'.format(self.host, self.port), local_realm=self, ssid=self.ssid,
                                             ssid_pass=self.password, security=self.security, number_template_='00', up=True, resource=resource, shelf=shelf)
             station_object.use_security(
@@ -219,18 +226,18 @@ class Ping(Realm):
 
         if (self.enable_virtual):
             if (self.generic_endps_profile.create(ports=virtual_stations, sleep_time=.5)):
-                print('Virtual client generic endpoint creation completed.')
+                logging.info('Virtual client generic endpoint creation completed.')
             else:
-                print('Virtual client generic endpoint creation failed.')
+                logging.error('Virtual client generic endpoint creation failed.')
                 exit(0)
 
         if (self.enable_real):
             real_sta_os_types = [self.real_sta_data_dict[real_sta_name]['ostype'] for real_sta_name in self.real_sta_data_dict]
 
             if (self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client_os_types=real_sta_os_types)):
-                print('Real client generic endpoint creation completed.')
+                logging.info('Real client generic endpoint creation completed.')
             else:
-                print('Real client generic endpoint creation failed.')
+                logging.error('Real client generic endpoint creation failed.')
                 exit(0)
 
     def start_generic(self):
@@ -240,7 +247,7 @@ class Ping(Realm):
         self.generic_endps_profile.stop_cx()
 
     def get_results(self):
-        print(self.generic_endps_profile.created_endp)
+        logging.info(self.generic_endps_profile.created_endp)
         results = self.json_get(
             "/generic/{}".format(','.join(self.generic_endps_profile.created_endp)))
         if (len(self.generic_endps_profile.created_endp) > 1):
@@ -287,7 +294,7 @@ class Ping(Realm):
     def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path=''):
         if result_json is not None:
             self.result_json = result_json
-        print('Generating Report')
+        logging.info('Generating Report')
 
         report = lf_report(_output_pdf='interop_ping.pdf',
                            _output_html='interop_ping.html',
@@ -295,8 +302,8 @@ class Ping(Realm):
                            _path=report_path)
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
-        print('path: {}'.format(report_path))
-        print('path_date_time: {}'.format(report_path_date_time))
+        logging.info('path: {}'.format(report_path))
+        logging.info('path_date_time: {}'.format(report_path_date_time))
 
         # setting report title
         report.set_title('Ping Test Report')
@@ -361,10 +368,10 @@ class Ping(Realm):
                 self.device_names_with_errors.append(device_data['name'])
                 self.devices_with_errors.append(device)
                 self.remarks.append(','.join(device_data['remarks']))
-            print(self.packets_sent,
+            logging.info(self.packets_sent,
                   self.packets_received,
                   self.packets_dropped)
-            print(self.device_min,
+            logging.info(self.device_min,
                   self.device_max,
                   self.device_avg)
 
@@ -403,7 +410,7 @@ class Ping(Realm):
                                         _color_name=['lightgrey', 'orange', 'steelblue'])
 
         graph_png = graph.build_bar_graph_horizontal()
-        print('graph name {}'.format(graph_png))
+        logging.info('graph name {}'.format(graph_png))
         report.set_graph_image(graph_png)
         # need to move the graph image to the results directory
         report.move_graph_image()
@@ -452,7 +459,7 @@ class Ping(Realm):
                                         _color_name=['lightgrey', 'orange', 'steelblue'])
 
         graph_png = graph.build_bar_graph_horizontal()
-        print('graph name {}'.format(graph_png))
+        logging.info('graph name {}'.format(graph_png))
         report.set_graph_image(graph_png)
         # need to move the graph image to the results directory
         report.move_graph_image()
@@ -509,16 +516,21 @@ if __name__ == '__main__':
         EXAMPLE-1:
         Command Line Interface to run ping test with only virtual clients
         python3 lf_interop_ping.py --mgr 192.168.200.103  --target 192.168.1.3 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
-        --passwd OpenWifi --ping_interval 1 --ping_duration 1 --debug
+        --passwd OpenWifi --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --debug
 
         EXAMPLE-2:
         Command Line Interface to run ping test with only real clients
-        python3 lf_interop_ping.py --mgr 192.168.200.103 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1
+        python3 lf_interop_ping.py --mgr 192.168.200.103 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --ssid RDT_wpa2 
+        --security wpa2_personal --passwd OpenWifi
 
         EXAMPLE-3:
         Command Line Interface to run ping test with both real and virtual clients
         python3 lf_interop_ping.py --mgr 192.168.200.103 --target 192.168.1.3 --real --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
-        --passwd OpenWifi --ping_interval 1 --ping_duration 1
+        --passwd OpenWifi --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61
+
+        EXAMPLE-4:
+        Command Line Interface to run ping test with existing Wi-Fi configuration on the real devices
+        python3 lf_interop_ping.py --mgr 192.168.200.63 --real --target 192.168.1.61 --ping_interval 5 --ping_duration 1 --passwd OpenWifi --use_default_config
 
         SCRIPT_CLASSIFICATION : Test
 
@@ -584,6 +596,10 @@ if __name__ == '__main__':
                           default='lanforge',
                           help='Password to connect to LANforge GUI')
 
+    optional.add_argument('--server_ip',
+                          type=str,
+                          help='Upstream for configuring the Interop App')
+
     optional.add_argument('--security',
                           type=str,
                           default='open',
@@ -611,10 +627,33 @@ if __name__ == '__main__':
                           action="store_true",
                           help='specify this flag if the test should run on real clients')
 
+    optional.add_argument('--use_default_config',
+                          action='store_true',
+                          help='specify this flag if wanted to proceed with existing Wi-Fi configuration of the devices')
+
     optional.add_argument('--debug',
                           action="store_true",
                           help='Enable debugging')
+    
+    # logging configuration:
+    parser.add_argument('--log_level', default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+
+    parser.add_argument("--lf_logger_config_json",
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
+
     args = parser.parse_args()
+
+    # set the logger level to debug
+    logger_config = lf_logger_config.lf_logger_config()
+
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
 
     # input sanity
     if(args.virtual is False and args.real is False):
@@ -624,15 +663,28 @@ if __name__ == '__main__':
         print('--radio required')
         exit(0)
     if (args.virtual is True and args.ssid is None):
-        print('--ssid required')
+        print('--ssid required for virtual stations')
         exit(0)
     if (args.security != 'open' and args.passwd == '[BLANK]'):
         print('--passwd required')
         exit(0)
+    if(args.use_default_config == False):
+        if(args.ssid is None):
+            print('--ssid required for Wi-Fi configuration')
+            exit(0)
+
+        if(args.security.lower() != 'open' and args.passwd == '[BLANK]'):
+            print('--passwd required for Wi-Fi configuration')
+            exit(0)
+
+        if(args.server_ip is None):
+            print('--server_ip or upstream ip required for Wi-fi configuration')
+            exit(0)
 
     mgr_ip = args.mgr
     mgr_password = args.mgr_passwd
     mgr_port = args.mgr_port
+    server_ip = args.server_ip
     ssid = args.ssid
     security = args.security
     password = args.passwd
@@ -641,6 +693,7 @@ if __name__ == '__main__':
     target = args.target
     interval = args.ping_interval
     duration = args.ping_duration
+    configure = not args.use_default_config
     debug = args.debug
 
     if (debug):
@@ -667,12 +720,12 @@ if __name__ == '__main__':
     # creating virtual stations if --virtual flag is specified
     if (args.virtual):
 
-        print('Proceeding to create {} virtual stations on {}'.format(num_sta, radio))
+        logging.info('Proceeding to create {} virtual stations on {}'.format(num_sta, radio))
         station_list = LFUtils.portNameSeries(
             prefix_='sta', start_id_=0, end_id_=num_sta-1, padding_number_=100000, radio=radio)
         ping.sta_list = station_list
         if (debug):
-            print('Virtual Stations: {}'.format(station_list).replace(
+            logging.info('Virtual Stations: {}'.format(station_list).replace(
                 '[', '').replace(']', '').replace('\'', ''))
 
     # selecting real clients if --real flag is specified
@@ -681,6 +734,49 @@ if __name__ == '__main__':
         Devices.get_devices()
         ping.Devices = Devices
         ping.select_real_devices(real_devices=Devices)
+
+        if(configure):
+
+            # for androids
+            logger.info('Configuring Wi-Fi on the selected devices')
+            if(Devices.android_list == []):
+                logging.info('There are no Androids to configure Wi-Fi')
+            else:
+                androids = interop_connectivity.Android(lanforge_ip=mgr_ip, port=mgr_port, server_ip=server_ip, ssid=ssid, passwd=password, encryption=security)
+                androids_data = androids.get_serial_from_port(port_list=Devices.android_list)
+
+                androids.stop_app(port_list = androids_data)
+
+                # androids.set_wifi_state(port_list=androids_data, state='disable')
+
+                # time.sleep(5)
+
+                androids.set_wifi_state(port_list=androids_data, state='enable')
+
+                androids.configure_wifi(port_list=androids_data)
+
+            # for laptops
+            laptops = interop_connectivity.Laptop(lanforge_ip=mgr_ip, port=8080, server_ip=server_ip, ssid=ssid, passwd=password, encryption=security)
+            all_laptops = Devices.windows_list + Devices.linux_list + Devices.mac_list
+
+            if(all_laptops == []):
+                logging.info('There are no laptops selected to configure Wi-Fi')
+            else:
+
+                laptops_data = laptops.get_laptop_from_port(port_list=all_laptops)
+
+                # works only for linux
+                laptops.rm_station(port_list=laptops_data)
+                time.sleep(2)
+
+                laptops.add_station(port_list=laptops_data)
+                time.sleep(2)
+
+                laptops.set_port(port_list=laptops_data)
+
+            if(Devices.android_list != [] or all_laptops != []):
+                logging.info('Waiting 20s for the devices to configure to Wi-Fi')
+                time.sleep(20)
 
     # station precleanup
     ping.cleanup()
@@ -691,7 +787,7 @@ if __name__ == '__main__':
 
     # check if generic tab is enabled or not
     if (not ping.check_tab_exists()):
-        print('Generic Tab is not available.\nAborting the test.')
+        logging.error('Generic Tab is not available.\nAborting the test.')
         exit(0)
 
     ping.sta_list += ping.real_sta_list
@@ -699,10 +795,10 @@ if __name__ == '__main__':
     # creating generic endpoints
     ping.create_generic_endp()
 
-    print(ping.generic_endps_profile.created_cx)
+    logging.info(ping.generic_endps_profile.created_cx)
 
     # run the test for the given duration
-    print('Running the ping test for {} minutes'.format(duration))
+    logging.info('Running the ping test for {} minutes'.format(duration))
 
     # start generate endpoint
     ping.start_generic()
@@ -716,12 +812,12 @@ if __name__ == '__main__':
     
     time.sleep(duration * 60)
 
-    print('Stopping the test')
+    logging.info('Stopping the test')
     ping.stop_generic()
 
     result_data = ping.get_results()
-    # print(result_data)
-    print(ping.result_json)
+    # logging.info(result_data)
+    logging.info(ping.result_json)
     if (args.virtual):
         ports_data_dict = ping.json_get('/ports/all/')['interfaces']
         ports_data = {}
@@ -737,11 +833,11 @@ if __name__ == '__main__':
                         # min_rtt = 10000
                         # max_rtt = 0
                         # for result in result_data['last results'].split('\n'):
-                        #     # print(result)
+                        #     # logging.info(result)
                         #     if(result == ''):
                         #         continue
                         #     rt_time = result.split()[6]
-                        #     print(rt_time.split('time='))
+                        #     logging.info(rt_time.split('time='))
                         #     time_value = float(rt_time.split('time=')[1])
                         #     t_rtt += time_value
                         #     if(time_value < min_rtt):
@@ -749,7 +845,7 @@ if __name__ == '__main__':
                         #     if(max_rtt < time_value):
                         #         max_rtt = time_value
                         # avg_rtt = t_rtt / float(result_data['rx pkts'])
-                        # print(t_rtt, min_rtt, max_rtt, avg_rtt)
+                        # logging.info(t_rtt, min_rtt, max_rtt, avg_rtt)
                         ping.result_json[station] = {
                             'command': result_data['command'],
                             'sent': result_data['tx pkts'],
@@ -790,7 +886,7 @@ if __name__ == '__main__':
                             #     if(max_rtt < time_value):
                             #         max_rtt = time_value
                             # avg_rtt = t_rtt / float(ping_data['rx pkts'])
-                            # print(t_rtt, min_rtt, max_rtt, avg_rtt)
+                            # logging.info(t_rtt, min_rtt, max_rtt, avg_rtt)
                             ping.result_json[station] = {
                                 'command': ping_data['command'],
                                 'sent': ping_data['tx pkts'],
@@ -814,9 +910,9 @@ if __name__ == '__main__':
         if (type(result_data) == dict):
             for station in ping.real_sta_list:
                 current_device_data = Devices.devices_data[station]
-                # print(current_device_data)
+                # logging.info(current_device_data)
                 if (station in result_data['name']):
-                    # print(result_data['last results'].split('\n'))
+                    # logging.info(result_data['last results'].split('\n'))
                     ping.result_json[station] = {
                         'command': result_data['command'],
                         'sent': result_data['tx pkts'],
@@ -859,7 +955,7 @@ if __name__ == '__main__':
                         }
                         ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
 
-    print(ping.result_json)
+    logging.info(ping.result_json)
 
     # station post cleanup
     # ping.cleanup()
