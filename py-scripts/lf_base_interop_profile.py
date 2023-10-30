@@ -723,10 +723,15 @@ class RealDevice(Realm):
                 'MAC': device_details['mac']
             }
             # print('{}\t{}\t\t\t{}'.format(device, device_details['hw version'], device_details['mac']))
+        pd.set_option('display.max_rows', None)
         df = pd.DataFrame(data=t_devices).transpose()
         print(df)
 
-        self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11): ').split(',')
+        self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
+        
+        # if all is seleceted making the list as empty string so that it would consider all devices
+        if(self.selected_device_eids == ['all']):
+            self.selected_device_eids = ['']
         print('You have selected the below devices for testing')
         # print('Port\t\thw version\t\t\tMAC')
         selected_t_devices = {}
