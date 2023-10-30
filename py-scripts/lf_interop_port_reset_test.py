@@ -46,7 +46,6 @@ import time
 import datetime
 from datetime import datetime
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import logging
 
@@ -74,7 +73,6 @@ class InteropPortReset(Realm):
                  passwd=None,
                  encryp=None,
                  reset=None,
-                 clients= None,
                  mgr_ip=None,
                  time_int=None,
                  wait_time=None,
@@ -99,8 +97,6 @@ class InteropPortReset(Realm):
         self.ssid = ssid
         self.passwd = passwd
         self.encryp = encryp
-        # self.band = band
-        # self.clients = clients
         self.mgr_ip = mgr_ip
         self.reset = reset
         self.time_int = time_int
@@ -139,8 +135,6 @@ class InteropPortReset(Realm):
                 if any(key in item for item in android_list):
                     self.final_selected_android_list.append(supported_dict[key])
         logging.info(f"Final Android Serial Numbers List: {self.final_selected_android_list}")
-
-        # return self.available_device_list, self.user_query
 
     def get_resources_data(self):
         # fetching all devices from Resource Manager tab
@@ -200,7 +194,6 @@ class InteropPortReset(Realm):
         if not port_list:
             logging.info('rm_station() -> Port list is empty')
             return
-
         data_list = []
         for port_data in port_list:
             if 'Lin' == port_data['os']:
@@ -211,7 +204,6 @@ class InteropPortReset(Realm):
                     'port': sta_name
                 }
                 data_list.append(data)
-
         for i in data_list:
             self.json_post("/cli-json/add_sta", i)
 
@@ -222,9 +214,7 @@ class InteropPortReset(Realm):
         if not port_list:
             logging.info('add_station() -> Port list is empty')
             return
-
         data_list = []
-
         for port_data in port_list:
             shelf = port_data['shelf']
             resource = port_data['resource']
@@ -249,7 +239,6 @@ class InteropPortReset(Realm):
                 'mac': 'xx:xx:xx:*:*:xx'
             }
             data_list.append(data)
-
         for i in data_list:
             self.json_post("/cli-json/add_sta", i)
 
@@ -260,7 +249,6 @@ class InteropPortReset(Realm):
         if not port_list:
             logging.info('set_port() -> Port list is empty')
             return
-
         data_list = []
         for port_data in port_list:
             shelf = port_data['shelf']
@@ -289,7 +277,6 @@ class InteropPortReset(Realm):
                     'interest': interest
                 }
             data_list.append(data)
-
         for i in data_list:
             self.json_post("/cli-json/set_port", i)
 
@@ -297,16 +284,9 @@ class InteropPortReset(Realm):
         # Convert the list of JSON values to a JSON-formatted string
         json_string = json.dumps(json_list)
         new_folder = os.path.join(self.report_path, "Wifi_Messages")
-        if os.path.exists(new_folder) and os.path.isdir(new_folder):
-            pass
-            # print(f"The folder 'Wifi_Messages' is already existed in '{self.report_path}' report folder.")
-        else:
-            # print(f"The folder 'Wifi_Messages' does not exist in '{self.report_path}' report folder.")
+        if not (os.path.exists(new_folder) and os.path.isdir(new_folder)):
             os.makedirs(new_folder)
-
         file_path = f"{self.report_path}/Wifi_Messages/{file_name}"
-        # print("log file saved in Wifi_Message directory path:", file_path)
-
         # Write the JSON-formatted string to the .json file
         with open(file_path, 'w') as file:
             file.write(json_string)
@@ -328,54 +308,33 @@ class InteropPortReset(Realm):
     def get_last_wifi_msg(self):
         a = self.json_get("/wifi-msgs/last/1", debug_=True)
         last = a['wifi-messages']['time-stamp']
-        # logging.info(str(a))
         logging.info(f"Last WiFi Message Time Stamp: {last}")
-        # logging.info(str(last))
         return last
 
     def get_count(self, value=None, keys_list=None, device=None, filter=None):
         count_ = []
         device = device.split(".")[2]
         for i, y in zip(keys_list, range(len(keys_list))):
-            # print("Time stamp :-", i)
             wifi_msg_text = value[y][i]['text']
             if type(wifi_msg_text) == str:
                 wifi_msg_text_keyword_list = value[y][i]['text'].split(" ")
-                # print("#Wifi Message Text list:", wifi_msg_text_keyword_list)
                 if device is None:
                     logging.info(f"Device name is {device} None device name not existed in wifi messages...")
                 else:
-                    # print("#Device", device)
                     if device in wifi_msg_text_keyword_list:
                         if filter in wifi_msg_text_keyword_list:
                             # logging.info(f"The filter {filter} is present in the wifi message for device '{device}'.")
                             count_.append("YES")
-                    else:
-                        pass
-                        # print(f"The device {device} not present in wifi_msg, so Skipping",
-                        #       wifi_msg_text_keyword_list)
             else:
                 for item in wifi_msg_text:
                     wifi_msg_text_keyword_list = item.split(" ")
                     # print("$Wifi Message Text list:", wifi_msg_text_keyword_list)
-                    if device is None:
-                        pass
-                        # logging.info(f"Device name is {device} None device name not existed in wifi messages... , ...")
-                    else:
-                        # print("$Device", device)
+                    if device is not None:
                         if device in wifi_msg_text_keyword_list:
                             if filter in wifi_msg_text_keyword_list:
                                 # logging.info(f"The filter {filter} is present in the wifi message test list.")
                                 count_.append("YES")
-                        else:
-                            pass
-                            # print(f"The device {device} not present in wifi_msg, so Skipping",
-                            #       wifi_msg_text_keyword_list)
-        # print("Filter Present Count list:", count_)
-        # logging.info(str(count_))
         counting = count_.count("YES")
-        # print("Total Counting:", counting)
-        # logging.info(str(counting))
         return counting
 
     def get_time_from_wifi_msgs(self, local_dict=None, phn_name=None, timee=None, file_name="dummy.json"):
@@ -387,14 +346,11 @@ class InteropPortReset(Realm):
         logging.info(f"Counting the DISCONNECTIONS, SCANNING, ASSOC ATTEMPTS, ASSOC RECJECTIONS, CONNECTS for device {phn_name}")
         self.create_log_file(json_list=values, file_name=file_name)
         self.remove_files_with_duplicate_names(folder_path=f"{self.report_path}/Wifi_Messages/")
-        # logging.info("values" + str(values))
         keys_list = []
 
         for i in range(len(values)):
             keys_list.append(list(values[i].keys())[0])
         # print("Key list", keys_list)
-
-        # print("Before updating the disconnect count:", local_dict[phn_name])
 
         if "1.1." in phn_name:
             # disconnects
@@ -512,45 +468,19 @@ class InteropPortReset(Realm):
             logging.info(f"The total number of available active Linux devices are: {len(self.base_interop_profile.linux_list)}")
             logging.info(f"The total number of available active Mac devices are: {len(self.base_interop_profile.mac_list)}")
 
-            # Checking and selecting the number of available clients are grater than or equal to given number of clients
-            # if self.clients is not None:  #TODO: Need to remove the --client arg
-            #     if len(self.adb_device_list) >= self.clients:
-            #         logging.info("No of available clients is greater than or equal to provided clients")
-            #         logging.info("No of available clients is greater than or equal to provided clients")
-            #         logging.info("*** Now choosing no of clients provided from available list randomly ***")
-            #         logging.info("now choosing no of clients provided from available list randomly")
-            #         new_device = []
-            #         for i, x in zip(self.adb_device_list, range(int(self.clients))):
-            #             if x < self.clients:
-            #                 new_device.append(i)
-            #         logging.info(f"Selected Devices List: {new_device}")
-            #         logging.info(new_device)
-            #         self.adb_device_list = new_device
-            #     else:
-            #         logging.info("No of available clients is less than provided clients to be tested, Please check it.")
-            #         logging.info("no of available clients is less then provided clients to be tested, Please check it.")
-            #         exit(1)
-
             if self.adb_device_list:
                 logging.info(f"Selected All Active Devices: {self.adb_device_list}")
             else:
                 logging.info(f"No active adb devices list found: {self.adb_device_list}")
-                # exit(1)
-            # Fetching Name of the devices in a list if the active devices are available
             logging.info(f"Final selected device list, after chosen from available device list: {self.adb_device_list}")
-            logging.info(f"Final selected device list, after chosen from available device list: {str(self.adb_device_list)}")
 
-            #############
             if len(self.adb_device_list) == 0:
                 logging.info("There is no active adb (Android) devices please check system")
-                # exit(1)
             else:
                 for i in range(len(self.adb_device_list)):
                     self.phn_name.append(self.adb_device_list[i].split(".")[2])
                 logging.info(f"Separated device names from the full name: {self.phn_name}")
                 logging.info("phn_name" + str(self.phn_name))
-
-            ####################
 
             # check status of devices
             phantom = []
@@ -593,8 +523,6 @@ class InteropPortReset(Realm):
                         logging.info("Forgetting all Saved networks for %s device..." % i)
                         logging.info("forget all previous connected networks")
                         self.utility.forget_netwrk(device=i, network_id=connected_network_info['Network Id'])
-                        # print("Waiting for 2 sec")
-                        # time.sleep(2)
 
                 logging.info("Stopping the APP")
                 for i in self.adb_device_list:
@@ -615,15 +543,12 @@ class InteropPortReset(Realm):
                 logging.info("check heath data")
                 health = dict.fromkeys(self.adb_device_list)
                 logging.info(f"Initial Health Data For Android Clients: {health}")
-                # logging.info(str(health))
                 health_for_laptops = dict.fromkeys(self.all_laptops)
                 logging.info(f"Initial Health Data For Laptops Clients: {health_for_laptops}")
 
                 # checking whether the adb device connected to given ssid or not
                 for i in self.adb_device_list:
                     dev_state = self.utility.get_device_state(device=i)
-                    # print("State of the Device:", dev_state)
-                    # logging.info("device state" + dev_state)
                     if dev_state == "COMPLETED,":
                         logging.info("Phone %s is in connected state" % i)
                         logging.info("phone is in connected state")
@@ -692,7 +617,6 @@ class InteropPortReset(Realm):
 
                     list_ = ["ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected"]
                     sec_dict = dict.fromkeys(list_)
-                    # print("sec_dict", sec_dict)
 
                     for i in self.adb_device_list:
                         local_dict[i] = sec_dict.copy()  # for android devices dict
@@ -725,13 +649,13 @@ class InteropPortReset(Realm):
                         logging.info("enable wifi")
                         self.interop.enable_or_disable_wifi(device=i, wifi="enable")
                     for i in self.adb_device_list:
-                        logging.info("Starting APP for " % i)
+                        logging.info("Starting APP for %s" % i)
                         self.interop.start(device=i)
                     logging.info("Waiting until given %s sec waiting time to finish..." % self.wait_time)
                     time.sleep(int(self.wait_time))
                     for i in self.all_selected_devices:
                         get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee,
-                                                                 file_name=f"reset_{r}_log.json")  #Todo : need to rename the method
+                                                                 file_name=f"reset_{r}_log.json")
                         reset_dict[r] = get_dicct
                 logging.info(f"Final Reset Count Dictionary for all clients: {reset_dict}")
                 logging.info("reset dict " + str(reset_dict))
@@ -748,12 +672,11 @@ class InteropPortReset(Realm):
                 logging.info("Generating the Report...")
                 return reset_dict, test_duration
         except Exception as e:
-            print(e)
+            logger.error(str(e))
 
     def generate_overall_graph(self, reset_dict=None, figsize=(13, 5), _alignmen=None, remove_border=None,
                                bar_width=0.7, _legend_handles=None, _legend_loc="best", _legend_box=None, _legend_ncol=1,
-                               _legend_fontsize=None, text_font=12, bar_text_rotation=45,
-                               ):
+                               _legend_fontsize=None, text_font=12, bar_text_rotation=45):
         dict_ = ['Port Resets', 'Disconnected', 'Scans', 'Assoc Attempts', "Association Rejection", 'Connected']
         data = dict.fromkeys(dict_)
         data['Port Resets'] = self.reset
@@ -765,11 +688,9 @@ class InteropPortReset(Realm):
         asso_rej, laptop_asso_rej = [], []
 
         for j in self.adb_device_list:
-            # print(j)
             local = []
             local_2, local_3, local_4, local_5, local_6 = [], [], [], [], []
             for i in reset_dict:
-                # print(i)
                 if j in list(reset_dict[i].keys()):
                     local.append(reset_dict[i][j]['Connected'])
                     local_2.append(reset_dict[i][j]['Disconnected'])
@@ -783,13 +704,10 @@ class InteropPortReset(Realm):
             asso_attempt.append(local_4)
             asso_rej.append(local_5)
 
-        # print("list ", conected_list, disconnected_list, scan_state, asso_attempt, asso_rej)
         for j in self.all_laptops:
-            # print(j)
             local = []
             local_2, local_3, local_4, local_5, local_6 = [], [], [], [], []
             for i in reset_dict:
-                # print(i)
                 if j in list(reset_dict[i].keys()):
                     local.append(reset_dict[i][j]['Connected'])
                     local_2.append(reset_dict[i][j]['Disconnected'])
@@ -828,13 +746,6 @@ class InteropPortReset(Realm):
             for m in asso_rej[i]:
                 assorej = assorej + m
 
-        # print("scan", scan)
-        # print(ass_atmpt)
-        # print(conects)
-        # print(disconnects)
-        # print(assorej)
-
-        # print("Before count the dictionary data for overall data: ", data)
         data['Disconnected'] = disconnects
         data['Scans'] = scan
         data['Assoc Attempts'] = ass_atmpt
@@ -846,10 +757,6 @@ class InteropPortReset(Realm):
         self.graph_image_name = "overall_graph"
         courses = list(data.keys())
         values = list(data.values())
-        # print(courses)
-        # print(values)
-
-        # fig = plt.figure(figsize=(12, 4))
 
         fig_size, ax = plt.subplots(figsize=figsize, gridspec_kw=_alignmen)
         # to remove the borders
@@ -1010,7 +917,6 @@ class InteropPortReset(Realm):
             self.lf_report.set_table_dataframe(test_setup)
             self.lf_report.build_table()
 
-
     def generate_report(self, reset_dict=None, test_dur=None):
         try:
             # print("reset dict", reset_dict)
@@ -1019,10 +925,6 @@ class InteropPortReset(Realm):
 
             date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
             # self.lf_report.move_data(_file_name="overall_reset_test.log")
-            # if self.clients is None:
-            #     num_clients = len(self.adb_device_list)
-            # else:
-            #     num_clients = len(self.all_selected_devices)
             test_setup_info = {
                 "DUT Name": self.dut_name,
                 "LANforge ip": self.host,
@@ -1075,15 +977,12 @@ class InteropPortReset(Realm):
 
             all_devices = self.adb_device_list + self.all_laptops
             self.individual_client_info(reset_dict=reset_dict, device_list=all_devices)
-
             self.lf_report.set_obj_html("Tested Clients Information:",
                                         "The table displays details of real clients which are involved in the test.")
             self.lf_report.build_objective()
             d_name, device_type, model, user_name, release = [], [], [], [], []
 
             for y in all_devices:
-                # print(self.adb_device_list)
-                # print("Device :", y)
                 if "1.1." in y:
                     d_name.append(self.interop.get_device_details(device=y, query="name"))
                     device_type.append(self.interop.get_device_details(device=y, query="device-type"))
@@ -1104,13 +1003,9 @@ class InteropPortReset(Realm):
                         dev_type = ""
                     device_type.append(dev_type)
                     # release.append("")
-
-
             s_no = []
             for i in range(len(d_name)):
                 s_no.append(i + 1)
-
-            # self.clients = len(self.adb_device_list)
 
             table_2 = {
                 "S.No": s_no,
@@ -1128,7 +1023,6 @@ class InteropPortReset(Realm):
             self.lf_report.write_html()
             self.lf_report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
         except Exception as e:
-            print(str(e))
             logging.warning(str(e))
 
 
@@ -1196,12 +1090,6 @@ INCLUDE_IN_README: False
     parser.add_argument("--encryp", default="psk2",
                         help='Specify the encryption type  on which the test will be running eg :open|psk|psk2|sae|psk2jsae')
 
-    # parser.add_argument("--band", default="5G",
-    #                     help='specify the type of band you want to perform testing eg 5G|2G|Dual')
-
-    # parser.add_argument("--clients", type=int, default=None,
-    #                     help='Specify no of clients you want to perform test on.')
-
     parser.add_argument("--reset", type=int, default=2,
                         help='Specify the number of time you want to reset. eg: 2')
 
@@ -1250,7 +1138,6 @@ INCLUDE_IN_README: False
     obj.selecting_devices_from_available()
     reset_dict, duration = obj.run()
     obj.generate_report(reset_dict=reset_dict, test_dur=duration)
-
 
 if __name__ == '__main__':
     main()
