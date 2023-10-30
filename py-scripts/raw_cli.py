@@ -122,7 +122,7 @@ def main():
     response_json_list = []
     errors_warnings = []
     cli_data_params : dict = {}
-    print(" ----- 107 cmd ----- ----- ----- ----- ----- ----- ----- ----- -----")
+
     for parameter in args.arg:
         k_v : list = []
         if isinstance(parameter[0], list):
@@ -148,7 +148,8 @@ def main():
                errors_warnings=errors_warnings,
                debug=args.debug,
                suppress_related_commands=False)
-
+    if len(errors_warnings) > 0:
+        pprint.pprint(["errors and warnings:", errors_warnings])
 
 if __name__ == "__main__":
     main()
