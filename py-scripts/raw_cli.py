@@ -47,7 +47,7 @@ import argparse
 import pprint
 import inspect
 import collections
-sys.path.insert(1, "../../")
+sys.path.insert(1, "../")
 
 if "SHELL" in os.environ.keys():
     lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
