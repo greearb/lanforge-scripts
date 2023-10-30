@@ -96,6 +96,7 @@ def main():
                               debug=args.debug,
                               suppress_related_commands=True)
         exit(0)
+    print(" ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
     if not args.cmd:
         raise ValueError("--cmd required, please use a CLI command, followed by --args 'parameter value' as necessary")
 
@@ -104,17 +105,10 @@ def main():
     # command.post_rm_adb(shelf=1, resource=1, adb_id=args.id, debug=args.debug, suppress_related_commands=True)
     data={
         "cmd": txt_cmd
-    }
+     }
     command.json_post(url="/cli-json/raw", post_data=data, debug=args.debug, suppress_related_commands=True)
+    print(" ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
 
-    # look up the cmd from the session method_map
-    if not (session.find_method(args.cmd)):
-        print(f"Unable to find cmd[{args.cmd}] in method_map:\n")
-        print("    method_map keys:")
-        session.print_method_map();
-        exit(1)
-    method_ref = session.method_map[args.cmd];
-    print(f"cmd[{args.cmd}] could be processed: [{method_ref}]")
     # compose the dict of args to pass into the eval
     # print( f"typeof args.arg:{type(args.arg)}")
     cli_data_params : dict = {
@@ -136,6 +130,18 @@ def main():
             raise ValueError("Unable to handle value of 'parameter' from args.arg")
         pprint.pprint(["k_v", k_v, "parameter", parameter])
         cli_data_params[k_v[0]] = k_v[1]
+
+    # look up the cmd from the session method_map
+    if not (session.find_method(args.cmd)):
+        print(f"Unable to find cmd[{args.cmd}] in method_map:\n")
+        print("    method_map keys:")
+        session.print_method_map();
+        exit(1)
+    print(" ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
+    method_ref = session.method_map[args.cmd];
+    print(f"cmd[{args.cmd}] has reference: [{dir(method_ref) }]")
+    print(" ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
+
     pprint.pprint(["CliDataPrams", cli_data_params])
     method_ref(cli_data_params)
 
