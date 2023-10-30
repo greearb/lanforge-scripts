@@ -24051,6 +24051,7 @@ class LFSession(BaseSession):
             to assembling method calls at runtime.
         ---- ---- ---- ---- """
         if not self.method_map or len(self.method_map) < 100:
+            self.logger.warning("find_method: Creating method map")
             self.method_map = {
                 "adb": self.command_instance.post_adb,
                 "adb_bt": self.command_instance.post_adb_bt,
@@ -24344,9 +24345,11 @@ class LFSession(BaseSession):
                 "/wl-endp": self.query_instance.get_wl_endp,
                 "/ws-msg": self.query_instance.get_ws_msg,
             }
-        if cli_name not in self.method_map:
-            print(f"command '{cli_name}' not present")
+        if not (cli_name in self.method_map.keys()):
+            self.logger.warning(f"find_method: command '{cli_name}' not present")
             self.print_method_map()
+            return None
+        return self.method_map[cli_name]
 
     def print_method_map(self):
         pprint(self.method_map)
