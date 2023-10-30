@@ -1,18 +1,33 @@
 #!/usr/bin/env python3
 """
-NAME: jbr_raw_cli.py
+NAME: raw_cli.py
 
 PURPOSE: test the functionality of passing raw commands thru JSON API
 
-EXAMPLE:
-$ ./jbr_raw_cli.py --mgr localhost --debug --cmd "reset_port 1 1 sta00500"
-$ echo watch that station reset
+EXAMPLES:
+=========
+    Creating a Layer 3 TCP connection:
+    ----------------------------------
+$ ./raw_cli.py --mgr ct521a-manx.bitratchet.net --cmd rm_endp --arg "endp_name tcp-A"
+$ ./raw_cli.py --mgr ct521a-manx.bitratchet.net --cmd add_endp --arg "alias tcp-A" \
+    --arg "shelf 1" --arg "resource 1" --arg "port eth1" --arg "p_type lf_tcp" --arg "ip_port ANY" \
+    --arg "min_rate 36000" --arg "max_rate 0" --arg "multi_conn 10"
+$ ./raw_cli.py --mgr ct521a-manx.bitratchet.net --cmd add_endp --arg "alias tcp-B" \
+    --arg "shelf 1" --arg "resource 1" --arg "port eth2" --arg "p_type lf_tcp" --arg "ip_port ANY" \
+    --arg "min_rate 36000" --arg "max_rate 0" --arg "multi_conn 10"
+$ ./raw_cli.py --mgr ct521a-manx.bitratchet.net --cmd add_cx --arg "alias tcp" \
+    --arg "test_mgr default_tm" --arg "tx_endp tcp-B" --arg "rx_endp tcp-A"
 
-$ ./jbr_raw_cli.py --host ct521a-jana --cmd "add_text_blob category type it takes a village to raise a child"
-$ Krl /text/spicy.takes
-$ echo that created a text blob
+    Sending a raw one-line command:
+    -------------------------------
+$ ./raw_cli.py --mgr localhost --raw "reset_port 1 1 sta00500"
+
+    Submitting a text blob entry:
+    -----------------------------
+$ ./raw_cli.py --mgr ct521a-jana --raw "add_text_blob category type it takes a village to raise a child"
 
 NOTES:
+======
 This method of executing CLI commands does NOT report errors presently.
 
 TO DO NOTES:
