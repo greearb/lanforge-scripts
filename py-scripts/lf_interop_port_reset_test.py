@@ -404,15 +404,15 @@ class InteropPortReset(Realm):
                 logging.info("Final Disconnect count for %s: %s" % (phn_name, win_disconnect_count))
                 local_dict[phn_name]["Disconnected"] = win_disconnect_count
                 win_scan_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                filter="SCAN-STARTED")
+                                                filter="NoneValue")
                 logging.info("Final Scanning Count for %s: %s" % (phn_name, win_scan_count))
                 local_dict[str(phn_name)]["Scanning"] = win_scan_count
                 win_association_attempt = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                         filter="Trying to Associate")
+                                                         filter="NoneValue")
                 logging.info("Final Association Attempts Count for %s: %s" % (phn_name, win_association_attempt))
                 local_dict[str(phn_name)]["ConnectAttempt"] = win_association_attempt
                 win_association_rejection = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                           filter="")
+                                                           filter="NoneValue")
                 logging.info("Final Association Rejection Count for %s: %s" % (phn_name, win_association_rejection))
                 local_dict[str(phn_name)]["Association Rejection"] = win_association_rejection
                 win_connected_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
@@ -425,7 +425,7 @@ class InteropPortReset(Realm):
                 logging.info("Final Disconnect count for %s: %s" % (phn_name, other_disconnect_count))
                 local_dict[phn_name]["Disconnected"] = other_disconnect_count
                 other_scan_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                  filter="SCAN-STARTED")
+                                                  filter="scan started")
                 logging.info("Final Scanning Count for %s: %s" % (phn_name, other_scan_count))
                 local_dict[str(phn_name)]["Scanning"] = other_scan_count
                 other_association_attempt = self.get_count(value=values, keys_list=keys_list, device=phn_name,
@@ -433,12 +433,12 @@ class InteropPortReset(Realm):
                 logging.info("Final Association Attempts Count for %s: %s" % (phn_name, other_association_attempt))
                 local_dict[str(phn_name)]["ConnectAttempt"] = other_association_attempt
                 other_association_rejection = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                             filter="")
+                                                             filter="NoneValue")
                 logging.info("Final Association Rejection Count for %s: %s" % (phn_name, other_association_rejection))
                 local_dict[str(phn_name)]["Association Rejection"] = other_association_rejection
 
                 other_connected_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                       filter="CTRL-EVENT-CONNECTED")
+                                                       filter="Associated")
                 logging.info("Final Connected Count for %s: %s" % (phn_name, other_connected_count))
                 local_dict[str(phn_name)]["Connected"] = other_connected_count
         logging.info("local_dict " + str(local_dict))
