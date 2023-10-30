@@ -86,49 +86,37 @@ def main():
         txt_cmd = args.raw
         data={
             "cmd": txt_cmd
-        };
-        command.json_post(url="/cli-json/raw",
-                          post_data=data,
-                          debug=args.debug,
-                          suppress_related_commands=True)
+        }
 
+        # command.json_post(url="/cli-json/raw",
+        #                  post_data=data,
+        #                  debug=args.debug,
+        #                  suppress_related_commands=True)
         command.json_post_raw(post_data=data,
                               debug=args.debug,
                               suppress_related_commands=True)
         exit(0)
-    print(" ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
+
     if not args.cmd:
         raise ValueError("--cmd required, please use a CLI command, followed by --args 'parameter value' as necessary")
-
     if not args.arg:
         raise ValueError("There appear to be no --arg parameters provided.")
-    # command.post_rm_adb(shelf=1, resource=1, adb_id=args.id, debug=args.debug, suppress_related_commands=True)
-    data={
-        "cmd": txt_cmd
-     }
-    command.json_post(url="/cli-json/raw", post_data=data, debug=args.debug, suppress_related_commands=True)
-    print(" ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
 
     # compose the dict of args to pass into the eval
     # print( f"typeof args.arg:{type(args.arg)}")
-    cli_data_params : dict = {
-        "self": command,
-        "debug": True,
-        "response_json_list": [],
-        "errors_warnings": [],
-        "suppress_related_commands": False
-    }
+    response_json_list = []
+    errors_warnings = []
+    cli_data_params : dict = {}
+    print(" ----- 107 cmd ----- ----- ----- ----- ----- ----- ----- ----- -----")
     for parameter in args.arg:
         k_v : list = []
         if isinstance(parameter[0], list):
-            print("    *LIST*")
             k_v = (parameter)
         elif isinstance(parameter[0], str):
-            print("    *STR*")
             k_v = parameter[0].split(' ', 1)
         else:
             raise ValueError("Unable to handle value of 'parameter' from args.arg")
-        pprint.pprint(["k_v", k_v, "parameter", parameter])
+        # pprint.pprint(["k_v", k_v, "parameter", parameter])
         cli_data_params[k_v[0]] = k_v[1]
 
     # look up the cmd from the session method_map
@@ -137,14 +125,14 @@ def main():
         print("    method_map keys:")
         session.print_method_map();
         exit(1)
-    print(" ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
     method_ref = session.method_map[args.cmd];
-    print(f"cmd[{args.cmd}] has reference: [{dir(method_ref) }]")
-    print(" ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
-
-    pprint.pprint(["CliDataPrams", cli_data_params])
-    method_ref(cli_data_params)
-
+    # print(f"cmd[{args.cmd}] has reference: [{dir(method_ref) }]")
+    # pprint.pprint(["CliDataPrams", cli_data_params])
+    method_ref(**cli_data_params,
+               response_json_list=response_json_list,
+               errors_warnings=errors_warnings,
+               debug=args.debug,
+               suppress_related_commands=False)
 
 
 if __name__ == "__main__":
