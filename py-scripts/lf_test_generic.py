@@ -1200,6 +1200,7 @@ def main():
     optional.add_argument('--file_output_lfcurl', help='location to output results of lf_curl, absolute path preferred', default=None)
     optional.add_argument('--destination_url_lfcurl', help='destination url for lfcurl', default=None)
     optional.add_argument('--loop_count', help='determines the number of loops to use in lf_curl and lfping', default=None)
+    optional.add_argument('--interval', help='ping interval configuration', default=0.2)
     optional.add_argument('--target',
                           help='Target for lfping (ex: www.google.com). ALSO ip address or LANforge eid of iperf3 server used for iperf3-client target . Example: 192.168.1.151 OR 1.1.eth2', default=None)
     optional.add_argument('--client_port', help="the port number of the iperf client endpoint. example: -p 5011",default=None)
@@ -1274,6 +1275,8 @@ def main():
         else:
             logger.info('Not supporting report format: %s. Defaulting to csv data file output type, naming it data.csv.' % args.output_format)
             output = 'csv'
+    else:
+        rpt_file_path = ""
 
     #TODO edit name_prefix
     lf_generic_test = GenTest(host=args.mgr, port=args.mgr_port,
