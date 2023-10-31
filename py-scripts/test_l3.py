@@ -1562,6 +1562,7 @@ class L3VariableTime(Realm):
         '''
         cleanup = lf_cleanup.lf_clean(
             host=self.lfclient_host, port=self.lfclient_port, resource='all')
+        cleanup.cxs_clean()
         cleanup.sanitize_all()
         # Make sure they are gone
         count = 0
@@ -2499,12 +2500,20 @@ class L3VariableTime(Realm):
         self.port_data.pop("warnings")
         logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
 
+ 
         self.resource_data = self.json_get('resource/all?fields=eid,hostname,hw+version')
         # self.resource_data = self.json_get('resource/all')
         self.resource_data.pop("handler")
         self.resource_data.pop("uri")
         # self.resource_data.pop("warnings")
-        logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
+        logger.info("self.resource_data type: {dtype}".format(dtype=type(self.port_data)))
+        #logger.info("self.resource_data : {data}".format(data=self.port_data))
+
+        # This is to handle the case where there is only one resourse 
+        if "resource" in self.resource_data.keys():
+            self.resource_data["resources"] = [{'1.1':self.resource_data['resource']}]
+            self.resource_data.pop("resource")
+
 
         # Note will type will only work for 5.4.7
         # gather endp data
@@ -4586,6 +4595,7 @@ class L3VariableTime(Realm):
     def cleanup(self):
         cleanup = lf_cleanup.lf_clean(
             host=self.lfclient_host, port=self.lfclient_port, resource='all')
+        cleanup.cxs_clean()
         cleanup.sanitize_all()
 
         # Make sure they are gone
