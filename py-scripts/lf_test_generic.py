@@ -219,7 +219,7 @@ class GenTest():
     # Write initial headers to port csv file (all ports used, created & existing ports)
     def csv_add_port_column_headers(self, port_eid):
         #create file name
-        file_name = self.report_file_path + "/port-" + port_eid + "." + self.outpu_format
+        file_name = self.report_file_path + "/port-" + port_eid + "." + self.output_format
 
         #open file in write mode, returns TextIOWrapper
         txt_strm = open(file_name, "w")
@@ -440,7 +440,8 @@ class GenTest():
             for sta_alias in self.sta_list:
                 port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
                 #write headers to csv
-                self.csv_add_port_column_headers(sta_alias)
+                if (self.create_report):
+                    self.csv_add_port_column_headers(sta_alias)
                 self.command.post_set_port(shelf = port_shelf,
                                            resource = port_resource,
                                            port = port_name,
@@ -453,7 +454,8 @@ class GenTest():
             for eid in self.use_existing_eid:
                 port_shelf, port_resource, port_name, *nil = self.name_to_eid(eid)
                 #write headers to csv
-                self.csv_add_port_column_headers(eid)
+                if (self.create_report):
+                    self.csv_add_port_column_headers(eid)
                 self.command.post_set_port(shelf = port_shelf ,
                                         resource = port_resource,
                                         port = port_name,
@@ -663,14 +665,15 @@ class GenTest():
 
     #This function takes eid_list and returns interop device type or False.
     def is_device_interop(self, eid_list):
-        device_shelf, device_resource, device_port_name, *nil = eid_list
-        json_url = "%s/ports/%s/%s/%s?fields=hw version" % (self.lfclient_url, device_shelf, device_resource, device_port_name)
-        json_response = self.query.json_get(url=json_url,
-                                            debug=self.debug)
-        if json_response is not None:
-            return json_response['hw version']
-        else:
-            return False
+        return False
+        #device_shelf, device_resource, device_port_name, *nil = eid_list
+        #json_url = "%s/ports/%s/%s/%s?fields=hw version" % (self.lfclient_url, device_shelf, device_resource, device_port_name)
+        #json_response = self.query.json_get(url=json_url,
+                                           # debug=self.debug)
+        #if json_response is not None:
+            #return json_response['hw version']
+        #else:
+        # return False
                     
     def create_generic_endp(self, eid_list, type, unique_num, interop_device):
         """
@@ -684,7 +687,9 @@ class GenTest():
         #construct generic endp command
 
         cmd = ""
-        eid_shelf, eid_resource, eid_name, *nil = eid_list
+        eid_shelf = eid_list[0]
+        eid_resource = eid_list[1]
+        eid_name = eid_list[2]
         if (self.cmd):
             cmd=self.cmd
         elif (type == 'iperf3'):
@@ -794,7 +799,7 @@ class GenTest():
             self.csv_add_gen_column_headers(unique_alias)
 
         
-    def do_iperf (self, type, alias, eid):
+    def do_iperf (self, type, alias, eid_list):
         """
         :param type: takes in options 'client' or 'server'
         :param alias: takes in alias. example: 'sta0000'
@@ -805,7 +810,9 @@ class GenTest():
         #TODO: allow for multiple targets to be passed in for multiple servers.
         cmd = "iperf3 --forceflush --format k --precision 4"
         #TODO check if dest, client_port and server_port are not empty
-        eid_shelf, eid_resource, eid_name, *nil = self.name_to_eid(eid)
+        eid_shelf = eid_list[0]
+        eid_resource = eid_list[1]
+        eid_name = eid_list[2]
         if (type == 'client'):
             if (self.iperf3_target_lanforge):
                 server_ip_addr = self.eid_to_ip(self.name_to_eid(self.target))
@@ -882,14 +889,12 @@ class GenTest():
         :param padding_number: used for width of resulting station number
         :return: list of stations
         """
-
-        if radio is not None:
-            radio_shelf, radio_resource, radio_name, *nil = self.name_to_eid(radio) 
-
         name_list = []
-        for i in range((padding_number + start_id), (padding_number + end_id + 1)):
-            sta_name = "%s%s" % (prefix, str(i)[1:])
-            name_list.append("%i.%i.%s" % (radio_shelf, radio_resource, sta_name))
+        if radio is not None:
+            radio_shelf, radio_resource, sta_name, *nil = self.name_to_eid(radio)
+            for i in range((padding_number + start_id), (padding_number + end_id + 1)):
+                sta_name = "%s%s" % (prefix, str(i)[1:])
+                name_list.append("%i.%i.%s" % (radio_shelf, radio_resource, sta_name))
         return name_list
 
     # This function takes in eid '1.1.sta0000' and returns a boolean (true or false)
@@ -984,9 +989,11 @@ class GenTest():
         print("Checking args passed into test")
         #TODO validate all args, depending on which test is used.
         #TODO: in args, check if file_out_lfcurl and destination_url_lfcurl is None. then state that defaults are being used and apply defaults
-        if self.security != "open":
+        #Station creation specific
+        if (self.sta_list) and self.security != "open":
             if (self.passwd is None) or (self.passwd == ""):
                 raise ValueError("use_security: %s requires passphrase or [BLANK]" % self.security)
+        #Generic endp specific
         if ((self.test_type == "iperf3" or self.test_type == "iperf3-client") and self.target is None):
             raise ValueError ("To execute test type 'iperf3' or 'iperf3-client', a target must be specified as an IP address or port eid.")
         
@@ -1276,7 +1283,9 @@ def main():
             logger.info('Not supporting report format: %s. Defaulting to csv data file output type, naming it data.csv.' % args.output_format)
             output = 'csv'
     else:
+        #give blank values for parser
         rpt_file_path = ""
+        output = "csv"
 
     #TODO edit name_prefix
     lf_generic_test = GenTest(host=args.mgr, port=args.mgr_port,
