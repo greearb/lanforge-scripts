@@ -497,7 +497,7 @@ class InteropPortReset(Realm):
                 else:
                     logging.info("Devices %s is in phantom state" % j)
                     logging.info("all devices are not up")
-                    exit(1)
+                    # exit(1)
             # if state == "UP":
             if self.adb_device_list or self.windows_list or self.linux_list or self.mac_list:
                 # setting / modify user name
@@ -1043,8 +1043,8 @@ PURPOSE:
 EXAMPLE:
         # To run port-reset test on specified real devices (android, laptops)
 
-            ./lf_interop_port_reset_test.py --host 192.168.200.192 --mgr_ip 192.168.1.161 --dut TestDut --ssid OpenWifi 
-            --passwd OpenWifi --encryp psk2 --reset 10 --time_int 5 --wait_time 5 --release 11
+            python3 lf_interop_port_reset_test.py --host 192.168.200.63 --mgr_ip 192.168.1.61 --dut Test_Dut 
+            --ssid RDT_wpa2 --passwd OpenWifi --encryp psk2 --reset 1 --time_int 5 --wait_time 5 --release 11
 
 SCRIPT_CLASSIFICATION:  Toggling, Report Generation, Each Reset Wifi Messages
 
