@@ -30,9 +30,15 @@ EXAMPLES:
                     --report_file_path "/home/lanforge/test_generic_1"
         
     IPERF3 :
+        iperf: create 1 client and 1 server. client is already existing & server is on lanforge.
+
+         ./lf_test_generic.py --mgr 192.168.102.211 --port 8080 --use_existing_eid "1.1.sta00015,1.1.eth3" --test_type iperf3 --server_port 5201 
+                --client_port 5201 --target "1.1.eth3"
+        
+        
         iperf -- client only: creates 3 client : 2 clients on sta, 1 on eth port (with existing eid):
 
-            ./lf_test_generic.py: --mgr 192.168.102.211 --test_type iperf3-client --lf_user lanforge --lf_passwd lanforge --num_stations 2 --log_level debug --test_duration 20s
+            ./lf_test_generic.py --mgr 192.168.102.211 --test_type iperf3-client --lf_user lanforge --lf_passwd lanforge --num_stations 2 --log_level debug --test_duration 20s
                 --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target 192.168.3.3 --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191 --create_report --report_file_path "/home/lanforge/iperf3_reports"
 
         iperf -- server only: creates 3 servers : 2 servers on sta, 1 on eth port (with existing eid):
@@ -1060,33 +1066,38 @@ def main():
         description='''
         lf_test_generic.py
         --------------------
-        Generic command example:
-        python3 ./lf_test_generic.py
-            --mgr localhost (optional)
-            --mgr_port 4122 (optional)
-            --upstream_port eth1 (optional)
-            --radio wiphy0 (required)
-            --num_stations 3 (optional)
-            --security {open | wep | wpa | wpa2 | wpa3}
-            --ssid netgear (required)
-            --passwd admin123 (required)
-            --type lfping  {generic | lfping | iperf3-client | speedtest | lf_curl} (required)
-            --dest 10.40.0.1 (required - also target for iperf3)
-            --test_duration 2m 
-            --interval 1s 
-            --debug 
+
+            EXAMPLES:
+                LFPING :
+                    ./lf_test_generic.py --mgr 192.168.102.211 --test_type ping --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
+                                --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target www.google.com --test_duration", "4s", "--create_report",
+                                --report_file_path "/home/diptidhond/test_generic_1"
+                LFCURL :
+                    ./lf_test_generic.py --mgr 192.168.102.211 --test_type lfcurl --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug 
+                                --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration", "4s", "--create_report",
+                                --report_file_path "/home/lanforge/test_generic_1"
+                SPEEDTEST :
+                    ./lf_test_generic.py --mgr 192.168.102.211 --test_type speedtest --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
+                                --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration", "4s", "--create_report", "--no_upload", "--single_connection",
+                                --report_file_path "/home/lanforge/test_generic_1"
+                    
+                IPERF3 :
+                    iperf: create 1 client and 1 server. client is already existing & server is on lanforge.
+                    
+                        ./lf_test_generic.py --mgr 192.168.102.211 --port 8080 --use_existing_eid "1.1.sta00015,1.1.eth3" --test_type iperf3 --server_port 5201 
+                            --client_port 5201 --target "1.1.eth3"
 
 
-            Example commands: 
-            LFPING:
-                ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
-                --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info 
-                --report_file /home/lanforge/reports/LFPING.csv --test_duration 20s --upstream_port 1.1.eth2
-            LFCURL:
-                ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
-            IPERF:
-                ./lf_test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
-            SPEEDTEST:
+                    iperf -- client only: creates 3 client : 2 clients on sta, 1 on eth port (with existing eid):
+
+                        ./lf_test_generic.py --mgr 192.168.102.211 --test_type iperf3-client --lf_user lanforge --lf_passwd lanforge --num_stations 2 --log_level debug --test_duration 20s
+                            --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target 192.168.3.3 --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191 --create_report --report_file_path "/home/lanforge/iperf3_reports"
+
+                    iperf -- server only: creates 3 servers : 2 servers on sta, 1 on eth port (with existing eid):
+
+                        ./lf_test_generic.py --mgr 192.168.102.211 --test_type iperf3-server --lf_user lanforge --lf_passwd lanforge --num_stations 2 --log_level debug --test_duration 20s
+                            --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191 --create_report --report_file_path "/home/lanforge/iperf3_reports"
+
 
             Port Mgr Cols available to be reported:
                 4way time (us)'
