@@ -1160,7 +1160,8 @@ class Mixed_Traffic(Realm):
                                                                 ipaddr_type_avail_list=[],
                                                                 network_auth_type_list=[],
                                                                 anqp_3gpp_cell_net_list=[],
-                                                                ieee80211w_list=[])
+                                                                ieee80211w_list=[],
+                                                                interopt_mode=True)
         if self.real:
             if self.user_query[0]:
                 logger.info("No station pre clean up any existing cxs on LANforge")
