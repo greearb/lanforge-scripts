@@ -1657,6 +1657,18 @@ class Mixed_Traffic(Realm):
             self.lf_report_mt.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
 
 def main():
+    help_summary = '''\
+    Mixed traffic test is designed to measure the access point performance and stability by running multiple traffic
+    on both virtual & real clients like Android, Linux, Windows, and IOS connected to the access point.
+    This test allows the user to choose multiple types of traffic like client ping test, qos test, ftp test, http test,
+    multicast test.
+    
+    * This script is capable of running the tests in serial OR parallel as well.
+    
+    * This script can run the on multiple iterations.
+    
+    * This script has multi-band (2.4G, 5G, 6G) support.
+    '''
     parser = argparse.ArgumentParser(
         prog='lf_mixed_traffic.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -1824,7 +1836,16 @@ INCLUDE_IN_README: False
     # logging configuration
     optional.add_argument("--lf_logger_config_json",
                           help="--lf_logger_config_json <json file> , json configuration of logger")
+
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
+
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
