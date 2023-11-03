@@ -18,33 +18,36 @@ Make sure the generic tab is enabled in the GUI by going to the Port Manager, cl
 EXAMPLES:
     LFPING :
         ./lf_test_generic.py --mgr 192.168.102.211 --test_type ping --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
-                    --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target www.google.com --test_duration", "4s", "--create_report",
-                    --report_file_path "/home/diptidhond/test_generic_1"
+                    --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target www.google.com --test_duration
+                    "4s" --create_report --report_file_path "/home/diptidhond/test_generic_1"
     LFCURL :
-        ./lf_test_generic.py --mgr 192.168.102.211 --test_type lfcurl --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug 
-                    --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration", "4s", "--create_report",
+        ./lf_test_generic.py --mgr 192.168.102.211 --test_type lfcurl --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
+                    --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration 4s --create_report
                     --report_file_path "/home/lanforge/test_generic_1"
     SPEEDTEST :
         ./lf_test_generic.py --mgr 192.168.102.211 --test_type speedtest --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
-                    --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration", "4s", "--create_report", "--no_upload", "--single_connection",
+                    --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration 2m --create_report --no_upload --single_connection
                     --report_file_path "/home/lanforge/test_generic_1"
         
     IPERF3 :
         iperf: create 1 client and 1 server. client is already existing & server is on lanforge.
+        
+            ./lf_test_generic.py --mgr 192.168.102.211 --port 8080 --use_existing_eid "1.1.sta00015,1.1.eth3" --test_type iperf3
+                --server_port 5201 --client_port 5201 --target "1.1.eth3" --create_report --port_mgr_cols "alias,rx bytes,tx bytes"
 
-         ./lf_test_generic.py --mgr 192.168.102.211 --port 8080 --use_existing_eid "1.1.sta00015,1.1.eth3" --test_type iperf3 --server_port 5201 
-                --client_port 5201 --target "1.1.eth3"
-        
-        
+
         iperf -- client only: creates 3 client : 2 clients on sta, 1 on eth port (with existing eid):
 
             ./lf_test_generic.py --mgr 192.168.102.211 --test_type iperf3-client --lf_user lanforge --lf_passwd lanforge --num_stations 2 --log_level debug --test_duration 20s
-                --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target 192.168.3.3 --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191 --create_report --report_file_path "/home/lanforge/iperf3_reports"
+                --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target 192.168.3.3 --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191
+                --create_report --report_file_path "/home/lanforge/iperf3_reports" --port_mgr_cols "alias,rx bytes,tx bytes"
 
         iperf -- server only: creates 3 servers : 2 servers on sta, 1 on eth port (with existing eid):
 
             ./lf_test_generic.py --mgr 192.168.102.211 --test_type iperf3-server --lf_user lanforge --lf_passwd lanforge --num_stations 2 --log_level debug --test_duration 20s
-                --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191 --create_report --report_file_path "/home/lanforge/iperf3_reports"
+                --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191 --create_report
+                --report_file_path "/home/lanforge/iperf3_reports" --port_mgr_cols "alias,rx bytes,tx bytes"
+
 
 Use './test_generic.py --help' to see command line usage and options.
 
