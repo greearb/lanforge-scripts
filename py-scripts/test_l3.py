@@ -1562,7 +1562,6 @@ class L3VariableTime(Realm):
         '''
         cleanup = lf_cleanup.lf_clean(
             host=self.lfclient_host, port=self.lfclient_port, resource='all')
-        cleanup.cxs_clean()
         cleanup.sanitize_all()
         # Make sure they are gone
         count = 0
@@ -4595,7 +4594,6 @@ class L3VariableTime(Realm):
     def cleanup(self):
         cleanup = lf_cleanup.lf_clean(
             host=self.lfclient_host, port=self.lfclient_port, resource='all')
-        cleanup.cxs_clean()
         cleanup.sanitize_all()
 
         # Make sure they are gone
