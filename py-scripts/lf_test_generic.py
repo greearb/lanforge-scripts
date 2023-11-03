@@ -1293,6 +1293,7 @@ def main():
         else:
             logger.info('Not supporting report format: %s. Defaulting to csv data file output type, naming it data.csv.' % args.output_format)
             output = 'csv'
+        print("Report file path for csv files and report generated (if expecting report) :" + rpt_file_path)
     else:
         #give blank values for parser
         rpt_file_path = ""
