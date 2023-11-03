@@ -167,6 +167,8 @@ class lf_clean(Realm):
             return still_looking_endp
 
     # removes cxs from the Layer-3 gui tab, and the related l3-endps from the L3 Endps gui tab.
+    # you have to remove CX before removing endpoints belonging to that CX
+    # Note the code changed to only remove CX and not endpoints
     def cxs_clean(self):
         still_looking_cxs = True
         iterations_cxs = 1
@@ -175,95 +177,35 @@ class lf_clean(Realm):
             iterations_cxs += 1
             logger.info("cxs_clean: iterations_cxs: {iterations_cxs}".format(iterations_cxs=iterations_cxs))
             cx_json = super().json_get("cx")
-            # logger.info(cx_json)
-            endp_json = super().json_get("endp")
-            # logger.info(endp_json)
-            if cx_json is not None:
+            # endp_json = super().json_get("endp")
+            logger.info(cx_json.keys())
+            if cx_json is not None and 'empty' not in cx_json:
                 logger.info("Removing old cross connects")
                 # delete L3-CX based upon the L3-Endp name & the resource value from
                 # the e.i.d of the associated L3-Endps
+                cx_json.pop("handler")
+                cx_json.pop("uri")
+                if 'warnings' in cx_json:
+                    cx_json.pop("warnings")
+                # if type(endp_json['endpoint']) is dict:
+
                 for cx_name in list(cx_json):
-                    if cx_name != 'handler' and cx_name != 'uri' and cx_name != 'empty' and cx_name != 'warnings':
-                        # if there are L3 Endps, check relation to Layer-3 cxs:
-                        if endp_json is not None:
-                            # if there is only a single endpoint:
-                            if type(endp_json['endpoint']) is dict:
-                                endp_name = endp_json['endpoint']['name']
-                                # if cx_name + '-A' in endp_name or cx_name + '-B' in endp_name:
-                                if cx_name + '-A' in endp_name:
-                                    endp_eid_split = endp_eid.split('.')
-                                    # endp_eid_split[1] == realm resource value:
-                                    resource_eid = str(endp_eid_split[1])
-                                    if resource_eid in self.resource or 'all' in self.resource:
-                                        # remove Layer-3 cx:
-                                        req_url = "cli-json/rm_cx"
-                                        data = {
-                                            "test_mgr": "default_tm",
-                                            "cx_name": cx_name
-                                        }
-                                        # logger.info(data)
-                                        logger.info("Removing {cx_name}...".format(cx_name=cx_name))
-                                        super().json_post(req_url, data)
+                    cxs_eid = cx_json[cx_name]['entity id']
+                    cxs_eid_split = cxs_eid.split('.')
+                    # cxs_eid_split[1] == realm resource value:
+                    resource_eid = str(cxs_eid_split[1])
+                    # logger.info(resource_eid)
+                    if resource_eid in self.resource or 'all' in self.resource:
+                        # remove Layer-3 cx:
+                        req_url = "cli-json/rm_cx"
+                        data = {
+                            "test_mgr": "default_tm",
+                            "cx_name": cx_name
+                        }
+                        # logger.info(data)
+                        logger.info("Removing {cx_name}...".format(cx_name=cx_name))
+                        super().json_post(req_url, data)
 
-                                        # remove associated L3-Endp:
-                                        req_url = "cli-json/rm_endp"
-                                        data = {
-                                            "endp_name": endp_name
-                                        }
-                                        # logger.info(data)
-                                        logger.info("Removing {endp_name}...".format(endp_name=endp_name))
-                                        super().json_post(req_url, data)
-
-                            # if there are > 1 endpoints:
-                            else:
-                                for endp_num in endp_json['endpoint']:
-                                    # get L3-Endp e.i.d & name:
-                                    for endp_val in endp_num.values():
-                                        endp_eid = endp_val['entity id']
-                                        endp_name = endp_val['name']
-                                        # if cx_name + '-A' in endp_name or cx_name + '-B' in endp_name:
-                                        if cx_name + '-A' in endp_name:
-                                            endp_eid_split = endp_eid.split('.')
-                                            # endp_eid_split[1] == realm resource value:
-                                            resource_eid = str(endp_eid_split[1])
-                                            # The L3 Endps are removed with their related Layer-3 cx by default:
-                                            if resource_eid in self.resource or 'all' in self.resource:
-                                                # remove Layer-3 cx:
-                                                req_url = "cli-json/rm_cx"
-                                                data = {
-                                                    "test_mgr": "default_tm",
-                                                    "cx_name": cx_name
-                                                }
-                                                # logger.info(data)
-                                                logger.info("Removing {cx_name}...".format(cx_name=cx_name))
-                                                super().json_post(req_url, data)
-
-                                                # remove associated L3-Endp:
-                                                req_url = "cli-json/rm_endp"
-                                                data = {
-                                                    "endp_name": endp_name
-                                                }
-                                                # logger.info(data)
-                                                logger.info("Removing {endp_name}...".format(endp_name=endp_name))
-                                                super().json_post(req_url, data)
-
-                        # if there are no L3 Endps, just remove the Layer-3 cxs:
-                        else:
-                            cxs_eid = cx_json[cx_name]['entity id']
-                            cxs_eid_split = cxs_eid.split('.')
-                            # cxs_eid_split[1] == realm resource value:
-                            resource_eid = str(cxs_eid_split[1])
-                            # logger.info(resource_eid)
-                            if resource_eid in self.resource or 'all' in self.resource:
-                                # remove Layer-3 cx:
-                                req_url = "cli-json/rm_cx"
-                                data = {
-                                    "test_mgr": "default_tm",
-                                    "cx_name": cx_name
-                                }
-                                # logger.info(data)
-                                logger.info("Removing {cx_name}...".format(cx_name=cx_name))
-                                super().json_post(req_url, data)
                 time.sleep(5)
             else:
                 logger.info("No cross connects found to cleanup")
