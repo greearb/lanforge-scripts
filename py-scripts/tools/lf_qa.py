@@ -40,7 +40,6 @@ class csv_sql:
                  _file='kpi.csv',
                  _database='qa_db',
                  _table='qa_table',
-                 _server='',
                  _png=False):
         self.path = _path
         self.path_comp = _path_comp
@@ -51,7 +50,6 @@ class csv_sql:
         self.file = _file
         self.database = _database
         self.table = _table
-        self.server = _server
         self.png = _png
         self.kpi_list = []
         self.html_list = []
@@ -1021,10 +1019,6 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         help='--table qa_table  default: qa_table',
         default='qa_table')
     parser.add_argument(
-        '--server',
-        help="--server http://<server ip>/ for running with server enabled. Not needed for running locally. --server 'http://192.168.95.6/' default: ''",
-        default='')
-    parser.add_argument(
         '--store',
         help='--store , store kpi to db, action store_true',
         action='store_true')
@@ -1042,6 +1036,9 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         default="lf_qa")
 
     parser.add_argument('--test_suite', help="--test_suite , the test suite is to help identify which suite was run ", default="lf_qa")
+
+    parser.add_argument('--server', help="--server , server switch is deprecated ", default="")
+
 
     # logging configuration:
     parser.add_argument('--log_level',
@@ -1077,17 +1074,16 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
     __file = args.file
     __database = args.database
     __table = args.table
-    __server = args.server
     __png = args.png
     __dir = args.dir
 
     logger.info("config:\
             path:{path} file:{file}\
             database:{database} table:{table} \
-            server:{server} store:{store} png:{png}" .format(
+            store:{store} png:{png}" .format(
         path=__path, file=__file,
         database=__database, table=__table,
-        server=__server, store=args.store, png=args.png))
+        store=args.store, png=args.png))
 
     if __path == '' and args.store:
         logger.info("--path <path of kpi.csv> must be entered if --store ,  exiting")
@@ -1115,7 +1111,6 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         _file=__file,
         _database=__database,
         _table=__table,
-        _server=__server,
         _png=__png)
     # csv_dash.sub_test_information()
 
@@ -1213,7 +1208,6 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
 
         report.set_table_title("QA Test Results")
         report.build_table_title()
-        # report.set_text("QA broken links, check if server correct: {server} example --server 'http:/192.168.0.101/".format(server=__server))
         report.build_text()
         html_results = csv_dash.get_html_results()
         report.set_custom_html(html_results)
