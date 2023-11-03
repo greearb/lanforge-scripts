@@ -1,11 +1,10 @@
 #!/bin/bash
 
 # This bash script will modify the layer 3 endp traffic 
-#   11. Small bursts of data of about 1K (can be configurable) at a 30 second long ransom interval
+#    1. Small bursts of data of about 1K (can be configurable) at a 30 second long ransom interval
 #    2. Emulate a brief upstream video (e.g. when someone is at the door)
 
 # main idea is to provide easy way for user to automate changing a l3 cx behavior via bash / python
-
 
 set -x
 
