@@ -1351,7 +1351,7 @@ def main():
     print("Done with connection monitoring")
     
     lf_generic_test.stop()
-    lf_generic_test.generate_report()
+    #lf_generic_test.generate_report()
     lf_generic_test.cleanup()
 
 if __name__ == "__main__":
