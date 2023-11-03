@@ -110,8 +110,13 @@ class lf_clean(Realm):
             logger.info("layer4_endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
             layer4_endp_json = super().json_get("layer4")
             # logger.info(layer4_endp_json)
-            if layer4_endp_json is not None:
+            if layer4_endp_json is not None and 'empty' not in layer4_endp_json:
                 logger.info("Removing old Layer 4-7 endpoints")
+                layer4_endp_json.pop("handler")
+                layer4_endp_json.pop("uri")
+                if 'warnings' in layer4_endp_json:
+                    layer4_endp_json.pop("warnings")
+
                 for name in list(layer4_endp_json):
                     # if name != 'handler' and name != 'uri' and name != 'empty':
                     if name == 'endpoint':
@@ -141,22 +146,23 @@ class lf_clean(Realm):
                                 # get L4-Endp name:
                                 for endp_values in endp_num.values():
                                     endp_name = endp_values['name']
-                                    # Remove Layer 4-7 cross connections:
-                                    req_url = "cli-json/rm_cx"
-                                    data = {
-                                        "test_mgr": "default_tm",
-                                        "cx_name": "CX_" + endp_name
-                                    }
-                                    logger.info("Removing {endp_name}...".format(endp_name="CX_" + endp_name))
-                                    super().json_post(req_url, data)
+                                    if endp_name != '':
+                                        # Remove Layer 4-7 cross connections:
+                                        req_url = "cli-json/rm_cx"
+                                        data = {
+                                            "test_mgr": "default_tm",
+                                            "cx_name": "CX_" + endp_name
+                                        }
+                                        logger.info("Removing {endp_name}...".format(endp_name="CX_" + endp_name))
+                                        super().json_post(req_url, data)
 
-                                    # Remove Layer 4-7 endpoint
-                                    req_url = "cli-json/rm_endp"
-                                    data = {
-                                        "endp_name": endp_name
-                                    }
-                                    logger.info("Removing {endp_name}...".format(endp_name=endp_name))
-                                    super().json_post(req_url, data)
+                                        # Remove Layer 4-7 endpoint
+                                        req_url = "cli-json/rm_endp"
+                                        data = {
+                                            "endp_name": endp_name
+                                        }
+                                        logger.info("Removing {endp_name}...".format(endp_name=endp_name))
+                                        super().json_post(req_url, data)
                 time.sleep(1)
             else:
                 logger.info("No endpoints found to cleanup")
