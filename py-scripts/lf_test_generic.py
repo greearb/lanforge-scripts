@@ -154,8 +154,6 @@ class GenTest():
         self.output_format = output_format
         self.report_file_path = report_file_path
         self.create_report = create_report
-        self.gen_tab_cols = gen_tab_cols
-        self.port_mgr_cols = port_mgr_cols
 
         # create a session
         self.session = LFSession(lfclient_url="http://%s:8080" % self.host,
@@ -187,8 +185,12 @@ class GenTest():
         self.gen_csv_writers = {}
 
         if self.create_report:
-            # create csv results writer and open results file to be written to
             #TODO add to results.csv as a 'combined' results.
+            #split self.port_mgr_cols into list
+            self.port_mgr_cols = str.split(port_mgr_cols, ",")
+            #split self.gen_tab_cols into list
+            self.gen_tab_cols = str.split(gen_tab_cols, ",")
+            # create csv results writer and open results file to be written to
             results = self.report_file_path + "/results." + self.output_format
             self.csv_results_file = open(results, "w")
             self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
@@ -201,7 +203,7 @@ class GenTest():
                                                   padding_number=10000,
                                                   radio=self.radio)
         if (use_existing_eid):
-            #split list given into a functional list used in script.
+            #split list from user to create functional list used in script.
             self.use_existing_eid = use_existing_eid.split(",")
         else:
             self.use_existing_eid = use_existing_eid
@@ -1070,33 +1072,35 @@ def main():
             EXAMPLES:
                 LFPING :
                     ./lf_test_generic.py --mgr 192.168.102.211 --test_type ping --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
-                                --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target www.google.com --test_duration", "4s", "--create_report",
-                                --report_file_path "/home/diptidhond/test_generic_1"
+                                --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target www.google.com --test_duration
+                                "4s" --create_report --report_file_path "/home/diptidhond/test_generic_1"
                 LFCURL :
-                    ./lf_test_generic.py --mgr 192.168.102.211 --test_type lfcurl --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug 
-                                --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration", "4s", "--create_report",
+                    ./lf_test_generic.py --mgr 192.168.102.211 --test_type lfcurl --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
+                                --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration "4s" --create_report
                                 --report_file_path "/home/lanforge/test_generic_1"
                 SPEEDTEST :
                     ./lf_test_generic.py --mgr 192.168.102.211 --test_type speedtest --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
-                                --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration", "4s", "--create_report", "--no_upload", "--single_connection",
+                                --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration "4s" --create_report --no_upload --single_connection
                                 --report_file_path "/home/lanforge/test_generic_1"
                     
                 IPERF3 :
                     iperf: create 1 client and 1 server. client is already existing & server is on lanforge.
                     
-                        ./lf_test_generic.py --mgr 192.168.102.211 --port 8080 --use_existing_eid "1.1.sta00015,1.1.eth3" --test_type iperf3 --server_port 5201 
-                            --client_port 5201 --target "1.1.eth3"
+                        ./lf_test_generic.py --mgr 192.168.102.211 --port 8080 --use_existing_eid "1.1.sta00015,1.1.eth3" --test_type iperf3
+                            --server_port 5201 --client_port 5201 --target "1.1.eth3" --create_report --port_mgr_cols "alias,rx bytes,tx bytes"
 
 
                     iperf -- client only: creates 3 client : 2 clients on sta, 1 on eth port (with existing eid):
 
                         ./lf_test_generic.py --mgr 192.168.102.211 --test_type iperf3-client --lf_user lanforge --lf_passwd lanforge --num_stations 2 --log_level debug --test_duration 20s
-                            --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target 192.168.3.3 --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191 --create_report --report_file_path "/home/lanforge/iperf3_reports"
+                            --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target 192.168.3.3 --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191
+                            --create_report --report_file_path "/home/lanforge/iperf3_reports" --port_mgr_cols "alias,rx bytes,tx bytes"
 
                     iperf -- server only: creates 3 servers : 2 servers on sta, 1 on eth port (with existing eid):
 
                         ./lf_test_generic.py --mgr 192.168.102.211 --test_type iperf3-server --lf_user lanforge --lf_passwd lanforge --num_stations 2 --log_level debug --test_duration 20s
-                            --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191 --create_report --report_file_path "/home/lanforge/iperf3_reports"
+                            --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1 --target --use_existing_eid 1.1.eth2 --client_port 9191 --server_port 9191 --create_report
+                            --report_file_path "/home/lanforge/iperf3_reports" --port_mgr_cols "alias,rx bytes,tx bytes"
 
 
             Port Mgr Cols available to be reported:
@@ -1220,7 +1224,7 @@ def main():
     optional.add_argument('--loop_count', help='determines the number of loops to use in lf_curl and lfping', default=None)
     optional.add_argument('--interval', help='ping interval configuration', default=0.2)
     optional.add_argument('--target',
-                          help='Target for lfping (ex: www.google.com). ALSO ip address or LANforge eid of iperf3 server used for iperf3-client target . Example: 192.168.1.151 OR 1.1.eth2', default=None)
+                          help='Target for lfping (ex: www.google.com). ALSO arg to specify IP address (if server is OFF lanforge, ex: 192.168.101.1) or LANforge eid (if server port is ON lanfoge, ex: 1.1.eth3) of iperf3 server used for iperf3-client target.', default=None)
     optional.add_argument('--client_port', help="the port number of the iperf client endpoint. example: -p 5011",default=None)
     optional.add_argument('--server_port', help="the port number of the iperf server endpoint. example: -p 5011",default=None)
 
@@ -1246,9 +1250,9 @@ def main():
 
     # args for reporting
     optional.add_argument('--output_format', help= 'choose either csv or xlsx. currently xlsx is under construction.',default='csv')
-    optional.add_argument('--report_file_path', help='directory to store results in. example: /home/lanforge/reporting/file_name_wanted', default=None)
-    optional.add_argument( '--gen_tab_cols', help='Columns wished to be monitored from generic endpoint tab',default= ['name', 'tx pkts', 'rx pkts', 'dropped'])
-    optional.add_argument( '--port_mgr_cols', help='Columns wished to be monitored from port manager tab',default= ['ap', 'ip', 'parent dev'])
+    optional.add_argument('--report_file_path', help='directory to store results in. example: /home/lanforge/report-data/directory-to-store-results', default=None)
+    optional.add_argument( '--gen_tab_cols', help='Columns wished to be monitored from generic endpoint tab. please use list format. examples example: "name,tx pkts,rx pkts".',default= "name,tx pkts,rx pkts,dropped")
+    optional.add_argument( '--port_mgr_cols', help='Columns wished to be monitored from port manager tab. example: "ap,ip,parent dev"',default= "ap,ip,parent dev")
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',default= None)
     optional.add_argument('--create_report',action="store_true", help='specify this flag if test should create report. This means that html, pdf, and csv data is saved and created.')
 
