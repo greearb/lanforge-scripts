@@ -41,7 +41,6 @@ class csv_sql:
                  _database='qa_db',
                  _table='qa_table',
                  _server='',
-                 _cut='/home/lanforge/',
                  _png=False):
         self.path = _path
         self.path_comp = _path_comp
@@ -53,7 +52,6 @@ class csv_sql:
         self.database = _database
         self.table = _table
         self.server = _server
-        self.cut = _cut
         self.png = _png
         self.kpi_list = []
         self.html_list = []
@@ -1027,10 +1025,6 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         help="--server http://<server ip>/ for running with server enabled. Not needed for running locally. --server 'http://192.168.95.6/' default: ''",
         default='')
     parser.add_argument(
-        '--cut',
-        help='--cut /home/lanforge/ used to adjust server path default: /home/lanforge/',
-        default='/home/lanforge/')
-    parser.add_argument(
         '--store',
         help='--store , store kpi to db, action store_true',
         action='store_true')
@@ -1086,7 +1080,6 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
     __server = args.server
     __png = args.png
     __dir = args.dir
-    __cut = args.cut
 
     logger.info("config:\
             path:{path} file:{file}\
@@ -1123,7 +1116,6 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         _database=__database,
         _table=__table,
         _server=__server,
-        _cut=__cut,
         _png=__png)
     # csv_dash.sub_test_information()
 
