@@ -1076,11 +1076,11 @@ def main():
                                 "4s" --create_report --report_file_path "/home/diptidhond/test_generic_1"
                 LFCURL :
                     ./lf_test_generic.py --mgr 192.168.102.211 --test_type lfcurl --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
-                                --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration "4s" --create_report
+                                --ssid eero-mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration 4s --create_report
                                 --report_file_path "/home/lanforge/test_generic_1"
                 SPEEDTEST :
                     ./lf_test_generic.py --mgr 192.168.102.211 --test_type speedtest --lf_user lanforge --lf_passwd lanforge --num_stations 3 --log_level debug
-                                --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration "4s" --create_report --no_upload --single_connection
+                                --ssid mesh-lanforge --passwd lanforge --security wpa2 --radio wiphy1  --test_duration 2m --create_report --no_upload --single_connection
                                 --report_file_path "/home/lanforge/test_generic_1"
                     
                 IPERF3 :
