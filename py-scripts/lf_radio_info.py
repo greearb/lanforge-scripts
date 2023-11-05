@@ -120,6 +120,7 @@ class radio_information(Realm):
         max_station = self.lf_radio_df.get(["Radio", "max_sta"])
         # logger.info(max_station)
 
+        max_sta = 'NA'
         for row in max_station.index:
             if max_station.loc[row, "Radio"] == wiphy_radio:
                     max_sta = max_station.loc[row, "max_sta"]
@@ -131,7 +132,7 @@ class radio_information(Realm):
     def get_max_vap(self, wiphy_radio):
         max_vaps = self.lf_radio_df.get(["Radio", "max_vap"])
         # logger.info(max_vaps)
-
+        wiphy_max_vaps = 'NA'
         for row in max_vaps.index:
             if max_vaps.loc[row, "Radio"] == wiphy_radio:
                     wiphy_max_vaps = max_vaps.loc[row, "max_vap"]
@@ -143,7 +144,7 @@ class radio_information(Realm):
     def get_max_vifs(self, wiphy_radio):
         max_vif = self.lf_radio_df.get(["Radio", "max_vifs"])
         # logger.info(max_vif)
-
+        wiphy_max_vif = 'NA'
         for row in max_vif.index:
             if max_vif.loc[row, "Radio"] == wiphy_radio:
                 wiphy_max_vif = max_vif.loc[row, "max_vifs"]
@@ -157,7 +158,7 @@ class radio_information(Realm):
     def get_radio_driver(self, wiphy_radio):
         radio_driver = self.lf_radio_df.get(["Radio", "WIFI-Radio Driver"])
         # logger.info(radio_driver)
-
+        wiphy_driver = 'NA'
         for row in radio_driver.index:
             if radio_driver.loc[row, "Radio"] == wiphy_radio:
                 wiphy_driver = radio_driver.loc[row, "WIFI-Radio Driver"]
@@ -169,7 +170,7 @@ class radio_information(Realm):
     def get_radio_capabilities(self, wiphy_radio):
         radio_caps = self.lf_radio_df.get(["Radio", "Radio Capabilities"])
         # logger.info(radio_caps)
-
+        wiphy_capability = 'NA'
         for row in radio_caps.index:
             if radio_caps.loc[row, "Radio"] == wiphy_radio:
                     wiphy_capability = radio_caps.loc[row, "Radio Capabilities"]
@@ -193,7 +194,7 @@ class radio_information(Realm):
     def get_radio_type(self, wiphy_radio):
         radio_types = self.lf_radio_df.get(["Radio", "WIFI-Radio Driver"])
         # logger.info(radio_types)
-
+        type_radio = 'NA'
         for row in radio_types.index:
             if radio_types.loc[row, "Radio"] == wiphy_radio:
                     type_radio = radio_types.loc[row, "WIFI-Radio Driver"]
