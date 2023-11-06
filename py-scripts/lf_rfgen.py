@@ -90,15 +90,17 @@ class lf_rfgen():
 
 
         response = self.command.post_show_rfgen(
-                        p_id = _p_id,                         # RF Generator serial number, or 'all'.
-                        resource= _resource,                     # Resource number, or 'all'. [W]
-                        shelf = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
-                        response_json_list = _response_json_list,
-                        debug = _debug,
-                        errors_warnings = _errors_warnings,
-                        suppress_related_commands = _suppress_related_commands)
+                p_id = _p_id,                         # RF Generator serial number, or 'all'.
+                resource= _resource,                     # Resource number, or 'all'. [W]
+                shelf = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
+                response_json_list = _response_json_list,
+                debug = _debug,
+                errors_warnings = _errors_warnings,
+                suppress_related_commands = _suppress_related_commands)
 
-        logger.debug(pformat(response_json_list))
+        logger.debug("Response: {response}".format(response=response))
+        logger.debug(pformat(_response_json_list))
+        return response
 
 
 
@@ -141,7 +143,7 @@ INCLUDE_IN_README: True
     parser.add_argument("--lf_passwd", help="lanforge password defualt lanforge ", default="lanforge")
     parser.add_argument("--resource", help='(add wl endp) LANforge resource Default', default=1)
     parser.add_argument("--shelf", help='(add wl endp) LANforge Shelf name/id', default=1)
-    parser.add_argument("--id", help='ct712 id  default= all', default='all')
+    parser.add_argument("--id", help='ct712 id  default= all', default='NA')
 
 
     # Logging Configuration
@@ -173,7 +175,7 @@ INCLUDE_IN_README: True
 
     response_json_list = []
 
-    rfgen.show(
+    response = rfgen.show(
         _p_id = args.id,                         # RF Generator serial number, or 'all'.
         _resource = args.resource,                     # Resource number, or 'all'. [W]
         _shelf = args.shelf,                           # Shelf number or alias, can be 'all'. [R][D:1]
@@ -182,6 +184,7 @@ INCLUDE_IN_README: True
         _errors_warnings = None,
         _suppress_related_commands = False)
 
+    logger.info("Response: {response}".format(response=response))
     logger.info(pformat(response_json_list))
 
 if __name__ == "__main__":
