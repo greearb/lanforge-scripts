@@ -184,8 +184,8 @@ class lf_clean(Realm):
             logger.info("cxs_clean: iterations_cxs: {iterations_cxs}".format(iterations_cxs=iterations_cxs))
             cx_json = super().json_get("cx")
             # endp_json = super().json_get("endp")
-            logger.info(cx_json.keys())
             if cx_json is not None and 'empty' not in cx_json:
+                logger.info(cx_json.keys())
                 logger.info("Removing old cross connects")
                 # delete L3-CX based upon the L3-Endp name & the resource value from
                 # the e.i.d of the associated L3-Endps
