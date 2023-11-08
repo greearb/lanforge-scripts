@@ -2,7 +2,9 @@
 """
 NAME: raw_cli.py
 
-PURPOSE: test the functionality of passing raw commands thru JSON API
+PURPOSE: Assemble and execute CLI commands using the JSON API using lanforge_api.py.
+        This includes raw single line commands
+        and commands assembled with named parameters.
 
 EXAMPLES:
 =========
@@ -26,9 +28,18 @@ $ ./raw_cli.py --mgr localhost --raw "reset_port 1 1 sta00500"
     -----------------------------
 $ ./raw_cli.py --mgr ct521a-jana --raw "add_text_blob category type it takes a village to raise a child"
 
+STATUS: Functional
+
 NOTES:
 ======
 This method of executing CLI commands does NOT report errors presently.
+
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
+
+INCLUDE_IN_README: True
 
 TO DO NOTES:
 
@@ -63,12 +74,16 @@ else:
 #   M A I N
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 def main():
+    help_summary = """Utility script intended to be used from shell scripts in order to send commands
+        to a LANforge system through the REST API. This script can send a one-line preformatted command
+        like the kind found in a /home/lanforge/DB directory, or can assemble a command using arguments.
+        """
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
         description='tests creating raw command')
     parser.add_argument("--host", "--mgr", help='specify the GUI to connect to, assumes port 8080')
-
+    parser.add_argument("--help_summary", help="purpose of the script", action="store_true")
     parser.add_argument("--raw", help='full CLI command to execute, including all arguments')
     parser.add_argument("--cmd", help='CLI command, where arguments to the command are provided using --arg parameters')
     parser.add_argument("--arg", action='append', nargs='+',
@@ -76,6 +91,10 @@ def main():
     parser.add_argument("--debug", "-d", help='turn on debugging', action="store_true")
 
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     if not (args.cmd or args.raw):
         print("No --raw or --cmd command provided")
         exit(1)
