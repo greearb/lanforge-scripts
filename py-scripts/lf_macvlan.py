@@ -14,13 +14,13 @@ $ ./lf_macvlan.py --new_macvlan --qty 2 --parent_port 1.1.eth2 --ip 192.168.1.9/
 
 $ ./lf_macvlan.py --new_macvlan --qty 2 --mac_pattern 'xx:xx:xx:*:*:xx' --ip DHCP --state up
 
-$ ./lf_macvlan.py --set_state down --port 1.1.eth2#0 --port 1.1.eth2#1
+$ ./lf_macvlan.py --set_state down --port 1.1.eth2#0 1.1.eth2#1
 
-$ ./lf_macvlan.py --set_state up --port 1.1.eth2#0 --port 1.1.eth2#1
+$ ./lf_macvlan.py --set_state up --port 1.1.eth2#0 1.1.eth2#1
 
-$ ./lf_macvlan.py --rm_macvlan --port 1.1.eth2#0 --port 1.1.eth2#1
+$ ./lf_macvlan.py --rm_macvlan --port 1.1.eth2#0 1.1.eth2#1
 
-$ ./lf_macvlan.py --set_ip --port 1.1.eth2#0,DHCP --port 1.1.eth2#1,ip=192.168.1.9/24,gw=192.168.1.1
+$ ./lf_macvlan.py --set_ip --port 1.1.eth2#0,DHCP 1.1.eth2#1,ip=192.168.1.9/24,gw=192.168.1.1
 
 $ ./lf_macvlan.py --list --parent_port 1.1.eth2
 
@@ -51,7 +51,8 @@ if sys.version_info[0] != 3:
 import importlib
 import argparse
 import pprint
-#import ipaddress
+
+# import ipaddress
 
 sys.path.insert(1, "../")
 # lanforge_client = importlib.import_module("lanforge_client")
@@ -63,6 +64,8 @@ from lanforge_client.lanforge_api import LFJsonQuery
 NA: str = "NA"
 DHCP: str = "DHCP"
 NO_GATEWAY = "0.0.0.0"
+MAC_VLAN = "MAC-VLAN"
+logger = logging.getLogger(__name__)
 
 class macvlan:
     ADD_MVLAN_FLAGS: dict = {
@@ -70,6 +73,7 @@ class macvlan:
         "down": 1
     }
     DEFAULT_MAC_PATTERN: str = "xx:xx:xx:*:*:xx"
+    PORT_TYPE: str = 'port type'
 
     def __init__(self,
                  session: LFSession = None,
@@ -80,6 +84,8 @@ class macvlan:
                  debug: bool = False,
                  state: str = None):
         self.session: LFSession = session
+        if not session.logger:
+            session.logger = logging
         self.lfcommand: LFJsonCommand = session.get_command()
         self.lfquery: LFJsonQuery = session.get_query()
 
@@ -100,6 +106,53 @@ class macvlan:
                              "down",
                              "ip",
                              "port+type"]
+
+    def remove_vlans(self,
+                     vlan_list: list = None,
+                     force: bool = False) -> None:
+        """
+
+        :param vlan_list: list of string eids that will be filtered to see if
+                            they are type macvlan
+        :param force: remove ports that are listed, do not restrict to macvlans
+        :return: nothing
+        """
+        existing_ports: list = self.list_ports()
+        included_ports: list = []
+        for item in existing_ports:
+            eid: str = list(item.keys())[0]
+            self.session.logger
+            if eid not in vlan_list:
+                continue
+
+            pprint.pprint(item)
+            port_dict: dict = item[eid]
+            port_type: str = port_dict[self.PORT_TYPE] # item.values[eid]['port_type']
+            if port_type == MAC_VLAN:
+                logger.warning(f"adding {eid}")
+                included_ports.append(eid)
+                continue
+            if force:
+                logger.warning(f"will remove non-macvlan port {eid}")
+                included_ports.append(eid)
+                continue
+            logger.warning(f"ignoring non-macvlan port {eid}")
+        for item in included_ports:
+            hunks: list = item.split('.')
+            logger.warning(f"removing {item}")
+            self.lfcommand.post_rm_vlan(port=hunks[2],
+                                        resource=hunks[1],
+                                        shelf=hunks[0],
+                                        response_json_list=self.response_json_list,
+                                        errors_warnings=self.errors_warnings,
+                                        debug=self.debug,
+                                        suppress_related_commands=True)
+            if len(self.errors_warnings):
+                for err in self.errors_warnings:
+                    logger.warning(err)
+                self.errors_warnings.clear()
+
+        # should be all done by here, but might want to wait
 
     def new_macvlan(self,
                     parent_port: str = None,
@@ -151,7 +204,7 @@ class macvlan:
         port_cmd_flags: str = NA
         port_current_flags: int = 0
 
-        if state is "down":
+        if state == "down":
             port_current_flags |= self.SetPortCurrentFlags.if_down
 
         if self.ip_addr == DHCP:
@@ -177,8 +230,8 @@ class macvlan:
         netmask = 24
         if '/' in ip_str:
             slashix = ip_str.find('/')
-            netmask = int(ip_str[slashix+1:])
-            ip_str[0:slashix-1]
+            netmask = int(ip_str[slashix + 1:])
+            ip_str[0:slashix - 1]
             pprint.pprint(["ip_str", ip_str, "slashix", slashix, "netmask", netmask])
         gateway = NO_GATEWAY
         if ip_str == DHCP:
@@ -275,8 +328,10 @@ def main():
                         action='store_true',
                         help="Do not create a macvlan but change the state. Specify if the port is admin 'up' or admin 'down'")
     parser.add_argument("--port",
-                        help="specify the EID of the port to change or remove (1.1.eth2#1)")
-    parser.add_argument("--rm_macvlan",
+                        nargs="+",
+                        # action='append', NO DON'T
+                        help="specify the EID of the port to change or remove (--port 1.1.eth2#1 --port 1.1.eth2#0)")
+    parser.add_argument("--rm_macvlan", "--rm", "--del", "--remove",
                         action='store_true',
                         help="remove macvlans using --port <EID> arguments")
     parser.add_argument("--set_ip",
@@ -304,7 +359,6 @@ def main():
                                      stream_warnings=True,
                                      exit_on_error=True)
 
-    logger = logging.getLogger(__name__)
     if args.log_level:
         logger.setLevel(args.log_level)
 
@@ -315,19 +369,35 @@ def main():
                                   ip_addr=args.ip,
                                   state=args.state)
     if args.new_macvlan:
-        print("creating new macvlan")
+        logger.info("creating new macvlan")
         my_macvlan.new_macvlan(parent_port=args.parent_port,
                                qty=args.qty,
                                mac_pattern=args.mac_pattern,
                                debug=args.debug)
     elif args.set_state:
-        print("setting state on ports")
+        logger.info("setting state on ports")
+
     elif args.rm_macvlan:
-        print("removing macvlan or port")
+        logger.info("removing macvlan or port")
+        if not args.port:
+            logger.error("* * no mac-vlans specified for removal, use --list to see ports")
+            exit(1)
+
+        extended_list: list = []
+        for item in args.port:
+            pprint.pprint(["item", item])
+            s_item: str = str(item)
+            if s_item.find(',') >= 0:
+                extended_list.extend(s_item.split(','))
+            else:
+                extended_list.append(s_item)
+        pprint.pprint(["extended_list", extended_list])
+        my_macvlan.remove_vlans(vlan_list=extended_list, force=False)
     elif args.set_ip:
-        print("setting IP on port")
+        logger.info("setting IP on port")
+
     elif args.list:
-        print("List of ports:")
+        logger.info("List of ports:")
         list_of_ports: list = []
         if args.parent_port:
             list_of_ports = my_macvlan.list_ports(parent_port=args.parent_port)
@@ -335,7 +405,7 @@ def main():
             list_of_ports = my_macvlan.list_ports()
         pprint.pprint(list_of_ports)
     else:
-        print("* * Unable to determine action, bye.")
+        logger.error("* * Unable to determine action, bye.")
         exit(1)
 
 
