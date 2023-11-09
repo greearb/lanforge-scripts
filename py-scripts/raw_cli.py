@@ -70,6 +70,8 @@ else:
     from lanforge_api import LFJsonCommand
     from lanforge_api import LFJsonQuery
 
+logger = logging.getLogger(__name__)
+
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 #   M A I N
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
