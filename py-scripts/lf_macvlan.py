@@ -51,9 +51,10 @@ if sys.version_info[0] != 3:
 import importlib
 import argparse
 import pprint
+#import ipaddress
 
 sys.path.insert(1, "../")
-#lanforge_client = importlib.import_module("lanforge_client")
+# lanforge_client = importlib.import_module("lanforge_client")
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
 from lanforge_client.lanforge_api import LFSession
 from lanforge_client.lanforge_api import LFJsonCommand
@@ -61,6 +62,7 @@ from lanforge_client.lanforge_api import LFJsonQuery
 
 NA: str = "NA"
 DHCP: str = "DHCP"
+NO_GATEWAY = "0.0.0.0"
 
 class macvlan:
     ADD_MVLAN_FLAGS: dict = {
@@ -81,7 +83,7 @@ class macvlan:
         self.lfcommand: LFJsonCommand = session.get_command()
         self.lfquery: LFJsonQuery = session.get_query()
 
-        self.SetPortCurrentFlags: LFJsonCommand.SetPortCurrentFlags= self.lfcommand.SetPortCurrentFlags
+        self.SetPortCurrentFlags: LFJsonCommand.SetPortCurrentFlags = self.lfcommand.SetPortCurrentFlags
         self.SetPortInterest: LFJsonCommand.SetPortInterest = self.lfcommand.SetPortInterest
 
         self.parent_port: str = parent_port
@@ -123,6 +125,28 @@ class macvlan:
             raise ValueError("new_macvlan: no parent port provided")
 
         port_hunks: list = parent_port.split(".")
+        if len(port_hunks) < 3:
+            raise ValueError(f"new_macvlan: parent_port has insufficient decimals:{parent_port}")
+
+        print("Finding existing macvlans on parent port...")
+        existing_mvlans: list = self.list_ports(parent_port=parent_port)
+        maximum_vlan_num: int = 0
+        if existing_mvlans is None:
+            logging.warning("* * existing vlans is None")
+        elif len(existing_mvlans) < 1:
+            logging.warning("* * existing vlans is empty")
+        else:
+            logging.debug(["matching-vlans:", pprint.pformat(existing_mvlans)])
+            substr_start: int = len(parent_port) + 1
+            for item in existing_mvlans:
+                item_key = list(item.keys())[0]
+                # print(f"ITEM KEY:{item_key}")
+                if item_key == parent_port:
+                    continue
+                trailing_num: int = int(item_key[substr_start:])
+                if trailing_num > maximum_vlan_num:
+                    maximum_vlan_num = trailing_num
+            print(f"MAX VLAN NUM: {maximum_vlan_num}")
 
         port_cmd_flags: str = NA
         port_current_flags: int = 0
@@ -132,10 +156,12 @@ class macvlan:
 
         if self.ip_addr == DHCP:
             port_current_flags |= self.SetPortCurrentFlags.use_dhcp
+        else:
+            raise ValueError("DHCP NOT SUPPORTED")
+
         port_interest_flags: int = self.SetPortInterest.dhcp \
                                    | self.SetPortInterest.dhcpv6 \
-                                    | self.SetPortInterest.ifdown \
-
+                                   | self.SetPortInterest.ifdown
         if port_current_flags > 0:
             port_interest_flags |= self.SetPortInterest.current_flags
 
@@ -147,8 +173,17 @@ class macvlan:
         else:
             raise ValueError(f"hard to determine value for ip:{self.ip_addr}")
 
-
-        for portnum in range(0, int(qty)):
+        parent_port_hunks: list = parent_port.split(".")
+        netmask = 24
+        if '/' in ip_str:
+            slashix = ip_str.find('/')
+            netmask = int(ip_str[slashix+1:])
+            ip_str[0:slashix-1]
+            pprint.pprint(["ip_str", ip_str, "slashix", slashix, "netmask", netmask])
+        gateway = NO_GATEWAY
+        if ip_str == DHCP:
+            gateway = NA
+        for portnum in range(maximum_vlan_num, maximum_vlan_num + int(qty)):
             self.lfcommand.post_add_mvlan(flags=self.ADD_MVLAN_FLAGS[state],
                                           # ignore index, kernel assigns this usually
                                           mac=mac_pattern,
@@ -158,8 +193,21 @@ class macvlan:
                                           debug=debug,
                                           errors_warnings=self.errors_warnings,
                                           suppress_related_commands=True)
-            #self.lfcommand.post_set_port()
+            self.lfcommand.post_set_port(shelf=1,
+                                         resource=port_hunks[1],
+                                         port=f"{parent_port_hunks[2]}#{portnum}",
+                                         ip_addr=ip_str,
+                                         netmask=netmask,
+                                         gateway=gateway,
+                                         cmd_flags=NA,
+                                         current_flags=int(port_current_flags),
+                                         current_flags_msk=int(port_current_flags),
+                                         mac=mac_pattern,
+                                         interest=int(port_interest_flags),
+                                         dns_servers=NA,
+                                         debug=True)
             raise ValueError("UNFINISHED")
+
     def list_ports(self,
                    eid_list: list = None,
                    parent_port: str = None):
@@ -191,7 +239,7 @@ class macvlan:
             response = filtered_response
         if not response:
             logging.error("no response")
-        pprint.pprint(response)
+        return response
 
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
@@ -274,18 +322,18 @@ def main():
                                debug=args.debug)
     elif args.set_state:
         print("setting state on ports")
-
     elif args.rm_macvlan:
         print("removing macvlan or port")
     elif args.set_ip:
         print("setting IP on port")
     elif args.list:
         print("List of ports:")
+        list_of_ports: list = []
         if args.parent_port:
-            my_macvlan.list_ports(parent_port=args.parent_port)
+            list_of_ports = my_macvlan.list_ports(parent_port=args.parent_port)
         else:
-            my_macvlan.list_ports()
-
+            list_of_ports = my_macvlan.list_ports()
+        pprint.pprint(list_of_ports)
     else:
         print("* * Unable to determine action, bye.")
         exit(1)
