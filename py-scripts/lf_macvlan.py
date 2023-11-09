@@ -39,6 +39,7 @@ INCLUDE_IN_README: True
 TO DO NOTES:
 
 """
+import ipaddress
 import logging
 import os
 import sys
@@ -67,6 +68,7 @@ NO_GATEWAY = "0.0.0.0"
 MAC_VLAN = "MAC-VLAN"
 logger = logging.getLogger(__name__)
 
+
 class macvlan:
     ADD_MVLAN_FLAGS: dict = {
         "up": NA,
@@ -74,6 +76,7 @@ class macvlan:
     }
     DEFAULT_MAC_PATTERN: str = "xx:xx:xx:*:*:xx"
     PORT_TYPE: str = 'port type'
+    PHANTOM: str = 'phantom'
 
     def __init__(self,
                  session: LFSession = None,
@@ -97,15 +100,16 @@ class macvlan:
         self.mac_pattern: str = mac_pattern
         self.ip_addr: str = ip_addr
         self.state: str = state
-        self.errors_warnings = []
-        self.debug = debug
-        self.port_columns = ["port",
-                             "parent+dev",
-                             "alias",
-                             "phantom",
-                             "down",
-                             "ip",
-                             "port+type"]
+        self.errors_warnings: list = []
+        self.response_json_list: list = []
+        self.debug: bool = debug
+        self.port_columns: list = ["port",
+                                   "parent+dev",
+                                   "alias",
+                                   "phantom",
+                                   "down",
+                                   "ip",
+                                   "port+type"]
 
     def remove_vlans(self,
                      vlan_list: list = None,
@@ -127,13 +131,17 @@ class macvlan:
 
             pprint.pprint(item)
             port_dict: dict = item[eid]
-            port_type: str = port_dict[self.PORT_TYPE] # item.values[eid]['port_type']
+            port_type: str = port_dict[self.PORT_TYPE]  # item.values[eid]['port_type']
             if port_type == MAC_VLAN:
                 logger.warning(f"adding {eid}")
                 included_ports.append(eid)
                 continue
             if force:
                 logger.warning(f"will remove non-macvlan port {eid}")
+                included_ports.append(eid)
+                continue
+            if (port_dict[self.PHANTOM] == True) or (port_dict[self.PHANTOM] == "True"):
+                logger.warning(f"will remove phantom port {eid}")
                 included_ports.append(eid)
                 continue
             logger.warning(f"ignoring non-macvlan port {eid}")
@@ -164,7 +172,7 @@ class macvlan:
         if not parent_port:
             parent_port = self.parent_port
         if not qty:
-            qty = self.num_ports
+            qty = int(self.num_ports)
         if not mac_pattern:
             mac_pattern = self.mac_pattern
         if not mac_pattern:
@@ -203,39 +211,76 @@ class macvlan:
 
         port_cmd_flags: str = NA
         port_current_flags: int = 0
-
-        if state == "down":
-            port_current_flags |= self.SetPortCurrentFlags.if_down
-
-        if self.ip_addr == DHCP:
-            port_current_flags |= self.SetPortCurrentFlags.use_dhcp
-        else:
-            raise ValueError("DHCP NOT SUPPORTED")
-
         port_interest_flags: int = self.SetPortInterest.dhcp \
                                    | self.SetPortInterest.dhcpv6 \
                                    | self.SetPortInterest.ifdown
+        if state == "down":
+            port_current_flags |= self.SetPortCurrentFlags.if_down
+        portnum: int = 0  # use as temp counter
+        first_ip_str: str = None
+        netmask_str: str = NA
+        cidr_str: str = "/24"
+        ip_addresses: list = []
+        gateway: str = NA
+        ip: ipaddress.IPv4Address = None
+        prev_ip: ipaddress.IPv4Network = None
+        comma_pos: int = self.ip_addr.find(',')
+        slash_pos: int = self.ip_addr.find('/')
+
+        if self.ip_addr == DHCP:
+            port_current_flags |= self.SetPortCurrentFlags.use_dhcp
+            portnum = int(maximum_vlan_num)
+            while portnum < (int(maximum_vlan_num) + int(qty)):
+                ip_addresses.insert(portnum, NA)
+                portnum +=1
+        else:
+            port_interest_flags |= self.SetPortInterest.ip_Mask \
+                                   | self.SetPortInterest.ip_gateway \
+                                   | self.SetPortInterest.ip_address
+            if comma_pos < 0:
+                logger.warning(f"Using NO_GATEWAY for {self.ip_addr}")
+                first_ip_str = self.ip_addr
+            elif comma_pos < 8:
+                raise ValueError(
+                    f"Unusual network address: {self.ip_addr}, expecting something like: 10.0.0.2/24,10.0.0.1")
+            elif comma_pos > 8:
+                # print(f" !! !! comma:{comma_pos} slash:{slash_pos}")
+                if slash_pos > 0:
+                    gateway = self.ip_addr[comma_pos + 1:]
+                    cidr_str = self.ip_addr[slash_pos:comma_pos]
+                    first_ip_str = self.ip_addr[0:slash_pos]
+                    print(f"* * gateway:{gateway} cidr:{cidr_str} first_ip_str: {first_ip_str}")
+                else:
+                    gateway = self.ip_addr[comma_pos + 1:]
+                    # print(f"+ + gateway:{gateway} cidr:{cidr_str}")
+                    if (slash_pos > 0) and (slash_pos < comma_pos):
+                        first_ip_str = self.ip_addr[0:slash_pos]
+                    else:
+                        first_ip_str = self.ip_addr[0:comma_pos]
+            # print(f" = => first_ip_str{first_ip_str}")
+            ip = ipaddress.IPv4Address(first_ip_str)
+            prev_ip = ipaddress.IPv4Address(str(ip))
+            netmask_str = ipaddress.IPv4Network(f"{first_ip_str}{cidr_str}", strict=False).with_netmask
+            netmask_str = netmask_str[netmask_str.find('/')+1:]
+            portnum = maximum_vlan_num
+            while portnum < (maximum_vlan_num + int(qty)):
+                # print(f" ** ** portnum:{portnum} maxv:{maximum_vlan_num} q:{qty}")
+                ip_addresses.insert(portnum, str(ip))
+                prev_ip = ip
+                ip = ipaddress.IPv4Address(prev_ip + 1)
+                portnum += 1
+        # pprint.pprint(["cidr", cidr_str, "netmask_str", netmask_str, "gateway", gateway, "ip_addresses", ip_addresses])
+
         if port_current_flags > 0:
             port_interest_flags |= self.SetPortInterest.current_flags
 
         ip_str = NA
         if self.ip_addr == DHCP:
-            ip_str = DHCP
-        elif "." in self.ip_addr:
-            ip_str = self.ip_addr
-        else:
-            raise ValueError(f"hard to determine value for ip:{self.ip_addr}")
+            ip_str = NA
+            ip_addresses.append(ip_str)
 
         parent_port_hunks: list = parent_port.split(".")
-        netmask = 24
-        if '/' in ip_str:
-            slashix = ip_str.find('/')
-            netmask = int(ip_str[slashix + 1:])
-            ip_str[0:slashix - 1]
-            pprint.pprint(["ip_str", ip_str, "slashix", slashix, "netmask", netmask])
-        gateway = NO_GATEWAY
-        if ip_str == DHCP:
-            gateway = NA
+
         for portnum in range(maximum_vlan_num, maximum_vlan_num + int(qty)):
             self.lfcommand.post_add_mvlan(flags=self.ADD_MVLAN_FLAGS[state],
                                           # ignore index, kernel assigns this usually
@@ -246,19 +291,21 @@ class macvlan:
                                           debug=debug,
                                           errors_warnings=self.errors_warnings,
                                           suppress_related_commands=True)
+
             self.lfcommand.post_set_port(shelf=1,
                                          resource=port_hunks[1],
                                          port=f"{parent_port_hunks[2]}#{portnum}",
-                                         ip_addr=ip_str,
-                                         netmask=netmask,
+                                         ip_addr=ip_addresses[portnum],
+                                         netmask=netmask_str,
                                          gateway=gateway,
                                          cmd_flags=NA,
-                                         current_flags=int(port_current_flags),
-                                         current_flags_msk=int(port_current_flags),
+                                         current_flags=str(port_current_flags),
+                                         current_flags_msk=str(port_current_flags),
                                          mac=mac_pattern,
                                          interest=int(port_interest_flags),
                                          dns_servers=NA,
-                                         debug=True)
+                                         debug=True,
+                                         suppress_related_commands=True)
             raise ValueError("UNFINISHED")
 
     def list_ports(self,
