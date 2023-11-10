@@ -640,19 +640,19 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
         # get the Fedora platform
         if (self.email_title_txt != ""):
 
-            self.mail_subject = "{iteration} of {total_iterations} QA Rig: {email} Suite: {suite} Duration: {duration} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  Tests:{tests}   Server IP: {hostname}  DB: {db} Server Ver:{server_ver} Date: {date}".format(
+            self.mail_subject = "{iteration} of {total_iterations} QA Server IP: {hostname}  Rig: {email} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial} Suite: {suite} Duration: {duration}  Tests:{tests}  DB: {db} Server Ver:{server_ver} Date: {date}".format(
                 iteration=self.iteration,
                 total_iterations=self.total_iterations,
+                hostname=self.server_ip,
                 email=self.email_title_txt,
                 duration=self.suite_duration,
                 suite=self.test_suite,
                 tests=self.tests_run, finished=self.tests_success, fail=self.tests_failure, timeout=self.tests_timeout, partial=self.tests_some_failure,
-                hostname=self.server_ip,
                 server_ver=server_version,
                 db=self.database_sqlite,
                 date=datetime.datetime.now())
         else:
-            self.mail_subject = "Suite: {suite} Duration: {duration} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial} Suite: {suite} Tests:{tests}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(
+            self.mail_subject = "Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial} Suite: {suite} Duration: {duration}  Suite: {suite} Tests:{tests}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(
                 # email=self.email_title_txt,
                 duration=self.suite_duration,
                 suite=self.test_suite,
