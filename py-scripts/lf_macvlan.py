@@ -94,6 +94,7 @@ class macvlan:
 
         self.SetPortCurrentFlags: LFJsonCommand.SetPortCurrentFlags = self.lfcommand.SetPortCurrentFlags
         self.SetPortInterest: LFJsonCommand.SetPortInterest = self.lfcommand.SetPortInterest
+        self.NcShowPortsProbeFlags: LFJsonCommand.NcShowPortsProbeFlags = self.lfcommand.NcShowPortsProbeFlags
 
         self.parent_port: str = parent_port
         self.num_ports: int = num_ports
@@ -110,6 +111,67 @@ class macvlan:
                                    "down",
                                    "ip",
                                    "port+type"]
+
+    def set_state(self,
+                  state: str = None,
+                  ports=None):
+        my_port_list: list = []
+        if isinstance(ports, str):
+            if ports.find(',') < 5:
+                raise ValueError(f"set_state found strange port: {ports}")
+            if ports.find(','):
+                my_port_list.extend(ports.split(','))
+            else:
+                my_port_list.append(ports)
+        elif isinstance(ports, list):
+            my_port_list.extend(ports)
+        else:
+            raise ValueError(f"Unsure how to process {pprint.pformat(ports)}")
+
+        if not ((state == "up") or (state == "down")):
+            raise ValueError("set_state requires state 'up' or 'down'")
+        existing_list: list = self.list_ports()
+        if self.debug:
+            pprint.pprint(["existing ports", existing_list])
+        filtered_list: list = []
+        for item_d in existing_list:
+            # print(f"type of item_d {type(item_d)} : item_d:{item_d}")
+            eid: str = list(item_d.keys())[0]
+            # print(f"is EID:{eid} in {my_port_list}")
+            if not eid in my_port_list:
+                # print(f"ignoring port {eid}")
+                continue
+            filtered_list.append(eid)
+        if len(filtered_list) < 1:
+            logger.warning("no matching ports found")
+            exit(1)
+        logger.warning(f"will change state of these ports: {filtered_list} ")
+        interest_flags: int = self.SetPortInterest.current_flags.value | self.SetPortInterest.ifdown.value
+        current_flags: int = 0 if state == "up" else self.SetPortCurrentFlags.if_down.value
+        current_flags_mask: int = self.SetPortCurrentFlags.if_down.value
+        probe_flags_i: int = self.NcShowPortsProbeFlags.GW.value \
+                             | self.NcShowPortsProbeFlags.EASY_IP_INFO.value
+        for item in filtered_list:
+            port_hunks: list = str(item).split(".")
+            # pprint.pprint(["port hunks", port_hunks])
+            self.lfcommand.post_set_port(shelf=1,
+                                         resource=port_hunks[1],
+                                         port=port_hunks[2],
+                                         cmd_flags=NA,
+                                         current_flags=current_flags,
+                                         current_flags_msk=current_flags_mask,
+                                         interest=interest_flags,
+                                         debug=self.debug,
+                                         suppress_related_commands=True)
+        self.lfcommand.post_nc_show_ports(port="all",
+                                          probe_flags=probe_flags_i,
+                                          resource="all",
+                                          shelf=1,
+                                          errors_warnings=self.errors_warnings,
+                                          response_json_list=self.response_json_list,
+                                          suppress_related_commands=False,
+                                          debug=self.debug)
+        logger.info("done")
 
     def remove_vlans(self,
                      vlan_list: list = None,
@@ -168,7 +230,7 @@ class macvlan:
                     mac_pattern: str = None,
                     debug: bool = False):
         debug = self.debug or debug
-        print(f"would create new macvlan debug:{debug}")
+        logger.info(f"Will create {qty} new macvlans")
         if not parent_port:
             parent_port = self.parent_port
         if not qty:
@@ -191,7 +253,7 @@ class macvlan:
 
         print("Finding existing macvlans on parent port...")
         existing_mvlans: list = self.list_ports(parent_port=parent_port)
-        maximum_vlan_num: int = 0
+        maximum_vlan_num: int = -1
         if existing_mvlans is None:
             logging.warning("* * existing vlans is None")
         elif len(existing_mvlans) < 1:
@@ -206,37 +268,43 @@ class macvlan:
                     continue
                 trailing_num: int = int(item_key[substr_start:])
                 if trailing_num > maximum_vlan_num:
-                    maximum_vlan_num = trailing_num
-            print(f"MAX VLAN NUM: {maximum_vlan_num}")
+                    maximum_vlan_num = int(trailing_num)
+            if debug:
+                print(f"MAX VLAN NUM: {maximum_vlan_num}")
 
         port_cmd_flags: str = NA
         port_current_flags: int = 0
-        port_interest_flags: int = self.SetPortInterest.dhcp \
-                                   | self.SetPortInterest.dhcpv6 \
-                                   | self.SetPortInterest.ifdown
+        port_current_flags_mask: int = self.SetPortCurrentFlags.if_down.value \
+                                       | self.SetPortCurrentFlags.use_dhcp.value
+        port_interest_flags: int = self.SetPortInterest.rpt_timer.value
+
         if state == "down":
-            port_current_flags |= self.SetPortCurrentFlags.if_down
+            port_current_flags |= self.SetPortCurrentFlags.if_down.value
+            port_interest_flags |= self.SetPortInterest.ifdown.value
+
         portnum: int = 0  # use as temp counter
         first_ip_str: str = None
         netmask_str: str = NA
         cidr_str: str = "/24"
-        ip_addresses: list = []
-        gateway: str = NA
+        ip_addresses: list = [NA] * (maximum_vlan_num + 1)
+        gateway: str = NO_GATEWAY  # do not use NA, it will fail on set-port
         ip: ipaddress.IPv4Address = None
         prev_ip: ipaddress.IPv4Network = None
         comma_pos: int = self.ip_addr.find(',')
         slash_pos: int = self.ip_addr.find('/')
 
         if self.ip_addr == DHCP:
-            port_current_flags |= self.SetPortCurrentFlags.use_dhcp
-            portnum = int(maximum_vlan_num)
-            while portnum < (int(maximum_vlan_num) + int(qty)):
+            port_current_flags |= self.SetPortCurrentFlags.use_dhcp.value
+            port_interest_flags |= self.SetPortInterest.dhcp.value
+            portnum = int(maximum_vlan_num) + 1
+
+            while portnum <= (int(maximum_vlan_num) + int(qty)):
                 ip_addresses.insert(portnum, NA)
-                portnum +=1
+                portnum += 1
         else:
-            port_interest_flags |= self.SetPortInterest.ip_Mask \
-                                   | self.SetPortInterest.ip_gateway \
-                                   | self.SetPortInterest.ip_address
+            port_interest_flags |= self.SetPortInterest.ip_Mask.value \
+                                   | self.SetPortInterest.ip_gateway.value \
+                                   | self.SetPortInterest.ip_address.value
             if comma_pos < 0:
                 logger.warning(f"Using NO_GATEWAY for {self.ip_addr}")
                 first_ip_str = self.ip_addr
@@ -261,9 +329,9 @@ class macvlan:
             ip = ipaddress.IPv4Address(first_ip_str)
             prev_ip = ipaddress.IPv4Address(str(ip))
             netmask_str = ipaddress.IPv4Network(f"{first_ip_str}{cidr_str}", strict=False).with_netmask
-            netmask_str = netmask_str[netmask_str.find('/')+1:]
-            portnum = maximum_vlan_num
-            while portnum < (maximum_vlan_num + int(qty)):
+            netmask_str = netmask_str[netmask_str.find('/') + 1:]
+            portnum = int(maximum_vlan_num) + 1
+            while portnum <= (int(maximum_vlan_num) + int(qty)):
                 # print(f" ** ** portnum:{portnum} maxv:{maximum_vlan_num} q:{qty}")
                 ip_addresses.insert(portnum, str(ip))
                 prev_ip = ip
@@ -272,7 +340,7 @@ class macvlan:
         # pprint.pprint(["cidr", cidr_str, "netmask_str", netmask_str, "gateway", gateway, "ip_addresses", ip_addresses])
 
         if port_current_flags > 0:
-            port_interest_flags |= self.SetPortInterest.current_flags
+            port_interest_flags |= self.SetPortInterest.current_flags.value
 
         ip_str = NA
         if self.ip_addr == DHCP:
@@ -280,8 +348,11 @@ class macvlan:
             ip_addresses.append(ip_str)
 
         parent_port_hunks: list = parent_port.split(".")
-
-        for portnum in range(maximum_vlan_num, maximum_vlan_num + int(qty)):
+        portnum = int(maximum_vlan_num) + 1
+        probe_flags_i: int = self.NcShowPortsProbeFlags.GW.value \
+                             | self.NcShowPortsProbeFlags.EASY_IP_INFO.value
+        while portnum <= (int(maximum_vlan_num) + int(qty)):
+            # print(f"\n =====  =====  =====  =====  =====  add_m {portnum}  =====  =====  =====  =====  =====")
             self.lfcommand.post_add_mvlan(flags=self.ADD_MVLAN_FLAGS[state],
                                           # ignore index, kernel assigns this usually
                                           mac=mac_pattern,
@@ -291,22 +362,71 @@ class macvlan:
                                           debug=debug,
                                           errors_warnings=self.errors_warnings,
                                           suppress_related_commands=True)
+            portnum += 1
 
+        # print(f"\n =====  =====  REFRESH 1 =====  =====  ===== ")
+        self.lfcommand.post_nc_show_ports(port="all",
+                                          probe_flags=self.NcShowPortsProbeFlags.EASY_IP_INFO.value,
+                                          resource=parent_port_hunks[1],
+                                          shelf=parent_port_hunks[0],
+                                          errors_warnings=self.errors_warnings,
+                                          response_json_list=self.response_json_list,
+                                          suppress_related_commands=False,
+                                          debug=debug)
+        found: int = 0
+        fail_at: int = 60
+        print("Waiting for macvlans to be created: ", end="")
+        while found < (int(maximum_vlan_num) + int(qty)):
+            fail_at -= 1
+            time.sleep(0.200)
+            found = 0
+            response: list = self.list_ports(parent_port=parent_port)
+            filtered_response: list = []
+            for entry in response:
+                # print(f"KEYS:{list(entry.keys())[0]}")
+                eid: str = list(entry.keys())[0]
+                if eid.startswith(parent_port + "#"):
+                    # pprint.pprint(entry)
+                    filtered_response.append(entry)
+            found = len(filtered_response)
+            print(f" {found}...", end="")
+            if fail_at <= 0:
+                raise Exception("\nUnable to find all requested macvlans")
+        print("")
+
+        portnum = int(maximum_vlan_num) + 1
+        if debug:
+            pprint.pprint(["portnum", portnum, "ip_addresses", ip_addresses])
+        while portnum <= (int(maximum_vlan_num) + int(qty)):
+            # print(f"\n =====  =====  =====  =====  =====   set_port {portnum} =====  =====  =====  =====  =====")
             self.lfcommand.post_set_port(shelf=1,
                                          resource=port_hunks[1],
                                          port=f"{parent_port_hunks[2]}#{portnum}",
                                          ip_addr=ip_addresses[portnum],
+                                         report_timer=3000,
                                          netmask=netmask_str,
                                          gateway=gateway,
                                          cmd_flags=NA,
-                                         current_flags=str(port_current_flags),
-                                         current_flags_msk=str(port_current_flags),
+                                         current_flags=port_current_flags,
+                                         current_flags_msk=port_current_flags_mask,
                                          mac=mac_pattern,
-                                         interest=int(port_interest_flags),
+                                         interest=port_interest_flags,
                                          dns_servers=NA,
-                                         debug=True,
+                                         debug=debug,
                                          suppress_related_commands=True)
-            raise ValueError("UNFINISHED")
+            portnum += 1
+
+        # here would be a logical time to poll ports to wait for them to appear
+        # but we'll just do a nc_show_port for now
+        # print(f"\n =====  =====  REFRESH 2 =====  =====  ===== ")
+        self.lfcommand.post_nc_show_ports(port="all",
+                                          probe_flags=probe_flags_i,
+                                          resource=parent_port_hunks[1],
+                                          shelf=parent_port_hunks[0],
+                                          errors_warnings=self.errors_warnings,
+                                          response_json_list=self.response_json_list,
+                                          suppress_related_commands=False,
+                                          debug=debug)
 
     def list_ports(self,
                    eid_list: list = None,
@@ -423,6 +543,11 @@ def main():
                                debug=args.debug)
     elif args.set_state:
         logger.info("setting state on ports")
+        if not args.port:
+            logger.error("* * no mac-vlans specified for transition, try with --port 1.1.eth1#0 ... ")
+            exit(1)
+        my_macvlan.set_state(state=args.state,
+                             ports=args.port)
 
     elif args.rm_macvlan:
         logger.info("removing macvlan or port")
@@ -432,16 +557,23 @@ def main():
 
         extended_list: list = []
         for item in args.port:
-            pprint.pprint(["item", item])
+            # pprint.pprint(["item", item])
             s_item: str = str(item)
             if s_item.find(',') >= 0:
                 extended_list.extend(s_item.split(','))
             else:
                 extended_list.append(s_item)
-        pprint.pprint(["extended_list", extended_list])
+        if args.debug:
+            pprint.pprint(["extended_list", extended_list])
         my_macvlan.remove_vlans(vlan_list=extended_list, force=False)
+
     elif args.set_ip:
+        if not args.port:
+            print("* * no ports specified to change IP on")
+            exit(1)
         logger.info("setting IP on port")
+        for item in args.port:
+            print(f" item:{item}")
 
     elif args.list:
         logger.info("List of ports:")
