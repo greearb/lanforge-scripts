@@ -36,7 +36,7 @@ def main():
                 'pyserial','pexpect-serial', 'scp','scipy','simple-geometry','kaleido','psutil','aiohttp','bs4',
                 'django','django-celery-beat','django-enum-choices','django-timezone-field',
                 'flower','jsonfield','matplotlib','psycopg2-binary','wheel','pytest','pytest-html','pytest-json',
-                'django-celery-results','celery','python-contrab',
+                'django-celery-results','celery',
                 'pytest-json-report','pytest-metadata','python-dateutil','requests','pillow','tabulate','selenium']
     if args.pyjwt:
         packages.append('pyjwt')
