@@ -16,7 +16,7 @@ def main():
 
         OUTPUT: List of successful and unsuccessful installs
 
-        NOTES: Install as root
+        NOTES: Run this as lanforge user (not root)
         '''
     )
     parser.add_argument('--pyjwt', help='Install PyJWT which is necessary for GhostRequest', action="store_true")
@@ -25,7 +25,7 @@ def main():
 
     print("Installing webGUI Python3 Dependencies")
 
-    # These don't work on my F36 LANforge system
+    # These don't work on my F36 LANforge system (as root user, my bad)
     # Possibly they are not required?
     # 'celery' (conflicts with OS's 'click'.  But I installed rpm celery pkg, maybe this is good enough?)
     # 'python-contrab':  pip doesn't know anything about it evidently.
@@ -36,7 +36,7 @@ def main():
                 'pyserial','pexpect-serial', 'scp','scipy','simple-geometry','kaleido','psutil','aiohttp','bs4',
                 'django','django-celery-beat','django-enum-choices','django-timezone-field',
                 'flower','jsonfield','matplotlib','psycopg2-binary','wheel','pytest','pytest-html','pytest-json',
-                'django-celery-results==2.4.0',
+                'django-celery-results','celery','python-contrab',
                 'pytest-json-report','pytest-metadata','python-dateutil','requests','pillow','tabulate','selenium']
     if args.pyjwt:
         packages.append('pyjwt')

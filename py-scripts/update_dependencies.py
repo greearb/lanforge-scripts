@@ -16,7 +16,7 @@ def main():
 
         OUTPUT: List of successful and unsuccessful installs
 
-        NOTES: Install as root
+        NOTES: Run this as lanforge user (not root)
         '''
     )
     parser.add_argument('--pyjwt', help='Install PyJWT which is necessary for GhostRequest', action="store_true")
