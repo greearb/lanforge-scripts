@@ -122,6 +122,9 @@ class macvlan:
             raise ValueError("set_ip(): only takes on port at a time")
         if (not ip_str) or (not port):
             raise ValueError("set_ip(): requires ip and port")
+        netmask: str = NA
+        gateway: str = NA
+
         existing_ports: list = self.list_ports()
         existing_eids: list = [ list(entry.keys())[0] for entry in existing_ports]
         if not port in existing_eids:
@@ -130,22 +133,65 @@ class macvlan:
         current_flags_mask: int = self.SetPortCurrentFlags.use_dhcp.value
         current_flags: int = 0
 
+        comma_pos = ip_str.find(',')
+        slash_pos = ip_str.find('/')
+        gateway_ip: str = NO_GATEWAY
+        cidr_str: str = "/24"
+        using_dhcp: bool = False
         if ip_str == DHCP:
             current_flags |= self.SetPortCurrentFlags.use_dhcp.value
-        elif ip_str.find('=') > 0:
+            using_dhcp = True
+        elif comma_pos > 0:  # we should have a gateway
             interest_flags |= self.SetPortInterest.ip_address.value \
                               | self.SetPortInterest.ip_gateway.value \
                               | self.SetPortInterest.ip_Mask.value
+            gateway_ip = ip_str[comma_pos+1:]
+            if slash_pos > 0:
+                cidr_str = ip_str[slash_pos:comma_pos]
+                ip_str = ip_str[0:slash_pos]
+            else:
+                ip_str = ip_str[0:comma_pos]
+        elif slash_pos > 0:
+            interest_flags |= self.SetPortInterest.ip_address.value \
+                              | self.SetPortInterest.ip_gateway.value \
+                              | self.SetPortInterest.ip_Mask.value
+            cidr_str = ip_str[slash_pos:]
+            ip_str = ip_str[0:slash_pos]
         else:
             raise ValueError(f"hard to parse ip: {ip_str}")
+        ip4network: ipaddress.IPv4Network = ipaddress.IPv4Network(f"{ip_str}{cidr_str}", strict=False)
+        netmask = str(ip4network.with_netmask)
+        netmask = netmask[netmask.find('/')+1:]
+        if self.debug:
+            pprint.pprint(["ip4n:", ip4network, "gateway:", gateway_ip, "cidr:", cidr_str, "netmask:", netmask, "IP:", ip_str])
+
         port_hunks: list = ip_str.split('.')
-        pprint.pprint(["port_hunks", port_hunks])
-        self.lfcommand.post_set_port(shelf=1,
-                                     resource=port_hunks[1],
-                                     port=port_hunks[2],
-                                     current_flags=current_flags,
-                                     current_flags_msk=current_flags_mask,
-                                     interest=interest_flags)
+        if self.debug:
+            pprint.pprint(["port_hunks", port_hunks])
+        if using_dhcp:
+            print(" ++ ++ set port with DHCP")
+            self.lfcommand.post_set_port(shelf=1,
+                                         resource=port_hunks[1],
+                                         port=port_hunks[2],
+                                         current_flags=current_flags,
+                                         current_flags_msk=current_flags_mask,
+                                         interest=interest_flags,
+                                         debug=self.debug,
+                                         suppress_related_commands=True)
+        else:
+            print(f" ** ** set port with IP {ip_str}")
+            self.lfcommand.post_set_port(shelf=1,
+                                         resource=port_hunks[1],
+                                         port=port_hunks[2],
+                                         current_flags=current_flags,
+                                         current_flags_msk=current_flags_mask,
+                                         interest=interest_flags,
+                                         ip_addr=ip_str,
+                                         netmask=netmask,
+                                         gateway=gateway_ip,
+                                         debug=self.debug,
+                                         suppress_related_commands=True)
+        time.sleep(5)
         self.lfcommand.post_nc_show_ports(shelf=1,
                                           resource=port_hunks[1],
                                           port=port_hunks[2])
