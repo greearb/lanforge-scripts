@@ -20,7 +20,9 @@ $ ./lf_macvlan.py --set_state up --port 1.1.eth2#0 1.1.eth2#1
 
 $ ./lf_macvlan.py --rm_macvlan --port 1.1.eth2#0 1.1.eth2#1
 
-$ ./lf_macvlan.py --set_ip --port 1.1.eth2#0,DHCP 1.1.eth2#1,ip=192.168.1.9/24,gw=192.168.1.1
+$ ./lf_macvlan.py --set_ip --port 1.1.eth2#0 --ip DHCP
+
+$ ./lf_macvlan.py --set_ip --port 1.1.eth2#1 --ip 192.168.1.9/24,192.168.1.1
 
 $ ./lf_macvlan.py --list --parent_port 1.1.eth2
 
@@ -111,6 +113,42 @@ class macvlan:
                                    "down",
                                    "ip",
                                    "port+type"]
+    def set_ip(self,
+               port:str = None,
+               ip_str:str = None):
+        if isinstance(ip_str, list):
+            raise ValueError("set_ip(): only takes one ip at a time")
+        if isinstance(port, list):
+            raise ValueError("set_ip(): only takes on port at a time")
+        if (not ip_str) or (not port):
+            raise ValueError("set_ip(): requires ip and port")
+        existing_ports: list = self.list_ports()
+        existing_eids: list = [ list(entry.keys())[0] for entry in existing_ports]
+        if not port in existing_eids:
+            raise ValueError(f"port {port} not found")
+        interest_flags: int = self.SetPortInterest.dhcp.value
+        current_flags_mask: int = self.SetPortCurrentFlags.use_dhcp.value
+        current_flags: int = 0
+
+        if ip_str == DHCP:
+            current_flags |= self.SetPortCurrentFlags.use_dhcp.value
+        elif ip_str.find('=') > 0:
+            interest_flags |= self.SetPortInterest.ip_address.value \
+                              | self.SetPortInterest.ip_gateway.value \
+                              | self.SetPortInterest.ip_Mask.value
+        else:
+            raise ValueError(f"hard to parse ip: {ip_str}")
+        port_hunks: list = ip_str.split('.')
+        pprint.pprint(["port_hunks", port_hunks])
+        self.lfcommand.post_set_port(shelf=1,
+                                     resource=port_hunks[1],
+                                     port=port_hunks[2],
+                                     current_flags=current_flags,
+                                     current_flags_msk=current_flags_mask,
+                                     interest=interest_flags)
+        self.lfcommand.post_nc_show_ports(shelf=1,
+                                          resource=port_hunks[1],
+                                          port=port_hunks[2])
 
     def set_state(self,
                   state: str = None,
@@ -529,6 +567,11 @@ def main():
     if args.log_level:
         logger.setLevel(args.log_level)
 
+    ip_str = args.ip
+    if args.ip is not None:
+        if args.ip == "dhcp":
+            ip_str = DHCP
+
     my_macvlan: macvlan = macvlan(session=lfsession,
                                   parent_port=args.parent_port,
                                   num_ports=args.qty,
@@ -568,12 +611,19 @@ def main():
         my_macvlan.remove_vlans(vlan_list=extended_list, force=False)
 
     elif args.set_ip:
+        pprint.pprint(["port:", args.port, "ip:", args.ip])
         if not args.port:
             print("* * no ports specified to change IP on")
             exit(1)
-        logger.info("setting IP on port")
-        for item in args.port:
-            print(f" item:{item}")
+        if isinstance(args.port, list):
+            if len(args.port) > 1:
+                raise ValueError("set_ip: please specify one port at a time")
+        if not args.ip:
+            print(f"* * no ip specified for port {args.port}")
+            exit(1)
+        if isinstance(args.ip, list):
+            raise ValueError("set_ip: please specify one IP per port")
+        my_macvlan.set_ip(port=args.port[0], ip_str=args.ip)
 
     elif args.list:
         logger.info("List of ports:")
