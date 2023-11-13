@@ -441,6 +441,11 @@ class lf_report:
             self.allure_results_history_path = os.path.join(self.allure_results,"history")
 
         logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history,allure_results=self.allure_results_history_path))
+
+        # check to see if the directory is present
+        if not os.path.exists(self.allure_results_history_path):
+            os.makedirs(self.allure_results_history_path)
+
         # allure_report directory
         try:
             files = os.listdir(self.allure_report_history)
