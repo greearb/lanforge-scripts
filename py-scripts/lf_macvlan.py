@@ -101,7 +101,7 @@ class macvlan:
         self.parent_port: str = parent_port
         self.num_ports: int = num_ports
         self.mac_pattern: str = mac_pattern
-        self.ip_addr: str = ip_addr
+        self.ip_addr: str = NO_GATEWAY if (not ip_addr) else ip_addr
         self.state: str = state
         self.errors_warnings: list = []
         self.response_json_list: list = []
@@ -113,9 +113,10 @@ class macvlan:
                                    "down",
                                    "ip",
                                    "port+type"]
+
     def set_ip(self,
-               port:str = None,
-               ip_str:str = None):
+               port: str = None,
+               ip_str: str = None):
         if isinstance(ip_str, list):
             raise ValueError("set_ip(): only takes one ip at a time")
         if isinstance(port, list):
@@ -126,7 +127,7 @@ class macvlan:
         gateway: str = NA
 
         existing_ports: list = self.list_ports()
-        existing_eids: list = [ list(entry.keys())[0] for entry in existing_ports]
+        existing_eids: list = [list(entry.keys())[0] for entry in existing_ports]
         if not port in existing_eids:
             raise ValueError(f"port {port} not found")
         interest_flags: int = self.SetPortInterest.dhcp.value
@@ -145,7 +146,7 @@ class macvlan:
             interest_flags |= self.SetPortInterest.ip_address.value \
                               | self.SetPortInterest.ip_gateway.value \
                               | self.SetPortInterest.ip_Mask.value
-            gateway_ip = ip_str[comma_pos+1:]
+            gateway_ip = ip_str[comma_pos + 1:]
             if slash_pos > 0:
                 cidr_str = ip_str[slash_pos:comma_pos]
                 ip_str = ip_str[0:slash_pos]
@@ -161,9 +162,10 @@ class macvlan:
             raise ValueError(f"hard to parse ip: {ip_str}")
         ip4network: ipaddress.IPv4Network = ipaddress.IPv4Network(f"{ip_str}{cidr_str}", strict=False)
         netmask = str(ip4network.with_netmask)
-        netmask = netmask[netmask.find('/')+1:]
+        netmask = netmask[netmask.find('/') + 1:]
         if self.debug:
-            pprint.pprint(["ip4n:", ip4network, "gateway:", gateway_ip, "cidr:", cidr_str, "netmask:", netmask, "IP:", ip_str])
+            pprint.pprint(
+                ["ip4n:", ip4network, "gateway:", gateway_ip, "cidr:", cidr_str, "netmask:", netmask, "IP:", ip_str])
 
         port_hunks: list = ip_str.split('.')
         if self.debug:
@@ -317,8 +319,10 @@ class macvlan:
         logger.info(f"Will create {qty} new macvlans")
         if not parent_port:
             parent_port = self.parent_port
-        if not qty:
+        if (not qty) and self.num_ports:
             qty = int(self.num_ports)
+        else:
+            qty = 1
         if not mac_pattern:
             mac_pattern = self.mac_pattern
         if not mac_pattern:
@@ -339,11 +343,11 @@ class macvlan:
         existing_mvlans: list = self.list_ports(parent_port=parent_port)
         maximum_vlan_num: int = -1
         if existing_mvlans is None:
-            logging.warning("* * existing vlans is None")
+            logger.warning("* * existing vlans is None")
         elif len(existing_mvlans) < 1:
-            logging.warning("* * existing vlans is empty")
+            logger.warning("* * existing vlans is empty")
         else:
-            logging.debug(["matching-vlans:", pprint.pformat(existing_mvlans)])
+            logger.debug(["matching-vlans:", pprint.pformat(existing_mvlans)])
             substr_start: int = len(parent_port) + 1
             for item in existing_mvlans:
                 item_key = list(item.keys())[0]
@@ -533,6 +537,10 @@ class macvlan:
                                                    requested_col_names=self.port_columns,
                                                    errors_warnings=self.errors_warnings,
                                                    debug=self.debug)
+            if not response:
+                logger.error(f"* * unable to get a port list for resource_list[{resource_list}]")
+                pprint.pprint(self.errors_warnings)
+                return response
             filtered_response: list = []
             for entry in response:
                 # print(f"KEYS:{list(entry.keys())[0]}")
@@ -542,7 +550,8 @@ class macvlan:
                     filtered_response.append(entry)
             response = filtered_response
         if not response:
-            logging.error("no response")
+            logger.error(f"* * unable to get a port list:")
+            pprint.pprint(self.errors_warnings)
         return response
 
 
