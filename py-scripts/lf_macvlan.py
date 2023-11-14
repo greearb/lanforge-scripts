@@ -542,13 +542,19 @@ class macvlan:
                 pprint.pprint(self.errors_warnings)
                 return response
             filtered_response: list = []
-            for entry in response:
-                # print(f"KEYS:{list(entry.keys())[0]}")
-                eid: str = list(entry.keys())[0]
+            if isinstance(response, list):
+                for entry in response:
+                    # print(f"KEYS:{list(entry.keys())[0]}")
+                    eid: str = list(entry.keys())[0]
+                    if eid.startswith(parent_port):
+                        # pprint.pprint(entry)
+                        filtered_response.append(entry)
+                response = filtered_response
+            elif isinstance(response, dict):
+                eid: str = list(response.keys())[0]
                 if eid.startswith(parent_port):
-                    # pprint.pprint(entry)
-                    filtered_response.append(entry)
-            response = filtered_response
+                    filtered_response.append(response)
+                response = filtered_response
         if not response:
             logger.error(f"* * unable to get a port list:")
             pprint.pprint(self.errors_warnings)
