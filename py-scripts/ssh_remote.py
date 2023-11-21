@@ -5,6 +5,16 @@
 #
 # Example:
 # /home/greearb/ssh_remote.py --remote_args " r5g bssid=d8:f8:83:35:db:e9"
+#
+# example do_ap script on remote system:
+#
+# #!/bin/bash
+#
+# cd /home/lanforge
+# . lanforge.profile
+# ./vrf_exec.bash eth2 python3 foo_ap.py $*
+#
+# foo_ap.py knows how to log into AP and grab stats.
 ##################################################################################
 
 import paramiko
