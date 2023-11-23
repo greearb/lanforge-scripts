@@ -75,6 +75,7 @@ if sys.version_info[0] != 3:
 import importlib
 import argparse
 import pprint
+import urllib
 
 # import ipaddress
 
@@ -112,23 +113,115 @@ class portmod:
                                    "down",
                                    "ip",
                                    "port+type"]
+        self.all_port_columns: list = []
+        tmp_all_cols: list = [
+            "4way time (us)",
+            "activity",
+            "alias",
+            "anqp time (us)",
+            "ap",
+            "avg chain rssi",
+            "beacon",
+            "bps rx ll",
+            "bps rx",
+            "bps tx ll",
+            "bps tx",
+            "bytes rx ll",
+            "bytes tx ll",
+            "chain rssi",
+            "channel",
+            "collisions",
+            "connections",
+            "crypt",
+            "cx ago",
+            "cx time (us)",
+            "device",
+            "dhcp (ms)",
+            "down",
+            "entity id",
+            "gateway ip",
+            "hardware",
+            "ip",
+            "ipv6 address",
+            "ipv6 gateway",
+            "key/phrase",
+            "login-fail",
+            "login-ok",
+            "logout-fail",
+            "logout-ok",
+            "mac",
+            "mask",
+            "misc",
+            "mode",
+            "mtu",
+            "no cx (us)",
+            "noise",
+            "parent dev",
+            "phantom",
+            "port type",
+            "port",
+            "pps rx",
+            "pps tx",
+            "qlen",
+            "reset",
+            "retry failed",
+            "rx bytes",
+            "rx crc",
+            "rx drop",
+            "rx errors",
+            "rx fifo",
+            "rx frame",
+            "rx length",
+            "rx miss",
+            "rx over",
+            "rx pkts",
+            "rx-rate",
+            "sec",
+            "signal",
+            "ssid",
+            "status",
+            "time-stamp",
+            "tx abort",
+            "tx bytes",
+            "tx crr",
+            "tx errors",
+            "tx fifo",
+            "tx hb",
+            "tx pkts",
+            "tx wind",
+            "tx-failed %",
+            "tx-rate",
+            "wifi retries"
+        ]
+        self.all_port_columns = list(map(urllib.parse.quote_plus, tmp_all_cols))
+        # pprint.pprint(["result of map:", self.all_port_columns])
+
 
     def list_ports(self,
                    eid_list: list = None,
+                   filter: str = None,
                    columns: list = None,
                    debug: bool = False):
         debug |= self.debug
         if not eid_list:
             eid_list = ["list"]
-
+        #pprint.pprint(["list_ports columns", columns])
         response = self.lfquery.get_port(eid_list=eid_list,
-                                         requested_col_names=self.port_columns,
+                                         requested_col_names=columns,
                                          errors_warnings=self.errors_warnings,
                                          debug=self.debug)
-
         if not response:
             logger.error(f"* * unable to get a port list:")
             pprint.pprint(self.errors_warnings)
+        if filter:
+            filtered_list: list = []
+            for port_entry in response:
+                port_eid = list(port_entry.keys())[0]
+                if port_eid.startswith(filter):
+                    filtered_list.append(port_entry)
+                else:
+                    logger.debug(f"filtering out {port_eid}")
+            response = filtered_list
         return response
 
     def modify_station(self):
@@ -161,6 +254,7 @@ def main():
                         action='store_true',
                         help="prints a list of ports or ports matching --filter")
     parser.add_argument("--columns", "--cols",
+                        nargs="+",
                         help="list of port columns to display, or ALL")
     parser.add_argument("--filter",
                         help="EID prefix to filter ports: --filter 1.2.sta\n"
@@ -246,13 +340,28 @@ def main():
                                   debug=args.debug)
     response: dict = {}
     if args.list:
+        col_list: list = my_portmod.port_columns
+        if args.columns:
+            if isinstance(args.columns, str):
+                pprint.pprint(["args.columns", args.columns])
+                if str(args.columns).find(',') > 0:
+                    col_list = str(args.columns).split(",")
+                elif str(args.columns) == "all":
+                    col_list = my_portmod.all_port_columns
+            elif isinstance(args.columns, list):
+                if args.columns[0] == "all":
+                    col_list = my_portmod.all_port_columns
+                else:
+                    col_list = args.columns
         if args.filter:
-            response = my_portmod.list_ports(filter=args.filter, cols=args.columns)
+            response = my_portmod.list_ports(filter=args.filter,
+                                             columns=col_list)
         elif args.port_name:
-            response = my_portmod.list_ports(filter=args.port_name, cols=args.columns)
+            response = my_portmod.list_ports(filter=args.port_name,
+                                             columns=col_list)
         else:
-            response = my_portmod.list_ports(cols=args.columns)
-        pprint.print(response)
+            response = my_portmod.list_ports(columns=col_list)
+        pprint.pprint(response)
         exit(0)
 
     if not args.port_name:
