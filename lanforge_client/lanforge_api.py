@@ -4343,7 +4343,7 @@ class LFJsonCommand(JsonCommand):
             Example Usage: 
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_802_11a = "802.11a"        # 802.11a
-        AUTO = "AUTO"                # 802.11g
+        AUTO = "AUTO"                # Best Available
         a7 = "a7"                    # 802.11a-EHT (6E disables /n and /ac)
         aAX = "aAX"                  # 802.11a-AX (6E disables /n and /ac)
         abg = "abg"                  # 802.11abg
@@ -15182,6 +15182,7 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_voip_info
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_voip_info(self, 
+                           aq_call_report_count: str = None,         # Number of AQ Call Report. Default is 0.
                            codec: str = None,                        # Codec to use for the voice stream, supported values:
                            # G711U, G711A, SPEEX, g726-16, g726-24, g726-32,
                            # g726-40, g729a.
@@ -15220,6 +15221,8 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if aq_call_report_count is not None:
+            data["aq_call_report_count"] = aq_call_report_count
         if codec is not None:
             data["codec"] = codec
         if first_call_delay is not None:
@@ -15276,7 +15279,8 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_set_voip_info(codec=param_map.get("codec"),
+        self.post_set_voip_info(aq_call_report_count=param_map.get("aq_call_report_count"),
+                                codec=param_map.get("codec"),
                                 first_call_delay=param_map.get("first_call_delay"),
                                 jitter_buffer_sz=param_map.get("jitter_buffer_sz"),
                                 local_sip_port=param_map.get("local_sip_port"),
@@ -22361,6 +22365,93 @@ class LFJsonQuery(JsonQuery):
                                    plural_key="resources")
     #
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <RFGEN> type requests
+
+    If you need to call the URL directly,
+    request one of these URLs:
+        /rfgen/
+        /rfgen/$shelf_id
+        /rfgen/$shelf_id/$resource_id/
+        /rfgen/$shelf_id/$resource_id/$port_id
+
+    When requesting specific column names, they need to be URL encoded:
+        bb-gain, entity+id, frequency, gain, if-gain, name, pulse+count, pulse+interval, 
+        pulse+width, state, status, sweep+time
+    Example URL: /rfgen?fields=bb-gain,entity+id
+
+    Example py-json call (it knows the URL):
+        record = LFJsonGet.get_rfgen(eid_list=['1.234', '1.344'],
+                                     requested_col_names=['entity id'], 
+                                     debug=True)
+
+    The record returned will have these members: 
+    {
+        'bb-gain':        # RX Gain AMP, (0-62, 2db steps)
+        'entity id':      # -
+        'frequency':      # The RF generator's center frequency in Mhz.
+        'gain':           # Main RF Gain AMP
+        'if-gain':        # Fine precision RF Tx and Rx gain AMP (0-40)
+        'name':           # Attenuator module identifier (shelf . resource . serial-num).
+        'pulse count':    # The number of pulses in each group.
+        'pulse interval': # Time between pulses, in micro-seconds.
+        'pulse width':    # Pulse width, in micro-seconds.
+        'state':          # Configured state of the RF Generator.
+        'status':         # Current status of the RF Generator helper process.
+        'sweep time':     # The time between groups of pulses.
+    }
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    def get_rfgen(self, 
+                  eid_list: list = None,
+                  requested_col_names: list = None,
+                  wait_sec: float = 0.01,
+                  timeout_sec: float = 5.0,
+                  errors_warnings: list = None,
+                  debug: bool = False):
+        """
+        :param eid_list: list of entity IDs to query for
+        :param requested_col_names: list of column names to return
+        :param wait_sec: duration to wait between retries if no response or response is HTTP 404
+        :param timeout_sec: duration in which to keep querying before returning
+        :param errors_warnings: optional list to extend with errors and warnings from response
+        :param debug: print diagnostic info if true
+        :return: dictionary of results
+        """
+        debug |= self.debug_on
+        url = "/rfgen"
+        if (eid_list is None) or (len(eid_list) < 1):
+            raise ValueError("no entity id in request")
+        trimmed_fields = []
+        if isinstance(requested_col_names, str):
+            if not requested_col_names.strip():
+                raise ValueError("column name cannot be blank")
+            trimmed_fields.append(requested_col_names.strip())
+        if isinstance(requested_col_names, list):
+            for field in requested_col_names:
+                if not field.strip():
+                    raise ValueError("column names cannot be blank")
+                field = field.strip()
+                if field.find(" ") > -1:
+                    raise ValueError("field should be URL encoded: [%s]" % field)
+                trimmed_fields.append(field)
+        url += self.create_port_eid_url(eid_list=eid_list)
+
+        if len(trimmed_fields) > 0:
+            url += "?fields=%s" % (",".join(trimmed_fields))
+
+        response = self.json_get(url=url,
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=timeout_sec,
+                                 max_timeout_sec=timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if response is None:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="rfgenerator",
+                                   plural_key="rfgenerators")
+    #
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <SCAN> type requests
 
     If you need to call the URL directly,
@@ -24051,7 +24142,6 @@ class LFSession(BaseSession):
             to assembling method calls at runtime.
         ---- ---- ---- ---- """
         if not self.method_map or len(self.method_map) < 100:
-            self.logger.warning("find_method: Creating method map")
             self.method_map = {
                 "adb": self.command_instance.post_adb,
                 "adb_bt": self.command_instance.post_adb_bt,
@@ -24330,6 +24420,7 @@ class LFSession(BaseSession):
                 "/quit": self.query_instance.get_quit,
                 "/radiostatus": self.query_instance.get_radiostatus,
                 "/resource": self.query_instance.get_resource,
+                "/rfgen": self.query_instance.get_rfgen,
                 "/scan": self.query_instance.get_scan,
                 "/stations": self.query_instance.get_stations,
                 "/status-msg": self.query_instance.get_status_msg,
@@ -24345,11 +24436,9 @@ class LFSession(BaseSession):
                 "/wl-endp": self.query_instance.get_wl_endp,
                 "/ws-msg": self.query_instance.get_ws_msg,
             }
-        if not (cli_name in self.method_map.keys()):
-            self.logger.warning(f"find_method: command '{cli_name}' not present")
+        if cli_name not in self.method_map:
+            print(f"command '{cli_name}' not present")
             self.print_method_map()
-            return None
-        return self.method_map[cli_name]
 
     def print_method_map(self):
         pprint(self.method_map)
