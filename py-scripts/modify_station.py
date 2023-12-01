@@ -6,6 +6,7 @@ import sys
 import os
 import importlib
 import argparse
+import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -33,6 +34,12 @@ class ModifyStation(Realm):
                  _disable_flags=None,
                  _number_template="00000",
                  _radio=None,
+                 _ip=None,
+                 _netmask=None,
+                 _gateway=None,
+                 _channel=None,
+                 _txpower=None,
+                 _country=None,
                  _proxy_str=None,
                  _debug_on=False,
                  _exit_on_error=False,
@@ -65,6 +72,12 @@ class ModifyStation(Realm):
         self.station_profile.desired_add_sta_flags = self.enable_flags
         self.station_profile.desired_add_sta_flags_mask = self.enable_flags + self.disable_flags
 
+        self.ip = _ip
+        self.netmask = _netmask
+        self.gateway = _gateway
+        self.channel = _channel
+        self.txpower = _txpower
+        self.country = _country
     def set_station(self):
         return self.station_profile.modify(radio=self.radio)
 
@@ -84,13 +97,22 @@ def main():
         --------------------
         Command example:
         ./modify_station.py
-            --radio wiphy0
-            --station 1.1.sta0000
-            --security open
-            --ssid netgear
-            --passwd BLANK
-            --enable_flag osen_enable
-            --disable_flag ht160_enable
+            --radio         wiphy0
+            --station       1.1.sta0000
+            --security      open
+            --ssid          netgear
+            --passwd        BLANK
+            --enable_flag   osen_enable
+            --disable_flag  ht160_enable
+            --bssid         [soon] 00:11:22:33:44:55
+            --mode          [soon] abgnAX
+            --rate          [soon] mcs-rate
+            --ip            [soon] 192.168.45.2
+            --netmask       [soon] 255.255.255.0
+            --gateway       [soon] 192.168.45.1
+            --channel       [soon] 6
+            --txpower       [soon] 24
+            --country       [soon] US
             --debug
         --------------------
         Station flags are currently defined as:
@@ -113,7 +135,7 @@ def main():
         hs20_enable          | 0x800000     # Enable Hotspot 2.0 (HS20) feature.  Requires WPA-2.
         disable_gdaf         | 0x1000000    # AP:  Disable DGAF (used by HotSpot 2.0).
         8021x_radius         | 0x2000000    # Use 802.1x (RADIUS for AP).
-        80211r_pmska_cache   | 0x4000000    # Enable oportunistic PMSKA caching for WPA2 (Related to 802.11r).
+        80211r_pmska_cache   | 0x4000000    # Enable opportunistic PMSKA caching for WPA2 (Related to 802.11r).
         disable_ht80         | 0x8000000    # Disable HT80 (for AC chipset NICs only)
         ibss_mode            | 0x20000000   # Station should be in IBSS mode.
         osen_enable          | 0x40000000   # Enable OSEN protocol (OSU Server-only Authentication)
@@ -133,12 +155,44 @@ def main():
                     ''')
 
     optional = parser.add_argument_group('optional arguments')
-    optional.add_argument('--enable_flag', help='station flags to add', default=list(), action='append')
-    optional.add_argument('--disable_flag', help='station flags to disable', default=list(), action='append')
-    optional.add_argument('--station', help='station to modify', required=True, action='append')
+    optional.add_argument('--enable_flag',
+                          default=list(),
+                          action='append',
+                          help='station flags to add')
+    optional.add_argument('--disable_flag',
+                          help='station flags to disable',
+                          default=list(),
+                          action='append')
+    optional.add_argument('--station',
+                          help='station to modify',
+                          # required=True, # making this required breaks --help_summary
+                          action='append')
     optional.add_argument('--mac', default="NA")
+    optional.add_argument('--ip',
+                          help="specify IP to apply to port (ipv4 a.b.c.e or DHCP)")
+    optional.add_argument('--netmask',
+                          help="specify netmask to apply to port")
+    optional.add_argument('--gateway',
+                          help="specify gateway to apply to port")
+    optional.add_argument('--channel',
+                          help="specify channel for radio, requires --radio")
+    optional.add_argument('--txpower',
+                          help="specify txpower for radio, requires --radio")
+    optional.add_argument('--country',
+                          help="sets country region for all radios in a resource; requires --radio, all radios on that resource will be changed")
 
     args = parser.parse_args()
+
+    if args.help_summary:
+        print("Modify stations on a system. Use the enable_flag to create a flag on a station. Turn off a flag with "
+              "the disable_flag option. A list of available flags are available in the add_station.py file in "
+              "py-json/LANforge.")
+        exit(0)
+    if not args.radio:
+        print("--radio eid required, eg 1.6.wiphy0")
+        exit(1)
+    if (not args.enable_flag) or (not args.disable_flag):
+        print("Missing --enable_flag or --disable_flags will probably trouble.")
 
     modify_station = ModifyStation(_host=args.mgr,
                                    _port=args.mgr_port,
@@ -151,6 +205,12 @@ def main():
                                    _proxy_str=args.proxy,
                                    _enable_flags=args.enable_flag,
                                    _disable_flags=args.disable_flag,
+                                   _ip=args.ip,
+                                   _netmask=args.netmask,
+                                   _gateway=args.gateway,
+                                   _channel=args.channel,
+                                   _txpower=args.txpower,
+                                   _country=args.country,
                                    _debug_on=args.debug)
     modify_station.set_station()
 
