@@ -5020,8 +5020,8 @@ class L3VariableTime(Realm):
                 dataset_list = [self.client_dict_A[tos]["ul_A"], self.client_dict_A[tos]["dl_A"]]
                 # TODO possibly explain the wording for upload and download
                 dataset_length = len(self.client_dict_A[tos]["ul_A"])
-                x_fig_size = 15
-                y_fig_size = len(self.client_dict_A[tos]["clients_A"]) * .4 + 3
+                x_fig_size = 20
+                y_fig_size = len(self.client_dict_A[tos]["clients_A"]) * .4 + 5
                 logger.debug("length of clients_A {clients} resource_alias_A {alias_A}".format(
                     clients=len(self.client_dict_A[tos]["clients_A"]), alias_A=len(self.client_dict_A[tos]["resource_alias_A"])))
                 logger.debug("clients_A {clients}".format(clients=self.client_dict_A[tos]["clients_A"]))
@@ -5100,8 +5100,8 @@ class L3VariableTime(Realm):
                 dataset_list = [self.client_dict_B[tos]["ul_B"], self.client_dict_B[tos]["dl_B"]]
                 dataset_length = len(self.client_dict_B[tos]["ul_B"])
 
-                x_fig_size = 15
-                y_fig_size = len(self.client_dict_B[tos]["clients_B"]) * .4 + 3
+                x_fig_size = 20
+                y_fig_size = len(self.client_dict_B[tos]["clients_B"]) * .4 + 5
 
                 self.report.set_obj_html(
                     _obj_title=f"Individual throughput upstream endp,  offered upload bps: {min_bps_a} offered download bps: {min_bps_b} /station for traffic {tos} (WiFi).",
