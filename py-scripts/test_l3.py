@@ -2525,7 +2525,7 @@ class L3VariableTime(Realm):
         else:
             logger.info("Consider upgrading to 5.4.7 + endp field type not supported in LANforge GUI version results for Multicast reversed in graphs and tables")
             self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,eid')
-            endp_type_preset = True
+            endp_type_present = False
         self.endp_data.pop("handler")
         self.endp_data.pop("uri")
         logger.info("self.endpoint_data type: {dtype} data: {data}".format(
@@ -3927,9 +3927,25 @@ class L3VariableTime(Realm):
                             # Report Table information
                             # use the eid to get the hostname and channel
                             eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
-                            self.bk_resource_host_A.append('NA-need 5.4.7 or greater')
-                            self.bk_resource_hw_ver_A.append('NA-need 5.4.7 or greater')
+                            # look up the resource
+                            resource_found = False
+                            for resource_data in self.resource_data['resources']:
+                                resource_data_key = list(resource_data.keys())[0]
+                                if resource_data_key == eid_tmp_resource:
+                                    resource_found = True
+                                    self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
+                                    self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_eid_A.append(resource_data[resource_data_key]['eid'])
+                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_alias_A.append(client_alias)
+
+                                    break
+
+                            if resource_found is False:
+                                self.bk_resource_host_A.append('NA')
+                                self.bk_resource_hw_ver_A.append('NA')
+                                self.bk_resource_eid_A.append('NA')
+                                self.bk_resource_alias_A.append('NA')
 
                             # look up port information
                             eid_info = endp_data[endp_data_key]['name'].split('-')
@@ -3967,9 +3983,24 @@ class L3VariableTime(Realm):
                             # Report Table information
                             # use the eid to get the hostname and channel
                             eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
-                            self.bk_resource_host_B.append('NA-need 5.4.7 or greater')
-                            self.bk_resource_hw_ver_B.append('NA-need 5.4.7 or greater')
+                            # look up the resource
+                            resource_found = False
+                            for resource_data in self.resource_data['resources']:
+                                resource_data_key = list(resource_data.keys())[0]
+                                if resource_data_key == eid_tmp_resource:
+                                    resource_found = True
+                                    self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
+                                    self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_eid_B.append(resource_data[resource_data_key]['eid'])
+                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    self.bk_resource_alias_B.append(client_alias)
+                                    break
+
+                            if resource_found is False:
+                                self.bk_resource_host_B.append('NA')
+                                self.bk_resource_hw_ver_B.append('NA')
+                                self.bk_resource_eid_B.append('NA')
+                                self.bk_resource_alias_B.append('NA')
 
                             # look up port information
                             eid_info = endp_data[endp_data_key]['name'].split('-')
@@ -4010,10 +4041,24 @@ class L3VariableTime(Realm):
                             # Report Table information
                             # use the eid to get the hostname and channel
                             eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
+                            # look up the resource
+                            resource_found = False
+                            for resource_data in self.resource_data['resources']:
+                                resource_data_key = list(resource_data.keys())[0]
+                                if resource_data_key == eid_tmp_resource:
+                                    resource_found = True
+                                    self.be_resource_host_A.append(resource_data[resource_data_key]['hostname'])
+                                    self.be_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.be_resource_eid_A.append(resource_data[resource_data_key]['eid'])
+                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    self.be_resource_alias_A.append(client_alias)
+                                    break
 
-                            self.be_resource_host_A.append('NA-need 5.4.7 or greater')
-                            self.be_resource_hw_ver_A.append('NA-need 5.4.7 or greater')
+                            if resource_found is False:
+                                self.be_resource_host_A.append('NA')
+                                self.be_resource_hw_ver_A.append('NA')
+                                self.be_resource_eid_A.append('NA')
+                                self.be_resource_alias_A.append('NA')
 
                             # look up port information
                             eid_info = endp_data[endp_data_key]['name'].split('-')
@@ -4051,9 +4096,25 @@ class L3VariableTime(Realm):
                             # Report Table information
                             # use the eid to get the hostname and channel
                             eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
-                            self.be_resource_host_B.append('NA-need 5.4.7 or greater')
-                            self.be_resource_hw_ver_B.append('NA-need 5.4.7 or greater')
+                            # look up the resource
+                            resource_found = False
+                            for resource_data in self.resource_data['resources']:
+                                resource_data_key = list(resource_data.keys())[0]
+                                if resource_data_key == eid_tmp_resource:
+                                    resource_found = True
+                                    self.be_resource_host_B.append(resource_data[resource_data_key]['hostname'])
+                                    self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.be_resource_eid_B.append(resource_data[resource_data_key]['eid'])
+                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    self.be_resource_alias_B.append(client_alias)
+
+                                    break
+
+                            if resource_found is False:
+                                self.be_resource_host_B.append('NA')
+                                self.be_resource_hw_ver_B.append('NA')
+                                self.be_resource_eid_B.append('NA')
+                                self.be_resource_alias_B.append('NA')
 
                             # look up port information
                             eid_info = endp_data[endp_data_key]['name'].split('-')
@@ -4092,9 +4153,25 @@ class L3VariableTime(Realm):
                             # Report Table information
                             # use the eid to get the hostname and channel
                             eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
-                            self.vi_resource_host_A.append('NA')
-                            self.vi_resource_hw_ver_A.append('NA')
+                            # look up the resource
+                            resource_found = False
+                            for resource_data in self.resource_data['resources']:
+                                resource_data_key = list(resource_data.keys())[0]
+                                if resource_data_key == eid_tmp_resource:
+                                    resource_found = True
+                                    self.vi_resource_host_A.append(resource_data[resource_data_key]['hostname'])
+                                    self.vi_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.vi_resource_eid_A.append(resource_data[resource_data_key]['eid'])
+                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    self.vi_resource_alias_A.append(client_alias)
+
+                                    break
+
+                            if resource_found is False:
+                                self.vi_resource_host_A.append('NA')
+                                self.vi_resource_hw_ver_A.append('NA')
+                                self.vi_resource_eid_A.append('NA')
+                                self.vi_resource_alias_A.append('NA')
 
                             # look up port information
                             eid_info = endp_data[endp_data_key]['name'].split('-')
@@ -4132,9 +4209,25 @@ class L3VariableTime(Realm):
                             # Report Table information
                             # use the eid to get the hostname and channel
                             eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
-                            self.vi_resource_host_B.append('NA-need 5.4.7 or greater')
-                            self.vi_resource_hw_ver_B.append('NA-need 5.4.7 or greater')
+                            # look up the resource
+                            resource_found = False
+                            for resource_data in self.resource_data['resources']:
+                                resource_data_key = list(resource_data.keys())[0]
+                                if resource_data_key == eid_tmp_resource:
+                                    resource_found = True
+                                    self.vi_resource_host_B.append(resource_data[resource_data_key]['hostname'])
+                                    self.vi_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.vi_resource_eid_B.append(resource_data[resource_data_key]['eid'])
+                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    self.vi_resource_alias_B.append(client_alias)
+
+                                    break
+
+                            if resource_found is False:
+                                self.vi_resource_host_B.append('NA')
+                                self.vi_resource_hw_ver_B.append('NA')
+                                self.vi_resource_eid_B.append('NA')
+                                self.vi_resource_alias_B.append('NA')
 
                             # look up port information
                             eid_info = endp_data[endp_data_key]['name'].split('-')
@@ -4173,10 +4266,24 @@ class L3VariableTime(Realm):
                             # Report Table information
                             # use the eid to get the hostname and channel
                             eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
+                            # look up the resource
+                            resource_found = False
+                            for resource_data in self.resource_data['resources']:
+                                resource_data_key = list(resource_data.keys())[0]
+                                if resource_data_key == eid_tmp_resource:
+                                    resource_found = True
+                                    self.vo_resource_host_A.append(resource_data[resource_data_key]['hostname'])
+                                    self.vo_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
+                                    self.vo_resource_eid_A.append(resource_data[resource_data_key]['eid'])
+                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    self.vo_resource_alias_A.append(client_alias)
+                                    break
 
-                            self.vo_resource_host_A.append('NA-need 5.4.7 or greater')
-                            self.vo_resource_hw_ver_A.append('NA-need 5.4.7 or greater')
+                            if resource_found is False:
+                                self.vo_resource_host_A.append('NA')
+                                self.vo_resource_hw_ver_A.append('NA')
+                                self.vo_resource_eid_A.append('NA')
+                                self.vo_resource_alias_A.append('NA')
 
                             # look up port information
                             eid_info = endp_data[endp_data_key]['name'].split('-')
@@ -4211,8 +4318,25 @@ class L3VariableTime(Realm):
                             self.vo_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.vo_port_protocol_B.append('Uni-cast')
 
-                            self.vo_resource_host_B.append('NA-need 5.4.7 or greater')
-                            self.vo_resource_hw_ver_B.append('NA-need 5.4.7 or greater')
+                            # look up the resource
+                            resource_found = False
+                            for resource_data in self.resource_data['resources']:
+                                resource_data_key = list(resource_data.keys())[0]
+                                if resource_data_key == eid_tmp_resource:
+                                    resource_found = True
+                                    self.vo_resource_host_B.append(resource_data[resource_data_key]['hostname'])
+                                    self.vo_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
+                                    self.vo_resource_eid_B.append(resource_data[resource_data_key]['eid'])
+                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    self.vo_resource_alias_B.append(client_alias)
+
+                                    break
+
+                            if resource_found is False:
+                                self.vo_resource_host_B.append('NA')
+                                self.vo_resource_hw_ver_B.append('NA')
+                                self.vo_resource_eid_B.append('NA')
+                                self.vo_resource_alias_B.append('NA')
 
                             # look up port information
                             eid_info = endp_data[endp_data_key]['name'].split('-')
