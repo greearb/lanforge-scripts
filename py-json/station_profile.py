@@ -1,4 +1,5 @@
 # !/usr/bin/env python3
+import pprint
 import sys
 import os
 import importlib
@@ -40,9 +41,10 @@ class StationProfile:
     def __init__(self, lfclient_url, local_realm,
                  ssid="NA",
                  ssid_pass="NA",
+                 bssid=None,
                  security="open",
                  number_template_="00000",
-                 mode=0,
+                 mode=0,  # shouldn't this be -1 or AUTO?
                  up=True,
                  resource=1,
                  shelf=1,
@@ -53,6 +55,7 @@ class StationProfile:
         self.debug = debug_
         self.lfclient_url = lfclient_url
         self.ssid = ssid
+        self.bssid = bssid
         self.ssid_pass = ssid_pass
         self.mode = mode
         self.up = up
@@ -82,6 +85,8 @@ class StationProfile:
             "flags_mask": 0,
             "ap": None,
         }
+        if self.mode:
+            self.add_sta_data["mode"] = self.mode
         self.desired_set_port_cmd_flags = []
         self.desired_set_port_current_flags = ["if_down"]
         self.desired_set_port_interest_flags = ["current_flags", "ifdown"]
@@ -241,7 +246,7 @@ class StationProfile:
             if (ssid is None) or (ssid == ""):
                 raise ValueError("use_security: %s requires ssid" % security_type)
             if (passwd is None) or (passwd == ""):
-                raise ValueError("use_security: %s requires passphrase or [BLANK]" % security_type)
+                raise ValueError("use_security: %s requires passphrase, NA or [BLANK]" % security_type)
             for name in types.values():
                 if name in self.desired_add_sta_flags and name in self.desired_add_sta_flags_mask:
                     self.desired_add_sta_flags.remove(name)
@@ -635,43 +640,66 @@ class StationProfile:
             self.add_sta_data["resource"] = station_resource
             self.add_sta_data["sta_name"] = station_port
             self.add_sta_data["ssid"] = 'NA'
+            self.add_sta_data['ap'] = 'DEFAULT'
             self.add_sta_data["key"] = 'NA'
             self.add_sta_data['mac'] = 'NA'
             self.add_sta_data['mode'] = 'NA'
+            if self.mode in add_sta.add_sta_modes:
+                self.add_sta_data['mode'] = add_sta.add_sta_modes[self.mode]
+            elif self.debug:
+                logging.debug(f"* * {self.mode} not found in add_sta.add_sta_modes")
+
             self.add_sta_data['suppress_preexec_cli'] = 'NA'
             self.add_sta_data['suppress_preexec_method'] = 'NA'
-
+            if self.debug:
+                self.add_sta_data['__debug'] = self.debug
+            self.set_port_data['mac'] = 'NA'
             if self.bssid:
                 self.add_sta_data['ap'] = self.bssid
+            if self.ssid:
+                self.add_sta_data['ssid'] = self.ssid
+            if self.ssid_pass:
+                self.add_sta_data['key'] = self.ssid_pass
+            # if self.mac: use set_port_data['mac'] when modifying a station's mac
+            self.add_sta_data['mac'] = 'NA'
 
             add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
             if self.debug:
                 logger.debug(self.lfclient_url + "/cli_json/add_sta")
-                logger.debug(self.add_sta_data)
+                logger.warning(self.add_sta_data)
             add_sta_r.addPostData(self.add_sta_data)
-            add_sta_r.jsonPost(self.debug)
+            add_sta_r.jsonPost(debug=self.debug, show_error=True, die_on_error_=False)
 
             do_set_port = 0;
             self.desired_set_port_cmd_flags = []
             self.desired_set_port_current_flags = []
             self.desired_set_port_interest_flags = []
+
             if self.ip:
                 do_set_port += 1
-                self.desired_set_port_interest_flags = ["ip_address", "ip_mask", "ip_gateway"]
+                self.desired_set_port_interest_flags = ["ip_address", "ip_Mask", "ip_gateway"]
                 if self.ip == "DHCP" or self.ip == "dhcp" or self.dhcp:
                     if self.ipv6:
                         self.desired_set_port_current_flags.append("use_dhcpv6")
                         self.desired_set_port_interest_flags.append("dhcpv6")
                     else:
                         self.set_port_data["ip_addr"] = "0.0.0.0"
+                        self.set_port_data['netmask'] = "0.0.0.0"
+                        self.set_port_data['gateway'] = "0.0.0.0"
                         self.desired_set_port_current_flags.append("use_dhcp")
                         self.desired_set_port_interest_flags.append("dhcp")
+                        self.desired_set_port_interest_flags.append("current_flags")
+                else:
+                    self.set_port_data['ip_addr'] = self.ip
 
-                self.set_port_data['ip_addr'] = self.ip
-                self.add_named_flags(self.desired_set_port_interest_flags, set_port.set_port)
             if self.ipv6:
                 do_set_port += 1
                 self.set_port_data['ipv6'] = self.ipv6
+            if self.up:
+                do_set_port += 1
+                if self.up == "DOWN" or self.up == "down":
+                    self.desired_set_port_current_flags.append("if_down")
+                self.desired_set_port_interest_flags.append("ifdown")
             if self.netmask:
                 do_set_port += 1
                 self.set_port_data['netmask'] = self.netmask
@@ -679,9 +707,22 @@ class StationProfile:
                 do_set_port += 1
                 self.set_port_data['gateway'] = self.gateway
             if do_set_port:
+                self.set_port_data['current_flags'] = self.add_named_flags(
+                    desired_list=self.desired_set_port_current_flags,
+                    command_ref=set_port.set_port_current_flags)
+                self.set_port_data['interest'] = self.add_named_flags(
+                    desired_list=self.desired_set_port_interest_flags,
+                    command_ref=set_port.set_port_interest_flags)
                 self.set_port_data['shelf'] = station_shelf
                 self.set_port_data['resource'] = station_resource
                 self.set_port_data['port'] = station_port
-
+                if self.debug:
+                    self.set_port_data['__debug'] = 1
                 set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
                 set_port_r.addPostData(self.set_port_data)
+                response_list = []
+                set_port_r.jsonPost(show_error=self.debug,
+                                    debug=self.debug,
+                                    die_on_error_=False,
+                                    response_json_list_=response_list)
+                pprint.pprint(["post", self.set_port_data, "response", response_list])
