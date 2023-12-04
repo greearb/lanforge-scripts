@@ -367,14 +367,14 @@ class StationProfile:
 
     def add_named_flags(self, desired_list, command_ref):
         if desired_list is None:
-            logger.critical("addNamedFlags wants a list of desired flag names")
-            raise ValueError("addNamedFlags wants a list of desired flag names")
+            logger.info("add_named_flags wants a list of desired flag names")
+            raise ValueError("add_named_flags wants a list of desired flag names")
         if len(desired_list) < 1:
-            logger.warning("addNamedFlags: empty desired list")
+            logger.info("add_named_flags: empty desired list")
             return 0
         if (command_ref is None) or (len(command_ref) < 1):
-            logger.critical("addNamedFlags wants a maps of flag values")
-            raise ValueError("addNamedFlags wants a maps of flag values")
+            logger.critical("add_named_flags wants a maps of flag values")
+            raise ValueError("add_named_flags wants a maps of flag values")
 
         result = 0
         for name in desired_list:
