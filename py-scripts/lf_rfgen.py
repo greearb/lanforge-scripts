@@ -102,6 +102,28 @@ class lf_rfgen():
         logger.debug(pformat(_response_json_list))
         return response
 
+    def get(self,
+        _eid_list: list = None,
+        _requested_col_names: list = None,
+        _wait_sec: float = 0.01,
+        _timeout_sec: float = 5.0,
+        _errors_warnings: list = None,
+        _debug: bool = False):
+
+
+        response = self.command.get_rfgen(
+        eid_list = _eid_list,
+        requested_col_names = _requested_col_names,
+        wait_sec = _wait_sec,
+        timeout_sec = _timeout_sec,
+        errors_warnings = _errors_warnings,
+        debug = _debug)
+
+        logger.debug("Response get rfgen: {response}".format(response=response))
+        logger.debug(pformat(_response_json_list))
+        return response
+
+
 
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
@@ -189,6 +211,19 @@ INCLUDE_IN_README: True
 
     logger.info("Response: {response}".format(response=response))
     logger.info(pformat(response_json_list))
+
+    response = rfgen.get(
+        _eid_list = ['1.1.57b068dc21104e63','1.1.570b8dc22276763'],                         
+        _requested_col_names = ,                    
+        _shelf = args.shelf,                           # Shelf number or alias, can be 'all'. [R][D:1]
+        _response_json_list = response_json_list,
+        _debug = args.debug,
+        _errors_warnings = None,
+        _suppress_related_commands = False)
+
+    logger.info("Response: {response}".format(response=response))
+    logger.info(pformat(response_json_list))
+
 
 if __name__ == "__main__":
     main()
