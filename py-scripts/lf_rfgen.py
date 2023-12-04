@@ -120,6 +120,9 @@ PURPOSE: lanforge api interface for rfgen commands
 
 EXAMPLE: Work in progress
 
+CURL command:
+curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.19:8080/rfgen/ | json_pp
+
 SCRIPT_CLASSIFICATION:  Module
 
 SCRIPT_CATEGORIES: 
