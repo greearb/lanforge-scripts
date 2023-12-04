@@ -809,6 +809,7 @@ class LFCliBase:
                               '--key',
                               default="[BLANK]",
                               help='WiFi passphrase/password/key')
+        # please override this password argument using set_defaults(passwd='NA')
 
         if more_required is not None:
             for argument in more_required:
