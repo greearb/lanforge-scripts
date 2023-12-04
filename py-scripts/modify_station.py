@@ -19,11 +19,14 @@ lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-
+set_port = importlib.import_module("py-json.LANforge.set_port")
+add_sta = importlib.import_module("py-json.LANforge.add_sta")
 
 class ModifyStation(Realm):
     def __init__(self,
                  _ssid="NA",
+                 _state=None,
+                 _bssid=None,
                  _security="NA",
                  _password="NA",
                  _mac="NA",
@@ -35,6 +38,7 @@ class ModifyStation(Realm):
                  _number_template="00000",
                  _radio=None,
                  _ip=None,
+                 _mode=None,
                  _netmask=None,
                  _gateway=None,
                  _channel=None,
@@ -51,6 +55,8 @@ class ModifyStation(Realm):
         self.host = _host
         self.port = _port
         self.ssid = _ssid
+        self.state = _state
+        self.bssid = _bssid
         self.security = _security
         self.password = _password
         self.mac = _mac
@@ -62,9 +68,13 @@ class ModifyStation(Realm):
         self.number_template = _number_template
         self.debug = _debug_on
         self.dhcp = _dhcp
+        self.mode = _mode
+
         self.station_profile = self.new_station_profile()
         self.station_profile.station_names = self.station_list
+        self.station_profile.up = self.state
         self.station_profile.ssid = self.ssid
+        self.station_profile.bssid = self.bssid
         self.station_profile.security = self.security
         self.station_profile.ssid_pass = self.password
         self.station_profile.mac = self.mac
@@ -72,7 +82,7 @@ class ModifyStation(Realm):
         self.station_profile.debug = self.debug
         self.station_profile.desired_add_sta_flags = self.enable_flags
         self.station_profile.desired_add_sta_flags_mask = self.enable_flags + self.disable_flags
-
+        self.station_profile.mode = _mode
         self.station_profile.ip = _ip
         self.station_profile.netmask = _netmask
         self.station_profile.gateway = _gateway
@@ -117,17 +127,18 @@ def main():
         ./modify_station.py
             --radio         wiphy0
             --station       1.1.sta0000
+            --set_state     up|down
             --security      open
             --ssid          netgear
             --passwd        BLANK
             --enable_flag   osen_enable
             --disable_flag  ht160_enable
-            --bssid         [soon] 00:11:22:33:44:55
-            --mode          [soon] abgnAX
-            --rate          [soon] mcs-rate
-            --ip            [soon] 192.168.45.2
-            --netmask       [soon] 255.255.255.0
-            --gateway       [soon] 192.168.45.1
+            --bssid         00:11:22:33:44:55
+            --mode          abgnAX
+            --rate          [mcs rate available from txo-feautres]
+            --ip            192.168.45.2
+            --netmask       255.255.255.0
+            --gateway       192.168.45.1
             --channel       [soon] 6
             --txpower       [soon] 24
             --antennas      [soon] 3
@@ -170,8 +181,10 @@ def main():
         use-wpa3             | 0x10000000000 # Enable WPA-3 (SAE Personal) mode.
         use-bss-transition   | 0x80000000000 # Enable BSS transition.
         disable-twt          | 0x100000000000 # Disable TWT mode
+''')
 
-                    ''')
+    # the default value of passwd in parent parser is '[BLANK]' and that's destructive here
+    parser.set_defaults(passwd='NA')
 
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument('--enable_flag',
@@ -186,9 +199,20 @@ def main():
                           help='station to modify',
                           # required=True, # making this required breaks --help_summary
                           action='append')
-    optional.add_argument('--mac', default="NA")
+    optional.add_argument('--set_state', '--state', '--up',
+                          choices=['DOWN', 'UP', 'down', 'up'],
+                          help="admin port UP or DOWN")
+    optional.add_argument('--mac',
+                          default="NA",
+                          help="MAC address of the station")
+    optional.add_argument('--mode',
+                          default='NA',
+                          help=f"set station wifi mode: "
+                               f"{', '.join(list(add_sta.add_sta_modes.keys()))}")
+    optional.add_argument('--bssid',
+                          help="specify the BSSID of the AP to associate with, or DEFAULT")
     optional.add_argument('--ip',
-                          help="specify IP to apply to port (ipv4 a.b.c.e or DHCP)")
+                          help="specify IP to apply to port (ipv4 1.2.3.4 or DHCP)")
     optional.add_argument('--netmask',
                           help="specify netmask to apply to port")
     optional.add_argument('--gateway',
@@ -209,6 +233,10 @@ def main():
               "the disable_flag option. A list of available flags are available in the add_station.py file in "
               "py-json/LANforge.")
         exit(0)
+    if args.mode != "NA":
+        if args.mode not in add_sta.add_sta_modes:
+            raise ValueError("wifi mode not found, expecting one of: "
+                             f"{', '.join(list(add_sta.add_sta_modes.keys()))}")
     if not args.radio:
         print("--radio eid required, eg 1.6.wiphy0")
         exit(1)
@@ -217,7 +245,9 @@ def main():
 
     modify_station = ModifyStation(_host=args.mgr,
                                    _port=args.mgr_port,
+                                   _state=args.set_state,
                                    _ssid=args.ssid,
+                                   _bssid=args.bssid,
                                    _password=args.passwd,
                                    _security=args.security,
                                    _mac=args.mac,
@@ -227,6 +257,7 @@ def main():
                                    _enable_flags=args.enable_flag,
                                    _disable_flags=args.disable_flag,
                                    _ip=args.ip,
+                                   _mode=args.mode,
                                    _netmask=args.netmask,
                                    _gateway=args.gateway,
                                    _channel=args.channel,
@@ -234,6 +265,8 @@ def main():
                                    _antennas=args.antennas,
                                    _country=args.country,
                                    _debug_on=args.debug)
+    if args.ip == "DHCP" or args.ip == "dhcp":
+        modify_station.dhcp = True
     modify_station.set_station()
 
     # TODO:  Check return code and exit accordingly
