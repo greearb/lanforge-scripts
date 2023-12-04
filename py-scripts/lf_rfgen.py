@@ -114,11 +114,11 @@ def main():
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
         description='''\
-NAME: lf_rfgen.py
+NAME: lf_rfgen.py  
 
 PURPOSE: lanforge api interface for rfgen commands
 
-EXAMPLE:
+EXAMPLE: Work in progress
 
 SCRIPT_CLASSIFICATION:  Module
 
@@ -137,13 +137,13 @@ LICENSE:
 INCLUDE_IN_README: True
             ''')
     # http://www.candelatech.com/lfcli_ug.php#show_rfgen
-    parser.add_argument("--host", "--mgr", dest='mgr', help='specify the GUI to connect to')
+    parser.add_argument("--host", "--mgr", dest='mgr', help='specify the GUI to connect to',default="192.168.0.19")
     parser.add_argument("--mgr_port", help="specify the GUI to connect to, default 8080", default="8080")
     parser.add_argument("--lf_user", help="lanforge user name default lanforge", default="lanforge")
     parser.add_argument("--lf_passwd", help="lanforge password defualt lanforge ", default="lanforge")
     parser.add_argument("--resource", help='(add wl endp) LANforge resource Default', default=1)
     parser.add_argument("--shelf", help='(add wl endp) LANforge Shelf name/id', default=1)
-    parser.add_argument("--id", help='ct712 id  default= all', default='NA')
+    parser.add_argument("--id", help='ct712 id  default= all', default='57b068dc22276763')
 
 
     # Logging Configuration
