@@ -35,6 +35,8 @@ logger = logging.getLogger(__name__)
 
 
 class StationProfile:
+    DHCP: str = "DHCP"
+
     def __init__(self, lfclient_url, local_realm,
                  ssid="NA",
                  ssid_pass="NA",
@@ -77,7 +79,8 @@ class StationProfile:
             "mode": 0,
             "mac": "xx:xx:xx:xx:*:xx",
             "flags": 0,  # (0x400 + 0x20000 + 0x1000000000)  # create admin down
-            "flags_mask": 0
+            "flags_mask": 0,
+            "ap": None,
         }
         self.desired_set_port_cmd_flags = []
         self.desired_set_port_current_flags = ["if_down"]
@@ -137,6 +140,11 @@ class StationProfile:
             "port_to_reset": 0,
             "seconds_till_reset": 0
         }
+
+        # these settings would be present when modifying a station
+        self.ip = None
+        self.netmask = None
+        self.gateway = None
 
     def set_wifi_txo(self, txo_ena=1,
                      tx_power=255,
@@ -633,9 +641,47 @@ class StationProfile:
             self.add_sta_data['suppress_preexec_cli'] = 'NA'
             self.add_sta_data['suppress_preexec_method'] = 'NA'
 
+            if self.bssid:
+                self.add_sta_data['ap'] = self.bssid
+
             add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
             if self.debug:
                 logger.debug(self.lfclient_url + "/cli_json/add_sta")
                 logger.debug(self.add_sta_data)
             add_sta_r.addPostData(self.add_sta_data)
             add_sta_r.jsonPost(self.debug)
+
+            do_set_port = 0;
+            self.desired_set_port_cmd_flags = []
+            self.desired_set_port_current_flags = []
+            self.desired_set_port_interest_flags = []
+            if self.ip:
+                do_set_port += 1
+                self.desired_set_port_interest_flags = ["ip_address", "ip_mask", "ip_gateway"]
+                if self.ip == "DHCP" or self.ip == "dhcp" or self.dhcp:
+                    if self.ipv6:
+                        self.desired_set_port_current_flags.append("use_dhcpv6")
+                        self.desired_set_port_interest_flags.append("dhcpv6")
+                    else:
+                        self.set_port_data["ip_addr"] = "0.0.0.0"
+                        self.desired_set_port_current_flags.append("use_dhcp")
+                        self.desired_set_port_interest_flags.append("dhcp")
+
+                self.set_port_data['ip_addr'] = self.ip
+                self.add_named_flags(self.desired_set_port_interest_flags, set_port.set_port)
+            if self.ipv6:
+                do_set_port += 1
+                self.set_port_data['ipv6'] = self.ipv6
+            if self.netmask:
+                do_set_port += 1
+                self.set_port_data['netmask'] = self.netmask
+            if self.gateway:
+                do_set_port += 1
+                self.set_port_data['gateway'] = self.gateway
+            if do_set_port:
+                self.set_port_data['shelf'] = station_shelf
+                self.set_port_data['resource'] = station_resource
+                self.set_port_data['port'] = station_port
+
+                set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
+                set_port_r.addPostData(self.set_port_data)
