@@ -39,6 +39,7 @@ class ModifyStation(Realm):
                  _gateway=None,
                  _channel=None,
                  _txpower=None,
+                 _antennas=None,
                  _country=None,
                  _proxy_str=None,
                  _debug_on=False,
@@ -72,14 +73,31 @@ class ModifyStation(Realm):
         self.station_profile.desired_add_sta_flags = self.enable_flags
         self.station_profile.desired_add_sta_flags_mask = self.enable_flags + self.disable_flags
 
+        self.station_profile.ip = _ip
+        self.station_profile.netmask = _netmask
+        self.station_profile.gateway = _gateway
+
         self.ip = _ip
         self.netmask = _netmask
         self.gateway = _gateway
         self.channel = _channel
         self.txpower = _txpower
+        self.antennas = _antennas
         self.country = _country
+
     def set_station(self):
-        return self.station_profile.modify(radio=self.radio)
+        result = self.station_profile.modify(radio=self.radio)
+
+        if self.channel or self.txpower or self.antennas or self.country:
+            print("would check to see if provided radio matches provided station")
+        if self.channel:
+            print("would set radio channel")
+        if self.txpower:
+            print("would set radio txpower")
+        if self.antennas:
+            print("would set radio nss")
+
+        return result
 
 
 def main():
@@ -112,6 +130,7 @@ def main():
             --gateway       [soon] 192.168.45.1
             --channel       [soon] 6
             --txpower       [soon] 24
+            --antennas      [soon] 3
             --country       [soon] US
             --debug
         --------------------
@@ -178,6 +197,8 @@ def main():
                           help="specify channel for radio, requires --radio")
     optional.add_argument('--txpower',
                           help="specify txpower for radio, requires --radio")
+    optional.add_argument('--antennas', '--antenna',
+                          help="specify antenna diversity for radio (NSS), requires --radio")
     optional.add_argument('--country',
                           help="sets country region for all radios in a resource; requires --radio, all radios on that resource will be changed")
 
@@ -210,6 +231,7 @@ def main():
                                    _gateway=args.gateway,
                                    _channel=args.channel,
                                    _txpower=args.txpower,
+                                   _antennas=args.antennas,
                                    _country=args.country,
                                    _debug_on=args.debug)
     modify_station.set_station()
