@@ -237,7 +237,7 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
-
+add_sta = importlib.import_module("py-json.LANforge.add_sta")
 
 class CreateStation(Realm):
     def __init__(self,
@@ -274,6 +274,10 @@ class CreateStation(Realm):
         self.security = _security
         self.password = _password
         self.mode = _mode
+        if _mode:
+            if str.isalpha(_mode):
+                self.mode = add_sta.add_sta_modes[_mode];
+
         self.eap_method = _eap_method
         self.radius_identity = _radius_identity
         self.radius_passwd = _radius_passwd
