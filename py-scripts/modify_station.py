@@ -12,7 +12,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -21,6 +20,7 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 set_port = importlib.import_module("py-json.LANforge.set_port")
 add_sta = importlib.import_module("py-json.LANforge.add_sta")
+
 
 class ModifyStation(Realm):
     def __init__(self,
@@ -81,7 +81,8 @@ class ModifyStation(Realm):
         self.station_profile.dhcp = self.dhcp
         self.station_profile.debug = self.debug
         self.station_profile.desired_add_sta_flags = self.enable_flags
-        self.station_profile.desired_add_sta_flags_mask = self.enable_flags + self.disable_flags
+        if self.enable_flags or self.disable_flags:
+            self.station_profile.desired_add_sta_flags_mask = self.enable_flags + self.disable_flags
         self.station_profile.mode = _mode
         self.station_profile.ip = _ip
         self.station_profile.netmask = _netmask
@@ -94,6 +95,34 @@ class ModifyStation(Realm):
         self.txpower = _txpower
         self.antennas = _antennas
         self.country = _country
+
+    def list_ports(self):
+        response = super().json_get("/port/list?fields=port,alias,down")
+        if not response:
+            raise ValueError("Unable to make request")
+
+        if "interfaces" not in response:
+            pprint.pprint(["Full response:", response])
+            return
+        for record in response["interfaces"]:
+            #pprint.pprint(["record", record])
+            eid = list(record.keys())[0]
+            print(f"{eid}")
+
+    def list_stations(self):
+        response = super().json_get("/port/list?fields=port,alias,down,port+type")
+        if not response:
+            raise ValueError("Unable to make request")
+
+        if "interfaces" not in response:
+            pprint.pprint(["Full response:", response])
+            return
+
+        for record in response["interfaces"]:
+            #pprint.pprint(["record", record])
+            eid = list(record.keys())[0]
+            if record[eid]["port type"] == "WIFI-STA":
+                print(f"{eid}")
 
     def set_station(self):
         result = self.station_profile.modify(radio=self.radio)
@@ -124,6 +153,10 @@ def main():
         modify_station.py
         --------------------
         Command example:
+        ./modify_station.py --mgr localhost --list_ports
+        
+        ./modify_station.py --mgr localhost --list_stations
+        
         ./modify_station.py
             --radio         wiphy0
             --station       1.1.sta0000
@@ -225,7 +258,12 @@ def main():
                           help="specify antenna diversity for radio (NSS), requires --radio")
     optional.add_argument('--country',
                           help="sets country region for all radios in a resource; requires --radio, all radios on that resource will be changed")
-
+    optional.add_argument('--list_stations',
+                          action="store_true",
+                          help="lists station by Eid")
+    optional.add_argument('--list_ports',
+                          action="store_true",
+                          help="lists ports by Eid")
     args = parser.parse_args()
 
     if args.help_summary:
@@ -233,6 +271,19 @@ def main():
               "the disable_flag option. A list of available flags are available in the add_station.py file in "
               "py-json/LANforge.")
         exit(0)
+    if args.list_stations:
+        modify_station = ModifyStation(_host=args.mgr,
+                                       _port=args.mgr_port,
+                                       _debug_on=args.debug)
+        modify_station.list_stations()
+        exit(0)
+    if args.list_ports:
+        modify_station = ModifyStation(_host=args.mgr,
+                                       _port=args.mgr_port,
+                                       _debug_on=args.debug)
+        modify_station.list_ports()
+        exit(0)
+
     if args.mode != "NA":
         if args.mode not in add_sta.add_sta_modes:
             raise ValueError("wifi mode not found, expecting one of: "
