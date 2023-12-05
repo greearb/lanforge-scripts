@@ -113,7 +113,8 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario WC_AX200_2G_W4 ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-1' NA wiphy4,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                    " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\"",
+                    " --raw_line \"settle_time: 5000\""
                 ]
             },
             "WC_AX200_2G_W4":{
