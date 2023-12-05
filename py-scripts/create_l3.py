@@ -134,6 +134,7 @@ class CreateL3(Realm):
         self.cx_profile.cleanup_prefix()
 
     def build(self):
+        # check for test_group
         if self.cx_profile.create(endp_type=self.cx_type,
                                   side_a=self.endp_a,
                                   side_b=self.endp_b,
@@ -221,6 +222,7 @@ INCLUDE_IN_README: False
     parser.add_argument('--mgr_port', default=8080, help='port LANforge GUI HTTP service is running on')
     parser.add_argument('--min_rate_a', help='--min_rate_a bps rate minimum for side_a', default=56000)
     parser.add_argument('--min_rate_b', help='--min_rate_b bps rate minimum for side_b', default=56000)
+    parser.add_argument('--cx_prefix', help='phrase to begin CX names with', default="VT")
     parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
     parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
     parser.add_argument('--cx_type', help='specify the traffic type for cx eg : lf_udp | lf_tcp', default="lf_udp")
@@ -241,6 +243,8 @@ INCLUDE_IN_README: False
                         help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument('--lf_logger_config_json',
                         help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument("--no_pre_cleanup", action="store_true",
+                        help="do not remove connections at start")
     parser.add_argument('--debug', '-d', default=False, action="store_true", help='Enable debugging')
     args = parser.parse_args()
 
@@ -251,7 +255,7 @@ INCLUDE_IN_README: False
 
     ip_var_test = CreateL3(host=args.mgr,
                            port=args.mgr_port,
-                           name_prefix="VT",
+                           name_prefix=args.cx_prefix,
                            endp_a=args.endp_a,
                            endp_b=args.endp_b,
                            tos=args.tos,
@@ -270,8 +274,8 @@ INCLUDE_IN_README: False
                            _multi_conn_a=args.multi_conn_a,
                            _multi_conn_b=args.multi_conn_b
                            )
-
-    ip_var_test.pre_cleanup()
+    if not args.no_pre_cleanup:
+        ip_var_test.pre_cleanup()
 
     ip_var_test.build()
 
