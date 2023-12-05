@@ -219,7 +219,8 @@ class TestGroup(Realm):
             self.rm_port(sta, check_exists=True)
 
     def build(self):
-
+        if not self.ssid:
+            raise ValueError("testgroup.build: requires ssid")
         self.station_profile.use_security(self.security,
                                           self.ssid,
                                           self.password)
