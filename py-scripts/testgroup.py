@@ -150,8 +150,15 @@ class TestGroup(Realm):
         if rm_cx_list is None:
             rm_cx_list = []
         self.tg_profile = self.new_test_group_profile()
-        if group_name is None and list_groups is None and (tg_action is not None or cx_action is not None or
-                                                           add_cx_list is not None or rm_cx_list is not None or show_group is not None):
+        # print(f"group_name:{group_name}, list_groups:{list_groups}, tg_action:{tg_action}, cx_action:{cx_action}, "
+        #       f"add_cx_list:{add_cx_list}, rm_cx_list:{rm_cx_list}, show_group:{show_group}")
+        if (group_name is None
+                and list_groups is None
+                and (tg_action is not None
+                     or cx_action is not None
+                     or add_cx_list is not None
+                     or rm_cx_list is not None
+                     or show_group is not None)):
             raise ValueError(
                 "Group name must be set if manipulating test groups")
         else:
@@ -482,8 +489,8 @@ INCLUDE_IN_README: False
     elif args.quiesce_group:
         cx_action = 'quiesce'
 
-    print("use_existing value:", args.use_existing)
-    if not args.use_existing:
+    # print(f"use_existing:{args.use_existing}, list_groups:{args.list_groups}")
+    if not (args.list_groups or args.use_existing):
         ip_var_test = TestGroup(host=args.mgr,
                                 port=args.mgr_port,
                                 number_template="0000",
