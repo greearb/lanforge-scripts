@@ -153,7 +153,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario CC_MTK7921_5G_AC_W5 ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-2' NA wiphy5,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AC 4 'DUT: USE_DUT_NAME Radio-2' NA wiphy5,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
@@ -194,7 +194,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario CC_MTK7921_5G_W5 ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-2' NA wiphy5,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy5,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
@@ -207,7 +207,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name WC_MTK7921_5G_W5",
-                    " --upstream UPSTREAM_PORT --batch_size 1,2,4 --loop_iter 1 --protocol UDP-IPv4 --duration 20000",
+                    " --upstream UPSTREAM_PORT --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 20000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_MTK7921_5G_W5'",
                     " --test_rig TEST_RIG ",
                     " --set DUT_SET_NAME",
