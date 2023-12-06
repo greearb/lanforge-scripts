@@ -84,11 +84,13 @@ def main():
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
         description='tests creating raw command')
-    parser.add_argument("--host", "--mgr", help='specify the GUI to connect to, assumes port 8080')
+    parser.add_argument("--host", "--mgr",
+                        default='localhost',
+                        help='specify the GUI to connect to, assumes port 8080')
     parser.add_argument("--help_summary", help="purpose of the script", action="store_true")
     parser.add_argument("--raw", help='full CLI command to execute, including all arguments')
     parser.add_argument("--cmd", help='CLI command, where arguments to the command are provided using --arg parameters')
-    parser.add_argument("--arg", action='append', nargs='+',
+    parser.add_argument("--arg", "--param", action='append', nargs='+',
                         help='paramets with value, eg: --arg "alias bartleby" --arg "max-txbps 1000000" ')
     parser.add_argument("--debug", "-d", help='turn on debugging', action="store_true")
 
@@ -151,7 +153,7 @@ def main():
         elif isinstance(parameter[0], str):
             k_v = parameter[0].split(' ', 1)
         else:
-            raise ValueError("Unable to handle value of 'parameter' from args.arg")
+            raise ValueError(f"Unable to handle value of '{parameter}' from args.arg")
         # pprint.pprint(["k_v", k_v, "parameter", parameter])
         cli_data_params[k_v[0]] = k_v[1]
 
