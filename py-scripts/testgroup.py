@@ -518,8 +518,8 @@ INCLUDE_IN_README: False
     testgrp.do_tg_action()
     testgrp.show_info()
 
-    print(f"use_existing:{args.use_existing}, list_groups:{args.list_groups} "
-          f"sta_list{station_list}\n")
+    # print(f"use_existing:{args.use_existing}, list_groups:{args.list_groups} "
+    #       f"sta_list{station_list}\n")
     if not (args.list_groups or args.use_existing or args.num_stations):
         ip_var_test = TestGroup(host=args.mgr,
                                 port=args.mgr_port,
