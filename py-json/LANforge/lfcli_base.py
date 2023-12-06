@@ -658,7 +658,7 @@ class LFCliBase:
             else:
                 if 'ms' in time_string:
                     dur_time = int(time_string.replace("ms",""))
-                    duration_time = datetime.timedelta(microseconds=dur_time)
+                    duration_time = datetime.timedelta(microseconds=dur_time*1000)
                 else:
                     raise ValueError("Cannot compute time string provided: %s" % time_string)
         else:
