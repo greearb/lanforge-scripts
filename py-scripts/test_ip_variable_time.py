@@ -730,7 +730,7 @@ class IPVariableTime(Realm):
         # for i in range(len(self.upstream)):
         comp_sta_list = []
         list(map(comp_sta_list.extend,self.sta_list))
-        self.cx_profile.monitor_updated(layer3_cols=layer3_cols,
+        self.cx_profile.monitor(layer3_cols=layer3_cols,
                                 sta_list=comp_sta_list,
                                 port_mgr_cols=port_mgr_cols,
                                 report_file=report_f,
