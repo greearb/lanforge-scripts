@@ -96,6 +96,7 @@ import importlib
 import argparse
 import time
 import logging
+import pprint
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +162,7 @@ class TestGroup(Realm):
                      or show_group is not None)):
             raise ValueError(
                 "Group name must be set if manipulating test groups")
-        else:
+        elif group_name:
             self.tg_profile.group_name = group_name
 
         if add_cx_list:
@@ -191,29 +192,33 @@ class TestGroup(Realm):
         self.number_template = number_template
         self.debug = _debug_on
         self.name_prefix = name_prefix
-        self.station_profile = self.new_station_profile()
-        self.cx_profile = self.new_l3_cx_profile()
-        self.station_profile.lfclient_url = self.lfclient_url
-        self.station_profile.ssid = self.ssid
-        self.station_profile.ssid_pass = self.password
-        self.station_profile.security = self.security
-        self.station_profile.number_template_ = self.number_template
-        self.station_profile.debug = self.debug
-        self.station_profile.use_ht160 = use_ht160
-        if self.station_profile.use_ht160:
-            self.station_profile.mode = 9
-        self.station_profile.mode = mode
-        if self.ap is not None:
-            self.station_profile.set_command_param("add_sta", "ap", self.ap)
-        # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user defined variable from terminal.
+        # why?
+        self.station_profile = None
+        self.cx_profile = None
+        if self.sta_list and len(self.sta_list) >0:
+            self.new_station_profile()
+            self.cx_profile = self.new_l3_cx_profile()
+            self.station_profile.lfclient_url = self.lfclient_url
+            self.station_profile.ssid = self.ssid
+            self.station_profile.ssid_pass = self.password
+            self.station_profile.security = self.security
+            self.station_profile.number_template_ = self.number_template
+            self.station_profile.debug = self.debug
+            self.station_profile.use_ht160 = use_ht160
+            if self.station_profile.use_ht160:
+                self.station_profile.mode = 9
+            self.station_profile.mode = mode
+            if self.ap is not None:
+                self.station_profile.set_command_param("add_sta", "ap", self.ap)
+            # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user defined variable from terminal.
 
-        self.cx_profile.host = self.host
-        self.cx_profile.port = self.port
-        self.cx_profile.name_prefix = self.name_prefix
-        self.cx_profile.side_a_min_bps = side_a_min_rate
-        self.cx_profile.side_a_max_bps = side_a_max_rate
-        self.cx_profile.side_b_min_bps = side_b_min_rate
-        self.cx_profile.side_b_max_bps = side_b_max_rate
+            self.cx_profile.host = self.host
+            self.cx_profile.port = self.port
+            self.cx_profile.name_prefix = self.name_prefix
+            self.cx_profile.side_a_min_bps = side_a_min_rate
+            self.cx_profile.side_a_max_bps = side_a_max_rate
+            self.cx_profile.side_b_min_bps = side_b_min_rate
+            self.cx_profile.side_b_max_bps = side_b_max_rate
 
         self.tg_action = tg_action
         self.cx_action = cx_action
@@ -221,33 +226,38 @@ class TestGroup(Realm):
         self.show_group = show_group
 
     def pre_cleanup(self):
-        self.cx_profile.cleanup_prefix()
-        for sta in self.sta_list:
-            self.rm_port(sta, check_exists=True)
+        if self.cx_profile:
+            self.cx_profile.cleanup_prefix()
+        if self.sta_list and len(self.sta_list) > 0:
+            for sta in self.sta_list:
+                self.rm_port(sta, check_exists=True)
 
     def build(self):
-        if not self.ssid:
-            raise ValueError("testgroup.build: requires ssid")
-        self.station_profile.use_security(self.security,
-                                          self.ssid,
-                                          self.password)
-        self.station_profile.set_number_template(self.number_template)
-        print("Creating stations")
-        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.station_profile.set_command_param("set_port", "report_timer", 1500)
-        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        # self.station_profile.create(radio=self.radio,
-        #                             sta_names_=self.sta_list,
-        #                             debug=self.debug)
-        if self.station_profile.create(
-            radio=self.radio,
-            sta_names_=self.sta_list,
-            debug=self.debug):
-            self._pass("Stations created.")
-        else:
-            self._fail("Stations not properly created.")
+        # JBR: this step...did not calibrate if the Connection Group existed!
+        if self.sta_list and self.ssid:
+            print("testgroup::build: building sta_list...")
+            pprint.pprint(["sta_list:", self.sta_list])
+            raise ValueError("testgroup:build: requires ssid")
+            self.station_profile.use_security(self.security,
+                                              self.ssid,
+                                              self.password)
+            self.station_profile.set_number_template(self.number_template)
+            print("Creating stations")
+            self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+            self.station_profile.set_command_param("set_port", "report_timer", 1500)
+            self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+            # self.station_profile.create(radio=self.radio,
+            #                             sta_names_=self.sta_list,
+            #                             debug=self.debug)
+            if self.station_profile.create(
+                radio=self.radio,
+                sta_names_=self.sta_list,
+                debug=self.debug):
+                self._pass("Stations created.")
+            else:
+                self._fail("Stations not properly created.")
 
-        if self.up:
+        if self.sta_list and self.up:
             self.station_profile.admin_up()
             if not LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
                                                      port_list=self.station_profile.station_names,
@@ -262,12 +272,15 @@ class TestGroup(Realm):
                 self._fail("Stations failed to get IPs", print_=True)
                 self._fail("FAIL: Station build failed", print_=True)
                 logger.info("Please re-check the configuration applied")
-        self.cx_profile.create(endp_type="lf_udp",
-                               side_a=self.station_profile.station_names,
-                               side_b=self.upstream,
-                               sleep_time=0)
-        self.add_cx_list = self.cx_profile.get_cx_names()
-        self._pass("PASS: Cross Connection build finished")
+
+        pprint.pprint(["testgroup::build: cx_profile", self.cx_profile])
+        if self.cx_profile:
+            self.cx_profile.create(endp_type="lf_udp",
+                                   side_a=self.station_profile.station_names,
+                                   side_b=self.upstream,
+                                   sleep_time=0)
+            self.add_cx_list = self.cx_profile.get_cx_names()
+            self._pass("PASS: Cross Connection build finished")
 
     def do_cx_action(self):
         if self.cx_action == 'start':
@@ -292,15 +305,16 @@ class TestGroup(Realm):
                 logger.info("%s not found, no action taken" % self.tg_profile.group_name)
 
     def show_info(self):
-        time.sleep(.5)
+        time.sleep(.25)
         if self.list_groups:
             tg_list = self.tg_profile.list_groups()
             if len(tg_list) > 0:
                 logger.info("Current Test Groups: %s" % tg_list)
                 for group in tg_list:
+                    print(f"{group} ")
                     logger.info(group)
             else:
-                logger.info("No test groups found")
+                logger.info("testgroup::show_info: No test groups found")
         if self.show_group:
             cx_list = self.tg_profile.list_cxs()
             if len(cx_list) > 0:
@@ -467,12 +481,17 @@ INCLUDE_IN_README: False
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    num_sta = 2
+    num_sta = 0
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
-                                          radio=args.radio)
+    station_list: list = []
+    if num_sta > 0:
+        station_list = LFUtils.portNameSeries(prefix_="sta",
+                                              start_id_=0,
+                                              end_id_=num_sta - 1,
+                                              padding_number_=10000,
+                                              radio=args.radio)
 
     tg_action = None
     cx_action = None
@@ -489,8 +508,19 @@ INCLUDE_IN_README: False
     elif args.quiesce_group:
         cx_action = 'quiesce'
 
-    # print(f"use_existing:{args.use_existing}, list_groups:{args.list_groups}")
-    if not (args.list_groups or args.use_existing):
+    # Query the groups we have and determine if the name being provided already
+    # exists, otherwise we affect an existing test group.
+    testgrp = TestGroup(host=args.mgr,
+                        port=args.mgr_port,
+                        _debug_on=args.debug,
+                        list_groups=True)
+    testgrp.list_groups = True
+    testgrp.do_tg_action()
+    testgrp.show_info()
+
+    print(f"use_existing:{args.use_existing}, list_groups:{args.list_groups} "
+          f"sta_list{station_list}\n")
+    if not (args.list_groups or args.use_existing or args.num_stations):
         ip_var_test = TestGroup(host=args.mgr,
                                 port=args.mgr_port,
                                 number_template="0000",
@@ -518,10 +548,11 @@ INCLUDE_IN_README: False
         ip_var_test.do_tg_action()
         ip_var_test.update_cxs()
         ip_var_test.do_cx_action()
-        time.sleep(5)
+        time.sleep(0.25)
         ip_var_test.show_info()
         print('Creates %s stations and connections' % num_sta)
     else:
+        # print(f"args.list_groups:[{args.list_groups}]")
         tg = TestGroup(host=args.mgr, port=args.mgr_port,
                        group_name=args.group_name,
                        add_cx_list=args.add_cx,
@@ -533,7 +564,7 @@ INCLUDE_IN_README: False
         tg.do_tg_action()
         tg.update_cxs()
         tg.do_cx_action()
-        time.sleep(5)
+        time.sleep(0.25)
         tg.show_info()
 
 
