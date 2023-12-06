@@ -159,11 +159,12 @@ def main():
 
     # look up the cmd from the session method_map
     if not (session.find_method(args.cmd)):
-        print(f"Unable to find cmd[{args.cmd}] in method_map:\n")
+        pprint.pprint(["session.find_method:", args.cmd, session.find_method(args.cmd)])
+        print(f"raw_cli.py: Unable to find cmd[{args.cmd}] in method_map:\n")
         print("    method_map keys:")
-        session.print_method_map();
+        session.print_method_map()
         exit(1)
-    method_ref = session.method_map[args.cmd];
+    method_ref = session.method_map[args.cmd]
     # print(f"cmd[{args.cmd}] has reference: [{dir(method_ref) }]")
     # pprint.pprint(["CliDataPrams", cli_data_params])
     method_ref(**cli_data_params,
