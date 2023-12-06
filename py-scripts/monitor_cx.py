@@ -123,12 +123,12 @@ class CxMonitor:
                 # print(f"ALL:{cxnames}")
                 self.cxnames = ["all"]
             elif cxnames.find(",") > 0:
-                print("COMMA")
+                # print("COMMA")
                 self.cxnames = ",".split(cxnames)
             else:
                 self.cxnames = cxnames
         elif isinstance(cxnames, list):
-            print("LIST ")
+            # print("LIST ")
             self.cxnames.extend(cxnames)
 
         # turn cxnames into endpoint unique names:
@@ -139,7 +139,7 @@ class CxMonitor:
                 self.endp_names[f"{cxname}-B"] = 1
 
         else:
-            pprint.pprint(["cxnames", self.cxnames])
+            # pprint.pprint(["cxnames", self.cxnames])
             for name in self.cxnames:
                 self.endp_names[f"{name}-A"] = 1
                 self.endp_names[f"{name}-B"] = 1
@@ -313,7 +313,9 @@ def main():
     parser.add_argument(
         "--host", "--mgr", help="specify the GUI to connect to, assumes port 8080"
     )
-    parser.add_argument("--cx_names", help="comma separated list of cx names, or ALL")
+    parser.add_argument("--cx_names",
+                        nargs="+",
+                        help="spsace or comma separated list of cx names, or ALL")
     parser.add_argument("--csv_file", help="csv filename to save data to")
     parser.add_argument(
         "--quit",
@@ -344,6 +346,7 @@ def main():
         require_session=True,
         exit_on_error=True,
     )
+    # pprint.pprint(["CX NAMES", args.cx_names])
     cx_monitor = CxMonitor(
         session,
         cxnames=args.cx_names,
