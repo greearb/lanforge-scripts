@@ -394,6 +394,274 @@ class L3CXProfile(LFCliBase):
             if output_format.lower() != 'csv':
                 pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
 
+    def monitor_updated(self,
+                duration_sec=60,
+                monitor_interval_ms=1, # monitor interval is seconds 
+                sta_list=None,
+                layer3_cols=None,
+                port_mgr_cols=None,
+                created_cx=None,
+                report_file=None,
+                systeminfopath=None,
+                output_format=None,
+                script_name=None,
+                arguments=None,
+                compared_report=None,
+                resource=1,
+                adjust_cx_json=False,  # used for lf_test_max_association.py (removes created_cx from json get to alleviate url > 2048 bytes error)
+                debug=False):
+        if duration_sec:
+            duration_sec = self.parse_time(duration_sec).seconds
+        else:
+            logger.critical("L3CXProfile::monitor wants duration_sec > 1 second")
+            raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
+        if (duration_sec * 1000) <= monitor_interval_ms:
+            logger.critical("L3CXProfile::monitor wants duration_sec > monitor_interval")
+            raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
+        if report_file is None:
+            logger.critical("Monitor requires an output file to be defined")
+            raise ValueError("Monitor requires an output file to be defined")
+        if systeminfopath is None:
+            raise ValueError("Monitor requires a system info path to be defined")
+        if created_cx is None:
+            logger.critical("Monitor needs a list of Layer 3 connections")
+            raise ValueError("Monitor needs a list of Layer 3 connections")
+        if (monitor_interval_ms is None) or (monitor_interval_ms < 250):
+            logger.critical("L3CXProfile::monitor wants monitor_interval >= 250 millisecond")
+            raise ValueError("L3CXProfile::monitor wants monitor_interval >= 250 millisecond")
+        if layer3_cols is None:
+            logger.critical("L3CXProfile::monitor wants a list of column names to monitor")
+            raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
+        if output_format:
+            if output_format.lower() != report_file.split('.')[-1]:
+                logger.critical('Filename {report_file} has an extension that does not match output format {output_format} '.format(
+                    report_file=report_file, output_format=output_format))
+
+                raise ValueError('Filename {report_file} has an extension that does not match output format {output_format} '.format(
+                    report_file=report_file, output_format=output_format))
+        else:
+            output_format = report_file.split('.')[-1]
+
+        # default save to csv first
+        if report_file.split('.')[-1] != 'csv':
+            report_file = report_file.replace(str(output_format), 'csv', 1)
+            logger.info("Saving rolling data into...{report_file}".format(report_file=report_file))
+
+        # ================== Step 1, set column names and header row
+        layer3_cols = [self.replace_special_char(x) for x in layer3_cols]
+        layer3_fields = ",".join(layer3_cols)
+        default_cols = ['Timestamp', 'Timestamp milliseconds epoch', 'Timestamp seconds epoch', 'Duration elapsed']
+        default_cols.extend(layer3_cols)
+        # append alias to port_mgr_cols if not present needed later
+        if port_mgr_cols:
+            if 'alias' not in port_mgr_cols:
+                port_mgr_cols.append('alias')
+
+        if port_mgr_cols:
+            default_cols.extend(port_mgr_cols)
+        header_row = default_cols
+
+        if port_mgr_cols:
+            port_mgr_cols = [self.replace_special_char(x) for x in port_mgr_cols]
+            port_mgr_cols_labelled = []
+            for col_name in port_mgr_cols:
+                port_mgr_cols_labelled.append("port mgr - " + col_name)
+
+            port_mgr_fields = ",".join(port_mgr_cols)
+            header_row.extend(port_mgr_cols_labelled)
+        # create sys info file
+        systeminfo = self.json_get('/')
+        sysinfo = [str("LANforge GUI Build: " + systeminfo['VersionInfo']['BuildVersion']),
+                   str("Script Name: " + script_name), str("Argument input: " + str(arguments))]
+        with open(systeminfopath, 'w') as filehandle:
+            for listitem in sysinfo:
+                filehandle.write('%s\n' % listitem)
+
+        # ================== Step 2, monitor columns
+        # wait 1 seconds to get proper port data
+        time.sleep(1)
+
+        start_time = datetime.datetime.now()
+        end_time = start_time + datetime.timedelta(seconds=duration_sec)
+
+        passes = 0
+        expected_passes = 0
+        old_cx_rx_values = self.__get_rx_values()
+
+        # for x in range(0,int(round(iterations,0))):
+        initial_starttime = datetime.datetime.now()
+        timestamp_data = list()
+        while datetime.datetime.now() < end_time:
+            t = datetime.datetime.now()
+            timestamp = t.strftime("%m/%d/%Y %I:%M:%S")
+            t_to_millisec_epoch = int(self.get_milliseconds(t))
+            t_to_sec_epoch = int(self.get_seconds(t))
+            time_elapsed = int(self.get_seconds(t)) - int(self.get_seconds(initial_starttime))
+            stations = [station.split('.')[-1] for station in sta_list]
+            stations = ','.join(stations)
+
+            if port_mgr_cols:
+                port_mgr_response = self.json_get("/port/1/%s/%s?fields=%s" % (resource, stations, port_mgr_fields))
+
+            # if True, removes created_cx from json get to alleviate url > 2048 bytes error
+            if adjust_cx_json:
+                layer_3_response = self.json_get("/endp/?fields=%s" % (layer3_fields))
+            else:
+                layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
+            # logger.info(layer_3_response)
+
+            new_cx_rx_values = self.__get_rx_values()
+            if debug:
+                logger.debug(old_cx_rx_values, new_cx_rx_values)
+                logger.debug("\n-----------------------------------")
+                logger.debug(t)
+                logger.debug("-----------------------------------\n")
+            expected_passes += 1
+            if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
+                passes += 1
+            else:
+                # TODO track where this goes?
+                self.fail("FAIL: Not all stations increased traffic")
+
+            result = dict()  # create dataframe from layer 3 results
+            if type(layer_3_response) is dict:
+                for dictionary in layer_3_response['endpoint']:
+                    logger.debug('layer_3_data: {dictionary}'.format(dictionary=dictionary))
+                    result.update(dictionary)
+            else:
+                pass
+            layer3 = pd.DataFrame(result.values())
+            layer3.columns = ['l3-' + x for x in layer3.columns]
+
+            if port_mgr_cols:  # create dataframe from port mgr results
+                result = dict()
+                if type(port_mgr_response) is dict:
+                    logger.info("port_mgr_response {pmr}".format(pmr=port_mgr_response))
+                    if 'interfaces' in port_mgr_response:
+                        for dictionary in port_mgr_response['interfaces']:
+                            if debug:
+                                logger.debug('port mgr data: {dictionary}'.format(dictionary=dictionary))
+                            result.update(dictionary)
+
+                    elif 'interface' in port_mgr_response:
+                        dict_update = {port_mgr_response['interface']['alias']: port_mgr_response['interface']}
+                        if debug:
+                            logger.debug(dict_update)
+                        result.update(dict_update)
+                        if debug:
+                            logger.debug(result)
+                    else:
+                        logger.critical('interfaces and interface not in port_mgr_response')
+                        raise ValueError('interfaces and interface not in port_mgr_response')
+                    portdata_df = pd.DataFrame(result.values())
+                    logger.info("portdata_df {pd}".format(pd=portdata_df))
+                    portdata_df.columns = ['port-' + x for x in portdata_df.columns]
+                    portdata_df['alias'] = portdata_df['port-alias']
+
+                    layer3_alias = list()  # Add alias to layer 3 dataframe
+                    for cross_connect in layer3['l3-name']:
+                        for port in portdata_df['port-alias']:
+                            if port in cross_connect:
+                                layer3_alias.append(port)
+                    if len(layer3_alias) == layer3.shape[0]:
+                        layer3['alias'] = layer3_alias
+                    else:
+                        logger.critical(("The Stations or Connection on LANforge did not match expected,",
+                                        " Check if LANForge initial state correct or delete/cleanup corrects"))
+                        raise ValueError(("The Stations or Connection on LANforge did not match expected,",
+                                        " Check if LANForge initial state correct or delete/cleanup corrects"))
+
+                    timestamp_df = pd.merge(layer3, portdata_df, on='alias')
+            else:
+                timestamp_df = layer3
+            probe_port_df_list = list()
+            for station in sta_list:
+                probe_port = ProbePort(lfhost=self.lfclient_host,
+                                       lfport=self.lfclient_port,
+                                       eid_str=station,
+                                       debug=self.debug)
+                probe_results = dict()
+                if (probe_port.refreshProbe()):
+                    probe_results['Signal Avg Combined'] = probe_port.getSignalAvgCombined()
+                    probe_results['Signal Avg per Chain'] = probe_port.getSignalAvgPerChain()
+                    probe_results['Signal Combined'] = probe_port.getSignalCombined()
+                    probe_results['Signal per Chain'] = probe_port.getSignalPerChain()
+                    if 'Beacon Av Signal' in probe_results.keys():
+                        probe_results['Beacon Avg Signal'] = probe_port.getBeaconSignalAvg()
+                    else:
+                        probe_results['Beacon Avg Signal'] = "0"
+                    # probe_results['HE status'] = probe_port.he
+                    probe_results['TX Bitrate'] = probe_port.tx_bitrate
+                    probe_results['TX Mbps'] = probe_port.tx_mbit
+                    probe_results['TX MCS ACTUAL'] = probe_port.tx_mcs
+                    if probe_port.tx_mcs:
+                        probe_results['TX MCS'] = int(probe_port.tx_mcs) % 8
+                    else:
+                        probe_results['TX MCS'] = probe_port.tx_mcs
+                    probe_results['TX NSS'] = probe_port.tx_nss
+                    probe_results['TX MHz'] = probe_port.tx_mhz
+                    if probe_port.tx_gi:
+                        probe_results['TX GI ns'] = (probe_port.tx_gi * 10**9)
+                    else:
+                        probe_results['TX GI ns'] = probe_port.tx_gi
+                    probe_results['TX Mbps Calc'] = probe_port.tx_mbit_calc
+                    probe_results['TX GI'] = probe_port.tx_gi
+                    probe_results['TX Mbps short GI'] = probe_port.tx_data_rate_gi_short_Mbps
+                    probe_results['TX Mbps long GI'] = probe_port.tx_data_rate_gi_long_Mbps
+                    probe_results['RX Bitrate'] = probe_port.rx_bitrate
+                    probe_results['RX Mbps'] = probe_port.rx_mbit
+                    probe_results['RX MCS ACTUAL'] = probe_port.rx_mcs
+                    if probe_port.rx_mcs:
+                        probe_results['RX MCS'] = int(probe_port.rx_mcs) % 8
+                    else:
+                        probe_results['RX MCS'] = probe_port.rx_mcs
+                    probe_results['RX NSS'] = probe_port.rx_nss
+                    probe_results['RX MHz'] = probe_port.rx_mhz
+                    if probe_port.rx_gi:
+                        probe_results['RX GI ns'] = (probe_port.rx_gi * 10**9)
+                    else:
+                        probe_results['RX GI ns'] = probe_port.rx_gi
+                    probe_results['RX Mbps Calc'] = probe_port.rx_mbit_calc
+                    probe_results['RX GI'] = probe_port.rx_gi
+                    probe_results['RX Mbps short GI'] = probe_port.rx_data_rate_gi_short_Mbps
+                    probe_results['RX Mbps long GI'] = probe_port.rx_data_rate_gi_long_Mbps
+
+                    probe_df_initial = pd.DataFrame(probe_results.values()).transpose()
+                    probe_df_initial.columns = probe_results.keys()
+                    probe_df_initial.columns = ['probe ' + x for x in probe_df_initial.columns]
+                    probe_df_initial['alias'] = station.split('.')[-1]
+                    probe_port_df_list.append(probe_df_initial)
+            if len(probe_port_df_list) > 0:
+                probe_port_df = pd.concat(probe_port_df_list)
+                timestamp_df = pd.merge(timestamp_df, probe_port_df, on='alias')
+                timestamp_df['Timestamp'] = timestamp
+                timestamp_df['Timestamp milliseconds epoch'] = t_to_millisec_epoch
+                timestamp_df['Timestamp seconds epoch'] = t_to_sec_epoch
+                timestamp_df['Duration elapsed'] = time_elapsed
+                timestamp_data.append(timestamp_df)
+                time.sleep(monitor_interval_ms/1000)
+                logger.info("Monitor: {}".format(datetime.datetime.now()))
+            else:
+                logger.info("port probe dataframe list is empty.")
+        if len(timestamp_data) > 0:
+            df = pd.concat(timestamp_data)
+            df = df.drop('alias', axis=1)
+            df.to_csv(str(report_file), index=False)
+
+        # comparison to last report / report inputted
+        if compared_report:
+            pandas_extensions.compare_two_df(dataframe_one=pandas_extensions.file_to_df(report_file),
+                                             dataframe_two=pandas_extensions.file_to_df(compared_report))
+            # TODO why is this exit here?
+            exit(1)
+            # append compared df to created one
+            if output_format.lower() != 'csv':
+                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+        else:
+            if output_format.lower() != 'csv':
+                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+
+
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
             self.json_post("/cli-json/show_cxe", {
