@@ -84,7 +84,7 @@ NOTES:
             --ssid <ssid>
             --password admin123
             --test_duration 2m (default)
-            --monitor_interval_ms
+            --monitor_interval
             --a_min 3000
             --b_min 1000
             --ap "00:0e:8e:78:e1:76"
@@ -311,7 +311,7 @@ class IPVariableTime(Realm):
                  output_format=None,
                  layer3_cols=None,
                  port_mgr_cols=None,
-                 monitor_interval_ms=1000,
+                 monitor_interval=1000,
                  kpi_csv=None,
                  kpi_path=None,
                  outfile=None,
@@ -386,7 +386,7 @@ class IPVariableTime(Realm):
         self.output_format = output_format
         self.layer3_cols = layer3_cols
         self.port_mgr_cols = port_mgr_cols
-        self.monitor_interval_ms = monitor_interval_ms
+        self.monitor_interval = monitor_interval
         self.outfile = outfile
         self.kpi_csv = kpi_csv
         self.kpi_path = kpi_path
@@ -675,6 +675,7 @@ class IPVariableTime(Realm):
             logger.debug(port_mgr_cols)
 
         try:
+            # monitor interval returns milliseconds
             monitor_interval = Realm.parse_time(self.monitor_interval).total_seconds()
         except ValueError as error:
             logger.critical(error)
@@ -735,7 +736,7 @@ class IPVariableTime(Realm):
                                 report_file=report_f,
                                 systeminfopath=systeminfopath,
                                 duration_sec=self.test_duration,
-                                monitor_interval_ms=monitor_interval_ms,
+                                monitor_interval_ms=monitor_interval,
                                 created_cx=layer3endps,
                                 output_format=output,
                                 compared_report=compared_rept,
@@ -1153,7 +1154,7 @@ NOTES:
             --ssid <ssid>
             --password admin123
             --test_duration 2m (default)
-            --monitor_interval_ms
+            --monitor_interval
             --a_min 3000
             --b_min 1000
             --ap "00:0e:8e:78:e1:76"
@@ -1569,7 +1570,7 @@ INCLUDE_IN_README: False
                                  output_format=args.output_format,
                                  layer3_cols=args.layer3_cols,
                                  port_mgr_cols=args.port_mgr_cols,
-                                 monitor_interval_ms=args.monitor_interval_ms,
+                                 monitor_interval=args.monitor_interval,
                                  kpi_csv=kpi_csv,
                                  kpi_path=kpi_path,
                                  outfile=args.csv_outfile,
