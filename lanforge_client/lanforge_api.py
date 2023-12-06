@@ -22375,9 +22375,14 @@ class LFJsonQuery(JsonQuery):
         /rfgen/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        bb-gain, entity+id, frequency, gain, if-gain, name, pulse+count, pulse+interval, 
-        pulse+width, state, status, sweep+time
-    Example URL: /rfgen?fields=bb-gain,entity+id
+        bb-gain, burst+offset, chirp+width, duration, entity+id, frequency, frequency+modulation, 
+        gain, if-gain, name, ofdm+header+modulation, ofdm+payload+modulation, one+burst, 
+        pulse+count, pulse+interval, pulse+repetition+frequency+1, pulse+repetition+frequency+2, 
+        pulse+repetition+frequency+3, pulse+width, sample+rate, state, status, sweep+time, 
+        time+period+1+off, time+period+1+on, time+period+2+off, time+period+2+on, 
+        time+period+3+off, time+period+3+on, trials+center, trials+high, trials+low, 
+        trigger+amp, trigger+dbm, uut+channel
+    Example URL: /rfgen?fields=bb-gain,burst+offset
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_rfgen(eid_list=['1.234', '1.344'],
@@ -22386,18 +22391,44 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        'bb-gain':        # RX Gain AMP, (0-62, 2db steps)
-        'entity id':      # -
-        'frequency':      # The RF generator's center frequency in Mhz.
-        'gain':           # Main RF Gain AMP
-        'if-gain':        # Fine precision RF Tx and Rx gain AMP (0-40)
-        'name':           # Attenuator module identifier (shelf . resource . serial-num).
-        'pulse count':    # The number of pulses in each group.
-        'pulse interval': # Time between pulses, in micro-seconds.
-        'pulse width':    # Pulse width, in micro-seconds.
-        'state':          # Configured state of the RF Generator.
-        'status':         # Current status of the RF Generator helper process.
-        'sweep time':     # The time between groups of pulses.
+        'bb-gain':                      # RX Gain AMP, (0-62, 2db steps)
+        'burst offset':                 # FCC5 burst offset.For W53 this is the blank-time.
+        'chirp width':                  # W53 Chirp width in khz.
+        'duration':                     # Duration for OFDM radar test.
+        'entity id':                    # -
+        'frequency':                    # The RF generator's center frequency in Mhz.
+        'frequency modulation':         # Frequency Modulation for FCC5 configuration.
+        'gain':                         # Main RF Gain AMP
+        'if-gain':                      # Fine precision RF Tx and Rx gain AMP (0-40)
+        'name':                         # Attenuator module identifier (shelf . resource . serial-num).
+        'ofdm header modulation':       # Type of interval for OFDM Header modulation.
+        'ofdm payload modulation':      # Type of interval for OFDM Payload modulation.
+        'one burst':                    # Run one pulse train and then stop.
+        'pulse count':                  # The number of pulses in each group.
+        'pulse interval':               # Time between pulses, in micro-seconds.
+        'pulse repetition frequency 1': # ETSI test cases use PRI (Pulse Repetition Frequency) as part of RADAR
+                                        # emulation configuration.
+        'pulse repetition frequency 2': # ETSI test cases use PRI (Pulse Repetition Frequency) as part of RADAR
+                                        # emulation configuration.
+        'pulse repetition frequency 3': # ETSI test cases use PRI (Pulse Repetition Frequency) as part of RADAR
+                                        # emulation configuration.
+        'pulse width':                  # Pulse width, in micro-seconds.
+        'sample rate':                  # RfGenerator sample rate.
+        'state':                        # Configured state of the RF Generator.
+        'status':                       # Current status of the RF Generator helper process.
+        'sweep time':                   # The time between groups of pulses.
+        'time period 1 off':            # Time period 1 of no transmission noise modulation.
+        'time period 1 on':             # Time period 1 of modulated noise transmission.
+        'time period 2 off':            # Time period 2 of no transmission noise modulation.
+        'time period 2 on':             # Time period 2 of modulated noise transmission.
+        'time period 3 off':            # Time period 3 of no transmission noise modulation.
+        'time period 3 on':             # Time period 3 of modulated noise transmission.
+        'trials center':                # Number of trials in the center range of specified UUT channel.
+        'trials high':                  # Number of trials in the upper range of specified UUT channel.
+        'trials low':                   # Number of trials in the low range of specified UUT channel.
+        'trigger amp':                  # Trigger amplitude for pulse-detect tool.  In 1/100ths of an amp units.
+        'trigger dbm':                  # Trigger dBm for pulse-detect tool.
+        'uut channel':                  # UUT Channel for FCC5 configuration.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -24141,7 +24172,7 @@ class LFSession(BaseSession):
             class and method used by a python script. This provides a dyanmic approach 
             to assembling method calls at runtime.
         ---- ---- ---- ---- """
-        if not self.method_map or len(self.method_map) < 100:
+        if not self.method_map or len(self.method_map) < 1:
             self.method_map = {
                 "adb": self.command_instance.post_adb,
                 "adb_bt": self.command_instance.post_adb_bt,
@@ -24437,8 +24468,10 @@ class LFSession(BaseSession):
                 "/ws-msg": self.query_instance.get_ws_msg,
             }
         if cli_name not in self.method_map:
-            print(f"command '{cli_name}' not present")
+            self.logger.error(f"LFSession::find_method: command '{cli_name}' not present")
             self.print_method_map()
+            return None
+        return self.method_map[cli_name]
 
     def print_method_map(self):
-        pprint(self.method_map)
+        pprint(["method_map keys:", self.method_map.keys()])
