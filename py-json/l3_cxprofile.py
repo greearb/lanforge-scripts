@@ -129,7 +129,7 @@ class L3CXProfile(LFCliBase):
 
     def monitor(self,
                 duration_sec=60,
-                monitor_interval_ms=1, # monitor interval is seconds 
+                monitor_interval_ms=1, # monitor interval is in seconds yet may have a decimal for milli seconds
                 sta_list=None,
                 layer3_cols=None,
                 port_mgr_cols=None,
@@ -144,7 +144,7 @@ class L3CXProfile(LFCliBase):
                 adjust_cx_json=False,  # used for lf_test_max_association.py (removes created_cx from json get to alleviate url > 2048 bytes error)
                 debug=False):
         if duration_sec:
-            duration_sec = self.parse_time(duration_sec).seconds
+            duration_sec = self.parse_time(duration_sec).seconds()
         else:
             logger.critical("L3CXProfile::monitor wants duration_sec > 1 second")
             raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
@@ -385,8 +385,6 @@ class L3CXProfile(LFCliBase):
         if compared_report:
             pandas_extensions.compare_two_df(dataframe_one=pandas_extensions.file_to_df(report_file),
                                              dataframe_two=pandas_extensions.file_to_df(compared_report))
-            # TODO why is this exit here?
-            exit(1)
             # append compared df to created one
             if output_format.lower() != 'csv':
                 pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
@@ -396,7 +394,7 @@ class L3CXProfile(LFCliBase):
 
     def monitor_updated(self,
                 duration_sec=60,
-                monitor_interval_ms=1, # monitor interval is seconds 
+                monitor_interval_ms=1, # monitor interval is seconds yet may be a decimal 
                 sta_list=None,
                 layer3_cols=None,
                 port_mgr_cols=None,
@@ -426,9 +424,9 @@ class L3CXProfile(LFCliBase):
         if created_cx is None:
             logger.critical("Monitor needs a list of Layer 3 connections")
             raise ValueError("Monitor needs a list of Layer 3 connections")
-        if (monitor_interval_ms is None) or (monitor_interval_ms < 250):
-            logger.critical("L3CXProfile::monitor wants monitor_interval >= 250 millisecond")
-            raise ValueError("L3CXProfile::monitor wants monitor_interval >= 250 millisecond")
+        if (monitor_interval_ms is None) or (monitor_interval_ms < .25):
+            logger.critical("L3CXProfile::monitor wants monitor_interval >= .25 seconds or 250 milliseconds")
+            raise ValueError("L3CXProfile::monitor wants monitor_interval >= .25 seconds or 250 millisecond")
         if layer3_cols is None:
             logger.critical("L3CXProfile::monitor wants a list of column names to monitor")
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
