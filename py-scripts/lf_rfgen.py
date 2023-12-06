@@ -211,7 +211,7 @@ INCLUDE_IN_README: True
 
     logger.info("Response: {response}".format(response=response))
     logger.info(pformat(response_json_list))
-
+    '''
     response = rfgen.get(
         _eid_list = ['1.1.57b068dc21104e63','1.1.570b8dc22276763'],                         
         _requested_col_names = ,                    
@@ -223,7 +223,7 @@ INCLUDE_IN_README: True
 
     logger.info("Response: {response}".format(response=response))
     logger.info(pformat(response_json_list))
-
+    '''
 
 if __name__ == "__main__":
     main()
