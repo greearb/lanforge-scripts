@@ -44,6 +44,7 @@ DOWNLOAD_BPS=(
 cd ./py-scripts
 LAST_STA_IDX=$(( ${#STATIONS[@]}- 1))
 EXISTING_STATIONS=( $(./modify_station.py --mgr "$GUI" --list_stations) )
+echo "Existing Stations: ${EXISTING_STATIONS[@]}"
 # check for connection group name
 EXISTING_GROUPS=( $(./testgroup.py --mgr "$GUI" --list_groups) )
 ADD_GROUP=0
@@ -56,11 +57,17 @@ if (( ADD_GROUP > 0 )); then
     ./testgroup.py --mgr "$GUI" --add_group --group_name "$TEST_PREFIX"
     ./raw_cli.py --mgr "$GUI" --cmd show_group --param "group $TEST_PREFIX"
 fi
-
+shelf=1
 for i in $(seq 0 $LAST_STA_IDX); do
+    resource="${STATIONS[$i]}"
+    resource="${resource#1.}"
+    resource="${resource%.*}"
+    short_sta="${STATIONS[$i]}"
+    short_sta="${short_sta##*.}" # need to turn 1.1.sta0000 to sta0000, not the same below
     if echo "${EXISTING_STATIONS[@]}" | grep -q "${STATIONS[$i]}" ; then
-        echo "station ${STATIONS[$i]} exists"
+        echo "      Station ${STATIONS[$i]} exists"
     else
+        echo "      Creating ${STATIONS[$i]} ..."
         ./create_station.py --mgr "$GUI" $DBG \
             --radio         "${RADIOS[$i]}" \
             --security      "$SEC" \
@@ -72,6 +79,10 @@ for i in $(seq 0 $LAST_STA_IDX); do
             --no_pre_cleanup \
             --no_cleanup \
          || echo "problem creating station ${STATIONS[$i]}] "
+         ./raw_cli.py --mgr "$GUI" --cmd nc_show_ports \
+            --arg "shelf 1" \
+            --arg "resource $resource" \
+            --arg "port $short_sta"
     fi
     ./create_l3.py --mgr "$GUI" $DBG \
         --cx_type       "${TYPE:-lf_udp}" \
