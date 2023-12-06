@@ -67,9 +67,8 @@ class TestGroupProfile(LFCliBase):
     def list_groups(self):
         test_groups = self.local_realm.json_get("/testgroups/all")
         tg_list = []
-        if test_groups is not None:
-            test_groups = test_groups["groups"]
-            for group in test_groups:
+        if test_groups and "groups" in test_groups:
+            for group in test_groups["groups"]:
                 for k, v in group.items():
                     tg_list.append(v['name'])
         return tg_list
