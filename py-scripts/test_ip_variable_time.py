@@ -311,7 +311,7 @@ class IPVariableTime(Realm):
                  output_format=None,
                  layer3_cols=None,
                  port_mgr_cols=None,
-                 monitor_interval='1s',
+                 monitor_interval_ms=1000,
                  kpi_csv=None,
                  kpi_path=None,
                  outfile=None,
@@ -386,7 +386,7 @@ class IPVariableTime(Realm):
         self.output_format = output_format
         self.layer3_cols = layer3_cols
         self.port_mgr_cols = port_mgr_cols
-        self.monitor_interval = monitor_interval
+        self.monitor_interval_ms = monitor_interval_ms
         self.outfile = outfile
         self.kpi_csv = kpi_csv
         self.kpi_path = kpi_path
@@ -729,13 +729,13 @@ class IPVariableTime(Realm):
         # for i in range(len(self.upstream)):
         comp_sta_list = []
         list(map(comp_sta_list.extend,self.sta_list))
-        self.cx_profile.monitor(layer3_cols=layer3_cols,
+        self.cx_profile.monitor_updated(layer3_cols=layer3_cols,
                                 sta_list=comp_sta_list,
                                 port_mgr_cols=port_mgr_cols,
                                 report_file=report_f,
                                 systeminfopath=systeminfopath,
                                 duration_sec=self.test_duration,
-                                monitor_interval_ms=monitor_interval,
+                                monitor_interval_ms=monitor_interval_ms,
                                 created_cx=layer3endps,
                                 output_format=output,
                                 compared_report=compared_rept,
@@ -1390,8 +1390,8 @@ INCLUDE_IN_README: False
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',
                         default=None)
     optional.add_argument('--monitor_interval',
-                        help='how frequently do you want your monitor function to take measurements, 35s, 2h',
-                        default='1s')
+                        help='how frequently do you want your monitor function to take measurements, 35s, 2h, lowest is 250ms',
+                        default='1000ms')
     optional.add_argument('--ipv6', help='Sets the test to use IPv6 traffic instead of IPv4', action='store_true')
     optional.add_argument('--influx_host')
     optional.add_argument('--influx_token', help='Username for your Influx database')
@@ -1569,7 +1569,7 @@ INCLUDE_IN_README: False
                                  output_format=args.output_format,
                                  layer3_cols=args.layer3_cols,
                                  port_mgr_cols=args.port_mgr_cols,
-                                 monitor_interval=args.monitor_interval,
+                                 monitor_interval_ms=args.monitor_interval_ms,
                                  kpi_csv=kpi_csv,
                                  kpi_path=kpi_path,
                                  outfile=args.csv_outfile,
