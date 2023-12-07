@@ -327,6 +327,29 @@ class DataplaneTest(cv_test):
 
 
 def main():
+
+    help_summary='''\
+The Candela WiFi data plane test is designed to conduct an automatic testing of
+all combinations of station types, MIMO types, Channel Bandwidths, Traffic types,
+Traffic direction, Frame sizes etc… It will run a quick throughput test at every
+combination of these test variables and plot all the results in a set of charts to
+compare performance. The user is allowed to define an intended load as a percentage
+of the max theoretical PHY rate for every test combination. The expected behavior
+is that for every test combination the achieved throughput should be at least 70%%
+of the theoretical max PHY rate under ideal test conditions. This test provides
+a way to go through hundreds of combinations in a fully automated fashion and
+very easily find patterns and problem areas which can be further
+debugged using more specific testing.
+
+
+
+Throughput for each different traffic type.
+Datasets with names ending in '-LL' will include the IP, TCP, UDP
+and Ethernet header bytes in their calculation. For Armageddon traffic only,
+low-level throughput includes the Ethernet FCS and preamble.
+Other datasets report 'goodput' for the protocol.
+    '''
+
     parser = argparse.ArgumentParser(
         prog='lf_dataplane_test',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -541,6 +564,8 @@ INCLUDE_IN_README: False
                         default="")
 
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')    
+
 
 
     # TODO:  Add debug and log-level support, and propagate as needed.
@@ -548,6 +573,10 @@ INCLUDE_IN_README: False
     #   GUI, for instance when GUI is running locally against a remote LANforge system.
 
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
