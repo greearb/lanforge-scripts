@@ -5219,6 +5219,17 @@ def main():
     lfjson_port = 8080
     endp_types = "lf_udp"
 
+    help_summary='''\
+The Layer 3 Traffic Generation Test is designed to test the performance of the
+Access Point by running layer 3 TCP and/or UDP Traffic.  Layer-3 Cross-Connects represent a stream
+of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints,
+each of which is associated with a particular Port (physical or virtual interface).
+
+The test will create stations, create CX traffic between upstream port and stations, run traffic
+and generate a report.
+'''
+
+
     parser = argparse.ArgumentParser(
         prog='test_l3.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -6058,7 +6069,18 @@ INCLUDE_IN_README: False
     test_l3_parser.add_argument(
         '--ap_band_list', help="--ap_band_list '2g,5g,6g' supported bands", default='2g,5g,6g')
 
+    parser.add_argument('--help_summary',
+                        default=None,
+                        action="store_true",
+                        help='Show summary of what this script does')
+
+
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     # initialize pass / fail
     test_passed = False
