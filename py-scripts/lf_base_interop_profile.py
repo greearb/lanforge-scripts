@@ -101,7 +101,8 @@ class BaseInteropWifi(Realm):
             resource_id[final["resource-id"]] = final["name"]
         self.supported_devices_names = value
         self.supported_devices_resource_id = resource_id
-        logging.info("List of all Available Devices Serial Numbers in Interop Tab:".format(self.supported_devices_names))
+        logging.info(
+            "List of all Available Devices Serial Numbers in Interop Tab:".format(self.supported_devices_names))
         logging.info(self.supported_devices_names)
 
     def get_device_details(self, query="name", device="1.1.RZ8N70TVABP"):
@@ -142,7 +143,7 @@ class BaseInteropWifi(Realm):
                         new_list.append(y)
                 loc_dict = dict.fromkeys(new_list)
                 for i in loc_dict:
-                    lst = ["host_name", "hw_version"] # you can add the keys to the loc_dict if you want in feature.
+                    lst = ["host_name", "hw_version"]  # you can add the keys to the loc_dict if you want in feature.
                     loc_dict[i] = dict.fromkeys(lst)
                 for n, m in zip(range(len(new_list)), new_list):
                     loc_dict[m]['host_name'] = res[n][m]['hostname']
@@ -408,7 +409,7 @@ class BaseInteropWifi(Realm):
                 sec_key = []
                 for i in res:
                     sec_key.append(list(i.keys()))
-                new_list =[]
+                new_list = []
                 for z in sec_key:
                     for y in z:
                         new_list.append(y)
@@ -434,7 +435,7 @@ class BaseInteropWifi(Realm):
             for i in keys:
                 for z in i:
                     new_keys.append(z)
-            for i,z in zip(range(len(new_keys)), new_keys):
+            for i, z in zip(range(len(new_keys)), new_keys):
                 if z == eid:
                     mac = resources['interfaces'][i][z]['ap']
                     return mac
@@ -461,7 +462,6 @@ class BaseInteropWifi(Realm):
                                       user_key=self.session.get_session_based_key(),
                                       response_json_list=json_response,
                                       debug=True)
-
 
 
 class UtilityInteropWifi(BaseInteropWifi):
@@ -524,33 +524,34 @@ class UtilityInteropWifi(BaseInteropWifi):
         return_dict = dict.fromkeys(value)
         if '"' + ssid + '"' + "\n" in z:
             # print("yes")
-            logging.info("yes")
+            # logging.info("yes")
             ind = z.index('"' + ssid + '"' + "\n")
             # print(z[271])
             m = z[ind:]
-            logging.info(m)
+            # logging.info(m)
             if "ConnectAttempt:" in m:
                 connect_ind = m.index("ConnectAttempt:")
                 connect_attempt = m[connect_ind + 1]
-                logging.info("connection attempts " + connect_attempt)
+                # logging.info("connection attempts " + connect_attempt)
                 return_dict["ConnectAttempt"] = connect_attempt
             if 'ConnectFailure:' in m:
                 connect_fail_ind = m.index('ConnectFailure:')
                 connect_failure = m[connect_fail_ind + 1]
-                logging.info("connection failure " + connect_failure)
+                # logging.info("connection failure " + connect_failure)
                 return_dict["ConnectFailure"] = connect_failure
             if 'AssocRej:' in m:
                 ass_rej_ind = m.index('AssocRej:')
                 assocrej = m[ass_rej_ind + 1]
-                logging.info("association rejection " + assocrej)
+                # logging.info("association rejection " + assocrej)
                 return_dict["AssocRej"] = assocrej
             if 'AssocTimeout:' in m:
                 ass_ind = m.index('AssocTimeout:')
                 asso_timeout = m[ass_ind + 1]
-                logging.info("association timeout " +  asso_timeout)
+                # logging.info("association timeout " + asso_timeout)
                 return_dict["AssocTimeout"] = asso_timeout
         else:
-            logging.info(f"Given {ssid} ssid is not present in the 'ConnectAttempt', 'ConnectFailure', 'AssocRej', 'AssocTimeout' States")
+            logging.info(
+                f"Given {ssid} ssid is not present in the 'ConnectAttempt', 'ConnectFailure', 'AssocRej', 'AssocTimeout' States")
             logging.info("ssid is not present")
         return return_dict
 
@@ -599,7 +600,8 @@ class UtilityInteropWifi(BaseInteropWifi):
             }
             # print("Network info:", network_info_dict)
         return network_info_dict
-    
+
+
 class RealDevice(Realm):
     def __init__(self,
                  manager_ip=None,
@@ -624,7 +626,7 @@ class RealDevice(Realm):
         self.linux = 0
         self.windows = 0
         self.mac = 0
-    
+
     # getting data of all real devices
     def get_devices(self):
         devices            = []
