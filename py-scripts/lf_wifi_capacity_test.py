@@ -558,6 +558,21 @@ class WiFiCapacityTest(cv_test):
 
 
 def main():
+
+    help_summary='''\
+The Candela WiFi Capacity test is designed to measure performance of an
+Access Point when handling different amounts of WiFi Stations.
+The test allows the user to increase the number of stations in user defined
+steps for each test iteration and measure the per station and the overall
+throughput for each trial. Along with throughput other measurements made are
+client connection times, Fairness, % packet loss, DHCP times and more.
+The expected behavior is for the AP to be able to handle several stations
+(within the limitations of the AP specs) and make sure all stations get
+a fair amount of airtime both in the upstream and downstream.
+An AP that scales well will not show a significant over-all throughput
+decrease as more stations are added.
+'''
+
     parser = argparse.ArgumentParser(
         prog="lf_wifi_capacity_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -678,8 +693,13 @@ INCLUDE_IN_README: False
                         default=0)
 
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')    
 
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     cv_base_adjust_parser(args)
 
