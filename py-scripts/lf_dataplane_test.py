@@ -341,13 +341,6 @@ a way to go through hundreds of combinations in a fully automated fashion and
 very easily find patterns and problem areas which can be further
 debugged using more specific testing.
 
-
-
-Throughput for each different traffic type.
-Datasets with names ending in '-LL' will include the IP, TCP, UDP
-and Ethernet header bytes in their calculation. For Armageddon traffic only,
-low-level throughput includes the Ethernet FCS and preamble.
-Other datasets report 'goodput' for the protocol.
     '''
 
     parser = argparse.ArgumentParser(
