@@ -329,7 +329,7 @@ class DataplaneTest(cv_test):
 def main():
 
     help_summary='''\
-The Candela WiFi data plane test is designed to conduct an automatic testing of
+The Candela Tech WiFi data plane test is designed to conduct an automatic testing of
 all combinations of station types, MIMO types, Channel Bandwidths, Traffic types,
 Traffic direction, Frame sizes etc… It will run a quick throughput test at every
 combination of these test variables and plot all the results in a set of charts to
