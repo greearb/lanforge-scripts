@@ -19,10 +19,11 @@ fi
 scripts=(
     py-scripts/lf_wifi_capacity_test.py
     py-scripts/lf_dataplane_test.py
+    py-scripts/lf_rvr_test.py
+    py-scripts/lf_interop_ping.py
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
     py-scripts/sta_connect2.py
-    py-scripts/lf_interop_ping.py
     py-scripts/raw_cli.py
 )
 ./gen_html_help.pl "${scripts[@]}" > $DESTF
