@@ -4,6 +4,7 @@
 # lanforge-scripts checkout directory. The location below is correct in 
 # the case where this script is executed from btbits/x64_btbits/server/lf-scripts
 # (eg, a server build).
+# DESTF=${1:-./scripts_ug.php}  use for testing and local scripts_ug.ph generation in lanforge-scripts
 DESTF=${1:-../../html/scripts_ug.php}
 if [[ -z ${1:-} ]]; then
     echo "Using $DESTF as the default target."
