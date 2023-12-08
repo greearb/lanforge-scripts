@@ -270,6 +270,14 @@ class RvrTest(cvtest):
 
 
 def main():
+
+    help_summary='''\
+The Candela Rate vs Range Test measures the performance over distance of the Device Under Test. 
+Distance is emulated using programmable attenuation and a throughput test is run 
+at each distance/RSSI step and plotted on a chart. The test allows the user to plot 
+RSSI curves both upstream and downstream for different types of traffic and different station types.
+    '''
+
     parser = argparse.ArgumentParser(
         prog="lf_rvr_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -441,8 +449,14 @@ def main():
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     # logging configuration
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')    
+
 
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
