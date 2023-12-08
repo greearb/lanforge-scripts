@@ -25,6 +25,7 @@ my %reports = (
     "py-scripts/lf_wifi_capacity_test.py" => "wifi_capacity.pdf",
     "py-scripts/lf_dataplane_test.py" => "dataplane.pdf",
     "py-scripts/lf_rvr_test.py" => "rate_vs_range.pdf",
+    "py-scripts/test_l3.py" => "test_l3.pdf",
     );
 
 
