@@ -498,7 +498,15 @@ class Ping(Realm):
         report.write_pdf()
 
 
-if __name__ == '__main__':
+def main():
+
+    help_summary='''\
+The Candela Tech ping test is to evaluate network connectivity and measure the round-trip time taken for 
+data packets to travel from the source to the destination and back. It helps assess the reliability and latency of the network, 
+identifying any packet loss, delays, or variations in response times. The test aims to ensure that devices can communicate 
+effectively over the network and pinpoint potential issues affecting connectivity.
+    '''
+
     parser = argparse.ArgumentParser(
         prog='interop_ping.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -560,24 +568,20 @@ if __name__ == '__main__':
     # required arguments
     required.add_argument('--mgr',
                           type=str,
-                          help='hostname where LANforge GUI is running',
-                          required=True)
+                          help='hostname where LANforge GUI is running')
 
 
     required.add_argument('--target',
                           type=str,
-                          help='Target URL for ping test',
-                          required=True)
+                          help='Target URL for ping test')
     
     required.add_argument('--ping_interval',
                           type=str,
-                          help='Interval (in seconds) between the echo requests',
-                          required=True)
+                          help='Interval (in seconds) between the echo requests')
 
     required.add_argument('--ping_duration',
                           type=float,
-                          help='Duration (in minutes) to run the ping test',
-                          required=True)
+                          help='Duration (in minutes) to run the ping test')
 
     # optional arguments
 
@@ -641,8 +645,15 @@ if __name__ == '__main__':
 
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')    
+
 
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     # set the logger level to debug
     logger_config = lf_logger_config.lf_logger_config()
@@ -961,3 +972,7 @@ if __name__ == '__main__':
     # ping.cleanup()
 
     ping.generate_report()
+
+if __name__ == "__main__":
+    main()
+
