@@ -12,7 +12,7 @@ EXAMPLE:
         # To run port-reset test on specified real devices (android, laptops)
 
             ./lf_interop_port_reset_test.py --host 192.168.200.192 --mgr_ip 192.168.1.161 --dut TestDut --ssid OpenWifi
-            --passwd OpenWifi --encryp psk2 --reset 10 --time_int 5 --wait_time 5 --release 11
+            --passwd OpenWifi --encryp psk2 --reset 10 --time_int 5 --release 11
 
 SCRIPT_CLASSIFICATION:  Toggling, Report Generation, Each Reset Wi-Fi Messages
 
@@ -107,7 +107,7 @@ class InteropPortReset(Realm):
         self.mgr_ip = mgr_ip
         self.reset = reset
         self.time_int = time_int
-        self.wait_time = wait_time
+        # self.wait_time = wait_time
         self.supported_release = suporrted_release
         self.device_name = []
         self.lf_report = lf_report_pdf.lf_report(_path="", _results_dir_name="Interop_port_reset_test",
@@ -617,8 +617,7 @@ class InteropPortReset(Realm):
             logging.info(f"Test Started at {present_time}")
             logging.info("Test started at " + str(present_time))
             # get the list of adb devices
-            self.adb_device_list = self.interop.check_sdk_release(
-                selected_android_devices=self.final_selected_android_list)
+            self.adb_device_list = self.interop.check_sdk_release(selected_android_devices=self.final_selected_android_list)
             self.windows_list = self.base_interop_profile.windows_list
             self.linux_list = self.base_interop_profile.linux_list
             self.mac_list = self.base_interop_profile.mac_list
@@ -727,9 +726,9 @@ class InteropPortReset(Realm):
                         else:
                             logging.info("**** The Device is not connected to the expected ssid ****")
                     else:
-                        logging.info(f"Waiting for {self.wait_time} sec & Checking again the status of the device")
-                        logging.info(f"Waiting for {self.wait_time} & Checking again")
-                        time.sleep(int(self.wait_time))
+                        # logging.info(f"Waiting for {self.wait_time} sec & Checking again the status of the device")
+                        logging.info(f"Waiting for 30 sec & Checking again")
+                        time.sleep(30)
                         dev_state = self.utility.get_device_state(device=i)
                         logging.info(f"Device state {dev_state}")
                         logging.info("device state" + str(dev_state))
@@ -810,8 +809,8 @@ class InteropPortReset(Realm):
                             logging.info("PASSED : ALL STATIONS GOT IP")
                         else:
                             logging.info("FAILED : MAY BE NOT ALL STATIONS ACQUIRED IP'S")
-                        logging.info("Waiting until given %s sec waiting time to finish..." % self.wait_time)
-                    time.sleep(int(self.wait_time))
+                        # logging.info("Waiting until given %s sec waiting time to finish..." % self.wait_time)
+                    time.sleep(30)
                     for i in self.all_selected_devices:
                         get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee,
                                                                  file_name=f"reset_{r}_log.json")
@@ -1147,13 +1146,23 @@ class InteropPortReset(Realm):
 
             date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
             # self.lf_report.move_data(_file_name="overall_reset_test.log")
+            security = ""
+            if self.encryp == "psk2":
+                security = "wpa2"
+            elif self.encryp == "psk3":
+                security = "wpa3"
+            elif self.encryp == "psk":
+                security = "wpa"
+            else:
+                security = "open"
             test_setup_info = {
                 "DUT Name": self.dut_name,
                 "LANforge ip": self.host,
                 "SSID": self.ssid,
+                "Security": security,
                 "Total Reset Count": self.reset,
-                "No of Clients": len(self.all_selected_devices),
-                "Wait Time": str(self.wait_time) + " sec",
+                "No of Clients": f"{len(self.user_query[0])} (Windows: {len(self.windows_list)}, Linux: {len(self.linux_list)}, Mac: {len(self.mac_list)}, Android: {len(self.adb_device_list)})",
+                # "Wait Time": str(self.wait_time) + " sec",
                 "Time intervel between resets": str(self.time_int) + " sec",
                 "Test Duration": test_dur,
             }
@@ -1235,11 +1244,11 @@ class InteropPortReset(Realm):
                 "Device Type": device_type,
                 # "Model": model,
                 # "SDK Release": release,
-                "Resets": self.total_resets,
-                "Dissconnects": self.total_disconnects,
-                "Scannings": self.total_scans,
-                "AsscAttemts": self.total_ass_attemst,
-                "AsscRejects": self.total_ass_rejects,
+                "Port Resets": self.total_resets,
+                "Disconnects": self.total_disconnects,
+                "Scans": self.total_scans,
+                "Assoc Attemts": self.total_ass_attemst,
+                "Assoc Rejects": self.total_ass_rejects,
                 "Connects": self.total_connects
             }
             test_setup = pd.DataFrame(table_2)
@@ -1277,7 +1286,7 @@ EXAMPLE:
         # To run port-reset test on specified real devices (android, laptops)
 
             python3 lf_interop_port_reset_test.py --host 192.168.200.63 --mgr_ip 192.168.1.61 --dut Test_Dut 
-            --ssid RDT_wpa2 --passwd OpenWifi --encryp psk2 --reset 1 --time_int 5 --wait_time 5 --release 11
+            --ssid RDT_wpa2 --passwd OpenWifi --encryp psk2 --reset 1 --time_int 5 --release 11
 
 SCRIPT_CLASSIFICATION:  Toggling, Report Generation, Each Reset Wifi Messages
 
@@ -1329,8 +1338,8 @@ INCLUDE_IN_README: False
     parser.add_argument("--time_int", type=int, default=5,
                         help='Specify the time interval in seconds after which reset should happen.')
 
-    parser.add_argument("--wait_time", type=int, default=20,
-                        help='Specify the wait time in seconds for WIFI Supplicant Logs.')
+    # parser.add_argument("--wait_time", type=int, default=20,
+    #                     help='Specify the wait time in seconds for WIFI Supplicant Logs.')
 
     parser.add_argument("--release", nargs='+', default=["12"],
                         help='Specify the SDK release version (Android Version) of real clients to be supported in test.'
@@ -1364,7 +1373,7 @@ INCLUDE_IN_README: False
                            reset=args.reset,
                            # clients=args.clients,
                            time_int=args.time_int,
-                           wait_time=args.wait_time,
+                           # wait_time=args.wait_time,
                            suporrted_release=args.release,
                            mgr_ip=args.mgr_ip
                            )
