@@ -21,7 +21,10 @@ my $footer = "<?php require_once(\"footer.php\"); ?>
 ";
 
 my %reports = (
-    "py-scripts/lf_interop_ping.py" => "interop_ping.pdf"
+    "py-scripts/lf_interop_ping.py" => "interop_ping.pdf",
+    "py-scripts/lf_wifi_capacity_test.py" => "wifi_capacity.pdf",
+    "py-scripts/lf_dataplane_test.py" => "dataplane.pdf",
+    "py-scripts/lf_rvr_test.py" => "rate_vs_range.pdf",
     );
 
 
