@@ -60,8 +60,7 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 if 'py-scripts' not in sys.path:
-    sys.path.append('/home/agent11/Desktop/lanforge-scripts/py-scripts')
-    # sys.path.append('/home/lanforge/lanforge-scripts/py-scripts')
+    sys.path.append('/home/lanforge/lanforge-scripts/py-scripts')
 
 from lf_base_interop_profile import RealDevice
 from datetime import datetime, timedelta
@@ -131,6 +130,23 @@ class Ping(Realm):
         self.generic_endps_profile.interval = self.interval
         self.Devices = None
 
+    def change_target_to_ip(self):
+
+        # checking if target is an IP or a port
+        if(self.target.count('.') != 3):
+            # checking if target is eth1 or 1.1.eth1
+            target_port_list = self.name_to_eid(self.target)
+            shelf, resource, port, _ = target_port_list
+            try:
+                target_port_ip = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port))['interface']['ip']
+            except:
+                logging.error('The target port {} not found on the LANforge. Please change the target.'.format(self.target))
+                exit(0)
+            self.target = target_port_ip
+            print(self.target)
+        else:
+            print(self.target)
+    
     def cleanup(self):
 
         if (self.enable_virtual):
@@ -511,7 +527,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
         prog='interop_ping.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''
-            Allows user to run the ping test on a target IP for the given duration and packet interval
+            Allows user to run the ping test on a target IP or port for the given duration and packet interval
             with either selected number of virtual stations or provides the list of available real devices
             and allows the user to select the real devices and run ping test on them.
         ''',
@@ -565,25 +581,26 @@ effectively over the network and pinpoint potential issues affecting connectivit
     required = parser.add_argument_group('Required arguments')
     optional = parser.add_argument_group('Optional arguments')
 
-    # required arguments
-    required.add_argument('--mgr',
-                          type=str,
-                          help='hostname where LANforge GUI is running')
-
-
-    required.add_argument('--target',
-                          type=str,
-                          help='Target URL for ping test')
-    
-    required.add_argument('--ping_interval',
-                          type=str,
-                          help='Interval (in seconds) between the echo requests')
-
-    required.add_argument('--ping_duration',
-                          type=float,
-                          help='Duration (in minutes) to run the ping test')
-
     # optional arguments
+    optional.add_argument('--mgr',
+                          type=str,
+                          help='hostname where LANforge GUI is running',
+                          default='localhost')
+
+    optional.add_argument('--target',
+                          type=str,
+                          help='Target URL or port for ping test',
+                          default='eth1')
+    
+    optional.add_argument('--ping_interval',
+                          type=str,
+                          help='Interval (in seconds) between the echo requests',
+                          default='1')
+
+    optional.add_argument('--ping_duration',
+                          type=float,
+                          help='Duration (in minutes) to run the ping test',
+                          default=1)
 
     optional.add_argument('--ssid',
                           type=str,
@@ -727,6 +744,9 @@ effectively over the network and pinpoint potential issues affecting connectivit
     # ping object creation
     ping = Ping(host=mgr_ip, port=mgr_port, ssid=ssid, security=security, password=password, radio=radio,
                 lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=duration, debug=debug)
+    
+    # changing the target from port to IP
+    ping.change_target_to_ip()
 
     # creating virtual stations if --virtual flag is specified
     if (args.virtual):
