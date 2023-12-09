@@ -5,7 +5,7 @@
         ]  
     },
     "test_suites":{
-        "dp_perf_2g_W0_W2_W4_W5_W7_tx":{
+        "dp_perf_2g_W0_W2_W3_W4_W5_W7_tx":{
             "CC_DUT_ATH10K_9984_2G_W0":{
                 "enabled":"TRUE",
                 "load_db":"skip",
