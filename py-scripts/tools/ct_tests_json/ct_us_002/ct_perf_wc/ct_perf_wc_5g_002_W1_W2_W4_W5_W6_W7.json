@@ -8,7 +8,7 @@
         ]  
     },
     "test_suites":{
-        "wc_perf_5g_W1_W2_W4_W5_W6_W7":{
+        "wc_perf_5g_W1_W2_W3_W4_W5_W6_W7":{
             "CC_DUT_ATH10K_9984_5G_W1":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -18,6 +18,9 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=3 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
@@ -57,6 +60,8 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=3 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
@@ -87,6 +92,47 @@
                     " --set DUT_SET_NAME"
                 ]
             },
+            "CC_DUT_ATH10K_998x_5G_W3":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=3 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+                ]
+            },
+            "CC_ATH10K_998x_5G_W3":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario WC_ATH10K_9984_5G_W1 ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 32 'DUT: USE_DUT_NAME Radio-2' NA wiphy3,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                ]
+            },
+            "WC_ATH10K_998x_5G_W3":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "iterations":"1",
+                "load_db":"skip",
+                "command":"lf_wifi_capacity_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name WC_ATH10K_998x_5G_W3",
+                    " --upstream UPSTREAM_PORT --batch_size 1,8,16,32,64 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_ATH10K_998x_5G_W3'",
+                    " --test_rig TEST_RIG ",
+                    " --set DUT_SET_NAME"
+                ]
+            },
             "CC_DUT_AX200_5G_W4":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -96,6 +142,8 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=3 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
@@ -135,6 +183,8 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=3 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
@@ -174,6 +224,8 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=3 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME",
                     " --dut_flag DHCPD-LAN"
                 ]
@@ -215,6 +267,8 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=3 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME",
                     " --dut_flag DHCPD-LAN"
                 ]
@@ -256,6 +310,8 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=3 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
