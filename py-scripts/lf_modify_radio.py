@@ -51,15 +51,15 @@ logger = logging.getLogger(__name__)
 #http://www.candelatech.com/lfcli_ug.php#set_wifi_radio
 class lf_modify_radio():
     def __init__(self,
-                lf_mgr=None,
-                lf_port=8080,
-                lf_user=None,
-                lf_passwd=None,
-                debug=False,
-                static_ip=None,
-                ip_mask = None,
-                gateway_ip=None
-                ):
+                 lf_mgr=None,
+                 lf_port=8080,
+                 lf_user=None,
+                 lf_passwd=None,
+                 debug=False,
+                 static_ip=None,
+                 ip_mask=None,
+                 gateway_ip=None,
+                 session=None):
         self.lf_mgr = lf_mgr
         self.lf_port = lf_port
         self.lf_user = lf_user
@@ -69,13 +69,14 @@ class lf_modify_radio():
         self.ip_mask = ip_mask
         self.gateway_ip = gateway_ip
 
-        self.session = LFSession(lfclient_url="http://%s:8080" % self.lf_mgr,
-                                    debug=debug,
-                                    connection_timeout_sec=4.0,
-                                    stream_errors=True,
-                                    stream_warnings=True,
-                                    require_session=True,
-                                    exit_on_error=True)
+        if not session:
+            self.session = LFSession(lfclient_url="http://%s:8080" % self.lf_mgr,
+                                     debug=debug,
+                                     connection_timeout_sec=4.0,
+                                     stream_errors=True,
+                                     stream_warnings=True,
+                                     require_session=True,
+                                     exit_on_error=True)
         # type hinting
         self.command: LFJsonCommand
         self.command = self.session.get_command()
