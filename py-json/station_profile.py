@@ -625,7 +625,7 @@ class StationProfile:
 
     def modify(self, radio):
         for station in self.station_names:
-            logger.info(station)
+            logger.info(f"modifying station {station}")
             self.add_sta_data["flags"] = self.add_named_flags(self.desired_add_sta_flags, add_sta.add_sta_flags)
             self.add_sta_data["flags_mask"] = self.add_named_flags(self.desired_add_sta_flags_mask,
                                                                    add_sta.add_sta_flags)
@@ -666,11 +666,11 @@ class StationProfile:
             add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
             if self.debug:
                 logger.debug(self.lfclient_url + "/cli_json/add_sta")
-                logger.warning(self.add_sta_data)
+                logger.debug(self.add_sta_data)
             add_sta_r.addPostData(self.add_sta_data)
             add_sta_r.jsonPost(debug=self.debug, show_error=True, die_on_error_=False)
 
-            do_set_port = 0;
+            do_set_port = 0
             self.desired_set_port_cmd_flags = []
             self.desired_set_port_current_flags = []
             self.desired_set_port_interest_flags = []
@@ -725,4 +725,4 @@ class StationProfile:
                                     debug=self.debug,
                                     die_on_error_=False,
                                     response_json_list_=response_list)
-                pprint.pprint(["post", self.set_port_data, "response", response_list])
+                # pprint.pprint(["post", self.set_port_data, "response", response_list])
