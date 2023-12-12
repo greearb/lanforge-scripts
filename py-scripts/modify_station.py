@@ -20,6 +20,7 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 set_port = importlib.import_module("py-json.LANforge.set_port")
 add_sta = importlib.import_module("py-json.LANforge.add_sta")
+import lf_modify_radio
 
 
 class ModifyStation(Realm):
@@ -105,7 +106,7 @@ class ModifyStation(Realm):
             pprint.pprint(["Full response:", response])
             return
         for record in response["interfaces"]:
-            #pprint.pprint(["record", record])
+            # pprint.pprint(["record", record])
             eid = list(record.keys())[0]
             print(f"{eid}")
 
@@ -119,24 +120,64 @@ class ModifyStation(Realm):
             return
 
         for record in response["interfaces"]:
-            #pprint.pprint(["record", record])
+            # pprint.pprint(["record", record])
             eid = list(record.keys())[0]
             if record[eid]["port type"] == "WIFI-STA":
                 print(f"{eid}")
 
     def set_station(self):
+        print(f"modifying station on radio {self.radio}")
         result = self.station_profile.modify(radio=self.radio)
+        return result
+
+    def adjust_radio(self, radio_eid=None):
+        if not radio_eid:
+            raise ValueError("adjust_radio: requires radio eid")
+
+        radio_adjuster = lf_modify_radio.lf_modify_radio(lf_mgr=self.host,
+                                                         lf_port=self.port,
+                                                         lf_user=None,
+                                                         lf_passwd=None,
+                                                         debug=self.debug,
+                                                         static_ip=None,
+                                                         ip_mask=None,
+                                                         gateway_ip=None)
+
+        eid_hunks: list = radio_eid.split(".")
+        if len(eid_hunks) < 3:
+            raise ValueError(f"adjust_radio: wants a three-part eid (eg: 1.2.wiphy0), but has [{radio_eid}]")
 
         if self.channel or self.txpower or self.antennas or self.country:
-            print("would check to see if provided radio matches provided station")
+            print("checking to see if provided radio matches provided station")
+            port_list = self.find_ports_like(pattern=self.station_list[0],
+                                             _fields="port,alias,parent dev",
+                                             debug_=True)
+
+            if not port_list:
+                pprint.pprint(["port_list:", port_list])
+                raise ValueError(f"station:{self.station_list[0]} does not correspond to radio: {self.radio}")
+
         if self.channel:
             print("would set radio channel")
+
         if self.txpower:
             print("would set radio txpower")
+
         if self.antennas:
             print("would set radio nss")
 
-        return result
+        print(f"...done {self.radio}")
+        pprint.pprint(["EID HUNKS", eid_hunks, "ONE:", eid_hunks[1]])
+        res: int = eid_hunks[1]
+        radio: str = str(eid_hunks[2])
+
+        radio_adjuster.set_wifi_radio(_resource=res,
+                                      _radio=radio,
+                                      _shelf=1,
+                                      _antenna=self.antennas,
+                                      _channel=self.channel,
+                                      _txpower=self.txpower,
+                                      _country_code=self.country)
 
 
 def main():
@@ -291,8 +332,12 @@ def main():
     if not args.radio:
         print("--radio eid required, eg 1.6.wiphy0")
         exit(1)
+
     if (not args.enable_flag) or (not args.disable_flag):
-        print("Missing --enable_flag or --disable_flags will probably trouble.")
+        print("No --enable_flag or --disable_flags listed to change.")
+
+    if (not args.station) or (len(args.station) < 1):
+        raise ValueError("requires --station eid (eg: 1.1.wlan0)")
 
     modify_station = ModifyStation(_host=args.mgr,
                                    _port=args.mgr_port,
@@ -316,11 +361,21 @@ def main():
                                    _antennas=args.antennas,
                                    _country=args.country,
                                    _debug_on=args.debug)
+    modifications: int = 0
     if args.ip == "DHCP" or args.ip == "dhcp":
         modify_station.dhcp = True
-    modify_station.set_station()
+    if args.set_state or args.ssid or args.bssid or args.passwd \
+            or args.mac or args.enable_flag or args.disable_flag \
+            or args.ip or args.netmask or args.gateway:
+        modifications += 1
+        modify_station.set_station()
 
-    # TODO:  Check return code and exit accordingly
+    if args.channel or args.txpower or args.antennas or args.country:
+        modifications += 1
+        modify_station.adjust_radio(radio_eid=args.radio)
+
+    if modifications < 1:
+        print("** ** No stations modified ** **")
 
 
 if __name__ == "__main__":
