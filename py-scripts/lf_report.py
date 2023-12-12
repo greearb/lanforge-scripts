@@ -124,6 +124,12 @@ class lf_report:
         self.graph_image = ""
         self.csv_file_name = ""
         self.html = ""
+        self.allure_executor = ""
+        self.allure_executor_dir = ""
+        self.write_out_allure_executor = ""
+        self.allure_environment_properties = ""
+        self.allure_environment_properties_dir = ""
+        self.write_out_allure_environment_properties = ""
         self.junit = ""
         self.write_output_junit = ""
         self.junit_dir = ""
@@ -409,6 +415,46 @@ class lf_report:
         return self.write_output_html
 
     # will put the set here
+    def set_allure_environment_properties(self,allure_environment_properties):
+        self.allure_environment_properties = allure_environment_properties
+
+    def write_allure_environment_properties(self,test_suite=""):
+        self.allure_environment_properties_dir ="{}".format(self.path_date_time)
+        if test_suite == "":
+            self.write_out_allure_environment_properties = "{}/environment.properties".format(self.path_date_time)
+        else:
+            self.write_out_allure_environment_properties = "{dir}/{suite}_environment.properties".format(dir=self.path_date_time,suite=test_suite)
+        logger.info("write_out_allure_environment_properties: {}".format(self.write_out_allure_environment_properties))
+        logger.info("allure_environment_properties_dir: {}".format(self.allure_environment_properties_dir))
+        try:
+            test_file = open(self.write_out_allure_environment_properties, "w")
+            test_file.write(self.allure_environment_properties)
+            test_file.close()
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.warning("write_out_allure_environment_properties failed")
+        return self.write_out_allure_environment_properties, self.allure_environment_properties_dir
+
+    def set_allure_executor(self,allure_executor):
+        self.allure_executor = allure_executor
+
+    def write_allure_executor(self,test_suite=""):
+        self.allure_executor_dir ="{}".format(self.path_date_time)
+        if test_suite == "":
+            self.write_out_allure_executor = "{}/executor.json".format(self.path_date_time)
+        else:
+            self.write_out_allure_executor = "{dir}/{suite}_executor.json".format(dir=self.path_date_time,suite=test_suite)
+        logger.info("write_out_allure_executor: {}".format(self.write_out_allure_executor))
+        logger.info("allure_executor_dir: {}".format(self.allure_executor_dir))
+        try:
+            test_file = open(self.write_out_allure_executor, "w")
+            test_file.write(self.allure_executor)
+            test_file.close()
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.warning("write_out_allure_executor failed")
+        return self.write_out_allure_executor, self.allure_executor_dir
+
     def set_junit_results(self,junit_results):
         self.junit = junit_results
 
