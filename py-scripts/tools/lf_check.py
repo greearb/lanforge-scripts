@@ -2035,6 +2035,9 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
 
+    parser.add_argument("--no_exit","--no_exit_if_no_gui",dest='no_exit_if_no_gui',
+                        help="--no_exit_if_no_gui store true , if gui unavailable do not exit to allow gui restart",)
+
     args = parser.parse_args()
 
     # set up logger
@@ -2354,6 +2357,12 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     logger.error(
                         "ERROR: lanforge_gui_version exception, tests aborted check lanforge ip")
                     exit(1)
+
+                # check to see if there was a error
+                if len(lanforge_gui_version_full) == 0 or lanforge_gui_version  == "" or lanforge_gui_build_date == "" or lanforge_gui_git_sha == "":
+                    if not args.no_exit_if_no_gui:
+                        logger.error("LANforge GUI Not Running, so exiting")
+                        exit(1)
 
                 try:
                     lanforge_radio_json, lanforge_radio_text = check.get_lanforge_radio_information()
