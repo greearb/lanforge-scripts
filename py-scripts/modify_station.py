@@ -150,7 +150,7 @@ class ModifyStation(Realm):
         if self.channel or self.txpower or self.antennas or self.country:
             print("checking to see if provided radio matches provided station")
             port_list = self.find_ports_like(pattern=self.station_list[0],
-                                             _fields="port,alias,parent dev",
+                                             _fields="port,alias,parent dev,port type",
                                              debug_=True)
 
             if not port_list:
