@@ -745,6 +745,8 @@ class Realm(LFCliBase):
 
     # Searches for ports that match a given pattern and returns a list of names
     def find_ports_like(self, pattern="", _fields="_links,alias,device,port+type", resource=0, debug_=False):
+        if not pattern:
+            raise ValueError("find_ports_list wants a non-empty pattern")
         if resource == 0:
             url = "/port/1/list?fields=%s" % _fields
         else:
@@ -806,6 +808,11 @@ class Realm(LFCliBase):
                             if (port_suf >= match.group(2)) and (port_suf <= match.group(3)):
                                 # logger.info("%s: suffix[%s] between %s:%s" % (port_name, port_name, match.group(2), match.group(3))
                                 matched_map[port_eid] = record
+            else:
+                for port_eid, record in prelim_map.items():
+                    if port_eid.startswith(pattern):
+                        matched_map[port_eid] = record
+
         except ValueError as e:
             self.error(e)
 
