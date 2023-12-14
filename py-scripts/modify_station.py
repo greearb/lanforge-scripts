@@ -24,6 +24,10 @@ import lf_modify_radio
 
 
 class ModifyStation(Realm):
+    ANTENNA_VALUES: dict = {
+        "All": 0, "1x1": 1, "2x2": 4, "3x3": 7, "4x4": 8, "8x8": 9
+    }
+
     def __init__(self,
                  _ssid="NA",
                  _state=None,
@@ -152,10 +156,24 @@ class ModifyStation(Realm):
             port_list = self.find_ports_like(pattern=self.station_list[0],
                                              _fields="port,alias,parent dev,port type",
                                              debug_=True)
-
             if not port_list:
-                pprint.pprint(["port_list:", port_list])
                 raise ValueError(f"station:{self.station_list[0]} does not correspond to radio: {self.radio}")
+            num_matching=0
+            pprint.pprint(["port_list:", port_list])
+            if isinstance(port_list, dict):
+                for eid, record in port_list.items():
+                    if not record["parent dev"]:
+                        continue
+                    if self.radio.endswith(record["parent dev"]):
+                        num_matching+=1
+            elif isinstance(port_list, list):
+                for record in port_list:
+                    if not record["parent dev"]:
+                        continue
+                    if record["parent dev"] == self.radio:
+                        num_matching+=1
+            if num_matching < 1:
+                raise ValueError(f"Station [{self.station_list[0]}] and Radio[{self.radio}] do not correspond")
 
         if self.channel:
             print("would set radio channel")
@@ -178,6 +196,14 @@ class ModifyStation(Realm):
                                       _channel=self.channel,
                                       _txpower=self.txpower,
                                       _country_code=self.country)
+
+    @staticmethod
+    def convert_antenna(antenna_str=None):
+        if not antenna_str:
+            return 0
+        if antenna_str in ModifyStation.ANTENNA_VALUES:
+            return ModifyStation.ANTENNA_VALUES[antenna_str]
+        return 0
 
 
 def main():
@@ -213,9 +239,9 @@ def main():
             --ip            192.168.45.2
             --netmask       255.255.255.0
             --gateway       192.168.45.1
-            --channel       [soon] 6
-            --txpower       [soon] 24
-            --antennas      [soon] 3
+            --channel       6
+            --txpower       24
+            --antennas      2x2
             --country       [soon] US
             --debug
         --------------------
@@ -294,11 +320,14 @@ def main():
     optional.add_argument('--channel',
                           help="specify channel for radio, requires --radio")
     optional.add_argument('--txpower',
-                          help="specify txpower for radio, requires --radio")
+                          help="specify txpower for radio, requires --radio, use 0-25 or DEFAULT or -1")
+
     optional.add_argument('--antennas', '--antenna',
+                          choices=["All", "1x1", "2x2", "3x3", "4x4", "8x8"],
                           help="specify antenna diversity for radio (NSS), requires --radio")
     optional.add_argument('--country',
-                          help="sets country region for all radios in a resource; requires --radio, all radios on that resource will be changed")
+                          help="sets country region for all radios in a resource; requires --radio,"
+                               " all radios on that resource will be changed")
     optional.add_argument('--list_stations',
                           action="store_true",
                           help="lists station by Eid")
@@ -358,7 +387,7 @@ def main():
                                    _gateway=args.gateway,
                                    _channel=args.channel,
                                    _txpower=args.txpower,
-                                   _antennas=args.antennas,
+                                   _antennas=ModifyStation.ANTENNA_VALUES[args.antennas],
                                    _country=args.country,
                                    _debug_on=args.debug)
     modifications: int = 0
