@@ -91,7 +91,8 @@ class lf_modify_radio():
                         _antenna=None,
                         _channel=None,
                         _txpower=None,
-                        _country_code=None):
+                        _country_code=None,
+                        _flags=None):
 
         self.command.post_set_wifi_radio(
                                 resource=_resource,
@@ -101,6 +102,7 @@ class lf_modify_radio():
                                 channel=_channel,
                                 txpower=_txpower,
                                 country=_country_code,
+                                flags=_flags,
                                 debug=self.debug)
 
     def enable_dhcp_eth(self, interface="1.1.eth2"):
