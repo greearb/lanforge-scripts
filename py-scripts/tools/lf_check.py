@@ -2720,6 +2720,11 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
     # copy allure report to latest
     allure_latest_dir = os.path.join(report.path,"allure-report-latest")
+        
+    # check to see if the directory is present
+    if not os.path.exists(allure_latest_dir):
+        os.makedirs(allure_latest_dir)
+
     new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir, dirs_exist_ok=True)
     logger.debug("allure report directory copied to {latest}".format(latest=new_allure_latest_dir))
 
