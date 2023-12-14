@@ -2719,7 +2719,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     logger.debug("allure report directory with timestamp {allure_report}".format(allure_report=new_allure_epoch_dir))
 
     # copy allure report to latest
-    allure_latest_dir = os.path.join(report.path,"latest")
+    allure_latest_dir = os.path.join(report.path,"allure-report-latest")
     new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir, dirs_exist_ok=True)
     logger.debug("allure report directory copied to {latest}".format(latest=new_allure_latest_dir))
 
