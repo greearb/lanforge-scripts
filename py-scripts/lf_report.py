@@ -415,15 +415,16 @@ class lf_report:
         return self.write_output_html
 
     # will put the set here
-    def set_allure_environment_properties(self,allure_environment_properties):
+    def set_allure_environment_properties(self,allure_environment_properties=""):
         self.allure_environment_properties = allure_environment_properties
 
-    def write_allure_environment_properties(self,test_suite=""):
-        self.allure_environment_properties_dir ="{}".format(self.path_date_time)
-        if test_suite == "":
+    def write_allure_environment_properties(self,allure_results_path=""):
+        # self.allure_environment_properties_dir ="{}".format(self.path_date_time)
+        if allure_results_path == "":
             self.write_out_allure_environment_properties = "{}/environment.properties".format(self.path_date_time)
         else:
-            self.write_out_allure_environment_properties = "{dir}/{suite}_environment.properties".format(dir=self.path_date_time,suite=test_suite)
+            self.allure_environment_properties_dir = allure_results_path
+            self.write_out_allure_environment_properties = "{allure_results_path}/environment.properties".format(allure_results_path=allure_results_path)
         logger.info("write_out_allure_environment_properties: {}".format(self.write_out_allure_environment_properties))
         logger.info("allure_environment_properties_dir: {}".format(self.allure_environment_properties_dir))
         try:
@@ -438,12 +439,12 @@ class lf_report:
     def set_allure_executor(self,allure_executor):
         self.allure_executor = allure_executor
 
-    def write_allure_executor(self,test_suite=""):
-        self.allure_executor_dir ="{}".format(self.path_date_time)
-        if test_suite == "":
+    def write_allure_executor(self,allure_results_path=""):
+        if allure_results_path == "":
             self.write_out_allure_executor = "{}/executor.json".format(self.path_date_time)
         else:
-            self.write_out_allure_executor = "{dir}/{suite}_executor.json".format(dir=self.path_date_time,suite=test_suite)
+            self.write_out_allure_executor = "{allure_results_path}/executor.json".format(allure_results_path=allure_results_path)
+            self.allure_executor_dir = allure_results_path
         logger.info("write_out_allure_executor: {}".format(self.write_out_allure_executor))
         logger.info("allure_executor_dir: {}".format(self.allure_executor_dir))
         try:
@@ -475,7 +476,36 @@ class lf_report:
             logger.warning("write_junit failed")
         return self.write_output_junit, self.junit_dir
 
-    def update_allure_results_history(self,allure_results=""):
+    def update_allure_results_history(self,allure_results_path=""):
+        # TODO abiltiy to set the Allure results dir
+        if allure_results_path == "":
+            self.allure_results_history_path = os.path.join(self.path_date_time,"history")
+            self.allure_results = "{allure_results_path}".format(allure_results_path=self.path_date_time)
+
+        else:
+            #TODO check if the path is passed in for allure results
+            self.allure_results = allure_results_path
+            self.allure_results_history_path = os.path.join(self.allure_results,"history")
+
+        logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history,allure_results=self.allure_results_history_path))
+
+        # check to see if the directory is present
+        if not os.path.exists(self.allure_results_history_path):
+            os.makedirs(self.allure_results_history_path)
+
+        # allure_report directory
+        try:
+            files = os.listdir(self.allure_report_history)
+            for fname in files:
+                allure_report_history_file =  str(self.allure_report_history_path) + '/' + str(fname)
+                allure_results_history_file = str(self.allure_results_history_path) + '/' + str(fname)
+                shutil.copy(allure_report_history_file,allure_results_history_file)
+
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.info("Either no allure report present or the copy of history failed.")
+        
+    def copy_allure_report(self):
         # TODO abiltiy to set the Allure results dir
         if allure_results == "":
             self.allure_results_history_path = os.path.join(self.path_date_time,"history")
@@ -503,7 +533,8 @@ class lf_report:
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("Either no allure report present or the copy of history failed.")
-        
+
+
 
     def generate_allure_report(self):
         # TODO current the junit.xml is placed in the base directory 
