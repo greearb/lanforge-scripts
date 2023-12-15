@@ -177,13 +177,13 @@ def main():
         exit(1)
 
     modify_radio = lf_modify_radio(lf_mgr=args.mgr,
-                            lf_port=args.mgr_port,
-                            lf_user=args.lf_user,
-                            lf_passwd=args.lf_passwd,
-                            debug=args.debug,
-                            static_ip=args.static_ip,
-                            ip_mask=args.ip_mask,
-                            gateway_ip=args.gateway_ip
+                                   lf_port=args.mgr_port,
+                                   lf_user=args.lf_user,
+                                   lf_passwd=args.lf_passwd,
+                                   debug=args.debug,
+                                   static_ip=args.static_ip,
+                                   ip_mask=args.ip_mask,
+                                   gateway_ip=args.gateway_ip
                                    )
     if args.enable_dhcp == "True":
         modify_radio.enable_dhcp_eth(interface=args.radio)
