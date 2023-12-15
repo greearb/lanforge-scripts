@@ -368,6 +368,9 @@ def main():
     if (not args.station) or (len(args.station) < 1):
         raise ValueError("requires --station eid (eg: 1.1.wlan0)")
 
+    antenna_flag: int = None
+    if args.antennas:
+        antenna_flag = ModifyStation.ANTENNA_VALUES[args.antennas]
     modify_station = ModifyStation(_host=args.mgr,
                                    _port=args.mgr_port,
                                    _state=args.set_state,
@@ -387,7 +390,7 @@ def main():
                                    _gateway=args.gateway,
                                    _channel=args.channel,
                                    _txpower=args.txpower,
-                                   _antennas=ModifyStation.ANTENNA_VALUES[args.antennas],
+                                   _antennas=antenna_flag,
                                    _country=args.country,
                                    _debug_on=args.debug)
     modifications: int = 0
