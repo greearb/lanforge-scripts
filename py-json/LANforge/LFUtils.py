@@ -201,7 +201,7 @@ def port_up_request(resource_id, port_name, debug_on=False):
     if port_name:
         eid = name_to_eid(port_name)
         if resource_id == None:
-            resource_id = eid[1];
+            resource_id = eid[1]
             port_name = eid[2]
 
     data = {
@@ -544,18 +544,18 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
 def speed_to_int(speed):
     # Parse speed into a number.  Initial implementation is for ping output, but
     # add more as needed.
-    tokens = speed.split(" ");
+    tokens = speed.split(" ")
     rv = float(tokens[0])
     if len(tokens) > 1:
-        units = tokens[1];
+        units = tokens[1]
         if units == "B":
             return int(rv)
         elif units == "KB":
-            return int(rv * 1000);
+            return int(rv * 1000)
         elif units == "MB":
-            return int(rv * 1000000);
+            return int(rv * 1000000)
         elif units == "GB":
-            return int(rv * 1000000000);
+            return int(rv * 1000000000)
         else:
             raise ValueError("Un-handled units -:%s:-" % (units))
 
