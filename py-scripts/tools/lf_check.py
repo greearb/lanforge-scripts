@@ -555,6 +555,8 @@ class lf_check():
         if inspect_url.startswith('/'):
             inspect_url = inspect_url[1:]
 
+        allure_report_latest = os.path.join(os.path.dirname(os.path.dirname(report_url)),'allure-report-latest')            
+
         # following recommendation
         # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
         # Mail
@@ -581,10 +583,14 @@ Dut HW: {dut_hw}
 Dut SW: {dut_sw}
 Dut SN: {dut_sn}
 
+allure-report-latest:
+http://{host}/{allure}
+
 lf_check Test Suite Report:
 http://{hostname}/{report}
 """.format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip,
-                suite=self.test_suite, db=self.database_sqlite, hostname=self.server_ip, report=report_url,
+                suite=self.test_suite, db=self.database_sqlite, host=self.server_ip, allure=allure_report_latest, 
+                hostname=self.server_ip, report=report_url,
                 dut_model=self.use_dut_name, dut_hw=self.dut_hw, dut_sw=self.dut_sw, dut_sn=self.dut_serial)
 
         else:
@@ -2593,10 +2599,10 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
                 # TODO path in the allure results path
                 allure_results_path = str(report.get_path()) + "/allure-results"
+                allure_results_latest_path = str(report.get_path()) + "/allure-results-latest"
 
                 if not os.path.isdir(allure_results_path):
                     os.mkdir(allure_results_path)
-
 
 
                 # copy junit_xml from suite to results
