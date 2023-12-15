@@ -776,8 +776,8 @@ Tests Timed Out:
 
         self.message_txt += """
 
-Allure Report:
-=============
+Allure Report Junit :
+=====================
 """
         self.message_txt += """
 
@@ -2693,12 +2693,11 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     kernel_version = "kernel={}\n".format(lanforge_kernel_version)
     gui_version = "gui_version={}\n".format(lanforge_gui_version)
     gui_build_date = "gui_build_date={}\n".format(lanforge_gui_build_date)
-    server_version = "server_version={}\n".format(lanforge_system_ip)
     lanforge_ip = "lanforge_ip={}\n".format(lanforge_system_ip)
     lanforge = "lanforge={}\n".format(lanforge_system_node_version)
 
-    allure_environment_properties = "{kernel_version} {gui_version} {gui_build_date} {server_version} {lanforge_ip} {lanforge}".format(
-        kernel_version=kernel_version,gui_version=gui_version,gui_build_date=gui_build_date,server_version=server_version,lanforge_ip=lanforge_ip,lanforge=lanforge
+    allure_environment_properties = "{kernel_version} {gui_version} {gui_build_date} {lanforge_ip} {lanforge}".format(
+        kernel_version=kernel_version,gui_version=gui_version,gui_build_date=gui_build_date,lanforge_ip=lanforge_ip,lanforge=lanforge
     )
 
     report.set_allure_environment_properties(allure_environment_properties=allure_environment_properties)
