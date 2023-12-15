@@ -642,6 +642,7 @@ class StationProfile:
             self.add_sta_data["ssid"] = 'NA'
             self.add_sta_data['ap'] = 'DEFAULT'
             self.add_sta_data["key"] = 'NA'
+            # add_sta is not the correct cmd to set a mac address, but set_port is
             self.add_sta_data['mac'] = 'NA'
             self.add_sta_data['mode'] = 'NA'
             if self.mode in add_sta.add_sta_modes:
@@ -653,7 +654,6 @@ class StationProfile:
             self.add_sta_data['suppress_preexec_method'] = 'NA'
             if self.debug:
                 self.add_sta_data['__debug'] = self.debug
-            self.set_port_data['mac'] = 'NA'
             if self.bssid:
                 self.add_sta_data['ap'] = self.bssid
             if self.ssid:
@@ -674,10 +674,14 @@ class StationProfile:
             self.desired_set_port_cmd_flags = []
             self.desired_set_port_current_flags = []
             self.desired_set_port_interest_flags = []
-
+            self.set_port_data['mac'] = 'NA'
+            if (self.mac):
+                do_set_port += 1
+                self.desired_set_port_interest_flags.append("mac_address")
+                self.set_port_data["mac"] = self.mac
             if self.ip:
                 do_set_port += 1
-                self.desired_set_port_interest_flags = ["ip_address", "ip_Mask", "ip_gateway"]
+                self.desired_set_port_interest_flags.extend(["ip_address", "ip_Mask", "ip_gateway"])
                 if self.ip == "DHCP" or self.ip == "dhcp" or self.dhcp:
                     if self.ipv6:
                         self.desired_set_port_current_flags.append("use_dhcpv6")
