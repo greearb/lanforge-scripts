@@ -675,7 +675,7 @@ class StationProfile:
             self.desired_set_port_current_flags = []
             self.desired_set_port_interest_flags = []
             self.set_port_data['mac'] = 'NA'
-            if (self.mac):
+            if self.mac:
                 do_set_port += 1
                 self.desired_set_port_interest_flags.append("mac_address")
                 self.set_port_data["mac"] = self.mac
