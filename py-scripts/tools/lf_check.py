@@ -602,10 +602,13 @@ Dut HW: {dut_hw}
 Dut SW: {dut_sw}
 Dut SN: {dut_sn}
 
+allure-report-latest:
+http://{host}/{allure}
+
 
 lf_check Test Suite Report:
 http://{hostname}/{report}
-""".format(hostname=self.server_ip, suite=self.test_suite, db=self.database_sqlite, report=report_url,
+""".format(hostname=self.server_ip, suite=self.test_suite, db=self.database_sqlite, report=report_url,host=self.server_ip, allure=allure_report_latest,
                 dut_model=self.use_dut_name, dut_hw=self.dut_hw, dut_sw=self.dut_sw, dut_sn=self.dut_serial)
 
         # For Multiple Suites save the link for multiple lf_check results  lf_qa and lf_inspect alread keep the aggragate
@@ -2532,8 +2535,17 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 report.build_table_title()
                 report.set_table_dataframe(lf_suite_time)
                 report.build_table()
+
+
+                report.set_table_title("LANforge Allure Report ")
+                report.build_table_title()
+
+                allure_report_latest_url = '../../allure-report-latest'
+
+                report.build_link("LANforge Allure Report",allure_report_latest_url)
+
                 if "NA" not in qa_report_html:
-                    report.set_table_title("LF Check QA ")
+                    report.set_table_title("LANforge QA ")
                     report.build_table_title()
 
                     abs_path = False
@@ -2554,7 +2566,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                         report.build_link("QA Test Results", qa_url)
 
                 if "NA" not in inspect_report_html:
-                    report.set_table_title("LF Inspect QA ")
+                    report.set_table_title("LANforge Inspect QA ")
                     report.build_table_title()
 
                     # try relative path
