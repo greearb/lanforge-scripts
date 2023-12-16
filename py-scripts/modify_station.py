@@ -13,11 +13,12 @@ if sys.version_info[0] != 3:
     exit(1)
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
-
+sys.path.insert(0, ".")
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 set_port = importlib.import_module("py-json.LANforge.set_port")
 add_sta = importlib.import_module("py-json.LANforge.add_sta")
 import lf_modify_radio
@@ -100,6 +101,10 @@ class ModifyStation(Realm):
         self.txpower = _txpower
         self.antennas = _antennas
         self.country = _country
+        if _country:
+            if not _country.isnumeric():
+                if _country in LFUtils.COUNTRY_CODES_NUMBERS:
+                    self.country = LFUtils.COUNTRY_CODES_NUMBERS[_country]
 
     def list_ports(self):
         response = super().json_get("/port/list?fields=port,alias,down")
@@ -151,6 +156,13 @@ class ModifyStation(Realm):
         if len(eid_hunks) < 3:
             raise ValueError(f"adjust_radio: wants a three-part eid (eg: 1.2.wiphy0), but has [{radio_eid}]")
 
+        if self.country:
+            if isinstance(self.country, str) and not self.country.isnumeric():
+                if self.country in LFUtils.COUNTRY_CODES_NUMBERS:
+                    self.country = LFUtils.COUNTRY_CODES_NUMBERS[self.country]
+                else:
+                    raise ValueError(f"Unknown country code [{self.country}]")
+
         if self.channel or self.txpower or self.antennas or self.country:
             print("checking to see if provided radio matches provided station")
             port_list = self.find_ports_like(pattern=self.station_list[0],
@@ -158,20 +170,20 @@ class ModifyStation(Realm):
                                              debug_=True)
             if not port_list:
                 raise ValueError(f"station:{self.station_list[0]} does not correspond to radio: {self.radio}")
-            num_matching=0
+            num_matching = 0
             pprint.pprint(["port_list:", port_list])
             if isinstance(port_list, dict):
                 for eid, record in port_list.items():
                     if not record["parent dev"]:
                         continue
                     if self.radio.endswith(record["parent dev"]):
-                        num_matching+=1
+                        num_matching += 1
             elif isinstance(port_list, list):
                 for record in port_list:
                     if not record["parent dev"]:
                         continue
                     if record["parent dev"] == self.radio:
-                        num_matching+=1
+                        num_matching += 1
             if num_matching < 1:
                 raise ValueError(f"Station [{self.station_list[0]}] and Radio[{self.radio}] do not correspond")
 
@@ -325,9 +337,15 @@ def main():
     optional.add_argument('--antennas', '--antenna',
                           choices=["All", "1x1", "2x2", "3x3", "4x4", "8x8"],
                           help="specify antenna diversity for radio (NSS), requires --radio")
-    optional.add_argument('--country',
-                          help="sets country region for all radios in a resource; requires --radio,"
-                               " all radios on that resource will be changed")
+
+    country_code_list: list = list(LFUtils.COUNTRY_CODES_NUMBERS.keys())
+    country_code_list.extend([str(x) for x in LFUtils.COUNTRY_CODES_NUMBERS.values()])
+    parser.add_argument("--country", "--regdom", "--country_code",
+                        choices=country_code_list,
+                        help="Set the country code for the lanforge resource. "
+                             "This needs to set all radios on the resource to the same country code. "
+                             "Requires --radio (eg 1.1.wiphy0) for reference to determine resource.")
+
     optional.add_argument('--list_stations',
                           action="store_true",
                           help="lists station by Eid")
@@ -368,7 +386,7 @@ def main():
     if (not args.station) or (len(args.station) < 1):
         raise ValueError("requires --station eid (eg: 1.1.wlan0)")
 
-    antenna_flag: int = None
+    antenna_flag = None
     if args.antennas:
         antenna_flag = ModifyStation.ANTENNA_VALUES[args.antennas]
     modify_station = ModifyStation(_host=args.mgr,
