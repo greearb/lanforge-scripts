@@ -159,7 +159,8 @@ class Android():
             username = self.get_username(shelf, resource)
 
             if(username is None):
-                logger.warning('The device with serial {} not found'.format(serial))
+                # logger.warning('The device with serial {} not found'.format(serial))
+                username = requests.get('http://{}:{}/adb/1/1/{}'.format(self.lanforge_ip, self.port, serial)).json()['devices']['user-name']
 
             # check if the encryption is personal
             if(self.eap_method is None):
@@ -205,8 +206,8 @@ class Android():
                 try:
                     shelf, resource = interop_tab_data['resource-id'].split('.')
                 except:
-                    logger.warning('Resource id is missing for the device {} therefore skipping the device from usage'.format(name))
-                    return(devices_data)
+                    # logger.warning('Resource id is missing for the device {} therefore skipping the device from usage'.format(name))
+                    shelf, resource = '', ''
 
                 devices_data.append((shelf, resource, serial))
 
@@ -222,8 +223,8 @@ class Android():
                     try:
                         shelf, resource = data['resource-id'].split('.')
                     except:
-                        logger.warning('Resource id is missing for the device {} therefore skipping the device from usage'.format(name))
-                        continue
+                        # logger.warning('Resource id is missing for the device {} therefore skipping the device from usage'.format(name))
+                        shelf, resource = '', ''
 
                     devices_data.append((shelf, resource, serial))
 
@@ -435,6 +436,7 @@ class Laptop():
         for resource_data in resources:
             port, resource = list(resource_data.keys())[0], list(resource_data.values())[0]
             shelf, resource_id = port.split('.')
+            hostname = resource_data[port]['hostname']
             # filtering LANforges from resources
             if(resource['ct-kernel']):
                 continue
@@ -457,8 +459,10 @@ class Laptop():
                     'shelf': shelf,
                     'resource': resource_id,
                     'sta_name': 'ad1',
+                    'hostname': hostname,
                     'report_timer': 1500,
-                    'interest': 8388610
+                    'current_flags': 2147483648,
+                    'interest': 16384
                 })
             
             # fetching data for Linux
@@ -468,6 +472,7 @@ class Laptop():
                     'shelf': shelf,
                     'resource': resource_id,
                     'sta_name': 'sta{}'.format(resource_id),
+                    'hostname': hostname,
                     # 'sta_name': 'en0',
                     'current_flags': 2147483648,
                     'interest': 16384
@@ -480,6 +485,7 @@ class Laptop():
                     'shelf': shelf,
                     'resource': resource_id,
                     'sta_name': 'en0',
+                    'hostname': hostname,
                     'current_flags': 2147483648,
                     'interest': 16384
                 })
