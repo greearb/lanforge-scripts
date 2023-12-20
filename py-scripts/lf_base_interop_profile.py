@@ -34,6 +34,7 @@ if sys.version_info[0] != 3:
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+interop_connectivity = importlib.import_module("py-json.interop_connectivity")
 from lanforge_client.lanforge_api import LFSession
 from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
@@ -606,12 +607,20 @@ class RealDevice(Realm):
     def __init__(self,
                  manager_ip=None,
                  port=8080,
+                 server_ip=None,
+                 ssid=None,
+                 encryption=None,
+                 passwd=None,
                  _debug_on=False,
                  _exit_on_error=False):
         super().__init__(lfclient_host=manager_ip,
                          debug_=_debug_on)
         self.manager_ip = manager_ip
         self.manager_port = port
+        self.server_ip = server_ip
+        self.ssid = ssid
+        self.encryption = encryption
+        self.passwd  = passwd
         self.devices = []
         self.devices_data = {}
         self.selected_device_eids = []
@@ -622,12 +631,204 @@ class RealDevice(Realm):
         self.linux_list = []
         self.mac_list = []
         self.android_list = []
+        self.station_list = []
         self.android = 0
         self.linux = 0
         self.windows = 0
         self.mac = 0
+    
+    # To configure interop devices to an ssid at the time of device selection for testing
+    # Step 1: queries all interop devices from both interop tab and resource manager
+    # Step 2: displays port, username and os details of all real devices
+    # Step 3: the user then should select the devices from the list using serial numbers
+    # Step 4: the devices get configured and then the script waits for 2 minutes for the configuration to apply
+    # Step 5: then it checks both android and laptops for the expected configuration. If the configuration is not as expected, then the respective device is eliminated from the test
+    # Step 6: The script then proceeds for the test
+    def query_all_devices_to_configure_wifi(self):
+        
+        all_devices = {}
+        selected_androids = []
+        selected_laptops = []
+        selected_t_devices = {}
 
-    # getting data of all real devices
+        index = 1 # serial number for selection of devices
+        
+        # fetch all androids
+        androids_obj = interop_connectivity.Android(lanforge_ip=self.manager_ip, port=self.manager_port, server_ip=self.server_ip, ssid=self.ssid, passwd=self.passwd, encryption=self.encryption)
+        androids = androids_obj.get_devices()
+        for android in androids:
+            shelf, resource, serial = android
+            all_devices[index] = {
+                'port': '{}.{}'.format(shelf, resource),
+                'username': serial,
+                'os': 'Android'
+            }
+            index += 1
+
+        # fetch all laptops
+        laptops_obj = interop_connectivity.Laptop(lanforge_ip=self.manager_ip, port=self.manager_port, server_ip=self.server_ip, ssid=self.ssid, passwd=self.passwd, encryption=self.encryption)
+        laptops = laptops_obj.get_resources_data()
+        for laptop in laptops:
+            all_devices[index] = {
+                'port': '{}.{}'.format(laptop['shelf'], laptop['resource']),
+                'username': laptop['hostname'],
+                'os': laptop['os']
+            }
+            index += 1
+
+        pd.set_option('display.max_rows', None)
+        df = pd.DataFrame(data=all_devices).transpose()
+        print(df)
+
+        select_serials = input('Select the serial numbers of devices to run the test(e.g. 1,2,3,.. or enter "all" to select all devices): ')
+        if('all' != select_serials):
+            select_serials = list(map(int, select_serials.split(',')))
+            for seleted_serial in select_serials:
+                selected_username = all_devices[seleted_serial]['username']
+                selected_os = all_devices[seleted_serial]['os']
+                if(selected_os == 'Android'):
+                    for android in androids:
+                        if(android[2] == selected_username):
+                            selected_androids.append(android)
+                            break
+                else:
+                    for laptop in laptops:
+                        if(laptop['hostname'] == selected_username):
+                            selected_laptops.append(laptop)
+        else:
+            selected_androids = androids
+            selected_laptops = laptops
+        
+        androids_obj.stop_app(port_list=selected_androids)
+        androids_obj.configure_wifi(port_list=selected_androids)
+
+        laptops_obj.rm_station(port_list=selected_laptops)
+        laptops_obj.add_station(port_list=selected_laptops)
+        laptops_obj.set_port(port_list=selected_laptops)
+
+        logging.info('Applying the new Wi-Fi configuration. Waiting for 2 minutes for the new configuration to apply.')
+        time.sleep(120)
+
+        # selecting devices only those connected to given SSID and contains IP
+        # for androids
+        exclude_androids = []
+        for android in selected_androids:    
+
+            # get resource id for the android device from interop tab
+            resource_id = self.json_get('/adb/1/1/{}'.format(android[2]))['devices']['resource-id']
+
+            # if there is no resource id in interop tab
+            if(resource_id == ''):
+                logging.warning('The android with serial {} is not connected to the given SSID. Excluding it from testing'.format(android[2]))
+                exclude_androids.append(android)
+                continue
+
+            # fetching port data for the android device
+            print('------------>', resource_id)
+            current_android_port_data = self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
+
+            # fetching resource data for android device
+            current_android_resource_data = self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
+
+            current_android_port_data.update(current_android_resource_data)
+            
+            # checking if the android is connected to the desired ssid
+            if(current_android_port_data['ssid'] != self.ssid):
+                logging.warning('The android with serial {} is not conneted to the given SSID. Excluding it from testing'.format(android[2]))
+                exclude_androids.append(android)
+                continue
+
+            # checking if the android is active or down
+            if(current_android_port_data['ip'] == '0.0.0.0'):
+                logging.warning('The android with serial {} is down. Excluding it from testing'.format(android[2]))
+                exclude_androids.append(android)
+                continue
+
+            username = self.json_get('resource/{}/{}?fields=user'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']['user']
+
+            self.selected_devices.append(resource_id)
+            self.selected_macs.append(current_android_port_data['mac'])
+            self.report_labels.append('{} android {}'.format(resource_id, username)[:25])
+            self.android += 1
+            self.android_list.append(resource_id)
+            
+            current_sta_name = resource_id + '.wlan0'
+            self.station_list.append(current_sta_name)
+
+            self.devices_data[current_sta_name] = current_android_port_data
+            self.devices_data[current_sta_name]['ostype'] = 'android'
+
+            selected_t_devices[resource_id] = {
+                'hw version': 'Android',
+                'MAC': current_android_port_data['mac']
+            }
+            
+            
+        for android in exclude_androids:
+            selected_androids.remove(android)
+
+        # for laptops
+        exclude_laptops = []
+        for laptop in selected_laptops:
+            
+            # check SSID and IP values from port manager
+            current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))['interface']
+
+            # checking if the laptop is connected to the desired ssid
+            if(current_laptop_port_data['ssid'] != self.ssid):
+                logging.warning('The laptop with port {}.{}.{} is not conneted to the given SSID. Excluding it from testing'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+                exclude_laptops.append(laptop)
+                continue
+
+            # checking if the laptop is active or down
+            if(current_laptop_port_data['ip'] == '0.0.0.0'):
+                logging.warning('The laptop with port {}.{}.{} is down. Excluding it from testing'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+                exclude_laptops.append(laptop)
+                continue
+
+            current_laptop_resource_data = self.json_get('resource/{}/{}'.format(laptop['shelf'], laptop['resource']))['resource']
+            hostname = current_laptop_resource_data['hostname']
+
+            current_laptop_port_data.update(current_laptop_resource_data)
+            
+            # adding port id to selected_device_eids
+            current_resource_id = '{}.{}.{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name'])
+            self.selected_devices.append(current_resource_id)
+            self.selected_macs.append(current_laptop_port_data['mac'])
+            self.report_labels.append('{} {} {}'.format(current_resource_id, laptop['os'], hostname)[:25])
+
+            selected_t_devices[current_resource_id] = {
+                'MAC': current_laptop_port_data['mac']
+            }
+            if(laptop['os'] == 'Win'):
+                self.windows += 1
+                self.windows_list.append(current_resource_id)
+                selected_t_devices[current_resource_id]['hw version'] = 'Win'
+                current_laptop_port_data['ostype'] = 'windows'
+            elif(laptop['os'] == 'Lin'):
+                self.linux += 1
+                self.linux_list.append(current_resource_id)
+                selected_t_devices[current_resource_id]['hw version'] = 'Lin'
+                current_laptop_port_data['ostype'] = 'linux'
+            elif(laptop['os'] == 'Apple'):
+                self.mac += 1
+                self.mac_list.append(current_resource_id)
+                selected_t_devices[current_resource_id]['hw version'] = 'Mac'
+                current_laptop_port_data['ostype'] = 'macos'
+            
+            current_sta_name = current_resource_id
+            self.station_list.append(current_sta_name)
+
+            self.devices_data[current_sta_name] = current_laptop_port_data
+
+        for laptop in exclude_laptops:
+            selected_laptops.remove(laptop)
+
+        df = pd.DataFrame(data=selected_t_devices).transpose()
+        print(df)
+        return [self.selected_devices, self.report_labels, self.selected_macs]
+
+    # getting data of all real devices already configured to an SSID
     def get_devices(self):
         devices            = []
         devices_data       = {}
