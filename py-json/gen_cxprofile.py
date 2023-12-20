@@ -42,6 +42,20 @@ class GenCXProfile(LFCliBase):
         self.speedtest_min_up = 0
         self.speedtest_max_ping = 0
 
+    # setting endpoint report timer
+    def set_report_timer(self, endp_name=None, timer=5000):
+        if(endp_name is not None):
+            # NOTE API needs the timer in milliseconds
+            data = {
+                'endp_name': endp_name,
+                'milliseconds': timer
+            }
+            logger.info(data)
+            logger.info('Setting the report timer to {} milliseconds for endpoint {}'.format(timer, endp_name))
+            self.json_post('/cli-json/set_endp_report_timer', data, debug_=True)
+        else:
+            logger.warning('Endpoint name not specified for setting the report timer')
+    
     # If not specified, default client_type is linux
     def parse_command(self, sta_name, gen_name, client_type="linux", ip=None):
         if self.type == "lfping":
