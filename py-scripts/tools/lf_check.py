@@ -2144,6 +2144,9 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
     iteration = 0
 
+    # test suite list for allure report
+    lf_check_test_suite_list = []
+
     # for rig json (lanforge)
     for json_rig_name in json_rig_list:
 
@@ -2258,6 +2261,9 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                         test_list = args.test_list.split(',')
                         logger.info(
                             "use_testlist set True test list : {list}".format(list=test_list))
+
+                # allure report list
+                lf_check_test_suite_list.append(report_path)
 
                 # lf_check() class created
                 check = lf_check(_json_rig=json_rig,
@@ -2713,9 +2719,10 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     gui_build_date = "gui_build_date={}\n".format(lanforge_gui_build_date)
     lanforge_ip = "lanforge_ip={}\n".format(lanforge_system_ip)
     lanforge = "lanforge={}\n".format(lanforge_system_node_version)
+    suites = "suites={}\n".format(lf_check_test_suite_list)
 
-    allure_environment_properties = "{kernel_version} {gui_version} {gui_build_date} {lanforge_ip} {lanforge}".format(
-        kernel_version=kernel_version,gui_version=gui_version,gui_build_date=gui_build_date,lanforge_ip=lanforge_ip,lanforge=lanforge
+    allure_environment_properties = "{kernel_version} {gui_version} {gui_build_date} {lanforge_ip} {lanforge} {suites}".format(
+        kernel_version=kernel_version,gui_version=gui_version,gui_build_date=gui_build_date,lanforge_ip=lanforge_ip,lanforge=lanforge,suites=suites
     )
 
     report.set_allure_environment_properties(allure_environment_properties=allure_environment_properties)
