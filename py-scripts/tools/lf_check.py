@@ -2262,8 +2262,6 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                         logger.info(
                             "use_testlist set True test list : {list}".format(list=test_list))
 
-                # allure report list
-                lf_check_test_suite_list.append(report_path)
 
                 # lf_check() class created
                 check = lf_check(_json_rig=json_rig,
@@ -2634,6 +2632,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 # report.update_allure_results_history(allure_results=allure_results_path)
                 # report.generate_allure_report()
 
+
                 # Send email
                 if args.no_send_email or check.email_list_test == "":
                     logger.info(
@@ -2700,8 +2699,12 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                                     CandelaLogo_small_dest_png)
 
                     # print out locations of results
-                    logger.info("html_report_latest: {latest}".format(
-                        latest=html_report_latest))
+                    logger.info("html_report_latest: {latest}".format(latest=html_report_latest))
+
+                    # allure report list needs to be adjusted
+                    lf_check_test_suite_list.append(check.lf_check_link)
+
+
 
     # This next bit of code will do the following
     #   Record the GUI build information and Kernel information
