@@ -2263,6 +2263,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                             "use_testlist set True test list : {list}".format(list=test_list))
 
 
+
                 # lf_check() class created
                 check = lf_check(_json_rig=json_rig,
                                  _json_dut=json_dut,
@@ -2642,6 +2643,9 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     check.iteration = iteration
                     check.send_results_email(report_file=html_report)
 
+                # allure report list needs to be adjusted
+                lf_check_test_suite_list.append(check.lf_check_link)
+
                 # print later so shows up last
                 logger.info("junit.xml: allure serve {}".format(junit_xml))
                 logger.info("junit.xml path: allure serve {}".format(junit_path_only))
@@ -2701,8 +2705,6 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     # print out locations of results
                     logger.info("html_report_latest: {latest}".format(latest=html_report_latest))
 
-                    # allure report list needs to be adjusted
-                    lf_check_test_suite_list.append(check.lf_check_link)
 
 
 
