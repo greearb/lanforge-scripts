@@ -2755,7 +2755,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
         os.makedirs(allure_latest_dir)
 
     try:
-        new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir, dir_exist_ok=True)
+        new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir, dirs_exist_ok=True)
         logger.debug("allure report directory copied to {latest}".format(latest=new_allure_latest_dir))
     except:
         # fedora 27 does no except the directory being present
