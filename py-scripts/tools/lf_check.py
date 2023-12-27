@@ -2545,7 +2545,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 report.set_table_title("LANforge Allure Report ")
                 report.build_table_title()
 
-                allure_report_latest_url = '../../allure-report-latest'
+                allure_report_latest_url = '../allure-report-latest'
 
                 report.build_link("LANforge Allure Report",allure_report_latest_url)
 
