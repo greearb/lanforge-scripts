@@ -2618,8 +2618,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 allure_results_path = str(report.get_path()) + "/allure-results"
                 allure_results_latest_path = str(report.get_path()) + "/allure-results-latest"
 
-                if not os.path.isdir(allure_results_path):
-                    os.mkdir(allure_results_path)
+                if not os.path.exists(allure_results_path):
+                    os.makedirs(allure_results_path)
 
 
                 # copy junit_xml from suite to results
@@ -2724,11 +2724,18 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     gui_build_date = "gui_build_date={}\n".format(lanforge_gui_build_date)
     lanforge_ip = "lanforge_ip={}\n".format(lanforge_system_ip)
     lanforge = "lanforge={}\n".format(lanforge_system_node_version)
-    suites = "suites={}\n".format(lf_check_test_suite_list)
+    #suites = "suites={}\n".format(lf_check_test_suite_list)
 
-    allure_environment_properties = "{kernel_version} {gui_version} {gui_build_date} {lanforge_ip} {lanforge} {suites}".format(
-        kernel_version=kernel_version,gui_version=gui_version,gui_build_date=gui_build_date,lanforge_ip=lanforge_ip,lanforge=lanforge,suites=suites
+    allure_environment_properties = "{kernel_version} {gui_version} {gui_build_date} {lanforge_ip} {lanforge}".format(
+        kernel_version=kernel_version,gui_version=gui_version,gui_build_date=gui_build_date,lanforge_ip=lanforge_ip,lanforge=lanforge
     )
+
+    count = 0
+    for suite in lf_check_test_suite_list:
+        suite_string = " URL_{}={}\n".format(count,suite)
+        allure_environment_properties += suite_string
+        count += 1
+
 
     report.set_allure_environment_properties(allure_environment_properties=allure_environment_properties)
     report.write_allure_environment_properties(allure_results_path=allure_results_path)
@@ -2743,6 +2750,11 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     allure_epoch = str(int(time.time()))
     allure_epoch_dir = os.path.join(report.path,allure_epoch)
     
+
+    # check to see if the directory is present
+    if not os.path.exists(report.allure_report_dir):
+        os.makedirs(report.allure_report_dir)
+
     # directory with time stamp
     new_allure_epoch_dir = shutil.copytree(report.allure_report_dir,allure_epoch_dir)
     logger.debug("allure report directory with timestamp {allure_report}".format(allure_report=new_allure_epoch_dir))
