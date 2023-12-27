@@ -2577,8 +2577,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                     # try relative path
                     parent_path = os.path.dirname(inspect_report_html)
                     parent_name = os.path.basename(parent_path)
-                    inspect_report_base_name = os.path.basename(
-                        inspect_report_html)
+                    inspect_report_base_name = os.path.basename(inspect_report_html)
 
                     inspect_url = './' + parent_name + '/' + inspect_report_base_name
                     logger.info("QA Test Results inspect_run custom: {inspect_url}".format(
@@ -2729,6 +2728,10 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     allure_environment_properties = "{kernel_version} {gui_version} {gui_build_date} {lanforge_ip} {lanforge}".format(
         kernel_version=kernel_version,gui_version=gui_version,gui_build_date=gui_build_date,lanforge_ip=lanforge_ip,lanforge=lanforge
     )
+
+    if lf_check_test_suite_list:
+        suite_parent = "URL={}".format(os.path.dirname(os.path.dirname(lf_check_test_suite_list[0])))
+        allure_environment_properties += suite_parent 
 
     count = 0
     for suite in lf_check_test_suite_list:
