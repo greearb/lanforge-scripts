@@ -2403,7 +2403,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                             # self.logger.info("key {}".format(key))
                             # self.logger.info("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
                             driver = lanforge_radio_json[key]['driver'].split(
-                                'Driver:', maxsplit=1)[-1].split(maxsplit=1)[0]
+                                'Driver:', maxsplit=1)[-1].split('Bus:', maxsplit=1)[0]
                             try:
                                 firmware_version = lanforge_radio_json[key]['firmware version']
                                 firmware_version = firmware_version.replace(
@@ -2730,7 +2730,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     )
 
     if lf_check_test_suite_list:
-        suite_parent = "URL={}".format(os.path.dirname(os.path.dirname(lf_check_test_suite_list[0])))
+        suite_parent = "URL={}\n".format(os.path.dirname(os.path.dirname(lf_check_test_suite_list[0])))
         allure_environment_properties += suite_parent 
 
     count = 0
