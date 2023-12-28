@@ -772,7 +772,13 @@ class RealDevice(Realm):
         for laptop in selected_laptops:
             
             # check SSID and IP values from port manager
-            current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))['interface']
+            current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+            if(current_android_port_data is None):
+                logging.warning('The laptop with port {}.{}.{} not found. Excluding it from testing'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+                exclude_laptops.append(laptop)
+                continue
+
+            current_laptop_port_data = current_laptop_port_data['interface']
 
             # checking if the laptop is connected to the desired ssid
             if(current_laptop_port_data['ssid'] != self.ssid):
