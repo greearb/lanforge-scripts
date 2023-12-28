@@ -143,10 +143,9 @@ class Ping(Realm):
             shelf, resource, port, _ = target_port_list
             try:
                 target_port_ip = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port))['interface']['ip']
+                self.target = target_port_ip
             except:
-                logging.error('The target port {} not found on the LANforge. Please change the target.'.format(self.target))
-                exit(0)
-            self.target = target_port_ip
+                logging.warning('The target is not an ethernet port. Proceeding with the given target {}.'.format(self.target))
             print(self.target)
         else:
             print(self.target)
@@ -333,12 +332,12 @@ class Ping(Realm):
                 'rtts': {}
             }
             # print('------------',json_data)
-            for seq in self.result_json[station]['rtts']:
-                json_data[station]['rtts'][str(seq)] = self.result_json[station]['rtts'][seq]
+            # for seq in self.result_json[station]['rtts']:
+            json_data[station]['rtts'] = self.result_json[station]['rtts']
         self.graph_values = json_data
         device_names = list(json_data.keys())
         sequence_numbers = list(set(seq for device_data in json_data.values() for seq in device_data.get("rtts", {})))
-        # print(sequence_numbers)
+        print(sequence_numbers, 340)
         rtt_values = {}
         for seq in sequence_numbers:
             rtt_values[seq] = []
@@ -347,7 +346,10 @@ class Ping(Realm):
                     if(seq in device_data['rtts'].keys()):
                         rtt_values[seq].append(device_data['rtts'][seq])
                     else:
-                        rtt_values[seq].append(1)
+                        if(len(device_data['rtts'].keys()) != 0):
+                            rtt_values[seq].append(1)
+                        else:
+                            rtt_values[seq].append(0)
         # rtt_values = {seq: [device_data.get("rtts", {}).get(seq, 0) for device_data in json_data.values()] for seq in sequence_numbers}
         # print(rtt_values)
         # Set different colors based on RTT values
@@ -384,8 +386,9 @@ class Ping(Realm):
         # print(list(map(int,sequence_numbers))[0::10])
         # print(timestamps)
 
-        ticks_sequence_numbers =  list(map(int,sequence_numbers))
-        ticks_sequence_numbers.sort()
+        # ticks_sequence_numbers =  list(map(int,sequence_numbers))
+        # ticks_sequence_numbers.sort()
+        sequence_numbers.sort()
         timestamps.sort()
         # print('--------------')
         # print(ticks_sequence_numbers[0::10])
@@ -412,22 +415,18 @@ class Ping(Realm):
     def build_area_graphs(self, report_obj=None):
         json_data = self.graph_values
         device_names = list(json_data.keys())
-        sequence_numbers = []
-        for device_data in json_data.values():
-            for seq in device_data.get('rtts', {}):
-                if(seq not in sequence_numbers and device_data['rtts'][seq] != 0.11):
-                    sequence_numbers.append(seq)
-        sequence_numbers = list(set(seq for device_data in json_data.values() for seq in device_data.get("rtts", {})))
 
         # Plot line graphs for each device
         for device_name, device_data in json_data.items():
             rtts = []
-            dropped_seqs = []
-            for seq in sequence_numbers:
-                if('rtts' in device_data.keys()):
-                    if(seq in device_data['rtts'].keys()):
-                            rtts.append(device_data['rtts'][seq])
-            # rtts = [device_data.get("rtts", {}).get(seq, 0) for seq in sequence_numbers]
+            # dropped_seqs = []
+            sequence_numbers = []
+            if('rtts' in device_data.keys()):
+                for seq in device_data['rtts']:
+                    if(device_data['rtts'][seq] == 0.11):
+                        continue
+                    rtts.append(device_data['rtts'][seq])
+                    sequence_numbers.append(seq)
             plt.figure(figsize=(15, len(device_names) * .5 + 4))
             plt.plot(sequence_numbers, rtts, label=device_name, color="Slateblue", alpha=0.6)
 
@@ -457,18 +456,21 @@ class Ping(Realm):
                 for row in range(len(timestamps)):
                     writer.writerow([timestamps[row], rtts[row]])
                 # writer.writerows([timestamps, rtts])
-
-            ticks_sequence_numbers =  list(map(int,sequence_numbers))
-            ticks_sequence_numbers.sort()
+            sequence_numbers.sort()
             timestamps.sort()
 
             # settings labels for x-axis
-            plt.xticks(range(0, len(sequence_numbers), max(round(len(sequence_numbers) / 30), len(sequence_numbers) // 30)), timestamps[::max(round(len(sequence_numbers) / 30), len(sequence_numbers) // 30)], rotation=45)
+            if(len(sequence_numbers) > 30):
+                plt.xticks(range(0, len(sequence_numbers), max(round(len(sequence_numbers) / 30), len(sequence_numbers) // 30)), timestamps[::max(round(len(sequence_numbers) / 30), len(sequence_numbers) // 30)], rotation=45)
+            else:
+                plt.xticks(sequence_numbers, timestamps, rotation=45)
 
             # print(sequence_numbers)
             # print(rtts)
             # plt.xlim(0, max(rtts))
-            plt.xlim(0, max(list(map(int, sequence_numbers))))
+            # plt.xlim(0, max(list(map(int, sequence_numbers))))
+            if(len(sequence_numbers) != 0):
+                plt.xlim(0, max(sequence_numbers))
 
             # Show the plot
             # plt.show()
@@ -583,11 +585,16 @@ class Ping(Realm):
             self.device_channels.append(device_data['channel'])
             self.device_mac.append(device_data['mac'])
             t_rtt_values = sorted(list(device_data['rtts'].values()))
-            self.device_avg.append(float(sum(t_rtt_values) / len(t_rtt_values)))
-            while(0.11 in t_rtt_values):
-                t_rtt_values.remove(0.11)
-            self.device_min.append(float(min(t_rtt_values)))
-            self.device_max.append(float(max(t_rtt_values)))
+            if(t_rtt_values != []):
+                self.device_avg.append(float(sum(t_rtt_values) / len(t_rtt_values)))
+                while(0.11 in t_rtt_values):
+                    t_rtt_values.remove(0.11)
+                self.device_min.append(float(min(t_rtt_values)))
+                self.device_max.append(float(max(t_rtt_values)))
+            else:
+                self.device_avg.append(0)
+                self.device_min.append(0)
+                self.device_max.append(0)
             # self.device_avg.append(float(sum(t_rtt_values) / len(t_rtt_values)))
             # self.device_min.append(float(device_data['min_rtt'].replace(',', '')))
             # self.device_max.append(float(device_data['max_rtt'].replace(',', '')))
@@ -1130,10 +1137,7 @@ connectivity problems.
                                         drop_count = t_drop_val
                                         for drop_packet in range(1, current_drop_packets + 1):
                                             dropped_packets.append(seq_number - drop_packet)
-                            else:
-                                # rtts = [0] * 60 * int(ping.duration)
-                                for seq in range(1, 60 * int(ping.duration) + 1):
-                                    rtts[station][seq] = 0
+
                             if(rtts_list == []):
                                 rtts_list = [0]
                             min_rtt = str(min(rtts_list))
@@ -1206,10 +1210,7 @@ connectivity problems.
                                             drop_count = t_drop_val
                                             for drop_packet in range(1, current_drop_packets + 1):
                                                 dropped_packets.append(seq_number - drop_packet)
-                                else:
-                                    # rtts = [0] * 60 * int(ping.duration)
-                                    for seq in range(1, 60 * int(ping.duration) + 1):
-                                        rtts[station][seq] = 0
+
                                 if(rtts_list == []):
                                     rtts_list = [0]
                                 min_rtt = str(min(rtts_list))
@@ -1282,10 +1283,7 @@ connectivity problems.
                                     drop_count = t_drop_val
                                     for drop_packet in range(1, current_drop_packets + 1):
                                         dropped_packets.append(seq_number - drop_packet)
-                        else:
-                            # rtts = [0] * 60 * int(ping.duration)
-                            for seq in range(1, 60 * int(ping.duration) + 1):
-                                rtts[station][seq] = 0
+
                         if(rtts_list == []):
                             rtts_list = [0]
                         min_rtt = str(min(rtts_list))
@@ -1303,13 +1301,15 @@ connectivity problems.
                                 ping.result_json[station]['sent'] = str(max(list(rtts[station].keys())))
                                 ping.result_json[station]['recv'] = str(len(rtts[station].keys()))
                                 ping.result_json[station]['dropped'] = str(int(ping.result_json[station]['sent']) - int(ping.result_json[station]['recv']))
-                        required_sequence_numbers = list(range(1, max(rtts.keys())))
-                        for seq in required_sequence_numbers:
-                            if(seq not in rtts[station].keys()):
-                                if(seq in dropped_packets):
-                                    rtts[station][seq] = 0
-                                else:
-                                    rtts[station][seq] = 0.11
+                        if(len(rtts[station].keys()) != 0):
+                            required_sequence_numbers = list(range(1, max(rtts[station].keys())))
+                            for seq in required_sequence_numbers:
+                                if(seq not in rtts[station].keys()):
+                                    if(seq in dropped_packets):
+                                        rtts[station][seq] = 0
+                                    else:
+                                        rtts[station][seq] = 0.11
+                                # print(station, rtts[station])
                         ping.result_json[station]['rtts'] = rtts[station]
                         ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
                         # ping.result_json[station]['dropped_packets'] = dropped_packets
@@ -1368,10 +1368,6 @@ connectivity problems.
                                             for drop_packet in range(1, current_drop_packets + 1):
                                                 dropped_packets.append(seq_number - drop_packet)
                                                 
-                            else:
-                                # rtts = [0] * 60 * int(ping.duration)
-                                for seq in range(1, 60 * int(ping.duration) + 1):
-                                    rtts[station][seq] = 0
                             if(rtts_list == []):
                                 rtts_list = [0]
                             min_rtt = str(min(rtts_list))
