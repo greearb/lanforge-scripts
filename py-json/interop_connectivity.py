@@ -315,6 +315,22 @@ class Laptop():
         except:
             logger.error('Request failed for port {}'.format(data['port'])) 
     
+    # method to get the station name from port manager
+    def get_station_name(self, shelf, resource):
+        url = 'http://{}:{}/ports/{}/{}/?fields=parent dev'.format(self.lanforge_ip, self.port, shelf, resource)
+        station_response = requests.get(url)
+        station_response = station_response.json()
+        if('interfaces' in station_response.keys()):
+            stations = station_response['interfaces']
+            for station in stations:
+                station_name, station_details = list(station.keys())[0], list(station.values())[0]
+                if(station_details['parent dev'] != ''):
+                    return station_name.split('.')[2]
+            return 'wlan0'
+        else:
+            logging.error('Malformed response. Response does not have interfaces data. Setting the station name to default i.e., wlan0')
+            return 'wlan0'
+
     # remove station
     # NOTE this is only for Linux Laptops
     def rm_station(self, port_list=[]):
@@ -326,25 +342,13 @@ class Laptop():
         for port_data in port_list:
             if('Lin' == port_data['os']):
                 shelf, resource, sta_name = port_data['shelf'], port_data['resource'], port_data['sta_name']
-
-                get_station_name = requests.get('http://{}:{}/ports/{}/{}/?fields=parent dev'.format(self.lanforge_ip, self.port, shelf, resource))
-                station_response = get_station_name.json()
-                stations = station_response['interfaces']
-
-                if(type(stations) == list):
-                    for station in stations:
-                        station_name, station_details = list(station.keys())[0], list(station.values())[0]
-                        if(station_details['parent dev'] != ''):
-
-                            data = {
-                                'shelf'     : shelf,
-                                'resource'  : resource,
-                                'port'      : sta_name
-                            }
-                            data_list.append(data)
-                            break
-                elif(type(stations) == dict):
-                    logger.warning('The port {}.{} does not have the required interfaces'.format(shelf, resource))
+                sta_name = self.get_station_name(shelf, resource)
+                data = {
+                    'shelf'     : shelf,
+                    'resource'  : resource,
+                    'port'      : sta_name
+                }
+                data_list.append(data)
         
         url = 'http://{}:{}/cli-json/rm_vlan'.format(self.lanforge_ip, self.port)
 
@@ -405,11 +409,13 @@ class Laptop():
                 }
             elif(os == 'Win'):
                 report_timer = port_data['report_timer']
+                current_flags = port_data['current_flags']
                 data = {
                     'shelf': shelf,
                     'resource': resource,
                     'port': port,
                     'report_timer': report_timer,
+                    'current_flags': current_flags,
                     'interest': interest
                 }
             data_list.append(data)
@@ -437,6 +443,7 @@ class Laptop():
             port, resource = list(resource_data.keys())[0], list(resource_data.values())[0]
             shelf, resource_id = port.split('.')
             hostname = resource_data[port]['hostname']
+            sta_name = self.get_station_name(shelf=shelf, resource=resource_id)
             # filtering LANforges from resources
             if(resource['ct-kernel']):
                 continue
@@ -458,7 +465,7 @@ class Laptop():
                     'os': 'Win',
                     'shelf': shelf,
                     'resource': resource_id,
-                    'sta_name': 'ad1',
+                    'sta_name': sta_name,
                     'hostname': hostname,
                     'report_timer': 1500,
                     'current_flags': 2147483648,
@@ -471,7 +478,7 @@ class Laptop():
                     'os': 'Lin',
                     'shelf': shelf,
                     'resource': resource_id,
-                    'sta_name': 'sta{}'.format(resource_id),
+                    'sta_name': sta_name,
                     'hostname': hostname,
                     # 'sta_name': 'en0',
                     'current_flags': 2147483648,
@@ -484,7 +491,7 @@ class Laptop():
                     'os': 'Apple',
                     'shelf': shelf,
                     'resource': resource_id,
-                    'sta_name': 'en0',
+                    'sta_name': sta_name,
                     'hostname': hostname,
                     'current_flags': 2147483648,
                     'interest': 16384
@@ -521,7 +528,7 @@ class Laptop():
                     'os': 'Win',
                     'shelf': shelf,
                     'resource': resource,
-                    'sta_name': 'ad1',
+                    'sta_name': 'wlan0',
                     'report_timer': 1500,
                     'interest': 8388610
                 })
