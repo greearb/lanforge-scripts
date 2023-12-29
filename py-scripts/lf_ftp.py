@@ -153,6 +153,7 @@ class FtpTest(LFCliBase):
         self.uc_min = []
         self.uc_max = []
         self.url_data = []
+        self.bytes_rd = []
         self.channel_list = []
         self.mode_list = []
         self.cx_list = []
@@ -606,6 +607,7 @@ class FtpTest(LFCliBase):
             return float(upper[:-2]) * 10 ** 6
 
     def my_monitor(self):
+        dataset = []
         if self.clients_type == "Virtual":
             response_port = self.json_get("/port/all")
             for interface in response_port['interfaces']:
@@ -628,6 +630,7 @@ class FtpTest(LFCliBase):
         uc_max_data = self.json_get("layer4/list?fields=uc-max")
         uc_min_data = self.json_get("layer4/list?fields=uc-min")
         total_url_data = self.json_get("layer4/list?fields=total-urls")
+        bytes_rd = self.json_get("layer4/list?fields=bytes-rd") 
         print(uc_avg_data)
         print(total_url_data)
 
@@ -639,6 +642,8 @@ class FtpTest(LFCliBase):
                 self.uc_min.append(uc_min_data['endpoint']['uc-min'])
                 #reading uc-avg data in json format
                 self.url_data.append(total_url_data['endpoint']['total-urls'])
+                dataset.append(bytes_rd['endpoint']['bytes-rd'])
+                self.bytes_rd=[float(f"{(i / 1000000): .4f}") for i in dataset]
             else:
                 for cx in uc_avg_data['endpoint']:
                     for CX in cx:
@@ -660,6 +665,12 @@ class FtpTest(LFCliBase):
                         for created_cx in self.cx_list:
                             if CX == created_cx:                
                                 self.url_data.append(cx[CX]['total-urls'])
+                for cx in bytes_rd['endpoint']:
+                    for CX in cx:
+                        for created_cx in self.cx_list:
+                            if CX == created_cx:    
+                                dataset.append(cx[CX]['bytes-rd'])
+                                self.bytes_rd=[float(f"{(i / 1000000): .4f}") for i in dataset]            
             logger.info(f"uc_min,uc_max,uc_avg {self.uc_min},{self.uc_max},{self.uc_avg}")
             print("total urls",self.url_data)
         else:
@@ -1092,7 +1103,7 @@ class FtpTest(LFCliBase):
                 duration = str(self.traffic_duration/3600) + "h"
 
         '''Method for generate the report'''
-        print(self.real_client_list,self.station_list,self.url_data,self.uc_avg,self.mac_id_list,self.channel_list,self.mode_list)
+        #print(self.real_client_list,self.station_list,self.url_data,self.uc_avg,self.mac_id_list,self.channel_list,self.mode_list)
         client_list=[]
         if self.clients_type == "Real":
             client_list = self.real_client_list1
@@ -1229,7 +1240,8 @@ class FtpTest(LFCliBase):
                         " Channel" : self.channel_list,
                         " Mode" : self.mode_list,
                         " No of times File downloaded " : self.url_data,
-                        " Time Taken to Download file (ms)" : self.uc_avg
+                        " Time Taken to Download file (ms)" : self.uc_avg,
+                        " Bytes-rd (Mega Bytes)" : self.bytes_rd
                     }
         dataframe1 = pd.DataFrame(dataframe)
         self.report.set_table_dataframe(dataframe1)
