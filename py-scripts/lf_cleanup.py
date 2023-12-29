@@ -622,7 +622,7 @@ NOTES:
         '--resource',
         '--res',
         help='--resource <realm resource> to clear a specific resource, or --resource <all> to cleanup all resources',
-        default='1')
+        default='all')
     parser.add_argument(
         '--cxs',
         help="--cxs, this will clear all the Layer-3 cxs and endps",
