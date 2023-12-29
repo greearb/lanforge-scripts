@@ -112,6 +112,9 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+from lanforge_client.lanforge_api import LFSession
+from lanforge_client.lanforge_api import LFJsonCommand
 TestGroupProfile = realm.TestGroupProfile
 port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
@@ -133,6 +136,7 @@ class IPV4L4(Realm):
                  ftp_user=None,
                  ftp_passwd=None,
                  requests_per_ten=None,
+                 rpt_timer=1000,
                  station_list=None,
                  test_duration="2m",
                  ap=None,
@@ -169,6 +173,7 @@ class IPV4L4(Realm):
         self.epoch_time = int(time.time())
         self.debug = _debug_on
         self.requests_per_ten = int(requests_per_ten)
+        self.rpt_timer = rpt_timer
         self.number_template = number_template
         self.test_duration = test_duration
         self.sta_list = station_list
@@ -180,7 +185,15 @@ class IPV4L4(Realm):
         self.cx_profile = self.new_l4_cx_profile()
 
         self.port_util = PortUtils(self)
-
+        self.session = LFSession(lfclient_url="http://%s:8080" % self.host,
+                                 debug=self.debug,
+                                 connection_timeout_sec=4.0,
+                                 stream_errors=True,
+                                 stream_warnings=True,
+                                 require_session=True,
+                                 exit_on_error=True)
+        self.command: LFJsonCommand
+        self.command = self.session.get_command()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password
@@ -342,6 +355,13 @@ class IPV4L4(Realm):
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endps, total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_seconds, total_urls
 
+    def set_port_report_timer(self,cx_names=None):
+        for cx_name in cx_names:    
+            self.command.post_set_cx_report_timer(cx_name=cx_name,
+                                             test_mgr="default_tm",
+                                             milliseconds=int(self.rpt_timer),
+                                             debug=self.debug)
+        
     def build(self):
         l4_7_port_lst = []
         if 'http' in self.url:
@@ -423,9 +443,11 @@ class IPV4L4(Realm):
                 self.cx_profile.created_cx = {}
                 if len(exist_l4['endpoint']) > 1:
                     for i in exist_l4['endpoint']:
-                        self.cx_profile.created_cx[list(i.keys())[0]] = 'CX_' + i[list(i.keys())[0]]['name']
+                        if i[list(i.keys())[0]]['name']!="":
+                            self.cx_profile.created_cx[list(i.keys())[0]] = 'CX_' + i[list(i.keys())[0]]['name']
                 else:
-                    self.cx_profile.created_cx[exist_l4['endpoint']['name']] = 'CX_' + exist_l4['endpoint']['name']
+                    if self.cx_profile.created_cx[exist_l4['endpoint']['name']] != "":
+                        self.cx_profile.created_cx[exist_l4['endpoint']['name']] = 'CX_' + exist_l4['endpoint']['name']
             self.cx_profile.cleanup()
         else:
             self.cx_profile.cleanup()
@@ -635,6 +657,8 @@ Generic command example:
 
     test_l4_parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes',
                                 default=600)
+    test_l4_parser.add_argument('--rpt_timer', help='--rpt_timer report timer. Enter in milliseconds',
+                                default=1000)
     test_l4_parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes',
                                 default=1)
     test_l4_parser.add_argument('--url', help='''
@@ -909,21 +933,30 @@ Generic command example:
                      num_tests=args.num_tests,
                      target_requests_per_ten=args.target_per_ten,
                      requests_per_ten=args.requests_per_ten,
+                     rpt_timer=args.rpt_timer,
                      l4_7_port=args.l4_7_port_name)
     ip_test.cleanup(station_list, clean_all_sta=False if num_sta else True, clean_all_l4_7=False if num_sta else True)
     ip_test.build()
     ip_test.start()
     l4_cx_results = {}
-
+    layer4traffic_list = []
+    layer4_tm = []
     ip_test_json_data = ip_test.json_get('layer4')['endpoint']
     logger.info(pformat(ip_test_json_data))
 
     if not isinstance(ip_test_json_data, list):
         # if single cx data_type == dict, OR multi cx data_type == list
-        layer4traffic = ip_test_json_data['name']
+        if ip_test_json_data['name'] != '':
+            layer4traffic = ip_test_json_data['name']
     else:
-        layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.json_get('layer4')['endpoint']])
+        for endp in ip_test.json_get('layer4')['endpoint']:
+            if endp[list(endp.keys())[0]]['name'] != '':
+                layer4traffic_list.append([*endp.keys()][0])
+        layer4traffic = ','.join([str(elem) for i,elem in enumerate(layer4traffic_list)])
     # TODO pass in what is to be monitored on the command line
+    for cx_name in layer4traffic_list :
+        layer4_tm.append('CX_'+cx_name)
+    ip_test.set_port_report_timer(cx_names=layer4_tm)
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
                                # report_file is for the monitor
                                report_file=report_file,
