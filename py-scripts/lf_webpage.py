@@ -571,7 +571,7 @@ class HttpDownload(Realm):
         return graph_png
 
     def generate_report(self, date, num_stations, duration, test_setup_info, dataset, lis, bands, threshold_2g,
-                        threshold_5g, threshold_both, dataset2, #summary_table_value,
+                        threshold_5g, threshold_both, dataset2,dataset1, #summary_table_value,
                         result_data, test_rig,
                         test_tag, dut_hw_version, dut_sw_version, dut_model_num, dut_serial_num, test_id,
                         test_input_infor, csv_outfile, _results_dir_name='webpage_test', report_path=''):
@@ -757,7 +757,8 @@ class HttpDownload(Realm):
                         " Channel" : self.channel_list,
                         " Mode" : self.mode_list,
                         " No of times File downloaded " : dataset2,
-                        " Average time taken to Download file (ms)" : dataset
+                        " Average time taken to Download file (ms)" : dataset,
+                        " Bytes-rd (Mega Bytes) " : dataset1
                     }
         dataframe1 = pd.DataFrame(dataframe)
         report.set_table_dataframe(dataframe1)
@@ -1108,7 +1109,8 @@ def main():
     for i in result_data:
         dataset = result_data[i]['dl_time']
         dataset2 = result_data[i]['url_times']
-    print("data sets",dataset,dataset2)
+        bytes_rd = result_data[i]['bytes_rd']
+    dataset1 = [float(f"{(i / 1000000): .4f}") for i in bytes_rd]
     lis = []
     if bands == "Both":
         for i in range(1, args.num_stations*2 + 1):
@@ -1132,7 +1134,7 @@ def main():
     http.generate_report(date, num_stations=args.num_stations,
                           duration=args.duration, test_setup_info=test_setup_info, dataset=dataset, lis=lis,
                           bands=args.bands, threshold_2g=args.threshold_2g, threshold_5g=args.threshold_5g,
-                          threshold_both=args.threshold_both, dataset2=dataset2,
+                          threshold_both=args.threshold_both, dataset2=dataset2,dataset1=dataset1,
                           #summary_table_value=summary_table_value, 
                           result_data=result_data,
                           test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
