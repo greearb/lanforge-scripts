@@ -14,8 +14,8 @@ EXAMPLE:
 
     # For modify the net-smith dhcp min and max range
     python3 ./lf_create_vap_cv.py --mgr 192.168.200.138 --port 8080 --delete_old_scenario --scenario_name hello
-    --vap_radio 1.1.wiphy0 --vap_freq 2437 --vap_ssid testings --vap_passwd Password@123 --vap_security wpa2
-    --vap_bw 20 --vap_ip 192.168.0.16 --vap_ip_mask 255.255.0.0 --dhcp_min_range 192.168.0.5 --dhcp_max_range 192.168.0.200
+    --vap_radio 1.1.wiphy0 --vap_freq 2437 --vap_ssid testings --vap_passwd Password@123 --vap_security wpa2 --num_vaps 2
+    --vap_bw 20 --vap_ip 192.168.0.16 --vap_ip_mask 255.255.0.0 --dhcp_min_range 192.168.0.5 --dhcp_max_range 192.168.0.200 
 
     vs_code launch.json example:
     "args": ["--mgr","localhost",
@@ -160,6 +160,19 @@ class create_vap_cv(cv_test):
         self.vap_mode = vap_mode
         self.vaps_list= []
 
+    def remove_profile(self,scenario_name="Automation"):
+        post_data = {"name":scenario_name}
+        post_url = "http://{}:{}/cli-json/rm_profile".format(self.lfclient_host,self.lf_port)
+        profile_data = requests.get(url="http://{}:{}/profile/all".format(self.lfclient_host,self.lf_port))
+        data = profile_data.json()
+        for profile in data['profiles']:
+            for key,value in profile.items():
+                if scenario_name in value['name']:
+                    requests.post(url=post_url,json=post_data)
+                else:
+                    logger.info("No existing profile with given scenario name {}".format(scenario_name))
+            break
+        
     def setup_vap(self, scenario_name="Automation", radio="wiphy0", frequency="-1", name=None, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
 
         profile_flag = {"wep": "2", "wpa": "4", "wpa2": "8", "wpa3": "20", "open": None}
@@ -202,6 +215,7 @@ class create_vap_cv(cv_test):
                           vap_upstream_port="1.1.eth2",
                           profile_name=None,
                           freq=-1,
+                          amount=1,
                           line=None):
 
         self.profile_name = profile_name
@@ -221,11 +235,11 @@ class create_vap_cv(cv_test):
         upstream_shelf, upstream_resource, upstream_name, *nil = LFUtils.name_to_eid(vap_upstream_port)
         if self.set_upstream == "True":
             # TODO VAP needs to have ability to enable dhcp on the vap as compared to the upstream port.
-            self.raw_line_l1 = [[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},AUTO {self.freq} NA'],
+            self.raw_line_l1 = [[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} {amount} NA NA {vap_radio_name},AUTO {self.freq} NA'],
                                 [f'resource {vap_shelf}.{vap_resource}.0 0'],
                                 [f'profile_link {upstream_shelf}.{upstream_resource} upstream-dhcp 1 NA NA {upstream_name},AUTO -1 NA']]
         else:
-            self.raw_line_l1 = [[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},AUTO {self.freq} NA'],
+            self.raw_line_l1 = [[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} {amount} NA NA {vap_radio_name},AUTO {self.freq} NA'],
                                 [f'resource {vap_shelf}.{vap_resource}.0 0']]
 
         logger.info(self.raw_line_l1)
@@ -240,7 +254,7 @@ class create_vap_cv(cv_test):
         chamber.build(scenario_name)        # self.apply_and_build_scenario("Sushant1")
 
     def build_and_setup_vap(self,delete_old_scenario=True, scenario_name="Automation", radio="wiphy0", vap_upstream_port="1.1.eth2",
-                            frequency=-1, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
+                            frequency=-1, amount=1, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
         self.setup_vap(scenario_name=scenario_name,
                        radio=radio,
                        frequency=frequency,
@@ -255,6 +269,7 @@ class create_vap_cv(cv_test):
                                          vap_upstream_port=vap_upstream_port,
                                          profile_name=scenario_name,
                                          freq=frequency,
+                                         amount=amount,
                                          line=None)
 
         self.build_chamberview(chamber=chamber, scenario_name=scenario_name)
@@ -297,8 +312,8 @@ EXAMPLE:
         
     # For modify the net-smith dhcp min and max range
     python3 ./lf_create_vap_cv.py --mgr 192.168.200.138 --port 8080 --delete_old_scenario --scenario_name hello 
-    --vap_radio 1.1.wiphy0 --vap_freq 2437 --vap_ssid testings --vap_passwd Password@123 --vap_security wpa2 
-    --vap_bw 20 --vap_ip 192.168.0.16 --vap_ip_mask 255.255.0.0 --dhcp_min_range 192.168.0.5 --dhcp_max_range 192.168.0.200
+    --vap_radio 1.1.wiphy0 --vap_freq 2437 --vap_ssid testings --vap_passwd Password@123 --vap_security wpa2 --num_vaps 2
+    --vap_bw 20 --vap_ip 192.168.0.16 --vap_ip_mask 255.255.0.0 --dhcp_min_range 192.168.0.5 --dhcp_max_range 192.168.0.200 
 
     vs_code launch.json example:
     "args": ["--mgr","localhost",
@@ -374,12 +389,14 @@ INCLUDE_IN_README: False
                         help="vap frequency (by default: 2437")
     parser.add_argument("-vs", "--vap_ssid", default="routed-AP",
                         help="vap ssid (by default: routed-AP")
-    parser.add_argument("-vp", "--vap_passwd", default="something",
-                        help="vap password (by default: something")
+    parser.add_argument("-vp", "--vap_passwd", default=None,
+                        help="vap password (by default:None")
     parser.add_argument("-vse", "--vap_security", default="wpa2",
                         help="vap security like wep ,wpa, wpa2, wpa3 (by default: wpa2")
     parser.add_argument("--vap_upstream_port", default="1.1.eth2",
                         help="vap upstream_port (by default: 1.1.eth2")
+    parser.add_argument("--num_vaps", default= 1,
+                        type=int , help="enter the number of vaps need to be created (by default : 1)")
     parser.add_argument("--vap_bw", type=str, default=None, help="vap bw like 20, 40, 80, 160(by default: None")
     parser.add_argument("--vap_mode", type=str, default="AUTO",
                         help="vap mode can be selected from these"
@@ -426,7 +443,8 @@ INCLUDE_IN_README: False
     if args.load_existing_scenario is True:
         lf_create_vap_cv.load_old_scenario()
     else:
-        lf_create_vap_cv.build_and_setup_vap(delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
+        lf_create_vap_cv.remove_profile(scenario_name=vap_scenario_name)
+        lf_create_vap_cv.build_and_setup_vap(delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,amount=args.num_vaps,
                                              vap_upstream_port=vap_upstream_port, frequency=vap_freq, vap_ssid=vap_ssid, vap_pawd=vap_passwd, vap_security=vap_security)
         if args.dhcp_min_range and args.dhcp_max_range:
             lf_create_vap_cv.modify_vr_cfg(dhcp_min=args.dhcp_min_range, dhcp_max=args.dhcp_max_range)
