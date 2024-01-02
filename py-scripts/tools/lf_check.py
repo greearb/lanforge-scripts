@@ -2035,6 +2035,10 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
         '--update_latest',
         help="--update_latest  copy latest results to top dir",
         action='store_true')
+    parser.add_argument('--new_test_run',
+        help="--new_test_run is used to allow for a new set of allure links in results",
+        action='store_true')
+
 
     # logging configuration:
     parser.add_argument('--log_level',
@@ -2734,7 +2738,28 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
         allure_environment_properties += suite_parent 
 
     count = 0
+    allure_suite_strings = ""
     for suite in lf_check_test_suite_list:
+        allure_suite_strings += suite_string
+        count += 1
+
+    # write URL's to a file
+    allure_env_links_file = str(report.get_path()) + "/allure_env_links.txt"
+
+    # This is to allow past lf_check results as a URL
+    if args.new_test_run:
+        if os.path.exists(allure_env_links_file):
+            os.remove(allure_env_links_file)
+
+    # check for new test run
+    allure_env_links_fd = open(allure_env_links_file, 'a+')
+    allure_env_links_fd.write(allure_suite_strings)
+    allure_env_links_fd.close()
+
+    allure_env_links_fd = open(allure_env_links_file, 'r+')
+
+    count = 0
+    for suite in allure_env_links_fd:
         suite_string = " URL_{}={}\n".format(count,suite)
         allure_environment_properties += suite_string
         count += 1
