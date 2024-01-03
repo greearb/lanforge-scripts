@@ -225,7 +225,7 @@ class InteropPortReset(Realm):
                             data = {
                                 'shelf': shelf,
                                 'resource': resource,
-                                'port': sta_name
+                                'port': station_name.split(".")[2]  # taking the exiting station names
                             }
                             data_list.append(data)
                             break
@@ -313,6 +313,7 @@ class InteropPortReset(Realm):
             data_list.append(data)
         for i in data_list:
             self.json_post("/cli-json/set_port", i)
+            time.sleep(5)
 
     def real_clients_connectivity(self, windows_list, linux_list, mac_list):
         # for laptops
@@ -538,16 +539,32 @@ class InteropPortReset(Realm):
                 local_dict[str(phn_name)]["Association Rejection"] = win_association_rejection
                 win_connected_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
                                                      filter="connected")
-                # Double-checking & adding remarks if any
-                if win_connected_count > 1 or win_connected_count == 0:
-                    port_name = phn_name.split(".")
-                    port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
-                    if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
-                        win_connected_count = 1
+                # assoc-rejection based logic
+                if win_association_rejection:
+                    # Updating the connects
+                    actual_connects = win_association_attempt - win_association_rejection
+                    if actual_connects == win_connected_count:
+                        win_connected_count = win_connected_count
                     else:
-                        win_connected_count = 0
+                        win_connected_count = actual_connects
+                else:
+                    if win_association_attempt == win_connected_count:
+                        win_connected_count = win_connected_count
+                    else:
+                        # Double-checking
+                        if win_connected_count > 1 or win_connected_count == 0:
+                            port_name = phn_name.split(".")
+                            port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
+                            if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
+                                win_connected_count = 1
+                            else:
+                                win_connected_count = 0
                 logging.info("Final Connected Count for %s: %s" % (phn_name, win_connected_count))
                 local_dict[str(phn_name)]["Connected"] = win_connected_count
+                # Updating the association-rejections
+                if win_association_attempt > win_connected_count:
+                    win_association_rejection = win_association_attempt - win_connected_count
+                local_dict[str(phn_name)]["Association Rejection"] = win_association_rejection
                 # Adding re-marks
                 remarks = "NA"
                 if win_disconnect_count == 0 and win_connected_count == 1:
@@ -555,11 +572,7 @@ class InteropPortReset(Realm):
                 elif win_disconnect_count >= 1 and win_connected_count == 0:
                     remarks = "The Disconnections are seen but Client did not connected to user given SSID."
                 local_dict[str(phn_name)]["Remarks"] = remarks
-                # Updating the association-rejections
-                if win_association_attempt > win_connected_count:
-                    win_association_rejection = win_association_attempt - win_connected_count
-                local_dict[str(phn_name)]["Association Rejection"] = win_association_rejection
-            else:  # for linux, mac
+            else:  # other means (for linux, mac)
                 other_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
                                                         filter="disconnected")
                 # Double-checking the disconnect count with another key msg
@@ -583,16 +596,32 @@ class InteropPortReset(Realm):
 
                 other_connected_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
                                                        filter="<3>CTRL-EVENT-CONNECTED")
-                # Double-checking & adding remarks if any
-                if other_connected_count > 1 or other_connected_count == 0:
-                    port_name = phn_name.split(".")
-                    port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
-                    if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
-                        other_connected_count = 1
+                # assoc-rejection based logic
+                if other_association_rejection:
+                    # Updating the connects
+                    actual_connects = other_association_attempt - other_association_rejection
+                    if actual_connects == other_connected_count:
+                        other_connected_count = other_connected_count
                     else:
-                        other_connected_count = 0
+                        other_connected_count = actual_connects
+                else:
+                    if other_association_attempt == other_connected_count:
+                        other_connected_count = other_connected_count
+                    else:
+                        # Double-checking & adding remarks if any
+                        if other_connected_count > 1 or other_connected_count == 0:
+                            port_name = phn_name.split(".")
+                            port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
+                            if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
+                                other_connected_count = 1
+                            else:
+                                other_connected_count = 0
                 logging.info("Final Connected Count for %s: %s" % (phn_name, other_connected_count))
                 local_dict[str(phn_name)]["Connected"] = other_connected_count
+                # Updating the association-rejections
+                if other_association_attempt > other_connected_count:
+                    other_association_rejection = other_association_attempt - other_connected_count
+                local_dict[str(phn_name)]["Association Rejection"] = other_association_rejection
                 # Adding remarks
                 remarks = "NA"
                 if other_disconnect_count == 0 and other_connected_count == 1:
@@ -600,17 +629,13 @@ class InteropPortReset(Realm):
                 elif other_disconnect_count >= 1 and other_connected_count == 0:
                     remarks = "The Disconnections are seen but Client did not connected to user given SSID."
                 local_dict[str(phn_name)]["Remarks"] = remarks
-                # Updating the association-rejections
-                if other_association_attempt > other_connected_count:
-                    other_association_rejection = other_association_attempt - other_connected_count
-                local_dict[str(phn_name)]["Association Rejection"] = other_association_rejection
         logging.info("local_dict " + str(local_dict))
 
         return local_dict
 
     # @property
     def run(self):
-        try:
+        # try:
             # start timer
             present_time = datetime.now()
             test_start_time = present_time.strftime("%b %d %H:%M:%S")
@@ -829,8 +854,8 @@ class InteropPortReset(Realm):
                 logging.info(f"Name of the Report Folder : {self.report_path}")
                 logging.info("Generating the Report...")
                 return reset_dict, test_duration
-        except Exception as e:
-            logger.error(str(e))
+        # except Exception as e:
+        #     logger.error(str(e))
 
     def generate_overall_graph(self, reset_dict=None, figsize=(13, 5), _alignmen=None, remove_border=None,
                                bar_width=0.7, _legend_handles=None, _legend_loc="best", _legend_box=None,
@@ -1139,7 +1164,7 @@ class InteropPortReset(Realm):
             self.lf_report.build_table()
 
     def generate_report(self, reset_dict=None, test_dur=None):
-        try:
+        # try:
             # print("reset dict", reset_dict)
             # print("Test Duration", test_dur)
             # logging.info("reset dict " + str(reset_dict))
@@ -1161,7 +1186,7 @@ class InteropPortReset(Realm):
                 "SSID": self.ssid,
                 "Security": security,
                 "Total Reset Count": self.reset,
-                "No of Clients": f"{len(self.user_query[0])} (Windows: {len(self.windows_list)}, Linux: {len(self.linux_list)}, Mac: {len(self.mac_list)}, Android: {len(self.adb_device_list)})",
+                "No of Clients": f"{len(self.all_selected_devices)} (Windows: {len(self.windows_list)}, Linux: {len(self.linux_list)}, Mac: {len(self.mac_list)}, Android: {len(self.adb_device_list)})",
                 # "Wait Time": str(self.wait_time) + " sec",
                 "Time intervel between resets": str(self.time_int) + " sec",
                 "Test Duration": test_dur,
@@ -1264,8 +1289,8 @@ class InteropPortReset(Realm):
             self.lf_report.write_html()
             self.lf_report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
             # self.lf_report.move_data(directory="log", _file_name="port_reset.log")
-        except Exception as e:
-            logging.warning(str(e))
+        # except Exception as e:
+        #     logging.warning(str(e))
 
 
 def main():
