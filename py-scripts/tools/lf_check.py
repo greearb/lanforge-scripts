@@ -2740,7 +2740,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     count = 0
     allure_suite_strings = ""
     for suite in lf_check_test_suite_list:
-        allure_suite_strings += suite
+        suite_string = "{}\n".format(suite)
+        allure_suite_strings += suite_string
         count += 1
 
     # write URL's to a file
