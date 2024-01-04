@@ -2815,11 +2815,25 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
     try:
         new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir, dirs_exist_ok=True)
-        logger.debug("allure report directory copied to {latest}".format(latest=new_allure_latest_dir))
     except:
         # fedora 27 does no except the directory being present
         shutil.rmtree(allure_latest_dir, ignore_errors=True)
         new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir)
+    logger.debug("allure report directory copied to {latest}".format(latest=new_allure_latest_dir))
+
+    # copy the allure-report-latest into the epoch time stamp
+    # check to see if the directory is present
+    if not os.path.exists(new_allure_epoch_dir):
+        os.makedirs(new_allure_epoch_dir)
+
+    try:
+        new_allure_epoch_latest_dir = shutil.copytree(report.allure_report_dir,new_allure_epoch_dir, dirs_exist_ok=True)
+    except:
+        # fedora 27 does no except the directory being present
+        shutil.rmtree(new_allure_epoch_dir, ignore_errors=True)
+        new_allure_epoch_latest_dir = shutil.copytree(report.allure_report_dir,new_allure_epoch_dir)
+
+    logger.debug("allure report directory copied to {latest}".format(latest=new_allure_epoch_latest_dir))
 
 
 
