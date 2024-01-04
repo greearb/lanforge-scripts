@@ -2770,10 +2770,6 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     report.write_allure_environment_properties(allure_results_path=allure_results_path)
 
 
-    # Update allure one time
-    report.update_allure_results_history(allure_results_path=allure_results_path)
-    report.generate_allure_report()
-
     # Copy the allure report to latest and mv report to time stamp
     # maybe report should contain this funtionality
     allure_epoch = str(int(time.time()))
@@ -2787,6 +2783,28 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     # directory with time stamp
     new_allure_epoch_dir = shutil.copytree(report.allure_report_dir,allure_epoch_dir)
     logger.debug("allure report directory with timestamp {allure_report}".format(allure_report=new_allure_epoch_dir))
+
+    # Update the executor json after copying the data 
+    # save executor.json
+    allure_executor_dictionary = {
+        "reportName": "{report_name}".format(report_name="lf_check"),
+        "buildName": "{build_name}#{time1}".format(build_name=lanforge_gui_version,time1=allure_epoch),
+        "buildOrder": "{time2}".format(time2=allure_epoch),
+        "name": "{name}".format(name="Lanforge Check"),
+        "reportUrl": "../{time3}/index.html".format(time3=allure_epoch),
+        "buildUrl": "../{time4}".format(time4=allure_epoch),
+        "type": "lf_check"
+    }
+
+    allure_executor_json = json.dumps(allure_executor_dictionary, indent=4)
+    report.set_allure_executor(allure_executor_json)
+    report.write_allure_executor(allure_results_path=allure_results_path)                  
+
+
+    # Update allure one time
+    report.update_allure_results_history(allure_results_path=allure_results_path)
+    report.generate_allure_report()
+
 
     # copy allure report to latest
     allure_latest_dir = os.path.join(report.path,"allure-report-latest")
@@ -2804,22 +2822,6 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
         new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir)
 
 
-
-    # Update the executor json after copying the data 
-    # save executor.json
-    allure_executor_dictionary = {
-        "reportName": "{report_name}".format(report_name="lf_check"),
-        "buildName": "{build_name}#{time1}".format(build_name=lanforge_gui_version,time1=allure_epoch),
-        "buildOrder": "{time2}".format(time2=allure_epoch),
-        "name": "{name}".format(name="Lanforge Check"),
-        "reportUrl": "../{time3}/index.html".format(time3=allure_epoch),
-        "buildUrl": "../{time4}".format(time4=allure_epoch),
-        "type": "lf_check"
-    }
-
-    allure_executor_json = json.dumps(allure_executor_dictionary, indent=4)
-    report.set_allure_executor(allure_executor_json)
-    report.write_allure_executor(allure_results_path=allure_results_path)                  
 
 if __name__ == '__main__':
     main()
