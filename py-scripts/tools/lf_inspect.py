@@ -496,7 +496,7 @@ class inspect_sql:
                                 test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'], description=df_data_1['short-description'])
                             # record the junit results
                             self.junit_results += """
-                                <testcase name="{name}" classname="{suite} id="{description}">
+                                <testcase name="{name}" classname="{suite}" id="{description}">
                                 """.format(name=self.junit_test, suite=self.test_suite, description=description)
 
                             # remove junit xml characters
@@ -741,7 +741,7 @@ class inspect_sql:
                             test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'], description=df_data_1['short-description'])
                         # record the junit results
                         self.junit_results += """
-                            <testcase name="{name}" classname="{suite} id="{description}">
+                            <testcase name="{name}" classname="{suite}" id="{description}">
                             """.format(name=self.junit_test, suite=self.test_suite, description=description)
 
                         # remove junit xml characters
@@ -1037,7 +1037,7 @@ class inspect_sql:
                                 test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'], description=df_data_1['short-description'])
                             # record the junit results
                             self.junit_results += """
-                                <testcase name="{name}" classname="{suite} id="{description}">
+                                <testcase name="{name}" classname="{suite}" id="{description}">
                                 """.format(name=self.junit_test, suite=self.test_suite, description=description)
 
                             # remove junit xml characters
