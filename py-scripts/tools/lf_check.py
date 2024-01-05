@@ -179,6 +179,22 @@ class lf_check():
                  _log_path,
                  _json_test_name):
 
+
+        # get the server information
+        self.hostname = socket.getfqdn()
+        self.server_ip = socket.gethostbyname(self.hostname)
+
+        # report information
+        self.lf_check_report_url = ""
+        self.report_path = ""
+
+        if _report_path is not None:
+            self.report_path = _report_path
+            self.lf_check_report_url = self.report_path.replace('/home/lanforge/', '')
+        # if self.lf_check_report_url.startswith('/'):
+        #    self.lf_check_report_url = self.lf_check_report_url[1:]
+
+
         # test configuration
         self.json_rig = _json_rig
         self.json_dut = _json_dut
@@ -539,6 +555,7 @@ class lf_check():
         ssh.close()
         time.sleep(1)
         return self.lanforge_gui_version_full, self.lanforge_gui_version, self.lanforge_gui_build_date, self.lanforge_gui_git_sha
+
 
     def send_results_email(self, report_file=None):
         if (report_file is None):
@@ -1711,11 +1728,12 @@ junit.xml path: allure serve {junit_path}
                     kernel=self.lanforge_kernel_version, gui=self.lanforge_gui_version, build=self.lanforge_gui_build_date,
                    )
 
-
+        # put the URL's in the results
         self.junit_results += """
             <property name="command" value="{command}" />
-            <property name="log" value="{log}" />
-        """.format(command=command_quotes_removed, log=allure_stdout_log_link)
+            <property name="url:log" value="http://{server_ip}{log}" />
+            <property name="url:test_suite" value="http://{server_ip_1}{lf_check}" />
+        """.format(command=command_quotes_removed, server_ip=self.server_ip, server_ip_1=self.server_ip, log=allure_stdout_log_link, lf_check=self.lf_check_report_url)
 
         # End properties
         self.junit_results += """
