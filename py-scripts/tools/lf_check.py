@@ -1659,23 +1659,20 @@ junit.xml path: allure serve {junit_path}
 
         # stdout_log_link is used for the email reporting to have
         # the corrected path
-        abs_path = False
-        if abs_path:
-            stdout_log_link = str(stdout_log_txt).replace(
-                '/home/lanforge', '')
-            stderr_log_link = str(stderr_log_txt).replace(
-                '/home/lanforge', '')
-        # use relative path for reporting
-        else:
-            stdout_log_basename = os.path.basename(stdout_log_txt)
-            stdout_log_parent_path = os.path.dirname(stdout_log_txt)
-            stdout_log_parent_basename = os.path.basename(stdout_log_parent_path)
-            stdout_log_link = "./" + stdout_log_parent_basename + "/" + stdout_log_basename
+        
+        allure_stdout_log_link = str(stdout_log_txt).replace('/home/lanforge', '')
+        # allure_stderr_log_link = str(stderr_log_txt).replace('/home/lanforge', '')
 
-            stderr_log_basename = os.path.basename(stderr_log_txt)
-            stderr_log_parent_path = os.path.dirname(stderr_log_txt)
-            stderr_log_parent_basename = os.path.basename(stderr_log_parent_path)
-            stderr_log_link = "./" + stderr_log_parent_basename + "/" + stderr_log_basename
+        # use relative path for reporting
+        stdout_log_basename = os.path.basename(stdout_log_txt)
+        stdout_log_parent_path = os.path.dirname(stdout_log_txt)
+        stdout_log_parent_basename = os.path.basename(stdout_log_parent_path)
+        stdout_log_link = "./" + stdout_log_parent_basename + "/" + stdout_log_basename
+
+        stderr_log_basename = os.path.basename(stderr_log_txt)
+        stderr_log_parent_path = os.path.dirname(stderr_log_txt)
+        stderr_log_parent_basename = os.path.basename(stderr_log_parent_path)
+        stderr_log_link = "./" + stderr_log_parent_basename + "/" + stderr_log_basename
 
         if command.find(' ') > 1:
             short_cmd = command[0:command.find(' ')]
@@ -1718,7 +1715,7 @@ junit.xml path: allure serve {junit_path}
         self.junit_results += """
             <property name="command" value="{command}" />
             <property name="log" value="{log}" />
-        """.format(command=command_quotes_removed, log=stdout_log_link)
+        """.format(command=command_quotes_removed, log=allure_stdout_log_link)
 
         # End properties
         self.junit_results += """
