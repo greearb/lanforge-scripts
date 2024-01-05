@@ -503,27 +503,26 @@ class inspect_sql:
                             str_df_data_1 = str(df_data_1).replace('<', '').replace('>', '')
                             str_df_data_2 = str(df_data_2).replace('<', '').replace('>', '')
 
+                            # Start properties
                             self.junit_results += """
-                                <system-out>
-                                Performance: {test_result}
-                                Last Run: {numeric_score_1}
-                                Prev Run: {numeric_score_2}
-                                percent:  {percent}
+                            <properties>
+                            """
 
-
-                                df_data_1 : {df_data_1}
-
-
-                                df_data_2 : {df_data_2}
-                                </system-out>
+                            self.junit_results += """
+                                <property name="Performance" value="{test_result}" />
+                                <property name="Last Run" value="{numeric_score_1}" />
+                                <property name="Prev Run" value="{numeric_score_2}" />
+                                <property name="percent" value="{percent}" />
+                                <property name="Last Data" value="{df_data_1}" />
+                                <property name="Perv Data" value="{df_data_2}" />
                                 """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
                                            percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+                            
+                            # End properties
+                            self.junit_results += """
+                            </properties>
+                            """                
 
-                            # self.junit_results += """
-                            #    <properties>
-                            #    <property name= "{type1}" value= "{value1}"/>
-                            #    </properties>.""".format(type1="this",value1="and that")
-                            # need to have tests return error messages
                             if self.test_result != "Good" and self.test_result != "Fair":
                                 self.junit_results += """
                                     <failure message="Performance: {result}  Percent: {percent}">
@@ -748,26 +747,25 @@ class inspect_sql:
                         str_df_data_1 = str(df_data_1).replace('<', '').replace('>', '')
                         str_df_data_2 = str(df_data_2).replace('<', '').replace('>', '')
 
+                        # Start properties
                         self.junit_results += """
-                            <system-out>
-                            Performance: {test_result}
-                            Last Run: {numeric_score_1}
-                            Prev Run: {numeric_score_2}
-                            percent:  {percent}
+                        <properties>
+                        """
 
-
-                            df_data_1 : {df_data_1}
-
-
-                            df_data_2 : {df_data_2}
-                            </system-out>
+                        self.junit_results += """
+                            <property name="Performance" value="{test_result}" />
+                            <property name="Last Run" value="{numeric_score_1}" />
+                            <property name="Prev Run" value="{numeric_score_2}" />
+                            <property name="percent" value="{percent}" />
+                            <property name="Last Data" value="{df_data_1}" />
+                            <property name="Perv Data" value="{df_data_2}" />
                             """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
-                                       percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
-
-                        # self.junit_results += """
-                        #    <properties>
-                        #    <property name= "{type1}" value= "{value1}"/>
-                        #    </properties>.""".format(type1="this",value1="and that")
+                                        percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+                        
+                        # End properties
+                        self.junit_results += """
+                        </properties>
+                        """                
                         # need to have tests return error messages
                         if self.test_result != "Good" and self.test_result != "Fair":
                             self.junit_results += """
@@ -1044,27 +1042,26 @@ class inspect_sql:
                             str_df_data_1 = str(df_data_1).replace('<', '').replace('>', '')
                             str_df_data_2 = str(df_data_2).replace('<', '').replace('>', '')
 
+                            # Start properties
                             self.junit_results += """
-                                <system-out>
-                                Performance: {test_result}
-                                Last Run: {numeric_score_1}
-                                Prev Run: {numeric_score_2}
-                                percent:  {percent}
+                            <properties>
+                            """
 
-
-                                df_data_1 : {df_data_1}
-
-
-                                df_data_2 : {df_data_2}
-                                </system-out>
+                            self.junit_results += """
+                                <property name="Performance" value="{test_result}" />
+                                <property name="Last Run" value="{numeric_score_1}" />
+                                <property name="Prev Run" value="{numeric_score_2}" />
+                                <property name="percent" value="{percent}" />
+                                <property name="Last Data" value="{df_data_1}" />
+                                <property name="Perv Data" value="{df_data_2}" />
                                 """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
                                            percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+                            
+                            # End properties
+                            self.junit_results += """
+                            </properties>
+                            """                
 
-                            # self.junit_results += """
-                            #    <properties>
-                            #    <property name= "{type1}" value= "{value1}"/>
-                            #    </properties>.""".format(type1="this",value1="and that")
-                            # need to have tests return error messages
                             if self.test_result != "Good" and self.test_result != "Fair":
                                 self.junit_results += """
                                     <failure message="Performance: {result}  Percent: {percent}">
