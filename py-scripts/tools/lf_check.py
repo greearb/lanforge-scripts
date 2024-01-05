@@ -1696,6 +1696,11 @@ junit.xml path: allure serve {junit_path}
             <testcase name="{name}" classname="{suite}" time="{time}">
             """.format(name=self.test, suite=self.test_suite, command=short_cmd, time=self.duration_sec_us)
 
+        # Properties TODO
+        #self.junit_results += """
+        #    <property name="{name}" value="{value}" />
+        #""".format(name=, value=)
+
         self.junit_results += """
             <system-out>
             Command:
