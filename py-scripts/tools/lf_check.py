@@ -371,9 +371,9 @@ class lf_check():
         self.logger.info(
             "get_scripts_get_sha exit_code: {exit_code}".format(
                 exit_code=exit_code))
-        scripts_git_sha = commit_hash.decode('utf-8', 'ignore')
-        scripts_git_sha = scripts_git_sha.replace('\n', '')
-        return scripts_git_sha
+        self.scripts_git_sha = commit_hash.decode('utf-8', 'ignore')
+        self.scripts_git_sha = self.scripts_git_sha.replace('\n', '')
+        return self.scripts_git_sha
 
     '''
     self.lf_mgr_ip = "192.168.0.102"
@@ -1696,19 +1696,45 @@ junit.xml path: allure serve {junit_path}
             <testcase name="{name}" classname="{suite}" time="{time}">
             """.format(name=self.test, suite=self.test_suite, command=short_cmd, time=self.duration_sec_us)
 
-        # Properties TODO
-        #self.junit_results += """
-        #    <property name="{name}" value="{value}" />
-        #""".format(name=, value=)
+        # Start properties
+        self.junit_results += """
+        <properties>
+        """
+        self.junit_results += """
+            <property name="LANforge" value="{lanforge}" />
+            <property name="LANforge IP" value="{ip}" />
+            <property name="kernel" value="{kernel}" />
+            <property name="Server Version" value="{server}" />
+            <property name="GUI" value="{gui}" />
+            <property name="GUI build Date" value={build} />
+            <property name="GUI git sha" value={gui_sha} />
+            <property name="Scripts git sha" value="{scripts}" />
+        """.format(lanforge=self.lanforge_system_node_version, ip=self.lf_mgr_ip,server=self.lanforge_server_version,
+                   gui_sha=self.lanforge_gui_git_sha, scripts=self.scripts_git_sha,
+                    kernel=self.lanforge_kernel_version, gui=self.lanforge_gui_version, build=self.lanforge_gui_build_date,
+                   )
+
 
         self.junit_results += """
-            <system-out>
-            Command:
-            {stdout}
-            link
-            {link}
-            </system-out>
-            """.format(stdout=command_quotes_removed, link=stdout_log_link)
+            <property name="command" value="{command}" />
+            <property name="log" value="{log}" />
+        """.format(command=command_quotes_removed, log=stdout_log_link)
+
+        # End properties
+        self.junit_results += """
+        </properties>
+        """                
+
+        # TODO removed for now as the text is produced yet since the property does not have a name it shows 
+        # up as unknown
+        # self.junit_results += """
+        #    <system-out>
+        #    Command:
+        #    {stdout}
+        #    link
+        #    {link}
+        #    </system-out>
+        #    """.format(stdout=command_quotes_removed, link=stdout_log_link)
 
         # need to have tests return error messages
         if self.test_result != "Finished":
