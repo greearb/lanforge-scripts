@@ -22,6 +22,8 @@ import traceback
 import math
 import datetime
 import shutil
+import socket
+
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
@@ -51,6 +53,22 @@ class inspect_sql:
                  _lf_inspect_report_path='',
                  _test_suite='db_compare'
                  ):
+        
+        # get the server information
+        self.hostname = socket.getfqdn()
+        self.server_ip = socket.gethostbyname(self.hostname)
+
+        # report information
+        self.lf_inspect_report_url = ""
+        self.report_path = ""
+
+        if _outfile is not None:
+            self.report_path = _outfile
+            self.lf_inspect_report_url = self.report_path.replace('/home/lanforge/', '')
+        if self.lf_inspect_report_url.startswith('/'):
+            self.lf_inspect_report_url = self.lf_inspect_report_url[1:]
+
+
         self.path = _path
         self.dir = _dir
         self.table = _table
@@ -70,6 +88,7 @@ class inspect_sql:
         self.conn = None
         self.plot_figure = []
         self.html_results = ""
+        self.outfile = _outfile
 
         # this may or maynot be needed
         self.dut_model_num_list = "NA"
@@ -509,14 +528,16 @@ class inspect_sql:
                             """
 
                             self.junit_results += """
+                                <property name="url:lf_inspect" value="http://{server_ip}/{lf_inspect}" />
                                 <property name="Performance" value="{test_result}" />
                                 <property name="Last Run" value="{numeric_score_1}" />
                                 <property name="Prev Run" value="{numeric_score_2}" />
                                 <property name="percent" value="{percent}" />
                                 <property name="Last Data" value="{df_data_1}" />
                                 <property name="Perv Data" value="{df_data_2}" />
-                                """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
-                                           percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+                                """.format(server_ip=self.server_ip, lf_inspect=self.lf_inspect_report_url,
+                                        test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
+                                        percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
                             
                             # End properties
                             self.junit_results += """
