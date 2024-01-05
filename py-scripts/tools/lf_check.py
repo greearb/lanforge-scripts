@@ -191,8 +191,8 @@ class lf_check():
         if _report_path is not None:
             self.report_path = _report_path
             self.lf_check_report_url = self.report_path.replace('/home/lanforge/', '')
-        # if self.lf_check_report_url.startswith('/'):
-        #    self.lf_check_report_url = self.lf_check_report_url[1:]
+        if self.lf_check_report_url.startswith('/'):
+            self.lf_check_report_url = self.lf_check_report_url[1:]
 
 
         # test configuration
@@ -1732,7 +1732,7 @@ junit.xml path: allure serve {junit_path}
         self.junit_results += """
             <property name="command" value="{command}" />
             <property name="url:log" value="http://{server_ip}{log}" />
-            <property name="url:test_suite" value="http://{server_ip_1}{lf_check}" />
+            <property name="url:test_suite" value="http://{server_ip_1}/{lf_check}" />
         """.format(command=command_quotes_removed, server_ip=self.server_ip, server_ip_1=self.server_ip, log=allure_stdout_log_link, lf_check=self.lf_check_report_url)
 
         # End properties
