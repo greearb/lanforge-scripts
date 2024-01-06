@@ -2296,11 +2296,21 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
                 current_time = time.strftime(
                     "%Y-%m-%d-%H-%M-%S", time.localtime())
-                csv_results = "{dir}-{outfile}-{current_time}.csv".format(
-                    dir=__dir, outfile=args.outfile, current_time=current_time)
+                # TODO how does report handle the output file                
+                if args.outfile == '':
+                    csv_results = "{current_time}-{dir}.csv".format(
+                        dir=__dir, current_time=current_time)                
+                else:
+                    csv_results = "{current_time}-{outfile}-{dir}.csv".format(
+                        dir=__dir, current_time=current_time)
                 csv_results = report.file_add_path(csv_results)
-                outfile_name = "{dir}-{outfile}-{current_time}".format(
-                    dir=__dir, outfile=args.outfile, current_time=current_time)
+
+                if args.outfile == '':
+                    outfile_name = "{current_time}-{dir}".format(
+                        dir=__dir, current_time=current_time)
+                else:
+                    outfile_name = "{current_time}-{outfile}-{dir}".format(
+                        dir=__dir, outfile=args.outfile, current_time=current_time)
                 outfile = report.file_add_path(outfile_name)
                 if args.flat_dir:
                     report_path = report.get_flat_dir_report_path()
