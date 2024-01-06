@@ -199,7 +199,7 @@ class lf_check():
         if _outfile is not None:
             self.lf_check_outfile = _outfile
             self.lf_check_outfile = self.lf_check_outfile.replace('/home/lanforge/','')
-            self.lf_check_report = "{url}/{file}.html".format(url=self.server_ip,file=self.lf_check_outfile)
+            self.lf_check_report = "{file}.html".format(file=self.lf_check_outfile)
 
 
         # test configuration
