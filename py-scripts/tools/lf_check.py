@@ -187,12 +187,18 @@ class lf_check():
         # report information
         self.lf_check_report_url = ""
         self.report_path = ""
+        self.lf_check_report = ""
+        self.lf_check_outfile = ""
 
         if _report_path is not None:
             self.report_path = _report_path
             self.lf_check_report_url = self.report_path.replace('/home/lanforge/', '')
         if self.lf_check_report_url.startswith('/'):
             self.lf_check_report_url = self.lf_check_report_url[1:]
+
+        if _outfile is not None:
+            self.lf_check_outfile = _outfile
+            self.lf_check_report = "{url}/{file}.html".format(url=self.server_ip,file=self.lf_check_outfile)
 
 
         # test configuration
@@ -1732,8 +1738,13 @@ junit.xml path: allure serve {junit_path}
         self.junit_results += """
             <property name="command" value="{command}" />
             <property name="url:log" value="http://{server_ip}{log}" />
-            <property name="url:test_suite" value="http://{server_ip_1}/{lf_check}" />
+            <property name="url:lf_check_dir" value="http://{server_ip_1}/{lf_check}" />
         """.format(command=command_quotes_removed, server_ip=self.server_ip, server_ip_1=self.server_ip, log=allure_stdout_log_link, lf_check=self.lf_check_report_url)
+
+        self.junit_results += """
+            <property name="url:lf_check_report" value="http://{server_ip}/{lf_check_report}" />
+        """.format(server_ip=self.server_ip, lf_check_report=self.lf_check_report)
+
 
         # End properties
         self.junit_results += """
