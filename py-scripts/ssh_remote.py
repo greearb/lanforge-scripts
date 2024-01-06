@@ -21,6 +21,7 @@ import paramiko
 from paramiko import SSHClient
 import socket
 import argparse
+import logging
 
 global ip
 global ssh_port
@@ -40,10 +41,11 @@ remote_args=""
 
 def get_info(cmd):
     try:
+        #logging.getLogger("paramiko").setLevel(logging.DEBUG)
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        #print("Connecting to AP...")
-        client.connect(ip, username=username, password=password, port=ssh_port, timeout=timeout)
+        #print("Connecting to Remote System...")
+        client.connect(ip, username=username, password=password, port=ssh_port, timeout=timeout, allow_agent=False, look_for_keys=False)
         #print("Running cmd: %s" %(cmd))
         stdin, stdout, stderr = client.exec_command(cmd)
        
@@ -52,13 +54,16 @@ def get_info(cmd):
         #print("Output:\n")
         print(output)
 
-    except paramiko.ssh_exception.AuthenticationException:
+    except paramiko.ssh_exception.AuthenticationException as e:
+        print(e)
         print("Authentication Error, Check Credentials")
         return
-    except paramiko.SSHException:
-        print("Cannot SSH to the AP")
+    except paramiko.SSHException as e:
+        print(e)
+        print("Cannot SSH to the remote system: %s:%i user: %s  password: %s" % (ip, ssh_port, username, password))
         return
-    except socket.timeout:
+    except socket.timeout as e:
+        print(e)
         print("AP Unreachable")
         return
     return
