@@ -182,6 +182,6 @@ while (1) {
     }
     print_totals(*STDOUT);
     print "]\n";
-    sleep(5);
+    sleep(30);
 }
 #
