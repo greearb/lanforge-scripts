@@ -40,7 +40,10 @@ while (my $line=<STDIN>) {
     my $lc_pos = index($line, '[{');
     # print "lc at $lc_pos\n";
     next if ($lc_pos < 0);
-    print `date`;
+    # more informative not to have the current date but the date of the record
+    # print `date`;
+    my ($date_str) = $line =~ /^(\w+ \d+ \d+:\d+:\d+) /;
+    print "$date_str \n";
     my $loadmon_line = substr($line, $lc_pos);
     my $ra_loadmon = parse_json($loadmon_line);
     #print Dumper($ra_loadmon);
