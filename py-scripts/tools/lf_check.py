@@ -2294,8 +2294,9 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                                                  dir=__dir),
                                              _output_pdf="{dir}.pdf".format(dir=__dir))
 
-                current_time = time.strftime(
-                    "%Y-%m-%d-%H-%M-%S", time.localtime())
+                # Get current time from report
+                current_time = report.date
+                logger.debug("report date to be used {date}".format(date=current_time))
                 # TODO how does report handle the output file                
                 if args.outfile == '':
                     csv_results = "{current_time}-{dir}.csv".format(
