@@ -23,6 +23,7 @@ my_lfver=`cat /var/www/html/installed-ver.txt`
 my_greeting_f="/tmp/greeting.txt"
 
 my_build="-"
+echo "exit" | nc localhost 4001 > $my_greeting_f
 if [[ -f $my_greeting_f ]]; then
     my_build=`grep 'Compiled on: ' $my_greeting_f`
     my_build="${my_build#*Compiled on: }"
