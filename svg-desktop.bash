@@ -11,6 +11,7 @@ SourceFile="/usr/share/backgrounds/mate/desktop/Ubuntu-Mate-Cold-no-logo.png"
 _R="${RANDOM}dt${RANDOM}"
 DesktopFile="/home/lanforge/Pictures/desktop-${_R}.svg"
 my_version=`cat /var/www/html/installed-ver.txt`
+my_kernel=`uname -r`
 my_hostname=`hostname`
 my_dev=`ip ro sho | awk '/default via/{print $5}'`
 my_ip=`ip a sho $my_dev | awk '/inet /{print $2}'`
@@ -75,17 +76,21 @@ text {
     stroke-width: 6px;
     stroke: rgba(50, 50, 50, 255);
 }
+.smalltxt {
+    font-size: 28px;
+}
 </style>
 <g>
     <rect id='bgrec' x='260' y='80' rx='10' ry='10' width='901px' height='351px'>
     </rect>
     <g>
-        <text x='270' y='120'>LANforge $my_lfver $my_hostname</text>
-        <text x='270' y='160'>Build: $my_build</text>
-        <text x='270' y='200'>$my_realm Resource 1.$my_resource</text>
-        <text x='270' y='240'>$my_dev $my_ip</text>
-        <text x='270' y='280'>$my_os</text>
-        <text x='270' y='320'>$my_mac</text>
+        <text x='270' y='120'>$my_hostname</text>
+        <text x='270' y='160'>LANforge $my_lfver Kernel $my_kernel</text>
+        <text x='270' y='200' class='smalltxt'>  built $my_build</text>
+        <text x='270' y='240'>$my_realm Resource 1.$my_resource</text>
+        <text x='270' y='280'>$my_dev $my_ip</text>
+        <text x='270' y='320'>$my_os</text>
+        <text x='270' y='360'>$my_mac</text>
     </g>
 </g>
 </svg>
