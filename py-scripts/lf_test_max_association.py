@@ -857,7 +857,7 @@ EXAMPLE:
                 --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
                 --dut_hw_version 1.0 --dut_model_num ct523c --dut_sw_version 5.4.5 --dut_serial_num cc34
 
-SCRIPT_CLASSIFICATION:  Stations & Cross-connectionCreation, Report generation
+SCRIPT_CLASSIFICATION:  Traffic Test, Stations & Cross-connectionCreation, Report generation
 
 SCRIPT_CATEGORIES:   Functional
 
