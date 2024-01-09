@@ -9,7 +9,7 @@ EXAMPLE:
     clear all stations:
         ./lf_cleanup.py --mgr localhost --resource 1 --sta
 
-    clear all Port Mgr objects:
+    This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI tabs:
         ./lf_cleanup.py --mgr localhost --resource 1 --sanitize
 
     clear all cxs and enps:
@@ -28,7 +28,7 @@ JSON EXAMPLE:
     clear all stations:
         "args": ["--mgr","192.168.30.12","--resource","1","--sta"]
 
-    clear all Port Mgr objects:
+    This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI tabs:
         "args": ["--mgr","192.168.30.12","--resource","1","--sanitize"]
 
     clear all cxs and enps:
@@ -43,15 +43,24 @@ JSON EXAMPLE:
     clear sta with names phy (not wiphy) and 1.1.eth stations:
         "args": ["--mgr","192.168.30.12","--resource","1","--misc"]
 
+SCRIPT_CLASSIFICATION:  Deletion
+
+SCRIPT_CATEGORIES:  Functional
+
 NOTES:
 
+    The default port is 8080
+    The script will only cleanup what is present in the GUI,
+     so it will need to iterate multiple times with script
+
+VERIFIED_ON:
     Tested on 03/17/2023:
         kernel version: 5.19.17+
         gui version: 5.4.6
 
-
-Copyright 2021 Candela Technologies Inc
-License: Free to distribute and modify. LANforge systems must be licensed.
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
 """
 import sys
 import os
@@ -602,15 +611,24 @@ JSON EXAMPLE:
     clear sta with names phy (not wiphy) and 1.1.eth stations:
         "args": ["--mgr","192.168.30.12","--resource","1","--misc"]
 
+SCRIPT_CLASSIFICATION:  Deletion
+
+SCRIPT_CATEGORIES:  Functional
+
 NOTES:
 
     The default port is 8080
     The script will only cleanup what is present in the GUI,
      so it will need to iterate multiple times with script
 
+VERIFIED_ON:
     Tested on 03/17/2023:
         kernel version: 5.19.17+
         gui version: 5.4.6
+
+LICENSE:
+          Free to distribute and modify. LANforge systems must be licensed.
+          Copyright 2023 Candela Technologies Inc
 
             ''')
     parser.add_argument(
