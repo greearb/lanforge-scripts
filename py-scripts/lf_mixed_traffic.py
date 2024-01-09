@@ -44,9 +44,9 @@ EXAMPLE:
           --direction Download --mc_tos "VI" --virtual --qos_serial --ping_test_duration 30s --qos_test_duration 30s --ftp_test_duration 30s 
           --http_test_duration 30s --multicast_test_duration 30s
 
-SCRIPT_CLASSIFICATION:  Creation, Report Generation (Both individual & Overall)
+SCRIPT_CLASSIFICATION:  Multiples Tests, Creation, Report Generation (Both individual & Overall)
 
-SCRIPT_CATEGORIES:  Set of tests mixed and able to run each test one after another.
+SCRIPT_CATEGORIES:  Performance, Functional
 
 NOTES:
         The primary goal of the script is to execute a series of tests and group their individual test reports into a unified report.
@@ -1720,9 +1720,9 @@ EXAMPLE:
           --direction Download --mc_tos "VI" --virtual --qos_serial --ping_test_duration 30s --qos_test_duration 30s --ftp_test_duration 30s 
           --http_test_duration 30s --multicast_test_duration 30s
 
-SCRIPT_CLASSIFICATION:  Creation, Report Generation (Both individual & Overall)
+SCRIPT_CLASSIFICATION:  Multiples Tests, Creation, Report Generation (Both individual & Overall)
 
-SCRIPT_CATEGORIES:  Set of tests mixed and able to run each test one after another.
+SCRIPT_CATEGORIES:  Performance, Functional
 
 NOTES:
         The primary goal of the script is to execute a series of tests and group their individual test reports into a unified report.
