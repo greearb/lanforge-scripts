@@ -1288,9 +1288,9 @@ EXAMPLE:
             python3 lf_interop_port_reset_test.py --host 192.168.200.63 --mgr_ip 192.168.1.61 --dut Test_Dut 
             --ssid RDT_wpa2 --passwd OpenWifi --encryp psk2 --reset 1 --time_int 5 --release 11
 
-SCRIPT_CLASSIFICATION:  Toggling, Report Generation, Each Reset Wifi Messages
+SCRIPT_CLASSIFICATION:  Interop Port-Reset Test
 
-SCRIPT_CATEGORIES: Interop Port-Reset Test
+SCRIPT_CATEGORIES: Toggling, Report Generation, Each Reset Wifi Messages
 
 NOTES:      
         The primary objective of this script is to automate the process of toggling WiFi on real devices with the
