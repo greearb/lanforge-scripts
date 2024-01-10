@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 """
-NAME: lf_atten_mod_test.py
+NAME:       lf_atten_mod_test.py
 
-PURPOSE:
-This program is used to modify the LANforge attenuator (through the LANforge manager/server processes) by using create() method.
-You can check the attenuator details and serial number by using show() method.
+PURPOSE:    This script is used to create the user-specified Layer-3 cross-connection.
 
-EXAMPLE:
-Run with all serial number and module: python3 lf_atten_mod_test.py -hst 192.168.200.12  -atten_serno all --atten_idx all --atten_val 220
-Run with particular serial number(2222) and module(2): python3 lf_atten_mod_test.py -hst 192.168.200.12  -atten_serno 2222 --atten_idx 3 --atten_val 220
+EXAMPLE:    Set channel four (zero-indexed) of all attenuators on LANforge system \'192.168.200.12\'
+            to attenuation value 220 ddB (22.0 dB).
+            Command: './lf_atten_mod_test.py --mgr 192.168.200.12 --atten_serno all --atten_idx 3 --atten_val 220'
 
-"atten_serno" = serial number
-"atten_idx" = module name
+            Set channel all channels of attenuator 2324 on LANforge system \'192.168.200.12\'
+            to attenuation value 0 ddB (0.0 dB).
+            Command: './lf_atten_mod_test.py --mgr 192.168.200.12 --atten_serno 2324 --atten_idx all --atten_val 0'
 
+            Run with '--help' option to see full usage and all options.
 
-Use './lf_atten_mod_test.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
@@ -67,15 +66,21 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=None,
         description='''\
-            lf_atten_mod_test.py
-            --------------------
-        set and show Attenuator:
-        python3 lf_atten_mod_test.py --hst 192.168.200.12  --atten_serno all --atten_idx 7 --atten_val 220
-                ''')
+NAME:       lf_atten_mod_test.py
 
-    parser.add_argument('-atten_serno', '--atten_serno', help='Serial number for requested Attenuator, or \'all\'', default='all')
-    parser.add_argument('-atten_idx', '--atten_idx', help='Attenuator index eg. For module 1 = 0,module 2 = 1, or \'all\'', default='all')
-    parser.add_argument('-atten_val', '--atten_val', help='Requested attenuation in 1/10ths of dB (ddB).', default=550)
+PURPOSE:    This script is used to create the user-specified Layer-3 cross-connection.
+
+EXAMPLE:    Set channel four (zero-indexed) of all attenuators on LANforge system \'192.168.200.12\'
+            to attenuation value 220 ddB (22 dB).
+            Command: './lf_atten_mod_test.py --mgr 192.168.200.12 --atten_serno all --atten_idx 3 --atten_val 220'
+
+            Set channel all channels of attenuator 2324 on LANforge system \'192.168.200.12\'
+            to attenuation value 0 ddB (0.0 dB).
+            Command: './lf_atten_mod_test.py --mgr 192.168.200.12 --atten_serno 2324 --atten_idx all --atten_val 0'
+''')
+    parser.add_argument('--atten_serno', help='Serial number for requested attenuator, or \'all\'',              default='all')
+    parser.add_argument('--atten_idx',   help='Attenuator index eg. For module 1 = 0, module 2 = 1, or \'all\'', default='all')
+    parser.add_argument('--atten_val',   help='Requested attenuation in 1/10ths of dB (ddB).',                   default=0)
     args = parser.parse_args()
 
     # set up logger
