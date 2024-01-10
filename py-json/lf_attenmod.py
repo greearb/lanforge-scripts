@@ -29,11 +29,11 @@ class ATTENUATORProfile(LFCliBase):
             "serno": self.atten_serno,
             "atten_idx": self.atten_idx,
             "val": self.atten_val,
-            "mode": None,
-            "pulse_width_us5": None,
-            "pulse_interval_ms": None,
-            "pulse_count": None,
-            "pulse_time_ms": None
+            "mode": 'NA',
+            "pulse_width_us5": 'NA',
+            "pulse_interval_ms": 'NA',
+            "pulse_count": 'NA',
+            "pulse_time_ms": 'NA'
         }
         self.debug = debug_
 
