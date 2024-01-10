@@ -73,11 +73,8 @@ def main():
         python3 lf_atten_mod_test.py --hst 192.168.200.12  --atten_serno all --atten_idx 7 --atten_val 220
                 ''')
 
-    parser.add_argument('-hst', '--host', help='host name', default='192.168.200.12')
-    # basic_argparser contains --port option
-    # Realm requires a port to be passed in 
-    parser.add_argument('-atten_serno', '--atten_serno', help='Serial number for requested Attenuator, or \'all\'', default=2222)
-    parser.add_argument('-atten_idx', '--atten_idx', help='Attenuator index eg. For module 1 = 0,module 2 = 1', default=7)
+    parser.add_argument('-atten_serno', '--atten_serno', help='Serial number for requested Attenuator, or \'all\'', default='all')
+    parser.add_argument('-atten_idx', '--atten_idx', help='Attenuator index eg. For module 1 = 0,module 2 = 1, or \'all\'', default='all')
     parser.add_argument('-atten_val', '--atten_val', help='Requested attenuation in 1/10ths of dB (ddB).', default=550)
     args = parser.parse_args()
 
@@ -87,10 +84,7 @@ def main():
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-
-    # TODO the attenuator does not need port need to clean up. 5/5/22
-    args.port = 8080
-    atten_mod_test = CreateAttenuator(host=args.host, port=args.port, serno=args.atten_serno, idx=args.atten_idx, val=args.atten_val, _debug_on=args.debug)
+    atten_mod_test = CreateAttenuator(host=args.mgr, port=args.mgr_port, serno=args.atten_serno, idx=args.atten_idx, val=args.atten_val, _debug_on=args.debug)
     atten_mod_test.build()
 
 
