@@ -344,6 +344,8 @@ sub create_generic {
 
    print "CMD: $ping_cmd\n" if ($::verbose);
 
+   # connections are having a problem knowing they are created with default_tm
+   $::utils->doCmd("show_tm all");
    $::utils->doCmd($::utils->fmt_cmd("add_gen_endp", $endp_name, 1, $::resource, $port_name, $type));
    $::utils->doCmd("set_gen_cmd $endp_name $ping_cmd");
    $::utils->doCmd("set_endp_quiesce $endp_name $::quiesce");
@@ -357,9 +359,12 @@ sub create_generic {
    $::utils->doCmd("set_endp_flag D_$endp_name ClearPortOnStart $::clear_on_start");
    $::utils->doCmd("set_endp_report_timer D_$endp_name $::report_timer");
 
+   # show endpoints to improve the chance of the add_cx to actually associate cx with detaul_tm
+   $::utils->doCmd("nc_show_endpoints $endp_name");
+   $::utils->doCmd("nc_show_endpoints D_$endp_name");
    # tie the knot with a CX
    $::utils->doCmd("add_cx CX_$endp_name default_tm $endp_name D_$endp_name");
-   $::utils->doCmd("set_cx_report_timer default_tm CX_$endp_name $::report_timer cxonly");
+   $::utils->doCmd("set_cx_report_timer CX_$endp_name $::report_timer cxonly");
 }
 
 #print Dumper(\@interfaces);
