@@ -303,6 +303,7 @@ class lf_check():
         # current test running
         self.test = None
         self.report_index = 0
+        self.report_list = []
         self.iteration = 0
         self.channel_list = []
         self.channel = 'NA'
@@ -1468,6 +1469,7 @@ junit.xml path: allure serve {junit_path}
         stdout_log_size = os.path.getsize(stdout_log_txt)
         # reset the report_index if there are multiple iterations
         self.report_index = 0
+        self.report_list = []
         if stdout_log_size > 0:
             stdout_log_fd = open(stdout_log_txt)
             # "Report Location:::/home/lanforge/html-reports/wifi-capacity-2021-08-17-04-02-56"
@@ -1480,11 +1482,16 @@ junit.xml path: allure serve {junit_path}
                         meta_data_path = line.replace('"', '')
                         meta_data_path = meta_data_path.replace(
                             'Report Location:::', '')
+                        # save the report location in a list
                         meta_data_path = meta_data_path.split('/')[-1]
                         meta_data_path = meta_data_path.split(' ')
                         meta_data_path = meta_data_path[0]
                         meta_data_path = meta_data_path.strip()
-                        meta_data_path = self.report_path + '/' + meta_data_path + '/meta.txt'
+                        meta_data_path = self.report_path + '/' + meta_data_path 
+                        report = meta_data_path.replace('/home/lanforge', '')
+                        self.report_list.append(report + '/readme.html')
+                        meta_data_path = meta_data_path + '/meta.txt'
+
                         break
             stdout_log_fd.close()
         if meta_data_path != "":
@@ -1742,9 +1749,17 @@ junit.xml path: allure serve {junit_path}
             <property name="url:lf_check_dir" value="http://{server_ip_1}/{lf_check}" />
         """.format(command=command_quotes_removed, server_ip=self.server_ip, server_ip_1=self.server_ip, log=allure_stdout_log_link, lf_check=self.lf_check_report_url)
 
+        report_index = 0
+        for report in self.report_list:
+            self.junit_results += """
+            <property name="url_{index}:test_report" value="http://{server_ip}/{report}" />
+            """.format(index=report_index, server_ip=self.server_ip, report=report)
+            report_index += 1
+
         self.junit_results += """
             <property name="url:lf_check_report" value="http://{server_ip}/{lf_check_report}" />
         """.format(server_ip=self.server_ip, lf_check_report=self.lf_check_report)
+
 
 
         # End properties
