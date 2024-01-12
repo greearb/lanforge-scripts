@@ -17,6 +17,9 @@
             "ssid_idx=0":{"ssid_idx":"0","SSID_USED":"axe11000_2g","SSID_PW_USED":"lf_axe11000_2g","BSSID_TO_USE":"fc:34:97:2b:38:90","SECURITY_USED":"wpa2"},
             "ssid_idx=1":{"ssid_idx":"1","SSID_USED":"axe11000_5g","SSID_PW_USED":"lf_axe11000_5g","BSSID_TO_USE":"fc:34:97:2b:38:94","SECURITY_USED":"wpa2"},
             "ssid_idx=2":{"ssid_idx":"2","SSID_USED":"axe11000_6g","SSID_PW_USED":"lf_axe11000_6g","BSSID_TO_USE":"fc:34:97:2b:38:98","SECURITY_USED":"wpa2"}
-        }
+        },
+        "UPSTREAM_PORT": "1.1.eth2",
+        "UPSTREAM_ALIAS": "eth2"
+
     }
 }
