@@ -1756,7 +1756,7 @@ junit.xml path: allure serve {junit_path}
             <property name="url:lf_check_report" value="http://{server_ip_2}/{lf_check_report}" />
             <property name="url:lf_check_dir" value="http://{server_ip_1}/{lf_check}" />
             <property name="command" value="{command}" />
-        """.format(command=command_quotes_removed, server_ip=self.server_ip, server_ip_1=self.server_ip, log=allure_stdout_log_link, lf_check=self.lf_check_report_url,server_ip_3=self.server_ip, lf_check_report=self.lf_check_report)
+        """.format(command=command_quotes_removed, server_ip=self.server_ip, server_ip_1=self.server_ip, log=allure_stdout_log_link, lf_check=self.lf_check_report_url,server_ip_2=self.server_ip, lf_check_report=self.lf_check_report)
 
 
         # End properties
