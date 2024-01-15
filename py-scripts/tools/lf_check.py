@@ -1743,11 +1743,6 @@ junit.xml path: allure serve {junit_path}
                    )
 
         # put the URL's in the results
-        self.junit_results += """
-            <property name="command" value="{command}" />
-            <property name="url:log" value="http://{server_ip}{log}" />
-            <property name="url:lf_check_dir" value="http://{server_ip_1}/{lf_check}" />
-        """.format(command=command_quotes_removed, server_ip=self.server_ip, server_ip_1=self.server_ip, log=allure_stdout_log_link, lf_check=self.lf_check_report_url)
 
         report_index = 0
         for report in self.report_list:
@@ -1757,9 +1752,11 @@ junit.xml path: allure serve {junit_path}
             report_index += 1
 
         self.junit_results += """
-            <property name="url:lf_check_report" value="http://{server_ip}/{lf_check_report}" />
-        """.format(server_ip=self.server_ip, lf_check_report=self.lf_check_report)
-
+            <property name="url:log" value="http://{server_ip}{log}" />
+            <property name="url:lf_check_report" value="http://{server_ip_2}/{lf_check_report}" />
+            <property name="url:lf_check_dir" value="http://{server_ip_1}/{lf_check}" />
+            <property name="command" value="{command}" />
+        """.format(command=command_quotes_removed, server_ip=self.server_ip, server_ip_1=self.server_ip, log=allure_stdout_log_link, lf_check=self.lf_check_report_url,server_ip_3=self.server_ip, lf_check_report=self.lf_check_report)
 
 
         # End properties
