@@ -50,46 +50,49 @@ class RunCvScenario(LFCliBase):
         return self.report_name
 
     def build(self):
-        data = {
-            "name": "BLANK",
-            "action": "overwrite",
-            "clean_dut": "yes",
-            "clean_chambers": "yes"
-        }
-        self.json_post("/cli-json/load", data)
-        self.wait_for_db_load_and_sync()
+        if (self.lanforge_db.lower() != "dflt"):
+            data = {
+                "name": "BLANK",
+                "action": "overwrite",
+                "clean_dut": "yes",
+                "clean_chambers": "yes"
+            }
+            self.json_post("/cli-json/load", data)
+            self.wait_for_db_load_and_sync()
 
-        port_counter = 0
-        attempts = 6
-        alias_map = None
-        while (attempts > 0) and (port_counter > 0):
-            sleep(1)
-            attempts -= 1
-            logger.debug("looking for ports like vap+")
-            port_list = self.localrealm.find_ports_like("vap+")
-            alias_map = LFUtils.portListToAliasMap(port_list)
-            port_counter = len(alias_map)
+            port_counter = 0
+            attempts = 6
+            alias_map = None
+            while (attempts > 0) and (port_counter > 0):
+                sleep(1)
+                attempts -= 1
+                logger.debug("looking for ports like vap+")
+                port_list = self.localrealm.find_ports_like("vap+")
+                alias_map = LFUtils.portListToAliasMap(port_list)
+                port_counter = len(alias_map)
 
-            port_list = self.localrealm.find_ports_like("sta+")
-            alias_map = LFUtils.portListToAliasMap(port_list)
-            port_counter += len(alias_map)
-            if port_counter == 0:
-                break
+                port_list = self.localrealm.find_ports_like("sta+")
+                alias_map = LFUtils.portListToAliasMap(port_list)
+                port_counter += len(alias_map)
+                if port_counter == 0:
+                    break
 
-        if (port_counter != 0) and (attempts == 0):
-            logger.error("There appears to be a vAP in this database, quitting.")
-            logger.error(pprint.pformat(alias_map))
-            exit(1)
+            if (port_counter != 0) and (attempts == 0):
+                logger.error("There appears to be a vAP in this database, quitting.")
+                logger.error(pprint.pformat(alias_map))
+                exit(1)
 
-        data = {
-            "name": self.lanforge_db,
-            "action": "overwrite",
-            "clean_dut": "yes",
-            "clean_chambers": "yes"
-        }
-        self.json_post("/cli-json/load", data)
-        self.wait_for_db_load_and_sync()
-        self._pass("Loaded scenario %s" % self.lanforge_db, True)
+            data = {
+                "name": self.lanforge_db,
+                "action": "overwrite",
+                "clean_dut": "yes",
+                "clean_chambers": "yes"
+            }
+            self.json_post("/cli-json/load", data)
+            self.wait_for_db_load_and_sync()
+            self._pass("Loaded scenario %s" % self.lanforge_db, True)
+        else:
+            self._pass("Using current scenario", True)
         return True
 
     def wait_for_db_load_and_sync(self):
@@ -175,38 +178,50 @@ class RunCvScenario(LFCliBase):
 
     def start(self, debug_=False):
         # /gui_cli takes commands keyed on 'cmd', so we create an array of commands
-        commands = [
-            "cv sync",
-            "sleep 4",
-            "cv apply '%s'" % self.cv_scenario,
-            "sleep 4",
-            "cv build",
-            "sleep 4",
-            "cv is_built",
-            "cv sync",
-            "sleep 4",
-            "cv list_instances",
-            "cv create '%s' 'test_ref' 'true'" % self.cv_test,
-            "sleep 5",
-            "cv load test_ref '%s'" % self.test_profile,
-            "sleep 5",
-            "cv click test_ref 'Auto Save Report'",
-            "sleep 1",
-            "cv click test_ref Start",
-            "sleep 60",
-            "cv get test_ref 'Report Location:'",
-            "sleep 5",
-            # "cv click test_ref 'Save HTML'",
-            "cv click test_ref 'Close'",
-            "sleep 1",
-            "cv click test_ref Cancel",
-            "sleep 1",
-            "exit"
-        ]
+        commands = []
+        if self.cv_scenario and self.cv_scenario != "DFLT":
+            commands.append("cv sync",
+                            "sleep 4",
+                            "cv apply '%s'" % self.cv_scenario,
+                            "sleep 4",
+                            "cv build",
+                            "sleep 4",
+                            "cv is_built",
+                            )
+        commands.extend(["cv sync",
+                         "sleep 4",
+                         ])
+        if self.cv_test == "QUIT":
+            logger.warning("Encounted test name QUIT")
+            return
+        commands.extend(["cv list_instances",
+                         "cv create '%s' 'test_ref' 'true'" % self.cv_test,
+                         "sleep 5",
+                         ])
+
+        if self.test_profile != "DEFAULT":
+            commands.extend(["cv load test_ref '%s'" % self.test_profile,
+                             "sleep 5"
+                             ])
+        commands.extend(["cv click test_ref 'Auto Save Report'",
+                         "sleep 1",
+                         "cv click test_ref Start",
+                         "sleep 60",
+                         ])
+        # if self.following_commands:
+        #     commands.extend(self.following_commands)
+        commands.extend(["cv get test_ref 'Report Location:'",
+                         "sleep 5",
+                         # "cv click test_ref 'Save HTML'",
+                         "cv click test_ref 'Close'",
+                         "sleep 1",
+                         "cv click test_ref Cancel",
+                         "sleep 1",
+                         "exit"
+                         ])
+
         for command in commands:
-            data = {
-                "cmd": command
-            }
+            data = { "cmd": command }
             try:
                 debug_par = ""
                 if debug_:
@@ -263,21 +278,62 @@ def main():
     parser = argparse.ArgumentParser(
         prog="run_cv_scenario.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        description="""LANforge Reporting Script:  Load a scenario and run a RvR report
-Example:
-./load_ap_scenario.py --lfmgr 127.0.0.1 --lanforge_db 'handsets' --cv_test 'WiFi Capacity' --test_profile 'test-20'
+        description="""Chamver View testing script:  Load a Chamber View (CV) scenario, build it, and run a test.
+
+Example of loading a CV scenario, build it, and run the  WiFi Capacity 
+test using a previously saved profile:
+    ./run_cv_scenario.py --lfmgr 127.0.0.1 --lanforge_db 'handsets' \\
+        --cv_scenario Mobile20 \\
+        --cv_test 'WiFi Capacity' \\
+        --test_profile 'test-20'
+
+Example of running a WiFi Capacity test using the current CV scenario.
+This combination of parameters will not re-generate the present CV scenario:
+    ./run_cv_scenario.py --lanforge_db DFLT \\ 
+        --cv_scenario CURRENT \\
+        --cv_test 'WiFi Capacity' \\
+        --test_profile DEFAULT
 """)
-    parser.add_argument("-m", "--lfmgr", type=str, help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)")
-    parser.add_argument("-d", "--lanforge_db", type=str, help="Name of test scenario database (see Status Tab)")
-    parser.add_argument("-c", "--cv_scenario", type=str,
-                        help="Name of Chamber View test scenario (see CV Manage Scenarios)")
-    parser.add_argument("-n", "--cv_test", type=str, help="Chamber View test")
-    parser.add_argument("-s", "--test_profile", type=str, help="Name of the saved CV test profile")
-    parser.add_argument("--debug", help='Enable debugging', default=False, action="store_true")
-    parser.add_argument("--log_level", help='debug message verbosity', type=str)
+    parser.add_argument("-m", "--lfmgr", type=str,
+                        help="address of the LANforge GUI machine (localhost is default)")
+    parser.add_argument("-o", "--port", type=int,
+                        help="IP Port the LANforge GUI is listening on (8080 is default)")
+
+    parser.add_argument("-d", "--lanforge_db", type=str, default="DFLT",
+                        help="Saved Test Configuration (database)\n"
+                             "Use DFLT for present configuration.\n"
+                             "See Status tab->Saved Test Configurations for saved configs.")
+
+    parser.add_argument("-c", "--cv_scenario", type=str, default="DFLT",
+                        help="Name of CV Test Scenario. See CV->Manage Scenarios for scenario names.\n"
+                             "Use DFLT to avoid loading a new scenario (default behavior).")
+
+    parser.add_argument("-n", "--cv_test", type=str,
+                        help="Chamber View test name, or QUIT to run no tests.\n"
+                             "This is required.")
+
+    parser.add_argument("-s", "--test_profile", type=str, default="DEFAULT",
+                        help="Name of the saved CV test profile. Default is 'DEFAULT'")
+
+    # parser.add_argument("-x", "--pre", nargs="+",
+    #                     help="One or more GUI-CLI arguments before starting the test, after test profile is loaded."
+    #                          "Multiple commands allowed")
+    #
+    # parser.add_argument("-y", "--cmd", nargs="+",
+    #                     help="One or more GUI-CLI arguments after the test start, before the report ends."
+    #                          "Multiple commands allowed")
+    #
+    # parser.add_argument("-z", "--pre", nargs="+",
+    #                     help="One or more GUI-CLI arguments after the test finishes, before the test window "
+    #                     "is closed. Multiple commands allowed")
+
+    parser.add_argument("--debug", default=False, action="store_true",
+                        help='Enable debugging', )
+    parser.add_argument("--log_level", type=str,
+                        help='debug message verbosity')
     # TODO: update report output file or directory
-    parser.add_argument("--report_file_name", help="name of the report file", type=str)
+    parser.add_argument("--report_file_name", type=str,
+                        help="name of the report file")
 
     args = parser.parse_args()
     if args.lfmgr is not None:
@@ -293,14 +349,20 @@ Example:
     if args.report_file_name:
         report_file_n = args.report_file_name
 
-    run_cv_scenario = RunCvScenario(lfjson_host, lfjson_port, debug_=debug, report_file_name=report_file_n)
+    run_cv_scenario = RunCvScenario(lfhost=lfjson_host,
+        lfport=lfjson_port,
+         debug_=debug,
+         report_file_name=report_file_n)
 
     if args.lanforge_db is not None:
         run_cv_scenario.lanforge_db = args.lanforge_db
-    if args.cv_scenario is not None:
+    if (args.cv_scenario is not None) and not (args.cv_scenario != "DFLT"):
         run_cv_scenario.cv_scenario = args.cv_scenario
     if args.cv_test is not None:
         run_cv_scenario.cv_test = args.cv_test
+    else:
+        print("--cv_test not defined...this is unexpected")
+
     if args.test_profile is not None:
         run_cv_scenario.test_profile = args.test_profile
     if args.log_level is not None:
@@ -318,10 +380,12 @@ Example:
     if (run_cv_scenario.lanforge_db is None) or (run_cv_scenario.lanforge_db == ""):
         raise ValueError("Please specificy scenario database name with --scenario_db")
 
-    if not (run_cv_scenario.build() and run_cv_scenario.passes()):
-        print("scenario failed to build.")
-        print(run_cv_scenario.get_fail_message())
-        exit(1)
+    if args.cv_scenario and not (args.cv_scenario != "DFLT"):
+        if not (run_cv_scenario.build() and run_cv_scenario.passes()):
+            print("scenario failed to build.")
+            print(run_cv_scenario.get_fail_message())
+            exit(1)
+
 
     if not (run_cv_scenario.start() and run_cv_scenario.passes()):
         print("scenario failed to start.")
