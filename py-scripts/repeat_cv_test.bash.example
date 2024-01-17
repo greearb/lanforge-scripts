@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# This script is an example of how to repeat a CV test.
+ITERATIONS="${1:-3}"
+RUNCV="./run_cv_scenario.py"
+CV_TEST='WiFi Capacity'
+# While the option --toggle_auto_save is available, it is better to
+# configure the test profile with auto save selected so that
+# the auto_save parameter does not toggle on and off
+#
+# Various options:
+#   --debug
+#   --log_level warning|info|debug
+#   --lanforge_db NAME|DFLT
+#   --cv_scenario NAME|DFLT
+#   --cv_test NAME
+#   --test_profile NAME|DEFAULT
+#   --leave_test_open
+#   --click_save
+#   --pre "command 1" "command 2" "command 3"
+#   --add "command 1" "command 2" "command 3"
+#   --post "command 1" "command 2" "command 3"
+
+# The pause button is capitalised:
+#   --add "cv click test_ref Pause"
+#   --post "cv click test_ref Pause"
+#   --post "cv click test_ref 'Save HTML'"
+
+RUN_OPTIONS=( --log_level info
+    --report_verbosity 10
+    --lanforge_db DFLT
+    --cv_scenario DFLT
+    --cv_test "$CV_TEST"
+    --test_profile DEFAULT
+    --leave_test_open
+    --add "cv click test_ref Pause"
+    --post "cv click test_ref Pause"
+            "echo Test should continue"
+)
+
+function run() {
+    set -x
+    $RUNCV "${RUN_OPTIONS[@]}"
+    set +x
+}
+
+set -veu
+COUNTER=1
+while (( COUNTER <= ITERATIONS )); do
+    echo "Iteration $COUNTER/$ITERATIONS"
+    run
+    sleep 1
+    read -p "Press [Enter] to run iteration $COUNTER/$ITERATIONS"
+    COUNTER=$(( COUNTER += 1 ))
+done
+echo "...done"
