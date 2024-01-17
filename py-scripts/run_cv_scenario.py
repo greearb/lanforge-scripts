@@ -31,7 +31,9 @@ Realm = realm.Realm
     if args.test_scenario is not None:
         cvScenario.test_scenario = args.test_scenario
 """
-
+# While the option --auto_save is available, it is better to
+# configure the test profile with auto save selected so that
+# the auto_save parameter does not toggle on and off
 
 class RunCvScenario(LFCliBase):
     def __init__(self, lfhost="localhost", lfport=8080, debug_=False, lanforge_db_=None, cv_scenario_=None,
@@ -45,6 +47,13 @@ class RunCvScenario(LFCliBase):
         self.localrealm = Realm(lfclient_host=lfhost, lfclient_port=lfport, debug_=debug_)
         self.report_name = report_file_name
         self.load_timeout_sec = 2 * 60
+        self.report_verbosity = None
+        self.leave_test_open = False
+        self.toggle_autosave = False
+        self.click_save = False
+        self.commands_pre: list = []
+        self.commands_start: list = []
+        self.commands_post: list = []
 
     def get_report_file_name(self):
         return self.report_name
@@ -189,11 +198,13 @@ class RunCvScenario(LFCliBase):
                             "cv is_built",
                             )
         commands.extend(["cv sync",
+                         "echo -  waiting to sync",
                          "sleep 4",
                          ])
         if self.cv_test == "QUIT":
-            logger.warning("Encounted test name QUIT")
+            logger.warning("Encountered test name QUIT")
             return
+
         commands.extend(["cv list_instances",
                          "cv create '%s' 'test_ref' 'true'" % self.cv_test,
                          "sleep 5",
@@ -201,43 +212,71 @@ class RunCvScenario(LFCliBase):
 
         if self.test_profile != "DEFAULT":
             commands.extend(["cv load test_ref '%s'" % self.test_profile,
-                             "sleep 5"
+                             "sleep 2"
                              ])
-        commands.extend(["cv click test_ref 'Auto Save Report'",
-                         "sleep 1",
+        if self.report_verbosity:
+            commands.extend([f"echo -  verbosity: {self.report_verbosity}",
+                             f"cv set test_ref VERBOSITY {self.report_verbosity}"
+                             ])
+        if self.toggle_autosave:
+            commands.append("cv click test_ref 'Auto Save Report'")
+
+        if self.commands_pre:
+            for pre_cmd in self.commands_pre:
+                logger.info(f"+cmd      pre [{pre_cmd}]")
+                commands.append(pre_cmd)
+
+        commands.extend(["sleep 2",
+                         "echo - - - Clicking Start - - -",
                          "cv click test_ref Start",
-                         "sleep 60",
-                         ])
-        # if self.following_commands:
-        #     commands.extend(self.following_commands)
-        commands.extend(["cv get test_ref 'Report Location:'",
                          "sleep 5",
-                         # "cv click test_ref 'Save HTML'",
-                         "cv click test_ref 'Close'",
-                         "sleep 1",
-                         "cv click test_ref Cancel",
-                         "sleep 1",
+                         ])
+
+        if self.commands_start:
+            for dur_cmd in self.commands_start:
+                logger.info(f"+cmd starting [{dur_cmd}]")
+                commands.append(dur_cmd)
+        commands.extend(["sleep 60",
+                         "cv get test_ref 'Report Location:'",
+                         "sleep 5"
+                         ])
+        if self.commands_post:
+            for post_cmd in self.commands_post:
+                logger.info(f"+cmd     post [{post_cmd}]")
+                commands.append(post_cmd)
+        if self.click_save:
+            commands.extend(["echo Clicking Save HTML",
+                            "cv click test_ref 'Save HTML'"])
+        if not self.leave_test_open:
+            commands.extend(["cv click test_ref 'Close'",
+                             "sleep 1",
+                             "cv click test_ref Cancel",
+                             "sleep 1",
+                             ])
+        commands.extend(["echo exiting automation",
                          "exit"
                          ])
 
+        debug_par = ""
+        if debug_:
+            debug_par = "?__debug=1"
         for command in commands:
-            data = { "cmd": command }
+            data = {"cmd": command}
             try:
-                debug_par = ""
-                if debug_:
-                    debug_par = "?__debug=1"
-                if command.endswith("is_built"):
-                    logger.info("Waiting for scenario to build...", )
+                if command.startswith("echo "):
+                    logger.info(f"{command[5:]}        ")
+                elif command.endswith("is_built"):
+                    logger.info("Waiting for scenario to build...    ", )
                     self.localrealm.wait_while_building(debug_=False)
-                    logger.info("...proceeding")
+                    logger.debug("      proceeding    ")
                 elif command.startswith("sleep "):
                     nap = int(command.split(" ")[1])
-                    logger.info("sleeping %d..." % nap)
+                    logger.info(f"-  sleeping {nap}...    ")
                     sleep(nap)
-                    logger.info("...proceeding")
+                    logger.debug("      proceeding    ")
                 elif command == "cv list_instances":
                     response_json = []
-                    logger.debug("running %s..." % command)
+                    logger.debug(f"      /gui-json/cmd:[{command}] data[{data}]    ")
                     response = self.json_post("/gui-json/cmd%s" % debug_par,
                                               data,
                                               debug_=debug_,
@@ -250,12 +289,13 @@ class RunCvScenario(LFCliBase):
                 #     self.report_file = ...
                 else:
                     response_json = []
-                    logger.debug("running %s..." % command)
+                    logger.info(f"*  [{command}]        ")
+                    logger.debug(f"      /gui-json/cmd:[{command}] data[{data}]    ")
                     self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False,
                                    response_json_list_=response_json)
                     if debug_:
                         logger.debug(pprint.pformat(response_json))
-                    logger.info("...proceeding")
+                    logger.debug("      proceeding    ")
             except Exception as x:
                 logger.error(x)
 
@@ -263,11 +303,11 @@ class RunCvScenario(LFCliBase):
         return True
 
     def stop(self):
-        logger.warning("Stop method does nothing")
+        logger.debug("Stop method does nothing    ")
         return True
 
     def cleanup(self):
-        logger.warning("Cleanup method does nothing")
+        logger.debug("Cleanup method does nothing    ")
         return True
 
 
@@ -278,7 +318,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog="run_cv_scenario.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        description="""Chamver View testing script:  Load a Chamber View (CV) scenario, build it, and run a test.
+        description="""Chamber View testing script:  Load a Chamber View (CV) scenario, build it, and run a test.
 
 Example of loading a CV scenario, build it, and run the  WiFi Capacity 
 test using a previously saved profile:
@@ -294,45 +334,72 @@ This combination of parameters will not re-generate the present CV scenario:
         --cv_test 'WiFi Capacity' \\
         --test_profile DEFAULT
 """)
-    parser.add_argument("-m", "--lfmgr", type=str,
+    parser.add_argument("--lfmgr", "-m", type=str,
                         help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int,
+    parser.add_argument("--port", "-o", type=int,
                         help="IP Port the LANforge GUI is listening on (8080 is default)")
 
-    parser.add_argument("-d", "--lanforge_db", type=str, default="DFLT",
+    parser.add_argument("--lanforge_db", "-d", type=str, default="DFLT",
                         help="Saved Test Configuration (database)\n"
                              "Use DFLT for present configuration.\n"
                              "See Status tab->Saved Test Configurations for saved configs.")
 
-    parser.add_argument("-c", "--cv_scenario", type=str, default="DFLT",
+    parser.add_argument("--cv_scenario", "-c", type=str, default="DFLT",
                         help="Name of CV Test Scenario. See CV->Manage Scenarios for scenario names.\n"
                              "Use DFLT to avoid loading a new scenario (default behavior).")
 
-    parser.add_argument("-n", "--cv_test", type=str,
+    parser.add_argument("--cv_test", "-n", type=str,
                         help="Chamber View test name, or QUIT to run no tests.\n"
                              "This is required.")
 
-    parser.add_argument("-s", "--test_profile", type=str, default="DEFAULT",
+    parser.add_argument("--test_profile", "-s", type=str, default="DEFAULT",
                         help="Name of the saved CV test profile. Default is 'DEFAULT'")
 
-    # parser.add_argument("-x", "--pre", nargs="+",
-    #                     help="One or more GUI-CLI arguments before starting the test, after test profile is loaded."
-    #                          "Multiple commands allowed")
-    #
-    # parser.add_argument("-y", "--cmd", nargs="+",
-    #                     help="One or more GUI-CLI arguments after the test start, before the report ends."
-    #                          "Multiple commands allowed")
-    #
-    # parser.add_argument("-z", "--pre", nargs="+",
-    #                     help="One or more GUI-CLI arguments after the test finishes, before the test window "
-    #                     "is closed. Multiple commands allowed")
+    parser.add_argument("--report_verbosity", "--verbosity", "-v", type=int,
+                        help="Report verbosity level: 0 - 11")
+
+    parser.add_argument("--leave_test_open", "--leave_open", "--leave",
+                        default=False, action="store_true",
+                        help="leave test window open when test completes")
+
+    # While the option --auto_save is available, it is better to
+    # configure the test profile with auto save selected so that
+    # the auto_save parameter does not toggle on and off
+    # The best way to get around this is to save a named test profile with
+    # Auto Save Report selected and not use the --toggle_auto_save flag.
+    parser.add_argument("--toggle_auto_save", default=False, action="store_true",
+                        help="This toggles the Auto Save Report checkbox. If your test profile was "
+                             "saved with Auto Save Report selected, when the test starts, the DEFAULT test "
+                             "profile will save with Auto Save Report *unselected*. The consequence is that"
+                             "every time you load test profile DEFAULT, Auto Save Report will be enabled "
+                             "every second time.")
+    parser.add_argument("--click_save", default=False, action="store_true",
+                        help="Show the save-report dialog as if you clicked 'Save HTML'. "
+                             "Both the HTML and PDF reports are created, "
+                             "the HTML report will be opened in the browser. "
+                             "Do not select this for un-attended report operation.")
+    parser.add_argument("--pre", "-x", nargs="+",
+                        help="One or more GUI-CLI arguments before starting the test, after test profile is loaded."
+                             "Multiple commands allowed")
+
+    parser.add_argument("--add", "-y", nargs="+",
+                        help="One or more GUI-CLI arguments immediately as the test starts, before the report ends."
+                             "Multiple commands allowed")
+
+    parser.add_argument("--post", "-z", nargs="+",
+                        help="One or more GUI-CLI arguments after the test finishes, before the test window "
+                        "is closed or click_save. Multiple commands allowed")
 
     parser.add_argument("--debug", default=False, action="store_true",
                         help='Enable debugging', )
     parser.add_argument("--log_level", type=str,
                         help='debug message verbosity')
+
     # TODO: update report output file or directory
-    parser.add_argument("--report_file_name", type=str,
+    parser.add_argument("--report_dir", "--dir", type=str,
+                        help="report directory")
+
+    parser.add_argument("--report_file_name", "--report_file", type=str,
                         help="name of the report file")
 
     args = parser.parse_args()
@@ -344,25 +411,37 @@ This combination of parameters will not re-generate the present CV scenario:
     if args.debug is not None:
         debug = args.debug
 
-    report_file_n = "untitled_report"
 
+
+    report_file_n = "untitled_report"
     if args.report_file_name:
         report_file_n = args.report_file_name
+    if args.report_dir:
+        report_file_n = f"{args.report_dir}/{report_file_n}"
 
     run_cv_scenario = RunCvScenario(lfhost=lfjson_host,
-        lfport=lfjson_port,
-         debug_=debug,
-         report_file_name=report_file_n)
+                                    lfport=lfjson_port,
+                                    debug_=debug,
+                                    report_file_name=report_file_n)
 
     if args.lanforge_db is not None:
         run_cv_scenario.lanforge_db = args.lanforge_db
-    if (args.cv_scenario is not None) and not (args.cv_scenario != "DFLT"):
+    if args.cv_scenario and (args.cv_scenario != "DFLT"):
         run_cv_scenario.cv_scenario = args.cv_scenario
-    if args.cv_test is not None:
+    if args.cv_test:
         run_cv_scenario.cv_test = args.cv_test
     else:
         print("--cv_test not defined...this is unexpected")
 
+    if args.report_verbosity:
+        run_cv_scenario.report_verbosity = args.report_verbosity
+
+    if args.leave_test_open:
+        run_cv_scenario.leave_test_open = True
+    if args.toggle_auto_save:
+        run_cv_scenario.toggle_autosave = True
+    if args.click_save:
+        run_cv_scenario.click_save
     if args.test_profile is not None:
         run_cv_scenario.test_profile = args.test_profile
     if args.log_level is not None:
@@ -377,6 +456,13 @@ This combination of parameters will not re-generate the present CV scenario:
         elif args.log_level == 'critical':
             logger_config.set_level_critical()
 
+    if args.pre:
+        run_cv_scenario.commands_pre.extend(args.pre)
+    if args.add:
+        run_cv_scenario.commands_start.extend(args.add)
+    if args.post:
+        run_cv_scenario.commands_post.extend(args.post)
+
     if (run_cv_scenario.lanforge_db is None) or (run_cv_scenario.lanforge_db == ""):
         raise ValueError("Please specificy scenario database name with --scenario_db")
 
@@ -385,7 +471,6 @@ This combination of parameters will not re-generate the present CV scenario:
             print("scenario failed to build.")
             print(run_cv_scenario.get_fail_message())
             exit(1)
-
 
     if not (run_cv_scenario.start() and run_cv_scenario.passes()):
         print("scenario failed to start.")
