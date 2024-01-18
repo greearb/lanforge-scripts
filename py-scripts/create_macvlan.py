@@ -126,6 +126,11 @@ class CreateMacVlan(Realm):
 
 
 def main():
+    help_summary = '''\
+    This script will create a variable number of macvlans on a specified ethernet port(eth1/eth2). It's important to 
+    note that the script can only add MAC-VLANs to Ethernet, Bonding and 802.1Q VLAN devices. The script has the 
+    feasibility to create the macvlan interfaces based on user-specified numbers.
+            '''
     parser = LFCliBase.create_bare_argparse(
         prog='create_macvlan.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -153,7 +158,7 @@ EXAMPLE:
 
             ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0,eth1#1,eth1#2
 
-        # For creating the macvlan's with first defiende port name
+        # For creating the macvlan's with first defined port name
 
             ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_port eth1#143
 
@@ -180,7 +185,7 @@ INCLUDE_IN_README: False
     parser.add_argument(
         '--macvlan_parent',
         help='specifies parent port for macvlan creation',
-        required=True)
+        required=False)
     parser.add_argument(
         '--first_port',
         help='specifies name of first port to be used',
@@ -213,6 +218,11 @@ INCLUDE_IN_README: False
         action='store_true')
 
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
