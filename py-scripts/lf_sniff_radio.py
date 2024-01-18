@@ -308,14 +308,12 @@ def main():
         --disable_ht40 0
         --disable_ht80 0
         --ht160_enable 0
-        --ax210
+        --6ghz_workaround
         --num_stations 1
         --security wpa2
         --ssid axe11000_5g
         --password lf_axe11000_5g
-        --ax210_scan_time 10
-
-
+        --6ghz_workaround_scan_time 10
         """)
 
     parser.add_argument('--mgr', type=str, help='--mgr: IP Address of LANforge',
@@ -358,7 +356,18 @@ def main():
     parser.add_argument('--ht160_enable', type=str, help='Enable/Disable \"ht160_enable\\ [0-disable,1-enable]" ',
                         default=0)
 
-    parser.add_argument('--ax210', help='--ax210 will create a station on the ax210 to get the regulatory domain for 6g and admin down the station then create the monitor for 6g on the AX210 radio', action='store_true')
+    parser.add_argument('--6ghz_workaround', '--ax210',
+                        help='''
+Perform workaround for Intel AX210 or BE200 radio 6GHz monitor mode firmware limitation
+before sniffing packets. Radio firmware requires a scan of 6GHz-capable regulatory domain
+before granting access to 6GHz channels on a monitor mode interface.''',
+                        dest='do_6ghz_workaround',
+                        action='store_true')
+    parser.add_argument('--6ghz_workaround_scan_time', '--ax210_scan_time', help='Time to wait for scan in 6GHz workaround',
+                        dest='do_6ghz_workaround_scan_time',
+                        default='20')
+    parser.add_argument('--num_stations', type=int, help='Number of stations to create default 1 for AX210 sniffing',
+                        default=1)
     parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000',
                         default=0000)
     parser.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='+',
@@ -379,10 +388,6 @@ def main():
                         default='[BLANK]')
     parser.add_argument('--mode', help='Used to force mode of stations default: 0 (auto)',
                         default=0)
-    parser.add_argument('--num_stations', type=int, help='Number of stations to create default 1 for AX210 sniffing',
-                        default=1)
-    parser.add_argument('--ax210_scan_time', help='Time to wait for scan',
-                        default='20')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
 
     # Logging information
@@ -412,7 +417,8 @@ def main():
     # if args.channel is None and args.channel_freq is None:
     #    print('--channel or --channel_freq most be entered')
 
-    if args.ax210:
+    # Workaround for Intel AX210 or BE200 radio 6GHz monitor mode firmware limitation
+    if args.do_6ghz_workaround:
         if args.num_stations:
             num_sta = int(args.num_stations)
         elif args.station_list:
@@ -449,10 +455,11 @@ def main():
         create_l3.build()
         create_l3.start()
         # allow 10 seconds for a scan
-        logger.info("wait {scan_time} for scan on AX210".format(scan_time=args.ax210_scan_time))
-        for i in range(0, int(args.ax210_scan_time)):
-            logger.info("AX210 scan network, PLease wait: {scan_time}".format(scan_time=(int(args.ax210_scan_time) - i)))
+        logger.info("wait {scan_time} for scan on AX210".format(scan_time=args.do_6ghz_workaround_scan_time))
+        for i in range(0, int(args.do_6ghz_workaround_scan_time)):
+            logger.info("AX210 scan network, Please wait: {scan_time}".format(scan_time=(int(args.do_6ghz_workaround_scan_time) - i)))
             time.sleep(1)
+
     sniff_flags_choice = None
     if args.sniff_using:
         sniff_flags_choice = wifi_monitor_profile.flagname_to_hex(flagnames=args.sniff_using)
@@ -483,7 +490,7 @@ def main():
                      sniff_snapshot_bytes=sniff_snaplen_choice)
     obj.setup(int(args.disable_ht40), int(args.disable_ht80), int(args.ht160_enable))
 
-    if args.ax210:
+    if args.do_6ghz_workaround:
         create_l3.stop()
 
     # TODO: Add wait-for logic instead of a sleep
@@ -497,7 +504,7 @@ def main():
 
     obj.cleanup()
 
-    if args.ax210:
+    if args.do_6ghz_workaround:
         create_l3.cleanup()
 
     # TODO:  Check if passed or not.
