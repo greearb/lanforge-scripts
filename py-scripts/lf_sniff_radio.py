@@ -231,10 +231,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog="lf_sniff_radio.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''\
-            lf_sniff_radio.py will create a monitor on LANforge (cli command add_monitor)
-
-            ''',
+        epilog='lf_sniff_radio.py will create a monitor on LANforge (cli command add_monitor)',
 
         description='''\
         This script will sniff a Radio following modifications to its settings.
@@ -278,43 +275,42 @@ def main():
 
         ''',
 
-        usage="""./lf_sniff_radio.py
-        --mgr localhost
-        --mgr_port 8080
-        --radio wiphy0
-        --outfile /home/lanforge/test_sniff.pcap
-        --duration 1
-        --channel 36
-        --channel_bw 40
-        --center_freq 5190
-        --radio_mode AUTO
-        --monitor_name Sniffer0
-
-        AX210 sniff command
-        ===================
-        
-        ./lf_sniff_radio.py
-        --mgr 192.168.0.104
-        --mgr_port 8080
-        --radio wiphy7
-        --outfile /home/lanforge/sniff_6G_80.pcap
-        --duration 20
-        //--channel 1e
-        --channel_bw 80
-        --channel_freq 5955
-        --center_freq 5985
-        --radio_mode AUTO
-        --monitor_name SNIFF_6G_80
-        --disable_ht40 0
-        --disable_ht80 0
-        --ht160_enable 0
-        --6ghz_workaround
-        --num_stations 1
-        --security wpa2
-        --ssid axe11000_5g
-        --password lf_axe11000_5g
-        --6ghz_workaround_scan_time 10
-        """)
+        usage='\n'
+              'Creating a sniffer generally:\n'
+              '\t./lf_sniff_radio.py\n'
+              '\t     --mgr localhost\n'
+              '\t     --mgr_port 8080\n'
+              '\t     --radio wiphy0\n'
+              '\t     --outfile /home/lanforge/test_sniff.pcap\n'
+              '\t     --duration 1\n'
+              '\t     --channel 36\n'
+              '\t     --channel_bw 40\n'
+              '\t     --center_freq 5190\n'
+              '\t     --radio_mode AUTO\n'
+              '\t     --monitor_name moni0\n'
+              '\t\n'
+              'Creating a 6GHz sniffer on AX210/BE200 radios:\n'
+              '\t./lf_sniff_radio.py\n'
+              '\t     --mgr 192.168.0.104\n'
+              '\t     --mgr_port 8080\n'
+              '\t     --radio wiphy7\n'
+              '\t     --outfile /home/lanforge/sniff_6G_80.pcap\n'
+              '\t     --duration 20\n'
+              '\t     //--channel 1e\n'
+              '\t     --channel_bw 80\n'
+              '\t     --channel_freq 5955\n'
+              '\t     --center_freq 5985\n'
+              '\t     --radio_mode AUTO\n'
+              '\t     --monitor_name moni0\n'
+              '\t     --disable_ht40 0\n'
+              '\t     --disable_ht80 0\n'
+              '\t     --ht160_enable 0\n'
+              '\t     --6ghz_workaround\n'
+              '\t     --num_stations 1\n'
+              '\t     --security wpa2\n'
+              '\t     --ssid axe11000_5g\n'
+              '\t     --password lf_axe11000_5g\n'
+              '\t     --6ghz_workaround_scan_time 10')
 
     parser.add_argument('--mgr', type=str, help='--mgr: IP Address of LANforge',
                         default="localhost")
@@ -326,24 +322,21 @@ def main():
                         default="/home/lanforge/test_pcap.pcap")
     parser.add_argument('--duration', type=int, help='--duration duration in sec, for which you want to capture',
                         default=60)
-    parser.add_argument('--channel', type=str, help='''
-                                    --channel Set channel pn selected Radio, the channel [52, 56 ...]
-                                    channel will get converted to the control frequency.
-                                    Must enter Channel
-                                    ''',
+    parser.add_argument('--channel', type=str,
+                        help='--channel Set channel pn selected Radio, the channel [52, 56 ...]\n'
+                             'channel will get converted to the control frequency.\n'
+                             'Must enter Channel',
                         default='36')
-    parser.add_argument('--channel_freq', type=str, help='''
-                                   --channel_freq  this is the frequency that the channel operates at
-                                   Must enter --channel or --channel_freq
-                                   --channel_freq takes presidence if both entered if value not zero
-                                   ''')
+    parser.add_argument('--channel_freq', type=str,
+                        help='--channel_freq  this is the frequency that the channel operates at\n'
+                             'Must enter --channel or --channel_freq\n'
+                             '--channel_freq takes presidence if both entered if value not zero')
     parser.add_argument('--channel_bw', type=str, help='--channel_bw select the bandwidth to be monitored, [ [20|40|80|80+80|160]], default=20',
                         default='20')
-    parser.add_argument('--center_freq', type=str, help='''
-                        --center_freq  select the bandwidth to be monitored, not needed if bw is 20
-                        ''',
+    parser.add_argument('--center_freq', type=str,
+                        help='--center_freq select the bandwidth to be monitored\n'
+                             '(not needed if channel width is 20MHz',
                         default=None)
-
     parser.add_argument('--radio_mode', type=str, help='--radio_mode select the radio mode [AUTO, 802.11a, 802.11b, '
                                                        '802.11ab ...]',
                         default="AUTO")
@@ -355,12 +348,10 @@ def main():
                         default=0)
     parser.add_argument('--ht160_enable', type=str, help='Enable/Disable \"ht160_enable\\ [0-disable,1-enable]" ',
                         default=0)
-
     parser.add_argument('--6ghz_workaround', '--ax210',
-                        help='''
-Perform workaround for Intel AX210 or BE200 radio 6GHz monitor mode firmware limitation
-before sniffing packets. Radio firmware requires a scan of 6GHz-capable regulatory domain
-before granting access to 6GHz channels on a monitor mode interface.''',
+                        help='Perform workaround for Intel AX210 or BE200 radio 6GHz monitor mode firmware limitation\n'
+                             'before sniffing packets. Radio firmware requires a scan of 6GHz-capable regulatory domain\n'
+                             'before granting access to 6GHz channels on a monitor mode interface.\n',
                         dest='do_6ghz_workaround',
                         action='store_true')
     parser.add_argument('--6ghz_workaround_scan_time', '--ax210_scan_time', help='Time to wait for scan in 6GHz workaround',
@@ -399,13 +390,13 @@ before granting access to 6GHz channels on a monitor mode interface.''',
     parser.add_argument('--sniff_bytes', help='keep this many bytes per packet, helps to reduce overall capture size',
                         default=None)
     parser.add_argument('--sniff_using',
-                        help="""Default sniffer is wireshark, which is only useful from a desktop setting.
-                        Combine options with a comma: dumpcap,mate_xterm
-        tshark:             headless tshark utility
-        dumpcap:            headless dumpcap utility
-        mate_terminal:      make tshark/dumpcap interactive in a MATE terminal
-        mate_xterm:         make tshark/dumpcap interactive in an xterm
-        mate_kill_dumpcap:  kill previously issued dumpcap""",
+                        help='Default sniffer is Wireshark, which is only useful from a desktop setting.\n'
+                             'Combine options with a comma: dumpcap,mate_xterm\n'
+                             'tshark:             headless tshark utility\n'
+                             'dumpcap:            headless dumpcap utility\n'
+                             'mate_terminal:      make tshark/dumpcap interactive in a MATE terminal\n'
+                             'mate_xterm:         make tshark/dumpcap interactive in an xterm\n'
+                             'mate_kill_dumpcap:  kill previously issued dumpcap',
                         default=None)
     args = parser.parse_args()
 
