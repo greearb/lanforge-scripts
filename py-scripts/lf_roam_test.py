@@ -2059,6 +2059,16 @@ class HardRoam(Realm):
 
 
 def main():
+    help_summary = '''\
+    The script is designed to support both hard and soft roaming, ensuring a smooth transition for devices between 
+    access points (APs). Additionally, the script captures packets in two scenarios: when a device is connected to 
+    an AP and when it roams from one AP to another. These captured packets help analyze the performance and stability 
+    of the roaming process. In essence, the script serves as a thorough test for assessing how well APs handle 
+    roaming and the overall network stability when clients move between different access points.
+        
+    The roaming test will create stations with advanced/802.1x and 11r key management, create CX traffic between upstream 
+    port and stations, run traffic and generate a report.
+            '''
     parser = argparse.ArgumentParser(
         prog='lf_roam_test.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -2219,7 +2229,15 @@ EXAMPLE: For multiple station and multiple iteration
     optional.add_argument('--band_cc', help='', default="5g")
     optional.add_argument('--timeout', help='', default="10")
 
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
+
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     obj = HardRoam(lanforge_ip=args.mgr,
                    lanforge_port=args.lanforge_port,
