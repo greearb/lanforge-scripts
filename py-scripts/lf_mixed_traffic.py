@@ -1660,14 +1660,10 @@ def main():
     help_summary = '''\
     Mixed traffic test is designed to measure the access point performance and stability by running multiple traffic
     on both virtual & real clients like Android, Linux, Windows, and IOS connected to the access point.
-    This test allows the user to choose multiple types of traffic like client ping test, qos test, ftp test, http test,
-    multicast test.
+    This test allows the user to choose multiple types of traffic like client PING test, QOS test, FTP test, HTTP test,
+    and multicast test.
     
-    * This script is capable of running the tests in serial OR parallel as well.
-    
-    * This script can run the on multiple iterations.
-    
-    * This script has multi-band (2.4G, 5G, 6G) support.
+    The test will create virtual stations, create CX based on the selected test, run traffic and generate a report.
     '''
     parser = argparse.ArgumentParser(
         prog='lf_mixed_traffic.py',
