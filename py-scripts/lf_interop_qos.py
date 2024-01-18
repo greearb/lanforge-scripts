@@ -1040,6 +1040,15 @@ class ThroughputQOS(Realm):
             print("No individual graph to generate.")
 
 def main():
+    help_summary = '''\
+    The Interop QoS test is designed to measure performance of an Access Point 
+    while running traffic with different types of services like voice, video, best effort, background.
+    The test allows the user to run layer3 traffic for different ToS in upload, download and bi-direction scenarios between AP and real devices.
+    Throughputs for all the ToS are reported for individual devices along with the overall throughput for each ToS.
+    The expected behavior is for the AP to be able to prioritize the ToS in an order of voice,video,best effort and background.
+    
+    The test will create stations, create CX traffic between upstream port and stations, run traffic and generate a report.
+    '''
     parser = argparse.ArgumentParser(
         prog='throughput_QOS.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -1129,7 +1138,7 @@ def main():
                             '--key',
                             default="[BLANK]",
                             help='WiFi passphrase/password/key')
-    required.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
+    required.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=False)
     required.add_argument('--upload', help='--upload traffic load per connection (upload rate)')
     required.add_argument('--download', help='--download traffic load per connection (download rate)')
     required.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
@@ -1139,7 +1148,15 @@ def main():
                               '--debug',
                               action="store_true",
                               help='Enable debugging')
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
+
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
     print("--------------------------------------------")
     print(args)
     print("--------------------------------------------")
