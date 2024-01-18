@@ -214,6 +214,11 @@ class CreateVR(Realm):
 
 
 def main():
+    help_summary = '''\
+    This script is designed to create variable number of Virtual Routers (vr) by setting up the configuration in Netsmith.
+    Through this script, services like DHCP, NAT can be provided to the vr.
+    '''
+    # /home/lanforge-scripts/py-json/LANforge/lfcli_base.py - for bare args parser
     # /home/lanforge-scripts/py-json/LANforge/lfcli_base.py - for bare args parser    
     parser = LFCliBase.create_bare_argparse(
         prog=__file__,
@@ -236,7 +241,7 @@ NOTES:
 
 """.format(f=__file__))
     required = parser.add_argument_group('required arguments')
-    required.add_argument('--vr_name', '--vr_names', required=True,
+    required.add_argument('--vr_name', '--vr_names', required=False,
                           help='EID of virtual router, like 1.2.vr0')
 
     optional = parser.add_argument_group('optional arguments')
@@ -250,6 +255,11 @@ NOTES:
                           help='Add router services to a port, "br0=nat,dhcp"')
 
     args = parser.parse_args()
+
+    # help_summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
