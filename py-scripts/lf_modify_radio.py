@@ -133,6 +133,11 @@ class lf_modify_radio():
 
 
 def main():
+    help_summary = '''\
+    This script is designed to modify/adjust the settings of the radio's standard configuration. It allows you to easily 
+    modify basic settings like the Country code, Channel/Frequency, Antenna, TX Power, and more. Additionally, the script
+    can activate or deactivate various features such as Extra TxStatus and Extra RxStatus for the specified radio.
+            '''
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -188,7 +193,15 @@ def main():
     parser.add_argument("--gateway_ip", default="192.168.2.50",
                         help="if static is true provide gateway ip")
 
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
+
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
