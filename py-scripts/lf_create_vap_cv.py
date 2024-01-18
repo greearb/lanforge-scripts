@@ -293,6 +293,12 @@ class create_vap_cv(cv_test):
 
 
 def main():
+    help_summary = '''\
+    Theis script is designed to create a Virtual Access point (VAP)
+    using Chamber view scenario. Through this script, dhcp min, max ranges can be set to the vap and can modify
+    vap ip address, vap ip mask, gateway, vap mode, vap bandwidth, vap frequency, security.
+    Any existing scenario can be loaded or deleted by providing respective arguments.
+    '''
     parser = argparse.ArgumentParser(
         prog="lf_create_vap_cv.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -411,8 +417,16 @@ INCLUDE_IN_README: False
                         action='store_true', help="select if you want to load existing scenario")
     parser.add_argument("--old_scenario_name", help="provide old scenario name to be loaded")
 
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
 
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     cv_base_adjust_parser(args)
 
     # set up logger
