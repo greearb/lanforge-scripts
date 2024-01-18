@@ -318,9 +318,12 @@ def main():
 
         """)
 
-    parser.add_argument('--mgr', type=str, help='--mgr: IP Address of LANforge', default="localhost")
-    parser.add_argument('--mgr_port', type=int, help='--mgr_port: HTTP Port of LANforge', default=8080)
-    parser.add_argument('--radio', type=str, help='--radio: Radio to sniff', default="wiphy0")
+    parser.add_argument('--mgr', type=str, help='--mgr: IP Address of LANforge',
+                        default="localhost")
+    parser.add_argument('--mgr_port', type=int, help='--mgr_port: HTTP Port of LANforge',
+                        default=8080)
+    parser.add_argument('--radio', type=str, help='--radio: Radio to sniff',
+                        default="wiphy0")
     parser.add_argument('--outfile', type=str, help='--outfile: give the filename with path',
                         default="/home/lanforge/test_pcap.pcap")
     parser.add_argument('--duration', type=int, help='--duration duration in sec, for which you want to capture',
@@ -344,8 +347,10 @@ def main():
                         default=None)
 
     parser.add_argument('--radio_mode', type=str, help='--radio_mode select the radio mode [AUTO, 802.11a, 802.11b, '
-                                                       '802.11ab ...]', default="AUTO")
-    parser.add_argument('--monitor_name', type=str, help='Wi-Fi monitor name', default="sniffer0")
+                                                       '802.11ab ...]',
+                        default="AUTO")
+    parser.add_argument('--monitor_name', type=str, help='Wi-Fi monitor name',
+                        default="sniffer0")
     parser.add_argument('--disable_ht40', type=str, help='Enable/Disable \"disable_ht40\" [0-disable,1-enable]',
                         default=0)
     parser.add_argument('--disable_ht80', type=str, help='Enable/Disable \"disable_ht80\" [0-disable,1-enable]',
@@ -354,34 +359,49 @@ def main():
                         default=0)
 
     parser.add_argument('--ax210', help='--ax210 will create a station on the ax210 to get the regulatory domain for 6g and admin down the station then create the monitor for 6g on the AX210 radio', action='store_true')
-    parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
-    parser.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='+', default=None)
-    parser.add_argument('--upstream_port', help='--upstream_port upstream port default: eth2', default='eth2')
-    parser.add_argument('--side_a_min_rate', help='--side_a_min_rate bps rate minimum for side_a default: 1024000', default=1024000)
-    parser.add_argument('--side_b_min_rate', help='--side_b_min_rate bps rate minimum for side_b default: 1024000', default=1024000)
-    parser.add_argument('--sta_prefix', help='--sta_prefix <station prefix>   --sta_prefix  sta   : default: wlan', default='wlan')
-    parser.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default='open')
-    parser.add_argument('--ssid', help='WiFi SSID for script objects to associate to', default='axe11000_5g')
-    parser.add_argument('--password', help='WiFi passphrase/password/key', default='[BLANK]')
-    parser.add_argument('--mode', help='Used to force mode of stations default: 0 (auto)', default=0)
-    parser.add_argument('--num_stations', type=int, default=1, help='Number of stations to create default 1 for AX210 sniffing')
-    parser.add_argument('--ax210_scan_time', default='20', help='Time to wait for scan')
+    parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000',
+                        default=0000)
+    parser.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='+',
+                        default=None)
+    parser.add_argument('--upstream_port', help='--upstream_port upstream port default: eth2',
+                        default='eth2')
+    parser.add_argument('--side_a_min_rate', help='--side_a_min_rate bps rate minimum for side_a default: 1024000',
+                        default=1024000)
+    parser.add_argument('--side_b_min_rate', help='--side_b_min_rate bps rate minimum for side_b default: 1024000',
+                        default=1024000)
+    parser.add_argument('--sta_prefix', help='--sta_prefix <station prefix>   --sta_prefix  sta   : default: wlan',
+                        default='wlan')
+    parser.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >',
+                        default='open')
+    parser.add_argument('--ssid', help='WiFi SSID for script objects to associate to',
+                        default='axe11000_5g')
+    parser.add_argument('--password', help='WiFi passphrase/password/key',
+                        default='[BLANK]')
+    parser.add_argument('--mode', help='Used to force mode of stations default: 0 (auto)',
+                        default=0)
+    parser.add_argument('--num_stations', type=int, help='Number of stations to create default 1 for AX210 sniffing',
+                        default=1)
+    parser.add_argument('--ax210_scan_time', help='Time to wait for scan',
+                        default='20')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
 
     # Logging information
     # logging configuration
-    parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--log_level', help='Set logging level: debug | info | warning | error | critical',
+                        default=None)
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
 
-    parser.add_argument('--sniff_bytes', default=None, help='keep this many bytes per packet, helps to reduce overall capture size')
-    parser.add_argument('--sniff_using', default=None,
+    parser.add_argument('--sniff_bytes', help='keep this many bytes per packet, helps to reduce overall capture size',
+                        default=None)
+    parser.add_argument('--sniff_using',
                         help="""Default sniffer is wireshark, which is only useful from a desktop setting.
                         Combine options with a comma: dumpcap,mate_xterm
         tshark:             headless tshark utility
         dumpcap:            headless dumpcap utility
         mate_terminal:      make tshark/dumpcap interactive in a MATE terminal
         mate_xterm:         make tshark/dumpcap interactive in an xterm
-        mate_kill_dumpcap:  kill previously issued dumpcap""")
+        mate_kill_dumpcap:  kill previously issued dumpcap""",
+                        default=None)
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
