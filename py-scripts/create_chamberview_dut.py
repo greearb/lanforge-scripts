@@ -181,6 +181,11 @@ class DUT(dut):
 
 
 def main():
+    help_summary = '''\
+    This script create chamberview dut script is designed to configure DUT using chamberview scenario.
+    This script allows the user to configure DUT with the parameters like ssid, password,security and BSSID. 
+    The DUT created can be seen in the chamber view under scenario configuration.
+    '''
     parser = argparse.ArgumentParser(
         prog='create_chamberview_dut.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -302,7 +307,15 @@ INCLUDE_IN_README: False
     parser.add_argument('--lf_logger_config_json',
                         help="--lf_logger_config_json <json file> , json configuration of logger")
 
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
+
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
