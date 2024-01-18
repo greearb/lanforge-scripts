@@ -88,6 +88,11 @@ class ProbePort2(LFCliBase):
 
 
 def main():
+    help_summary = '''\
+    This script is designed to find and show details about a specific port. This script performs a targeted query on a 
+    specified port and subsequently presents comprehensive information associated with it. The gathered details will 
+    include the port's Radio information, Regulatory information.
+            '''
     parser = LFCliBase.create_bare_argparse(
         prog=__name__,
         description='''\
@@ -126,6 +131,12 @@ INCLUDE_IN_README: False
     parser.add_argument('--port_eid', help='EID of station to be used', default="1.1.eth0")
 
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     probe = ProbePort2(lfhost=args.mgr,
                        lfport=args.mgr_port,
                        debug=args.debug,
