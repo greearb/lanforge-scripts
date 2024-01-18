@@ -1269,6 +1269,15 @@ class InteropPortReset(Realm):
 
 
 def main():
+    help_summary = '''\
+    The LANforge interop port reset test enables users to use real Wi-Fi stations and connect them to the Access Point 
+    being tested. It then disconnects and reconnects a given number of stations at different time intervals. 
+    This test helps evaluate how well the AP handles a dynamic and busy network environment with devices joining and 
+    leaving the network at random times.
+    
+    The test will basically disconnect & reconnect to the same network with real devices such as android, linux, windows
+    and generate a report.
+        '''
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -1351,7 +1360,15 @@ INCLUDE_IN_README: False
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
 
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
+
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set the logger level to debug
     logger_config = lf_logger_config.lf_logger_config()
