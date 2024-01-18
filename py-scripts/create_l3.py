@@ -155,6 +155,13 @@ class CreateL3(Realm):
 
 
 def main():
+    help_summary = '''\
+    This script is made to set up/ crate a Layer-3 cross-connections. It allows running traffic from the upstream port 
+    (eth1/eth2) to the station and vice versa. Additionally, it supports running traffic directly between stations. 
+    The script also has a useful feature for batch modifying or batch creation functionality.
+    
+    The script will create CX only, will not run/start traffic and will not generate any report.
+        '''
     parser = argparse.ArgumentParser(
         prog='create_l3.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -223,8 +230,8 @@ INCLUDE_IN_README: False
     parser.add_argument('--min_rate_a', help='--min_rate_a bps rate minimum for side_a', default=56000)
     parser.add_argument('--min_rate_b', help='--min_rate_b bps rate minimum for side_b', default=56000)
     parser.add_argument('--cx_prefix', help='phrase to begin CX names with', default="VT")
-    parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
-    parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
+    parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=False)
+    parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=False)
     parser.add_argument('--cx_type', help='specify the traffic type for cx eg : lf_udp | lf_tcp', default="lf_udp")
     parser.add_argument('--tos', help='specify tos for endpoints eg : BK | BE | VI | VO | Voice | Video')
     parser.add_argument('--pkts_to_send',
@@ -246,7 +253,16 @@ INCLUDE_IN_README: False
     parser.add_argument("--no_pre_cleanup", action="store_true",
                         help="do not remove connections at start")
     parser.add_argument('--debug', '-d', default=False, action="store_true", help='Enable debugging')
+
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
+
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
