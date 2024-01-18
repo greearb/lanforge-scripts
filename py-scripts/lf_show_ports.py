@@ -40,6 +40,12 @@ class show_ports:
         return json_response
 
 def main():
+    help_summary = '''\
+    This script provides information about various fields in the port manager. By default details such as port numbers, 
+    alias,down,phantom state and port will be shown. Also allows you to specify which fields you want to see 
+    using the script arguments. Additionally it wil offer a comprehensive overview of the status and configuration of 
+    different ports in a straightforward manner.
+        '''
     parser  = ArgumentParser(prog=__file__,
                              formatter_class=RawTextHelpFormatter,
                              description="""
@@ -72,7 +78,15 @@ mac             ---     To get MAC info
                                separated with comas(,)
                             --fields "port,ip,mode,phantom,alias,parent dev,channel,...."etc
                             ''')
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
+
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
     obj = show_ports(fields=args.fields,add_fields=args.add_fields)
     obj.show_ports()
 
