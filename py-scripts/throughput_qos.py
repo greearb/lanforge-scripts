@@ -1147,6 +1147,15 @@ class ThroughputQOS(Realm):
 
 
 def main():
+    help_summary = '''\
+    The Throughput QoS test is designed to measure performance of an Access Point 
+    while running traffic with different types of services like voice, video, best effort, background.
+    The test allows the user to run layer3 traffic for different ToS in upload, download and bi-direction scenarios between AP and virtual devices.
+    Throughputs for all the ToS are reported for individual clients along with the overall throughput for each ToS.
+    The expected behavior is for the AP to be able to prioritize the ToS in an order of voice,video,best effort and background.
+    
+    The test will create stations, create CX traffic between upstream port and stations, run traffic and generate a report.
+    '''
     parser = Realm.create_basic_argparse(
         prog='throughput_QOS.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -1221,7 +1230,7 @@ def main():
 
 ''')
     parser.add_argument('--mode', help='Used to force mode of stations', default="0")
-    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
+    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=False)
     parser.add_argument('--download', help='--download traffic load per connection (download rate)',default="0")
     parser.add_argument('--upload', help='--upload traffic load per connection (upload rate)',default="0")
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
@@ -1229,7 +1238,7 @@ def main():
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
     parser.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
     parser.add_argument('--bands', help='used to run on multiple radio bands,can be used with multiple stations',
-                        default="2.4G, 5G, BOTH", required=True)
+                        default="2.4G, 5G, BOTH", required=False)
     parser.add_argument('--tos', help='Enter the tos. Example1 : "BK,BE,VI,VO" , Example2 : "BK,VO", Example3 : "VI" ')
     parser.add_argument('--ssid_2g', help="ssid for  2.4Ghz band")
     parser.add_argument('--security_2g', help="security type for  2.4Ghz band")
@@ -1244,6 +1253,10 @@ def main():
     parser.add_argument('--radio_5g', help="radio which supports 5G bandwidth", default="wiphy1")
     parser.add_argument('--radio_6g', help="radio which supports 6G bandwidth", default="wiphy2")
     args = parser.parse_args()
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
     print("--------------------------------------------")
     print(args)
     print("--------------------------------------------")
