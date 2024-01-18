@@ -560,7 +560,11 @@ class lf_clean(Realm):
 
 
 def main():
-
+    help_summary = '''\
+    This script is used for cleaning the cross-connections, layer-3-endpoints, stations and bridges in Lanforge.
+    This script is also used to sanitize the lanforge unit, which means will clean the Port Mgr, Layer-3, L3 Endps, 
+    and Layer 4-7 tabs.
+            '''
     parser = argparse.ArgumentParser(
         prog='lf_cleanup.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -685,7 +689,15 @@ LICENSE:
     parser.add_argument('--log_level', default=None,
                         help='Set logging level: debug | info | warning | error | critical')
 
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
+
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
