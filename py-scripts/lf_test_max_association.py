@@ -783,6 +783,13 @@ class max_associate(Realm):
 
 
 def main():
+    help_summary = '''\
+    The Maximum Client Association Test is designed to test the capability of a newly built LANforge system. 
+    The objective of the test is to create the maximum number of virtual station interfaces on the system installed WIFI 
+    radio, associate the stations to the specified AP and run a long duration layer-3 UDP bidirectional traffic test.
+    
+    The test will create stations, create CX traffic & run traffic specified time period and generate a report.
+    '''
     parser = argparse.ArgumentParser(
         prog="lf_test_max_association.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -984,7 +991,15 @@ INCLUDE_IN_README: False
     parser.add_argument('--reset_port_time_min', help='Enter minimum port reset time', nargs='+', default=['0s'])
     parser.add_argument('--reset_port_time_max', help='Enter maximum port reset time', nargs='+', default=['0s'])
 
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
+
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
