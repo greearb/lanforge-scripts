@@ -286,6 +286,13 @@ class CreateL3(Realm):
 
 
 def main():
+    help_summary = '''\
+    This script creates a variable number of stations with individual cross-connects and endpoints.
+    The stations are initially set to the UP state, but the cross-connections are kept in a stopped state. It also 
+    supports batch creation functionality, making it convenient to generate multiple stations at once.
+    
+    The script will creates stations & CX only, will not run/start traffic and will not generate any report.
+        '''
     parser = LFCliBase.create_basic_argparse(
         prog='create_l3_stations.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -427,6 +434,11 @@ INCLUDE_IN_README: False
     parser.add_argument('--ip_port_increment_a', help='Ip port increment for endp-a', default=1)
     parser.add_argument('--ip_port_increment_b', help='Ip port increment for endp-b', default=1)
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
