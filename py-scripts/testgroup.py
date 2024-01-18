@@ -346,6 +346,12 @@ class TestGroup(Realm):
 
 
 def main():
+    help_summary = '''\
+    This script is designed to create a test connection group in the LANforge GUI (Connection Group GUI tab). Test Groups,
+    also known as Connection Groups, can be created, modified, and managed using this script. You can use it to create a 
+    new test group, add or remove layer-3 connections from the group, and start or stop the entire test connection group
+    as needed. It simplifies the process of handling these tasks within the LANforge environment.
+    '''
     parser = Realm.create_basic_argparse(
         prog='testgroup.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -475,6 +481,10 @@ INCLUDE_IN_README: False
         '--quiesce_group', help='quiesce all cxs in chosen test groups', default=None)
 
     args = parser.parse_args()
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
