@@ -312,33 +312,32 @@ def main():
               '\t     --password lf_axe11000_5g\n'
               '\t     --6ghz_workaround_scan_time 10')
 
-    parser.add_argument('--mgr', type=str, help='--mgr: IP Address of LANforge',
+    parser.add_argument('--mgr', type=str, help='IP Address of LANforge',
                         default="localhost")
-    parser.add_argument('--mgr_port', type=int, help='--mgr_port: HTTP Port of LANforge',
+    parser.add_argument('--mgr_port', type=int, help='HTTP Port of LANforge',
                         default=8080)
-    parser.add_argument('--radio', type=str, help='--radio: Radio to sniff',
+    parser.add_argument('--radio', type=str, help='Radio to sniff with',
                         default="wiphy0")
-    parser.add_argument('--outfile', type=str, help='--outfile: give the filename with path',
+    parser.add_argument('--outfile', type=str, help='Give the filename with path',
                         default="/home/lanforge/test_pcap.pcap")
-    parser.add_argument('--duration', type=int, help='--duration duration in sec, for which you want to capture',
+    parser.add_argument('--duration', type=int, help='Duration in sec for which you want to capture',
                         default=60)
     parser.add_argument('--channel', type=str,
-                        help='--channel Set channel pn selected Radio, the channel [52, 56 ...]\n'
+                        help='Set channel pn selected Radio, the channel [52, 56 ...]\n'
                              'channel will get converted to the control frequency.\n'
                              'Must enter Channel',
                         default='36')
     parser.add_argument('--channel_freq', type=str,
-                        help='--channel_freq  this is the frequency that the channel operates at\n'
+                        help='Frequency that the channel operates at\n'
                              'Must enter --channel or --channel_freq\n'
                              '--channel_freq takes presidence if both entered if value not zero')
-    parser.add_argument('--channel_bw', type=str, help='--channel_bw select the bandwidth to be monitored, [ [20|40|80|80+80|160]], default=20',
+    parser.add_argument('--channel_bw', type=str, help='Select the bandwidth to be monitored, [ [20|40|80|80+80|160]], default=20',
                         default='20')
     parser.add_argument('--center_freq', type=str,
-                        help='--center_freq select the bandwidth to be monitored\n'
+                        help='Select the bandwidth to be monitored\n'
                              '(not needed if channel width is 20MHz',
                         default=None)
-    parser.add_argument('--radio_mode', type=str, help='--radio_mode select the radio mode [AUTO, 802.11a, 802.11b, '
-                                                       '802.11ab ...]',
+    parser.add_argument('--radio_mode', type=str, help='Select the radio mode [AUTO, 802.11a, 802.11b, 802.11ab ...]',
                         default="AUTO")
     parser.add_argument('--monitor_name', type=str, help='Wi-Fi monitor name',
                         default="sniffer0")
@@ -363,13 +362,13 @@ def main():
                         default=0000)
     parser.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='+',
                         default=None)
-    parser.add_argument('--upstream_port', help='--upstream_port upstream port default: eth2',
+    parser.add_argument('--upstream_port', help='Upstream port',
                         default='eth2')
-    parser.add_argument('--side_a_min_rate', help='--side_a_min_rate bps rate minimum for side_a default: 1024000',
+    parser.add_argument('--side_a_min_rate', help='bps rate minimum for side_a default: 1024000',
                         default=1024000)
-    parser.add_argument('--side_b_min_rate', help='--side_b_min_rate bps rate minimum for side_b default: 1024000',
+    parser.add_argument('--side_b_min_rate', help='bps rate minimum for side_b default: 1024000',
                         default=1024000)
-    parser.add_argument('--sta_prefix', help='--sta_prefix <station prefix>   --sta_prefix  sta   : default: wlan',
+    parser.add_argument('--sta_prefix', help='Prefix used when creating station',
                         default='wlan')
     parser.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >',
                         default='open')
