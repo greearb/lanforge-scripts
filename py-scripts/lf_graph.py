@@ -743,7 +743,8 @@ class lf_stacked_graph:
                  _legend_bbox=(1.13, 1.01),
                  _legend_loc="upper right",
                  _remove_border=False,
-                 _rotation=0):
+                 _bar_text_rotation=0,
+                 _x_ticklabels_rotation=0):
         if _data_set is None:
             _data_set = [[1, 2, 3, 4], [1, 1, 1, 1], [1, 1, 1, 1]]
         if _label is None:
@@ -765,7 +766,8 @@ class lf_stacked_graph:
         self.legend_bbox = _legend_bbox
         self.legend_loc = _legend_loc
         self.remove_border = _remove_border
-        self.text_rotation = _rotation
+        self.bar_text_rotation = _bar_text_rotation
+        self.x_ticklabels_rotation = _x_ticklabels_rotation
 
     def build_stacked_graph(self):
         fig, axes_subplot = plt.subplots(figsize=self.figsize)
@@ -808,21 +810,22 @@ class lf_stacked_graph:
 
             # inserting bar text
             if len(list(self.data_set.keys())) > 10:
-                self.text_rotation = 90
+                self.bar_text_rotation = 90
+                self.x_ticklabels_rotation = 90
             for i, v in enumerate(pass_values):
                 if v != 0:
                     plt.text(i + .005, v * 0.45, "%s%s" % (v, "%"), color=self.bar_text_color,
                              fontweight=self.bar_font_weight,
-                             fontsize=self.bar_font_size, ha="center", va="center", rotation=self.text_rotation)
+                             fontsize=self.bar_font_size, ha="center", va="center", rotation=self.bar_text_rotation)
             for i, v in enumerate(fail_values):
                 if v != 0:
                     plt.text(i + .005, v * 0.45 + pass_values[i], "%s%s" % (v, "%"), color=self.bar_text_color,
                              fontweight=self.bar_font_weight, fontsize=self.bar_font_size, ha="center", va="center" ,
-                             rotation=self.text_rotation)
+                             rotation=self.bar_text_rotation)
             plt.legend([bar_1, bar_2], self.label, title=self.legend_title, bbox_to_anchor=self.legend_bbox,
                        loc=self.legend_loc)
             axes_subplot.set_xticks(list(self.data_set.keys()))
-            axes_subplot.set_xticklabels(list(self.data_set.keys()), rotation=self.text_rotation)
+            axes_subplot.set_xticklabels(list(self.data_set.keys()), rotation=self.x_ticklabels_rotation)
 
         # to remove the borders
         if self.remove_border:
