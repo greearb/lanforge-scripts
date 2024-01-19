@@ -31,6 +31,7 @@ if (( errors > 0 )); then
     echo "Usage: $0 <gui_ip> <resource_ip> <wpa_txt_filename> <list of station short eids>"
     echo "Example:"
     echo "        $0 localhost 192.168.1.101 wifi.txt 1.1.wlan0 1.wlan 1.sta0000"
+    echo " Please do not list radios from multiple chassis, that will not work."
     exit 1
 fi
 
@@ -50,6 +51,7 @@ if (( $? > 0 )); then
     echo "SCP failed, will not post config changes"
     exit 1
 fi
+rm -f $PORTS_JSON
 
 # collect list of ports for this resource
 for short_eid in "${STA_EIDS[@]}"; do
@@ -62,21 +64,21 @@ for short_eid in "${STA_EIDS[@]}"; do
     curl -sq -H 'Accept: application/json' \
         -H 'Content-Type: application/json' \
         -X POST -d "$JSON_CLEAN"  \
-        "http://$GUI:8080/$URL_WIFI_CUSTOM"
+        "http://$GUI:8080/$URL_WIFI_CUSTOM" &>/dev/null
     if (( $? > 0 )); then
         echo "command failed, stopping"
         exit 1
     fi
-    curl -sq -o $PORTS_JSON -s -H 'Accept: application/json'\
-        "http://$GUI:8080/port/1/$resource/list?fields=port,parent+dev" \
-        > $PORTS_JSON
+    if [[ ! -f $PORTS_JSON ]]; then
+        curl -sq -o $PORTS_JSON -s -H 'Accept: application/json'\
+            "http://$GUI:8080/port/1/$resource/list?fields=port,parent+dev" &>/dev/null
+    fi
     query=".interfaces[][$Q$eid$Q] | select(. != null).${Q}parent dev$Q"
     radio=$(jq "$query" $PORTS_JSON)
     if (( $? > 0 )); then
         echo "Unable to find record for port[$port]"
         continue
     fi
-
 
     echo "Setting $resource.$port radio[$radio] wpa_conf"
     cat > $POST_DATA << __EOF__
@@ -99,7 +101,7 @@ __EOF__
     curl -sq -H 'Accept: application/json' \
         -H 'Content-Type: application/json' \
         -X POST -d "@$POST_DATA"  \
-        "http://$GUI:8080/$URL_ADD_STATION"
+        "http://$GUI:8080/$URL_ADD_STATION" &>/dev/null
     if (( $? > 0 )); then
         echo "command failed, stopping"
         exit 1
