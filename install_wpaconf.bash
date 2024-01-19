@@ -1,6 +1,6 @@
 #!/bin/bash
 # copy the wpa_text file to the lanforge and assign it to a station or stations
-set -veu
+#set -veu
 if [[ -z "$1" ]]; then
     echo "Usage: $0 <gui_ip> <resource_ip> <wpa_txt_filename> <list of station short eids>"
     exit 1
@@ -59,15 +59,15 @@ for short_eid in "${STA_EIDS[@]}"; do
     echo "resource[$resource] port[$port]"
     echo "Clearing wifi_custom for $resource.$port"
     JSON_CLEAN="{'shelf':1,'resource':$resource,'port':$port,'type':'NA','text':'[BLANK]'}"
-    curl -sv -H 'Accept: application/json' \
+    curl -sq -H 'Accept: application/json' \
         -H 'Content-Type: application/json' \
         -X POST -d "$JSON_CLEAN"  \
-        -sq "http://$GUI:8080/$URL_WIFI_CUSTOM"
+        "http://$GUI:8080/$URL_WIFI_CUSTOM"
     if (( $? > 0 )); then
         echo "command failed, stopping"
         exit 1
     fi
-    curl -o $PORTS_JSON -s -H 'Accept: application/json'\
+    curl -sq -o $PORTS_JSON -s -H 'Accept: application/json'\
         "http://$GUI:8080/port/1/$resource/list?fields=port,parent+dev" \
         > $PORTS_JSON
     query=".interfaces[][$Q$eid$Q] | select(. != null).${Q}parent dev$Q"
@@ -96,10 +96,10 @@ for short_eid in "${STA_EIDS[@]}"; do
     "flags_mask":0x20
 }
 __EOF__
-    curl -sv -H 'Accept: application/json' \
+    curl -sq -H 'Accept: application/json' \
         -H 'Content-Type: application/json' \
         -X POST -d "@$POST_DATA"  \
-        -sq "http://$GUI:8080/$URL_ADD_STATION"
+        "http://$GUI:8080/$URL_ADD_STATION"
     if (( $? > 0 )); then
         echo "command failed, stopping"
         exit 1
