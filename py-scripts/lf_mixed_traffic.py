@@ -1017,6 +1017,8 @@ class Mixed_Traffic(Realm):
         for i in result_data:
             self.dataset = result_data[i]['dl_time']
             self.dataset2 = result_data[i]['url_times']
+            self.bytes_rd = result_data[i]['bytes_rd']
+        self.dataset1 = [float(f"{(i / 1000000): .4f}") for i in self.bytes_rd]
         logger.info("data sets {} {}".format(self.dataset, self.dataset2))
         if self.band == "Both":
             for i in range(1, len(http_sta_list) * 2 + 1):
@@ -1030,7 +1032,7 @@ class Mixed_Traffic(Realm):
             self.http_obj.devices = self.station_list
         self.http_obj.generate_report(date, num_stations=len(http_sta_list), duration=self.http_test_duration,
                                       test_setup_info=test_setup_info, dataset=self.dataset, lis=self.lis,
-                                      bands=Bands, threshold_2g="", threshold_5g="", threshold_both="",
+                                      bands=Bands, threshold_2g="", threshold_5g="", threshold_both="", dataset1=self.dataset1,
                                       dataset2=self.dataset2, result_data=result_data, test_rig="", test_tag="",
                                       dut_hw_version="", dut_sw_version="", dut_model_num="", dut_serial_num="",
                                       test_id="", test_input_infor="", csv_outfile="", _results_dir_name=f'Webpage_Test_Report_{self.band}',
