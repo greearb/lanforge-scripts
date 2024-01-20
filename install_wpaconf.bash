@@ -8,6 +8,10 @@ fi
 q="'"
 Q='"'
 
+if ! which jq; then
+    echo "Utility jq not found. Script will not operate, bye."
+    exit 1
+fi
 
 CONF_FILE="UNSET"
 GUI="UNSET"
@@ -64,14 +68,17 @@ function post() {
         exit 1
     fi
     local post_data="$1"
+    rm -f /tmp/post_response
     curl -sq -H 'Accept: application/json' \
         -H 'Content-Type: application/json' \
         -X POST -d "$post_data"  \
-        "http://$GUI:8080/$url" > /tmp/post_response
+        -o /tmp/post_response \
+        "http://$GUI:8080/$url"
+    local retv=$?
     echo -n "    "
     jq '.LAST|{command,response}' /tmp/post_response | tr -d "\n"
-
     echo "."
+    return $retv
 }
 
 if [[ ! -z "$HOSTIP" ]] && [[ $HOSTIP != UNSET ]]; then
@@ -82,8 +89,8 @@ if [[ ! -z "$HOSTIP" ]] && [[ $HOSTIP != UNSET ]]; then
         exit 1
     fi
 fi
-rm -f $PORTS_JSON
 
+rm -f $PORTS_JSON
 # collect list of ports for this resource
 for short_eid in "${STA_EIDS[@]}"; do
     resource="${short_eid%.*}"
@@ -93,7 +100,6 @@ for short_eid in "${STA_EIDS[@]}"; do
     echo "Clearing wifi_custom for $resource.$port"
     JSON_CLEAN="{'shelf':1,'resource':$resource,'port':$port,'type':'NA','text':'[BLANK]'}"
     post "$URL_WIFI_CUSTOM" "$JSON_CLEAN"
-
     if (( $? > 0 )); then
         echo "command failed, stopping"
         exit 1
@@ -101,6 +107,13 @@ for short_eid in "${STA_EIDS[@]}"; do
     if [[ ! -f $PORTS_JSON ]]; then
         curl -sq -o $PORTS_JSON -s -H 'Accept: application/json'\
             "http://$GUI:8080/port/1/$resource/list?fields=port,parent+dev"
+        if [[ ! -f $PORTS_JSON ]] || [[ ! -s $PORTS_JSON ]]; then
+            echo "Problem saving port list query, cannot check for radios"
+            exit 1
+        fi
+        echo -n "    port list: "
+        jq ".interfaces[] | .[$Q$eid$Q] | select(. != null)" "$PORTS_JSON"
+        echo ""
     fi
     query=".interfaces[][$Q$eid$Q] | select(. != null).${Q}parent dev$Q"
     radio=$(jq "$query" $PORTS_JSON)
