@@ -185,10 +185,15 @@ class HTTPProfile(LFCliBase):
 
             if (url is None) or (url == ""):
                 raise ValueError("HTTPProfile::create: url unset")
+            if ftp:
+                cx_name = name + "_ftp"
+            else:
+                if http:
+                    cx_name = name + "_http"
             if interop is None:
                 if upload_name is None:
                     endp_data = {
-                        "alias": name + "_l4",
+                        "alias": cx_name + "_l4",
                         "shelf": shelf,
                         "resource": resource,
                         "port": name,
@@ -202,7 +207,7 @@ class HTTPProfile(LFCliBase):
                     }
                 else:
                     endp_data = {
-                        "alias": name + "_l4",
+                        "alias": cx_name + "_l4",
                         "shelf": shelf,
                         "resource": resource,
                         # "port": ports[0],
@@ -223,18 +228,18 @@ class HTTPProfile(LFCliBase):
                 time.sleep(sleep_time)
 
                 endp_data = {
-                    "alias": "CX_" + name + "_l4",
+                    "alias": "CX_" + cx_name + "_l4",
                     "test_mgr": "default_tm",
-                    "tx_endp": name + "_l4",
+                    "tx_endp": cx_name + "_l4",
                     "rx_endp": "NA"
                 }
                 # print("http_profile - endp_data:{endp_data}".format(endp_data=endp_data))
                 cx_post_data.append(endp_data)
-                self.created_cx[name + "_l4"] = "CX_" + name + "_l4"
+                self.created_cx[cx_name + "_l4"] = "CX_" + cx_name + "_l4"
             else: # If Interop is enabled then this code will work
                 if upload_name is None:
                     endp_data = {
-                        "alias": name + str(resource) + "_l4",
+                        "alias": cx_name + str(resource) + "_l4",
                         "shelf": shelf,
                         "resource": resource,
                         "port": name,
@@ -248,7 +253,7 @@ class HTTPProfile(LFCliBase):
                     }
                 else:
                     endp_data = {
-                        "alias": name + str(resource) + "_l4",
+                        "alias": cx_name + str(resource) + "_l4",
                         "shelf": shelf,
                         "resource": resource,
                         # "port": ports[0],
@@ -269,14 +274,14 @@ class HTTPProfile(LFCliBase):
                 time.sleep(sleep_time)
 
                 endp_data = {  # Added resource id to alias and End point name as all real clients have same name(wlan0)
-                    "alias": "CX_" + name + str(resource) + "_l4",
+                    "alias": "CX_" + cx_name + str(resource) + "_l4",
                     "test_mgr": "default_tm",
-                    "tx_endp": name + str(resource) + "_l4",
+                    "tx_endp": cx_name + str(resource) + "_l4",
                     "rx_endp": "NA"
                 }
                 # print("http_profile - endp_data:{endp_data}".format(endp_data=endp_data))
                 cx_post_data.append(endp_data)
-                self.created_cx[name + str(resource) + "_l4"] = "CX_" + name + str(resource) + "_l4"
+                self.created_cx[cx_name + str(resource) + "_l4"] = "CX_" + cx_name + str(resource) + "_l4"
 
         for cx_data in cx_post_data:
             url = "/cli-json/add_cx"
