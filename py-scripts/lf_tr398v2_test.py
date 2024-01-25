@@ -296,6 +296,7 @@ class TR398v2Test(cvtest):
                  pull_report=False,
                  load_old_cfg=False,
                  raw_lines_file="",
+                 dut6="",
                  dut5="",
                  dut2="",
                  enables=None,
@@ -319,6 +320,7 @@ class TR398v2Test(cvtest):
         self.lf_password = lf_password
         self.instance_name = instance_name
         self.config_name = config_name
+        self.dut6 = dut6
         self.dut5 = dut5
         self.dut2 = dut2
         self.raw_lines_file = raw_lines_file
@@ -358,6 +360,8 @@ class TR398v2Test(cvtest):
         # cmd line args take precedence
         if self.upstream != "":
             cfg_options.append("upstream_port: " + self.upstream)
+        if self.dut6 != "":
+            cfg_options.append("selected_dut6: " + self.dut6)
         if self.dut5 != "":
             cfg_options.append("selected_dut5: " + self.dut5)
         if self.dut2 != "":
@@ -442,6 +446,8 @@ def main():
                         help="Specify 2Ghz DUT used by this test, example: 'TR398-DUT-r750 ruckus-r750-2g 4c:b1:cd:18:e8:e8 (2)'")
     parser.add_argument("--dut5", default="",
                         help="Specify 5Ghz DUT used by this test, example: 'TR398-DUT-r750 ruckus-r750-5g 4c:b1:cd:18:e8:ec (1)'")
+    parser.add_argument("--dut6", default="",
+                        help="Specify 6Ghz DUT used by this test, example: 'TR398-DUT-r750 ruckus-r750-6g 4c:b1:cd:18:e8:eb (3)'")
     parser.add_argument("--local_lf_report_dir",
                         help="--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory",
                         default="")
@@ -462,6 +468,7 @@ def main():
                           load_old_cfg=args.load_old_cfg,
                           dut2=args.dut2,
                           dut5=args.dut5,
+                          dut6=args.dut6,
                           raw_lines_file=args.raw_lines_file,
                           enables=args.enable,
                           disables=args.disable,
