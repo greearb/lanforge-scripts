@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # This bash script creates/updates a DUT, creates/updates a chamberview scenario,
-# loads and builds that scenario, runs wifi capacity test, and runs tr398v2 test
+# loads and builds that scenario, runs wifi capacity test (if you uncomment that part)
+# and runs tr398v2 test
 
 set -x
 
@@ -64,14 +65,14 @@ echo "Build Chamber View Scenario"
 
 # Run capacity test on the stations created by the chamber view scenario.
 #config_name doesn't matter
-echo "run wifi capacity test"
-./lf_wifi_capacity_test.py --config_name Custom --pull_report \
-  --mgr ${MGR} \
-  --port ${MGR_PORT} \
-  --instance_name testing --upstream $UPSTREAM --test_rig ${TESTBED} --graph_groups ${GROUP_FILE} \
-  --batch_size "100" --protocol "TCP-IPv4" --duration 20000
+#echo "run wifi capacity test"
+#./lf_wifi_capacity_test.py --config_name Custom --pull_report \
+#  --mgr ${MGR} \
+#  --port ${MGR_PORT} \
+#  --instance_name testing --upstream $UPSTREAM --test_rig ${TESTBED} --graph_groups ${GROUP_FILE} \
+#  --batch_size "100" --protocol "TCP-IPv4" --duration 20000
 
-rm ${GROUP_FILE}
+#rm ${GROUP_FILE}
 
 
 # Run tr398 automated test
@@ -86,8 +87,8 @@ rm ${GROUP_FILE}
       --upstream $UPSTREAM \
       --test_rig ${TESTBED} --pull_report \
       --local_lf_report_dir ${TR398_RPT_DIR} \
-      --dut5 '${DUT} ${SSID} ${BSSID5} (2)' \
-      --dut2 '${DUT} ${SSID} ${BSSID2} (1)' \
+      --dut5 "${DUT} ${SSID} ${BSSID5} (2)" \
+      --dut2 "${DUT} ${SSID} ${BSSID2} (1)" \
       --raw_lines_file ${TR398_CFG} \
       --raw_line "selected_dut6: ${DUT} ${SSID} ${BSSID6} (3)" \
       --set 'Calibrate 802.11AX Attenuators' 0 \
