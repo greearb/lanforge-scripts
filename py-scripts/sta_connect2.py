@@ -816,6 +816,13 @@ class StaConnect2(Realm):
 
 
 def main():
+    help_summary = '''\
+    Test will create a station, create TCP and UDP traffic, run it a short amount of time, 
+    and verify whether traffic was sent and received.  It also verifies the station connected
+    to the requested BSSID if bssid is specified as an argument. 
+    The script will clean up the station and connections at the end of the test.
+    '''
+
     lfjson_host = "localhost"
     lfjson_port = 8080
     parser = argparse.ArgumentParser(
@@ -957,8 +964,15 @@ CLI Example:
 
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
 
     args = parser.parse_args()
+
+    # help_summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
