@@ -790,46 +790,62 @@ if only DUT Transmit is choosen the upload speed is set to 0''')
         self.lf_dp_rvr_attenuator_combobox.grid(row= 4, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_upload_speed_combobox, "The ATTENUATOR is definded in the test_rig.json file")
 
-        self.lf_dp_rvr_attenuation_label = tkinter.Label(self.lf_dp_rvr_frame, text="Attenuation")
-        self.lf_dp_rvr_attenuation_label.grid(row=4, column=2)
-        self.lf_dp_rvr_attenuation_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>","0..+100..500","0..+100..600","0..+100..700","400,450,460,470,490,500"])
-        self.lf_dp_rvr_attenuation_combobox.current(1)
-        self.lf_dp_rvr_attenuation_combobox.grid(row= 4, column=3)
-        self.window_tooltip.bind(self.lf_dp_rvr_attenuation_combobox, '''Select the atteunation range  <start>..+<step>..<end> 
+        self.lf_dp_rvr_attenuation_2g_label = tkinter.Label(self.lf_dp_rvr_frame, text="Attenuation 2g")
+        self.lf_dp_rvr_attenuation_2g_label.grid(row=5, column=0)
+        self.lf_dp_rvr_attenuation_2g_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>","0..+100..500","0..+100..600","0..+100..700","400,450,460,470,490,500"])
+        self.lf_dp_rvr_attenuation_2g_combobox.current(1)
+        self.lf_dp_rvr_attenuation_2g_combobox.grid(row= 5, column=1)
+        self.window_tooltip.bind(self.lf_dp_rvr_attenuation_2g_combobox, '''Select the atteunation range  <start>..+<step>..<end> 
+May also enter custom Example 0..+100..700''')
+
+        self.lf_dp_rvr_attenuation_5g_label = tkinter.Label(self.lf_dp_rvr_frame, text="Attenuation 5g")
+        self.lf_dp_rvr_attenuation_5g_label.grid(row=5, column=2)
+        self.lf_dp_rvr_attenuation_5g_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>","0..+100..500","0..+100..600","0..+100..700","400,450,460,470,490,500"])
+        self.lf_dp_rvr_attenuation_5g_combobox.current(1)
+        self.lf_dp_rvr_attenuation_5g_combobox.grid(row= 5, column=3)
+        self.window_tooltip.bind(self.lf_dp_rvr_attenuation_5g_combobox, '''Select the atteunation range  <start>..+<step>..<end> 
+May also enter custom Example 0..+100..700''')
+
+        self.lf_dp_rvr_attenuation_6g_label = tkinter.Label(self.lf_dp_rvr_frame, text="Attenuation 6g")
+        self.lf_dp_rvr_attenuation_6g_label.grid(row=5, column=4)
+        self.lf_dp_rvr_attenuation_6g_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>","0..+100..500","0..+100..600","0..+100..700","400,450,460,470,490,500"])
+        self.lf_dp_rvr_attenuation_6g_combobox.current(1)
+        self.lf_dp_rvr_attenuation_6g_combobox.grid(row= 5, column=5)
+        self.window_tooltip.bind(self.lf_dp_rvr_attenuation_6g_combobox, '''Select the atteunation range  <start>..+<step>..<end> 
 May also enter custom Example 0..+100..700''')
 
         self.lf_dp_rvr_2g_file = tkinter.Label(self.lf_dp_rvr_frame, text='2g json file')
-        self.lf_dp_rvr_2g_file.grid(row= 5, column= 0)
+        self.lf_dp_rvr_2g_file.grid(row= 6, column= 0)
         self.lf_dp_rvr_2g_file_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_2g_file_entry_var.set("")
         self.lf_dp_rvr_2g_file_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_2g_file_entry_var, width = 64)
-        self.lf_dp_rvr_2g_file_entry.grid(row= 5, column=1, columnspan = 3)
+        self.lf_dp_rvr_2g_file_entry.grid(row= 6, column=1, columnspan = 3)
         self.window_tooltip.bind(self.lf_dp_rvr_2g_file_entry, '''Auto Generated json file name to be used by lf_check.py would be:
 ./lf_check.py  --json_test <QA generated name>.json:<Qa generated name>''')
 
         self.lf_dp_rvr_5g_file = tkinter.Label(self.lf_dp_rvr_frame, text='5g json file')
-        self.lf_dp_rvr_5g_file.grid(row= 6, column= 0)
+        self.lf_dp_rvr_5g_file.grid(row= 7, column= 0)
         self.lf_dp_rvr_5g_file_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_5g_file_entry_var.set("")
         self.lf_dp_rvr_5g_file_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_5g_file_entry_var, width = 64)
-        self.lf_dp_rvr_5g_file_entry.grid(row= 6, column=1, columnspan=3)
+        self.lf_dp_rvr_5g_file_entry.grid(row= 7, column=1, columnspan=3)
         self.window_tooltip.bind(self.lf_dp_rvr_5g_file_entry, ''''Auto Generated json file name to be used by lf_check.py would be:
 ./lf_check.py  --json_test <QA generated name>.json:<Qa generated name>''')
 
         self.lf_dp_rvr_6g_file = tkinter.Label(self.lf_dp_rvr_frame, text='6g json file')
-        self.lf_dp_rvr_6g_file.grid(row=7, column= 0)
+        self.lf_dp_rvr_6g_file.grid(row=8, column= 0)
         self.lf_dp_rvr_6g_file_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_6g_file_entry_var.set("")
         self.lf_dp_rvr_6g_file_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_6g_file_entry_var, width = 64)
-        self.lf_dp_rvr_6g_file_entry.grid(row=7, column=1, columnspan = 3)
+        self.lf_dp_rvr_6g_file_entry.grid(row=8, column=1, columnspan = 3)
         self.window_tooltip.bind(self.lf_dp_rvr_6g_file_entry, ''''Auto Generated json file name to be used by lf_check.py would be:
 ./lf_check.py  --json_test <QA generated name>.json:<Qa generated name>''')
 
         self.lf_dp_rvr_duration = tkinter.Label(self.lf_dp_rvr_frame, text='test duration')
-        self.lf_dp_rvr_duration.grid(row= 8, column= 0)
+        self.lf_dp_rvr_duration.grid(row= 9, column= 0)
         self.lf_dp_rvr_duration_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<Custom>","5000 (5 sec)","10000 (10 sec)","15000 (15 sec)","20000 (20 sec)","30000 (30 sec)","60000 (1 min)","300000 (5min)"])
         self.lf_dp_rvr_duration_combobox.current(3)
-        self.lf_dp_rvr_duration_combobox.grid(row= 8, column=1)
+        self.lf_dp_rvr_duration_combobox.grid(row= 9, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_duration_combobox, '''Enter the test duration , for custom it is in ms
 Example:  20000 milli seconds will run the test for 20 seconds
 if left blank will default to 20000''')
@@ -837,28 +853,28 @@ if left blank will default to 20000''')
         self.lf_dp_rvr_use_qa_var = tkinter.StringVar(value="Use")
         self.lf_dp_rvr_use_qa_var_check = tkinter.Checkbutton(self.lf_dp_rvr_frame, text="lf_qa", variable=self.lf_dp_rvr_use_qa_var,
                                         onvalue="Use", offvalue="Do Not Use")
-        self.lf_dp_rvr_use_qa_var_check.grid(row=9, column=0)
+        self.lf_dp_rvr_use_qa_var_check.grid(row=10, column=0)
         self.window_tooltip.bind(self.lf_dp_rvr_use_qa_var_check, '''Recommended: Wifi Capacity Test Suite Json will include lf_qa.
 lf_qa will compare performance over multiple runs for Chamber View tests and tests that include kpi''')
 
         self.lf_dp_rvr_use_inspect_var = tkinter.StringVar(value="Use")
         self.lf_dp_rvr_use_inspect_check = tkinter.Checkbutton(self.lf_dp_rvr_frame, text="lf_inspect", variable=self.lf_dp_rvr_use_inspect_var,
                                         onvalue="Use", offvalue="Do Not Use")
-        self.lf_dp_rvr_use_inspect_check.grid(row=9, column=1)
+        self.lf_dp_rvr_use_inspect_check.grid(row=10, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_use_inspect_check, '''Recommended: Wifi Capacity Test Suite Json will include lf_inspect. 
 lf_inspect will compare performance between two individual runs for Chamber View tests and tests that include kpi''')
 
         self.lf_dp_rvr_save = ttk.Button(self.lf_dp_rvr_frame, text = 'Create DP Suite', command = self.create_dp_json)
-        self.lf_dp_rvr_save.grid(row=10, column=0, sticky="news", padx=20, pady=10)
+        self.lf_dp_rvr_save.grid(row=11, column=0, sticky="news", padx=20, pady=10)
         self.window_tooltip.bind(self.lf_dp_rvr_save, 'Save Data Plane suite Json File')
 
         self.lf_dp_rvr_save = ttk.Button(self.lf_dp_rvr_frame, text = 'Create RvR Suite', command = self.create_rvr_json)
-        self.lf_dp_rvr_save.grid(row=10, column=1, sticky="news", padx=20, pady=10)
+        self.lf_dp_rvr_save.grid(row=11, column=1, sticky="news", padx=20, pady=10)
         self.window_tooltip.bind(self.lf_dp_rvr_save, 'Save RvR test suite Json File')
 
 
         self.lf_dp_rvr_clear = ttk.Button(self.lf_dp_rvr_frame, text = 'Clear DP, RvR Info', command = self.dp_rvr_clear_information)
-        self.lf_dp_rvr_clear.grid(row=10, column=2, sticky="news", padx=20, pady=10)
+        self.lf_dp_rvr_clear.grid(row=11, column=2, sticky="news", padx=20, pady=10)
         self.window_tooltip.bind(self.lf_dp_rvr_clear, 'Clear File Names , use between test suite generation')
 
 
@@ -1346,7 +1362,9 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_dp_rvr_download_speed_combobox.get()
         self.lf_dp_rvr_upload_speed_combobox.get()
         self.lf_dp_rvr_attenuator_combobox.get()
-        self.lf_dp_rvr_attenuation_combobox.get()
+        self.lf_dp_rvr_attenuation_2g_combobox.get()
+        self.lf_dp_rvr_attenuation_5g_combobox.get()
+        self.lf_dp_rvr_attenuation_6g_combobox.get()
 
         dictionary_length = len(self.radio_dict)
         logger.debug("radio_dict length = {length}".format(length=dictionary_length))
@@ -1381,7 +1399,9 @@ lf_inspect will compare performance between two individual runs for Chamber View
                 _lf_dp_rvr_download_speed_combobox = self.lf_dp_rvr_download_speed_combobox,
                 _lf_dp_rvr_upload_speed_combobox = self.lf_dp_rvr_upload_speed_combobox,
                 _lf_dp_rvr_attenuator_combobox = self.lf_dp_rvr_attenuator_combobox,      
-                _lf_dp_rvr_attenuation_combobox = self.lf_dp_rvr_attenuation_combobox
+                _lf_dp_rvr_attenuation_2g_combobox = self.lf_dp_rvr_attenuation_2g_combobox,
+                _lf_dp_rvr_attenuation_5g_combobox = self.lf_dp_rvr_attenuation_5g_combobox,
+                _lf_dp_rvr_attenuation_6g_combobox = self.lf_dp_rvr_attenuation_6g_combobox
         )
 
         if self.suite_radios_2g != "":
