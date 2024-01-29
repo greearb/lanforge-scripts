@@ -78,7 +78,9 @@ class lf_create_dp_rvr_json():
                  _lf_dp_rvr_download_speed_combobox,
                  _lf_dp_rvr_upload_speed_combobox,
                  _lf_dp_rvr_attenuator_combobox,
-                 _lf_dp_rvr_attenuation_combobox
+                 _lf_dp_rvr_attenuation_2g_combobox,
+                 _lf_dp_rvr_attenuation_5g_combobox,
+                 _lf_dp_rvr_attenuation_6g_combobox
                  ):
         self.suite_type = _suite_type
         self.suite_band = ""
@@ -104,7 +106,9 @@ class lf_create_dp_rvr_json():
         self.lf_dp_rvr_download_speed_combobox = _lf_dp_rvr_download_speed_combobox
         self.lf_dp_rvr_upload_speed_combobox = _lf_dp_rvr_upload_speed_combobox
         self.lf_dp_rvr_attenuator_combobox = _lf_dp_rvr_attenuator_combobox
-        self.lf_dp_rvr_attenuation_combobox = _lf_dp_rvr_attenuation_combobox
+        self.lf_dp_rvr_attenuation_2g_combobox = _lf_dp_rvr_attenuation_2g_combobox
+        self.lf_dp_rvr_attenuation_5g_combobox = _lf_dp_rvr_attenuation_5g_combobox
+        self.lf_dp_rvr_attenuation_6g_combobox = _lf_dp_rvr_attenuation_6g_combobox
         self.lf_dp_rvr_use_qa_var = _lf_dp_rvr_use_qa_var
         self.lf_dp_rvr_use_inspect_var = _lf_dp_rvr_use_inspect_var
 
@@ -195,6 +199,8 @@ class lf_create_dp_rvr_json():
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_2g
             dut_radio ="Radio-1"
+            lf_dp_rvr_attenuation = self.lf_dp_rvr_attenuation_2g_combobox.get()
+
 
         elif self.test_suite_band == "5g":
             self.file_5g = self.suite_radios_5g + ".json"
@@ -204,6 +210,8 @@ class lf_create_dp_rvr_json():
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_5g
             dut_radio = "Radio-2"
+            lf_dp_rvr_attenuation = self.lf_dp_rvr_attenuation_5g_combobox.get()
+
 
         elif self.test_suite_band == "6g":
             self.file_6g = self.suite_radios_6g + ".json"
@@ -213,6 +221,8 @@ class lf_create_dp_rvr_json():
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_6g
             dut_radio = "Radio-3"
+            lf_dp_rvr_attenuation = self.lf_dp_rvr_attenuation_6g_combobox.get()
+
 
         # configuration 
         lf_dp_rvr_duration = self.lf_dp_rvr_duration_combobox.get().split(' ', 1)[0]
@@ -223,7 +233,6 @@ class lf_create_dp_rvr_json():
         lf_dp_rvr_download_speed = self.lf_dp_rvr_download_speed_combobox.get()
         lf_dp_rvr_upload_speed = self.lf_dp_rvr_upload_speed_combobox.get()
         lf_dp_rvr_attenuator = self.lf_dp_rvr_attenuator_combobox.get()
-        lf_dp_rvr_attenuation = self.lf_dp_rvr_attenuation_combobox.get()
 
         self.dp_rvr_band_json = """
 {{
