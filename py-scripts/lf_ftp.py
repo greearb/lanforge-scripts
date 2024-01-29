@@ -218,12 +218,13 @@ class FtpTest(LFCliBase):
         #print(response_port)
         for interface in response_port['interfaces']:
             for port,port_data in interface.items():
-                if(not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0"):
-                    for id in self.eid_list:
-                        if(id+'.' in port):
-                            original_port_list.append(port)
-                            port_eid_list.append(str(LFUtils.name_to_eid(port)[0])+'.'+str(LFUtils.name_to_eid(port)[1]))
-                            self.mac_id1_list.append(str(LFUtils.name_to_eid(port)[0])+'.'+str(LFUtils.name_to_eid(port)[1])+' '+port_data['mac'])
+                if 'p2p0' not in port:
+                    if(not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0"):
+                        for id in self.eid_list:
+                            if(id+'.' in port):
+                                original_port_list.append(port)
+                                port_eid_list.append(str(LFUtils.name_to_eid(port)[0])+'.'+str(LFUtils.name_to_eid(port)[1]))
+                                self.mac_id1_list.append(str(LFUtils.name_to_eid(port)[0])+'.'+str(LFUtils.name_to_eid(port)[1])+' '+port_data['mac'])
         #print("port eid list",port_eid_list)
         for i in range(len(self.eid_list)):
             for j in range(len(port_eid_list)):
@@ -252,7 +253,7 @@ class FtpTest(LFCliBase):
 
         for eid in resource_eid_list1:
             for ports_m in original_port_list:
-                if eid in ports_m:
+                if eid in ports_m and 'p2p0' not in ports_m:
                     self.input_devices_list.append(ports_m)
         print("INPUT DEVICES LIST",self.input_devices_list)
         
