@@ -80,7 +80,10 @@ class lf_create_dp_rvr_json():
                  _lf_dp_rvr_attenuator_combobox,
                  _lf_dp_rvr_attenuation_2g_combobox,
                  _lf_dp_rvr_attenuation_5g_combobox,
-                 _lf_dp_rvr_attenuation_6g_combobox
+                 _lf_dp_rvr_attenuation_6g_combobox,
+                 _lf_radio_2g,
+                 _lf_radio_5g,
+                 _lf_radio_6g
                  ):
         self.suite_type = _suite_type
         self.suite_band = ""
@@ -111,6 +114,10 @@ class lf_create_dp_rvr_json():
         self.lf_dp_rvr_attenuation_6g_combobox = _lf_dp_rvr_attenuation_6g_combobox
         self.lf_dp_rvr_use_qa_var = _lf_dp_rvr_use_qa_var
         self.lf_dp_rvr_use_inspect_var = _lf_dp_rvr_use_inspect_var
+
+        self.lf_radio_2g = _lf_radio_2g
+        self.lf_radio_5g = _lf_radio_5g
+        self.lf_radio_6g = _lf_radio_6g
 
         self.suite_2d_radios = _suite_radios_2g
         self.suite_5g_radios = _suite_radios_5g
@@ -198,7 +205,7 @@ class lf_create_dp_rvr_json():
             self.suite_test_name_band_dict = self.suite_test_name_2g_dict
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_2g
-            dut_radio ="Radio-1"
+            dut_radio = self.lf_radio_2g
             lf_dp_rvr_attenuation = self.lf_dp_rvr_attenuation_2g_combobox.get()
 
 
@@ -209,7 +216,7 @@ class lf_create_dp_rvr_json():
             self.suite_test_name_band_dict = self.suite_test_name_5g_dict
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_5g
-            dut_radio = "Radio-2"
+            dut_radio = self.lf_radio_5g
             lf_dp_rvr_attenuation = self.lf_dp_rvr_attenuation_5g_combobox.get()
 
 
@@ -220,7 +227,7 @@ class lf_create_dp_rvr_json():
             self.suite_test_name_band_dict = self.suite_test_name_6g_dict
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_6g
-            dut_radio = "Radio-3"
+            dut_radio = self.lf_radio_6g
             lf_dp_rvr_attenuation = self.lf_dp_rvr_attenuation_6g_combobox.get()
 
 
