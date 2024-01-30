@@ -48,6 +48,7 @@ from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 import logging
+import asyncio
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -115,6 +116,28 @@ class InteropPortReset(Realm):
                                                  _output_pdf="port_reset_test.pdf")
         self.report_path = self.lf_report.get_report_path()
 
+        self.base_interop_profile = base.RealDevice(manager_ip=self.host, server_ip=self.mgr_ip, ssid=self.ssid,
+                                                    encryption=self.encryp, passwd=self.passwd)
+
+        self.utility = base.UtilityInteropWifi(host_ip=self.host)
+        # logging.basicConfig(filename='port_reset.log', filemode='w', format='%(asctime)s - %(message)s',
+        #                     level=logging.INFO, force=True)
+
+    def selecting_devices_from_available(self):
+        asyncio.run(self.base_interop_profile.query_all_devices_to_configure_wifi())
+        self.real_sta_list = self.base_interop_profile.station_list
+        real_device_data = self.base_interop_profile.devices_data
+        if len(self.real_sta_list) == 0:
+            logging.error('There are no real devices in this testbed. Aborting the test.')
+            exit(0)
+        logging.info(f"{self.real_sta_list}")
+
+        for sta_name in self.real_sta_list:
+            if sta_name not in real_device_data:
+                logger.error('Real Station not in devices data')
+                raise ValueError('Real station not in devices data')
+        android_list = self.base_interop_profile.android_list
+
         self.interop = base.BaseInteropWifi(manager_ip=self.host,
                                             port=self.port,
                                             ssid=self.ssid,
@@ -124,231 +147,14 @@ class InteropPortReset(Realm):
                                             screen_size_prcnt=0.4,
                                             _debug_on=False,
                                             _exit_on_error=False)
-        self.base_interop_profile = base.RealDevice(manager_ip=self.host)
-
-        self.utility = base.UtilityInteropWifi(host_ip=self.host)
-        # logging.basicConfig(filename='port_reset.log', filemode='w', format='%(asctime)s - %(message)s',
-        #                     level=logging.INFO, force=True)
-
-    def selecting_devices_from_available(self):
-        self.available_device_list = self.base_interop_profile.get_devices()
-        self.user_query = self.base_interop_profile.query_user()
-        logging.info("Available Devices List: {}".format(self.available_device_list))
-        logging.info("Query Result: {}".format(self.user_query))
-        android_list = self.base_interop_profile.android_list
         supported_dict = self.interop.supported_devices_resource_id
+        print("Supported dict", supported_dict)
         self.final_selected_android_list = []
         for key in supported_dict.keys():
             if key != "":
                 if any(key in item for item in android_list):
                     self.final_selected_android_list.append(supported_dict[key])
         logging.info(f"Final Android Serial Numbers List: {self.final_selected_android_list}")
-
-    def getting_resources_data(self, windows_list, linux_list, mac_list):
-        # fetching all devices from Resource Manager tab
-        response = self.json_get('/resource/all')
-        resources = response['resources']
-        resources_list = []
-        for resource_data in resources:
-            port, resource = list(resource_data.keys())[0], list(resource_data.values())[0]
-            shelf, resource_id = port.split('.')
-            # filtering LANforges from resources
-            if resource['ct-kernel']:
-                continue
-            # filtering Androids from resources
-            if resource['user'] != '':
-                continue
-            # filtering phantom resources
-            if resource['phantom']:
-                logging.info('The laptop on port {} is in phantom state.'.format(port))
-                continue
-            hw_version = resource['hw version']
-            # fetching data for Windows
-            if windows_list:
-                for win_device in windows_list:
-                    if 'Win' in hw_version and port in win_device:
-                        resources_list.append({
-                            'os': 'Win',
-                            'shelf': shelf,
-                            'resource': resource_id,
-                            'sta_name': win_device.split(".")[2],
-                            # 'report_timer': 1500,
-                            'current_flags': 2147483648,
-                            'interest': 16384
-                        })
-            # fetching data for Linux
-            if linux_list:
-                for lin_device in linux_list:
-                    if 'Lin' in hw_version and port in lin_device:
-                        resources_list.append({
-                            'os': 'Lin',
-                            'shelf': shelf,
-                            'resource': resource_id,
-                            'sta_name': 'sta{}'.format(resource_id),
-                            # 'sta_name': 'en0',
-                            'current_flags': 2147483648,
-                            'interest': 16384
-                        })
-            # fetching data for Mac
-            if mac_list:
-                for mac_device in mac_list:
-                    if 'Apple' in hw_version and port in mac_device:
-                        resources_list.append({
-                            'os': 'Apple',
-                            'shelf': shelf,
-                            'resource': resource_id,
-                            'sta_name': 'en0',
-                            'current_flags': 2147483648,
-                            'interest': 16384
-                        })
-        return resources_list
-
-    def rm_stations(self, port_list=None):
-        if port_list is None:
-            port_list = []
-        if not port_list:
-            logging.info('Port list is empty')
-            return
-        data_list = []
-        for port_data in port_list:
-            if 'Lin' == port_data['os']:
-                shelf, resource, sta_name = port_data['shelf'], port_data['resource'], port_data['sta_name']
-
-                get_station_name = self.json_get('/ports/{}/{}/?fields=parent dev'.format(shelf, resource), debug_=True)
-                # station_response = get_station_name.json()
-                stations = get_station_name['interfaces']
-
-                if type(stations) == list:
-                    for station in stations:
-                        station_name, station_details = list(station.keys())[0], list(station.values())[0]
-                        if station_details['parent dev'] != '':
-                            data = {
-                                'shelf': shelf,
-                                'resource': resource,
-                                'port': station_name.split(".")[2]  # taking the exiting station names
-                            }
-                            data_list.append(data)
-                            break
-                elif type(stations) == dict:
-                    logger.warning('The port {}.{} does not have the required interfaces'.format(shelf, resource))
-        for i in data_list:
-            self.json_post("/cli-json/rm_vlan", i)
-
-    # add station
-    def add_stations(self, port_list=None):
-        if port_list is None:
-            port_list = []
-        if not port_list:
-            logging.info('Port list is empty')
-            return
-        data_list = []
-        for port_data in port_list:
-            shelf = port_data['shelf']
-            resource = port_data['resource']
-            sta_name = port_data['sta_name']
-            operating_system = port_data['os']
-            if self.encryp == 'open':
-                self.encrypt_value = 0
-                self.passwd = 'NA'
-            elif self.encryp == 'wpa' or self.encryp == 'psk':
-                self.encrypt_value = 16
-            elif self.encryp == "wpa2" or self.encryp == 'psk2':
-                self.encrypt_value = 1024
-            elif self.encryp == "wpa3" or self.encryp == 'psk3':
-                self.encrypt_value = 1099511627776
-            if operating_system == 'Lin':
-                mac = 'xx:xx:xx:*:*:xx'
-            else:
-                mac = 'NA'
-            data = {
-                'shelf': shelf,
-                'resource': resource,
-                'radio': 'wiphy0',
-                'sta_name': sta_name,
-                'flags': self.encrypt_value,
-                'ssid': self.ssid,
-                'key': self.passwd,
-                'mac': mac
-            }
-            data_list.append(data)
-        for i in data_list:
-            self.json_post("/cli-json/add_sta", i)
-
-    # set port (enable DHCP)
-    def set_ports(self, port_list=None):
-        if port_list is None:
-            port_list = []
-        if not port_list:
-            logging.info('Port list is empty')
-            return
-        data_list = []
-        for port_data in port_list:
-            shelf = port_data['shelf']
-            resource = port_data['resource']
-            port = port_data['sta_name']
-            interest = port_data['interest']
-
-            os = port_data['os']
-            if os in ['Apple', 'Lin']:
-                current_flags = port_data['current_flags']
-                data = {
-                    'shelf': shelf,
-                    'resource': resource,
-                    'port': port,
-                    'current_flags': current_flags,
-                    'interest': interest,
-                    'mac': 'xx:xx:xx:*:*:xx'
-                }
-            elif os == 'Win':
-                # report_timer = port_data['report_timer']
-                current_flags = port_data['current_flags']
-                data = {
-                    'shelf': shelf,
-                    'resource': resource,
-                    'port': port,
-                    # 'report_timer': report_timer,
-                    'current_flags': current_flags,
-                    'interest': interest,
-                }
-            data_list.append(data)
-        for i in data_list:
-            self.json_post("/cli-json/set_port", i)
-            time.sleep(5)
-
-    def real_clients_connectivity(self, windows_list, linux_list, mac_list):
-        # for laptops
-        all_laptops = windows_list + linux_list + mac_list
-        if windows_list or linux_list or mac_list:
-            resource_list = self.getting_resources_data(windows_list=windows_list, linux_list=linux_list,
-                                                        mac_list=mac_list)
-            logging.info(f"Resource List: {resource_list}")
-            if linux_list:
-                self.rm_stations(port_list=resource_list)
-            time.sleep(2)
-            self.add_stations(port_list=resource_list)
-            time.sleep(2)
-            self.set_ports(port_list=resource_list)
-            logging.info(f"Waiting {30} sec for authorizing the devices.")
-            time.sleep(30)
-            # check if the devices (windows, linux, mac) is connected to expected/given ssid or not
-            for laptop in all_laptops:
-                port_name = laptop.split(".")
-                port_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
-                ssid = port_query['interface']['ssid']
-                ip = port_query['interface']["ip"]
-                if ssid == self.ssid and ssid != '':
-                    logging.info(f"The Device {laptop} has expected ssid: '{self.ssid}'")
-                    if ip != "0.0.0.0" and ip != '':
-                        logging.info(f"The Device {laptop} got an ip '{ip}'")
-                    else:
-                        logging.info(f"Didn't get the ip for device {laptop}, waiting for ip...")
-                        if self.wait_for_ip(station_list=[laptop]):
-                            logging.info(f"The device {laptop} got the ip.")
-                        else:
-                            logging.info(
-                                f"The device {laptop} didn't get the ip, after waiting for an ip. Please recheck the given ssid/password")
-                else:
-                    logging.info(f"The Device {laptop} has not expected ssid: {self.ssid}")
 
     def create_log_file(self, json_list, file_name="empty.json"):
         # Convert the list of JSON values to a JSON-formatted string
@@ -635,19 +441,16 @@ class InteropPortReset(Realm):
 
     # @property
     def run(self):
-        # try:
+        try:
             # start timer
             present_time = datetime.now()
             test_start_time = present_time.strftime("%b %d %H:%M:%S")
             logging.info(f"Test Started at {present_time}")
-            logging.info("Test started at " + str(present_time))
-            # get the list of adb devices
             self.adb_device_list = self.interop.check_sdk_release(selected_android_devices=self.final_selected_android_list)
             self.windows_list = self.base_interop_profile.windows_list
             self.linux_list = self.base_interop_profile.linux_list
             self.mac_list = self.base_interop_profile.mac_list
-            logging.info(
-                f"Final Active Devices List (Android, Windows, Linux, Mac) Which support user specified release & not in phantom : {self.adb_device_list, self.base_interop_profile.windows_list, self.base_interop_profile.linux_list, self.base_interop_profile.mac_list}")
+            logging.info(f"Final Active Devices List (Android, Windows, Linux, Mac) Which support user specified release & not in phantom : {self.adb_device_list, self.base_interop_profile.windows_list, self.base_interop_profile.linux_list, self.base_interop_profile.mac_list}")
             self.all_selected_devices = self.adb_device_list + self.windows_list + self.linux_list + self.mac_list
             self.all_laptops = self.windows_list + self.linux_list + self.mac_list
             logging.info(f"All Selected Devices: {self.all_selected_devices}")
@@ -661,92 +464,35 @@ class InteropPortReset(Realm):
             logging.info(
                 f"The total number of available active Mac devices are: {len(self.base_interop_profile.mac_list)}")
 
-            if self.adb_device_list:
-                logging.info(f"Selected All Active Devices: {self.adb_device_list}")
-            else:
-                logging.info(f"No active adb devices list found: {self.adb_device_list}")
-            logging.info(f"Final selected device list, after chosen from available device list: {self.adb_device_list}")
-
             if len(self.adb_device_list) == 0:
                 logging.info("There is no active adb (Android) devices please check system")
             else:
                 for i in range(len(self.adb_device_list)):
                     self.phn_name.append(self.adb_device_list[i].split(".")[2])
                 logging.info(f"Separated device names from the full name: {self.phn_name}")
-                logging.info("phn_name" + str(self.phn_name))
 
             # check status of devices
             phantom = []
             for i in self.adb_device_list:
                 phantom.append(self.interop.get_device_details(device=i, query="phantom"))
-            # print("Device Phantom State List", phantom)
-            # logging.info(phantom)
-            state = None
-            for i, j in zip(phantom, self.adb_device_list):
-                if str(i) == "False":
-                    logging.info("Device %s is in active state." % j)
-                    logging.info("device are up")
-                    state = "UP"
-                else:
-                    logging.info("Devices %s is in phantom state" % j)
-                    logging.info("all devices are not up")
-                    # exit(1)
-            # if state == "UP":
             if self.adb_device_list or self.windows_list or self.linux_list or self.mac_list:
-                # setting / modify user name
-                # self.interop.set_user_name(device=self.adb_device_list)
                 for i in self.adb_device_list:
                     self.device_name.append(self.interop.get_device_details(device=i, query="user-name"))
                 logging.info(f"ADB user-names for selected devices: {self.device_name}")
-                logging.info("device name " + str(self.device_name))
-                # print("waiting for 5 sec...")
-                # time.sleep(5)
-
-                logging.info("List out the network id's")
-                for i in self.adb_device_list:
-                    connected_network_info = self.utility.list_networks_info(device_name=i)
-                    if connected_network_info == 'No networks':
-                        logging.info("No exiting networks found for %s device" % i)
-                    else:
-                        # Forget already existing network base on the network id
-                        logging.info(
-                            "The %s device is already having %s saved networks" % (i, connected_network_info['SSID']))
-                        logging.info(f"Existing and Saved Network ids : {connected_network_info['Network Id']}")
-                        logging.info(f"Existing and Saved SSIDs : {connected_network_info['SSID']}")
-                        logging.info(f"Existing and Saved Security Types: {connected_network_info['Security type']}")
-                        logging.info("Forgetting all Saved networks for %s device..." % i)
-                        logging.info("forget all previous connected networks")
-                        self.utility.forget_netwrk(device=i, network_id=connected_network_info['Network Id'])
-
-                logging.info("Stopping the APP")
-                for i in self.adb_device_list:
-                    self.interop.stop(device=i)
-                if self.adb_device_list:
-                    logging.info("Apply SSID configuring using batch modify for android devices")
-                    logging.info("apply ssid using batch modify")
-                    # connecting the android devices to given ssid
-                    self.interop.batch_modify_apply(device=self.adb_device_list, manager_ip=self.mgr_ip)
-                # connecting the laptops to the given ssid
-                if self.all_laptops:
-                    self.real_clients_connectivity(windows_list=self.windows_list, linux_list=self.linux_list,
-                                                   mac_list=self.mac_list)
-                logging.info("Check heath data")
-                logging.info("check heath data")
+                logging.info("Checking heath data...")
                 health = dict.fromkeys(self.adb_device_list)
                 logging.info(f"Initial Health Data For Android Clients: {health}")
                 health_for_laptops = dict.fromkeys(self.all_laptops)
                 logging.info(f"Initial Health Data For Laptops Clients: {health_for_laptops}")
 
-                # checking whether the adb device connected to given ssid or not
+                # pre-checking whether the adb device connected to given ssid or not
                 for i in self.adb_device_list:
                     dev_state = self.utility.get_device_state(device=i)
                     if dev_state == "COMPLETED,":
-                        logging.info("Phone %s is in connected state" % i)
-                        logging.info("phone is in connected state")
+                        logging.info("Phone %s is in connected state." % i)
                         ssid = self.utility.get_device_ssid(device=i)
                         if ssid == self.ssid:
                             logging.info("The Device %s is connected to expected ssid (%s)" % (i, ssid))
-                            logging.info("device is connected to expected ssid")
                             health[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
                         else:
                             logging.info("**** The Device is not connected to the expected ssid ****")
@@ -755,23 +501,19 @@ class InteropPortReset(Realm):
                         logging.info(f"Waiting for 30 sec & Checking again")
                         time.sleep(30)
                         dev_state = self.utility.get_device_state(device=i)
+                        logging.info("Checking Device Status Again..." + str(dev_state))
                         logging.info(f"Device state {dev_state}")
-                        logging.info("device state" + str(dev_state))
                         if dev_state == "COMPLETED,":
                             logging.info("Phone is in connected state")
-                            logging.info("phone is in connected state")
                             ssid = self.utility.get_device_ssid(device=i)
                             if ssid == self.ssid:
                                 logging.info("The Device %s is connected to expected ssid (%s)" % (i, ssid))
-                                logging.info("device is connected to expected ssid")
                                 health[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
                         else:
                             logging.info(f"device state {dev_state}")
-                            logging.info("device state" + str(dev_state))
                             health[i] = {'ConnectAttempt': '0', 'ConnectFailure': '0', 'AssocRej': '0',
                                          'AssocTimeout': '0'}
                 logging.info(f"Health Status for the Android Devices: {health}")
-                logging.info("health" + str(health))
 
                 logging.info(f"Health Status for the Laptop Devices: {health_for_laptops}")
 
@@ -780,7 +522,7 @@ class InteropPortReset(Realm):
                 for i in range(self.reset):
                     reset_list.append(i)
                 logging.info(f"Given No.of iterations for Reset : {len(reset_list)}")
-                logging.info("reset list" + str(reset_list))
+                logging.info("Reset list:" + str(reset_list))
                 reset_dict = dict.fromkeys(reset_list)
                 for r, final in zip(range(self.reset), reset_dict):
                     logging.info("Waiting until given %s sec time intervel to finish..." % self.time_int)
@@ -854,8 +596,8 @@ class InteropPortReset(Realm):
                 logging.info(f"Name of the Report Folder : {self.report_path}")
                 logging.info("Generating the Report...")
                 return reset_dict, test_duration
-        # except Exception as e:
-        #     logger.error(str(e))
+        except Exception as e:
+            logger.error(str(e))
 
     def generate_overall_graph(self, reset_dict=None, figsize=(13, 5), _alignmen=None, remove_border=None,
                                bar_width=0.7, _legend_handles=None, _legend_loc="best", _legend_box=None,
@@ -1164,7 +906,7 @@ class InteropPortReset(Realm):
             self.lf_report.build_table()
 
     def generate_report(self, reset_dict=None, test_dur=None):
-        # try:
+        try:
             # print("reset dict", reset_dict)
             # print("Test Duration", test_dur)
             # logging.info("reset dict " + str(reset_dict))
@@ -1289,8 +1031,8 @@ class InteropPortReset(Realm):
             self.lf_report.write_html()
             self.lf_report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
             # self.lf_report.move_data(directory="log", _file_name="port_reset.log")
-        # except Exception as e:
-        #     logging.warning(str(e))
+        except Exception as e:
+            logging.warning(str(e))
 
 
 def main():
