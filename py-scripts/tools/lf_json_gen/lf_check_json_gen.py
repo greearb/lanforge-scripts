@@ -184,7 +184,7 @@ class json_gen_gui():
         self.lf_file = tkinter.Label(self.lf_rig_frame, text='json file')
         self.lf_file.grid(row= 3, column= 6)
         self.lf_rig_file_entry_var = tkinter.StringVar()
-        self.lf_rig_file_entry_var.set("ct_id_104_auto_gen_rig.json")
+        self.lf_rig_file_entry_var.set("ct_auto_gen_rig.json")
         self.lf_file_entry = tkinter.Entry(self.lf_rig_frame, textvariable = self.lf_rig_file_entry_var)
         self.lf_file_entry.grid(row=3, column=7)
         self.window_tooltip.bind(self.lf_file_entry, 'Enter test rig json file name')
@@ -334,7 +334,7 @@ class json_gen_gui():
         self.lf_dut_file = tkinter.Label(self.lf_dut_frame, text='json file')
         self.lf_dut_file.grid(row= 3, column= 4)
         self.lf_dut_file_entry_var = tkinter.StringVar()
-        self.lf_dut_file_entry_var.set("ct_id_AXE11000_dut.json")
+        self.lf_dut_file_entry_var.set("ct_dut.json")
         self.lf_dut_file_entry = tkinter.Entry(self.lf_dut_frame, textvariable = self.lf_dut_file_entry_var)
         self.lf_dut_file_entry.grid(row=3, column=5)
         self.window_tooltip.bind(self.lf_dut_file_entry, 'Enter dut json file name')
@@ -360,6 +360,8 @@ class json_gen_gui():
         self.lf_idx_security_dict = {}
         self.lf_idx_security_entry_var_dict = {}
         self.lf_idx_security_entry_dict = {}
+
+        self.lf_radio_label_dict = {}
 
         self.lf_idx_type_dict = {}
         self.lf_idx_type_list = ["","2g","5g","6g"]
@@ -420,13 +422,42 @@ class json_gen_gui():
             self.lf_idx_security_entry_dict[idx].grid(row=idx+dut_row+1, column=4)
             self.window_tooltip.bind(self.lf_idx_security_entry_dict[idx], 'Enter security example: wpa2')
 
-            # self.lf_idx_combobox = ttk.Combobox(self.lf_dut_frame, values=self.lf_idx_type_list)
-            # self.lf_idx_type_dict[idx] = self.lf_idx_combobox
-            # self.lf_idx_combobox.grid(row=idx+dut_row+1, column=5)
-            # self.window_tooltip.bind(self.lf_idx_type_dict[idx], 'Set Mode 2g, 5g, 6g')
+            radio_text = "Radio-{num}".format(num=idx+1)
+            self.lf_radio_label_dict[idx] = tkinter.Label(self.lf_dut_frame, text=radio_text)
+            self.lf_radio_label_dict[idx].grid(row=idx+dut_row+1, column= 5)
 
 
             self.lf_dut_last_row = idx+dut_row+1
+
+        self.lf_radio_2g = tkinter.Label(self.lf_dut_frame, text='Radio 2g')
+        self.lf_radio_2g.grid(row= self.lf_dut_last_row+1, column= 0)
+        self.lf_radio_2g_combobox = ttk.Combobox(self.lf_dut_frame, values=["<Custom>","Radio-1","Radio-2","Radio-3","Radio-4"])
+        self.lf_radio_2g_combobox.current(1)
+        self.lf_radio_2g_combobox.grid(row= self.lf_dut_last_row+1, column=1)
+        self.window_tooltip.bind(self.lf_radio_2g_combobox, '''Select the Radio to be used by 2g
+                            Note the syntax is Radio-X for chamberview tests''')
+
+        self.lf_radio_5g = tkinter.Label(self.lf_dut_frame, text='Radio 5g')
+        self.lf_radio_5g.grid(row= self.lf_dut_last_row+1, column= 2)
+        self.lf_radio_5g_combobox = ttk.Combobox(self.lf_dut_frame, values=["<Custom>","Radio-1","Radio-2","Radio-3","Radio-4"])
+        self.lf_radio_5g_combobox.current(2)
+        self.lf_radio_5g_combobox.grid(row= self.lf_dut_last_row+1, column=3)
+        self.window_tooltip.bind(self.lf_radio_5g_combobox, '''Select the Radio to be used by 5g  
+                            Note the syntax is Radio-X for chamberview tests''')
+
+        self.lf_radio_6g = tkinter.Label(self.lf_dut_frame, text='Radio 6g')
+        self.lf_radio_6g.grid(row= self.lf_dut_last_row+1, column= 4)
+        self.lf_radio_6g_combobox = ttk.Combobox(self.lf_dut_frame, values=["<Custom>","Radio-1","Radio-2","Radio-3","Radio-4"])
+        self.lf_radio_6g_combobox.current(3)
+        self.lf_radio_6g_combobox.grid(row= self.lf_dut_last_row+1, column=5)
+        self.window_tooltip.bind(self.lf_radio_6g_combobox, '''Select the Radio to be used by 6g  
+                            Note the syntax is Radio-X for chamberview tests''')
+
+
+        self.lf_dut_save = ttk.Button(self.lf_dut_frame, text = 'Create DUT Json', command = self.create_dut_json)
+        self.lf_dut_save.grid(row=self.lf_dut_last_row+2, column=0, sticky="news", padx=20, pady=10)
+        self.window_tooltip.bind(self.lf_dut_save, 'Save dut json file')
+
 
                 
         # Max Stations
@@ -434,21 +465,7 @@ class json_gen_gui():
              widget.grid_configure(padx=5, pady=5)
 
 
-        # TODO create the proper string of data
-        self.lf_idx_elements = []
-
-        for idx in range(0,self.lf_idx_upper_range):
-            lf_idx_elements = "ssid_idx=={idx},SSID_USED=={ssid},SSID_PW_USED=={ssid_pw},BSSID_TO_USE=={bssid},SECURITY_USED=={security}".format(
-                idx=idx,ssid=self.lf_idx_ssid_entry_var_dict[idx].get(),ssid_pw=self.lf_idx_ssid_pw_entry_var_dict[idx].get(),
-                bssid=self.lf_idx_bssid_entry_var_dict[idx].get(),security=self.lf_idx_security_entry_var_dict[idx].get())
             
-            self.lf_idx_elements.append(lf_idx_elements)
-
-        self.lf_dut_save = ttk.Button(self.lf_dut_frame, text = 'Create DUT Json', command = self.create_dut_json)
-        self.lf_dut_save.grid(row=self.lf_dut_last_row+1, column=0, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_dut_save, 'Save dut json file')
-
-
 
 
         #-----------------------------------------------------------------------------------
@@ -1284,6 +1301,10 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_wc_use_qa_var.get()
         self.lf_wc_use_inspect_var.get()
 
+        self.lf_radio_2g_combobox.get()
+        self.lf_radio_5g_combobox.get()
+        self.lf_radio_6g_combobox.get()
+
         dictionary_length = len(self.radio_dict)
         logger.debug("radio_dict length = {length}".format(length=dictionary_length))
         wc_json = lf_create_wc_json.lf_create_wc_json(
@@ -1308,7 +1329,10 @@ lf_inspect will compare performance between two individual runs for Chamber View
                 _radio_count = self.radio_count,
                 _radio_batch_dict = self.radio_batch_dict,
                 _lf_wc_use_qa_var = self.lf_wc_use_qa_var,
-                _lf_wc_use_inspect_var = self.lf_wc_use_inspect_var
+                _lf_wc_use_inspect_var = self.lf_wc_use_inspect_var,
+                _lf_radio_2g = self.lf_radio_2g_combobox.get(),
+                _lf_radio_5g = self.lf_radio_5g_combobox.get(),
+                _lf_radio_6g = self.lf_radio_6g_combobox.get()
         )
 
         if self.suite_radios_2g != "":
@@ -1401,7 +1425,10 @@ lf_inspect will compare performance between two individual runs for Chamber View
                 _lf_dp_rvr_attenuator_combobox = self.lf_dp_rvr_attenuator_combobox,      
                 _lf_dp_rvr_attenuation_2g_combobox = self.lf_dp_rvr_attenuation_2g_combobox,
                 _lf_dp_rvr_attenuation_5g_combobox = self.lf_dp_rvr_attenuation_5g_combobox,
-                _lf_dp_rvr_attenuation_6g_combobox = self.lf_dp_rvr_attenuation_6g_combobox
+                _lf_dp_rvr_attenuation_6g_combobox = self.lf_dp_rvr_attenuation_6g_combobox,
+                _lf_radio_2g = self.lf_radio_2g_combobox.get(),
+                _lf_radio_5g = self.lf_radio_5g_combobox.get(),
+                _lf_radio_6g = self.lf_radio_6g_combobox.get(),
         )
 
         if self.suite_radios_2g != "":
@@ -1434,16 +1461,14 @@ lf_inspect will compare performance between two individual runs for Chamber View
 
     def create_dut_json(self):
 
-        # update the index elements
-        self.lf_idx_elements = []
 
         for idx in range(0,self.lf_idx_upper_range):
 
-            idx_entry=self.use_idx_entry_var_dict[idx].get()
-            ssid=self.lf_idx_ssid_entry_var_dict[idx].get()
-            ssid_pw=self.lf_idx_ssid_pw_entry_var_dict[idx].get()
-            bssid=self.lf_idx_bssid_entry_var_dict[idx].get()
-            security=self.lf_idx_security_entry_var_dict[idx].get()
+            self.use_idx_entry_var_dict[idx].get()
+            self.lf_idx_ssid_entry_var_dict[idx].get()
+            self.lf_idx_ssid_pw_entry_var_dict[idx].get()
+            self.lf_idx_bssid_entry_var_dict[idx].get()
+            self.lf_idx_security_entry_var_dict[idx].get()
             
 
         dut_json = lf_dut_json.lf_create_dut_json(
@@ -1460,7 +1485,8 @@ lf_inspect will compare performance between two individual runs for Chamber View
                             _lf_idx_security_entry_var_dict=self.lf_idx_security_entry_var_dict,
                             _dut_upstream_port=self.lf_dut_upstream_port_entry_var.get(),
                             _dut_upstream_alias=self.lf_dut_upstream_alias_entry_var.get(),
-                            _dut_database=self.lf_dut_db_entry_var.get())
+                            _dut_database=self.lf_dut_db_entry_var.get()
+                            )
         
         dut_json.create()
         tkinter.messagebox.showinfo(title="success", message= self.lf_dut_file_entry_var.get() + " created")  
