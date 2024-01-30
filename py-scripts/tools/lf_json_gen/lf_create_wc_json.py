@@ -69,7 +69,10 @@ class lf_create_wc_json():
                  _radio_count,
                  _radio_batch_dict,
                  _lf_wc_use_qa_var,
-                 _lf_wc_use_inspect_var
+                 _lf_wc_use_inspect_var,
+                 _lf_radio_2g,
+                 _lf_radio_5g,
+                 _lf_radio_6g
                  ):
         self.test_suite_band = ""
         self.use_radio_dict = _use_radio_dict
@@ -83,6 +86,10 @@ class lf_create_wc_json():
         self.lf_wc_use_qa_var = _lf_wc_use_qa_var
         self.lf_wc_use_inspect_var = _lf_wc_use_inspect_var
         self.radio_index =""
+
+        self.lf_radio_2g = _lf_radio_2g
+        self.lf_radio_5g = _lf_radio_5g
+        self.lf_radio_6g = _lf_radio_6g
 
         # TODO Future copy generated file to alternate file (low priority until requeste)
 
@@ -133,7 +140,7 @@ class lf_create_wc_json():
             self.suite_test_name_band_dict = self.suite_test_name_2g_dict
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_2g
-            self.radio_index ="Radio-1"
+            self.radio_index = self.lf_radio_2g
             radio_index = self.radio_index
 
         elif self.test_suite_band == "5g":
@@ -142,7 +149,7 @@ class lf_create_wc_json():
             self.suite_test_name_band_dict = self.suite_test_name_5g_dict
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_5g
-            self.radio_index ="Radio-2"
+            self.radio_index = self.lf_radio_5g
             radio_index = self.radio_index
 
         elif self.test_suite_band == "6g":
@@ -151,7 +158,7 @@ class lf_create_wc_json():
             self.suite_test_name_band_dict = self.suite_test_name_6g_dict
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_6g
-            self.radio_index ="Radio-3"
+            self.radio_index = self.lf_radio_6g
             radio_index = self.radio_index
 
         self.wc_band_json = """
