@@ -1077,6 +1077,15 @@ class Realm(LFCliBase):
             }
             self.json_post(req_url, data)
 
+    def set_custom_wifi(self, resource, station, cmd):  # bg-scanning
+        bg_scan = {
+            "shelf": 1,
+            "resource": resource,
+            "port": station,
+            "text": cmd
+        }
+        self.json_post("/cli-json/set_wifi_custom", bg_scan)
+
     def parse_link(self, link):
         link = self.lfclient_url + link
         info = ()
