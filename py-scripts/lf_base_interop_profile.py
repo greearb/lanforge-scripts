@@ -2,17 +2,33 @@
 """
 NAME: lf_base_interop_profile.py
 
-PURPOSE:To use various functionality of LANforge Interop at function level
+PURPOSE: To use various functionality of LANforge Interop at function level
 
-EXAMPLE:
+EXAMPLE-1:
 $ ./lf_base_interop_profile.py --host 192.168.1.31 --ssid Airtel_9755718444_5GHz --passwd xyz --crypt psk2
+
+EXAMPLE-2:
+Command Line Interface for Wi-Fi Connectivity on all kinds of real devices
+python3 lf_base_interop_profile.py --host 192.168.200.63 --ssid RDT_wpa2 --crypt psk2 --passwd OpenWifi --server_ip 192.168.1.61 --config_wifi
 
 NOTES:
 
 #@TODO more functionality need to be added
 
 
-TO DO NOTES:
+STATUS: BETA RELEASE
+
+SCRIPT_CLASSIFICATION: Connectivity
+
+SCRIPT_CATEGORIES: Configuration
+
+VERIFIED_ON:
+Working date    - 29/01/2024
+Build version   - 5.4.7
+kernel version  - 6.2.16+
+
+License: Free to distribute and modify. LANforge systems must be licensed.
+Copyright 2023 Candela Technologies Inc.
 
 """
 
@@ -26,6 +42,7 @@ import argparse
 import time
 import logging
 import pandas as pd
+import asyncio
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -644,7 +661,7 @@ class RealDevice(Realm):
     # Step 4: the devices get configured and then the script waits for 2 minutes for the configuration to apply
     # Step 5: then it checks both android and laptops for the expected configuration. If the configuration is not as expected, then the respective device is eliminated from the test
     # Step 6: The script then proceeds for the test
-    def query_all_devices_to_configure_wifi(self):
+    async def query_all_devices_to_configure_wifi(self):
         
         all_devices = {}
         selected_androids = []
@@ -699,12 +716,14 @@ class RealDevice(Realm):
             selected_androids = androids
             selected_laptops = laptops
         
-        androids_obj.stop_app(port_list=selected_androids)
-        androids_obj.configure_wifi(port_list=selected_androids)
+        if(selected_androids != []):
+            await androids_obj.stop_app(port_list=selected_androids)
+            await androids_obj.configure_wifi(port_list=selected_androids)
 
-        laptops_obj.rm_station(port_list=selected_laptops)
-        laptops_obj.add_station(port_list=selected_laptops)
-        laptops_obj.set_port(port_list=selected_laptops)
+        if(selected_laptops != []):
+            await laptops_obj.rm_station(port_list=selected_laptops)
+            await laptops_obj.add_station(port_list=selected_laptops)
+            await laptops_obj.set_port(port_list=selected_laptops)
 
         logging.info('Applying the new Wi-Fi configuration. Waiting for 2 minutes for the new configuration to apply.')
         time.sleep(120)
@@ -719,12 +738,11 @@ class RealDevice(Realm):
 
             # if there is no resource id in interop tab
             if(resource_id == ''):
-                logging.warning('The android with serial {} is not connected to the given SSID. Excluding it from testing'.format(android[2]))
+                logging.warning('The android with serial {} is missing resource id. Excluding it from testing'.format(android[2]))
                 exclude_androids.append(android)
                 continue
 
             # fetching port data for the android device
-            print('------------>', resource_id)
             current_android_port_data = self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
 
             # fetching resource data for android device
@@ -734,7 +752,7 @@ class RealDevice(Realm):
             
             # checking if the android is connected to the desired ssid
             if(current_android_port_data['ssid'] != self.ssid):
-                logging.warning('The android with serial {} is not conneted to the given SSID. Excluding it from testing'.format(android[2]))
+                logging.warning('The android with serial {} is not conneted to the given SSID {}. Excluding it from testing'.format(android[2], self.ssid))
                 exclude_androids.append(android)
                 continue
 
@@ -773,7 +791,7 @@ class RealDevice(Realm):
             
             # check SSID and IP values from port manager
             current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
-            if(current_android_port_data is None):
+            if(current_laptop_port_data is None):
                 logging.warning('The laptop with port {}.{}.{} not found. Excluding it from testing'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
                 exclude_laptops.append(laptop)
                 continue
@@ -972,11 +990,35 @@ class RealDevice(Realm):
         return [self.selected_devices, self.report_labels, self.selected_macs]
 
 def main():
+    help_summary='''\
+This script is a standard library which support different functionality of interop including wi-fi connectivity on all kinds of real clients.
+    '''
     desc = """standard library which supports different functionality of interop
-        Operations: 
+        Operations:
+
+        EXAMPLE-1: 
         *    Example of scan results: 
         lf_base_interop_profile.py --host 192.168.1.31 --ssid Airtel_9755718444_5GHz --passwd xyz --crypt psk2
 
+        EXAMPLE-2:
+        For Wi-Fi Connectivity on all kinds of real devices
+        python3 lf_base_interop_profile.py --host 192.168.200.63 --ssid RDT_wpa2 --crypt psk2 --passwd OpenWifi --server_ip 192.168.1.61 --config_wifi
+
+        NAME: lf_base_interop_profile.py
+
+        STATUS: BETA RELEASE
+
+        SCRIPT_CLASSIFICATION: Connectivity
+
+        SCRIPT_CATEGORIES: Configuration
+
+        VERIFIED_ON:
+        Working date    - 29/01/2024
+        Build version   - 5.4.7
+        kernel version  - 6.2.16+
+
+        License: Free to distribute and modify. LANforge systems must be licensed.
+        Copyright 2023 Candela Technologies Inc.
         """
 
     parser = argparse.ArgumentParser(
@@ -999,23 +1041,44 @@ def main():
 
     parser.add_argument('--log_dur', '--ld', type=float, default=0,
                         help='LOG: Gather ADB logs for a duration of this many minutes')
+    
+    parser.add_argument('--config_wifi', action="store_true",
+                        help='Specific this flag to do Wi-Fi connectivity on real devices')
+
+    parser.add_argument('--server_ip', type=str, default='192.168.1.61',
+                        help='Specific the server IP for the Interop App')
 
     parser.add_argument('--log_destination', '--log_dest',
                         help='LOG: the filename destination on the LF device where the log file should be stored'
                              'Give "stdout" to receive content as keyed text message')
 
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
+
     args = parser.parse_args()
-    obj = BaseInteropWifi(manager_ip=args.host,
-                          port=8080,
-                          ssid=args.ssid,
-                          passwd=args.passwd,
-                          encryption=args.crypt,
-                          release="12",
-                          screen_size_prcnt=0.4,
-                          _debug_on=False,
-                          _exit_on_error=False)
-    z = obj.scan_results()
-    print(z)
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
+    if(args.config_wifi):
+        real_devices = RealDevice(manager_ip=args.host,
+                                  server_ip=args.server_ip,
+                                  ssid=args.ssid,
+                                  encryption=args.crypt,
+                                  passwd=args.passwd)
+        asyncio.run(real_devices.query_all_devices_to_configure_wifi())
+    else:
+        obj = BaseInteropWifi(manager_ip=args.host,
+                            port=8080,
+                            ssid=args.ssid,
+                            passwd=args.passwd,
+                            encryption=args.crypt,
+                            release="12",
+                            screen_size_prcnt=0.4,
+                            _debug_on=False,
+                            _exit_on_error=False)
+        z = obj.scan_results()
+        print(z)
 
 
 if __name__ == '__main__':
