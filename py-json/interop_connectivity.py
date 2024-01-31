@@ -53,7 +53,7 @@ class Android():
             logger.error('Request failed for port {}'.format(data['adb_id']))
 
     # stop app
-    def stop_app(self, port_list = []):
+    async def stop_app(self, port_list = []):
         if(port_list == []):
             logger.info('Port list is empty')
             return
@@ -73,6 +73,9 @@ class Android():
 
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, self.post_url, data) for data in data_list]
+        
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
 
     # toggle wifi
     def set_wifi_state(self, port_list = [], state='enable'):
@@ -146,7 +149,7 @@ class Android():
                             logger.warning('Android device {} having android version less {}. Some functions may not be supported.'.format(data['user-name'], self.min_supported_android_version))
                         return(data['user-name'])
 
-    def configure_wifi(self, port_list = []):
+    async def configure_wifi(self, port_list = []):
         if(port_list == []):
             logger.info('Port list is empty')
             return
@@ -182,6 +185,9 @@ class Android():
 
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, self.post_url, data) for data in data_list]
+
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
 
     # fetch all android devices  
     def get_devices(self):
@@ -333,7 +339,7 @@ class Laptop():
 
     # remove station
     # NOTE this is only for Linux Laptops
-    def rm_station(self, port_list=[]):
+    async def rm_station(self, port_list=[]):
         if(port_list == []):
             logger.info('Port list is empty')
             return
@@ -355,8 +361,12 @@ class Laptop():
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
 
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
+        time.sleep(2)
+
     # add station
-    def add_station(self, port_list=[]):
+    async def add_station(self, port_list=[]):
         if(port_list == []):
             logger.info('Port list is empty')
             return
@@ -382,9 +392,13 @@ class Laptop():
 
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
+        
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
+        time.sleep(2)
 
     # set port (enable DHCP)
-    def set_port(self, port_list=[]):
+    async def set_port(self, port_list=[]):
         if(port_list == []):
             logger.info('Port list is empty')
             return
@@ -424,6 +438,9 @@ class Laptop():
 
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
+
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
 
     # fetch all laptops
     def get_resources_data(self):
