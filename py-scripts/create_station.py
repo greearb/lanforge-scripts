@@ -265,7 +265,8 @@ class CreateStation(Realm):
                  _up=True,
                  _set_txo_data=None,
                  _exit_on_error=False,
-                 _exit_on_fail=False):
+                 _exit_on_fail=False,
+                 _custom_wifi_cmd=False):
         super().__init__(_host,
                          _port)
         self.host = _host
@@ -295,6 +296,7 @@ class CreateStation(Realm):
         self.debug = _debug_on
         self.up = _up
         self.set_txo_data = _set_txo_data
+        self.custom_wifi_cmd = _custom_wifi_cmd
         self.station_profile = self.new_station_profile()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -374,6 +376,11 @@ class CreateStation(Realm):
             self._pass("Stations created.")
         else:
             self._fail("Stations not properly created.")
+        # Custom Wifi setting
+        if self.custom_wifi_cmd:
+            for sta in self.sta_list:
+                self.set_custom_wifi(resource=int(sta.split('.')[1]), station=str(sta.split('.')[2]),
+                                     cmd=self.custom_wifi_cmd)
 
         if self.up:
             self.station_profile.admin_up()
@@ -451,6 +458,10 @@ EXAMPLE:
 
             create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --security <wpa2|wpa3> 
                 --eap_method <TTLS|PEAP> --radius_identity <username> --radius_passwd <password> --key_mgmt <key mgmt> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
+                
+        # CLI to Connect Clients with given custom wifi command.
+        
+            python3 create_station.py --mgr 192.168.200.165 --radio 1.1.wiphy0 --start_id 143 --num_stations 5 --ssid Netgear-5g --passwd sharedsecret --security wpa2 --custom_wifi_cmd 'bgscan="simple:50:-65:300"'
            
 
 SCRIPT_CLASSIFICATION:  Creation
@@ -755,6 +766,7 @@ INCLUDE_IN_README: False
         help='Add this flag to clean up stations after creation',
         action='store_true'
     )
+    optional.add_argument("--custom_wifi_cmd", help="Mention the custom wifi command.")
 
     args = parser.parse_args()
 
@@ -834,6 +846,7 @@ INCLUDE_IN_README: False
                                    _radio=args.radio,
                                    _set_txo_data=None,
                                    _proxy_str=args.proxy,
+                                   _custom_wifi_cmd=args.custom_wifi_cmd,
                                    _debug_on=args.debug)
     
     if(not args.no_pre_cleanup):
