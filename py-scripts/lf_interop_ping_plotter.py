@@ -4,26 +4,35 @@
     NAME: lf_interop_ping_plotter.py
 
     PURPOSE: lf_interop_ping_plotter.py will let the user select real devices, virtual devices or both and then allows them to run
-    ping test for user given duration and packet interval on the given target IP or domain name and generates realtime ping status and line charts for every device.
+    ping plotter test for user given duration and packet interval on the given target IP or domain name and generates realtime ping status and line charts for every device.
 
     EXAMPLE-1:
-    Command Line Interface to run ping test with only virtual clients
-    python3 lf_interop_ping_plotter.py --mgr 192.168.200.103  --target 192.168.1.3 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
-    --passwd OpenWifi --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --debug
+    Command Line Interface to run ping plotter test with only virtual clients with eth1 as the default target
+    python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
+    --passwd OpenWifi --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61 --debug
 
     EXAMPLE-2:
-    Command Line Interface to run ping test with only real clients
-    python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --ssid RDT_wpa2 --security wpa2_personal
-    --passwd OpenWifi
+    Command Line Interface to stop cleaning up stations after the test
+    python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
+    --passwd OpenWifi --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61 --debug --no_cleanup
 
     EXAMPLE-3:
-    Command Line Interface to run ping test with both real and virtual clients
-    python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --target 192.168.1.3 --real --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
-    --passwd OpenWifi --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61
+    Command Line Interface to run ping plotter test with only real clients
+    python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61 --ssid RDT_wpa2 --security wpa2_personal
+    --passwd OpenWifi
 
     EXAMPLE-4:
-    Command Line Interface to run ping test with existing Wi-Fi configuration on the real devices
-    python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --target 192.168.1.61 --ping_interval 5 --ping_duration 1 --passwd OpenWifi --use_default_config
+    Command Line Interface to run ping plotter test with both real and virtual clients
+    python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
+    --passwd OpenWifi --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61
+
+    EXAMPLE-5:
+    Command Line Interface to run ping plotter test with existing Wi-Fi configuration on the real devices
+    python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --passwd OpenWifi --use_default_config
+    
+    EXAMPLE-6:
+    Command Line Interface to run ping plotter test with a different target
+    python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --passwd OpenWifi --use_default_config --target 192.168.1.61
     
     SCRIPT_CLASSIFICATION : Test
 
@@ -31,15 +40,15 @@
 
     NOTES:
     1.Use './lf_interop_ping.py --help' to see command line usage and options
-    2.Please pass ping_duration in minutes
-    3.Please pass ping_interval in seconds
-    4.After passing the cli, if --real flag is selected, then a list of available real devices will be displayed on the terminal.
-    5.Enter the real device resource numbers seperated by commas (,)
+    2.Use 's','m','h' as suffixes for ping_duration in seconds, minutes and hours respectively
+    3.After passing the cli, if --real flag is selected, then a list of available real devices will be displayed on the terminal
+    4.Enter the real device resource numbers seperated by commas (,)
+    5.For --target, you can specify it as eth1, IP address or domain name (e.g., google.com)
 
     STATUS: BETA RELEASE
 
     VERIFIED_ON:
-    Working date    - 19/12/2023
+    Working date    - 06/12/2023
     Build version   - 5.4.7
     kernel version  - 6.2.16+
 
@@ -56,6 +65,7 @@ import importlib
 import logging
 import matplotlib.pyplot as plt
 import csv
+import asyncio
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
@@ -146,9 +156,9 @@ class Ping(Realm):
                 self.target = target_port_ip
             except:
                 logging.warning('The target is not an ethernet port. Proceeding with the given target {}.'.format(self.target))
-            print(self.target)
+            logging.info(self.target)
         else:
-            print(self.target)
+            logging.info(self.target)
         return self.target
 
     def cleanup(self):
@@ -214,23 +224,21 @@ class Ping(Realm):
         self.linux = self.Devices.linux
 
     def buildstation(self):
-        logging.info('Creating Stations {}'.format(self.sta_list))
-        for station_index in range(len(self.sta_list)):
-            shelf, resource, port = self.sta_list[station_index].split('.')
-            logging.info('{} {} {}'.format(shelf, resource, port))
-            station_object = StationProfile(lfclient_url='http://{}:{}'.format(self.host, self.port), local_realm=self, ssid=self.ssid,
-                                            ssid_pass=self.password, security=self.security, number_template_='00', up=True, resource=resource, shelf=shelf)
-            station_object.use_security(
-                security_type=self.security, ssid=self.ssid, passwd=self.password)
-
-            station_object.create(radio=self.radio, sta_names_=[
-                self.sta_list[station_index]])
+        logging.info('Creating Virtual Stations: {}'.format(self.sta_list))
+        station_object = StationProfile(lfclient_url='http://{}:{}'.format(self.host, self.port), local_realm=self,
+                                        ssid=self.ssid, ssid_pass=self.password, security=self.security,
+                                        number_template_='00')
+        station_object.use_security(self.security, self.ssid, self.password)
+        station_object.set_command_flag("add_sta", "create_admin_down", 1)
+        station_object.set_command_param("set_port", "report_timer", 1500)
+        station_object.set_command_flag("set_port", "rpt_timer", 1)
+        station_object.create(radio=self.radio, sta_names_=self.sta_list)
         station_object.admin_up()
-        if self.wait_for_ip([self.sta_list[station_index]]):
+        if Realm.wait_for_ip(self=self, station_list=self.sta_list, timeout_sec=-1):
             self._pass("All stations got IPs", print_=True)
         else:
-            self._fail(
-                "Stations failed to get IPs", print_=True)
+            self._fail("Stations failed to get IPs", print_=True)
+            logger.info("Please re-check the configuration applied")
 
     def check_tab_exists(self):
         response = self.json_get("generic")
@@ -276,7 +284,7 @@ class Ping(Realm):
         # logging.info(self.generic_endps_profile.created_endp)
         results = self.json_get(
             "/generic/{}".format(','.join(self.generic_endps_profile.created_endp)))
-        if (len(self.generic_endps_profile.created_endp) > 1):
+        if (len(self.generic_endps_profile.created_endp) > 1 and 'endpoints' in results.keys()):
             results = results['endpoints']
         else:
             results = results['endpoint']
@@ -329,15 +337,19 @@ class Ping(Realm):
         json_data = {}
         for station in self.result_json:
             json_data[station] = {
-                'rtts': {}
+                'rtts': {},
+                'sent': "",
+                'dropped': ""
             }
             # print('------------',json_data)
             # for seq in self.result_json[station]['rtts']:
             json_data[station]['rtts'] = self.result_json[station]['rtts']
+            json_data[station]['sent'] = self.result_json[station]['sent']
+            json_data[station]['dropped'] = self.result_json[station]['dropped']
         self.graph_values = json_data
         device_names = list(json_data.keys())
         sequence_numbers = list(set(seq for device_data in json_data.values() for seq in device_data.get("rtts", {})))
-        print(sequence_numbers, 340)
+        # print(sequence_numbers)
         rtt_values = {}
         for seq in sequence_numbers:
             rtt_values[seq] = []
@@ -346,7 +358,9 @@ class Ping(Realm):
                     if(seq in device_data['rtts'].keys()):
                         rtt_values[seq].append(device_data['rtts'][seq])
                     else:
-                        if(len(device_data['rtts'].keys()) != 0):
+                        if(device_data['sent'] == device_data['dropped']):
+                            rtt_values[seq].append(0)
+                        elif(len(device_data['rtts'].keys()) != 0):
                             rtt_values[seq].append(1)
                         else:
                             rtt_values[seq].append(0)
@@ -357,15 +371,16 @@ class Ping(Realm):
 
         # Create a stacked horizontal bar graph
         bar_width = 1
-        plt.figure(figsize=(15, len(device_names) * .5 + 4))
+        fig, ax = plt.subplots(figsize=(20, len(device_names) * .5 + 10))
         # y_positions = np.arange(len(device_names)) * (bar_width + 1)  # Adjust the 0.1 to control the gap
-        for i, device_name in enumerate(device_names):
+        for i, device_name in enumerate(self.report_names):
             # plt.barh(device_name, 1, color='white', height=0.5)
             for j, seq in enumerate(sequence_numbers):
-                plt.barh(device_name, 1, left=int(seq) - 1, color=colors[j][i], height=0.1)
+                plt.barh(device_name, 1, left=int(seq) - 1, color=colors[j][i], height=0.3)
 
         # Customize the plot
-        plt.xlabel('Sequence Number')
+        plt.xlabel('Time', fontweight='bold', fontsize=15)
+        plt.ylabel('Client Status', fontweight='bold', fontsize=15)
         plt.title('Client Status vs Time')
         # plt.legend(sequence_numbers, title='Sequence Numbers', loc='upper right')
 
@@ -378,7 +393,7 @@ class Ping(Realm):
 
         timestamps = []
         for seq_num in sequence_numbers:
-            timestamp = ((int(seq_num) -1) * interval + start_time).strftime("%H:%M:%S")
+            timestamp = ((int(seq_num) -1) * interval + start_time).strftime("%d/%m/%Y %H:%M:%S")
             timestamps.append(timestamp)
 
         # settings labels for x-axis
@@ -393,11 +408,24 @@ class Ping(Realm):
         # print('--------------')
         # print(ticks_sequence_numbers[0::10])
         # print(timestamps[0::10])
-        plt.xticks(range(0, len(sequence_numbers), max(round(len(sequence_numbers) / 30), len(sequence_numbers) // 30)), timestamps[::max(round(len(sequence_numbers) / 30), len(sequence_numbers) // 30)], rotation=45)
-
+        # settings labels for x-axis
+        if(len(sequence_numbers) > 30):
+            temp_sequence_numbers = sequence_numbers[:len(sequence_numbers):max(round(len(timestamps) / 30), len(timestamps) // 30)]
+            temp_timestamps = timestamps[:len(timestamps):max(round(len(timestamps) / 30), len(timestamps) // 30)]
+            
+            if(len(temp_sequence_numbers) != len(temp_timestamps)):
+                temp_sequence_numbers.pop(0)
+            # plt.xticks(temp_sequence_numbers, temp_timestamps, rotation=45)
+            ax.set_xticks(temp_sequence_numbers)
+            ax.set_xticklabels(temp_timestamps, rotation=45, ha='right')
+        else:
+            # plt.xticks(sequence_numbers, timestamps, rotation=45)
+            ax.set_xticks(sequence_numbers)
+            ax.set_xticklabels(timestamps, rotation=45, ha='right')
         # plt.xlim(0, max([max(rtt_values[seq]) for seq in sequence_numbers]))
 
-        plt.xlim(0, max(list(map(int, sequence_numbers))))
+        if(len(sequence_numbers) != 0):
+            plt.xlim(0, max(sequence_numbers))
 
         # print('working xlim', max([max(rtt_values[seq]) for seq in sequence_numbers]))
 
@@ -422,22 +450,25 @@ class Ping(Realm):
             # dropped_seqs = []
             sequence_numbers = []
             if('rtts' in device_data.keys()):
-                for seq in device_data['rtts']:
+                for seq in sorted(list(device_data['rtts'].keys())):
                     if(device_data['rtts'][seq] == 0.11):
                         continue
                     rtts.append(device_data['rtts'][seq])
                     sequence_numbers.append(seq)
-            plt.figure(figsize=(15, len(device_names) * .5 + 4))
-            plt.plot(sequence_numbers, rtts, label=device_name, color="Slateblue", alpha=0.6)
+            fig, ax = plt.subplots(figsize=(15, len(device_names) * .5 + 10))
+            # plt.plot(sequence_numbers, rtts, label=device_name, color="Slateblue", alpha=0.6)
 
             # for area chart
-            plt.fill_between(sequence_numbers, rtts, color="skyblue", alpha=0.2)
+            ax.fill_between(sequence_numbers, rtts, color="skyblue", alpha=1)
+            ax.set_xlabel('Time', fontweight='bold', fontsize=15)
+            ax.set_ylabel('RTT (ms)', fontweight='bold', fontsize=15)
 
+            
             # Customize the plot
-            plt.xlabel('Time')
-            plt.ylabel('RTT (ms)')
-            plt.title('RTT vs Time for {}'.format(device_name))
-            plt.legend(loc='upper right')
+            # plt.xlabel('Time')
+            # plt.ylabel('RTT (ms)')
+            # plt.title('RTT vs Time for {}'.format(device_name))
+            # plt.legend(loc='upper right')
             # plt.grid(True)
             # building timestamps
             start_time = self.start_time
@@ -445,7 +476,7 @@ class Ping(Realm):
 
             timestamps = []
             for seq_num in sequence_numbers:
-                timestamp = ((int(seq_num) -1) * interval + start_time).strftime("%H:%M:%S")
+                timestamp = ((int(seq_num) -1) * interval + start_time).strftime("%d/%m/%Y %H:%M:%S")
                 timestamps.append(timestamp)
 
             # generating csv
@@ -461,10 +492,23 @@ class Ping(Realm):
 
             # settings labels for x-axis
             if(len(sequence_numbers) > 30):
-                plt.xticks(range(0, len(sequence_numbers), max(round(len(sequence_numbers) / 30), len(sequence_numbers) // 30)), timestamps[::max(round(len(sequence_numbers) / 30), len(sequence_numbers) // 30)], rotation=45)
+                temp_sequence_numbers = sequence_numbers[:len(sequence_numbers):max(round(len(timestamps) / 30), len(timestamps) // 30)]
+                temp_timestamps = timestamps[:len(timestamps):max(round(len(timestamps) / 30), len(timestamps) // 30)]
+                
+                if(len(temp_sequence_numbers) != len(temp_timestamps)):
+                    temp_sequence_numbers.pop(0)
+                # plt.xticks(temp_sequence_numbers, temp_timestamps, rotation=45)
+                ax.set_xticks(temp_sequence_numbers)
+                ax.set_xticklabels(temp_timestamps, rotation=45, ha='right')
             else:
-                plt.xticks(sequence_numbers, timestamps, rotation=45)
+                # plt.xticks(sequence_numbers, timestamps, rotation=45)
+                ax.set_xticks(sequence_numbers)
+                ax.set_xticklabels(timestamps, rotation=45, ha='right')
 
+            # ax.set_xticks(sequence_numbers)
+            # ax.set_xticklabels(timestamps, rotation=45, ha='right')
+
+            # ax.xaxis.set_major_locator(plt.MaxNLocator(30))
             # print(sequence_numbers)
             # print(rtts)
             # plt.xlim(0, max(rtts))
@@ -474,6 +518,10 @@ class Ping(Realm):
 
             # Show the plot
             # plt.show()
+                
+            # set origin on x-axis
+            if(rtts != []):
+                plt.ylim(0, max(rtts))
             plt.savefig("%s.png" % device_name, dpi=96)
             graph_name = "%s.png" % device_name
             plt.close()
@@ -493,77 +541,16 @@ class Ping(Realm):
             report_obj.build_graph()
 
 
-    def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path=''):
+    def generate_report(self, result_json=None, result_dir='Ping_Plotter_Test_Report', report_path=''):
         if result_json is not None:
             self.result_json = result_json
         logging.info('Generating Report')
-
-        report = lf_report(_output_pdf='interop_ping.pdf',
-                           _output_html='interop_ping.html',
-                           _results_dir_name=result_dir,
-                           _path=report_path)
-        report_path = report.get_path()
-        report_path_date_time = report.get_path_date_time()
-        logging.info('path: {}'.format(report_path))
-        logging.info('path_date_time: {}'.format(report_path_date_time))
-
-        # setting report title
-        report.set_title('Ping Plotter Report')
-        report.build_banner()
-
-        # test setup info
-        test_setup_info = {
-            'SSID': self.ssid,
-            'Security': self.security,
-            'Website / IP': self.target,
-            'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
-            'Duration (in minutes)': self.duration
-        }
-        report.test_setup_table(
-            test_setup_data=test_setup_info, value='Test Setup Information')
-
-        # objective and description
-        report.set_obj_html(_obj_title='Objective',
-                            _obj='''The objective of the ping test is to evaluate network connectivity and measure the round-trip time taken for 
-                            data packets to travel from the source to the destination and back. It helps assess the reliability and latency of the network, 
-                            identifying any packet loss, delays, or variations in response times. The test aims to ensure that devices can communicate 
-                            effectively over the network and pinpoint potential issues affecting connectivity.
-                            ''')
-        report.build_objective()
-
-        # uptime and downtime
-        report.set_table_title(
-            'Ping Status'
-        )
-        report.build_table_title()
-        # graph for above
-        uptime_graph = self.generate_uptime_graph()
-        logging.info('uptime graph name {}'.format(uptime_graph))
-        report.set_graph_image(uptime_graph)
-
-        # need to move the graph image to the results directory
-        report.move_graph_image()
-
-        # report.set_csv_filename(uptime_graph)
-        # report.move_csv_file()
-        report.build_graph()
-
-        # realtime ping graphs
-        report.set_table_title('Ping graphs')
-        report.build_table_title()
-
-        # graphs for above
-
-        self.build_area_graphs(report_obj=report)
-
-        # packets sent vs received vs dropped
-        report.set_table_title(
-            'Packets sent vs packets received vs packets dropped')
-        report.build_table_title()
         # graph for the above
         self.packets_sent = []
         self.packets_received = []
         self.packets_dropped = []
+        self.packet_loss_percent = []
+        # self.client_unrechability_percent = []
         self.device_names = []
         self.device_modes = []
         self.device_channels = []
@@ -571,24 +558,34 @@ class Ping(Realm):
         self.device_max = []
         self.device_avg = []
         self.device_mac = []
+        self.device_ips = []
+        self.device_bssid = []
         self.device_names_with_errors = []
         self.devices_with_errors = []
         self.report_names = []
         self.remarks = []
         # packet_count_data = {}
         for device, device_data in self.result_json.items():
-            self.packets_sent.append(device_data['sent'])
-            self.packets_received.append(device_data['recv'])
-            self.packets_dropped.append(device_data['dropped'])
+            self.packets_sent.append(int(device_data['sent']))
+            self.packets_received.append(int(device_data['recv']))
+            self.packets_dropped.append(int(device_data['dropped']))
             self.device_names.append(device_data['name'])
             self.device_modes.append(device_data['mode'])
             self.device_channels.append(device_data['channel'])
             self.device_mac.append(device_data['mac'])
+            self.device_ips.append(device_data['ip'])
+            self.device_bssid.append(device_data['bssid'])
+            if(float(device_data['sent']) == 0):
+                self.packet_loss_percent.append(0)
+                # self.client_unrechability_percent.append(0)
+            else:
+                self.packet_loss_percent.append(float(device_data['dropped']) / float(device_data['sent']) * 100)
+                # self.client_unrechability_percent.append(float(device_data['dropped']) / (float(self.duration) * 60) * 100)
             t_rtt_values = sorted(list(device_data['rtts'].values()))
             if(t_rtt_values != []):
-                self.device_avg.append(float(sum(t_rtt_values) / len(t_rtt_values)))
                 while(0.11 in t_rtt_values):
                     t_rtt_values.remove(0.11)
+                self.device_avg.append(float(sum(t_rtt_values) / len(t_rtt_values)))
                 self.device_min.append(float(min(t_rtt_values)))
                 self.device_max.append(float(max(t_rtt_values)))
             else:
@@ -613,16 +610,85 @@ class Ping(Realm):
             logging.info('{} {} {}'.format(*self.device_min,
                   *self.device_max,
                   *self.device_avg))
+        
+        logging.info('Generating Report')
 
-            # packet_count_data[device] = {
-            #     'MAC': device_data['mac'],
-            #     'Channel': device_data['channel'],
-            #     'Mode': device_data['mode'],
-            #     'Packets Sent': device_data['sent'],
-            #     'Packets Received': device_data['recv'],
-            #     'Packets Loss': device_data['dropped'],
-            # }
-        x_fig_size = 15
+        report = lf_report(_output_pdf='interop_ping.pdf',
+                           _output_html='interop_ping.html',
+                           _results_dir_name=result_dir,
+                           _path=report_path)
+        report_path = report.get_path()
+        report_path_date_time = report.get_path_date_time()
+        logging.info('path: {}'.format(report_path))
+        logging.info('path_date_time: {}'.format(report_path_date_time))
+
+        # setting report title
+        report.set_title('Ping Plotter Test Report')
+        report.build_banner()
+
+        # test setup info
+        test_setup_info = {
+            'SSID': [self.ssid if self.ssid else 'TEST CONFIGURED'][0],
+            'Security': [self.security if self.ssid else 'TEST CONFIGURED'][0],
+            'Website / IP': self.target,
+            'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
+            'Duration': self.duration
+        }
+        report.test_setup_table(
+            test_setup_data=test_setup_info, value='Test Setup Information')
+
+        # objective and description
+        report.set_obj_html(_obj_title='Objective',
+                            _obj='''Candela Ping Plotter Test assesses the network connectivity for specified clients by measuring Round
+                            Trip data packet Travel time. It also detects issues like packet loss, delays, and
+                            response time variations, ensuring effective device communication and identifying
+                            connectivity problems.
+                            ''')
+        report.build_objective()
+
+        # uptime and downtime
+        report.set_table_title(
+            'Individual Ping Plotter Graph for {} duration:'.format(self.duration)
+        )
+        report.build_table_title()
+        # graph for above
+        uptime_graph = self.generate_uptime_graph()
+        logging.info('uptime graph name {}'.format(uptime_graph))
+        report.set_graph_image(uptime_graph)
+
+        # need to move the graph image to the results directory
+        report.move_graph_image()
+
+        # report.set_csv_filename(uptime_graph)
+        # report.move_csv_file()
+        report.build_graph()
+
+        # individual client report table
+        report.set_table_title(
+            'Individual client table report:'
+        )
+        report.build_table_title()
+
+        individual_report_df = pd.DataFrame({
+            'Wireless Client': self.report_names,
+            'IP Address': self.device_ips,
+            'MAC': self.device_mac,
+            'BSSID': self.device_bssid,
+            'Channel': self.device_channels,
+            'Packets Sent': self.packets_sent,
+            'Packets Received': self.packets_received,
+            'Packet Loss %': self.packet_loss_percent,
+            'AVG RTT (ms)': self.device_avg,
+            # 'Client Unrechability %': self.client_unrechability_percent
+        })
+        report.set_table_dataframe(individual_report_df)
+        report.build_table()
+
+        # packets sent vs received vs dropped
+        report.set_table_title(
+            'Packets sent vs packets received vs packets dropped')
+        report.build_table_title()        
+        x_fig_size = 20
         y_fig_size = len(self.device_names) * .5 + 4
         graph = lf_bar_graph_horizontal(_data_set=[self.packets_dropped, self.packets_received, self.packets_sent],
                                         _xaxis_name='Packets Count',
@@ -669,21 +735,21 @@ class Ping(Realm):
         report.set_table_dataframe(dataframe1)
         report.build_table()
 
-        # packets latency graph
-        report.set_table_title('Ping Latency Graph')
+        # packets rtt graph
+        report.set_table_title('Ping RTT Graph')
         report.build_table_title()
 
         graph = lf_bar_graph_horizontal(_data_set=[self.device_min, self.device_avg, self.device_max],
                                         _xaxis_name='Time (ms)',
                                         _yaxis_name='Wireless Clients',
                                         _label=[
-                                            'Min Latency (ms)', 'Average Latency (ms)', 'Max Latency (ms)'],
-                                        _graph_image_name='Ping Latency per client',
+                                            'Min RTT (ms)', 'Average RTT (ms)', 'Max RTT (ms)'],
+                                        _graph_image_name='Ping RTT per client',
                                         _yaxis_label=self.report_names,
                                         _yaxis_categories=self.report_names,
                                         _yaxis_step=1,
                                         _yticks_font=8,
-                                        _graph_title='Ping Latency per client',
+                                        _graph_title='Ping RTT per client',
                                         _title_size=16,
                                         _color=['lightgrey',
                                                 'orange', 'steelblue'],
@@ -711,12 +777,20 @@ class Ping(Realm):
             'MAC': self.device_mac,
             'Channel': self.device_channels,
             'Mode': self.device_modes,
-            'Min Latency (ms)': self.device_min,
-            'Average Latency (ms)': self.device_avg,
-            'Max Latency (ms)': self.device_max
+            'Min RTT (ms)': self.device_min,
+            'Average RTT (ms)': self.device_avg,
+            'Max RTT (ms)': self.device_max
         })
         report.set_table_dataframe(dataframe2)
         report.build_table()
+
+        # realtime ping graphs
+        report.set_table_title('Individual RTT vs Time Plots:')
+        report.build_table_title()
+
+        # graphs for above
+
+        self.build_area_graphs(report_obj=report)
 
         # check if there are remarks for any device. If there are remarks, build table else don't
         if(self.remarks != []):
@@ -749,34 +823,43 @@ connectivity problems.
         prog='interop_ping.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''
-            Allows user to run the ping test on a target IP for the given duration and packet interval
+            Allows user to run the ping plotter test on a target IP for the given duration and packet interval
             with either selected number of virtual stations or provides the list of available real devices
-            and allows the user to select the real devices and run ping test on them.
+            and allows the user to select the real devices and run ping plotter test on them.
         ''',
         description='''
         NAME: lf_interop_ping_plotter.py
 
         PURPOSE: lf_interop_ping_plotter.py will let the user select real devices, virtual devices or both and then allows them to run
-        ping test for user given duration and packet interval on the given target IP or domain name and generates realtime ping status and line charts for every device.
+        ping plotter test for user given duration and packet interval on the given target IP or domain name and generates realtime ping status and line charts for every device.
 
         EXAMPLE-1:
-        Command Line Interface to run ping test with only virtual clients
-        python3 lf_interop_ping_plotter.py --mgr 192.168.200.103  --target 192.168.1.3 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
-        --passwd OpenWifi --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --debug
+        Command Line Interface to run ping plotter test with only virtual clients with eth1 as the default target
+        python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
+        --passwd OpenWifi --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61 --debug
 
         EXAMPLE-2:
-        Command Line Interface to run ping test with only real clients
-        python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --ssid RDT_wpa2 --security wpa2_personal
-        --passwd OpenWifi
+        Command Line Interface to stop cleaning up stations after the test
+        python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
+        --passwd OpenWifi --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61 --debug --no_cleanup
 
         EXAMPLE-3:
-        Command Line Interface to run ping test with both real and virtual clients
-        python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --target 192.168.1.3 --real --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
-        --passwd OpenWifi --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61
+        Command Line Interface to run ping plotter test with only real clients
+        python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61 --ssid RDT_wpa2 --security wpa2_personal
+        --passwd OpenWifi
 
         EXAMPLE-4:
-        Command Line Interface to run ping test with existing Wi-Fi configuration on the real devices
-        python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --target 192.168.1.61 --ping_interval 5 --ping_duration 1 --passwd OpenWifi --use_default_config
+        Command Line Interface to run ping plotter test with both real and virtual clients
+        python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
+        --passwd OpenWifi --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61
+
+        EXAMPLE-5:
+        Command Line Interface to run ping plotter test with existing Wi-Fi configuration on the real devices
+        python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --passwd OpenWifi --use_default_config
+        
+        EXAMPLE-6:
+        Command Line Interface to run ping plotter test with a different target
+        python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --passwd OpenWifi --use_default_config --target 192.168.1.61
         
         SCRIPT_CLASSIFICATION : Test
 
@@ -784,10 +867,10 @@ connectivity problems.
 
         NOTES:
         1.Use './lf_interop_ping.py --help' to see command line usage and options
-        2.Please pass ping_duration in minutes
-        3.Please pass ping_interval in seconds
-        4.After passing the cli, if --real flag is selected, then a list of available real devices will be displayed on the terminal.
-        5.Enter the real device resource numbers seperated by commas (,)
+        2.Use 's','m','h' as suffixes for ping_duration in seconds, minutes and hours respectively
+        3.After passing the cli, if --real flag is selected, then a list of available real devices will be displayed on the terminal
+        4.Enter the real device resource numbers seperated by commas (,)
+        5.For --target, you can specify it as eth1, IP address or domain name (e.g., google.com)
 
         STATUS: BETA RELEASE
 
@@ -812,7 +895,7 @@ connectivity problems.
 
     optional.add_argument('--target',
                           type=str,
-                          help='Target URL or port for ping test',
+                          help='Target URL or port for ping plotter test',
                           default='eth1')
     
     optional.add_argument('--ping_interval',
@@ -821,9 +904,9 @@ connectivity problems.
                           default='1')
 
     optional.add_argument('--ping_duration',
-                          type=float,
-                          help='Duration (in minutes) to run the ping test',
-                          default=1)
+                          type=str,
+                          help='Duration to run the ping plotter test',
+                          default='1m')
 
     optional.add_argument('--ssid',
                           type=str,
@@ -878,6 +961,10 @@ connectivity problems.
     optional.add_argument('--debug',
                           action="store_true",
                           help='Enable debugging')
+    
+    optional.add_argument('--no_cleanup',
+                          action="store_true",
+                          help='specify this flag to stop cleaning up generic cxs after the test')
     
     # logging configuration:
     parser.add_argument('--log_level', default=None,
@@ -943,6 +1030,16 @@ connectivity problems.
     target = args.target
     interval = args.ping_interval
     duration = args.ping_duration
+    if('s' in duration):
+        duration = float(duration.replace('s', '')) / 60
+        report_duration = '00:00:{:02}'.format(int(args.ping_duration.replace('s', '')))
+    elif('m' in duration):
+        duration = float(duration.replace('m', ''))
+        report_duration = '00:{:02}:00'.format(int(args.ping_duration.replace('m', '')))
+    elif('h' in duration):
+        duration = float(duration.replace('h', '')) * 60
+        report_duration = '{:02}:00:00'.format(int(args.ping_duration.replace('h', '')))
+
     configure = not args.use_default_config
     debug = args.debug
 
@@ -965,10 +1062,7 @@ connectivity problems.
 
     # ping object creation
     ping = Ping(host=mgr_ip, port=mgr_port, ssid=ssid, security=security, password=password, radio=radio,
-                lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=duration, debug=debug)
-
-    # changing the target from port to IP
-    # ping.change_target_to_ip()
+                lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=report_duration, debug=debug)
     
     # creating virtual stations if --virtual flag is specified
     if (args.virtual):
@@ -985,56 +1079,14 @@ connectivity problems.
     if (args.real):
         Devices = RealDevice(manager_ip=mgr_ip, server_ip=server_ip, ssid=ssid, encryption=security, passwd=password)
         if(configure):
-            Devices.query_all_devices_to_configure_wifi()
+            # Run the event loop
+            asyncio.run(Devices.query_all_devices_to_configure_wifi())
             logging.info('{}'.format(*Devices.station_list))
             ping.select_real_devices(real_devices=Devices, real_sta_list=Devices.station_list, base_interop_obj=Devices)
         else:
             Devices.get_devices()
             ping.Devices = Devices
             ping.select_real_devices(real_devices=Devices)
-
-            # if(configure):
-
-            #     # for androids
-            #     logger.info('Configuring Wi-Fi on the selected devices')
-            #     if(Devices.android_list == []):
-            #         logging.info('There are no Androids to configure Wi-Fi')
-            #     else:
-            #         androids = interop_connectivity.Android(lanforge_ip=mgr_ip, port=mgr_port, server_ip=server_ip, ssid=ssid, passwd=password, encryption=security)
-            #         androids_data = androids.get_serial_from_port(port_list=Devices.android_list)
-
-            #         androids.stop_app(port_list = androids_data)
-
-            #         # androids.set_wifi_state(port_list=androids_data, state='disable')
-
-            #         # time.sleep(5)
-
-            #         androids.set_wifi_state(port_list=androids_data, state='enable')
-
-            #         androids.configure_wifi(port_list=androids_data)
-
-            #     # for laptops
-            #     laptops = interop_connectivity.Laptop(lanforge_ip=mgr_ip, port=8080, server_ip=server_ip, ssid=ssid, passwd=password, encryption=security)
-            #     all_laptops = Devices.windows_list + Devices.linux_list + Devices.mac_list
-
-            #     if(all_laptops == []):
-            #         logging.info('There are no laptops selected to configure Wi-Fi')
-            #     else:
-
-            #         laptops_data = laptops.get_laptop_from_port(port_list=all_laptops)
-
-            #         # works only for linux
-            #         laptops.rm_station(port_list=laptops_data)
-            #         time.sleep(2)
-
-            #         laptops.add_station(port_list=laptops_data)
-            #         time.sleep(2)
-
-            #         laptops.set_port(port_list=laptops_data)
-
-            #     if(Devices.android_list != [] or all_laptops != []):
-            #         logging.info('Waiting 20s for the devices to configure to Wi-Fi')
-            #         time.sleep(120)
 
     # station precleanup
     ping.cleanup()
@@ -1056,7 +1108,7 @@ connectivity problems.
     logging.info('{}'.format(*ping.generic_endps_profile.created_cx))
 
     # run the test for the given duration
-    logging.info('Running the ping test for {} minutes'.format(duration))
+    logging.info('Running the ping plotter test for {} minutes'.format(duration))
 
     ping.start_time = datetime.now()
 
@@ -1079,6 +1131,7 @@ connectivity problems.
         rtts[station] = {}
     while(loop_timer <= duration):
         t_init = datetime.now()
+        print(ping.generic_endps_profile.created_endp, "/generic/{}".format(','.join(ping.generic_endps_profile.created_endp)))
         result_data = ping.get_results()
         # logging.info(result_data)
         if (args.virtual):
@@ -1101,6 +1154,8 @@ connectivity problems.
                                 # 'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                                 # 'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                                 'mac': current_device_data['mac'],
+                                'ip': current_device_data['ip'],
+                                'bssid': current_device_data['ap'],
                                 'channel': current_device_data['channel'],
                                 'mode': current_device_data['mode'],
                                 'name': station,
@@ -1146,13 +1201,16 @@ connectivity problems.
                             ping.result_json[station]['min_rtt'] = min_rtt
                             ping.result_json[station]['avg_rtt'] = avg_rtt
                             ping.result_json[station]['max_rtt'] = max_rtt
-                            required_sequence_numbers = list(range(1, max(rtts[station].keys())))
-                            for seq in required_sequence_numbers:
-                                if(seq not in rtts[station].keys()):
-                                    if(seq in dropped_packets):
-                                        rtts[station][seq] = 0
-                                    else:
-                                        rtts[station][seq] = 0.11
+                            if(list(rtts[station].keys()) != []):
+                                required_sequence_numbers = list(range(1, max(rtts[station].keys())))
+                                for seq in required_sequence_numbers:
+                                    if(seq not in rtts[station].keys()):
+                                        if(seq in dropped_packets):
+                                            rtts[station][seq] = 0
+                                        else:
+                                            rtts[station][seq] = 0.11
+                            else:
+                                ping.result_json[station]['rtts'] =  {}
                             ping.result_json[station]['rtts'] = rtts[station]
                             ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
                             # ping.result_json[station]['dropped_packets'] = dropped_packets
@@ -1174,6 +1232,8 @@ connectivity problems.
                                     # 'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                                     # 'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                                     'mac': current_device_data['mac'],
+                                    'ip': current_device_data['ip'],
+                                    'bssid': current_device_data['ap'],
                                     'channel': current_device_data['channel'],
                                     'mode': current_device_data['mode'],
                                     'name': station,
@@ -1219,13 +1279,16 @@ connectivity problems.
                                 ping.result_json[station]['min_rtt'] = min_rtt
                                 ping.result_json[station]['avg_rtt'] = avg_rtt
                                 ping.result_json[station]['max_rtt'] = max_rtt
-                                required_sequence_numbers = list(range(1, max(rtts[station].keys())))
-                                for seq in required_sequence_numbers:
-                                    if(seq not in rtts[station].keys()):
-                                        if(seq in dropped_packets):
-                                            rtts[station][seq] = 0
-                                        else:
-                                            rtts[station][seq] = 0.11
+                                if(list(rtts[station].keys()) != []):
+                                    required_sequence_numbers = list(range(1, max(rtts[station].keys())))
+                                    for seq in required_sequence_numbers:
+                                        if(seq not in rtts[station].keys()):
+                                            if(seq in dropped_packets):
+                                                rtts[station][seq] = 0
+                                            else:
+                                                rtts[station][seq] = 0.11
+                                else:
+                                    ping.result_json[station]['rtts'] =  {}
                                 ping.result_json[station]['rtts'] = rtts[station]
                                 ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
                                 # ping.result_json[station]['dropped_packets'] = dropped_packets
@@ -1247,6 +1310,8 @@ connectivity problems.
                             # 'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                             # 'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                             'mac': current_device_data['mac'],
+                            'ip': current_device_data['ip'],
+                            'bssid': current_device_data['ap'],
                             'channel': current_device_data['channel'],
                             'mode': current_device_data['mode'],
                             'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
@@ -1330,6 +1395,8 @@ connectivity problems.
                                 # 'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                                 # 'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                                 'mac': current_device_data['mac'],
+                                'ip': current_device_data['ip'],
+                                'bssid': current_device_data['ap'],
                                 'channel': current_device_data['channel'],
                                 'mode': current_device_data['mode'],
                                 'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
@@ -1413,7 +1480,8 @@ connectivity problems.
 
     # print('----',rtts)
     # station post cleanup
-    # ping.cleanup()
+    if(not args.no_cleanup):
+        ping.cleanup()
 
     ping.generate_report()
 
