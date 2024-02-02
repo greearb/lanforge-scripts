@@ -132,22 +132,28 @@ class MACVLANProfile(LFCliBase):
         logger.info("Creating MACVLANs...")
         req_url = "/cli-json/add_mvlan"
 
-        if not self.dhcp and self.first_ip_addr and self.netmask and self.gateway:
+        if (not self.dhcp) and self.first_ip_addr and self.netmask and self.gateway:
             self.desired_set_port_interest_flags.append("ip_address")
             self.desired_set_port_interest_flags.append("ip_Mask")
             self.desired_set_port_interest_flags.append("ip_gateway")
-            self.ip_list = LFUtils.gen_ip_series(ip_addr=self.first_ip_addr, netmask=self.netmask,
+            self.ip_list = LFUtils.gen_ip_series(ip_addr=self.first_ip_addr,
+                                                 netmask=self.netmask,
                                                  num_ips=self.num_macvlans)
+            # pprint(["self.ip_list",self.ip_list])
+        else:
+            logger.info("Not generating list of IPs")
 
         if self.dhcp:
             logger.info("Using DHCP")
             self.desired_set_port_current_flags.append("use_dhcp")
             self.desired_set_port_interest_flags.append("dhcp")
 
-        self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
-                                                                   set_port.set_port_current_flags)
-        self.set_port_data["interest"] = self.add_named_flags(self.desired_set_port_interest_flags,
-                                                              set_port.set_port_interest_flags)
+        if self.desired_set_port_current_flags:
+            self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
+                                                                       set_port.set_port_current_flags)
+        if self.desired_set_port_interest_flags:
+            self.set_port_data["interest"] = self.add_named_flags(self.desired_set_port_interest_flags,
+                                                                  set_port.set_port_interest_flags)
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
 
         for i in range(len(self.desired_macvlans)):
@@ -157,37 +163,71 @@ class MACVLANProfile(LFCliBase):
                 "mac": "xx:xx:xx:*:*:xx",
                 "port": self.local_realm.name_to_eid(self.macvlan_parent)[2],
                 "index": int(self.desired_macvlans[i][self.desired_macvlans[i].index('#') + 1:]),
+                "report_timer":500, # speed up polling port to encourage detection for next set-port cmd
                 # "dhcp": self.dhcp,
-                "flags": None
             }
             if admin_down:
                 data["flags"] = 1
             else:
                 data["flags"] = 0
-            self.created_macvlans.append("%s.%s.%s#%d" % (self.shelf, self.resource,
-                                                          self.macvlan_parent,
-                                                          int(self.desired_macvlans[i][
-                                                              self.desired_macvlans[i].index('#') + 1:])))
+            mvl_end = int(self.desired_macvlans[i][ self.desired_macvlans[i].index('#') + 1:])
+            self.created_macvlans.append(f"{self.shelf}.{self.resource}.{self.macvlan_parent}#{mvl_end}")
             self.local_realm.json_post(req_url, data)
-            time.sleep(sleep_time)
 
-        if not LFUtils.wait_until_ports_appear(base_url=self.lfclient_url, port_list=self.created_macvlans, debug=debug):
+        time.sleep(sleep_time)
+        for i in range(len(self.desired_macvlans)):
+            self.local_realm.json_post("/cli-json/nc_show_ports",
+                                       {
+                                           "shelf":1,
+                                           "resource":self.resource,
+                                           "port":self.local_realm.name_to_eid(self.macvlan_parent)[2],
+                                           "probe_flags":"2"
+                                       },
+                                       suppress_related_commands_=True,
+                                       debug_=debug)
+        time.sleep(sleep_time)
+        if not LFUtils.wait_until_ports_appear(base_url=self.lfclient_url,
+                                               port_list=self.created_macvlans,
+                                               timeout=60*(1+int(len(self.created_macvlans)/10)),
+                                               debug=True):
+            logger.error("Unable to see mac_vlans appear, abandoning process")
             return False
 
-        print(self.created_macvlans)
+        # if not admin_down:
+        #    logger.info("Waiting for mac_vlans to admin-up")
+        #    LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
+        #                                      port_list=self.created_macvlans,
+        #                                      debug_=True,
+        #                                      timeout=60*(1+int(len(self.created_macvlans)/10)))
+        #logger.info("macvlans should be up now")
+        #pprint(["self.created_mvlans", self.created_macvlans])
 
         for i in range(len(self.created_macvlans)):
             eid = self.local_realm.name_to_eid(self.created_macvlans[i])
             name = eid[2]
-            self.set_port_data["port"] = name  # for set_port calls.
-            if not self.dhcp and self.first_ip_addr and self.netmask and self.gateway:
+            self.set_port_data["port"] = name
+            self.set_port_data['suppress_preexec_cli']=True
+            self.set_port_data['suppress_preexec_method']=True
+            self.set_port_data['suppress_postexec_cli']=True
+            self.set_port_data['suppress_postexec_method']=True
+
+            if (not self.dhcp) and self.first_ip_addr and self.netmask and self.gateway:
+                self.set_port_data["shelf"] = 1
+                self.set_port_data["resource"] = eid[1]
                 self.set_port_data["ip_addr"] = self.ip_list[i]
                 self.set_port_data["netmask"] = self.netmask
                 self.set_port_data["gateway"] = self.gateway
+                self.set_port_data["current_flags"] = 0
+                self.set_port_data["interest"] = 75513884
+                self.set_port_data["report_timer"] = 8000 # reduce polling by now to keep system load low
+                # pprint(["IP DATA", self.set_port_data])
+            else:
+                logger.info(" - - - - - - not issuing set_port IP data")
+
             set_port_r.addPostData(self.set_port_data)
             set_port_r.jsonPost(debug)
-            time.sleep(sleep_time)
 
+        time.sleep(sleep_time)
         return True
 
     def cleanup(self):
