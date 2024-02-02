@@ -83,7 +83,8 @@ class lf_create_dp_rvr_json():
                  _lf_dp_rvr_attenuation_6g_combobox,
                  _lf_radio_2g,
                  _lf_radio_5g,
-                 _lf_radio_6g
+                 _lf_radio_6g,
+                 _lf_dp_rvr_number_dut_indexes_combobox
                  ):
         self.suite_type = _suite_type
         self.suite_band = ""
@@ -99,6 +100,7 @@ class lf_create_dp_rvr_json():
         self.radio_batch_dict = _radio_batch_dict
         self.lf_dp_rvr_use_qa_var = _lf_dp_rvr_use_qa_var
         self.lf_dp_rvr_use_inspect_var = _lf_dp_rvr_use_inspect_var
+        self.lf_dp_rvr_number_dut_indexes_combobox = _lf_dp_rvr_number_dut_indexes_combobox
 
         # configuration 
         self.lf_dp_rvr_duration_combobox = _lf_dp_rvr_duration_combobox
@@ -241,6 +243,17 @@ class lf_create_dp_rvr_json():
         lf_dp_rvr_upload_speed = self.lf_dp_rvr_upload_speed_combobox.get()
         lf_dp_rvr_attenuator = self.lf_dp_rvr_attenuator_combobox.get()
 
+        lf_dp_rvr_number_dut_indexes = self.lf_dp_rvr_number_dut_indexes_combobox.get()
+
+        dut_indexes = ''
+        for index in range(0,int(lf_dp_rvr_number_dut_indexes)):
+            if index == 0:
+                dut_indexes += f"""" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",\n """
+            elif index == int(lf_dp_rvr_number_dut_indexes) - 1:
+                dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'","""
+            else:                
+                dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",\n """
+
         self.dp_rvr_band_json = """
 {{
     "{notes}":{{
@@ -291,9 +304,7 @@ class lf_create_dp_rvr_json():
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
-                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    {dut_indexes}
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME",
                     " --dut_flag DHCPD-LAN"
                 ]
@@ -320,9 +331,11 @@ class lf_create_dp_rvr_json():
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name {dp_rvr_test_name}",
                     " --config_name test_con --upstream UPSTREAM_PORT  --dut USE_DUT_NAME --duration {lf_dp_rvr_duration} --station 1.1.wlan{radio}",
-                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: {lf_dp_rvr_pkt_size}' ",
+                    " --download_speed {lf_dp_rvr_download_speed} --upload_speed {lf_dp_rvr_upload_speed} --raw_line 'pkts: {lf_dp_rvr_pkt_size}' ",
                     " --raw_line 'cust_pkt_sz: {lf_dp_rvr_pkt_custom_size}' ",
-                    " --raw_line 'directions: {lf_dp_rvr_dut_traffic_direction}' --raw_line 'traffic_types: {lf_dp_rvr_traffic_type}' --raw_line 'bandw_options: AUTO'",
+                    " --raw_line 'directions: {lf_dp_rvr_dut_traffic_direction}' ",
+                    " --raw_line 'traffic_types: {lf_dp_rvr_traffic_type}' ",
+                    " --raw_line 'bandw_options: AUTO' ",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{dp_rvr_test_name}'",
                     " {attenuator}",
                     " {attenuation}",
