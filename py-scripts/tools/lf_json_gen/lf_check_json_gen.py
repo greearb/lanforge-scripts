@@ -1320,6 +1320,7 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_radio_2g_combobox.get()
         self.lf_radio_5g_combobox.get()
         self.lf_radio_6g_combobox.get()
+        self.lf_wc_number_dut_indexes_combobox.get()
 
         dictionary_length = len(self.radio_dict)
         logger.debug("radio_dict length = {length}".format(length=dictionary_length))
@@ -1348,7 +1349,8 @@ lf_inspect will compare performance between two individual runs for Chamber View
                 _lf_wc_use_inspect_var = self.lf_wc_use_inspect_var,
                 _lf_radio_2g = self.lf_radio_2g_combobox.get(),
                 _lf_radio_5g = self.lf_radio_5g_combobox.get(),
-                _lf_radio_6g = self.lf_radio_6g_combobox.get()
+                _lf_radio_6g = self.lf_radio_6g_combobox.get(),
+                _lf_wc_number_dut_indexes_combobox = self.lf_wc_number_dut_indexes_combobox
         )
 
         if self.suite_radios_2g != "":
