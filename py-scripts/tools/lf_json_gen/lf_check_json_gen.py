@@ -411,7 +411,7 @@ class json_gen_gui():
             self.window_tooltip.bind(self.lf_idx_ssid_pw_entry_dict[idx], 'Enter SSID Password')
 
             self.lf_idx_bssid_entry_var_dict[idx] = tkinter.StringVar()
-            self.lf_idx_bssid_entry_var_dict[idx].set("bssid")
+            self.lf_idx_bssid_entry_var_dict[idx].set("00:00:00:00:00:00")
             self.lf_idx_bssid_entry_dict[idx] = tkinter.Entry(self.lf_dut_frame, textvariable = self.lf_idx_bssid_entry_var_dict[idx])
             self.lf_idx_bssid_entry_dict[idx].grid(row=idx+dut_row+1, column=3)
             self.window_tooltip.bind(self.lf_idx_bssid_entry_dict[idx], 'Enter BSSID')
@@ -693,6 +693,14 @@ or deselect to remove from the test json''')
         self.lf_wc_duration_combobox.grid(row= 4, column=1)
         self.window_tooltip.bind(self.lf_wc_duration_combobox, '''Select the duration of each iteration  ''')
 
+        self.lf_wc_number_dut_indexes = tkinter.Label(self.lf_wc_frame, text="Number DUT Indexes")
+        self.lf_wc_number_dut_indexes.grid(row=4, column=2)
+        self.lf_wc_number_dut_indexes_combobox = ttk.Combobox(self.lf_wc_frame, values=["1","2","3","4"])
+        self.lf_wc_number_dut_indexes_combobox.current(3)
+        self.lf_wc_number_dut_indexes_combobox.grid(row= 4, column=3)
+        self.window_tooltip.bind(self.lf_wc_number_dut_indexes_combobox, '''Number of DUT indexes valid in the DUT json''')
+
+
         self.lf_wc_use_qa_var = tkinter.StringVar(value="Use")
         self.lf_wc_use_qa_check = tkinter.Checkbutton(self.lf_wc_frame, text="lf_qa", variable=self.lf_wc_use_qa_var,
                                         onvalue="Use", offvalue="Do Not Use")
@@ -753,7 +761,7 @@ lf_inspect will compare performance between two individual runs for Chamber View
         # Row 1
         self.lf_dp_rvr_traffic_type_label = tkinter.Label(self.lf_dp_rvr_frame, text="Traffic Type")
         self.lf_dp_rvr_traffic_type_label.grid(row=1, column=0)
-        self.lf_dp_rvr_traffic_type_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["UDP","TCP",])
+        self.lf_dp_rvr_traffic_type_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["UDP","TCP","UDP;TCP"])
         self.lf_dp_rvr_traffic_type_combobox.current(0)
         self.lf_dp_rvr_traffic_type_combobox.grid(row= 1, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_traffic_type_combobox, '''Select the traffic type''')
@@ -866,6 +874,14 @@ May also enter custom Example 0..+100..700''')
         self.window_tooltip.bind(self.lf_dp_rvr_duration_combobox, '''Enter the test duration , for custom it is in ms
 Example:  20000 milli seconds will run the test for 20 seconds
 if left blank will default to 20000''')
+
+        self.lf_dp_rvr_number_dut_indexes = tkinter.Label(self.lf_dp_rvr_frame, text="Number DUT Indexes")
+        self.lf_dp_rvr_number_dut_indexes.grid(row=9, column=2)
+        self.lf_dp_rvr_number_dut_indexes_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["1","2","3","4"])
+        self.lf_dp_rvr_number_dut_indexes_combobox.current(3)
+        self.lf_dp_rvr_number_dut_indexes_combobox.grid(row= 9, column=3)
+        self.window_tooltip.bind(self.lf_dp_rvr_number_dut_indexes_combobox, '''Number of DUT indexes valid in the DUT json''')
+
 
         self.lf_dp_rvr_use_qa_var = tkinter.StringVar(value="Use")
         self.lf_dp_rvr_use_qa_var_check = tkinter.Checkbutton(self.lf_dp_rvr_frame, text="lf_qa", variable=self.lf_dp_rvr_use_qa_var,
@@ -1375,6 +1391,7 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_dp_rvr_5g_file_entry_var.get()
         self.lf_dp_rvr_6g_file_entry_var.get()
         self.lf_dp_rvr_duration_combobox.get()
+        self.lf_dp_rvr_number_dut_indexes_combobox.get()
 
         self.lf_dp_rvr_use_qa_var.get()
         self.lf_dp_rvr_use_inspect_var.get()
@@ -1429,6 +1446,7 @@ lf_inspect will compare performance between two individual runs for Chamber View
                 _lf_radio_2g = self.lf_radio_2g_combobox.get(),
                 _lf_radio_5g = self.lf_radio_5g_combobox.get(),
                 _lf_radio_6g = self.lf_radio_6g_combobox.get(),
+                _lf_dp_rvr_number_dut_indexes_combobox=self.lf_dp_rvr_number_dut_indexes_combobox
         )
 
         if self.suite_radios_2g != "":
