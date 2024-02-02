@@ -2119,7 +2119,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                         help="--lf_logger_config_json <json file> , json configuration of logger")
 
     parser.add_argument("--no_exit","--no_exit_if_no_gui",dest='no_exit_if_no_gui',
-                        help="--no_exit_if_no_gui store true , if gui unavailable do not exit to allow gui restart",)
+                        help="--no_exit_if_no_gui store true , if gui unavailable do not exit to allow gui restart",
+                        action='store_true')
 
     args = parser.parse_args()
 
