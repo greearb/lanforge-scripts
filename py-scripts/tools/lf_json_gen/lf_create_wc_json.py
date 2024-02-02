@@ -73,7 +73,8 @@ class lf_create_wc_json():
                  _lf_radio_2g,
                  _lf_radio_5g,
                  _lf_radio_6g,
-                 _lf_wc_number_dut_indexes_combobox
+                 _lf_wc_number_dut_indexes_combobox,
+                 _lf_wc_sta_profile_combobox
                  ):
         self.test_suite_band = ""
         self.use_radio_dict = _use_radio_dict
@@ -93,6 +94,7 @@ class lf_create_wc_json():
         self.lf_radio_6g = _lf_radio_6g
 
         self.lf_wc_number_dut_indexes_combobox = _lf_wc_number_dut_indexes_combobox
+        self.lf_wc_sta_profile_combobox = _lf_wc_sta_profile_combobox
 
         # TODO Future copy generated file to alternate file (low priority until requeste)
 
@@ -165,6 +167,7 @@ class lf_create_wc_json():
             radio_index = self.radio_index
 
         lf_wc_number_dut_indexes = self.lf_wc_number_dut_indexes_combobox.get()
+        lf_wc_sta_profile = self.lf_wc_sta_profile_combobox.get()
 
         dut_indexes = ''
         for index in range(0,int(lf_wc_number_dut_indexes)):
@@ -233,7 +236,7 @@ class lf_create_wc_json():
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario {wc_test_name} ",
-                    " --raw_line \\"profile_link 1.1 STA-AUTO {wc_sta_max_int} 'DUT: USE_DUT_NAME {radio_index}' NA wiphy{radio},AUTO -1 NA\\" ",
+                    " --raw_line \\"profile_link 1.1 {lf_wc_sta_profile} {wc_sta_max_int} 'DUT: USE_DUT_NAME {radio_index}' NA wiphy{radio},AUTO -1 NA\\" ",
                     " --raw_line \\"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\\""
                 ]
             }},
