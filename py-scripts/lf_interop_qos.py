@@ -224,7 +224,7 @@ class ThroughputQOS(Realm):
         mac_id1_list=[]
         for interface in response_port['interfaces']:
             for port,port_data in interface.items():
-                if(not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0"):
+                if(not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0'):
                     for id in self.eid_list:
                         if(id+'.' in port):
                             original_port_list.append(port)
