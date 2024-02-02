@@ -236,8 +236,10 @@ INCLUDE_IN_README: False
     parser.add_argument('--tos', help='specify tos for endpoints eg : BK | BE | VI | VO | Voice | Video')
     parser.add_argument('--pkts_to_send',
                         help='specify the pkts to send to the endpoints eg :One - 1 | Ten - 10 | (100) - 100 | (1000) - 1000')
-    parser.add_argument('--multi_conn_a', help='modify multi connection endpoint-a for cx', default=0, type=int)
-    parser.add_argument('--multi_conn_b', help='modify multi connection endpoint-b for cx', default=0, type=int)
+    parser.add_argument('--multi_conn_a', '--multi_con_a', default=0, type=int,
+                        help='modify multi connection endpoint-a for cx')
+    parser.add_argument('--multi_conn_b', '--multi_con_b', default=0, type=int,
+                        help='modify multi connection endpoint-b for cx')
     parser.add_argument('--min_ip_port_a', help='min ip port range for endp-a', default=-1)
     parser.add_argument('--min_ip_port_b', help='min ip port range for endp-b', default=-1)
     parser.add_argument('--batch_quantity', help='No of cx endpoints to batch-create', default=1)
