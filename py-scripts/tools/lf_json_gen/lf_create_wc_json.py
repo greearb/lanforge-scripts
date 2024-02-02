@@ -72,7 +72,8 @@ class lf_create_wc_json():
                  _lf_wc_use_inspect_var,
                  _lf_radio_2g,
                  _lf_radio_5g,
-                 _lf_radio_6g
+                 _lf_radio_6g,
+                 _lf_wc_number_dut_indexes_combobox
                  ):
         self.test_suite_band = ""
         self.use_radio_dict = _use_radio_dict
@@ -90,6 +91,8 @@ class lf_create_wc_json():
         self.lf_radio_2g = _lf_radio_2g
         self.lf_radio_5g = _lf_radio_5g
         self.lf_radio_6g = _lf_radio_6g
+
+        self.lf_wc_number_dut_indexes_combobox = _lf_wc_number_dut_indexes_combobox
 
         # TODO Future copy generated file to alternate file (low priority until requeste)
 
@@ -161,6 +164,18 @@ class lf_create_wc_json():
             self.radio_index = self.lf_radio_6g
             radio_index = self.radio_index
 
+        lf_wc_number_dut_indexes = self.lf_wc_number_dut_indexes_combobox.get()
+
+        dut_indexes = ''
+        for index in range(0,int(lf_wc_number_dut_indexes)):
+            if index == 0:
+                dut_indexes += f"""" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",\n """
+            elif index == int(lf_wc_number_dut_indexes) - 1:
+                dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'","""
+            else:                
+                dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",\n """
+        
+
         self.wc_band_json = """
 {{
     "{wifi}":{{
@@ -205,9 +220,7 @@ class lf_create_wc_json():
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
-                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    {dut_indexes}
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME",
                     " --dut_flag DHCPD-LAN"
                 ]
