@@ -772,14 +772,16 @@ class inspect_sql:
                         self.junit_results += """
                         <properties>
                         """
-
+                        # note the order of the data is 1,0  
+                        # the last run (0) is stored in numeric_score_2 
+                        # the previous run (1) is stored in numeric_score 1
                         self.junit_results += """
                             <property name="Performance" value="{test_result}" />
-                            <property name="Last Run" value="{numeric_score_1}" />
-                            <property name="Prev Run" value="{numeric_score_2}" />
+                            <property name="Last Run" value="{numeric_score_2}" />
+                            <property name="Prev Run" value="{numeric_score_1}" />
                             <property name="percent" value="{percent}" />
-                            <property name="Last Data" value="{df_data_1}" />
-                            <property name="Perv Data" value="{df_data_2}" />
+                            <property name="Last Data" value="{df_data_2}" />
+                            <property name="Perv Data" value="{df_data_1}" />
                             """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
                                         percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
                         
