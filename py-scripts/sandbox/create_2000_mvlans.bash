@@ -45,7 +45,7 @@ for parent in "${PARENTS_1[@]}"; do
     fi
 done
 # echo "N E X T, RX PORTS"
-sleep 5
+#sleep 5
 for parent in "${PARENTS_1[@]}"; do
     for mvl in $(seq 0 $NUM_MVL); do
         RX_PORTS+=("1.1.eth${parent}#${mvl}")
@@ -76,32 +76,37 @@ if (( $do_create_cx == 1 )); then
         for txport in "${TX_PORTS[@]}"; do
             rxport="${RX_PORTS[$port_index]}"
             ep_num="${PARENTS_2[$port_index]}"
-            echo "DOES <$ep_num> parent[$parent] match txport[$txport]? "
-            if [[ $txport =~ eth${parent}# ]]; then
-                echo "  YES epnum[$ep_num] rxport[$rxport] txport[$txport]"
+            # echo "DOES <$ep_num> parent[$parent] match txport[$txport]? "
+            if [[ "$txport" =~ eth${parent}#* ]]; then
+                # echo "  YES epnum[$ep_num] rxport[$rxport] txport[$txport]"
+                echo -n "+"
+
                 # batch_qty does not appear to work "$NUM_MVL" 
-                # set -x
-                # $PF/create_l3.py --mgr localhost \
-                #    --min_rate_a        9600 \
-                #    --min_rate_b        0 \
-                #    --cx_prefix         "y-e${ep_num}-" \
-                #    --cx_type           lf_tcp \
-                #    --multi_con_a       10 \
-                #    --multi_con_b       1 \
-                #    --batch_quantity    1 \
-                #    --endp_a            "$txport" \
-                #    --endp_b            "$rxport" \
-                #    --ip_port_increment_a 1 \
-                #    --ip_port_increment_b 1 \
-                #    --endp_a_increment 1 \
-                #    --endp_b_increment 1 \
-                #    --no_cleanup \
-                #    --no_pre_cleanup \
-                #    --debug --log_level debug
-                #set +x
+                set -x
+                $PF/create_l3.py --mgr localhost \
+                    --min_rate_a        9600 \
+                    --min_rate_b        0 \
+                    --cx_prefix         "y-e${ep_num}-" \
+                    --cx_type           lf_tcp \
+                    --multi_con_a       10 \
+                    --multi_con_b       1 \
+                    --batch_quantity    1 \
+                    --endp_a            "$txport" \
+                    --endp_b            "$rxport" \
+                    --min_ip_port_a     0 \
+                    --min_ip_port_b     -1 \
+                    --ip_port_increment_a 1 \
+                    --ip_port_increment_b 1 \
+                    --endp_a_increment  1 \
+                    --endp_b_increment  1 \
+                    --no_cleanup \
+                    --no_pre_cleanup \
+                    --debug --log_level debug
+                set +x
                 #sleep 5
             else
-                echo "  NO epnum[$ep_num] rxport[$rxport] txport[$txport]"
+                echo -n "-"
+                # echo -n "  NO epnum[$ep_num] rxport[$rxport] txport[$txport]"
             fi
         done
     done
