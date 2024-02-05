@@ -634,7 +634,13 @@ class L3CXProfile(LFCliBase):
                                            _data=endp_side_b,
                                            debug_=debug_,
                                            suppress_related_commands_=suppress_related_commands)
-                time.sleep(sleep_time)
+                self.local_realm.json_post(_req_url="/cli-json/set_endp_report_timer",
+                                           _data={"endp_name":endp_a_name, "milliseconds":250 },
+                                           suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(_req_url="/cli-json/set_endp_report_timer",
+                                           _data={ "endp_name":endp_b_name, "milliseconds":250, },
+                                           suppress_related_commands_=suppress_related_commands)
+                # time.sleep(sleep_time)
 
                 url = "cli-json/set_endp_flag"
                 data = {
@@ -864,7 +870,10 @@ class L3CXProfile(LFCliBase):
                                        data,
                                        debug_=debug_,
                                        suppress_related_commands_=suppress_related_commands)
-
+            self.local_realm.json_post("/cli-json/set_cx_report_timer",
+                                       {"test_mgr": "all", "cx_name": data["alias"], "milliseconds": 8000},
+                                       debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands)
             time.sleep(0.01)
 
         rv = self.local_realm.wait_until_cxs_appear(these_cx, debug=debug_, timeout=timeout)
