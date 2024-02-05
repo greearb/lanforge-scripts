@@ -582,11 +582,11 @@ class Realm(LFCliBase):
             wait_more = False
             endp_list = self.json_get("/endp/list")
             found_endps = {}
-            # LAN-2064 the endp_list may be a dict, it shouldbe a list of dictionarys, 
+            # LAN-2064 the endp_list may be a dict, it shouldbe a list of dictionaries,
             #  need to modify to handle single endpoint as compared to two
             # Realm, wait for endp if there is a single end point it will time out. 
             # since json type difference between single station and multiple station 
-            logger.debug("endp_list is type {endp}  keys {keys}".format(endp=type(endp_list),keys=endp_list.keys()))
+            # logger.debug("endp_list is type {endp}  keys {keys}".format(endp=type(end_list),keys=endp_list.keys()))
             if 'endpoint' in endp_list.keys():
                 logger.debug(" endpoint type {}".format(type(endp_list['endpoint'])))
                 if not isinstance(endp_list['endpoint'], list):
