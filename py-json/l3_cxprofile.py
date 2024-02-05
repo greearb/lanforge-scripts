@@ -7,6 +7,7 @@ import pandas as pd
 import time
 import datetime
 import logging
+import pprint
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -567,9 +568,16 @@ class L3CXProfile(LFCliBase):
                     side_a_shelf = side_a_info[0]
                     side_a_resource = side_a_info[1]
                 if cx_name is None:
-                    cx_name = "%s%s-%i" % (self.name_prefix, side_a_info[2], len(self.created_cx))
+                    safer_info_2 = re.sub("[^-_a-zA-Z0-9]", "_", side_a_info[2])
+                    cx_name = "%s%s-%i" % (self.name_prefix, safer_info_2, len(self.created_cx))
                 else:
                     cx_name = cx_name
+
+                match =re.search("[^-_a-zA-Z0-9]", str(cx_name))
+                if match:
+                    pprint.pprint(["name_prefix", self.name_prefix,
+                                   "side_a_info.2", side_a_info[2]])
+                    raise ValueError(f"Endp-A has invalid characters in name: [{cx_name}]")
 
                 if tos and add_tos_to_name:
                     endp_a_name = cx_name + "-%s-A" % (tos)
