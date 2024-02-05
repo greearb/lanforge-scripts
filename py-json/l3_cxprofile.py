@@ -302,9 +302,9 @@ class L3CXProfile(LFCliBase):
                         layer3['alias'] = layer3_alias
                     else:
                         logger.critical(("The Stations or Connection on LANforge did not match expected,",
-                                        " Check if LANForge initial state correct or delete/cleanup corrects"))
+                                         " Check if LANForge initial state correct or delete/cleanup corrects"))
                         raise ValueError(("The Stations or Connection on LANforge did not match expected,",
-                                        " Check if LANForge initial state correct or delete/cleanup corrects"))
+                                          " Check if LANForge initial state correct or delete/cleanup corrects"))
 
                     timestamp_df = pd.merge(layer3, portdata_df, on='alias')
             else:
@@ -465,17 +465,24 @@ class L3CXProfile(LFCliBase):
         self.created_endp.clear()
 
     def create(self,
-                endp_type,
-                side_a,
-                side_b,
-                sleep_time=0.03,
-                suppress_related_commands=None,
-                debug_=False,
-                pkts_to_send=None,
-                tos=None, timeout=300, ip_port_a=-1, ip_port_b=-1,
-                batch_quantity=1, port_increment_a=None, port_increment_b=None,
-                ip_port_increment_a=0, ip_port_increment_b=0, cx_name=None,
-                add_tos_to_name=False):
+               endp_type,
+               side_a,
+               side_b,
+               sleep_time=0.03,
+               suppress_related_commands=None,
+               debug_=False,
+               pkts_to_send=None,
+               tos=None,
+               timeout=300,
+               ip_port_a=-1,
+               ip_port_b=-1,
+               batch_quantity=1,
+               port_increment_a=None,
+               port_increment_b=None,
+               ip_port_increment_a=0,
+               ip_port_increment_b=0,
+               cx_name=None,
+               add_tos_to_name=False):
         # Returns a 2-member array, list of cx, list of endp on success.
         # If endpoints creation fails, returns False, False
         # if Endpoints creation is OK, but CX creation fails, returns False, list of endp
@@ -619,9 +626,13 @@ class L3CXProfile(LFCliBase):
                 }
 
                 url = "/cli-json/add_endp"
-                self.local_realm.json_post(url, endp_side_a, debug_=debug_,
+                self.local_realm.json_post(_req_url=url,
+                                           _data=endp_side_a,
+                                           debug_=debug_,
                                            suppress_related_commands_=suppress_related_commands)
-                self.local_realm.json_post(url, endp_side_b, debug_=debug_,
+                self.local_realm.json_post(_req_url=url,
+                                           _data=endp_side_b,
+                                           debug_=debug_,
                                            suppress_related_commands_=suppress_related_commands)
                 time.sleep(sleep_time)
 
@@ -849,7 +860,11 @@ class L3CXProfile(LFCliBase):
 
         for data in cx_post_data:
             url = "/cli-json/add_cx"
-            self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+            self.local_realm.json_post(url,
+                                       data,
+                                       debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands)
+
             time.sleep(0.01)
 
         rv = self.local_realm.wait_until_cxs_appear(these_cx, debug=debug_, timeout=timeout)
@@ -860,16 +875,16 @@ class L3CXProfile(LFCliBase):
         return these_cx, these_endp
 
     def monitor_without_disturbing_other_monitor(self,
-                duration_sec=60,
-                monitor_interval_ms=1, # monitor_insterval is seconds
-                sta_list=None,
-                layer3_cols=None,
-                port_mgr_cols=None,
-                created_cx=None,
-                script_name=None,
-                arguments=None,
-                compared_report=None,
-                debug=False):
+                                                 duration_sec=60,
+                                                 monitor_interval_ms=1, # monitor_insterval is seconds
+                                                 sta_list=None,
+                                                 layer3_cols=None,
+                                                 port_mgr_cols=None,
+                                                 created_cx=None,
+                                                 script_name=None,
+                                                 arguments=None,
+                                                 compared_report=None,
+                                                 debug=False):
         if duration_sec:
             duration_sec = self.parse_time(duration_sec).seconds
         else:
