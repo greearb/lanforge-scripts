@@ -70,44 +70,42 @@ done
 num_cx=$(( ${#TX_PORTS[@]} - 1 ))
 echo "Will create $NUM_MVL per parent"
 #sleep 2
-if (( $do_create_cx == 1 )); then   
+if (( $do_create_cx == 1 )); then
+    port_index=0
     for parent in "${PARENTS_1[@]}"; do
-        port_index=0
         for txport in "${TX_PORTS[@]}"; do
-            rxport="${RX_PORTS[$port_index]}"
+            # rxport="${RX_PORTS[$port_index]}"
+            rxport=${txport/1.2./1.1.}
             ep_num="${PARENTS_2[$port_index]}"
-            # echo "DOES <$ep_num> parent[$parent] match txport[$txport]? "
-            if [[ "$txport" =~ eth${parent}#* ]]; then
-                # echo "  YES epnum[$ep_num] rxport[$rxport] txport[$txport]"
-                echo -n "+"
+            # tx_pref="${txport/\#*/}"
+            # rx_pref="${rxport/\#*/}"
+            # echo " <$ep_num> parent[$parent] match txport[$txport] rxport[$rxport]?     [$tx_pref][$rx_pref]"
+            # echo "  YES epnum[$ep_num] rxport[$rxport] txport[$txport]"
+            # echo -n "+"
 
-                # batch_qty does not appear to work "$NUM_MVL" 
-                set -x
-                $PF/create_l3.py --mgr localhost \
-                    --min_rate_a        9600 \
-                    --min_rate_b        0 \
-                    --cx_prefix         "y-e${ep_num}-" \
-                    --cx_type           lf_tcp \
-                    --multi_con_a       10 \
-                    --multi_con_b       1 \
-                    --batch_quantity    1 \
-                    --endp_a            "$txport" \
-                    --endp_b            "$rxport" \
-                    --min_ip_port_a     0 \
-                    --min_ip_port_b     -1 \
-                    --ip_port_increment_a 1 \
-                    --ip_port_increment_b 1 \
-                    --endp_a_increment  1 \
-                    --endp_b_increment  1 \
-                    --no_cleanup \
-                    --no_pre_cleanup \
-                    --debug --log_level debug
-                set +x
-                #sleep 5
-            else
-                echo -n "-"
-                # echo -n "  NO epnum[$ep_num] rxport[$rxport] txport[$txport]"
-            fi
+            # batch_qty does not appear to work "$NUM_MVL"
+            set -x
+            $PF/create_l3.py --mgr localhost \
+                --min_rate_a        9600 \
+                --min_rate_b        0 \
+                --cx_prefix         "y-e${ep_num}-" \
+                --cx_type           lf_tcp \
+                --multi_con_a       10 \
+                --multi_con_b       1 \
+                --batch_quantity    1 \
+                --endp_a            "$txport" \
+                --endp_b            "$rxport" \
+                --min_ip_port_a     0 \
+                --min_ip_port_b     -1 \
+                --ip_port_increment_a 1 \
+                --ip_port_increment_b 1 \
+                --endp_a_increment  1 \
+                --endp_b_increment  1 \
+                --no_cleanup \
+                --no_pre_cleanup \
+                --debug --log_level debug
+            set +x
         done
+        port_index=$(( $port_index + 1 ))
     done
 fi
