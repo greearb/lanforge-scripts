@@ -279,7 +279,7 @@ class lf_create_ap_auto_json():
                 "command":"./tools/lf_inspect.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 0,1"
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
                 ]
             }"""
         self.ap_auto_band_json += """ 
