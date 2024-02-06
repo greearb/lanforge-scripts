@@ -86,6 +86,7 @@ NOTES:
                 "use-bss-transition"   :  Enable BSS transition.
                 "ft-roam-over-ds"      :  Roam over DS when AP supports it.
                 "disable_ht80"         :  Disable HT80 (for AC chipset NICs only)}
+                "80211r_pmska_cache"   :  Enable PMSKA caching for WPA2 (Related to 802.11r)
 
             example:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
@@ -311,7 +312,7 @@ class CreateStation(Realm):
         if self.sta_flags is not None:
             _flags = self.sta_flags.split(',')
             for flags in _flags:
-                print(flags)
+                logger.info(f"Selected Flags: '{flags}'")
                 self.station_profile.set_command_flag("add_sta", flags, 1)
 
         if self.debug:
@@ -516,6 +517,7 @@ NOTES:
                 "use-bss-transition"   :  Enable BSS transition.
                 "ft-roam-over-ds"      :  Roam over DS when AP supports it.
                 "disable_ht80"         :  Disable HT80 (for AC chipset NICs only)}
+                "80211r_pmska_cache"   :  Enable PMSKA caching for WPA2 (Related to 802.11r)
 
             example:
                     create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> 
