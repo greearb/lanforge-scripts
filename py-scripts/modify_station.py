@@ -21,7 +21,7 @@ Realm = realm.Realm
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 set_port = importlib.import_module("py-json.LANforge.set_port")
 add_sta = importlib.import_module("py-json.LANforge.add_sta")
-import lf_modify_radio
+mod_radio = importlib.import_module("py-scripts.lf_modify_radio")
 
 
 class ModifyStation(Realm):
@@ -143,7 +143,7 @@ class ModifyStation(Realm):
         if not radio_eid:
             raise ValueError("adjust_radio: requires radio eid")
 
-        radio_adjuster = lf_modify_radio.lf_modify_radio(lf_mgr=self.host,
+        radio_adjuster = mod_radio.lf_modify_radio(lf_mgr=self.host,
                                                          lf_port=self.port,
                                                          lf_user=None,
                                                          lf_passwd=None,
