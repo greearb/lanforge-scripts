@@ -74,7 +74,9 @@ class lf_create_wc_json():
                  _lf_radio_5g,
                  _lf_radio_6g,
                  _lf_wc_number_dut_indexes_combobox,
-                 _lf_wc_sta_profile_combobox
+                 _lf_wc_sta_profile_combobox,
+                 _ul_rate,
+                 _dl_rate
                  ):
         self.test_suite_band = ""
         self.use_radio_dict = _use_radio_dict
@@ -106,6 +108,9 @@ class lf_create_wc_json():
             self.wc_duration = '20000'
         else:
             self.wc_duration = _wc_duration
+
+        self.ul_rate = _ul_rate
+        self.dl_rate = _dl_rate
 
 
         self.use_radio_2g_var_dict = _use_radio_2g_var_dict
@@ -178,6 +183,8 @@ class lf_create_wc_json():
             else:                
                 dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",\n """
         
+        dl_rate = self.dl_rate
+        ul_rate = self.ul_rate
 
         self.wc_band_json = """
 {{
@@ -252,6 +259,8 @@ class lf_create_wc_json():
                     " --upstream UPSTREAM_PORT --batch_size {wc_batch_size} --loop_iter 1 --protocol UDP-IPv4 --duration {wc_duration}",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{wc_test_name}'",
                     " --test_rig TEST_RIG ",
+                    " --upload_rate {ul_rate}'",
+                    " --download_rate {dl_rate}'",
                     " --set DUT_SET_NAME",
                     " --verbosity 11"
                 ]
@@ -282,7 +291,7 @@ class lf_create_wc_json():
                 "command":"./tools/lf_inspect.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 0,1"
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
                 ]
             }"""
         self.wc_band_json += """ 
