@@ -696,7 +696,7 @@ or deselect to remove from the test json''')
         self.lf_wc_number_dut_indexes = tkinter.Label(self.lf_wc_frame, text="Number DUT Indexes")
         self.lf_wc_number_dut_indexes.grid(row=4, column=2)
         self.lf_wc_number_dut_indexes_combobox = ttk.Combobox(self.lf_wc_frame, values=["1","2","3","4"])
-        self.lf_wc_number_dut_indexes_combobox.current(3)
+        self.lf_wc_number_dut_indexes_combobox.current(2)
         self.lf_wc_number_dut_indexes_combobox.grid(row= 4, column=3)
         self.window_tooltip.bind(self.lf_wc_number_dut_indexes_combobox, '''Number of DUT indexes valid in the DUT json''')
 
@@ -708,10 +708,28 @@ or deselect to remove from the test json''')
         self.window_tooltip.bind(self.lf_wc_sta_profile_combobox, '''Station profile,  when using stations greater then 1 , 
 MU MIMO will perform poor for AX radios for virtual stations greater then one, use STA-AC''')
 
+        self.lf_wc_dl_rate = tkinter.Label(self.lf_wc_frame, text="dl_rate")
+        self.lf_wc_dl_rate.grid(row=6, column=0)
+        self.lf_wc_dl_rate_combobox = ttk.Combobox(self.lf_wc_frame, values=["custom>","0","9.6K","56K","128K","256K","384K","768K","1M",
+            "1.544M","2M","6M","10M","30M","37M","44.736M","100M","152M","155.52M","304M","622.08M","1G","2.488G","4.97664G",
+            "5G","9.94328G","10G","20G","25G","40G","50G","100G"])
+        self.lf_wc_dl_rate_combobox.current(8)
+        self.lf_wc_dl_rate_combobox.grid(row= 6, column=1)
+        self.window_tooltip.bind(self.lf_wc_dl_rate_combobox, '''Download Rate enter number or number followed by K M or G''')
+
+        self.lf_wc_ul_rate = tkinter.Label(self.lf_wc_frame, text="ul_rate")
+        self.lf_wc_ul_rate.grid(row=6, column=2)
+        self.lf_wc_ul_rate_combobox = ttk.Combobox(self.lf_wc_frame, values=["custom>","0","9.6K","56K","128K","256K","384K","768K","1M",
+            "1.544M","2M","6M","10M","30M","37M","44.736M","100M","152M","155.52M","304M","622.08M","1G","2.488G","4.97664G",
+            "5G","9.94328G","10G","20G","25G","40G","50G","100G"])
+        self.lf_wc_ul_rate_combobox.current(8)
+        self.lf_wc_ul_rate_combobox.grid(row= 6, column=3)
+        self.window_tooltip.bind(self.lf_wc_ul_rate_combobox, '''Upload Rate enter number or number followed by K M or G''')
+
         self.lf_wc_use_qa_var = tkinter.StringVar(value="Use")
         self.lf_wc_use_qa_check = tkinter.Checkbutton(self.lf_wc_frame, text="lf_qa", variable=self.lf_wc_use_qa_var,
                                         onvalue="Use", offvalue="Do Not Use")
-        self.lf_wc_use_qa_check.grid(row=6, column=0)
+        self.lf_wc_use_qa_check.grid(row=7, column=0)
         self.window_tooltip.bind(self.lf_wc_use_qa_check, '''Recommended: Wifi Capacity Test Suite Json will include lf_qa.
 lf_qa will compare performance over multiple runs for Chamber View tests and tests that include kpi''')
 
@@ -719,18 +737,18 @@ lf_qa will compare performance over multiple runs for Chamber View tests and tes
         self.lf_wc_use_inspect_var = tkinter.StringVar(value="Use")
         self.lf_wc_use_inspect_check = tkinter.Checkbutton(self.lf_wc_frame, text="lf_inspect", variable=self.lf_wc_use_inspect_var,
                                         onvalue="Use", offvalue="Do Not Use")
-        self.lf_wc_use_inspect_check.grid(row=6, column=1)
+        self.lf_wc_use_inspect_check.grid(row=7, column=1)
         self.window_tooltip.bind(self.lf_wc_use_inspect_check, '''Recommended: Wifi Capacity Test Suite Json will include lf_inspect. 
 lf_inspect will compare performance between two individual runs for Chamber View tests and tests that include kpi''')
 
 
         self.lf_wc_save = ttk.Button(self.lf_wc_frame, text = 'Create Wifi Capacity Test Suite Json', command = self.create_wc_json)
-        self.lf_wc_save.grid(row=7, column=0, sticky="news", padx=20, pady=10)
+        self.lf_wc_save.grid(row=8, column=0, sticky="news", padx=20, pady=10)
         self.window_tooltip.bind(self.lf_wc_save, 'Save Wifi Capacity Json File')
 
 
         self.lf_wc_clear = ttk.Button(self.lf_wc_frame, text = 'Clear WC Info', command = self.wc_clear_information)
-        self.lf_wc_clear.grid(row=7, column=1, sticky="news", padx=20, pady=10)
+        self.lf_wc_clear.grid(row=8, column=1, sticky="news", padx=20, pady=10)
         self.window_tooltip.bind(self.lf_wc_clear, 'Clear Wifi Capacity Information, use between test suite generation')
         
 
@@ -885,7 +903,7 @@ if left blank will default to 20000''')
         self.lf_dp_rvr_number_dut_indexes = tkinter.Label(self.lf_dp_rvr_frame, text="Number DUT Indexes")
         self.lf_dp_rvr_number_dut_indexes.grid(row=9, column=2)
         self.lf_dp_rvr_number_dut_indexes_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["1","2","3","4"])
-        self.lf_dp_rvr_number_dut_indexes_combobox.current(3)
+        self.lf_dp_rvr_number_dut_indexes_combobox.current(2)
         self.lf_dp_rvr_number_dut_indexes_combobox.grid(row= 9, column=3)
         self.window_tooltip.bind(self.lf_dp_rvr_number_dut_indexes_combobox, '''Number of DUT indexes valid in the DUT json''')
 
@@ -1330,6 +1348,11 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_wc_number_dut_indexes_combobox.get()
         self.lf_wc_sta_profile_combobox.get()
 
+        ul_rate = self.lf_wc_ul_rate_combobox.get()
+
+        dl_rate = self.lf_wc_dl_rate_combobox.get()
+
+
         dictionary_length = len(self.radio_dict)
         logger.debug("radio_dict length = {length}".format(length=dictionary_length))
         wc_json = lf_create_wc_json.lf_create_wc_json(
@@ -1359,7 +1382,10 @@ lf_inspect will compare performance between two individual runs for Chamber View
                 _lf_radio_5g = self.lf_radio_5g_combobox.get(),
                 _lf_radio_6g = self.lf_radio_6g_combobox.get(),
                 _lf_wc_number_dut_indexes_combobox = self.lf_wc_number_dut_indexes_combobox,
-                _lf_wc_sta_profile_combobox = self.lf_wc_sta_profile_combobox
+                _lf_wc_sta_profile_combobox = self.lf_wc_sta_profile_combobox,
+                _ul_rate = ul_rate,
+                _dl_rate = dl_rate
+
         )
 
         if self.suite_radios_2g != "":
