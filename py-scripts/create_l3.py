@@ -100,7 +100,8 @@ class CreateL3(Realm):
                  _min_ip_port_a=None,
                  _min_ip_port_b=None,
                  _multi_conn_a=None,
-                 _multi_conn_b=None):
+                 _multi_conn_b=None,
+                 ep_pairs=None):
         super().__init__(host, port)
         self.host = host
         self.port = port
@@ -129,6 +130,21 @@ class CreateL3(Realm):
         self.ip_port_increment_b = _ip_port_increment_b
         self.min_ip_port_a = _min_ip_port_a
         self.min_ip_port_b = _min_ip_port_b
+        # this overrides endp_a and endp_b
+        if ep_pairs:
+            self.endp_a = []
+            self.endp_b = []
+            logger.info("CreateL3: filling endpoint pair lists...")
+            for pair in list(ep_pairs):
+                ep_a = None
+                ep_b = None
+                if str(pair).find(',') < 1:
+                    raise ValueError(f"Endpoint pair does not appear to be two ports [{pair}]")
+                # print(f" P A I R     {pair}")
+                ep_a, ep_b = str(pair).split(",")
+                self.endp_a.append(ep_a)
+                self.endp_b.append(ep_b)
+            logger.info(f"filled {len(self.endp_a)} pairs")
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
@@ -232,6 +248,8 @@ INCLUDE_IN_README: False
     parser.add_argument('--cx_prefix', help='phrase to begin CX names with', default="VT")
     parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=False)
     parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=False)
+    parser.add_argument("--ep_pairs", default=None, required=False, nargs='*',
+                        help="--ep_pairs is a list of ports in a,b format, like eth1#0,eth2#0 eth1#1,eth2#1")
     parser.add_argument('--cx_type', help='specify the traffic type for cx eg : lf_udp | lf_tcp', default="lf_udp")
     parser.add_argument('--tos', help='specify tos for endpoints eg : BK | BE | VI | VO | Voice | Video')
     parser.add_argument('--pkts_to_send',
@@ -290,8 +308,8 @@ INCLUDE_IN_README: False
                            _min_ip_port_a=args.min_ip_port_a,
                            _min_ip_port_b=args.min_ip_port_b,
                            _multi_conn_a=args.multi_conn_a,
-                           _multi_conn_b=args.multi_conn_b
-                           )
+                           _multi_conn_b=args.multi_conn_b,
+                           ep_pairs=args.ep_pairs)
     if not args.no_pre_cleanup:
         ip_var_test.pre_cleanup()
 
