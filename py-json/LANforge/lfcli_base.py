@@ -410,6 +410,8 @@ class LFCliBase:
         logger.info(pprint.pformat(exception))
         logger.info(traceback.format_exception(Exception, exception, exception.__traceback__, chain=True))
 
+    # Checks that the calling system can connect to the specified LANforge.
+    # Additionally checks that license is valid and not expired. If it is, warn and continue.
     def check_connect(self, timeout=300):
         curr_time = math.floor(time.time())
         in30d_time = math.floor(curr_time + datetime.timedelta(days=30).total_seconds())
@@ -433,11 +435,27 @@ class LFCliBase:
                         line = line.strip()
                         if (not line) or (line == "\\n"):
                             continue
+
+                        # Have actual license data (not only whitespace or newline)
+                        # Split it by whitespace into separate components
                         hunks = re.split("\s+", line)
-                        if (hunks[-1]) == "forever":
+
+                        # Two types of licenses regular and node-locked. The only difference is
+                        # that the node-locked license also contains a MAC address of the system
+                        # it is node-locked for.
+                        #
+                        #   - Regular
+                        #       'FEATURE NUMBER KEY LICENSE_NAME EXPIRY_TIMESTAMP'
+                        #
+                        #   - Node-locked
+                        #       'FEATURE NUMBER KEY LICENSE_NAME EXPIRY_TIMESTAMP NODELOCK_MAC'
+                        #
+                        # Expiry timestamp will always be at index four (fifth element)
+                        if (hunks[4]) == "forever":
                             continue
 
-                        expire_at = int(hunks[-1])
+                        expire_at = int(hunks[4])
+
                         if expire_at < curr_time:
                             warnings.append("** License item %s EXPIRED on %s"
                                             % ( hunks[0],
