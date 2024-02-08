@@ -262,6 +262,8 @@ INCLUDE_IN_README: False
     parser.add_argument(
         "-m",
         "--lfmgr",
+        "--mgr",
+        dest="lfmgr",
         type=str,
         default="localhost",
         help="address of the LANforge GUI machine (localhost is default)")
