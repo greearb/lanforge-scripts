@@ -108,8 +108,6 @@ class BandSteering(Realm):
         time.sleep(1)
         self.remove_all_cxs(remove_all_endpoints=True)
 
-    print("precleanup done")
-
     def build(self):
         if not self.port_exists("sta0000"):
         # Build stations
@@ -263,7 +261,7 @@ class BandSteering(Realm):
             else:
                 y_2g.append(0)
 
-        for i in range(1, int(self.iter)+1):
+        for i in range(1, int(self.iter) + 1):
             x_axis_values.append(i)
 
         # test lf_graph in report
@@ -305,6 +303,9 @@ class BandSteering(Realm):
 
 
 def main():
+    help_summary = '''\
+     This script is used to check the bandsteering , if the stations are getting connected to 2.4GHz and 5GHz.
+    '''
     parser = LFCliBase.create_basic_argparse(
         prog='bs_obj.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -333,8 +334,12 @@ Command example:
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
     parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     parser.add_argument('--iter', help="--iter is used to provide number of iterations", default=10)
-    parser.add_argument('--traffic_type',help="traffic type tcp or udp,for tcp lf_tcp and udp lf_udp",default="lf_udp")
+    parser.add_argument('--traffic_type', help="traffic type tcp or udp,for tcp lf_tcp and udp lf_udp",
+                        default="lf_udp")
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
     print(args)
     # if args.debug:
     #    pprint.pprint(args)
@@ -352,7 +357,7 @@ Command example:
                                             end_id=num_sta - 1,
                                             padding_number=10000,
                                             radio=args.radio)
-    created_cx=[]
+    created_cx = []
 
     for i in range(int(args.iter)):
         bs_obj = BandSteering(_host=args.mgr,

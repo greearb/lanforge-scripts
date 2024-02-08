@@ -137,6 +137,9 @@ class CreateVAP(Realm):
 
 
 def main():
+    help_summary = '''\
+     This script will create a variable number(N) of VAP as specified by the user.
+    '''
     # /home/lanforge-scripts/py-json/LANforge/lfcli_base.py - for base args parser
     parser = LFCliBase.create_basic_argparse(
         prog='create_vap.py',
@@ -195,6 +198,9 @@ NOTES:
     optional.add_argument('--start_id', default=0)
     optional.add_argument('--vap_suffix', default=None, help='The numeric suffix, like the 005 in vap005')
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
@@ -275,6 +281,7 @@ NOTES:
     if any_failed:
         exit(1)
     exit(0)
+
 
 if __name__ == "__main__":
     main()

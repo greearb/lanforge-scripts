@@ -228,6 +228,9 @@ class SniffRadio(Realm):
 
 
 def main():
+    help_summary='''\
+     This script is intended to sniff the radio specified by the user on a particular channel for a specified duration.
+    '''
     parser = argparse.ArgumentParser(
         prog="lf_sniff_radio.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -397,7 +400,11 @@ def main():
                              'mate_xterm:         make tshark/dumpcap interactive in an xterm\n'
                              'mate_kill_dumpcap:  kill previously issued dumpcap',
                         default=None)
+    parser.add_argument('--help_summary',help='shows summary of the script',action='store_true')
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value

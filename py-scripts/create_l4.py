@@ -152,6 +152,10 @@ class CreateL4(Realm):
 
 
 def main():
+    help_summary = '''\
+     This script generates a variable number (N) of stations as specified by the user. For each station, it also creates
+      layer-4 endpoints, which are initially set to a stopped state.
+    '''
     parser = LFCliBase.create_basic_argparse(
         prog='create_l4.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -227,6 +231,10 @@ Tested on 02/13/2023:
     parser.add_argument("--lf_passwd", type=str, help="--lf_passwd lanforge password ",
                         default="lanforge")
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()

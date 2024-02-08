@@ -109,6 +109,9 @@ class CreateBridge(Realm):
             self._fail("Ports NOT successfully cleaned up.")
 
 def main():
+    help_summary = '''\
+     This script will create variable number of bridges between the interfaces defined by the user
+    '''
     # /home/lanforge-scripts/py-json/LANforge/lfcli_base.py - for base args parser
     parser = LFCliBase.create_basic_argparse(
         prog='create_bridge.py',
@@ -138,10 +141,13 @@ NOTES:
             ''')
     required = parser.add_argument_group('required arguments')
 
-    required.add_argument('--bridge_name', help='Name of the bridge to create', required=True)
-    required.add_argument('--target_device', help='The interfaces the bridge should contain', required=True)
+    required.add_argument('--bridge_name', help='Name of the bridge to create')
+    required.add_argument('--target_device', help='The interfaces the bridge should contain')
 
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
     # if args.debug:
     #    pprint.pprint(args)
     #    time.sleep(5)
@@ -172,6 +178,7 @@ NOTES:
         create_bridge.exit_success()
     else:
         create_bridge.exit_fail()
+
 
 if __name__ == "__main__":
     main()

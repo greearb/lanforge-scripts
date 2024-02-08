@@ -110,6 +110,9 @@ class CreateBond(Realm):
             self._fail("Ports NOT successfully cleaned up.")
 
 def main():
+    help_summary='''\
+     This script will create bond between the interfaces defined by the user
+    '''
     parser = LFCliBase.create_basic_argparse(
         prog='create_bond.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -145,11 +148,14 @@ COPYRIGHT:
 
     required = parser.add_argument_group('required arguments')
 
-    required.add_argument('--bond_name', help='Name of the bridge to create', required=True)
+    required.add_argument('--bond_name', help='Name of the bridge to create',)
     required.add_argument('--network_dev_list', help='list of network devices in the bond, must be comma separated '
-                          'with no spaces', required=True)
+                          'with no spaces',)
 
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value

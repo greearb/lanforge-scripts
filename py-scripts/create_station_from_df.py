@@ -78,6 +78,10 @@ class CreateStation(Realm):
 
 
 def main():
+    help_summary = '''\
+     This script is used to create stations from the data provided in the csv file. The csv file should be in the same 
+     path as the current file and the fields to be created in csv file are radio,ssid,passwd,security,station.
+    '''
     parser = LFCliBase.create_basic_argparse(
         prog='create_station_from_df.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -97,8 +101,13 @@ def main():
             --debug
             ''')
     required = parser.add_argument_group('required arguments')
-    required.add_argument('--df', help='Which file do you want to build stations off of?', required=True)
+    required.add_argument('--df', help='Which file do you want to build stations off of?')
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     df = pd.read_csv(args.df)
     unique = df[['radio', 'ssid', 'passwd', 'security']].drop_duplicates().reset_index(drop=True)

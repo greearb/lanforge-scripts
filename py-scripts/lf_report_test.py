@@ -40,6 +40,9 @@ lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
 
 def main():
     # Testing: generate data frame
+    help_summary='''\
+     This script is useful to test the functionality of the lf_graph and lf_report modules and generates pdf and html reports
+    '''
     parser = argparse.ArgumentParser(
         prog="lf_report_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -71,7 +74,11 @@ INCLUDE_IN_README
         default='localhost')
     # the args parser is not really used , this is so the report is not generated when testing
     # the imports with --help
+    parser.add_argument('--help_summary',help='provides help_summary to understand the script',action="store_true")
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
     print("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
 
     dataframe = pd.DataFrame({

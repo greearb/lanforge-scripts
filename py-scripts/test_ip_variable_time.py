@@ -1059,6 +1059,12 @@ class IPVariableTime(Realm):
 
 
 def main():
+    help_summary = '''\
+     This script is designed to generate a variable number (N) of stations and establish cross connections while 
+     facilitating the execution of UDP/TCP layer 3 traffic for a duration specified by the user. Additionally, it 
+     supports the utilization of existing stations and the creation of stations across multiple radios. Furthermore, 
+     stations can connect to multiple SSIDs as specified by the user.
+    '''
     # Realm args parser is one directory up then traverse into /py-json/LANforge/lfcli_base.py
     # search for create_basic_argsparse
     # --mgr --mgr_port --upstream_port --num_stations --radio --security --ssid --passwd
@@ -1377,8 +1383,7 @@ INCLUDE_IN_README: False
     optional.add_argument('--mode', nargs="+", help='Used to force mode of stations e.g: --mode 11 9')
     optional.add_argument('--ap', nargs="+", help='Used to force a connection to a particular AP')
     optional.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp, udp, tcp], type will be '
-                                               'adjusted automatically between ipv4 and ipv6 based on use of --ipv6 flag',
-                        required=True)
+                                               'adjusted automatically between ipv4 and ipv6 based on use of --ipv6 flag')
     optional.add_argument('--output_format', help='choose either csv or xlsx')
     optional.add_argument('--report_file', help='where you want to store results', default=None)
     optional.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
@@ -1444,9 +1449,12 @@ INCLUDE_IN_README: False
         '--csv_outfile',
         help="--csv_outfile <Output file for csv data>",
         default="")
+    parser.add_argument('--help_summary', help='shows help summary of the script ', action='store_true')
 
     args = parser.parse_args()
-
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
 

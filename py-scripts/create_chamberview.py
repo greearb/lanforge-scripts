@@ -199,6 +199,9 @@ class CreateChamberview(cv_test):
 
 
 def main():
+    help_summary='''\
+     This script creates a scenario in which stations,bridged-AP,vap,etc can be created and upstream, upstream-dhcp, uplink-nat can be configured in chamber view.
+    '''
     parser = cv_test.create_basic_argparse(
         prog='create_chamberview.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -271,6 +274,9 @@ INCLUDE_IN_README: False
         help="delete existing scenario with same name as given in 'create-scenario' argument. See 'further notes' section for more details. (by default: False)")
 
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value

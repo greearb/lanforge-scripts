@@ -47,6 +47,9 @@ class StationsConnected(LFCliBase):
 
 
 def main():
+    help_summary='''\
+     This script will return the count of the number of stations connected to a specific bssid
+    '''
     parser = argparse.ArgumentParser(
         prog='stations_connected.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -55,10 +58,15 @@ def main():
 
             ''',
         description='''\
-Contains examples of using realm to query stations and get specific information from them
+    Contains examples of using realm to query stations and get specific information from them
         ''')
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
     # if args are added  args=parser.parse_args() swap out next line
-    parser.parse_args()
+    args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     qstationsx = StationsConnected("localhost", 8080)
     bssid = "00:0E:8E:7B:DF:9B"

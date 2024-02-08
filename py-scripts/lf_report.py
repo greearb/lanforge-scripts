@@ -95,7 +95,7 @@ class lf_report:
         self.allure_report_history = os.path.join(self.path,allure_report_history)
         self.allure_report_history_path = str(self.allure_report_history)
 
-            
+
         self.allure_results_history = ""
         self.allure_results = ""
         self.allure_result_dir = ""
@@ -504,7 +504,7 @@ class lf_report:
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("Either no allure report present or the copy of history failed.")
-        
+
     def copy_allure_report(self):
         # TODO abiltiy to set the Allure results dir
         if allure_results == "":
@@ -537,7 +537,7 @@ class lf_report:
 
 
     def generate_allure_report(self):
-        # TODO current the junit.xml is placed in the base directory 
+        # TODO current the junit.xml is placed in the base directory
         # allure report directory needs to be allure-report
         allure_command = "allure generate {allure_results} --report-dir {allure_report} --clean".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         summary_output = ''
@@ -545,8 +545,8 @@ class lf_report:
         # allure_command = "allure serve {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         try:
             logger.info("allure command: {allure_command}".format(allure_command=allure_command))
-            #summary = subprocess.Popen((allure_command).split(' '), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)            
-            summary = subprocess.Popen((allure_command), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)            
+            #summary = subprocess.Popen((allure_command).split(' '), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            summary = subprocess.Popen((allure_command), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
             out, err = summary.communicate()
             errcode = summary.returncode
@@ -554,7 +554,7 @@ class lf_report:
                 out=out,
                 errcode=errcode,
                 err=err
-            ))            
+            ))
 
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
@@ -965,7 +965,7 @@ function copyTextToClipboard(ele) {
         self.html += self.chart_html_obj
 
     def build_chart_custom(self, name, align='center',padding='15px',margin='5px 5px 2em 5px',width='500px',height='500px'):
-        
+
         self.chart_html_obj = """
               <img align='{align}' style='padding:{padding};margin:{margin};width:{width};height:{height};'
               src='{image}'/> """.format(image=name,align=align,padding=padding,margin=margin,width=width, height=height)
@@ -998,6 +998,11 @@ function copyTextToClipboard(ele) {
 
 # Unit Test
 if __name__ == "__main__":
+    help_summary = '''\
+     This script is designed to generate reports in file formats such as PDF and HTML, accommodating various user 
+     preferences. The reports can encompass a range of elements, including graphs, tables, and customizable objectives,
+     tailored to meet specific user requirements
+    '''
     parser = argparse.ArgumentParser(
         prog="lf_report.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -1005,7 +1010,15 @@ if __name__ == "__main__":
     parser.add_argument('--lfmgr', help='sample argument: where LANforge GUI is running', default='localhost')
     # the args parser is not really used , this is so the report is not generated when testing
     # the imports with --help
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
     args = parser.parse_args()
+
+    # help summary
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     logger.info("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
 
     # Testing: generate data frame

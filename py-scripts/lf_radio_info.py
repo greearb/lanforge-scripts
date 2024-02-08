@@ -207,6 +207,9 @@ class radio_information(Realm):
 
 
 def main():
+    help_summary = '''\
+     This script will show all the radios information in a lanforge
+    '''
     parser = argparse.ArgumentParser(
         prog="lf_radio_info.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -233,7 +236,13 @@ CLI Example:
     parser.add_argument('--log_level', default=None,
                         help='Set logging level: debug | info | warning | error | critical')
 
+    parser.add_argument('--help_summary', help='shows help summary of the script', action='store_true')
+
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()

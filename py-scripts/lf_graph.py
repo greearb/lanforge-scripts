@@ -1038,7 +1038,7 @@ class lf_line_graph:
         if self.reverse_y:
             plt.gca().invert_yaxis()
         if self.reverse_x:
-            plt.gca().invert_xaxis()            
+            plt.gca().invert_xaxis()
         plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
@@ -1056,6 +1056,11 @@ class lf_line_graph:
 
 
 def main():
+    help_summary = '''\
+     This script facilitates the generation of comprehensive graphical reports. It offers a variety of graph types, 
+     including bar graphs, horizontal bar graphs, scatter graphs, bar-line graphs, stacked graphs, horizontal stacked 
+     graphs, and line graphs. 
+    '''
     # arguments
     parser = argparse.ArgumentParser(
         prog='lf_graph.py',
@@ -1102,9 +1107,16 @@ INCLUDE_IN_README
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
+    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+                        action="store_true")
+
     # the args parser is not really used , this is so the report is not generated when testing
     # the imports with --help
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
@@ -1226,7 +1238,6 @@ INCLUDE_IN_README
     # prevent eerror Blocked access to file
     options = {"enable-local-file-access": None}
     pdfkit.from_file(output_html_3, output_pdf_3, options=options)
-
 
 
 # Unit Test

@@ -530,6 +530,10 @@ class StaConnect(Realm):
 
 
 def main():
+    help_summary='''\
+     This script will create a station, create TCP and UDP traffic, run it a short amount of time, and verify whether 
+     traffic was sent and received.
+    '''
     parser = Realm.create_basic_argparse(
         prog="sta_connect.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -582,6 +586,9 @@ NOTES:
     parser.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="sta_connect_kpi")
 
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
     monitor_interval = Realm.parse_time(args.test_duration).total_seconds()
 
     staConnect = StaConnect(args.mgr, args.mgr_port, _upstream_port=args.upstream_port, _runtime_sec=monitor_interval,

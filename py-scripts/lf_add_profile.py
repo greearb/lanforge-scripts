@@ -193,6 +193,9 @@ class lf_add_profile():
 
 
 def main():
+    help_summary='''\
+     This script is helpful to create profiles on the lanforge device
+    '''
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -245,7 +248,7 @@ def main():
     parser.add_argument("--freq", help="(add profile)WiFi frequency to be used, 0 means default.")
     parser.add_argument("--instance_count", help="(add profile) Number of devices (stations, vdevs, etc)")
     parser.add_argument("--mac_pattern", help="(add profile) Optional MAC-Address pattern, for instance:  xx:xx:xx:*:*:xx")
-    parser.add_argument("--name", help="(add profile) Profile Name. [R] ", required=True)
+    parser.add_argument("--name", help="(add profile) Profile Name. [R] ")
     parser.add_argument('--passwd', help='(add profile) WiFi SSID to be used, [BLANK] means any.')
     parser.add_argument('--profile_flags', help='pass in flags as a decimal value takes presidence over hex and --pf []')
     parser.add_argument('--profile_flags_hex', help='pass in flags as a hex value')
@@ -333,7 +336,7 @@ def main():
         ''')
 
     # http://www.candelatech.com/lfcli_ug.php#add_profile_notes
-    parser.add_argument('--dut', help='(add profile notes) Profile Name. [R]', required=True)
+    parser.add_argument('--dut', help='(add profile notes) Profile Name. [R]')
     parser.add_argument('--text', action='append',
                         nargs=1,
                         help='''(add profile notes) list of lines of text
@@ -346,8 +349,12 @@ def main():
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--debug', help='Legacy debug flag', action='store_true')
+    parser.add_argument('--help_summary',help='shows summary of the script',action='store_true')
 
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
