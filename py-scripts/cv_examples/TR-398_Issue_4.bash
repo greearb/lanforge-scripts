@@ -1,9 +1,22 @@
 #!/bin/bash
-
-# This runs tr398v4 against a pre-configured testbed (DUT and scenario are not re-created)
-# See commented code below for examples of how to create scenario and DUT, but it is not configured
-# properly for the 204 testbed at this time.
-
+#
+# NAME:
+#   TR-398_Issue_4.bash
+#
+# PURPOSE:
+#   Automation script to run the 'TR-398 Issue 4' Chamber View test.
+#
+# USAGE:
+#   ./TR-398_Issue_4.bash
+#
+# SUMMARY:
+#   This bash script performs the following:
+#     - Creates/updates a DUT
+#     - Creates/updates a Chamber View scenario
+#     - Loads and builds the scenario
+#     - Runs the 'TR-398 Issue 4' test, saving generated reports
+#
+#   See the README in the 'cv_examples' directory for more information.
 set -x
 
 # Define some common variables.  This will need to be changed to match your own testbed.

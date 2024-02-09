@@ -1,9 +1,22 @@
 #!/bin/bash
-
-# This bash script creates/updates a DUT, creates/updates a chamberview scenario,
-# loads and builds that scenario, runs wifi capacity test (if you uncomment that part)
-# and runs tr398v2 test
-
+#
+# NAME:
+#   TR-398_Issue_2.bash
+#
+# PURPOSE:
+#   Automation script to run the 'TR-398 Issue 2' Chamber View test.
+#
+# USAGE:
+#   ./TR-398_Issue_2.bash
+#
+# SUMMARY:
+#   This bash script performs the following:
+#     - Creates/updates a DUT
+#     - Creates/updates a Chamber View scenario
+#     - Loads and builds the scenario
+#     - Runs the 'TR-398 Issue 2' test, saving generated reports
+#
+#   See the README in the 'cv_examples' directory for more information.
 set -x
 
 # Define some common variables.  This will need to be changed to match your own testbed.
