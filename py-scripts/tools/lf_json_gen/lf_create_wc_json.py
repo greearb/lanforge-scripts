@@ -51,6 +51,9 @@ class lf_create_wc_json():
                  _file_2g,
                  _file_5g,
                  _file_6g,
+                 _dir_2g,
+                 _dir_5g,
+                 _dir_6g,
                  _wc_duration,
                  _use_radio_dict,
                  _radio_dict,
@@ -100,9 +103,32 @@ class lf_create_wc_json():
 
         # TODO Future copy generated file to alternate file (low priority until requeste)
 
+        self.dir_2g = _dir_2g
+        self.dir_5g = _dir_5g
+        self.dir_6g = _dir_6g
+
         self.file_2g = "ct_perf_wc_2g" + _suite_radios_2g + ".json"
         self.file_5g = "ct_perf_wc_5g" + _suite_radios_5g + ".json"
         self.file_6g = "ct_perf_wc_6g" + _suite_radios_6g + ".json"
+
+        self.dir_file_2g = ""
+        self.dir_file_5g = ""
+        self.dir_file_6g = ""
+
+        if self.dir_2g != "":
+            self.dir_file_2g = self.dir_2g + "/" + self.file_2g
+        else:
+            self.dir_file_2g = self.file_2g
+
+        if self.dir_5g != "":
+            self.dir_file_5g = self.dir_5g + "/" + self.file_5g
+        else:
+            self.dir_file_5g = self.file_5g            
+
+        if self.dir_6g != "":
+            self.dir_file_6g = self.dir_6g + "/" + self.file_6g
+        else:
+            self.dir_file_6g = self.file_6g            
 
         if _wc_duration == "":
             self.wc_duration = '20000'
@@ -125,27 +151,32 @@ class lf_create_wc_json():
         self.suite_test_name_5g_dict = _suite_test_name_5g_dict
         self.suite_test_name_6g_dict = _suite_test_name_6g_dict
 
-        self.wc_2g_json = ""
-        self.wc_5g_json = ""
-        self.wc_6g_json = ""
-
         self.last_2g_radio = 0
 
     def get_file_2g(self):
         return self.file_2g
 
+    def get_dir_2g(self):
+        return os.path.dirname(os.path.abspath(self.dir_file_2g))
+
     def get_file_5g(self):
         return self.file_5g
 
+    def get_dir_5g(self):
+        return  os.path.dirname(os.path.abspath(self.dir_file_5g))
+
     def get_file_6g(self):
         return self.file_6g
+
+    def get_dir_6g(self):
+        return os.path.dirname(os.path.abspath(self.dir_file_6g))
 
 
     # Helper methods
     def create_suite(self):
 
         if self.test_suite_band == "2g":
-            file_band_fd = open(self.file_2g, 'w')
+            file_band_fd = open(self.dir_file_2g, 'w')
             self.use_radio_band_var_dict = self.use_radio_2g_var_dict
             self.suite_test_name_band_dict = self.suite_test_name_2g_dict
             band = self.test_suite_band.upper()
@@ -154,7 +185,7 @@ class lf_create_wc_json():
             radio_index = self.radio_index
 
         elif self.test_suite_band == "5g":
-            file_band_fd = open(self.file_5g, 'w')
+            file_band_fd = open(self.dir_file_5g, 'w')
             self.use_radio_band_var_dict = self.use_radio_5g_var_dict
             self.suite_test_name_band_dict = self.suite_test_name_5g_dict
             band = self.test_suite_band.upper()
@@ -163,7 +194,7 @@ class lf_create_wc_json():
             radio_index = self.radio_index
 
         elif self.test_suite_band == "6g":
-            file_band_fd = open(self.file_6g, 'w')
+            file_band_fd = open(self.dir_file_6g, 'w')
             self.use_radio_band_var_dict = self.use_radio_6g_var_dict
             self.suite_test_name_band_dict = self.suite_test_name_6g_dict
             band = self.test_suite_band.upper()
