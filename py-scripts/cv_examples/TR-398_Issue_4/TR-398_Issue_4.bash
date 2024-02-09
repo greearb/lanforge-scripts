@@ -19,116 +19,141 @@
 #   See the README in the 'cv_examples' directory for more information.
 set -x
 
-# Define some common variables.  This will need to be changed to match your own testbed.
-# MGR is LANforge GUI machine
-#MGR=192.168.100.209
-MGR=localhost
+# 0. TEST CONFIGURATION
+#
+# NOTE: If you change MGR to a remote IP, ensure that the IP address
+#       is the same as the machine running the LANforge GUI.
+#
+# General configuration
+MGR=localhost                               # Substitute for manager LANforge IP if running script remotely
+MGR_PORT=8080                               # Unlikely this needs to change
+TESTBED=Example-Testbed                     # Name of your testbed as it appears in report
 
-GROUP_FILE=/tmp/lf_cv_rpt_filelocation.txt
-TESTBED=Testbed-71
-DUT=tr398-root
-UPSTREAM_R=1.2
-UPSTREAM_P=eth3
-MGR_PORT=8080
-SSID=test_ssid
-PASSWD=test_passwd
-BSSID2=00:00:00:00:00:02
-BSSID5=00:00:00:00:00:05
-BSSID6=00:00:00:00:00:06
-TR398_CFG=my_tr398_71_cfg.txt
-TR398_RPT_DIR=/tmp/my-report
+LF_SCRIPTS=/home/lanforge/lanforge-scripts  # Modify this to point at your copy of LANforge scripts.
+LF_PY_SCRIPTS=$LF_SCRIPTS/py-scripts        # Directory of LANforge Python scripts.
+                                            # Useful if running this script in another directory.
 
-UPSTREAM=${UPSTREAM_R}.${UPSTREAM_P}
+TEST_CFG=TR-398_Issue_4.cfg                 # 'TR-398 Issue 4' test config file. If not specified in test script
+                                            # CLI, then any unspecified options will use default test values.
 
-# Allow sourcing a file to override the values set above.
+RPT_DIR=/tmp/TR-398_Issue_4_reports         # Output directory for generated reports and associated data
+
+# Chamber View Scenario name
+CV_SCENARIO_NAME=TR-398_Issue_4_Automated_Test
+
+# Upstream configuration
+UPSTREAM_RSRC=1.2                           # In form Shelf.Resource. Shelf is almost always '1'
+UPSTREAM_PORT=eth3                          # Name or alias of port. Usually an Ethernet port
+UPSTREAM=$UPSTREAM_RSRC.$UPSTREAM_PORT      # Combined to form EID
+
+# DUT configuration
+#
+# NOTE: Do not put quotes around these values as some of them
+#       will be substituted into other strings.
+DUT_NAME=TR-398_Issue_4_DUT                 # Name of DUT as it appears in report
+
+SSID_2G=test_ssid_2ghz                      # 2.4GHz radio SSID
+BSSID_2G=00:00:00:00:00:02                  # 2.4GHz radio BSSID
+PASSWD_2G=test_passwd                       # 2.4GHz radio password
+AUTH_2G=WPA2\|WPA3                          # 2.4GHz radio authentication type
+
+SSID_5G=test_ssid_5ghz                      # 5GHz radio SSID
+BSSID_5G=00:00:00:00:00:05                  # 5GHz radio BSSID
+PASSWD_5G=test_passwd                       # 5GHz radio password
+AUTH_5G=WPA2\|WPA3                          # 5GHz radio authentication type
+
+SSID_6G=test_ssid_6ghz                      # 6GHz radio SSID
+BSSID_6G=00:00:00:00:00:06                  # 6GHz radio BSSID
+PASSWD_6G=test_passwd                       # 6GHz radio password
+AUTH_6G=WPA3                                # 6GHz radio authentication type
+
+# Allow sourcing a file to override the configuration values set above.
 if [ -f local.cfg ]
 then
     . local.cfg
 fi
 
-# Create/update new DUT.
-#Replace my arguments with your setup.  Separate your ssid arguments with spaces and ensure the names are lowercase
-#echo "Make new DUT"
-#./create_chamberview_dut.py --lfmgr ${MGR} --port ${MGR_PORT} --dut_name ${DUT} \
-#  --ssid "ssid_idx=0 ssid=$SSID security=WPA2 password=$PASSWD bssid=$BSSID2" \
-#  --ssid "ssid_idx=1 ssid=$SSID security=WPA2 password=$PASSWD bssid=$BSSID5" \
-#  --ssid "ssid_idx=2 ssid=$SSID security=WPA3 password=$PASSWD bssid=$BSSID6" \
-#  --sw_version "beta-beta" --hw_version beta-6e --serial_num 666 --model_num test
 
-# Create/update chamber view scenario and apply and build it.
-# Easiest way to get these lines is to build the scenario in the LANforge GUI and then
-# copy/tweak what it shows in the 'Text Output' tab after saving and re-opening
-# the scenario.
-#echo "Build Chamber View Scenario"
-#change the lfmgr to your system, set the radio to a working radio on your LANforge system, same with the ethernet port.
+# 1. CREATE/UPDATE NEW DUT
+#
+# NOTE: Separate SSID option arguments with spaces and ensure the keys are lowercase
+echo "Creating/Updating DUT \'$DUT_NAME\'"
 
-#./create_chamberview.py --lfmgr ${MGR} --port ${MGR_PORT} --delete_scenario \
-#  --create_scenario tr398-automated \
-#  --raw_line "profile_link 1.1 STA-AUTO 1 'DUT: tr398-root Radio-1' NA wiphy0,AUTO -1 NA" \
-#  --raw_line "profile_link 1.1 STA-AUTO 1 'DUT: tr398-root Radio-2' NA ALL-AX,AUTO -1 NA" \
-#  --raw_line "profile_link ${UPSTREAM_R} upstream 1 'DUT: tr398-root LAN' NA ${UPSTREAM_P},AUTO -1 NA" \
-#  --raw_line "profile_link 1.2 peer 1 'DUT: tr398-root LAN' NA eth2,AUTO -1 NA" \
-#  --raw_line "profile_link 1.2 STA-AUTO 1 'DUT: tr398-root Radio-2' NA wiphy0,AUTO -1 NA" \
-#  --raw_line "profile_link 1.2 STA-AUTO 1 'DUT: tr398-root Radio-2' NA ALL-AX,AUTO -1 NA" \
-#  --raw_line "profile_link 1.3 STA-AUTO 1 'DUT: tr398-root Radio-3' NA ALL-AX,AUTO -1 NA" \
-#  --raw_line "chamber root 429 269 NA 10.0" \
-#  --raw_line "chamber node-2 689 323 NA 10.0" \
-#  --raw_line "chamber sta 191 185 NA 10.0" \
-#  --raw_line "chamber node-1 685 146 NA 10.0"
-
-# Run capacity test on the stations created by the chamber view scenario.
-#config_name doesn't matter
-#echo "run wifi capacity test"
-#./lf_wifi_capacity_test.py --config_name Custom --pull_report \
-#  --mgr ${MGR} \
-#  --port ${MGR_PORT} \
-#  --instance_name testing --upstream $UPSTREAM --test_rig ${TESTBED} --graph_groups ${GROUP_FILE} \
-#  --batch_size "100" --protocol "TCP-IPv4" --duration 20000
-
-#rm ${GROUP_FILE}
+$LF_PY_SCRIPTS/create_chamberview_dut.py \
+    --lfmgr       $MGR \
+    --port        $MGR_PORT \
+    --dut_name    $DUT_NAME \
+    --ssid        "ssid_idx=0 ssid=$SSID_2G security=$AUTH_2G password=$PASSWD_2G bssid=$BSSID_2G" \
+    --ssid        "ssid_idx=1 ssid=$SSID_5G security=$AUTH_5G password=$PASSWD_5G bssid=$BSSID_5G" \
+    --ssid        "ssid_idx=2 ssid=$SSID_6G security=$AUTH_6G password=$PASSWD_6G bssid=$BSSID_6G" \
+    --sw_version  "beta-beta" \
+    --hw_version  "beta-6e" \
+    --serial_num  "001" \
+    --model_num   "test"
 
 
-# Run tr398 automated test
-# NOTE:  --dut6 arg not supported in 5.4.6, so we use a RAW_LINE to set it.
-# TR398_CFG file is a dump of the 'Show Config' text from TR398 Advanced
-# Configuration tab.  This includes calibration data, so make sure you use the proper
-# config file for your testbed.
-# the first argument to --set is the configuration-key from the TR398 field's tooltip
-# or the text of the label for the field.
-./lf_tr398v4_test.py --mgr ${MGR} --port ${MGR_PORT} --lf_user lanforge --lf_password lanforge \
-      --instance_name tr398-instance --config_name test_con \
-      --upstream $UPSTREAM \
-      --test_rig ${TESTBED} --pull_report \
-      --local_lf_report_dir ${TR398_RPT_DIR} \
-      --dut6 "${DUT} ${SSID} ${BSSID6} (3)" \
-      --dut5 "${DUT} ${SSID} ${BSSID5} (2)" \
-      --dut2 "${DUT} ${SSID} ${BSSID2} (1)" \
-      --raw_lines_file ${TR398_CFG} \
-      --set 'Calibrate 802.11AX Attenuators' 0 \
-      --set 'Calibrate Virt-Sta Attenuators' 0 \
-      --set '6.1.1 Receiver Sensitivity' 0 \
-      --set '6.2.1 Maximum Connection' 0 \
-      --set '6.2.2 Maximum Throughput' 1 \
-      --set '6.2.3 Airtime Fairness' 0 \
-      --set '6.2.4 Dual-Band Throughput' 0 \
-      --set '6.2.5 Bi-Directional Throughput' 0 \
-      --set '6.2.8 Multi-Band Throughput' 0 \
-      --set '6.6.1 Mesh Backhaul RvR' 0 \
-      --set '6.2.6 Latency' 0 \
-      --set '6.2.7 Quality of Service' 0 \
-      --set '6.3.1 Range Versus Rate' 0 \
-      --set '6.3.2 Spatial Consistency' 0 \
-      --set '6.3.3 Peak Performance' 0 \
-      --set '6.4.1 Multiple STAs Performance' 0 \
-      --set '7.1.1 RSSI Accuracy' 0 \
-      --set '6.6.2 Mesh Backhaul Node-2 RvR' 0 \
-      --set '6.4.2 Multiple Assoc Stability' 0 \
-      --set '6.4.3 Downlink MU-MIMO' 0 \
-      --set '6.4.4 Multicast' 0 \
-      --set '6.5.2 AP Coexistence' 0 \
-      --set '6.5.3 Automatic Channel Selection' 0 \
-      --set '7.1.2 Channel Utilization' 0 \
-      --set '6.5.4 BSS Color' 0 \
-      --set '6.5.1 Long Term Stability' 0
+# 2. CREATE/UPDATE AND BUILD CHAMBER VIEW SCENARIO
+#
+# See README in same directory for instructions on building a
+# Chamber View scenario with the `create_chamberview.py` script.
+printf "Build Chamber View Scenario with DUT \'$DUT_NAME\' and upstream \'$UPSTREAM_PORT\'"
 
-echo "TR398 report is found in ${TR398_RPT_DIR}"
+$LF_PY_SCRIPTS/create_chamberview.py \
+    --lfmgr $MGR \
+    --port  $MGR_PORT \
+    --delete_scenario \
+    --create_scenario $CV_SCENARIO_NAME \
+    --raw_line "profile_link $UPSTREAM_RSRC upstream 1 'DUT: $DUT_NAME LAN' NA $UPSTREAM_PORT,AUTO -1 NA"
+
+
+# 3. RUN 'TR-398 Issue 4' TEST
+#
+# NOTE: The '--dut6' arg is not supported on LANforge pre-5.4.7, so use the '--raw_line' argument to set it.
+#
+# See README in same directory for instructions on building a
+# Chamber View scenario with the 'lf_tr398v4_test.py' script.
+printf "Starting TR-398 Issue 4 test"
+
+$LF_PY_SCRIPTS/lf_tr398v4_test.py \
+    --mgr                 $MGR \
+    --port                $MGR_PORT \
+    --lf_user             "lanforge" \
+    --lf_password         "lanforge" \
+    --instance_name       "tr398-instance" \
+    --config_name         "test_con" \
+    --test_rig            $TESTBED \
+    --pull_report \
+    --local_lf_report_dir $RPT_DIR \
+    --raw_lines_file      $TEST_CFG \
+    --dut2                "$DUT_NAME $SSID_2G $BSSID_2G (1)" \
+    --dut5                "$DUT_NAME $SSID_5G $BSSID_5G (2)" \
+    --dut6                "$DUT_NAME $SSID_6G $BSSID_6G (3)" \
+    --upstream            $UPSTREAM \
+    --set 'Calibrate 802.11AX Attenuators'    0 \
+    --set 'Calibrate Virt-Sta Attenuators'    0 \
+    --set '6.1.1 Receiver Sensitivity'        0 \
+    --set '6.2.1 Maximum Connection'          0 \
+    --set '6.2.2 Maximum Throughput'          1 \
+    --set '6.2.3 Airtime Fairness'            0 \
+    --set '6.2.4 Dual-Band Throughput'        0 \
+    --set '6.2.5 Bi-Directional Throughput'   0 \
+    --set '6.2.6 Latency'                     0 \
+    --set '6.2.7 Quality of Service'          0 \
+    --set '6.2.8 Multi-Band Throughput'       0 \
+    --set '6.3.1 Range Versus Rate'           0 \
+    --set '6.3.2 Spatial Consistency'         0 \
+    --set '6.3.3 Peak Performance'            0 \
+    --set '6.4.1 Multiple STAs Performance'   0 \
+    --set '6.4.2 Multiple Assoc Stability'    0 \
+    --set '6.4.3 Downlink MU-MIMO'            0 \
+    --set '6.4.4 Multicast'                   0 \
+    --set '6.5.1 Long Term Stability'         0 \
+    --set '6.5.2 AP Coexistence'              0 \
+    --set '6.5.3 Automatic Channel Selection' 0 \
+    --set '6.5.4 BSS Color'                   0 \
+    --set '6.6.1 Mesh Backhaul RvR'           0 \
+    --set '6.6.2 Mesh Backhaul Node-2 RvR'    0 \
+    --set '7.1.1 RSSI Accuracy'               0 \
+    --set '7.1.2 Channel Utilization'         0
+
+echo "Test is complete. Report can be found in $RPT_DIR"
