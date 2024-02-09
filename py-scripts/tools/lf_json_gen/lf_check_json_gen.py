@@ -81,6 +81,10 @@ class json_gen_gui():
         # self.tabControl.add(self.practice_tab, text = 'Practice') # Please Do not Delete.
         self.tabControl.pack(expand = 1, fill ="both")
 
+        self.file_2g = ""
+        self.file_5g = ""
+        self.file_6g = ""
+
         #-----------------------------------------------------------------------------------
         #
         #  Create Rig Json
@@ -187,7 +191,7 @@ class json_gen_gui():
         self.lf_rig_file_entry_var.set("ct_auto_gen_rig.json")
         self.lf_file_entry = tkinter.Entry(self.lf_rig_frame, textvariable = self.lf_rig_file_entry_var)
         self.lf_file_entry.grid(row=3, column=7)
-        self.window_tooltip.bind(self.lf_file_entry, 'Enter test rig json file name')
+        self.window_tooltip.bind(self.lf_file_entry, 'Enter rig json file name and/or path and rig json file name  /home/user/ct_auto_gen_rig.json')
         
         # forth row #TODO can the ATTEN values be read
         self.lf_atten_1 = tkinter.Label(self.lf_rig_frame, text="Atten 1")
@@ -240,7 +244,7 @@ class json_gen_gui():
         # save = ttk.Button(self.lf_rig_frame, text = 'Create Test Rig Json', command = lambda : messagebox.askyesno('Confirm', 'Do you want to save?'))
         self.lf_rig_save = ttk.Button(self.lf_rig_frame, text = 'Create Test Rig Json', command = self.create_rig_json)
         self.lf_rig_save.grid(row=7, column=0, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_rig_save, 'Save rig json file')
+        self.window_tooltip.bind(self.lf_rig_save, 'Create Rig Json')
 
 
         #-----------------------------------------------------------------------------------
@@ -337,7 +341,7 @@ class json_gen_gui():
         self.lf_dut_file_entry_var.set("ct_dut.json")
         self.lf_dut_file_entry = tkinter.Entry(self.lf_dut_frame, textvariable = self.lf_dut_file_entry_var)
         self.lf_dut_file_entry.grid(row=3, column=5)
-        self.window_tooltip.bind(self.lf_dut_file_entry, 'Enter dut json file name')
+        self.window_tooltip.bind(self.lf_dut_file_entry, 'Enter dut json file name and/or path and dut json file name  /home/user/ct_dut.json')
 
 
         # forth row
@@ -456,7 +460,7 @@ class json_gen_gui():
 
         self.lf_dut_save = ttk.Button(self.lf_dut_frame, text = 'Create DUT Json', command = self.create_dut_json)
         self.lf_dut_save.grid(row=self.lf_dut_last_row+2, column=0, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_dut_save, 'Save dut json file')
+        self.window_tooltip.bind(self.lf_dut_save, 'Create DUT Json')
 
 
                 
@@ -669,6 +673,14 @@ or deselect to remove from the test json''')
         self.lf_wc_2g_file_entry.grid(row= 1, column=1, columnspan = 2)
         self.window_tooltip.bind(self.lf_wc_2g_file_entry, '''Auto generated name for Wifi Capacity Test Suite''')
 
+        self.lf_wc_2g_dir = tkinter.Label(self.lf_wc_frame, text='2g json dir')
+        self.lf_wc_2g_dir.grid(row= 1, column= 3)
+        self.lf_wc_2g_dir_entry_var = tkinter.StringVar()
+        self.lf_wc_2g_dir_entry_var.set("")
+        self.lf_wc_2g_dir_entry = tkinter.Entry(self.lf_wc_frame, textvariable = self.lf_wc_2g_dir_entry_var, width = 48)
+        self.lf_wc_2g_dir_entry.grid(row= 1, column=4, columnspan = 2)
+        self.window_tooltip.bind(self.lf_wc_2g_dir_entry, '''Directory for Wifi Capacity Test Suite, if blank will show dir created in''')
+
         self.lf_wc_5g_file = tkinter.Label(self.lf_wc_frame, text='5g json file')
         self.lf_wc_5g_file.grid(row= 2, column= 0)
         self.lf_wc_5g_file_entry_var = tkinter.StringVar()
@@ -676,6 +688,14 @@ or deselect to remove from the test json''')
         self.lf_wc_5g_file_entry = tkinter.Entry(self.lf_wc_frame, textvariable = self.lf_wc_5g_file_entry_var, width = 48)
         self.lf_wc_5g_file_entry.grid(row= 2, column=1, columnspan = 2)
         self.window_tooltip.bind(self.lf_wc_5g_file_entry, '''Auto generated name for Wifi Capacity Test Suite''')
+
+        self.lf_wc_5g_dir = tkinter.Label(self.lf_wc_frame, text='5g json dir')
+        self.lf_wc_5g_dir.grid(row= 2, column= 3)
+        self.lf_wc_5g_dir_entry_var = tkinter.StringVar()
+        self.lf_wc_5g_dir_entry_var.set("")
+        self.lf_wc_5g_dir_entry = tkinter.Entry(self.lf_wc_frame, textvariable = self.lf_wc_5g_dir_entry_var, width = 48)
+        self.lf_wc_5g_dir_entry.grid(row= 2, column=4, columnspan = 2)
+        self.window_tooltip.bind(self.lf_wc_5g_dir_entry, '''Directory for Wifi Capacity Test Suite, if blank will show dir created in''')
 
         self.lf_wc_6g_file = tkinter.Label(self.lf_wc_frame, text='6g json file')
         self.lf_wc_6g_file.grid(row= 3, column= 0)
@@ -685,6 +705,13 @@ or deselect to remove from the test json''')
         self.lf_wc_6g_file_entry.grid(row= 3, column=1, columnspan = 2)
         self.window_tooltip.bind(self.lf_wc_6g_file_entry, '''Auto generated name for Wifi Capacity Test Suite''')
 
+        self.lf_wc_6g_dir = tkinter.Label(self.lf_wc_frame, text='6g json dir')
+        self.lf_wc_6g_dir.grid(row= 3, column= 3)
+        self.lf_wc_6g_dir_entry_var = tkinter.StringVar()
+        self.lf_wc_6g_dir_entry_var.set("")
+        self.lf_wc_6g_dir_entry = tkinter.Entry(self.lf_wc_frame, textvariable = self.lf_wc_6g_dir_entry_var, width = 48)
+        self.lf_wc_6g_dir_entry.grid(row= 3, column=4, columnspan = 2)
+        self.window_tooltip.bind(self.lf_wc_6g_file_entry, '''Directory for Wifi Capacity Test Suite, if blank will show dir created in''')
 
         self.lf_wc_duration = tkinter.Label(self.lf_wc_frame, text='test duration (ms)')
         self.lf_wc_duration.grid(row= 4, column= 0)
@@ -1325,16 +1352,14 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_wc_2g_file_entry_var.set("")
         self.lf_wc_5g_file_entry_var.set("")
         self.lf_wc_6g_file_entry_var.set("")
-        self.lf_wc_duration_combobox.set("")
 
 
 
     def create_wc_json(self):
         # use the auto generated name        
         self.wc_clear_information()
-        self.lf_wc_2g_file_entry_var.get()
-        self.lf_wc_5g_file_entry_var.get()
-        self.lf_wc_6g_file_entry_var.get()
+
+
         wc_duration = self.lf_wc_duration_combobox.get()
         if wc_duration == "":
             self.lf_wc_duration_combobox.set("20000")
@@ -1359,6 +1384,9 @@ lf_inspect will compare performance between two individual runs for Chamber View
                 _file_2g=self.lf_wc_2g_file_entry_var.get(),
                 _file_5g=self.lf_wc_5g_file_entry_var.get(),
                 _file_6g=self.lf_wc_6g_file_entry_var.get(),
+                _dir_2g=self.lf_wc_2g_dir_entry_var.get(),
+                _dir_5g=self.lf_wc_5g_dir_entry_var.get(),
+                _dir_6g=self.lf_wc_6g_dir_entry_var.get(),
                 _wc_duration=self.lf_wc_duration_combobox.get(),
                 _use_radio_dict = self.use_radio_var_dict,
                 _radio_dict = self.radio_dict,
@@ -1392,20 +1420,26 @@ lf_inspect will compare performance between two individual runs for Chamber View
             wc_json.test_suite_band = "2g"
             wc_json.create_suite()
             self.lf_wc_2g_file_entry_var.set(wc_json.get_file_2g())
+            self.lf_wc_2g_dir_entry_var.set(wc_json.get_dir_2g())
         if self.suite_radios_5g  != "":
             wc_json.test_suite_band = "5g"
             wc_json.create_suite()
             self.lf_wc_5g_file_entry_var.set(wc_json.get_file_5g())
+            self.lf_wc_5g_dir_entry_var.set(wc_json.get_dir_5g())
         if self.suite_radios_6g != "":
             wc_json.test_suite_band = "6g"
             wc_json.create_suite()
             self.lf_wc_6g_file_entry_var.set(wc_json.get_file_6g())
+            self.lf_wc_6g_dir_entry_var.set(wc_json.get_dir_6g())
 
 
         if self.suite_radios_2g == "" and self.suite_radios_5g == "" and self.suite_radios_6g == "":
             tkinter.messagebox.showinfo(title="message", message= "Please Read or Select LANforge Radios on LANforge tab" )  
         else:
-            tkinter.messagebox.showinfo(title="success", message= "created \n" + self.lf_wc_2g_file_entry_var.get() +"\n" + self.lf_wc_5g_file_entry_var.get() + "\n" + self.lf_wc_6g_file_entry.get() )  
+            tkinter.messagebox.showinfo(title="success", message= "created \n" + 
+                self.lf_wc_2g_dir_entry_var.get() + "/" + self.lf_wc_2g_file_entry_var.get() +"\n" + 
+                self.lf_wc_5g_dir_entry_var.get() + "/" + self.lf_wc_5g_file_entry_var.get() + "\n" + 
+                self.lf_wc_6g_dir_entry_var.get() + "/" + self.lf_wc_6g_file_entry.get() )  
 
     def dp_rvr_clear_information(self):
         self.lf_dp_rvr_2g_file_entry_var.set("")
