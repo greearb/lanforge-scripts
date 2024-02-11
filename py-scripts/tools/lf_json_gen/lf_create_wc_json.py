@@ -156,17 +156,17 @@ class lf_create_wc_json():
     def get_file_2g(self):
         return self.file_2g
 
-    def get_dir_2g(self):
-        return os.path.dirname(os.path.abspath(self.dir_file_2g))
-
     def get_file_5g(self):
         return self.file_5g
 
-    def get_dir_5g(self):
-        return  os.path.dirname(os.path.abspath(self.dir_file_5g))
-
     def get_file_6g(self):
         return self.file_6g
+
+    def get_dir_2g(self):
+        return os.path.dirname(os.path.abspath(self.dir_file_2g))
+
+    def get_dir_5g(self):
+        return  os.path.dirname(os.path.abspath(self.dir_file_5g))
 
     def get_dir_6g(self):
         return os.path.dirname(os.path.abspath(self.dir_file_6g))

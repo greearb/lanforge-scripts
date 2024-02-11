@@ -52,6 +52,9 @@ class lf_create_dp_rvr_json():
                  _file_2g,
                  _file_5g,
                  _file_6g,
+                 _dir_2g,
+                 _dir_5g,
+                 _dir_6g,
                  _use_radio_dict,
                  _radio_dict,
                  _radio_type_dict,
@@ -129,6 +132,13 @@ class lf_create_dp_rvr_json():
         self.file_5g = ""
         self.file_6g = ""
 
+        self.dir_file_2g = ""
+        self.dir_file_5g = ""
+        self.dir_file_6g = ""
+
+        self.dir_2g = _dir_2g
+        self.dir_5g = _dir_5g
+        self.dir_6g = _dir_6g
 
         self.use_radio_2g_var_dict = _use_radio_2g_var_dict
         self.use_radio_5g_var_dict = _use_radio_5g_var_dict
@@ -162,6 +172,17 @@ class lf_create_dp_rvr_json():
 
     def get_file_6g(self):
         return self.file_6g
+
+    def get_dir_2g(self):
+        return  os.path.dirname(os.path.abspath(self.dir_file_2g))
+
+    def get_dir_5g(self):
+        return  os.path.dirname(os.path.abspath(self.dir_file_5g))
+
+    def get_dir_6g(self):
+        return os.path.dirname(os.path.abspath(self.dir_file_6g))
+
+
 
     # Helper methods
     def create_suite(self):
@@ -202,7 +223,11 @@ class lf_create_dp_rvr_json():
 
         if self.test_suite_band == "2g":
             self.file_2g = self.suite_radios_2g + ".json"
-            file_band_fd = open(self.file_2g, 'w')
+            if self.dir_2g != "":
+                self.dir_file_2g = self.dir_2g + "/" + self.file_2g
+            else:
+                self.dir_file_2g = self.file_2g
+            file_band_fd = open(self.dir_file_2g, 'w')
             self.use_radio_band_var_dict = self.use_radio_2g_var_dict
             self.suite_test_name_band_dict = self.suite_test_name_2g_dict
             band = self.test_suite_band.upper()
@@ -213,7 +238,11 @@ class lf_create_dp_rvr_json():
 
         elif self.test_suite_band == "5g":
             self.file_5g = self.suite_radios_5g + ".json"
-            file_band_fd = open(self.file_5g, 'w')
+            if self.dir_5g != "":
+                self.dir_file_5g = self.dir_5g + "/" + self.file_5g
+            else:
+                self.dir_file_5g = self.file_5g            
+            file_band_fd = open(self.dir_file_5g, 'w')
             self.use_radio_band_var_dict = self.use_radio_5g_var_dict
             self.suite_test_name_band_dict = self.suite_test_name_5g_dict
             band = self.test_suite_band.upper()
@@ -224,7 +253,11 @@ class lf_create_dp_rvr_json():
 
         elif self.test_suite_band == "6g":
             self.file_6g = self.suite_radios_6g + ".json"
-            file_band_fd = open(self.file_6g, 'w')
+            if self.dir_6g != "":
+                self.dir_file_6g = self.dir_6g + "/" + self.file_6g
+            else:
+                self.dir_file_6g = self.file_6g            
+            file_band_fd = open(self.dir_file_6g, 'w')
             self.use_radio_band_var_dict = self.use_radio_6g_var_dict
             self.suite_test_name_band_dict = self.suite_test_name_6g_dict
             band = self.test_suite_band.upper()

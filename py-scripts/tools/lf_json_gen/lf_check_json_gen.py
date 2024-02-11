@@ -896,27 +896,52 @@ May also enter custom Example 0..+100..700''')
         self.lf_dp_rvr_2g_file_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_2g_file_entry_var.set("")
         self.lf_dp_rvr_2g_file_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_2g_file_entry_var, width = 64)
-        self.lf_dp_rvr_2g_file_entry.grid(row= 6, column=1, columnspan = 3)
+        self.lf_dp_rvr_2g_file_entry.grid(row= 6, column=1, columnspan = 2)
         self.window_tooltip.bind(self.lf_dp_rvr_2g_file_entry, '''Auto Generated json file name to be used by lf_check.py would be:
 ./lf_check.py  --json_test <QA generated name>.json:<Qa generated name>''')
 
-        self.lf_dp_rvr_5g_file = tkinter.Label(self.lf_dp_rvr_frame, text='5g json file')
+        self.lf_dp_rvr_2g_dir = tkinter.Label(self.lf_dp_rvr_frame, text='2g json dir')
+        self.lf_dp_rvr_2g_dir.grid(row= 6, column= 3)
+        self.lf_dp_rvr_2g_dir_entry_var = tkinter.StringVar()
+        self.lf_dp_rvr_2g_dir_entry_var.set("")
+        self.lf_dp_rvr_2g_dir_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_2g_dir_entry_var, width = 64)
+        self.lf_dp_rvr_2g_dir_entry.grid(row= 6, column=4, columnspan = 2)
+        self.window_tooltip.bind(self.lf_dp_rvr_2g_dir_entry, '''directory to place json, if blank will auto gen''')
+
+        self.lf_dp_rvr_5g_file = tkinter.Label(self.lf_dp_rvr_frame, text='5g json dir')
         self.lf_dp_rvr_5g_file.grid(row= 7, column= 0)
         self.lf_dp_rvr_5g_file_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_5g_file_entry_var.set("")
         self.lf_dp_rvr_5g_file_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_5g_file_entry_var, width = 64)
-        self.lf_dp_rvr_5g_file_entry.grid(row= 7, column=1, columnspan=3)
-        self.window_tooltip.bind(self.lf_dp_rvr_5g_file_entry, ''''Auto Generated json file name to be used by lf_check.py would be:
+        self.lf_dp_rvr_5g_file_entry.grid(row= 7, column=1, columnspan=2)
+        self.window_tooltip.bind(self.lf_dp_rvr_5g_file_entry, '''Auto Generated json file name to be used by lf_check.py would be:
 ./lf_check.py  --json_test <QA generated name>.json:<Qa generated name>''')
+
+        self.lf_dp_rvr_5g_dir = tkinter.Label(self.lf_dp_rvr_frame, text='5g json file')
+        self.lf_dp_rvr_5g_dir.grid(row= 7, column= 3)
+        self.lf_dp_rvr_5g_dir_entry_var = tkinter.StringVar()
+        self.lf_dp_rvr_5g_dir_entry_var.set("")
+        self.lf_dp_rvr_5g_dir_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_5g_dir_entry_var, width = 64)
+        self.lf_dp_rvr_5g_dir_entry.grid(row= 7, column=4, columnspan=2)
+        self.window_tooltip.bind(self.lf_dp_rvr_5g_dir_entry, '''directory to place json, if blank will auto gen''')
 
         self.lf_dp_rvr_6g_file = tkinter.Label(self.lf_dp_rvr_frame, text='6g json file')
         self.lf_dp_rvr_6g_file.grid(row=8, column= 0)
         self.lf_dp_rvr_6g_file_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_6g_file_entry_var.set("")
         self.lf_dp_rvr_6g_file_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_6g_file_entry_var, width = 64)
-        self.lf_dp_rvr_6g_file_entry.grid(row=8, column=1, columnspan = 3)
+        self.lf_dp_rvr_6g_file_entry.grid(row=8, column=1, columnspan = 2)
         self.window_tooltip.bind(self.lf_dp_rvr_6g_file_entry, ''''Auto Generated json file name to be used by lf_check.py would be:
 ./lf_check.py  --json_test <QA generated name>.json:<Qa generated name>''')
+
+        self.lf_dp_rvr_6g_dir = tkinter.Label(self.lf_dp_rvr_frame, text='6g json dir')
+        self.lf_dp_rvr_6g_dir.grid(row=8, column= 3)
+        self.lf_dp_rvr_6g_dir_entry_var = tkinter.StringVar()
+        self.lf_dp_rvr_6g_dir_entry_var.set("")
+        self.lf_dp_rvr_6g_dir_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_6g_dir_entry_var, width = 64)
+        self.lf_dp_rvr_6g_dir_entry.grid(row=8, column=4, columnspan = 2)
+        self.window_tooltip.bind(self.lf_dp_rvr_6g_dir_entry, '''directory to place json, if blank will auto gen''')
+
 
         self.lf_dp_rvr_duration = tkinter.Label(self.lf_dp_rvr_frame, text='test duration')
         self.lf_dp_rvr_duration.grid(row= 9, column= 0)
@@ -1352,6 +1377,9 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_wc_2g_file_entry_var.set("")
         self.lf_wc_5g_file_entry_var.set("")
         self.lf_wc_6g_file_entry_var.set("")
+        self.lf_wc_2g_dir_entry_var.set("")
+        self.lf_wc_5g_dir_entry_var.set("")
+        self.lf_wc_6g_dir_entry_var.set("")
 
 
 
@@ -1445,6 +1473,10 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_dp_rvr_2g_file_entry_var.set("")
         self.lf_dp_rvr_5g_file_entry_var.set("")
         self.lf_dp_rvr_6g_file_entry_var.set("")
+        self.lf_dp_rvr_2g_dir_entry_var.set("")
+        self.lf_dp_rvr_5g_dir_entry_var.set("")
+        self.lf_dp_rvr_6g_dir_entry_var.set("")
+
         # self.lf_dp_rvr_duration_entry_var.set("")
 
 
@@ -1485,6 +1517,9 @@ lf_inspect will compare performance between two individual runs for Chamber View
                 _file_2g=self.lf_dp_rvr_2g_file_entry_var.get(),
                 _file_5g=self.lf_dp_rvr_5g_file_entry_var.get(),
                 _file_6g=self.lf_dp_rvr_6g_file_entry_var.get(),
+                _dir_2g=self.lf_dp_rvr_2g_dir_entry_var.get(),
+                _dir_5g=self.lf_dp_rvr_5g_dir_entry_var.get(),
+                _dir_6g=self.lf_dp_rvr_6g_dir_entry_var.get(),
                 _use_radio_dict = self.use_radio_var_dict,
                 _radio_dict = self.radio_dict,
                 _radio_type_dict = self.radio_type_dict,
@@ -1524,6 +1559,7 @@ lf_inspect will compare performance between two individual runs for Chamber View
             dp_rvr_json.test_suite_band = "2g"
             dp_rvr_json.create_suite()
             self.lf_dp_rvr_2g_file_entry_var.set(dp_rvr_json.get_file_2g())
+            self.lf_dp_rvr_2g_dir_entry_var.set(dp_rvr_json.get_dir_2g())
         else:
             self.lf_dp_rvr_2g_file_entry_var.set("")
 
@@ -1531,6 +1567,7 @@ lf_inspect will compare performance between two individual runs for Chamber View
             dp_rvr_json.test_suite_band = "5g"
             dp_rvr_json.create_suite()
             self.lf_dp_rvr_5g_file_entry_var.set(dp_rvr_json.get_file_5g())
+            self.lf_dp_rvr_5g_dir_entry_var.set(dp_rvr_json.get_dir_5g())
         else:
             self.lf_dp_rvr_5g_file_entry_var.set("")
 
@@ -1538,6 +1575,7 @@ lf_inspect will compare performance between two individual runs for Chamber View
             dp_rvr_json.test_suite_band = "6g"
             dp_rvr_json.create_suite()
             self.lf_dp_rvr_6g_file_entry_var.set(dp_rvr_json.get_file_6g())
+            self.lf_dp_rvr_6g_dir_entry_var.set(dp_rvr_json.get_dir_6g())
         else:
             self.lf_dp_rvr_6g_file_entry_var.set("")
 
@@ -1545,7 +1583,10 @@ lf_inspect will compare performance between two individual runs for Chamber View
         if self.suite_radios_2g == "" and self.suite_radios_5g == "" and self.suite_radios_6g == "":
             tkinter.messagebox.showinfo(title="message", message= "Please Read or Select LANforge Radios on LANforge tab" )  
         else:
-            tkinter.messagebox.showinfo(title="success", message= "created \n" + self.lf_dp_rvr_2g_file_entry_var.get() +"\n" + self.lf_dp_rvr_5g_file_entry_var.get() + "\n" + self.lf_dp_rvr_6g_file_entry.get() )  
+            tkinter.messagebox.showinfo(title="success", message= "created \n" + 
+                self.lf_dp_rvr_2g_dir_entry_var.get() + "/" + self.lf_dp_rvr_2g_file_entry_var.get() +"\n" + 
+                self.lf_dp_rvr_5g_dir_entry_var.get() + "/" + self.lf_dp_rvr_5g_file_entry_var.get() + "\n" + 
+                self.lf_dp_rvr_6g_dir_entry_var.get() + "/" + self.lf_dp_rvr_6g_file_entry.get() )  
 
 
     def create_dut_json(self):
