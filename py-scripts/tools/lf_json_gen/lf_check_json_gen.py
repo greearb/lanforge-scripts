@@ -1385,7 +1385,7 @@ lf_inspect will compare performance between two individual runs for Chamber View
 
     def create_wc_json(self):
         # use the auto generated name        
-        self.wc_clear_information()
+        # self.wc_clear_information()
 
 
         wc_duration = self.lf_wc_duration_combobox.get()
