@@ -128,9 +128,9 @@ class lf_create_dp_rvr_json():
         self.suite_5g_radios = _suite_radios_5g
         self.suite_6g_radios = _suite_radios_6g
 
-        self.file_2g = ""
-        self.file_5g = ""
-        self.file_6g = ""
+        self.file_2g = _file_2g
+        self.file_5g = _file_5g
+        self.file_6g = _file_6g
 
         self.dir_file_2g = ""
         self.dir_file_5g = ""
@@ -222,7 +222,8 @@ class lf_create_dp_rvr_json():
             notes_title = "ct_tests_scripts"
 
         if self.test_suite_band == "2g":
-            self.file_2g = self.suite_radios_2g + ".json"
+            if self.file_2g == "":
+                self.file_2g = self.suite_radios_2g + ".json"
             if self.dir_2g != "":
                 self.dir_file_2g = self.dir_2g + "/" + self.file_2g
             else:
@@ -237,7 +238,8 @@ class lf_create_dp_rvr_json():
 
 
         elif self.test_suite_band == "5g":
-            self.file_5g = self.suite_radios_5g + ".json"
+            if self.file_5g == "":
+                self.file_5g = self.suite_radios_5g + ".json"
             if self.dir_5g != "":
                 self.dir_file_5g = self.dir_5g + "/" + self.file_5g
             else:
@@ -252,7 +254,8 @@ class lf_create_dp_rvr_json():
 
 
         elif self.test_suite_band == "6g":
-            self.file_6g = self.suite_radios_6g + ".json"
+            if self.file_6g == "":
+                self.file_6g = self.suite_radios_6g + ".json"
             if self.dir_6g != "":
                 self.dir_file_6g = self.dir_6g + "/" + self.file_6g
             else:
