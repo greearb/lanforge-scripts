@@ -106,10 +106,17 @@ class lf_create_wc_json():
         self.dir_2g = _dir_2g
         self.dir_5g = _dir_5g
         self.dir_6g = _dir_6g
+        
+        self.file_2g = _file_2g
+        self.file_5g = _file_5g
+        self.file_6g = _file_6g
 
-        self.file_2g = "ct_perf_wc_2g" + _suite_radios_2g + ".json"
-        self.file_5g = "ct_perf_wc_5g" + _suite_radios_5g + ".json"
-        self.file_6g = "ct_perf_wc_6g" + _suite_radios_6g + ".json"
+        if self.file_2g == "":
+            self.file_2g = "ct_perf_wc_2g" + _suite_radios_2g + ".json"
+        if self.file_5g == "":
+            self.file_5g = "ct_perf_wc_5g" + _suite_radios_5g + ".json"
+        if self.file_6g == "":            
+            self.file_6g = "ct_perf_wc_6g" + _suite_radios_6g + ".json"
 
         self.dir_file_2g = ""
         self.dir_file_5g = ""
