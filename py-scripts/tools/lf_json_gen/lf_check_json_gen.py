@@ -735,6 +735,13 @@ or deselect to remove from the test json''')
         self.window_tooltip.bind(self.lf_wc_sta_profile_combobox, '''Station profile,  when using stations greater then 1 , 
 MU MIMO will perform poor for AX radios for virtual stations greater then one, use STA-AC''')
 
+        self.lf_wc_sta_protocol = tkinter.Label(self.lf_wc_frame, text="Protocol")
+        self.lf_wc_sta_protocol.grid(row=5, column=2)
+        self.lf_wc_sta_protocol_combobox = ttk.Combobox(self.lf_wc_frame, values=["UDP","TCP","UDP-IPv4"])
+        self.lf_wc_sta_protocol_combobox.current(2)
+        self.lf_wc_sta_protocol_combobox.grid(row= 5, column=3)
+        self.window_tooltip.bind(self.lf_wc_sta_protocol_combobox, '''The network traffic protocal type to be generated''')
+
         self.lf_wc_dl_rate = tkinter.Label(self.lf_wc_frame, text="dl_rate")
         self.lf_wc_dl_rate.grid(row=6, column=0)
         self.lf_wc_dl_rate_combobox = ttk.Combobox(self.lf_wc_frame, values=["custom>","0","9.6K","56K","128K","256K","384K","768K","1M",
@@ -752,6 +759,13 @@ MU MIMO will perform poor for AX radios for virtual stations greater then one, u
         self.lf_wc_ul_rate_combobox.current(8)
         self.lf_wc_ul_rate_combobox.grid(row= 6, column=3)
         self.window_tooltip.bind(self.lf_wc_ul_rate_combobox, '''Upload Rate enter number or number followed by K M or G''')
+
+        self.lf_wc_dut_traffic_direction_label = tkinter.Label(self.lf_wc_frame, text="Traffic Direction")
+        self.lf_wc_dut_traffic_direction_label.grid(row=6, column=4)
+        self.lf_wc_dut_traffic_direction_combobox = ttk.Combobox(self.lf_wc_frame, values=["DUT Transmit","DUT Receive","DUT Transmit;DUT Receive"])
+        self.lf_wc_dut_traffic_direction_combobox.current(2)
+        self.lf_wc_dut_traffic_direction_combobox.grid(row=6, column=5)
+        self.window_tooltip.bind(self.lf_wc_dut_traffic_direction_combobox, '''Select DUT Traffic Direction, DUT Transmit is dl_rate, DUT Receive is ul_rate''')
 
         self.lf_wc_use_qa_var = tkinter.StringVar(value="Use")
         self.lf_wc_use_qa_check = tkinter.Checkbutton(self.lf_wc_frame, text="lf_qa", variable=self.lf_wc_use_qa_var,
@@ -1400,6 +1414,9 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_radio_6g_combobox.get()
         self.lf_wc_number_dut_indexes_combobox.get()
         self.lf_wc_sta_profile_combobox.get()
+        self.lf_wc_dut_traffic_direction_combobox.get()
+        self.lf_wc_sta_protocol_combobox.get()
+
 
         ul_rate = self.lf_wc_ul_rate_combobox.get()
 
@@ -1440,8 +1457,9 @@ lf_inspect will compare performance between two individual runs for Chamber View
                 _lf_wc_number_dut_indexes_combobox = self.lf_wc_number_dut_indexes_combobox,
                 _lf_wc_sta_profile_combobox = self.lf_wc_sta_profile_combobox,
                 _ul_rate = ul_rate,
-                _dl_rate = dl_rate
-
+                _dl_rate = dl_rate,
+                _lf_wc_dut_traffic_direction_combobox = self.lf_wc_dut_traffic_direction_combobox,
+                _lf_wc_sta_protocol_combobox = self.lf_wc_sta_protocol_combobox
         )
 
         if self.suite_radios_2g != "":
