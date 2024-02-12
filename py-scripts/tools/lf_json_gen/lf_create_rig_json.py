@@ -90,6 +90,13 @@ class lf_create_rig_json():
         self.lf_email_entry = _lf_email_entry
         self.lf_email_production_entry = _lf_email_production_entry
 
+    # Return path 
+    def get_dir(self):
+        return os.path.dirname(os.path.abspath(self.file))
+
+    def get_file(self):
+        return self.file
+
 
     # Helper methods
     def create(self):
