@@ -79,7 +79,9 @@ class lf_create_wc_json():
                  _lf_wc_number_dut_indexes_combobox,
                  _lf_wc_sta_profile_combobox,
                  _ul_rate,
-                 _dl_rate
+                 _dl_rate,
+                 _lf_wc_dut_traffic_direction_combobox,
+                 _lf_wc_sta_protocol_combobox
                  ):
         self.test_suite_band = ""
         self.use_radio_dict = _use_radio_dict
@@ -100,6 +102,8 @@ class lf_create_wc_json():
 
         self.lf_wc_number_dut_indexes_combobox = _lf_wc_number_dut_indexes_combobox
         self.lf_wc_sta_profile_combobox = _lf_wc_sta_profile_combobox
+        self.lf_wc_dut_traffic_direction_combobox = _lf_wc_dut_traffic_direction_combobox
+        self.lf_wc_sta_protocol_combobox = _lf_wc_sta_protocol_combobox
 
         # TODO Future copy generated file to alternate file (low priority until requeste)
 
@@ -111,12 +115,23 @@ class lf_create_wc_json():
         self.file_5g = _file_5g
         self.file_6g = _file_6g
 
+        self.ul_rate = _ul_rate
+        self.dl_rate = _dl_rate
+
+        self.traffic_direction = ''
+        self.lf_wc_dut_traffic_direction = self.lf_wc_dut_traffic_direction_combobox.get()
+        if "Transmit" in self.lf_wc_dut_traffic_direction:
+            self.traffic_direction += "_tx"
+        if "Receive" in self.lf_wc_dut_traffic_direction:
+            self.traffic_direction += "_rx"
+
+
         if self.file_2g == "":
-            self.file_2g = "ct_perf_wc_2g" + _suite_radios_2g + ".json"
+            self.file_2g = "ct_perf_wc_2g" + _suite_radios_2g + self.traffic_direction + ".json"
         if self.file_5g == "":
-            self.file_5g = "ct_perf_wc_5g" + _suite_radios_5g + ".json"
+            self.file_5g = "ct_perf_wc_5g" + _suite_radios_5g + self.traffic_direction + ".json"
         if self.file_6g == "":            
-            self.file_6g = "ct_perf_wc_6g" + _suite_radios_6g + ".json"
+            self.file_6g = "ct_perf_wc_6g" + _suite_radios_6g + self.traffic_direction + ".json"
 
         self.dir_file_2g = ""
         self.dir_file_5g = ""
@@ -140,19 +155,17 @@ class lf_create_wc_json():
         if _wc_duration == "":
             self.wc_duration = '20000'
         else:
-            self.wc_duration = _wc_duration
+            self.wc_duration = _wc_duration.split(' ', 1)[0]
 
-        self.ul_rate = _ul_rate
-        self.dl_rate = _dl_rate
 
 
         self.use_radio_2g_var_dict = _use_radio_2g_var_dict
         self.use_radio_5g_var_dict = _use_radio_5g_var_dict
         self.use_radio_6g_var_dict = _use_radio_6g_var_dict
 
-        self.suite_radios_2g = "ct_perf_wc_2g" + _suite_radios_2g
-        self.suite_radios_5g = "ct_perf_wc_5g" + _suite_radios_5g
-        self.suite_radios_6g = "ct_perf_wc_6g" + _suite_radios_6g
+        self.suite_radios_2g = "ct_perf_wc_2g" + _suite_radios_2g + self.traffic_direction
+        self.suite_radios_5g = "ct_perf_wc_5g" + _suite_radios_5g + self.traffic_direction
+        self.suite_radios_6g = "ct_perf_wc_6g" + _suite_radios_6g + self.traffic_direction
 
         self.suite_test_name_2g_dict = _suite_test_name_2g_dict
         self.suite_test_name_5g_dict = _suite_test_name_5g_dict
@@ -220,9 +233,18 @@ class lf_create_wc_json():
                 dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'","""
             else:                
                 dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",\n """
-        
-        dl_rate = self.dl_rate
-        ul_rate = self.ul_rate
+
+        # The perspective is with regards to the DUT
+        if "tx" in self.traffic_direction:
+            dl_rate = self.dl_rate
+        else: 
+            dl_rate = "0"
+        if "rx" in self.traffic_direction:
+            ul_rate = self.ul_rate
+        else:
+            ul_rate = "0"
+
+        lf_wc_sta_protocol =   self.lf_wc_sta_protocol_combobox.get()
 
         self.wc_band_json = """
 {{
@@ -294,7 +316,7 @@ class lf_create_wc_json():
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name {wc_test_name}",
-                    " --upstream UPSTREAM_PORT --batch_size {wc_batch_size} --loop_iter 1 --protocol UDP-IPv4 --duration {wc_duration}",
+                    " --upstream UPSTREAM_PORT --batch_size {wc_batch_size} --loop_iter 1 --protocol {lf_wc_sta_protocol} --duration {wc_duration}",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{wc_test_name}'",
                     " --test_rig TEST_RIG ",
                     " --upload_rate {ul_rate}'",
