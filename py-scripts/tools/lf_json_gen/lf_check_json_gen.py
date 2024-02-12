@@ -7,6 +7,7 @@ from tkinter import StringVar
 import requests
 import importlib
 import sys
+import os
 import logging
 import argparse
 
@@ -53,6 +54,8 @@ class json_gen_gui():
         # https://stackoverflow.com/questions/63681382/how-to-add-hover-feature-for-text-description-on-a-tkinter-button
         # tool tips
         Pmw.initialise(self.window)
+
+        self.current_working_directory = os.getcwd()
 
         self.max_radios = self.radio_count
 
@@ -244,7 +247,8 @@ class json_gen_gui():
         # save = ttk.Button(self.lf_rig_frame, text = 'Create Test Rig Json', command = lambda : messagebox.askyesno('Confirm', 'Do you want to save?'))
         self.lf_rig_save = ttk.Button(self.lf_rig_frame, text = 'Create Test Rig Json', command = self.create_rig_json)
         self.lf_rig_save.grid(row=7, column=0, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_rig_save, 'Create Rig Json')
+        rig_tool_tip_text = "Create Rig Json, In Current Working Directory: {}".format(self.current_working_directory)
+        self.window_tooltip.bind(self.lf_rig_save, rig_tool_tip_text)
 
 
         #-----------------------------------------------------------------------------------
@@ -341,7 +345,8 @@ class json_gen_gui():
         self.lf_dut_file_entry_var.set("ct_dut.json")
         self.lf_dut_file_entry = tkinter.Entry(self.lf_dut_frame, textvariable = self.lf_dut_file_entry_var)
         self.lf_dut_file_entry.grid(row=3, column=5)
-        self.window_tooltip.bind(self.lf_dut_file_entry, 'Enter dut json file name and/or path and dut json file name  /home/user/ct_dut.json')
+        dut_file_tool_tip_text = "Specify directory in 'json file' entry or will create \n In Current Working Directory: {}".format(self.current_working_directory)
+        self.window_tooltip.bind(self.lf_dut_file_entry, dut_file_tool_tip_text)
 
 
         # forth row
@@ -460,7 +465,8 @@ class json_gen_gui():
 
         self.lf_dut_save = ttk.Button(self.lf_dut_frame, text = 'Create DUT Json', command = self.create_dut_json)
         self.lf_dut_save.grid(row=self.lf_dut_last_row+2, column=0, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_dut_save, 'Create DUT Json')
+        dut_tool_tip_text = "Specify directory in 'json file' entry or will create \n In Current Working Directory: {}".format(self.current_working_directory)
+        self.window_tooltip.bind(self.lf_dut_save, dut_tool_tip_text)
 
 
                 
@@ -785,7 +791,8 @@ lf_inspect will compare performance between two individual runs for Chamber View
 
         self.lf_wc_save = ttk.Button(self.lf_wc_frame, text = 'Create Wifi Capacity Test Suite Json', command = self.create_wc_json)
         self.lf_wc_save.grid(row=8, column=0, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_wc_save, 'Save Wifi Capacity Json File')
+        wc_tool_tip_text = "Save Wifi Capacity Json File in directory specified in 'json dir' entry or will create \n In Current Working Directory: {}".format(self.current_working_directory)
+        self.window_tooltip.bind(self.lf_wc_save, wc_tool_tip_text)
 
 
         self.lf_wc_clear = ttk.Button(self.lf_wc_frame, text = 'Clear WC Info', command = self.wc_clear_information)
@@ -990,11 +997,13 @@ lf_inspect will compare performance between two individual runs for Chamber View
 
         self.lf_dp_rvr_save = ttk.Button(self.lf_dp_rvr_frame, text = 'Create DP Suite', command = self.create_dp_json)
         self.lf_dp_rvr_save.grid(row=11, column=0, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_dp_rvr_save, 'Save Data Plane suite Json File')
+        dp_tool_tip_text = "Save Data Plane Json File in directory specified in 'json dir' entry or will create \n In Current Working Directory: {}".format(self.current_working_directory)
+        self.window_tooltip.bind(self.lf_dp_rvr_save, dp_tool_tip_text)
 
         self.lf_dp_rvr_save = ttk.Button(self.lf_dp_rvr_frame, text = 'Create RvR Suite', command = self.create_rvr_json)
         self.lf_dp_rvr_save.grid(row=11, column=1, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_dp_rvr_save, 'Save RvR test suite Json File')
+        rvr_tool_tip_text = "Save RvR test suite Json File in directory specified in 'json dir' entry or will create \n In Current Working Directory: {}".format(self.current_working_directory)
+        self.window_tooltip.bind(self.lf_dp_rvr_save, rvr_tool_tip_text)
 
 
         self.lf_dp_rvr_clear = ttk.Button(self.lf_dp_rvr_frame, text = 'Clear DP, RvR Info', command = self.dp_rvr_clear_information)
@@ -1637,7 +1646,10 @@ lf_inspect will compare performance between two individual runs for Chamber View
                             )
         
         dut_json.create()
-        tkinter.messagebox.showinfo(title="success", message= self.lf_dut_file_entry_var.get() + " created")  
+        dut_dir = dut_json.get_dir()
+        dut_file = dut_json.get_file()
+        # tkinter.messagebox.showinfo(title="success", message= self.lf_dut_file_entry_var.get() + " created")  
+        tkinter.messagebox.showinfo(title="success", message= dut_dir + "/" + dut_file + " created")  
 
 
     def get_lanforge_radio_information(self):
