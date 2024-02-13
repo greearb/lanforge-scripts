@@ -88,7 +88,13 @@ class lf_create_dut_json():
         self.last_idx = 0
 
 
-        # create wifi dictionary, ssid indx
+    # Return path 
+    def get_dir(self):
+        return os.path.dirname(os.path.abspath(self.file))
+
+    def get_file(self):
+        return self.file
+    
 
     # Helper methods
     def create(self):
