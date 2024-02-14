@@ -610,6 +610,7 @@ class L3VariableTime(Realm):
                  use_existing_station_lists=False,
                  existing_station_lists=None,
                  wait_for_ip_sec="120s",
+                 exit_on_ip_acquired=False,
                  csv_data_to_report=False,
 
                  # ap module
@@ -759,6 +760,7 @@ class L3VariableTime(Realm):
         self.existing_station_lists = existing_station_lists
 
         self.wait_for_ip_sec = self.duration_time_to_seconds(wait_for_ip_sec)
+        self.exit_on_ip_acquired = exit_on_ip_acquired
 
         self.attenuators = attenuators
         self.atten_vals = atten_vals
@@ -1725,6 +1727,9 @@ class L3VariableTime(Realm):
 
         if self.wait_for_ip(temp_stations_list_with_side_b, timeout_sec=self.wait_for_ip_sec):
             logger.info("ip's acquired")
+            if self.exit_on_ip_acquired:
+                logger.info("exit_on_ip_acquired")
+                exit(1)
         else:
             # No reason to continue
             logger.critical(
@@ -6029,6 +6034,9 @@ INCLUDE_IN_README: False
     test_l3_parser.add_argument(
         '--wait_for_ip_sec', help='--wait_for_ip_sec <seconds>  default : 120s ', default="120s")
 
+    test_l3_parser.add_argument(
+        '--exit_on_ip_acquired', help='--exit_on_ip_acquired store true', action='store_true')
+
     # logging configuration
     test_l3_parser.add_argument(
         "--lf_logger_config_json",
@@ -6712,6 +6720,7 @@ INCLUDE_IN_README: False
         use_existing_station_lists=args.use_existing_station_list,
         existing_station_lists=existing_station_lists,
         wait_for_ip_sec=args.wait_for_ip_sec,
+        exit_on_ip_acquired=args.exit_on_ip_acquired,
         ap_read=args.ap_read,
         ap_module=args.ap_module,
         ap_test_mode=args.ap_test_mode,
