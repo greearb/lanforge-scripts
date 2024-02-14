@@ -1,31 +1,144 @@
 #!/bin/bash
+#
+# NAME:
+#   Dataplane.bash
+#
+# PURPOSE:
+#   Automation script to run the 'Dataplane' Chamber View test.
+#
+# USAGE:
+#   ./Dataplane.bash
+#
+# SUMMARY:
+#   This bash script performs the following:
+#     - Creates/updates a DUT
+#     - Creates/updates a Chamber View scenario
+#     - Loads and builds the scenario
+#     - Runs the 'Dataplane' test, saving generated reports
+#
+#   See the README in the 'cv_examples' directory for more information.
+set -x
 
-## NOTES ##
+# 0. TEST CONFIGURATION
+#
+# NOTE: If you change MGR to a remote IP, ensure that the IP address
+#       is the same as the machine running the LANforge GUI.
+#
+# General configuration
+MGR=localhost                               # Substitute for manager LANforge IP if running script remotely
+MGR_PORT=8080                               # Unlikely this needs to change
+TESTBED=Example-Testbed                     # Name of your testbed as it appears in report
+
+LF_SCRIPTS=/home/lanforge/lanforge-scripts  # Modify this to point at your copy of LANforge scripts.
+LF_PY_SCRIPTS=$LF_SCRIPTS/py-scripts        # Directory of LANforge Python scripts.
+                                            # Useful if running this script in another directory.
+
+TEST_CFG=Dataplane.cfg                      # 'Dataplane' test config file. If not specified in test script
+                                            # CLI, then any unspecified options will use default test values.
+
+RPT_DIR=/tmp/Dataplane_reports              # Output directory for generated reports and associated data
+
+# Chamber View Scenario name
+CV_SCENARIO_NAME=Dataplane_Automated_Test
+
+# Upstream configuration
+UPSTREAM_RSRC=1.2                           # In form Shelf.Resource. Shelf is almost always '1'
+UPSTREAM_PORT=eth3                          # Name or alias of port. Usually an Ethernet port
+UPSTREAM=$UPSTREAM_RSRC.$UPSTREAM_PORT      # Combined to form EID
+
+# DUT configuration
+#
+# NOTE: Do not put quotes around these values as some of them
+#       will be substituted into other strings.
+DUT_NAME=Dataplane_DUT                      # Name of DUT as it appears in report
+
+SSID_2G=test_ssid_2ghz                      # 2.4GHz radio SSID
+BSSID_2G=00:00:00:00:00:02                  # 2.4GHz radio BSSID
+PASSWD_2G=test_passwd                       # 2.4GHz radio password
+AUTH_2G=WPA2\|WPA3                          # 2.4GHz radio authentication type
+
+SSID_5G=test_ssid_5ghz                      # 5GHz radio SSID
+BSSID_5G=00:00:00:00:00:05                  # 5GHz radio BSSID
+PASSWD_5G=test_passwd                       # 5GHz radio password
+AUTH_5G=WPA2\|WPA3                          # 5GHz radio authentication type
+
+SSID_6G=test_ssid_6ghz                      # 6GHz radio SSID
+BSSID_6G=00:00:00:00:00:06                  # 6GHz radio BSSID
+PASSWD_6G=test_passwd                       # 6GHz radio password
+AUTH_6G=WPA3                                # 6GHz radio authentication type
+
+# Allow sourcing a file to override the configuration values set above.
+if [ -f local.cfg ]
+then
+    . local.cfg
+fi
 
 
-# Define some common variables.  Change these to match the current testbed.
-MGR=192.168.102.211
-PORT=8080
-DUT_NAME="TEST_DUT"
+# 1. CREATE/UPDATE NEW DUT
+#
+# NOTE: Separate SSID option arguments with spaces and ensure the keys are lowercase
+echo "Creating/Updating DUT \'$DUT_NAME\'"
 
-# Create/update new DUT.
-#Replace my arguments with your setup.  Separate your ssid arguments with spaces and ensure the names are lowercase
-echo "Make DUT"
-./create_chamberview_dut.py --lfmgr ${MGR} -o ${PORT} --dut_name ${DUT_NAME} --dut_flag="DHCPD-LAN" --dut_flag="DHCPD-WAN" \
---ssid "ssid_idx=0 ssid=eero-mesh-lanforge security=WPA2 password=lanforge bssid=64:97:14:64:D9:06" \
---ssid "ssid_idx=1 ssid=eero-mesh-lanforge security=WPA2 password=lanforge bssid=64:97:14:64:D9:07"
-
-
-# Create/update chamber view scenario and apply and build it.
-echo "Build Chamber View Scenario"
-#change the lfmgr to your system, set the radio to a working radio on your LANforge system, same with the ethernet port.
-./create_chamberview.py --mgr ${MGR} --mgr_port ${PORT} --delete_scenario --create_scenario TEST_SCENARIO \
---line "Resource=1.1 Profile=STA-AX Amount=1 Uses-1=wiphy0 DUT="${DUT_NAME}" DUT_Radio=Radio-1 Traffic=http Freq=-1" \
---line "Resource=1.1 Profile=upstream-dhcp Amount=1 Uses-1=eth2 Traffic=NA Freq=-1 " \
---line "Resource=1.1 Profile=uplink-nat Amount=1 Uses-1=eth3 Uses-2=eth2 Traffic=voip DUT=upstream DUT_Radio=LAN Freq=-1"
+$LF_PY_SCRIPTS/create_chamberview_dut.py \
+    --lfmgr       $MGR \
+    --port        $MGR_PORT \
+    --dut_name    $DUT_NAME \
+    --ssid        "ssid_idx=0 ssid=$SSID_2G security=$AUTH_2G password=$PASSWD_2G bssid=$BSSID_2G" \
+    --ssid        "ssid_idx=1 ssid=$SSID_5G security=$AUTH_5G password=$PASSWD_5G bssid=$BSSID_5G" \
+    --ssid        "ssid_idx=2 ssid=$SSID_6G security=$AUTH_6G password=$PASSWD_6G bssid=$BSSID_6G" \
+    --sw_version  "beta-beta" \
+    --hw_version  "beta-6e" \
+    --serial_num  "001" \
+    --model_num   "test"
 
 
-#Run dataplane test
-echo "Run Dataplane Test"
-./lf_dataplane_test.py --mgr ${MGR} -o ${PORT} --instance_name dataplane-inst --upstream 1.01.eth2 --download_speed "85%" --upload_speed "10%" --station 1.01.wlan0 --dut {$DUT_NAME} \
---raw_line "pkts: Custom;60;MTU" --raw_line "cust_pkt_sz: 88 1200" --raw_line "directions: DUT Transmit" --raw_line "traffic_types: UDP"
+# 2. CREATE/UPDATE AND BUILD CHAMBER VIEW SCENARIO
+#
+# NOTE: You will need to update this any time you change your Chamber View Scenario.
+#
+# See README in same directory for instructions on building a
+# Chamber View scenario with the `create_chamberview.py` script.
+printf "Build Chamber View Scenario with DUT \'$DUT_NAME\' and upstream \'$UPSTREAM_PORT\'"
+
+# This example creates the following:
+#   - LAN Ethernet upstream w/ DHCP enabled (the 'DUT $DUT_NAME LAN')
+#   - One AUTO 802.11 mode STA on radio wiphy0 which will associate to the
+#     second AP BSSID (5GHz in this example, the 'DUT $DUT_NAME Radio-2')
+$LF_PY_SCRIPTS/create_chamberview.py \
+    --lfmgr $MGR \
+    --port $MGR_PORT \
+    --delete_scenario \
+    --create_scenario $CV_SCENARIO_NAME \
+    --raw_line "profile_link 1.1 upstream 1 'DUT: $DUT_NAME LAN'     NA $UPSTREAM_PORT,AUTO -1 NA" \
+    --raw_line "profile_link 1.1 STA-AUTO 1 'DUT: $DUT_NAME Radio-2' NA wiphy0,AUTO         -1 NA"
+
+
+# 3. RUN 'Dataplane' TEST
+#
+# See README in same directory for instructions on building a
+# Chamber View scenario with the 'lf_dataplane_test.py' script.
+printf "Starting Dataplane test"
+
+# TODO: `--station` selection is hardcoded
+$LF_PY_SCRIPTS/lf_dataplane_test.py \
+    --mgr                 $MGR \
+    --port                $MGR_PORT \
+    --lf_user             "lanforge" \
+    --lf_password         "lanforge" \
+    --instance_name       "dataplane-instance" \
+    --config_name         "test_con" \
+    --test_rig            $TESTBED \
+    --pull_report \
+    --local_lf_report_dir $RPT_DIR \
+    --raw_lines_file      $TEST_CFG \
+    --dut                 $DUT_NAME \
+    --upstream            $UPSTREAM \
+    --station             1.1.wlan0 \
+    --download_speed      "85%" \
+    --upload_speed        "10%" \
+    --raw_line            "pkts: Custom;60;MTU" \
+    --raw_line            "cust_pkt_sz: 88 1200" \
+    --raw_line            "directions: DUT Transmit" \
+    --raw_line            "traffic_types: UDP"
+
+echo "Test is complete. Report can be found in $RPT_DIR"
