@@ -2804,6 +2804,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
 
     # save the environment _properties
+    allure_latest = "latest_allure={}/allure-report-latest/\n".format(os.path.dirname(os.path.dirname(lf_check_test_suite_list[0])))
     kernel_version = "kernel={}\n".format(lanforge_kernel_version)
     gui_version = "gui_version={}\n".format(lanforge_gui_version)
     gui_build_date = "gui_build_date={}\n".format(lanforge_gui_build_date)
@@ -2811,8 +2812,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     lanforge = "lanforge={}\n".format(lanforge_system_node_version)
     #suites = "suites={}\n".format(lf_check_test_suite_list)
 
-    allure_environment_properties = "{kernel_version} {gui_version} {gui_build_date} {lanforge_ip} {lanforge}".format(
-        kernel_version=kernel_version,gui_version=gui_version,gui_build_date=gui_build_date,lanforge_ip=lanforge_ip,lanforge=lanforge
+    allure_environment_properties = "{allure_latest} {kernel_version} {gui_version} {gui_build_date} {lanforge_ip} {lanforge}".format(
+        allure_latest=allure_latest,kernel_version=kernel_version,gui_version=gui_version,gui_build_date=gui_build_date,lanforge_ip=lanforge_ip,lanforge=lanforge
     )
 
     if lf_check_test_suite_list:
