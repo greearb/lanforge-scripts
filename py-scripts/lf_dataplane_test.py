@@ -233,6 +233,8 @@ class DataplaneTest(cv_test):
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
+        # NOTE: Do not move these into the function definition.
+        #       Otherwise, they will become immutable lists
         if enables is None:
             enables = []
         if disables is None:
@@ -241,32 +243,33 @@ class DataplaneTest(cv_test):
             raw_lines = []
         if sets is None:
             sets = []
-        self.lf_host = lf_host
-        self.lf_port = lf_port
-        self.lf_user = lf_user
-        self.lf_password = lf_password
-        self.instance_name = instance_name
-        self.config_name = config_name
-        self.dut = dut
-        self.duration = duration
-        self.upstream = upstream
-        self.station = station
-        self.pull_report = pull_report
-        self.load_old_cfg = load_old_cfg
-        self.test_name = "Dataplane"
-        self.upload_speed = upload_speed
-        self.download_speed = download_speed
-        self.enables = enables
-        self.disables = disables
-        self.raw_lines = raw_lines
-        self.raw_lines_file = raw_lines_file
-        self.sets = sets
-        self.graph_groups = graph_groups
-        self.ssh_port = ssh_port
-        self.local_lf_report_dir = local_lf_report_dir
-        self.test_rig = test_rig
-        self.test_tag = test_tag
-        self.verbosity = verbosity
+
+        self.lf_host                = lf_host
+        self.lf_port                = lf_port
+        self.lf_user                = lf_user
+        self.lf_password            = lf_password
+        self.instance_name          = instance_name
+        self.config_name            = config_name
+        self.dut                    = dut
+        self.duration               = duration
+        self.upstream               = upstream
+        self.station                = station
+        self.pull_report            = pull_report
+        self.load_old_cfg           = load_old_cfg
+        self.test_name              = "Dataplane"
+        self.upload_speed           = upload_speed
+        self.download_speed         = download_speed
+        self.enables                = enables
+        self.disables               = disables
+        self.raw_lines              = raw_lines
+        self.raw_lines_file         = raw_lines_file
+        self.sets                   = sets
+        self.graph_groups           = graph_groups
+        self.ssh_port               = ssh_port
+        self.local_lf_report_dir    = local_lf_report_dir
+        self.test_rig               = test_rig
+        self.test_tag               = test_tag
+        self.verbosity              = verbosity
 
     def setup(self):
         # Nothing to do at this time.
