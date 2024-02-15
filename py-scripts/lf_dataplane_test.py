@@ -532,34 +532,48 @@ INCLUDE_IN_README: False
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
-    parser.add_argument(
-        '--json', help="--json <config.json> json input file", default="")
-    parser.add_argument(
-        '--influx_json', help="--influx_json <influx_config.json> influx config json input file", default="")
-    parser.add_argument("-u", "--upstream", type=str, default="",
+    parser.add_argument('--json',
+                        help="--json <config.json> json input file",
+                        default="")
+    parser.add_argument('--influx_json',
+                        help="--influx_json <influx_config.json> influx config json input file",
+                        default="")
+    parser.add_argument("-u", "--upstream",
+                        type=str,
+                        default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
-    parser.add_argument("--station", type=str, default="",
+    parser.add_argument("--station",
+                        type=str,
+                        default="",
                         help="Station to be used in this test, example: 1.1.sta01500")
-
-    parser.add_argument("--dut", default="",
+    parser.add_argument("--dut",
+                        default="",
                         help="Specify DUT used by this test, example: linksys-8450")
-    parser.add_argument("--download_speed", default="",
+    parser.add_argument("--download_speed",
+                        default="",
                         help="Specify requested download speed.  Percentage of theoretical is also supported. Default: 85%%.")
-    parser.add_argument("--upload_speed", default="",
+    parser.add_argument("--upload_speed",
+                        default="",
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
-    parser.add_argument("--duration", default="",
+    parser.add_argument("--duration",
+                        default="",
                         help="Specify duration of each traffic run")
-    parser.add_argument("--verbosity", default="5",help="Specify verbosity of the report values 1 - 11 default 5")
-    parser.add_argument(
-        "--graph_groups", help="File to save graph_groups to", default=None)
+    parser.add_argument("--verbosity",
+                        default="5",
+                        help="Specify verbosity of the report values 1 - 11 default 5")
+    parser.add_argument("--graph_groups",
+                        help="File to save graph_groups to",
+                        default=None)
     parser.add_argument("--local_lf_report_dir",
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
                         default="")
 
-    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
-    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')    
-
-
+    parser.add_argument("--lf_logger_config_json",
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--help_summary',
+                        default=None,
+                        action="store_true",
+                        help='Show summary of what this script does')    
 
     # TODO:  Add debug and log-level support, and propagate as needed.
     # TODO:  Add ability to pull from a machine that is not running the
