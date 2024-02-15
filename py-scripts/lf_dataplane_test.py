@@ -280,15 +280,20 @@ class DataplaneTest(cv_test):
         blob_test = "dataplane-test-latest-"
 
         # To delete old config with same name
-        self.rm_text_blob(self.config_name, blob_test)
-        self.show_text_blob(None, None, False)
+        self.rm_text_blob(config_name=self.config_name,
+                          blob_test_name=blob_test)
+        self.show_text_blob(config_name=None,
+                            blob_test_name=None,
+                            brief=False)
 
         # Test related settings
         cfg_options = []
 
-        ### HERE###
-        self.apply_cfg_options(cfg_options, self.enables,
-                               self.disables, self.raw_lines, self.raw_lines_file)
+        self.apply_cfg_options(cfg_options=cfg_options,
+                               enables=self.enables,
+                               disables=self.disables,
+                               raw_lines=self.raw_lines,
+                               raw_lines_file=self.raw_lines_file)
 
         # cmd line args take precedence and so come last in the cfg array.
         if self.upstream != "":
@@ -310,20 +315,31 @@ class DataplaneTest(cv_test):
 
         # We deleted the scenario earlier, now re-build new one line at a time.
 
-        self.build_cfg(self.config_name, blob_test, cfg_options)
+        self.build_cfg(config_name=self.config_name,
+                       blob_test=blob_test,
+                       cfg_options=cfg_options)
 
         cv_cmds = []
 
         cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name,self.verbosity)
         cv_cmds.append(cmd)
 
-        self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
-                                 self.config_name, self.sets,
-                                 self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds, ssh_port=self.ssh_port, local_lf_report_dir=self.local_lf_report_dir,
+        self.create_and_run_test(load_old_cfg=self.load_old_cfg,
+                                 test_name=self.test_name,
+                                 instance_name=self.instance_name,
+                                 config_name=self.config_name,
+                                 sets=self.sets,
+                                 pull_report=self.pull_report,
+                                 lf_host=self.lf_host,
+                                 lf_user=self.lf_user,
+                                 lf_password=self.lf_password,
+                                 cv_cmds=cv_cmds,
+                                 ssh_port=self.ssh_port,
+                                 local_lf_report_dir=self.local_lf_report_dir,
                                  graph_groups_file=self.graph_groups)
         # To delete old config with same name
-        self.rm_text_blob(self.config_name, blob_test)
+        self.rm_text_blob(config_name=self.config_name,
+                          blob_test_name=blob_test)
 
 
 def main():
