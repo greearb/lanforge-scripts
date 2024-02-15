@@ -53,7 +53,9 @@ echo "Make new DUT"
   --ssid "ssid_idx=0 ssid=$SSID security=WPA2 password=$PASSWD bssid=$BSSID2" \
   --ssid "ssid_idx=1 ssid=$SSID security=WPA2 password=$PASSWD bssid=$BSSID5" \
   --ssid "ssid_idx=2 ssid=$SSID security=WPA3 password=$PASSWD bssid=$BSSID6" \
-  --sw_version "beta-beta" --hw_version beta-6e --serial_num 666 --model_num test
+  --sw_version "beta-beta" --hw_version beta-6e --serial_num 666 --model_num test \
+  --dut_flag "AP_MODE" \
+  --dut_flag "DHCPD-LAN"
 
 # Create/update chamber view scenario and apply and build it.
 # Easiest way to get these lines is to build the scenario in the LANforge GUI and then

@@ -89,7 +89,9 @@ $LF_PY_SCRIPTS/create_chamberview_dut.py \
     --sw_version  "beta-beta" \
     --hw_version  "beta-6e" \
     --serial_num  "001" \
-    --model_num   "test"
+    --model_num   "test" \
+    --dut_flag    "AP_MODE" \
+    --dut_flag    "DHCPD-LAN"
 
 
 # 2. CREATE/UPDATE AND BUILD CHAMBER VIEW SCENARIO
