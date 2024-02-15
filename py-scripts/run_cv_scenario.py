@@ -189,14 +189,14 @@ class RunCvScenario(LFCliBase):
         # /gui_cli takes commands keyed on 'cmd', so we create an array of commands
         commands = []
         if self.cv_scenario and self.cv_scenario != "DFLT":
-            commands.append("cv sync",
+            commands.extend(["cv sync",
                             "sleep 4",
                             "cv apply '%s'" % self.cv_scenario,
                             "sleep 4",
                             "cv build",
                             "sleep 4",
                             "cv is_built",
-                            )
+                            ])
         commands.extend(["cv sync",
                          "echo -  waiting to sync",
                          "sleep 4",
