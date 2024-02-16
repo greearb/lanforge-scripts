@@ -154,8 +154,12 @@ class TR398v4Test(cvtest):
 
         blob_test = "TR-398v4-"
 
-        self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
-        self.show_text_blob(None, None, False)
+        # To delete old config with same name
+        self.rm_text_blob(config_name=self.config_name,
+                          blob_test_name=blob_test)
+        self.show_text_blob(config_name=None,
+                            blob_test_name=None,
+                            brief=False)
 
         # Test related settings
 
@@ -163,7 +167,11 @@ class TR398v4Test(cvtest):
         # all cfgs are added to the cfg options and the array will be read top to bottom. so last cfg option will override the old c
         cfg_options = []
 
-        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
+        self.apply_cfg_options(cfg_options=cfg_options,
+                               enables=self.enables,
+                               disables=self.disables,
+                               raw_lines=self.raw_lines,
+                               raw_lines_file=self.raw_lines_file)
 
         # cmd line args take precedence
         if self.upstream != "":
@@ -179,15 +187,26 @@ class TR398v4Test(cvtest):
 
         # We deleted the scenario earlier, now re-build new one line at a time.
         # print("here are the cfg options: ", cfg_options)
-        self.build_cfg(self.config_name, blob_test, cfg_options)
+        self.build_cfg(config_name=self.config_name,
+                       blob_test=blob_test,
+                       cfg_options=cfg_options)
 
         cv_cmds = []
-        self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
-                                 self.config_name, self.sets,
-                                 self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds, local_lf_report_dir=self.local_lf_report_dir)
+        self.create_and_run_test(load_old_cfg=self.load_old_cfg,
+                                 test_name=self.test_name,
+                                 instance_name=self.instance_name,
+                                 config_name=self.config_name,
+                                 sets=self.sets,
+                                 pull_report=self.pull_report,
+                                 lf_host=self.lf_host,
+                                 lf_user=self.lf_user,
+                                 lf_password=self.lf_password,
+                                 cv_cmds=cv_cmds,
+                                 local_lf_report_dir=self.local_lf_report_dir)
 
-        self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
+        # To delete old config with same name
+        self.rm_text_blob(config_name=self.config_name,
+                          blob_test_name=blob_test)
 
 
 def main():
