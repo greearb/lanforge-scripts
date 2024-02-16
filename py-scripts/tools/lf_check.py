@@ -564,6 +564,26 @@ class lf_check():
         time.sleep(1)
         return self.lanforge_gui_version_full, self.lanforge_gui_version, self.lanforge_gui_build_date, self.lanforge_gui_git_sha
 
+    def no_send_results_email(self, report_file=None):
+        if (report_file is None):
+            self.logger.info("No report file, not sending email.")
+            return
+        report_url = report_file.replace('/home/lanforge/', '')
+        if report_url.startswith('/'):
+            report_url = report_url[1:]
+
+        # following recommendation
+        # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
+        # Mail
+        # command to check if mail running : systemctl status postfix
+        # command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
+        self.hostname = socket.getfqdn()
+        self.server_ip = socket.gethostbyname(self.hostname)
+
+        self.lf_check_link = "http://{hostname}/{report}".format(
+            hostname=self.server_ip, report=report_url)
+
+
 
     def send_results_email(self, report_file=None):
         if (report_file is None):
@@ -589,6 +609,8 @@ class lf_check():
         # command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
         self.hostname = socket.getfqdn()
         self.server_ip = socket.gethostbyname(self.hostname)
+
+        # IF email is not sent we still need the link 
 
         # a hostname lacking dots by definition lacks a domain name
         # this is not useful for hyperlinks outside the known domain, so an IP
@@ -2706,12 +2728,13 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                 if not os.path.exists(allure_results_path):
                     os.makedirs(allure_results_path)
 
-
                 # copy junit_xml from suite to results
                 shutil.copy2(junit_xml,allure_results_path)
 
                 check.set_junit_results(junit_xml)
                 check.set_junit_path_only(junit_path_only)
+
+                allure_report_path_latest = str(report.get_path()) + "/allure-report-latest"
 
                 # Allure report history
                 # TODO move to generation being at the end of all suites
@@ -2720,9 +2743,13 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
 
                 # Send email
-                if args.no_send_email or check.email_list_test == "":
-                    logger.info(
-                        "send email not set or email_list_test not set")
+                if args.no_send_email:
+                    logger.info("send email not set")
+                    # need to make the correct allure links
+                    check.no_send_results_email(report_file=html_report)
+                elif check.email_list_test == "":
+                    logger.info("email list empty")
+                    check.no_send_results_email(report_file=html_report)
                 else:
                     check.total_iterations = total_iterations
                     check.iteration = iteration
