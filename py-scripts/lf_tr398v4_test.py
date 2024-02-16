@@ -121,26 +121,27 @@ class TR398v4Test(cvtest):
             raw_lines = []
         if sets is None:
             sets = []
-        self.lf_host = lf_host
-        self.lf_port = lf_port
-        self.lf_user = lf_user
-        self.lf_password = lf_password
-        self.instance_name = instance_name
-        self.config_name = config_name
-        self.dut6 = dut6
-        self.dut5 = dut5
-        self.dut2 = dut2
-        self.raw_lines_file = raw_lines_file
-        self.upstream = upstream
-        self.pull_report = pull_report
-        self.load_old_cfg = load_old_cfg
-        self.test_name = "TR-398 Issue 4"
-        self.enables = enables
-        self.disables = disables
-        self.raw_lines = raw_lines
-        self.sets = sets
-        self.local_lf_report_dir = local_lf_report_dir
-        self.test_rig = test_rig
+
+        self.lf_host                = lf_host
+        self.lf_port                = lf_port
+        self.lf_user                = lf_user
+        self.lf_password            = lf_password
+        self.instance_name          = instance_name
+        self.config_name            = config_name
+        self.dut6                   = dut6
+        self.dut5                   = dut5
+        self.dut2                   = dut2
+        self.raw_lines_file         = raw_lines_file
+        self.upstream               = upstream
+        self.pull_report            = pull_report
+        self.load_old_cfg           = load_old_cfg
+        self.test_name              = "TR-398 Issue 4"
+        self.enables                = enables
+        self.disables               = disables
+        self.raw_lines              = raw_lines
+        self.sets                   = sets
+        self.local_lf_report_dir    = local_lf_report_dir
+        self.test_rig               = test_rig
 
     def setup(self):
         # Nothing to do at this time.
