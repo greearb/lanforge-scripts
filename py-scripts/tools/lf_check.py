@@ -566,7 +566,7 @@ class lf_check():
 
     def no_send_results_email(self, report_file=None):
         if (report_file is None):
-            self.logger.info("No report file, not sending email.")
+            self.logger.info("No report file")
             return
         report_url = report_file.replace('/home/lanforge/', '')
         if report_url.startswith('/'):
