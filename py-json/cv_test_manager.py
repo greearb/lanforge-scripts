@@ -249,6 +249,11 @@ class cv_test(Realm):
 
         # Read in calibration data and whatever else.
         if raw_lines_file != "":
+            # Check that file exists before attempting to open
+            if not os.path.exists(raw_lines_file) or not os.path.isfile(raw_lines_file):
+                logger.error(f"Could not open raw lines file \'{raw_lines_file}\'. Exiting")
+                exit(1)
+
             with open(raw_lines_file) as fp:
                 line = fp.readline()
                 while line:
