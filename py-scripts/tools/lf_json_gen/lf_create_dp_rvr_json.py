@@ -372,7 +372,8 @@ class lf_create_dp_rvr_json():
                     " --raw_line 'directions: {lf_dp_rvr_dut_traffic_direction}' ",
                     " --raw_line 'traffic_types: {lf_dp_rvr_traffic_type}' ",
                     " --raw_line 'bandw_options: AUTO' ",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{dp_rvr_test_name}'",
+                    " --raw_line 'spatial_streams: AUTO' "
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{dp_rvr_test_name}'",
                     " {attenuator}",
                     " {attenuation}",
                     " --raw_line 'attenuator_mod: 0xf'  ",
