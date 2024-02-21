@@ -831,12 +831,13 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_dp_rvr_frame = tkinter.LabelFrame(self.lf_dp_rvr_tab_frame, text="Data Plane / RvR Configuration")
         self.lf_dp_rvr_frame.grid(row= 0, column= 0, sticky="news", padx=20, pady=10)
         
-        # Row 1
+        row = 1
+        # row 1
         self.lf_dp_rvr_traffic_type_label = tkinter.Label(self.lf_dp_rvr_frame, text="Traffic Type")
-        self.lf_dp_rvr_traffic_type_label.grid(row=1, column=0)
+        self.lf_dp_rvr_traffic_type_label.grid(row=row, column=0)
         self.lf_dp_rvr_traffic_type_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["UDP","TCP","UDP;TCP"])
         self.lf_dp_rvr_traffic_type_combobox.current(0)
-        self.lf_dp_rvr_traffic_type_combobox.grid(row= 1, column=1)
+        self.lf_dp_rvr_traffic_type_combobox.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_traffic_type_combobox, '''Select the traffic type''')
 
         self.lf_dp_rvr_dut_traffic_direction_label = tkinter.Label(self.lf_dp_rvr_frame, text="Traffic Direction")
@@ -846,162 +847,179 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_dp_rvr_dut_traffic_direction_combobox.grid(row= 1, column=3)
         self.window_tooltip.bind(self.lf_dp_rvr_dut_traffic_direction_combobox, '''Select DUT Traffic Direction''')
 
-        # Row 2        
+        # Row 2
+        row += 1      
         self.lf_dp_rvr_pkt_size_label = tkinter.Label(self.lf_dp_rvr_frame, text="Packet Size")
-        self.lf_dp_rvr_pkt_size_label.grid(row=2, column=0)
+        self.lf_dp_rvr_pkt_size_label.grid(row=row, column=0)
         self.lf_dp_rvr_pkt_size_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["Custom","60","142","256","512","1024","MTU","4000"])
         self.lf_dp_rvr_pkt_size_combobox.current(6)
-        self.lf_dp_rvr_pkt_size_combobox.grid(row= 2, column=1)
+        self.lf_dp_rvr_pkt_size_combobox.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_pkt_size_combobox, '''Enter Data Plane or RvR pkt size separated by semi colons
 When using Custom Packet Sizes need to append: ;Custom''')
 
         self.lf_dp_rvr_pkt_size_custom_label = tkinter.Label(self.lf_dp_rvr_frame, text="Custom Pkt Size")
-        self.lf_dp_rvr_pkt_size_custom_label.grid(row=2, column=2)
+        self.lf_dp_rvr_pkt_size_custom_label.grid(row=row, column=2)
         self.lf_dp_rvr_pkt_size_custom_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["","<custom>","256,512,768,1024,MTU","768,1024,MTU"])
         self.lf_dp_rvr_pkt_size_custom_combobox.current(0)
-        self.lf_dp_rvr_pkt_size_custom_combobox.grid(row= 2, column=3)
+        self.lf_dp_rvr_pkt_size_custom_combobox.grid(row=row, column=3)
         self.window_tooltip.bind(self.lf_dp_rvr_pkt_size_custom_combobox, '''Enter Data Plane or RvR Custom Packet Sized pkt size
 The Packet Size needs end in Custom for example   60:Custom''')
 
         # Row 3
+        row +=1
         self.lf_dp_rvr_download_speed_label = tkinter.Label(self.lf_dp_rvr_frame, text="Download Speed")
-        self.lf_dp_rvr_download_speed_label.grid(row=3, column=0)
+        self.lf_dp_rvr_download_speed_label.grid(row=row, column=0)
         self.lf_dp_rvr_download_speed_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>","85%","75%","65%","50%","25%","10%","5%","1%","0"])
         self.lf_dp_rvr_download_speed_combobox.current(1)
-        self.lf_dp_rvr_download_speed_combobox.grid(row= 3, column=1)
+        self.lf_dp_rvr_download_speed_combobox.grid(row= row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_download_speed_combobox, '''Download speed is assoicated with DUT Transmit
 if on DUT Receive is choosen the Download speed is set to 0''')
 
         self.lf_dp_rvr_upload_speed_label = tkinter.Label(self.lf_dp_rvr_frame, text="Upload Speed")
-        self.lf_dp_rvr_upload_speed_label.grid(row=3, column=2)
+        self.lf_dp_rvr_upload_speed_label.grid(row=row, column=2)
         self.lf_dp_rvr_upload_speed_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>","85%","75%","65%","50%","25%","10%","5%","1%","0"])
         self.lf_dp_rvr_upload_speed_combobox.current(1)
-        self.lf_dp_rvr_upload_speed_combobox.grid(row= 3, column=3)
+        self.lf_dp_rvr_upload_speed_combobox.grid(row=row, column=3)
         self.window_tooltip.bind(self.lf_dp_rvr_upload_speed_combobox, '''Upload speed is associated with with DUT Receive
 if only DUT Transmit is choosen the upload speed is set to 0''')
 
         # Row 4
+        row +=1
         self.lf_dp_rvr_attenuator_label = tkinter.Label(self.lf_dp_rvr_frame, text="Attenuator")
-        self.lf_dp_rvr_attenuator_label.grid(row=4, column=0)
+        self.lf_dp_rvr_attenuator_label.grid(row=row, column=0)
         self.lf_dp_rvr_attenuator_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["","ATTENUATOR_1","ATTENUATOR_2","ATTENUATOR_3"])
         self.lf_dp_rvr_attenuator_combobox.current(0)
-        self.lf_dp_rvr_attenuator_combobox.grid(row= 4, column=1)
+        self.lf_dp_rvr_attenuator_combobox.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_upload_speed_combobox, "The ATTENUATOR is definded in the test_rig.json file")
 
+        # Row 5
+        row += 1
         self.lf_dp_rvr_attenuation_2g_label = tkinter.Label(self.lf_dp_rvr_frame, text="Attenuation 2g")
-        self.lf_dp_rvr_attenuation_2g_label.grid(row=5, column=0)
+        self.lf_dp_rvr_attenuation_2g_label.grid(row=row, column=0)
         self.lf_dp_rvr_attenuation_2g_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>","0..+100..500","0..+100..600","0..+100..700","400,450,460,470,490,500"])
         self.lf_dp_rvr_attenuation_2g_combobox.current(1)
-        self.lf_dp_rvr_attenuation_2g_combobox.grid(row= 5, column=1)
+        self.lf_dp_rvr_attenuation_2g_combobox.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_attenuation_2g_combobox, '''Select the atteunation range  <start>..+<step>..<end> 
 May also enter custom Example 0..+100..700''')
 
         self.lf_dp_rvr_attenuation_5g_label = tkinter.Label(self.lf_dp_rvr_frame, text="Attenuation 5g")
-        self.lf_dp_rvr_attenuation_5g_label.grid(row=5, column=2)
+        self.lf_dp_rvr_attenuation_5g_label.grid(row=row, column=2)
         self.lf_dp_rvr_attenuation_5g_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>","0..+100..500","0..+100..600","0..+100..700","400,450,460,470,490,500"])
         self.lf_dp_rvr_attenuation_5g_combobox.current(1)
-        self.lf_dp_rvr_attenuation_5g_combobox.grid(row= 5, column=3)
+        self.lf_dp_rvr_attenuation_5g_combobox.grid(row=row, column=3)
         self.window_tooltip.bind(self.lf_dp_rvr_attenuation_5g_combobox, '''Select the atteunation range  <start>..+<step>..<end> 
 May also enter custom Example 0..+100..700''')
 
         self.lf_dp_rvr_attenuation_6g_label = tkinter.Label(self.lf_dp_rvr_frame, text="Attenuation 6g")
-        self.lf_dp_rvr_attenuation_6g_label.grid(row=5, column=4)
+        self.lf_dp_rvr_attenuation_6g_label.grid(row=row, column=4)
         self.lf_dp_rvr_attenuation_6g_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>","0..+100..500","0..+100..600","0..+100..700","400,450,460,470,490,500"])
         self.lf_dp_rvr_attenuation_6g_combobox.current(1)
-        self.lf_dp_rvr_attenuation_6g_combobox.grid(row= 5, column=5)
+        self.lf_dp_rvr_attenuation_6g_combobox.grid(row=row, column=5)
         self.window_tooltip.bind(self.lf_dp_rvr_attenuation_6g_combobox, '''Select the atteunation range  <start>..+<step>..<end> 
 May also enter custom Example 0..+100..700''')
 
+        # row 6
+        row += 1
         self.lf_dp_rvr_2g_file = tkinter.Label(self.lf_dp_rvr_frame, text='2g json file')
-        self.lf_dp_rvr_2g_file.grid(row= 6, column= 0)
+        self.lf_dp_rvr_2g_file.grid(row=row, column= 0)
         self.lf_dp_rvr_2g_file_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_2g_file_entry_var.set("")
         self.lf_dp_rvr_2g_file_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_2g_file_entry_var, width = 64)
-        self.lf_dp_rvr_2g_file_entry.grid(row= 6, column=1, columnspan = 2)
+        self.lf_dp_rvr_2g_file_entry.grid(row=row, column=1, columnspan = 2)
         self.window_tooltip.bind(self.lf_dp_rvr_2g_file_entry, '''Auto Generated json file name to be used by lf_check.py would be:
 ./lf_check.py  --json_test <QA generated name>.json:<Qa generated name>''')
 
         self.lf_dp_rvr_2g_dir = tkinter.Label(self.lf_dp_rvr_frame, text='2g json dir')
-        self.lf_dp_rvr_2g_dir.grid(row= 6, column= 3)
+        self.lf_dp_rvr_2g_dir.grid(row=row, column= 3)
         self.lf_dp_rvr_2g_dir_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_2g_dir_entry_var.set("")
         self.lf_dp_rvr_2g_dir_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_2g_dir_entry_var, width = 64)
-        self.lf_dp_rvr_2g_dir_entry.grid(row= 6, column=4, columnspan = 2)
+        self.lf_dp_rvr_2g_dir_entry.grid(row=row, column=4, columnspan = 2)
         self.window_tooltip.bind(self.lf_dp_rvr_2g_dir_entry, '''directory to place json, if blank will auto gen''')
 
+        # row 7
+        row += 1
         self.lf_dp_rvr_5g_file = tkinter.Label(self.lf_dp_rvr_frame, text='5g json dir')
-        self.lf_dp_rvr_5g_file.grid(row= 7, column= 0)
+        self.lf_dp_rvr_5g_file.grid(row=row, column= 0)
         self.lf_dp_rvr_5g_file_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_5g_file_entry_var.set("")
         self.lf_dp_rvr_5g_file_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_5g_file_entry_var, width = 64)
-        self.lf_dp_rvr_5g_file_entry.grid(row= 7, column=1, columnspan=2)
+        self.lf_dp_rvr_5g_file_entry.grid(row=row, column=1, columnspan=2)
         self.window_tooltip.bind(self.lf_dp_rvr_5g_file_entry, '''Auto Generated json file name to be used by lf_check.py would be:
 ./lf_check.py  --json_test <QA generated name>.json:<Qa generated name>''')
 
         self.lf_dp_rvr_5g_dir = tkinter.Label(self.lf_dp_rvr_frame, text='5g json file')
-        self.lf_dp_rvr_5g_dir.grid(row= 7, column= 3)
+        self.lf_dp_rvr_5g_dir.grid(row=row, column= 3)
         self.lf_dp_rvr_5g_dir_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_5g_dir_entry_var.set("")
         self.lf_dp_rvr_5g_dir_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_5g_dir_entry_var, width = 64)
-        self.lf_dp_rvr_5g_dir_entry.grid(row= 7, column=4, columnspan=2)
+        self.lf_dp_rvr_5g_dir_entry.grid(row=row, column=4, columnspan=2)
         self.window_tooltip.bind(self.lf_dp_rvr_5g_dir_entry, '''directory to place json, if blank will auto gen''')
 
+
+        # row 8
+        row += 1
         self.lf_dp_rvr_6g_file = tkinter.Label(self.lf_dp_rvr_frame, text='6g json file')
-        self.lf_dp_rvr_6g_file.grid(row=8, column= 0)
+        self.lf_dp_rvr_6g_file.grid(row=row, column= 0)
         self.lf_dp_rvr_6g_file_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_6g_file_entry_var.set("")
         self.lf_dp_rvr_6g_file_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_6g_file_entry_var, width = 64)
-        self.lf_dp_rvr_6g_file_entry.grid(row=8, column=1, columnspan = 2)
+        self.lf_dp_rvr_6g_file_entry.grid(row=row, column=1, columnspan = 2)
         self.window_tooltip.bind(self.lf_dp_rvr_6g_file_entry, ''''Auto Generated json file name to be used by lf_check.py would be:
 ./lf_check.py  --json_test <QA generated name>.json:<Qa generated name>''')
 
         self.lf_dp_rvr_6g_dir = tkinter.Label(self.lf_dp_rvr_frame, text='6g json dir')
-        self.lf_dp_rvr_6g_dir.grid(row=8, column= 3)
+        self.lf_dp_rvr_6g_dir.grid(row=row, column= 3)
         self.lf_dp_rvr_6g_dir_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_6g_dir_entry_var.set("")
         self.lf_dp_rvr_6g_dir_entry = tkinter.Entry(self.lf_dp_rvr_frame, textvariable = self.lf_dp_rvr_6g_dir_entry_var, width = 64)
-        self.lf_dp_rvr_6g_dir_entry.grid(row=8, column=4, columnspan = 2)
+        self.lf_dp_rvr_6g_dir_entry.grid(row=row, column=4, columnspan = 2)
         self.window_tooltip.bind(self.lf_dp_rvr_6g_dir_entry, '''directory to place json, if blank will auto gen''')
 
-
+        # row 9
+        row += 1
         self.lf_dp_rvr_duration = tkinter.Label(self.lf_dp_rvr_frame, text='test duration')
-        self.lf_dp_rvr_duration.grid(row= 9, column= 0)
+        self.lf_dp_rvr_duration.grid(row=row, column= 0)
         self.lf_dp_rvr_duration_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<Custom>","5000 (5 sec)","10000 (10 sec)","15000 (15 sec)","20000 (20 sec)","30000 (30 sec)","60000 (1 min)","300000 (5min)"])
         self.lf_dp_rvr_duration_combobox.current(3)
-        self.lf_dp_rvr_duration_combobox.grid(row= 9, column=1)
+        self.lf_dp_rvr_duration_combobox.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_duration_combobox, '''Enter the test duration , for custom it is in ms
 Example:  20000 milli seconds will run the test for 20 seconds
 if left blank will default to 20000''')
 
         self.lf_dp_rvr_number_dut_indexes = tkinter.Label(self.lf_dp_rvr_frame, text="Number DUT Indexes")
-        self.lf_dp_rvr_number_dut_indexes.grid(row=9, column=2)
+        self.lf_dp_rvr_number_dut_indexes.grid(row=row, column=2)
         self.lf_dp_rvr_number_dut_indexes_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["1","2","3","4"])
         self.lf_dp_rvr_number_dut_indexes_combobox.current(2)
-        self.lf_dp_rvr_number_dut_indexes_combobox.grid(row= 9, column=3)
+        self.lf_dp_rvr_number_dut_indexes_combobox.grid(row=row, column=3)
         self.window_tooltip.bind(self.lf_dp_rvr_number_dut_indexes_combobox, '''Number of DUT indexes valid in the DUT json''')
 
 
+        # row 10 
+        row += 1
         self.lf_dp_rvr_use_qa_var = tkinter.StringVar(value="Use")
         self.lf_dp_rvr_use_qa_var_check = tkinter.Checkbutton(self.lf_dp_rvr_frame, text="lf_qa", variable=self.lf_dp_rvr_use_qa_var,
                                         onvalue="Use", offvalue="Do Not Use")
-        self.lf_dp_rvr_use_qa_var_check.grid(row=10, column=0)
+        self.lf_dp_rvr_use_qa_var_check.grid(row=row, column=0)
         self.window_tooltip.bind(self.lf_dp_rvr_use_qa_var_check, '''Recommended: Wifi Capacity Test Suite Json will include lf_qa.
 lf_qa will compare performance over multiple runs for Chamber View tests and tests that include kpi''')
 
         self.lf_dp_rvr_use_inspect_var = tkinter.StringVar(value="Use")
         self.lf_dp_rvr_use_inspect_check = tkinter.Checkbutton(self.lf_dp_rvr_frame, text="lf_inspect", variable=self.lf_dp_rvr_use_inspect_var,
                                         onvalue="Use", offvalue="Do Not Use")
-        self.lf_dp_rvr_use_inspect_check.grid(row=10, column=1)
+        self.lf_dp_rvr_use_inspect_check.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_use_inspect_check, '''Recommended: Wifi Capacity Test Suite Json will include lf_inspect. 
 lf_inspect will compare performance between two individual runs for Chamber View tests and tests that include kpi''')
 
+        # row 11
+        row += 1
         self.lf_dp_rvr_save = ttk.Button(self.lf_dp_rvr_frame, text = 'Create DP Suite', command = self.create_dp_json)
-        self.lf_dp_rvr_save.grid(row=11, column=0, sticky="news", padx=20, pady=10)
+        self.lf_dp_rvr_save.grid(row=row, column=0, sticky="news", padx=20, pady=10)
         dp_tool_tip_text = "Save Data Plane Json File in directory specified in 'json dir' entry or will create \n In Current Working Directory: {}".format(self.current_working_directory)
         self.window_tooltip.bind(self.lf_dp_rvr_save, dp_tool_tip_text)
 
         self.lf_dp_rvr_save = ttk.Button(self.lf_dp_rvr_frame, text = 'Create RvR Suite', command = self.create_rvr_json)
-        self.lf_dp_rvr_save.grid(row=11, column=1, sticky="news", padx=20, pady=10)
+        self.lf_dp_rvr_save.grid(row=row, column=1, sticky="news", padx=20, pady=10)
         rvr_tool_tip_text = "Save RvR test suite Json File in directory specified in 'json dir' entry or will create \n In Current Working Directory: {}".format(self.current_working_directory)
         self.window_tooltip.bind(self.lf_dp_rvr_save, rvr_tool_tip_text)
 
