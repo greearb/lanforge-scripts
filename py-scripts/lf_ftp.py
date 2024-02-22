@@ -263,10 +263,10 @@ class FtpTest(LFCliBase):
                 if eid +'.' in port:
                     self.windows_ports.append(port)
         for i in resource_eid_list2:
-            for j in range(len(self.devices_available)):
-                if i in self.devices_available[j]:
-                    self.real_client_list.append(self.devices_available[j])
-                    self.real_client_list1.append((self.devices_available[j])[:25])
+            for j in range(len(self.user_list)):
+                if i in self.user_list[j]:
+                    self.real_client_list.append(self.user_list[j])
+                    self.real_client_list1.append((self.user_list[j])[:25])
         print("REAL CLIENT LIST", self.real_client_list)
         #print("REAL CLIENT LIST1", self.real_client_list1)
 
