@@ -817,6 +817,7 @@ class L3VariableTime(Realm):
         self.bk_port_protocol_A = []
         self.bk_port_offered_rx_rate_A = []
         self.bk_port_offered_tx_rate_A = []
+        self.bk_rx_drop_percent_A = []
 
         # resource data BK -A
         self.bk_resource_host_A = []
@@ -847,6 +848,7 @@ class L3VariableTime(Realm):
         self.bk_port_protocol_B = []
         self.bk_port_offered_rx_rate_B = []
         self.bk_port_offered_tx_rate_B = []
+        self.bk_rx_drop_percent_B = []
 
         # resource data BK -B
         self.bk_resource_host_B = []
@@ -877,6 +879,7 @@ class L3VariableTime(Realm):
         self.be_port_protocol_A = []
         self.be_port_offered_rx_rate_A = []
         self.be_port_offered_tx_rate_A = []
+        self.be_rx_drop_percent_A = []
 
         # resource data BE -A
         self.be_resource_host_A = []
@@ -907,6 +910,7 @@ class L3VariableTime(Realm):
         self.be_port_protocol_B = []
         self.be_port_offered_rx_rate_B = []
         self.be_port_offered_tx_rate_B = []
+        self.be_rx_drop_percent_B = []
 
         # resource data BE -B
         self.be_resource_host_B = []
@@ -937,6 +941,7 @@ class L3VariableTime(Realm):
         self.vi_port_protocol_A = []
         self.vi_port_offered_rx_rate_A = []
         self.vi_port_offered_tx_rate_A = []
+        self.vi_rx_drop_percent_A = []
 
         # resource data VI -A
         self.vi_resource_host_A = []
@@ -967,6 +972,7 @@ class L3VariableTime(Realm):
         self.vi_port_protocol_B = []
         self.vi_port_offered_rx_rate_B = []
         self.vi_port_offered_tx_rate_B = []
+        self.vi_rx_drop_percent_B = []
 
         # resource data VI -B
         self.vi_resource_host_B = []
@@ -1004,6 +1010,7 @@ class L3VariableTime(Realm):
         self.vo_port_protocol_A = []
         self.vo_port_offered_rx_rate_A = []
         self.vo_port_offered_tx_rate_A = []
+        self.vo_rx_drop_percent_A = []
 
         # resource data VO -A
         self.vo_resource_host_A = []
@@ -1034,6 +1041,7 @@ class L3VariableTime(Realm):
         self.vo_port_protocol_B = []
         self.vo_port_offered_rx_rate_B = []
         self.vo_port_offered_tx_rate_B = []
+        self.vo_rx_drop_percent_B = []
 
         # resource data VO -B
         self.vo_resource_host_B = []
@@ -2524,12 +2532,12 @@ class L3VariableTime(Realm):
         endp_type_present = False
 
         # TODO check for 400 bad request instead of try except
-        self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid,type')
+        self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid,type,rx Drop %25')
         if self.endp_data is not None:
             endp_type_present = True
         else:
             logger.info("Consider upgrading to 5.4.7 + endp field type not supported in LANforge GUI version results for Multicast reversed in graphs and tables")
-            self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,eid')
+            self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,eid,rx Drop %25')
             endp_type_present = False
         self.endp_data.pop("handler")
         self.endp_data.pop("uri")
@@ -2568,6 +2576,7 @@ class L3VariableTime(Realm):
                             self.bk_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
                             self.bk_port_protocol_A.append(endp_data[endp_data_key]['type'])
+                            self.bk_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -2623,6 +2632,7 @@ class L3VariableTime(Realm):
                             self.bk_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.bk_port_protocol_B.append(endp_data[endp_data_key]['type'])
+                            self.bk_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -2680,6 +2690,7 @@ class L3VariableTime(Realm):
                             self.be_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.be_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
                             self.be_port_protocol_A.append(endp_data[endp_data_key]['type'])
+                            self.be_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -2736,6 +2747,7 @@ class L3VariableTime(Realm):
                             self.be_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.be_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.be_port_protocol_B.append(endp_data[endp_data_key]['type'])
+                            self.be_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -2793,6 +2805,7 @@ class L3VariableTime(Realm):
                             self.vi_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.vi_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
                             self.vi_port_protocol_A.append(endp_data[endp_data_key]['type'])
+                            self.vi_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -2849,6 +2862,7 @@ class L3VariableTime(Realm):
                             self.vi_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.vi_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.vi_port_protocol_B.append(endp_data[endp_data_key]['type'])
+                            self.vi_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -2906,6 +2920,7 @@ class L3VariableTime(Realm):
                             self.vo_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
                             self.vo_port_protocol_A.append(endp_data[endp_data_key]['type'])
+                            self.vo_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -2962,6 +2977,7 @@ class L3VariableTime(Realm):
                             self.vo_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.vo_port_protocol_B.append(endp_data[endp_data_key]['type'])
+                            self.vo_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -3022,6 +3038,7 @@ class L3VariableTime(Realm):
                             self.bk_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
                             self.bk_port_protocol_A.append(endp_data[endp_data_key]['type'])
+                            self.bk_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -3077,6 +3094,7 @@ class L3VariableTime(Realm):
                             self.bk_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.bk_port_protocol_B.append(endp_data[endp_data_key]['type'])
+                            self.bk_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -3136,6 +3154,7 @@ class L3VariableTime(Realm):
                             self.be_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.be_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
                             self.be_port_protocol_A.append(endp_data[endp_data_key]['type'])
+                            self.be_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -3192,6 +3211,7 @@ class L3VariableTime(Realm):
                             self.be_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.be_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.be_port_protocol_B.append(endp_data[endp_data_key]['type'])
+                            self.be_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -3249,6 +3269,7 @@ class L3VariableTime(Realm):
                             self.vi_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.vi_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
                             self.vi_port_protocol_A.append(endp_data[endp_data_key]['type'])
+                            self.vi_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -3305,6 +3326,7 @@ class L3VariableTime(Realm):
                             self.vi_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.vi_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.vi_port_protocol_B.append(endp_data[endp_data_key]['type'])
+                            self.vi_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -3361,6 +3383,7 @@ class L3VariableTime(Realm):
                             self.vo_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
                             self.vo_port_protocol_A.append(endp_data[endp_data_key]['type'])
+                            self.vo_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -3416,6 +3439,7 @@ class L3VariableTime(Realm):
                             self.vo_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.vo_port_protocol_B.append(endp_data[endp_data_key]['type'])
+                            self.vo_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
 
                             # Report Table information
                             # use the eid to get the hostname and channel
@@ -3476,6 +3500,7 @@ class L3VariableTime(Realm):
                             self.bk_clients_A.append(endp_data[endp_data_key]['name'])
                             self.bk_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.bk_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
                             self.bk_port_protocol_A.append('Mcast')
 
                             # Report Table information
@@ -3532,6 +3557,7 @@ class L3VariableTime(Realm):
                             self.bk_clients_B.append(endp_data[endp_data_key]['name'])
                             self.bk_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
+                            self.bk_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
                             self.bk_port_protocol_B.append('Mcast')
 
                             # Report Table information
@@ -3588,6 +3614,7 @@ class L3VariableTime(Realm):
                             self.be_clients_A.append(endp_data[endp_data_key]['name'])
                             self.be_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.be_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.be_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
                             self.be_port_protocol_A.append('Mcast')
 
                             # Report Table information
@@ -3643,6 +3670,7 @@ class L3VariableTime(Realm):
                             self.be_clients_B.append(endp_data[endp_data_key]['name'])
                             self.be_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.be_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
+                            self.be_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
                             self.be_port_protocol_B.append('Mcast')
 
                             # Report Table information
@@ -3700,6 +3728,7 @@ class L3VariableTime(Realm):
                             self.vi_clients_A.append(endp_data[endp_data_key]['name'])
                             self.vi_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.vi_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.vi_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
                             self.vi_port_protocol_A.append('Mcast')
 
                             # Report Table information
@@ -3756,6 +3785,7 @@ class L3VariableTime(Realm):
                             self.vi_clients_B.append(endp_data[endp_data_key]['name'])
                             self.vi_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.vi_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
+                            self.vi_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
                             self.vi_port_protocol_B.append('Mcast')
 
                             # Report Table information
@@ -3813,6 +3843,7 @@ class L3VariableTime(Realm):
                             self.vo_clients_A.append(endp_data[endp_data_key]['name'])
                             self.vo_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.vo_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
                             self.vo_port_protocol_A.append('Mcast')
 
                             # Report Table information
@@ -3868,6 +3899,7 @@ class L3VariableTime(Realm):
                             self.vo_clients_B.append(endp_data[endp_data_key]['name'])
                             self.vo_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
+                            self.vo_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
                             self.vo_port_protocol_B.append('Mcast')
 
                             # Report Table information
@@ -3927,6 +3959,7 @@ class L3VariableTime(Realm):
                             self.bk_clients_A.append(endp_data[endp_data_key]['name'])
                             self.bk_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.bk_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
                             self.bk_port_protocol_A.append('Uni-Cast')
 
                             # Report Table information
@@ -3983,6 +4016,7 @@ class L3VariableTime(Realm):
                             self.bk_clients_B.append(endp_data[endp_data_key]['name'])
                             self.bk_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.bk_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
+                            self.bk_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
                             self.bk_port_protocol_B.append('Uni-cast')
 
                             # Report Table information
@@ -4041,6 +4075,7 @@ class L3VariableTime(Realm):
                             self.be_clients_A.append(endp_data[endp_data_key]['name'])
                             self.be_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.be_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.be_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
                             self.be_port_protocol_A.append('Uni-cast')
 
                             # Report Table information
@@ -4096,6 +4131,7 @@ class L3VariableTime(Realm):
                             self.be_clients_B.append(endp_data[endp_data_key]['name'])
                             self.be_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.be_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
+                            self.be_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
                             self.be_port_protocol_B.append('Uni-cast')
 
                             # Report Table information
@@ -4153,6 +4189,7 @@ class L3VariableTime(Realm):
                             self.vi_clients_A.append(endp_data[endp_data_key]['name'])
                             self.vi_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.vi_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.vi_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
                             self.vi_port_protocol_A.append('Uni-cast')
 
                             # Report Table information
@@ -4209,6 +4246,7 @@ class L3VariableTime(Realm):
                             self.vi_clients_B.append(endp_data[endp_data_key]['name'])
                             self.vi_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.vi_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
+                            self.vi_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
                             self.vi_port_protocol_B.append('Uni-cast')
 
                             # Report Table information
@@ -4266,6 +4304,7 @@ class L3VariableTime(Realm):
                             self.vo_clients_A.append(endp_data[endp_data_key]['name'])
                             self.vo_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.vo_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
                             self.vo_port_protocol_A.append('Uni-cast')
 
                             # Report Table information
@@ -4321,6 +4360,7 @@ class L3VariableTime(Realm):
                             self.vo_clients_B.append(endp_data[endp_data_key]['name'])
                             self.vo_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
                             self.vo_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
+                            self.vo_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
                             self.vo_port_protocol_B.append('Uni-cast')
 
                             # look up the resource
@@ -4394,6 +4434,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_A": self.bk_port_protocol_A,
                 "offered_download_rate_A": self.bk_port_offered_rx_rate_A,
                 "offered_upload_rate_A": self.bk_port_offered_tx_rate_A,
+                "download_rx_drop_percent_A": self.bk_rx_drop_percent_A,
 
                 # B side
                 "clients_B": self.bk_clients_B,
@@ -4411,6 +4452,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_B": self.bk_port_protocol_B,
                 "offered_download_rate_B": self.bk_port_offered_tx_rate_B,
                 "offered_upload_rate_B": self.bk_port_offered_rx_rate_B,
+                "download_rx_drop_percent_B": self.bk_rx_drop_percent_B,
 
             },
             "BE": {
@@ -4433,6 +4475,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_A": self.be_port_protocol_A,
                 "offered_download_rate_A": self.be_port_offered_rx_rate_A,
                 "offered_upload_rate_A": self.be_port_offered_tx_rate_A,
+                "download_rx_drop_percent_A": self.be_rx_drop_percent_A,
 
                 # B side
                 "clients_B": self.be_clients_B,
@@ -4450,6 +4493,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_B": self.be_port_protocol_B,
                 "offered_download_rate_B": self.be_port_offered_tx_rate_B,
                 "offered_upload_rate_B": self.be_port_offered_rx_rate_B,
+                "download_rx_drop_percent_B": self.be_rx_drop_percent_B,
 
             },
             "VI": {
@@ -4472,6 +4516,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_A": self.vi_port_protocol_A,
                 "offered_download_rate_A": self.vi_port_offered_rx_rate_A,
                 "offered_upload_rate_A": self.vi_port_offered_tx_rate_A,
+                "download_rx_drop_percent_A": self.vi_rx_drop_percent_A,
 
                 # B side
                 "clients_B": self.vi_clients_B,
@@ -4489,6 +4534,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_B": self.vi_port_protocol_B,
                 "offered_download_rate_B": self.vi_port_offered_tx_rate_B,
                 "offered_upload_rate_B": self.vi_port_offered_rx_rate_B,
+                "download_rx_drop_percent_B": self.vi_rx_drop_percent_B,
 
             },
             "VO": {
@@ -4511,6 +4557,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_A": self.vo_port_protocol_A,
                 "offered_download_rate_A": self.vo_port_offered_rx_rate_A,
                 "offered_upload_rate_A": self.vo_port_offered_tx_rate_A,
+                "download_rx_drop_percent_A": self.vo_rx_drop_percent_A,
 
                 # B side
                 "clients_B": self.vo_clients_B,
@@ -4528,6 +4575,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_B": self.vo_port_protocol_B,
                 "offered_download_rate_B": self.vo_port_offered_tx_rate_B,
                 "offered_upload_rate_B": self.vo_port_offered_rx_rate_B,
+                "download_rx_drop_percent_B": self.vo_rx_drop_percent_B,
 
             }
         }
@@ -4557,6 +4605,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_A": self.bk_port_protocol_A,
                 "offered_download_rate_A": self.bk_port_offered_rx_rate_A,
                 "offered_upload_rate_A": self.bk_port_offered_tx_rate_A,
+                "download_rx_drop_percent_A": self.bk_rx_drop_percent_A,
 
                 # B side
                 "clients_B": self.bk_clients_B,
@@ -4574,6 +4623,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_B": self.bk_port_protocol_B,
                 "offered_download_rate_B": self.bk_port_offered_tx_rate_B,
                 "offered_upload_rate_B": self.bk_port_offered_rx_rate_B,
+                "download_rx_drop_percent_B": self.bk_rx_drop_percent_B,
 
             },
             "BE": {
@@ -4596,6 +4646,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_A": self.be_port_protocol_A,
                 "offered_download_rate_A": self.be_port_offered_rx_rate_A,
                 "offered_upload_rate_A": self.be_port_offered_tx_rate_A,
+                "download_rx_drop_percent_A": self.be_rx_drop_percent_A,
 
                 # B side
                 "clients_B": self.be_clients_B,
@@ -4613,6 +4664,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_B": self.be_port_protocol_B,
                 "offered_download_rate_B": self.be_port_offered_tx_rate_B,
                 "offered_upload_rate_B": self.be_port_offered_rx_rate_B,
+                "download_rx_drop_percent_B": self.be_rx_drop_percent_B,
 
             },
             "VI": {
@@ -4635,6 +4687,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_A": self.vi_port_protocol_A,
                 "offered_download_rate_A": self.vi_port_offered_rx_rate_A,
                 "offered_upload_rate_A": self.vi_port_offered_tx_rate_A,
+                "download_rx_drop_percent_A": self.vi_rx_drop_percent_A,
 
                 # B side
                 "clients_B": self.vi_clients_B,
@@ -4652,6 +4705,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_B": self.vi_port_protocol_B,
                 "offered_download_rate_B": self.vi_port_offered_tx_rate_B,
                 "offered_upload_rate_B": self.vi_port_offered_rx_rate_B,
+                "download_rx_drop_percent_B": self.vi_rx_drop_percent_B,
 
             },
             "VO": {
@@ -4674,6 +4728,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_A": self.vo_port_protocol_A,
                 "offered_download_rate_A": self.vo_port_offered_rx_rate_A,
                 "offered_upload_rate_A": self.vo_port_offered_tx_rate_A,
+                "download_rx_drop_percent_A": self.vo_rx_drop_percent_A,
 
                 # B side
                 "clients_B": self.vo_clients_B,
@@ -4691,6 +4746,7 @@ class L3VariableTime(Realm):
                 "traffic_protocol_B": self.vo_port_protocol_B,
                 "offered_download_rate_B": self.vo_port_offered_tx_rate_B,
                 "offered_upload_rate_B": self.vo_port_offered_rx_rate_B,
+                "download_rx_drop_percent_B": self.vo_rx_drop_percent_B,
 
             }
         }
@@ -5088,8 +5144,8 @@ class L3VariableTime(Realm):
                     " Offered Upload Rate Per Client": self.client_dict_A[tos]['offered_upload_rate_A'],
                     " Offered Download Rate Per Client": self.client_dict_A[tos]['offered_download_rate_A'],
                     " Upload Rate Per Client": self.client_dict_A[tos]['ul_A'],
-                    " Download Rate Per Client": self.client_dict_A[tos]['dl_A']
-                    # " Traffic Protocol " :
+                    " Download Rate Per Client": self.client_dict_A[tos]['dl_A'],
+                    " Drop Percentage (%)": self.client_dict_A[tos]['download_rx_drop_percent_A']
                 }
 
                 dataframe3 = pd.DataFrame(tos_dataframe_A)
@@ -5156,8 +5212,8 @@ class L3VariableTime(Realm):
                     " Offered Upload Rate Per Client": self.client_dict_B[tos]['offered_upload_rate_B'],
                     " Offered Download Rate Per Client": self.client_dict_B[tos]['offered_download_rate_B'],
                     " Upload Rate Per Client": self.client_dict_B[tos]['ul_B'],
-                    " Download Rate Per Client": self.client_dict_B[tos]['dl_B']
-                    # " Traffic Protocol " :
+                    " Download Rate Per Client": self.client_dict_B[tos]['dl_B'],
+                    " Drop Percentage (%)": self.client_dict_B[tos]['download_rx_drop_percent_B']
                 }
 
                 dataframe3 = pd.DataFrame(tos_dataframe_B)
