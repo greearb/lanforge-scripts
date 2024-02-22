@@ -525,11 +525,11 @@ class Mixed_Traffic(Realm):
             self.qos_test_obj.build()
             self.qos_test_obj.start()
             time.sleep(10)
-            connections_download, connections_upload = self.qos_test_obj.monitor()
+            connections_download, connections_upload, drop_a_per, drop_b_per = self.qos_test_obj.monitor()
             self.qos_test_obj.stop()
             time.sleep(5)
             test_results['test_results'].append(
-                self.qos_test_obj.evaluate_qos(connections_download, connections_upload))
+                self.qos_test_obj.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
             self.data.update(test_results)
             test_end_time = datetime.datetime.now().strftime("%b %d %H:%M:%S")
             logger.info("QOS Test ended at: {}".format(test_end_time))
@@ -650,12 +650,12 @@ class Mixed_Traffic(Realm):
 
             self.throughput_qos_obj.start(False, False)
             time.sleep(10)
-            connections_download, connections_upload = self.throughput_qos_obj.monitor()
+            connections_download, connections_upload, drop_a_per, drop_b_per = self.throughput_qos_obj.monitor()
             print("connections download", connections_download)
             print("connections upload", connections_upload)
             self.throughput_qos_obj.stop()
             time.sleep(5)
-            test_results['test_results'].append(self.throughput_qos_obj.evaluate_qos(connections_download, connections_upload))
+            test_results['test_results'].append(self.throughput_qos_obj.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
             self.data.update({self.band: test_results})  # right now it will only work for single band
             # if args.create_sta:
             #     if not throughput_qos.passes():
@@ -1645,8 +1645,8 @@ class Mixed_Traffic(Realm):
                             # " Offered Upload Rate Per Client": self.client_dict_A['min_bps_a'],
                             " Offered Download Rate Per Client (Mbps)": int(self.client_dict_A['min_bps_b']) / 1000000,
                             # " Upload Rate Per Client": self.client_dict_A[tos]['ul_A'],
-                            " Download Rate Per Client (Mbps)": [value / 1000000 for value in self.client_dict_A[tos]['dl_A']]
-                            # " Traffic Protocol " :
+                            " Download Rate Per Client (Mbps)": [value / 1000000 for value in self.client_dict_A[tos]['dl_A']],
+                            " Download Drop Percentage (%)": self.client_dict_A[tos]['download_rx_drop_percent_A']
                         }
                         dataframe3 = pd.DataFrame(tos_dataframe_A)
                         self.lf_report_mt.set_table_dataframe(dataframe3)
