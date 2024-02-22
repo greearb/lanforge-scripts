@@ -245,7 +245,7 @@ class ThroughputQOS(Realm):
                 if eid in device:
                     print(eid + ' ' + device)
                     self.user_list.append(device)
-        print("AVAILABLE DEVICES TO RUN TEST : ",self.user_list)
+        print("AVAILABLE DEVICES TO RUN TEST:", self.user_list)
 
         devices_list = input("Enter the desired resources to run the test:")
         #print("devices list",devices_list)
@@ -260,15 +260,15 @@ class ThroughputQOS(Realm):
             for ports_m in original_port_list:
                 if eid in ports_m:
                     self.input_devices_list.append(ports_m)
-        print("INPUT DEVICES LIST",self.input_devices_list)
+        print("INPUT DEVICES LIST:", self.input_devices_list)
         
         # user desired real client list 1.1 wlan0 ---
         
         for i in resource_eid_list2:
-            for j in range(len(self.devices_available)):
-                if i in self.devices_available[j]:
-                    self.real_client_list.append(self.devices_available[j])
-                    self.real_client_list1.append((self.devices_available[j])[:25])
+            for j in range(len(self.user_list)):
+                if i in self.user_list[j]:
+                    self.real_client_list.append(self.user_list[j])
+                    self.real_client_list1.append((self.user_list[j])[:25])
         print("REAL CLIENT LIST", self.real_client_list)
         #print("REAL CLIENT LIST1", self.real_client_list1)
 
