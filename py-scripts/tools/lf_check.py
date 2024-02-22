@@ -2527,19 +2527,23 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                                 firmware_version = "5.4.3 N/A"
                                 #radio_firmware_list = radio_firmware_list.append("NA")
 
-                            lf_radio_df = lf_radio_df.append(
-                                {'Radio': lanforge_radio_json[key]['entity id'],
-                                 'WIFI-Radio Driver': driver,
-                                 'Radio Capabilities': lanforge_radio_json[key]['capabilities'],
-                                 'Firmware Version': firmware_version,
-                                 'max_clients': lanforge_radio_json[key]['max_sta'],
-                                 'max_vap': lanforge_radio_json[key]['max_vap'],
-                                 'max_sta': lanforge_radio_json[key]['max_vifs']}, ignore_index=True)
+                            lf_radio_df_new = pd.DataFrame(
+                                {'Radio': [lanforge_radio_json[key]['entity id']],
+                                 'WIFI-Radio Driver': [driver],
+                                 'Radio Capabilities': [lanforge_radio_json[key]['capabilities']],
+                                 'Firmware Version': [firmware_version],
+                                 'max_clients': [lanforge_radio_json[key]['max_sta']],
+                                 'max_vap': [lanforge_radio_json[key]['max_vap']],
+                                 'max_sta': [lanforge_radio_json[key]['max_vifs']]})
+
+
+                            lf_radio_df = pd.concat([lf_radio_df,lf_radio_df_new], axis=0)
 
                     logger.info("lf_radio_df:: {lf_radio_df}".format(
                         lf_radio_df=lf_radio_df))
                     logger.info("radio_fw_dict:: {radio_fw_dict}".format(
                         radio_fw_dict=radio_fw_dict))
+
 
                     # using set() to remove duplicated entries
                     radio_firmware_list = list(set(radio_firmware_list))
