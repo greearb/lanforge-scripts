@@ -352,6 +352,7 @@ class ThroughputQOS(Realm):
 
     def monitor(self):
         throughput, upload,download,upload_throughput,download_throughput,connections_upload, connections_download = {}, [], [],[],[],{},{}
+        drop_a, drop_a_per, drop_b, drop_b_per = [], [], [], []
         if (self.test_duration is None) or (int(self.test_duration) <= 1):
             raise ValueError("Monitor test duration should be > 1 second")
         if self.cx_profile.created_cx is None:
@@ -365,12 +366,12 @@ class ThroughputQOS(Realm):
         index = -1
         connections_upload = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
         connections_download = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
-        [(upload.append([]), download.append([])) for i in range(len(self.cx_profile.created_cx))]
+        [(upload.append([]), download.append([]), drop_a.append([]), drop_b.append([])) for i in range(len(self.cx_profile.created_cx))]
         while datetime.now() < end_time:
             index += 1
             response = list(
                 self.json_get('/cx/%s?fields=%s' % (
-                    ','.join(self.cx_profile.created_cx.keys()), ",".join(['bps rx a', 'bps rx b']))).values())[2:]
+                    ','.join(self.cx_profile.created_cx.keys()), ",".join(['bps rx a', 'bps rx b', 'rx drop %25 a', 'rx drop %25 b']))).values())[2:]
             throughput[index] = list(
                 map(lambda i: [x for x in i.values()], response))
             time.sleep(1)
@@ -380,10 +381,14 @@ class ThroughputQOS(Realm):
             for i in range(len(throughput[key])):
                 upload[i].append(throughput[key][i][1])
                 download[i].append(throughput[key][i][0])
+                drop_a[i].append(throughput[key][i][2])
+                drop_b[i].append(throughput[key][i][3])
         print("Upload values", upload)
         print("Download Values", download)
         upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
+        drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
+        drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
         keys = list(connections_upload.keys())
         keys = list(connections_download.keys())
 
@@ -396,9 +401,9 @@ class ThroughputQOS(Realm):
         print("connections download",connections_download)
         print("connections",connections_upload)
 
-        return connections_download,connections_upload
+        return connections_download,connections_upload, drop_a_per, drop_b_per
 
-    def evaluate_qos(self, connections_download, connections_upload):
+    def evaluate_qos(self, connections_download, connections_upload, drop_a_per, drop_b_per):
         case_upload = ""
         case_download = ""
         tos_download = {'VI': [], 'VO': [], 'BK': [], 'BE': []}
@@ -411,6 +416,8 @@ class ThroughputQOS(Realm):
         rx_a_upload = {'BK': [], 'BE': [], 'VI': [], 'VO': []}
         tx_endps_upload = {}
         rx_endps_upload = {}
+        tos_drop_dict = {'rx_drop_a': {'BK': [], 'BE': [], 'VI': [], 'VO': []},
+                         'rx_drop_b': {'BK': [], 'BE': [], 'VI': [], 'VO': []}}
         if int(self.cx_profile.side_b_min_bps) != 0:
             case_download = str(int(self.cx_profile.side_b_min_bps) / 1000000)
         if int(self.cx_profile.side_a_min_bps) != 0:
@@ -432,10 +439,12 @@ class ThroughputQOS(Realm):
                     if temp in range(0, len(self.input_devices_list)):
                         if int(self.cx_profile.side_b_min_bps) != 0:
                             tos_download[self.tos[0]].append(connections_download[sta])
+                            tos_drop_dict['rx_drop_a'][self.tos[0]].append(drop_a_per[temp])
                             tx_b_download[self.tos[0]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
                             rx_a_download[self.tos[0]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
                         else:
                             tos_download[self.tos[0]].append(float(0))
+                            tos_drop_dict['rx_drop_a'][self.tos[0]].append(float(0))
                             tx_b_download[self.tos[0]].append(int(0))
                             rx_a_download[self.tos[0]].append(int(0))
                     elif temp in range(len(self.input_devices_list), 2 * len(self.input_devices_list)):
@@ -444,10 +453,12 @@ class ThroughputQOS(Realm):
                         else:
                             if int(self.cx_profile.side_b_min_bps) != 0:
                                 tos_download[self.tos[1]].append(connections_download[sta])
+                                tos_drop_dict['rx_drop_a'][self.tos[1]].append(drop_a_per[temp])
                                 tx_b_download[self.tos[1]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
                                 rx_a_download[self.tos[1]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
                             else:
                                 tos_download[self.tos[1]].append(float(0))
+                                tos_drop_dict['rx_drop_a'][self.tos[1]].append(float(0))
                                 tx_b_download[self.tos[1]].append(int(0))
                                 rx_a_download[self.tos[1]].append(int(0))
                     elif temp in range(2 * len(self.input_devices_list), 3 * len(self.input_devices_list)):
@@ -456,10 +467,12 @@ class ThroughputQOS(Realm):
                         else:
                             if int(self.cx_profile.side_b_min_bps) != 0:
                                 tos_download[self.tos[2]].append(connections_download[sta])
+                                tos_drop_dict['rx_drop_a'][self.tos[2]].append(drop_a_per[temp])
                                 tx_b_download[self.tos[2]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
                                 rx_a_download[self.tos[2]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
                             else:
                                 tos_download[self.tos[2]].append(float(0))
+                                tos_drop_dict['rx_drop_a'][self.tos[2]].append(float(0))
                                 tx_b_download[self.tos[2]].append(int(0))
                                 rx_a_download[self.tos[2]].append(int(0))
                     elif temp in range(3 * len(self.input_devices_list), 4 * len(self.input_devices_list)):
@@ -468,10 +481,12 @@ class ThroughputQOS(Realm):
                         else:
                             if int(self.cx_profile.side_b_min_bps) != 0:
                                 tos_download[self.tos[3]].append(connections_download[sta])
+                                tos_drop_dict['rx_drop_a'][self.tos[3]].append(drop_a_per[temp])
                                 tx_b_download[self.tos[3]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
                                 rx_a_download[self.tos[3]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
                             else:
                                 tos_download[self.tos[3]].append(float(0))
+                                tos_drop_dict['rx_drop_a'][self.tos[3]].append(float(0))
                                 tx_b_download[self.tos[3]].append(int(0))
                                 rx_a_download[self.tos[3]].append(int(0))
                 tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
@@ -492,10 +507,12 @@ class ThroughputQOS(Realm):
                     if temp in range(0, len(self.input_devices_list)):
                         if int(self.cx_profile.side_a_min_bps) != 0:
                             tos_upload[self.tos[0]].append(connections_upload[sta])
+                            tos_drop_dict['rx_drop_b'][self.tos[0]].append(drop_b_per[temp])
                             tx_b_upload[self.tos[0]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
                             rx_a_upload[self.tos[0]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
                         else:
                             tos_upload[self.tos[0]].append(float(0))
+                            tos_drop_dict['rx_drop_b'][self.tos[0]].append(float(0))
                             tx_b_upload[self.tos[0]].append(int(0))
                             rx_a_upload[self.tos[0]].append(int(0))
                     elif temp in range(len(self.input_devices_list), 2 * len(self.input_devices_list)):
@@ -504,10 +521,12 @@ class ThroughputQOS(Realm):
                         else:
                             if int(self.cx_profile.side_a_min_bps) != 0:
                                 tos_upload[self.tos[1]].append(connections_upload[sta])
+                                tos_drop_dict['rx_drop_b'][self.tos[1]].append(drop_b_per[temp])
                                 tx_b_upload[self.tos[1]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
                                 rx_a_upload[self.tos[1]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
                             else:
                                 tos_upload[self.tos[i+1]].append(float(0))
+                                tos_drop_dict['rx_drop_b'][self.tos[1]].append(float(0))
                                 tx_b_upload[self.tos[1]].append(int(0))
                                 rx_a_upload[self.tos[1]].append(int(0))
                     elif temp in range(2 * len(self.input_devices_list), 3 * len(self.input_devices_list)):
@@ -516,10 +535,12 @@ class ThroughputQOS(Realm):
                         else:
                             if int(self.cx_profile.side_a_min_bps) != 0:
                                 tos_upload[self.tos[2]].append(connections_upload[sta])
+                                tos_drop_dict['rx_drop_b'][self.tos[2]].append(drop_b_per[temp])
                                 tx_b_upload[self.tos[2]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
                                 rx_a_upload[self.tos[2]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
                             else:
                                 tos_upload[self.tos[2]].append(float(0))
+                                tos_drop_dict['rx_drop_b'][self.tos[2]].append(float(0))
                                 tx_b_upload[self.tos[2]].append(int(0))
                                 rx_a_upload[self.tos[2]].append(int(0))
                     elif temp in range(3 * len(self.input_devices_list), 4 * len(self.input_devices_list)):
@@ -528,10 +549,12 @@ class ThroughputQOS(Realm):
                         else:
                             if int(self.cx_profile.side_a_min_bps) != 0:
                                 tos_upload[self.tos[3]].append(connections_upload[sta])
+                                tos_drop_dict['rx_drop_b'][self.tos[3]].append(drop_b_per[temp])
                                 tx_b_upload[self.tos[3]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
                                 rx_a_upload[self.tos[3]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
                             else:
                                 tos_upload[self.tos[3]].append(float(0))
+                                tos_drop_dict['rx_drop_b'][self.tos[3]].append(float(0))
                                 tx_b_upload[self.tos[3]].append(int(0))
                                 rx_a_upload[self.tos[3]].append(int(0))
                 
@@ -546,7 +569,7 @@ class ThroughputQOS(Realm):
             print("no RX values available to evaluate QOS")
         key_upload = case_upload + " " + "Mbps"
         key_download = case_download + " " + "Mbps"
-        return {key_download: tos_download},{key_upload: tos_upload}
+        return {key_download: tos_download},{key_upload: tos_upload}, {"drop_per": tos_drop_dict}
 
     def set_report_data(self, data):
         rate_down= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
@@ -725,6 +748,7 @@ class ThroughputQOS(Realm):
         load=""
         upload_list,download_list,individual_upload_list,individual_download_list=[],[],[],[]
         individual_set,colors,labels=[],[],[]
+        individual_drop_a_list, individual_drop_b_list = [], []
         list=[[],[],[],[]]
         data_set={}
         rate_down= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
@@ -787,6 +811,8 @@ class ThroughputQOS(Realm):
                         individual_set=list[2]
                         individual_download_list=individual_set[0]
                         individual_upload_list=individual_set[1]
+                        individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['BK']
+                        individual_drop_b_list = res['test_results'][0][2]['drop_per']['rx_drop_b']['BK']
                         colors=['orange','wheat']
                         labels=["Download","Upload"]
                     else:
@@ -795,8 +821,10 @@ class ThroughputQOS(Realm):
                         labels=['BK']
                         if self.direction == "Upload":
                             individual_upload_list = [data_set[load]['BK']][0]
+                            individual_drop_b_list = res['test_results'][0][2]['drop_per']['rx_drop_b']['BK']
                         elif self.direction == "Download":
                             individual_download_list = [data_set[load]['BK']][0]
+                            individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['BK']
                     report.set_obj_html(
                         _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic BK(WiFi).",
                         _obj=f"The below graph represents individual throughput for {len(self.input_devices_list)} clients running BK "
@@ -840,7 +868,14 @@ class ThroughputQOS(Realm):
                         " Observed upload rate(Mbps) " : individual_upload_list,
                         " Observed download rate(Mbps)" : individual_download_list
                     }
-
+                    if self.direction == "Bi-direction":
+                        bk_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                        bk_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    else:
+                        if self.direction == "Upload":
+                            bk_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                        elif self.direction == "Download":
+                            bk_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
                     dataframe1 = pd.DataFrame(bk_dataframe)
                     report.set_table_dataframe(dataframe1)
                     report.build_table()
@@ -850,6 +885,8 @@ class ThroughputQOS(Realm):
                         individual_set=list[3]
                         individual_download_list=individual_set[0]
                         individual_upload_list=individual_set[1]
+                        individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['BE']
+                        individual_drop_b_list = res['test_results'][0][2]['drop_per']['rx_drop_b']['BE']
                         colors=['lightcoral','mistyrose']
                         labels=['Download','Upload']
                     else:
@@ -858,8 +895,10 @@ class ThroughputQOS(Realm):
                         labels=['BE']
                         if self.direction == "Upload":
                             individual_upload_list = [data_set[load]['BE']][0]
+                            individual_drop_b_list = res['test_results'][0][2]['drop_per']['rx_drop_b']['BE']
                         elif self.direction == "Download":
                             individual_download_list = [data_set[load]['BE']][0]
+                            individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['BE']
                     report.set_obj_html(
                         _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic BE(WiFi).",
                         _obj=f"The below graph represents individual throughput for {len(self.input_devices_list)} clients running BE "
@@ -904,7 +943,14 @@ class ThroughputQOS(Realm):
                         " Observed upload rate(Mbps) " : individual_upload_list,
                         " Observed download rate(Mbps)" : individual_download_list
                     }
-                    
+                    if self.direction == "Bi-direction":
+                        be_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                        be_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    else:
+                        if self.direction == "Upload":
+                            be_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                        elif self.direction == "Download":
+                            be_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
                     dataframe2 = pd.DataFrame(be_dataframe)
                     report.set_table_dataframe(dataframe2)
                     report.build_table()
@@ -914,6 +960,8 @@ class ThroughputQOS(Realm):
                         individual_set=list[0]
                         individual_download_list=individual_set[0]
                         individual_upload_list=individual_set[1]
+                        individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['VI']
+                        individual_drop_b_list = res['test_results'][0][2]['drop_per']['rx_drop_b']['VI']
                         colors=['steelblue','lightskyblue']
                         labels=['Download','Upload']
                     else:
@@ -922,8 +970,10 @@ class ThroughputQOS(Realm):
                         labels=['VI']
                         if self.direction == "Upload":
                             individual_upload_list = [data_set[load]['VI']][0]
+                            individual_drop_b_list = res['test_results'][0][2]['drop_per']['rx_drop_b']['VI']
                         elif self.direction == "Download":
                             individual_download_list = [data_set[load]['VI']][0]
+                            individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['VI']
                     report.set_obj_html(
                         _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic VI(WiFi).",
                         _obj=f"The below graph represents individual throughput for {len(self.input_devices_list)} clients running VI "
@@ -968,7 +1018,15 @@ class ThroughputQOS(Realm):
                         " Observed upload rate(Mbps) " : individual_upload_list,
                         " Observed download rate(Mbps)" : individual_download_list
                     }
-                    
+                    if self.direction == "Bi-direction":
+                        vi_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                        vi_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    else:
+                        if self.direction == "Upload":
+                            vi_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                        elif self.direction == "Download":
+                            vi_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    print("Df", vi_dataframe)
                     dataframe3 = pd.DataFrame(vi_dataframe)
                     report.set_table_dataframe(dataframe3)
                     report.build_table()
@@ -978,6 +1036,8 @@ class ThroughputQOS(Realm):
                         individual_set=list[1]
                         individual_download_list=individual_set[0]
                         individual_upload_list=individual_set[1]
+                        individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['VO']
+                        individual_drop_b_list = res['test_results'][0][2]['drop_per']['rx_drop_b']['VO']
                         colors=['grey','lightgrey']
                         labels=['Download','Upload']
                     else:
@@ -986,8 +1046,10 @@ class ThroughputQOS(Realm):
                         labels=['VO']
                         if self.direction == "Upload":
                             individual_upload_list = [data_set[load]['VO']][0]
+                            individual_drop_b_list = res['test_results'][0][2]['drop_per']['rx_drop_b']['VO']
                         elif self.direction == "Download":
                             individual_download_list = [data_set[load]['VO']][0]
+                            individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['VO']
                     report.set_obj_html(
                         _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic VO(WiFi).",
                         _obj=f"The below graph represents individual throughput for {len(self.input_devices_list)} clients running VO "
@@ -1032,6 +1094,15 @@ class ThroughputQOS(Realm):
                         " Observed upload rate(Mbps) " : individual_upload_list,
                         " Observed download rate(Mbps)" : individual_download_list
                     }
+                    if self.direction == "Bi-direction":
+                        vo_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                        vo_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    else:
+                        if self.direction == "Upload":
+                            vo_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                        elif self.direction == "Download":
+                            vo_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    print("Df", vo_dataframe)
                     dataframe4 = pd.DataFrame(vo_dataframe)
                     report.set_table_dataframe(dataframe4)
                     report.build_table() 
@@ -1211,12 +1282,12 @@ def main():
         throughput_qos.build()
         throughput_qos.start(False, False)
         time.sleep(10)
-        connections_download,connections_upload= throughput_qos.monitor()
+        connections_download,connections_upload, drop_a_per, drop_b_per = throughput_qos.monitor()
         print("connections download",connections_download)
         print("connections upload",connections_upload)
         throughput_qos.stop()
         time.sleep(5)
-        test_results['test_results'].append(throughput_qos.evaluate_qos(connections_download,connections_upload))
+        test_results['test_results'].append(throughput_qos.evaluate_qos(connections_download,connections_upload, drop_a_per, drop_b_per))
         data.update(test_results)
     test_end_time = datetime.now().strftime("%b %d %H:%M:%S")
     print("Test ended at: ", test_end_time)
