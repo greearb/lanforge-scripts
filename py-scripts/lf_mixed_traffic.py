@@ -266,9 +266,12 @@ class Mixed_Traffic(Realm):
             time_obj = time.gmtime(self.total_all_test_duration)
             self.time_formate = time.strftime("%H:%M:%S", time_obj)
 
-    def pre_cleanup(self):
-        # cleaning up stations
-        self.cleanup.sta_clean()
+    def pre_cleanup(self):  # cleaning pre-existing stations and cross connections
+        if not self.real:
+            self.cleanup.sta_clean()
+        self.cleanup.layer3_endp_clean()
+        self.cleanup.layer4_endp_clean()
+        self.cleanup.cxs_clean()
 
     def virtual_client_creation(self):
         if "2.4G" in self.band:
@@ -1949,6 +1952,7 @@ INCLUDE_IN_README: False
                 Mixed_Traffic_obj.pre_cleanup()
                 Mixed_Traffic_obj.virtual_client_creation()
             elif args.real:
+                Mixed_Traffic_obj.pre_cleanup()
                 Mixed_Traffic_obj.selecting_devices_from_available()
             if args.tests:
                 if "1" in args.tests:
