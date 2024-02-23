@@ -148,3 +148,16 @@ class cv_dut(LFCliBase):
             "ssid_flags": ssid_flags,
             "ssid_flags_mask": ssid_flags_mask,
         })
+
+    def add_note(self,
+                 dut_name="DUT",
+                 text='[BLANK]'):
+        req_url = "/cli-json/add_dut_notes"
+        logger.info("DUT profile add notes: name: %s" % dut_name +
+                    " notes: %s" % text)
+
+        self.json_post(req_url, {
+            "dut": dut_name,
+            "text": text
+        })
+
