@@ -180,6 +180,12 @@ class DUT(dut):
                               )
 
 
+    def add_notes(self,
+            dut_name="DUT",
+            text="[BLANK]"):
+                self.add_note(dut_name=dut_name,
+                            text=text)
+
 def main():
     help_summary = '''\
     This script create chamberview dut script is designed to configure DUT using chamberview scenario.
@@ -301,6 +307,10 @@ INCLUDE_IN_README: False
         default=None,
         action='append')
 
+    parser.add_argument("--dut_notes", default="[BLANK]", help="Add Notes to Chamberview Test, may want to use --dut_notes_clear prior")
+    parser.add_argument("--dut_notes_clear", help="Clear out older notes, used prior to adding new notes will set '[BLANK]'", action="store_true")
+
+
     # TODO:  Use lfcli_base for common arguments.
     parser.add_argument('--debug', help='Enable debugging', default=False, action="store_true")
     parser.add_argument('--log_level',
@@ -337,6 +347,10 @@ INCLUDE_IN_README: False
 
     new_dut.setup()
     new_dut.add_ssids()
+    if args.dut_notes_clear:
+        new_dut.add_notes(dut_name=args.dut_name,text='[BLANK]')
+    if args.dut_notes != '[BLANK]':
+        new_dut.add_notes(dut_name=args.dut_name,text=args.dut_notes)
     new_dut.cv_test.show_text_blob(None, None, True)  # Show changes on GUI
     new_dut.cv_test.sync_cv()
     time.sleep(2)
