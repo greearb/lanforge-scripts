@@ -144,18 +144,18 @@ class cv_test(Realm):
 
     # For auto save report
     def auto_save_report(self, instance):
-        cmd = "cv click %s 'Auto Save Report'" % instance
+        cmd = "cv click '%s' 'Auto Save Report'" % instance
         self.run_cv_cmd(cmd)
 
     # To get the report location
     def get_report_location(self, instance):
-        cmd = "cv get %s 'Report Location:'" % instance
+        cmd = "cv get '%s' 'Report Location:'" % instance
         location = self.run_cv_cmd(cmd)
         return location
 
     # To get if test is running or not
     def get_is_running(self, instance):
-        cmd = "cv get %s 'StartStop'" % instance
+        cmd = "cv get '%s' 'StartStop'" % instance
         val = self.run_cv_cmd(cmd)
         # pprint(val)
         return val[0]["LAST"]["response"] == 'StartStop::Stop'
@@ -183,7 +183,7 @@ class cv_test(Realm):
 
     # delete the test instance
     def delete_instance(self, instance):
-        cmd = "cv delete %s" % instance
+        cmd = "cv delete '%s'" % instance
         self.run_cv_cmd(cmd)
 
         # It can take a while, some test rebuild the old scenario upon exit, for instance.
@@ -347,7 +347,7 @@ class cv_test(Realm):
             check = self.get_report_location(instance_name)
             location = json.dumps(check[0]["LAST"]["response"])
             if location != '\"Report Location:::\"':
-                logger.info(location)
+                # logger.info(location)
                 location = location.replace('\"Report Location:::', '')
                 location = location.replace('\"', '')
                 report = lf_rpt()
@@ -360,7 +360,7 @@ class cv_test(Realm):
                     else:
                         filelocation.write(location + '/kpi.csv\n')
                     filelocation.close()
-                logger.info(location)
+                logger.info('Waiting on test completion for kpi')
                 self.lf_report_dir = location
                 if pull_report:
                     try:
