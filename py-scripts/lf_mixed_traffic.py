@@ -195,6 +195,7 @@ class Mixed_Traffic(Realm):
         self.multicast_test_duration = multicast_test_duration
         self.path = path
         self.station_profile = self.new_station_profile()
+        self.generic_endps_profile = self.new_generic_endp_profile()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.passwd,
@@ -269,9 +270,16 @@ class Mixed_Traffic(Realm):
     def pre_cleanup(self):  # cleaning pre-existing stations and cross connections
         if not self.real:
             self.cleanup.sta_clean()
+        resp = self.json_get('/generic?fields=name')
+        if 'endpoints' in resp:
+            for i in resp['endpoints']:
+                if list(i.values())[0]['name']:
+                    self.generic_endps_profile.created_cx.append('CX_' + list(i.values())[0]['name'])
+                    self.generic_endps_profile.created_endp.append(list(i.values())[0]['name'])
+        self.generic_endps_profile.cleanup()
+        self.cleanup.cxs_clean()
         self.cleanup.layer3_endp_clean()
         self.cleanup.layer4_endp_clean()
-        self.cleanup.cxs_clean()
 
     def virtual_client_creation(self):
         if "2.4G" in self.band:
@@ -1834,6 +1842,9 @@ INCLUDE_IN_README: False
                         default="MTU")
     parser.add_argument('--polling_interval',help="--polling_interval <seconds>", default='60s')
 
+    parser.add_argument('--pre_cleanup', help='Use this if you want to clean Generic, Layer-3, L3 Endps &'
+                                              ' Layer 4-7 tabs data', default=None, action="store_true")
+
     # logging configuration
     optional.add_argument("--lf_logger_config_json",
                           help="--lf_logger_config_json <json file> , json configuration of logger")
@@ -1949,10 +1960,12 @@ INCLUDE_IN_README: False
                                             path=path)
             logger.info("Selected Tests List".format(args.tests))
             if args.virtual:
-                Mixed_Traffic_obj.pre_cleanup()
+                if args.pre_cleanup:
+                    Mixed_Traffic_obj.pre_cleanup()
                 Mixed_Traffic_obj.virtual_client_creation()
             elif args.real:
-                Mixed_Traffic_obj.pre_cleanup()
+                if args.pre_cleanup:
+                    Mixed_Traffic_obj.pre_cleanup()
                 Mixed_Traffic_obj.selecting_devices_from_available()
             if args.tests:
                 if "1" in args.tests:
