@@ -347,7 +347,9 @@ class cv_test(Realm):
             check = self.get_report_location(instance_name)
             location = json.dumps(check[0]["LAST"]["response"])
             if location != '\"Report Location:::\"':
-                # logger.info(location)
+                # Please Do not remove or comment out the next line of logger.info it is used
+                # to find the location of the meta file used by LANforge Qualification
+                logger.info(location)  # Do Not comment out or remove
                 location = location.replace('\"Report Location:::', '')
                 location = location.replace('\"', '')
                 report = lf_rpt()
@@ -374,6 +376,9 @@ class cv_test(Realm):
                         raise e  # Exception("Could not find Reports")
                     break
             else:
+                # Please Do not remove or comment out the next line of logger.info it is used
+                # to find the location of the meta file used by LANforge Qualification
+                logger.info(location)  # Do Not comment out or remove
                 logger.info('Waiting on test completion for kpi')
                 
 
