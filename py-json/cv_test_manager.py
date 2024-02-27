@@ -376,9 +376,6 @@ class cv_test(Realm):
                         raise e  # Exception("Could not find Reports")
                     break
             else:
-                # Please Do not remove or comment out the next line of logger.info it is used
-                # to find the location of the meta file used by LANforge Qualification
-                logger.info(location)  # Do Not comment out or remove
                 logger.info('Waiting on test completion for kpi')
                 
 
