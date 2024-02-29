@@ -746,35 +746,37 @@ INCLUDE_IN_README: False
 
 def validate_args(args):
     if args.radio is None:
-        raise ValueError("--radio required")
+        print("--radio required")
+        exit(1)
     
-    if(args.eap_method is not None):
-        if(args.radius_identity is None):
+    if args.eap_method is not None:
+        if args.radius_identity is None:
             print("--radius_identity required")
-            exit(0)
-        elif(args.radius_passwd is None):
+            exit(1)
+        elif args.radius_passwd is None:
             print("--radius_passwd required")
-            exit(0)
-        elif(args.key_mgmt is None):
+            exit(1)
+        elif args.key_mgmt is None:
             print("--key_mgmt required")
-            exit(0)
-        elif(args.eap_method == 'TLS'):
-            if(args.pk_passwd is None):
+            exit(1)
+        elif args.eap_method == 'TLS':
+            if args.pk_passwd is None:
                 print("--pk_passwd required")
-                exit(0)
-            elif(args.ca_cert is None):
+                exit(1)
+            elif args.ca_cert is None:
                 print('--ca_cert required')
-                exit(0)
-            elif(args.private_key is None):
+                exit(1)
+            elif args.private_key is None:
                 print('--private_key required')
                 exit(0)
-        if(args.security == 'wpa3'):
-            if(args.pairwise_cipher == '[BLANK]'):
+
+        if args.security == 'wpa3':
+            if args.pairwise_cipher == '[BLANK]':
                 print('--pairwise_cipher required')
-                exit(0)
-            elif(args.groupwise_cipher == '[BLANK]'):
+                exit(1)
+            elif args.groupwise_cipher == '[BLANK]':
                 print('--groupwise_cipher required')
-                exit(0)
+                exit(1)
         
 
 def main():
