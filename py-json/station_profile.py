@@ -234,6 +234,16 @@ class StationProfile:
         self.reset_port_extra_data["reset_port_time_min"] = reset_port_min_time
         self.reset_port_extra_data["reset_port_time_max"] = reset_port_max_time
 
+    # Sets security configuration for the station.
+    # Security type and SSID are required. Password is optional.
+    #
+    # Security type is one of following (case insensitive)
+    #   - 'open'
+    #   - 'owe'
+    #   - 'wep'
+    #   - 'wpa'
+    #   - 'wpa2'
+    #   - 'wpa3'
     def use_security(self, security_type, ssid=None, passwd=None):
         SECURITY_TYPES = {
             "open":    "[BLANK]",
@@ -243,6 +253,11 @@ class StationProfile:
             "wpa2":    "wpa2_enable",
             "wpa3":    "use-wpa3"
         }
+
+        # This logic assumes security type must be all lowercase,
+        # but caller may pass a non-upper case security type
+        # so long as it matches one of supported types
+        security_type = security_type.lower()
 
         self.add_sta_data["ssid"] = ssid
         if security_type in SECURITY_TYPES.keys():

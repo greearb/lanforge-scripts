@@ -817,6 +817,7 @@ class LFCliBase:
         # Required Args
         required.add_argument('--radio',
                               help='radio EID, e.g: 1.wiphy2')
+        # Silently support capitalized security types
         required.add_argument('--security',
                               default="open",
                               help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
