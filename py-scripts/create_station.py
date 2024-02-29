@@ -348,10 +348,14 @@ class CreateStation(Realm):
             elif(self.eap_method == 'TTLS' or self.eap_method == 'PEAP'):
                 self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt, pairwise=self.pairwise_cipher, group=self.groupwise_cipher, eap=self.eap_method, identity=self.radius_identity,
                                                     passwd=self.radius_passwd)
-            if(self.security == 'wpa3'):
+
+            # Security type comes in one of following formats (possibly capitalized),
+            # so need to check if substring:
+            #   'type'
+            #   '<type1|type2>'
+            if 'wpa3' in self.security or 'WPA3' in self.security:
                 self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
-            # elif(self.security == 'wpa2'):
-            #     self.station_profile.set_command_param("add_sta", "ieee80211w", 0)
+
             self.desired_add_sta_flags = []
             self.desired_add_sta_flags_mask = []
             self.station_profile.set_command_flag(command_name="add_sta", param_name="8021x_radius", value=1)  # enable 802.1x flag
@@ -770,7 +774,15 @@ def validate_args(args):
                 print('--private_key required')
                 exit(0)
 
-        if args.security == 'wpa3':
+        # Only need to check WPA3 ciphers because user requests 802.1X authentication.
+        # Personal WPA3 always uses SAE, so default '[BLANK]' is fine if ciphers
+        # aren't specified.
+        #
+        # Security type comes in one of following formats (possibly capitalized),
+        # so need to check if substring:
+        #   'type'
+        #   '<type1|type2>'
+        if 'wpa3' in args.security or 'WPA3' in args.security:
             if args.pairwise_cipher == '[BLANK]':
                 print('--pairwise_cipher required')
                 exit(1)
