@@ -73,57 +73,47 @@ def main():
     parser = LFCliBase.create_bare_argparse(
         prog='create_qvlan.py',
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''Creates Q-VLAN stations attached to the Eth port of the user's choice.''',
-
+        epilog='''Creates Q-VLAN stations attached to the parent Ethernet port specified.''',
         description='''\
         create_qvlan.py:
         ---------------------
         Generic command ''')
-    parser.add_argument('--radio', help='radio EID, e.g: 1.wiphy2')
-    parser.add_argument(
-        '--qvlan_parent',
-        help='specifies parent port for qvlan creation',
-        default=None,
-        required=True)
-    parser.add_argument(
-        '--first_port',
-        help='specifies name of first port to be used',
-        default=None)
-    parser.add_argument(
-        '--num_ports',
-        type=int,
-        help='number of ports to create',
-        default=1)
-    parser.add_argument(
-        '--first_qvlan_ip',
-        help='specifies first static ip address to be used or dhcp',
-        default=None)
-    parser.add_argument(
-        '--netmask',
-        help='specifies netmask to be used with static ip addresses',
-        default=None)
-    parser.add_argument(
-        '--gateway',
-        help='specifies default gateway to be used with static addressing',
-        default=None)
-    parser.add_argument(
-        '--use_ports',
-        help='list of comma separated ports to use with ips, \'=\' separates name and ip { port_name1=ip_addr1,port_name1=ip_addr2 }.  Ports without ips will be left alone',
-        default=None)
+    parser.add_argument('--radio',
+                        help='radio EID, e.g: 1.wiphy2')
+    parser.add_argument('--qvlan_parent',
+                        help='specifies parent port for qvlan creation',
+                        default=None,
+                        required=True)
+    parser.add_argument('--first_port',
+                        help='specifies name of first port to be used',
+                        default=None)
+    parser.add_argument('--num_ports',
+                        type=int,
+                        help='number of ports to create',
+                        default=1)
+    parser.add_argument('--first_qvlan_ip',
+                        help='specifies first static ip address to be used or dhcp',
+                        default=None)
+    parser.add_argument('--netmask',
+                        help='specifies netmask to be used with static ip addresses',
+                        default=None)
+    parser.add_argument('--gateway',
+                        help='specifies default gateway to be used with static addressing',
+                        default=None)
+    parser.add_argument('--use_ports',
+                        help='list of comma separated ports to use with ips, \'=\' separates name and ip { port_name1=ip_addr1,port_name1=ip_addr2 }.  Ports without ips will be left alone',
+                        default=None)
     tg_group = parser.add_mutually_exclusive_group()
-    tg_group.add_argument(
-        '--add_to_group',
-        help='name of test group to add cxs to',
-        default=None)
-    parser.add_argument(
-        '--cxs',
-        help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group',
-        default=None)
-    parser.add_argument(
-        '--use_qvlans',
-        help='will create qvlans',
-        action='store_true',
-        default=False)
+    tg_group.add_argument('--add_to_group',
+                        help='name of test group to add cxs to',
+                        default=None)
+    parser.add_argument('--cxs',
+                        help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group',
+                        default=None)
+    parser.add_argument('--use_qvlans',
+                        help='will create qvlans',
+                        action='store_true',
+                        default=False)
 
     args = parser.parse_args()
 
