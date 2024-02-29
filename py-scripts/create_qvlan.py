@@ -42,30 +42,28 @@ class CreateQVlan(Realm):
             port_list = []
         if ip_list is None:
             ip_list = []
-        self.host = host
-        self.port = port
-        self.qvlan_parent = qvlan_parent
-        self.debug = debug
-        self.port_list = port_list
-        self.ip_list = ip_list
-        self.exit_on_error = exit_on_error
 
-        self.qvlan_profile = self.new_qvlan_profile()
-        self.qvlan_profile.num_qvlans = int(num_ports)
-        self.qvlan_profile.desired_qvlans = self.port_list
-        self.qvlan_profile.qvlan_parent = self.qvlan_parent
-        self.qvlan_profile.dhcp = dhcp
-        self.qvlan_profile.netmask = netmask
-        self.qvlan_profile.first_ip_addr = first_qvlan_ip
-        self.qvlan_profile.gateway = gateway
-        self.qvlan_profile.dhcp = dhcp
+        self.host           = host
+        self.port           = port
+        self.qvlan_parent   = qvlan_parent
+        self.debug          = debug
+        self.port_list      = port_list
+        self.ip_list        = ip_list
+        self.exit_on_error  = exit_on_error
+
+        self.qvlan_profile                  = self.new_qvlan_profile()
+        self.qvlan_profile.num_qvlans       = int(num_ports)
+        self.qvlan_profile.desired_qvlans   = self.port_list
+        self.qvlan_profile.qvlan_parent     = self.qvlan_parent
+        self.qvlan_profile.dhcp             = dhcp
+        self.qvlan_profile.netmask          = netmask
+        self.qvlan_profile.first_ip_addr    = first_qvlan_ip
+        self.qvlan_profile.gateway          = gateway
 
     def build(self):
         logger.info("Creating QVLAN stations")
-        if self.qvlan_profile.create(
-            debug=self.debug,
-            sleep_time=0,
-            ):
+        if self.qvlan_profile.create(debug=self.debug,
+                                     sleep_time=0):
             self._pass("802.1q VLAN creation successful.")
         else:
             self._fail("802.1q VLAN creation failed.")
@@ -179,14 +177,14 @@ def main():
     else:
         if not args.use_ports:
             num_ports = int(args.num_ports)
+            prefix = str(args.qvlan_parent) + "#"
+
             port_list = LFUtils.port_name_series(
-                prefix=str(
-                    args.qvlan_parent) + "#",
+                prefix=prefix,
                 start_id=1,
                 end_id=num_ports,
                 padding_number=10000,
                 radio=args.radio)
-            print(3)
         else:
             temp_list = args.use_ports.split(',')
             for port in temp_list:
