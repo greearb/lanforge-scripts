@@ -650,127 +650,98 @@ INCLUDE_IN_README: False
 
 ''')
     required = parser.add_argument_group('required arguments')
-    required.add_argument(
-        '--start_id',
-        help='Specify the station starting id \n e.g: --start_id <value> default 0', 
-        default=0)
+    required.add_argument('--start_id',
+                          help='Specify the station starting id \n e.g: --start_id <value> default 0', 
+                          default=0)
 
     optional = parser.add_argument_group('Optional arguments')
-    optional.add_argument(
-        '--mode',
-        help='Mode for your station (as a number)',
-        default=0)
-    optional.add_argument(
-        '--station_flag',
-        help='station flags to add. eg: --station_flag ht40_disable',
-        required=False,
-        default=None)
-
-    optional.add_argument(
-        "--radio_antenna",
-        help='Number of spatial streams: \n'
-            ' default = -1 \n'
-            ' 0 Diversity (All) \n'
-            ' 1 Fixed-A (1x1) \n'
-            ' 4 AB (2x2) \n'
-            ' 7 ABC (3x3) \n'
-            ' 8 ABCD (4x4) \n'
-            ' 9 (8x8) \n', 
-        default='-1')
-    optional.add_argument(
-        "--radio_channel", 
-        help='Radio Channel: \n'
-            ' default: AUTO \n'
-            ' e.g:   --radio_channel 6 (2.4G) \n'
-                    '\t--radio_channel 36 (5G) \n',
-        default='AUTO')
-    optional.add_argument(
-        "--radio_tx_power", 
-        help='Radio tx-power \n'
-            ' default: AUTO system defaults',
-        default='AUTO')
-    optional.add_argument(
-        "--country_code",
-        help='Radio Country Code:\n'
-            'e.g: \t--country_code 840')
-    optional.add_argument(
-        "--eap_method",
-        type=str,
-        help='Enter EAP method e.g: TLS'
-    )
-    optional.add_argument(
-        "--radius_identity",
-        type=str,
-        help='Enter the username of radius server'
-    )
-    optional.add_argument(
-        "--radius_passwd",
-        type=str,
-        help='Enter the password of radius server'
-    )
-    optional.add_argument(
-        "--pk_passwd",
-        type=str,
-        help='Enter the private key password'
-    )
-    optional.add_argument(
-        "--ca_cert",
-        type=str,
-        help='Enter path for certificate e.g: /home/lanforge/ca.pem'
-    )
-    optional.add_argument(
-        "--private_key",
-        type=str,
-        help='Enter private key path e.g: /home/lanforge/client.p12'
-    )
-    optional.add_argument(
-        "--key_mgmt",
-        type=str,
-        help='Add the key management value\n'
-             'default = 0 \n'
-             'wpa2    = WPA-EAP \n'
-             'wpa3    = WPA-SHA256\n'
-    )
-    optional.add_argument(
-        "--pairwise_cipher",
-        help='Pairwise Ciphers\n'
-             'DEFAULT\n'
-             'CCMP\n'
-             'TKIP\n'
-             'NONE\n'
-             'CCMP-TKIP\n'
-             'CCMP-256\n'
-             'GCMP\n'
-             'GCMP-256\n'
-             'CCMP/GCMP-256',
-        default='[BLANK]'
-    )
-    optional.add_argument(
-        "--groupwise_cipher",
-        help='Groupwise Ciphers\n'
-             'DEFAULT\n'
-             'CCMP\n'
-             'TKIP\n'
-             'WEP104\n'
-             'WEP40\n'
-             'GTK_NOT_USED\n'
-             'GCMP-256\n'
-             'CCMP-256\n'
-             'GCMP/CCMP-256\n'
-             'ALL',
-        default='[BLANK]'
-    )
-    optional.add_argument(
-        "--no_pre_cleanup",
-        help='Add this flag to stop cleaning up before station creation',
-        action='store_true'
-    )
-    optional.add_argument(
-        "--cleanup",
-        help='Add this flag to clean up stations after creation',
-        action='store_true'
-    )
-    optional.add_argument("--custom_wifi_cmd", help="Mention the custom wifi command.")
+    optional.add_argument('--mode',
+                          help='Mode for your station (as a number)',
+                          default=0)
+    optional.add_argument('--station_flag',
+                          help='station flags to add. eg: --station_flag ht40_disable',
+                          required=False,
+                          default=None)
+    optional.add_argument("--radio_antenna",
+                          help='Number of spatial streams: \n'
+                              ' default = -1 \n'
+                              ' 0 Diversity (All) \n'
+                              ' 1 Fixed-A (1x1) \n'
+                              ' 4 AB (2x2) \n'
+                              ' 7 ABC (3x3) \n'
+                              ' 8 ABCD (4x4) \n'
+                              ' 9 (8x8) \n', 
+                          default='-1')
+    optional.add_argument("--radio_channel", 
+                          help='Radio Channel: \n'
+                              ' default: AUTO \n'
+                              ' e.g:   --radio_channel 6 (2.4G) \n'
+                                      '\t--radio_channel 36 (5G) \n',
+                          default='AUTO')
+    optional.add_argument("--radio_tx_power", 
+                          help='Radio tx-power \n'
+                              ' default: AUTO system defaults',
+                          default='AUTO')
+    optional.add_argument("--country_code",
+                          help='Radio Country Code:\n'
+                               'e.g: \t--country_code 840')
+    optional.add_argument("--eap_method",
+                          type=str,
+                          help='Enter EAP method e.g: TLS')
+    optional.add_argument("--radius_identity",
+                          type=str,
+                          help='Enter the username of radius server')
+    optional.add_argument("--radius_passwd",
+                          type=str,
+                          help='Enter the password of radius server')
+    optional.add_argument("--pk_passwd",
+                          type=str,
+                          help='Enter the private key password')
+    optional.add_argument("--ca_cert",
+                          type=str,
+                          help='Enter path for certificate e.g: /home/lanforge/ca.pem')
+    optional.add_argument("--private_key",
+                          type=str,
+                          help='Enter private key path e.g: /home/lanforge/client.p12')
+    optional.add_argument("--key_mgmt",
+                          type=str,
+                          help='Add the key management value\n'
+                               'default = 0 \n'
+                               'wpa2    = WPA-EAP \n'
+                               'wpa3    = WPA-SHA256')
+    optional.add_argument("--pairwise_cipher",
+                          help='Pairwise Ciphers\n'
+                               'DEFAULT\n'
+                               'CCMP\n'
+                               'TKIP\n'
+                               'NONE\n'
+                               'CCMP-TKIP\n'
+                               'CCMP-256\n'
+                               'GCMP\n'
+                               'GCMP-256\n'
+                               'CCMP/GCMP-256',
+                               default='[BLANK]')
+    optional.add_argument("--groupwise_cipher",
+                          help='Groupwise Ciphers\n'
+                               'DEFAULT\n'
+                               'CCMP\n'
+                               'TKIP\n'
+                               'WEP104\n'
+                               'WEP40\n'
+                               'GTK_NOT_USED\n'
+                               'GCMP-256\n'
+                               'CCMP-256\n'
+                               'GCMP/CCMP-256\n'
+                               'ALL',
+                          default='[BLANK]')
+    optional.add_argument("--no_pre_cleanup",
+                          help='Add this flag to stop cleaning up before station creation',
+                          action='store_true')
+    optional.add_argument("--cleanup",
+                          help='Add this flag to clean up stations after creation',
+                          action='store_true')
+    optional.add_argument("--custom_wifi_cmd",
+                          help="Mention the custom wifi command.")
 
     args = parser.parse_args()
 
