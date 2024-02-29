@@ -68,8 +68,7 @@ class CreateQVlan(Realm):
         else:
             self._fail("802.1q VLAN creation failed.")
 
-
-def main():
+def parse_args():
     parser = LFCliBase.create_bare_argparse(
         prog='create_qvlan.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -115,7 +114,10 @@ def main():
                         action='store_true',
                         default=False)
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
