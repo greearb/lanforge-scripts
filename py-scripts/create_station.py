@@ -270,41 +270,43 @@ class CreateStation(Realm):
                  _custom_wifi_cmd=False):
         super().__init__(_host,
                          _port)
-        self.host = _host
-        self.port = _port
-        self.ssid = _ssid
-        self.security = _security
-        self.password = _password
-        self.mode = _mode
+        self.host           = _host
+        self.port           = _port
+        self.ssid           = _ssid
+        self.security       = _security
+        self.password       = _password
+        self.mode           = _mode
         if _mode:
             if str.isalpha(_mode):
                 self.mode = add_sta.add_sta_modes[_mode];
 
-        self.eap_method = _eap_method
-        self.radius_identity = _radius_identity
-        self.radius_passwd = _radius_passwd
-        self.pk_passwd = _pk_passwd
-        self.ca_cert = _ca_cert
-        self.private_key = _private_key
-        self.key_mgmt = _key_mgmt
-        self.pairwise_cipher=_pairwise_cipher
-        self.groupwise_cipher=_groupwise_cipher
-        self.sta_list = _sta_list
-        self.sta_flags = _sta_flags
-        self.radio = _radio
-        self.timeout = 120
-        self.number_template = _number_template
-        self.debug = _debug_on
-        self.up = _up
-        self.set_txo_data = _set_txo_data
-        self.custom_wifi_cmd = _custom_wifi_cmd
-        self.station_profile = self.new_station_profile()
-        self.station_profile.lfclient_url = self.lfclient_url
-        self.station_profile.ssid = self.ssid
-        self.station_profile.ssid_pass = self.password,
-        self.station_profile.security = self.security
-        self.station_profile.number_template_ = self.number_template
-        self.station_profile.mode = self.mode
+        self.eap_method         = _eap_method
+        self.radius_identity    = _radius_identity
+        self.radius_passwd      = _radius_passwd
+        self.pk_passwd          = _pk_passwd
+        self.ca_cert            = _ca_cert
+        self.private_key        = _private_key
+        self.key_mgmt           = _key_mgmt
+        self.pairwise_cipher    = _pairwise_cipher
+        self.groupwise_cipher   = _groupwise_cipher
+        self.sta_list           = _sta_list
+        self.sta_flags          = _sta_flags
+        self.radio              = _radio
+        self.timeout            = 120
+        self.number_template    = _number_template
+        self.debug              = _debug_on
+        self.up                 = _up
+        self.set_txo_data       = _set_txo_data
+        self.custom_wifi_cmd    = _custom_wifi_cmd
+
+        self.station_profile                    = self.new_station_profile()
+        self.station_profile.lfclient_url       = self.lfclient_url
+        self.station_profile.ssid               = self.ssid
+        self.station_profile.ssid_pass          = self.password,
+        self.station_profile.security           = self.security
+        self.station_profile.number_template_   = self.number_template
+        self.station_profile.mode               = self.mode
+
         # if self.sta_flags is not None:
         #     self.station_profile.desired_add_sta_flags = self.sta_flags
         #     self.station_profile.desired_add_sta_mask = self.sta_flags
@@ -865,8 +867,12 @@ INCLUDE_IN_README: False
                     exit(1)
 
 
-    create_station.modify_radio(mgr=args.mgr, radio=args.radio, antenna=args.radio_antenna, channel=args.radio_channel,
-                                tx_power=args.radio_tx_power, country_code=args.country_code)
+    create_station.modify_radio(mgr=args.mgr,
+                                radio=args.radio,
+                                antenna=args.radio_antenna,
+                                channel=args.radio_channel,
+                                tx_power=args.radio_tx_power,
+                                country_code=args.country_code)
     create_station.build()
 
     if(args.cleanup):
