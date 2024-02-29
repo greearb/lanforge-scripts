@@ -235,26 +235,29 @@ class StationProfile:
         self.reset_port_extra_data["reset_port_time_max"] = reset_port_max_time
 
     def use_security(self, security_type, ssid=None, passwd=None):
-        types = {"open": "[BLANK]",
-                 "owe": "use-owe",
-                 "wep": "wep_enable",
-                 "wpa": "wpa_enable",
-                 "wpa2": "wpa2_enable",
-                 "wpa3": "use-wpa3" }
+        SECURITY_TYPES = {
+            "open":    "[BLANK]",
+            "owe":     "use-owe",
+            "wep":     "wep_enable",
+            "wpa":     "wpa_enable",
+            "wpa2":    "wpa2_enable",
+            "wpa3":    "use-wpa3"
+        }
+
         self.add_sta_data["ssid"] = ssid
-        if security_type in types.keys():
+        if security_type in SECURITY_TYPES.keys():
             if (ssid is None) or (ssid == ""):
                 raise ValueError("use_security: %s requires ssid" % security_type)
             if (passwd is None) or (passwd == ""):
                 raise ValueError("use_security: %s requires passphrase, NA or [BLANK]" % security_type)
-            for name in types.values():
+            for name in SECURITY_TYPES.values():
                 if name in self.desired_add_sta_flags and name in self.desired_add_sta_flags_mask:
                     self.desired_add_sta_flags.remove(name)
                     self.desired_add_sta_flags_mask.remove(name)
             if security_type != "open":
-                self.desired_add_sta_flags.append(types[security_type])
+                self.desired_add_sta_flags.append(SECURITY_TYPES[security_type])
                 # self.set_command_flag("add_sta", types[security_type], 1)
-                self.desired_add_sta_flags_mask.append(types[security_type])
+                self.desired_add_sta_flags_mask.append(SECURITY_TYPES[security_type])
             else:
                 passwd = "[BLANK]"
             self.set_command_param("add_sta", "ssid", ssid)
