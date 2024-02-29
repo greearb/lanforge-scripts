@@ -417,9 +417,8 @@ class CreateStation(Realm):
             if('sta' in list(interface_name.keys())[0]):
                 available_stations.append(list(interface_name.keys())[0])
         return(available_stations)
-        
 
-def main():
+def parse_args():
     parser = LFCliBase.create_basic_argparse(  # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
         prog='create_station.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -743,16 +742,9 @@ INCLUDE_IN_README: False
     optional.add_argument("--custom_wifi_cmd",
                           help="Mention the custom wifi command.")
 
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    logger_config = lf_logger_config.lf_logger_config()
-    # set the logger level to requested value
-    logger_config.set_level(level=args.log_level)
-    logger_config.set_json(json_file=args.lf_logger_config_json)
-
-    # if args.debug:
-    #    pprint.pprint(args)
-    #    time.sleep(5)
+def validate_args(args):
     if args.radio is None:
         raise ValueError("--radio required")
     
@@ -783,6 +775,20 @@ INCLUDE_IN_README: False
             elif(args.groupwise_cipher == '[BLANK]'):
                 print('--groupwise_cipher required')
                 exit(0)
+        
+
+def main():
+    args = parse_args()
+    validate_args(args)
+
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
+
+    # if args.debug:
+    #    pprint.pprint(args)
+    #    time.sleep(5)
 
     start_id = 0
     if args.start_id != 0:
