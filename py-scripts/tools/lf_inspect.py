@@ -395,13 +395,21 @@ class inspect_sql:
                                 self.performance_poor += 1
                             elif percent_delta == 0:
                                 # for UL in test-tag and DL 0 or DL in test-tag and UL 0 this case should not be a failure
-                                if 'DL' in df_data_1['short-description'] and 'UL' in df_data_1['test-tag']:
-                                    logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
+                                if 'UL+DL' in df_data_1['short-description'] and 'DL_UL' in df_data_1['test-tag']:
+                                    logger.info("For test {test} the {discription} DL not being monitored Not Applicable".format(
+                                            test=df_data_1['test-tag'],description=df_data_1['short-description']))
+                                    background = self.background_red
+                                    self.performance_critical += 1
+                                    self.test_result = "Critical"
+                                elif 'DL' in df_data_1['short-description'] and 'UL' in df_data_1['test-tag']:
+                                    logger.info("For test {test} the {discription} DL not being monitored Not Applicable".format(
+                                            test=df_data_1['test-tag'],description=df_data_1['short-description']))
                                     background = self.background_green
                                     self.performance_good += 1
                                     self.test_result = "Good"
-                                elif 'UL' in df_data_1['short-description'] and 'DL' in df_data_1['test-tag']:
-                                    logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
+                                elif 'DL' in df_data_1['short-description'] and 'UL' in df_data_1['test-tag']:
+                                    logger.info("For test {test} the {discription} DL not being monitored Not Applicable".format(
+                                            test=df_data_1['test-tag'],description=df_data_1['short-description']))
                                     background = self.background_green
                                     self.performance_good += 1
                                     self.test_result = "Good"
