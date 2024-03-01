@@ -125,13 +125,17 @@ class lf_create_wc_json():
         if "UL" in self.lf_wc_dut_traffic_direction:
             self.traffic_direction += "_UL"
 
+        self.lf_wc_sta_protocol =   self.lf_wc_sta_protocol_combobox.get()
+        self.wc_sta_protocol = self.lf_wc_sta_protocol.replace(' and ','_')
+
+
 
         if self.file_2g == "":
-            self.file_2g = "ct_perf_wc_2g" + _suite_radios_2g + self.traffic_direction + ".json"
+            self.file_2g = "ct_perf_wc_2g" + _suite_radios_2g + self.traffic_direction + "_" + self.wc_sta_protocol + ".json"
         if self.file_5g == "":
-            self.file_5g = "ct_perf_wc_5g" + _suite_radios_5g + self.traffic_direction + ".json"
+            self.file_5g = "ct_perf_wc_5g" + _suite_radios_5g + self.traffic_direction + "_" + self.wc_sta_protocol + ".json"
         if self.file_6g == "":            
-            self.file_6g = "ct_perf_wc_6g" + _suite_radios_6g + self.traffic_direction + ".json"
+            self.file_6g = "ct_perf_wc_6g" + _suite_radios_6g + self.traffic_direction + "_" + self.wc_sta_protocol + ".json"
 
         self.dir_file_2g = ""
         self.dir_file_5g = ""
@@ -163,9 +167,9 @@ class lf_create_wc_json():
         self.use_radio_5g_var_dict = _use_radio_5g_var_dict
         self.use_radio_6g_var_dict = _use_radio_6g_var_dict
 
-        self.suite_radios_2g = "ct_perf_wc_2g" + _suite_radios_2g + self.traffic_direction
-        self.suite_radios_5g = "ct_perf_wc_5g" + _suite_radios_5g + self.traffic_direction
-        self.suite_radios_6g = "ct_perf_wc_6g" + _suite_radios_6g + self.traffic_direction
+        self.suite_radios_2g = "ct_perf_wc_2g" + _suite_radios_2g + self.traffic_direction + "_" + self.wc_sta_protocol 
+        self.suite_radios_5g = "ct_perf_wc_5g" + _suite_radios_5g + self.traffic_direction + "_" + self.wc_sta_protocol  
+        self.suite_radios_6g = "ct_perf_wc_6g" + _suite_radios_6g + self.traffic_direction + "_" + self.wc_sta_protocol  
 
         self.suite_test_name_2g_dict = _suite_test_name_2g_dict
         self.suite_test_name_5g_dict = _suite_test_name_5g_dict
@@ -244,7 +248,9 @@ class lf_create_wc_json():
         else:
             ul_rate = "0"
 
-        lf_wc_sta_protocol =   self.lf_wc_sta_protocol_combobox.get()
+        lf_wc_sta_protocol = self.lf_wc_sta_protocol
+        wc_sta_protocol = self.wc_sta_protocol 
+
 
         traffic_direction = self.traffic_direction
 
@@ -276,7 +282,7 @@ class lf_create_wc_json():
 
             for radio in range(0,self.radio_dict_size):
                 if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
-                    wc_test_name = str(self.suite_test_name_band_dict[radio].get()) + f"_{band}_W{radio}" + f"{traffic_direction}"
+                    wc_test_name = str(self.suite_test_name_band_dict[radio].get()) + f"_{band}_W{radio}" + f"{traffic_direction}" + f"_{wc_sta_protocol}"
                     wc_batch_size = str(self.radio_batch_dict[radio].get())
                     wc_sta_max = wc_batch_size.rsplit(',', 1)
                     if len(wc_sta_max) == 1:
@@ -318,7 +324,7 @@ class lf_create_wc_json():
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name {wc_test_name}",
-                    " --upstream UPSTREAM_PORT --batch_size {wc_batch_size} --loop_iter 1 --protocol {lf_wc_sta_protocol} --duration {wc_duration}",
+                    " --upstream UPSTREAM_PORT --batch_size {wc_batch_size} --loop_iter 1 --protocol '{lf_wc_sta_protocol}' --duration {wc_duration}",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{wc_test_name}'",
                     " --test_rig TEST_RIG ",
                     " --upload_rate '{ul_rate}'",
