@@ -743,7 +743,7 @@ MU MIMO will perform poor for AX radios for virtual stations greater then one, u
 
         self.lf_wc_sta_protocol = tkinter.Label(self.lf_wc_frame, text="Protocol")
         self.lf_wc_sta_protocol.grid(row=5, column=2)
-        self.lf_wc_sta_protocol_combobox = ttk.Combobox(self.lf_wc_frame, values=["UDP","TCP","UDP-IPv4"])
+        self.lf_wc_sta_protocol_combobox = ttk.Combobox(self.lf_wc_frame, values=["UDP","TCP","UDP-IPv4","TCP and UDP"])
         self.lf_wc_sta_protocol_combobox.current(2)
         self.lf_wc_sta_protocol_combobox.grid(row= 5, column=3)
         self.window_tooltip.bind(self.lf_wc_sta_protocol_combobox, '''The network traffic protocal type to be generated''')
