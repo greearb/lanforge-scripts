@@ -120,10 +120,10 @@ class lf_create_wc_json():
 
         self.traffic_direction = ''
         self.lf_wc_dut_traffic_direction = self.lf_wc_dut_traffic_direction_combobox.get()
-        if "Transmit" in self.lf_wc_dut_traffic_direction:
-            self.traffic_direction += "_tx"
-        if "Receive" in self.lf_wc_dut_traffic_direction:
-            self.traffic_direction += "_rx"
+        if "DL" in self.lf_wc_dut_traffic_direction:
+            self.traffic_direction += "_DL"
+        if "UL" in self.lf_wc_dut_traffic_direction:
+            self.traffic_direction += "_UL"
 
 
         if self.file_2g == "":
@@ -235,16 +235,18 @@ class lf_create_wc_json():
                 dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",\n """
 
         # The perspective is with regards to the DUT
-        if "tx" in self.traffic_direction:
+        if "DL" in self.traffic_direction:
             dl_rate = self.dl_rate
         else: 
             dl_rate = "0"
-        if "rx" in self.traffic_direction:
+        if "UL" in self.traffic_direction:
             ul_rate = self.ul_rate
         else:
             ul_rate = "0"
 
         lf_wc_sta_protocol =   self.lf_wc_sta_protocol_combobox.get()
+
+        traffic_direction = self.traffic_direction
 
         self.wc_band_json = """
 {{
@@ -274,7 +276,7 @@ class lf_create_wc_json():
 
             for radio in range(0,self.radio_dict_size):
                 if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
-                    wc_test_name = str(self.suite_test_name_band_dict[radio].get()) + f"_{band}_W{radio}"
+                    wc_test_name = str(self.suite_test_name_band_dict[radio].get()) + f"_{band}_W{radio}" + f"{traffic_direction}"
                     wc_batch_size = str(self.radio_batch_dict[radio].get())
                     wc_sta_max = wc_batch_size.rsplit(',', 1)
                     if len(wc_sta_max) == 1:
@@ -319,8 +321,8 @@ class lf_create_wc_json():
                     " --upstream UPSTREAM_PORT --batch_size {wc_batch_size} --loop_iter 1 --protocol {lf_wc_sta_protocol} --duration {wc_duration}",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{wc_test_name}'",
                     " --test_rig TEST_RIG ",
-                    " --upload_rate {ul_rate}'",
-                    " --download_rate {dl_rate}'",
+                    " --upload_rate '{ul_rate}'",
+                    " --download_rate '{dl_rate}'",
                     " --set DUT_SET_NAME",
                     " --verbosity 11"
                 ]
