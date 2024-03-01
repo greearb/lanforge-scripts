@@ -80,6 +80,8 @@ class lf_create_dp_rvr_json():
                  _lf_dp_rvr_pkt_size_custom_combobox,
                  _lf_dp_rvr_download_speed_combobox,
                  _lf_dp_rvr_upload_speed_combobox,
+                 _lf_dp_rvr_bandwidth_combobox,
+                 _lf_dp_rvr_spatial_streams_combobox,
                  _lf_dp_rvr_attenuator_combobox,
                  _lf_dp_rvr_attenuation_2g_combobox,
                  _lf_dp_rvr_attenuation_5g_combobox,
@@ -113,6 +115,8 @@ class lf_create_dp_rvr_json():
         self.lf_dp_rvr_pkt_custom_size_combobox = _lf_dp_rvr_pkt_size_custom_combobox
         self.lf_dp_rvr_download_speed_combobox = _lf_dp_rvr_download_speed_combobox
         self.lf_dp_rvr_upload_speed_combobox = _lf_dp_rvr_upload_speed_combobox
+        self.lf_dp_rvr_bandwidth_combobox = _lf_dp_rvr_bandwidth_combobox
+        self.lf_dp_rvr_spatial_streams_combobox = _lf_dp_rvr_spatial_streams_combobox
         self.lf_dp_rvr_attenuator_combobox = _lf_dp_rvr_attenuator_combobox
         self.lf_dp_rvr_attenuation_2g_combobox = _lf_dp_rvr_attenuation_2g_combobox
         self.lf_dp_rvr_attenuation_5g_combobox = _lf_dp_rvr_attenuation_5g_combobox
@@ -277,6 +281,8 @@ class lf_create_dp_rvr_json():
         lf_dp_rvr_pkt_custom_size = self.lf_dp_rvr_pkt_custom_size_combobox.get()
         lf_dp_rvr_download_speed = self.lf_dp_rvr_download_speed_combobox.get()
         lf_dp_rvr_upload_speed = self.lf_dp_rvr_upload_speed_combobox.get()
+        lf_dp_rvr_bandwidth = self.lf_dp_rvr_bandwidth_combobox.get()
+        lf_dp_rvr_spatial_streams = self.lf_dp_rvr_spatial_streams_combobox.get()
         lf_dp_rvr_attenuator = self.lf_dp_rvr_attenuator_combobox.get()
 
         lf_dp_rvr_number_dut_indexes = self.lf_dp_rvr_number_dut_indexes_combobox.get()
@@ -371,8 +377,8 @@ class lf_create_dp_rvr_json():
                     " --raw_line 'cust_pkt_sz: {lf_dp_rvr_pkt_custom_size}' ",
                     " --raw_line 'directions: {lf_dp_rvr_dut_traffic_direction}' ",
                     " --raw_line 'traffic_types: {lf_dp_rvr_traffic_type}' ",
-                    " --raw_line 'bandw_options: AUTO' ",
-                    " --raw_line 'spatial_streams: AUTO' "
+                    " --raw_line 'bandw_options: {lf_dp_rvr_bandwidth}' ",
+                    " --raw_line 'spatial_streams: {lf_dp_rvr_spatial_streams}' ",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{dp_rvr_test_name}'",
                     " {attenuator}",
                     " {attenuation}",
