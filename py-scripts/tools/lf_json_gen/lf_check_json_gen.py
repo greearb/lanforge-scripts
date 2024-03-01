@@ -768,10 +768,10 @@ MU MIMO will perform poor for AX radios for virtual stations greater then one, u
 
         self.lf_wc_dut_traffic_direction_label = tkinter.Label(self.lf_wc_frame, text="Traffic Direction")
         self.lf_wc_dut_traffic_direction_label.grid(row=6, column=4)
-        self.lf_wc_dut_traffic_direction_combobox = ttk.Combobox(self.lf_wc_frame, values=["DUT Transmit","DUT Receive","DUT Transmit;DUT Receive"])
+        self.lf_wc_dut_traffic_direction_combobox = ttk.Combobox(self.lf_wc_frame, values=["DUT DL","DUT UL","DUT DL;DUT UL"])
         self.lf_wc_dut_traffic_direction_combobox.current(2)
         self.lf_wc_dut_traffic_direction_combobox.grid(row=6, column=5)
-        self.window_tooltip.bind(self.lf_wc_dut_traffic_direction_combobox, '''Select DUT Traffic Direction, DUT Transmit is dl_rate, DUT Receive is ul_rate''')
+        self.window_tooltip.bind(self.lf_wc_dut_traffic_direction_combobox, '''Select DUT Download or DUT Upload''')
 
         self.lf_wc_use_qa_var = tkinter.StringVar(value="Use")
         self.lf_wc_use_qa_check = tkinter.Checkbutton(self.lf_wc_frame, text="lf_qa", variable=self.lf_wc_use_qa_var,
@@ -885,6 +885,22 @@ if only DUT Transmit is choosen the upload speed is set to 0''')
 
         # Row 4
         row +=1
+        self.lf_dp_rvr_bandwidth_label = tkinter.Label(self.lf_dp_rvr_frame, text="Bandwidth")
+        self.lf_dp_rvr_bandwidth_label.grid(row=row, column=0)
+        self.lf_dp_rvr_bandwidth_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["AUTO","20","40","80","160"])
+        self.lf_dp_rvr_bandwidth_combobox.current(0)
+        self.lf_dp_rvr_bandwidth_combobox.grid(row= row, column=1)
+        self.window_tooltip.bind(self.lf_dp_rvr_bandwidth_combobox, '''Bandwidth AUTO, 20, 40, 80, 160''')
+
+        self.lf_dp_rvr_spatial_streams_label = tkinter.Label(self.lf_dp_rvr_frame, text="Spatial Streams")
+        self.lf_dp_rvr_spatial_streams_label.grid(row=row, column=2)
+        self.lf_dp_rvr_spatial_streams_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["AUTO","1","2","3","4"])
+        self.lf_dp_rvr_spatial_streams_combobox.current(0)
+        self.lf_dp_rvr_spatial_streams_combobox.grid(row=row, column=3)
+        self.window_tooltip.bind(self.lf_dp_rvr_spatial_streams_combobox, '''Spatial Streams Auto, 1x1, 2x2, 3x3, 4x4''')
+
+        # Row 5
+        row +=1
         self.lf_dp_rvr_attenuator_label = tkinter.Label(self.lf_dp_rvr_frame, text="Attenuator")
         self.lf_dp_rvr_attenuator_label.grid(row=row, column=0)
         self.lf_dp_rvr_attenuator_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["","ATTENUATOR_1","ATTENUATOR_2","ATTENUATOR_3"])
@@ -892,7 +908,7 @@ if only DUT Transmit is choosen the upload speed is set to 0''')
         self.lf_dp_rvr_attenuator_combobox.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_upload_speed_combobox, "The ATTENUATOR is definded in the test_rig.json file")
 
-        # Row 5
+        # Row 6
         row += 1
         self.lf_dp_rvr_attenuation_2g_label = tkinter.Label(self.lf_dp_rvr_frame, text="Attenuation 2g")
         self.lf_dp_rvr_attenuation_2g_label.grid(row=row, column=0)
@@ -918,7 +934,7 @@ May also enter custom Example 0..+100..700''')
         self.window_tooltip.bind(self.lf_dp_rvr_attenuation_6g_combobox, '''Select the atteunation range  <start>..+<step>..<end> 
 May also enter custom Example 0..+100..700''')
 
-        # row 6
+        # row 7
         row += 1
         self.lf_dp_rvr_2g_file = tkinter.Label(self.lf_dp_rvr_frame, text='2g json file')
         self.lf_dp_rvr_2g_file.grid(row=row, column= 0)
@@ -937,7 +953,7 @@ May also enter custom Example 0..+100..700''')
         self.lf_dp_rvr_2g_dir_entry.grid(row=row, column=4, columnspan = 2)
         self.window_tooltip.bind(self.lf_dp_rvr_2g_dir_entry, '''directory to place json, if blank will auto gen''')
 
-        # row 7
+        # row 8
         row += 1
         self.lf_dp_rvr_5g_file = tkinter.Label(self.lf_dp_rvr_frame, text='5g json dir')
         self.lf_dp_rvr_5g_file.grid(row=row, column= 0)
@@ -957,7 +973,7 @@ May also enter custom Example 0..+100..700''')
         self.window_tooltip.bind(self.lf_dp_rvr_5g_dir_entry, '''directory to place json, if blank will auto gen''')
 
 
-        # row 8
+        # row 9
         row += 1
         self.lf_dp_rvr_6g_file = tkinter.Label(self.lf_dp_rvr_frame, text='6g json file')
         self.lf_dp_rvr_6g_file.grid(row=row, column= 0)
@@ -976,7 +992,7 @@ May also enter custom Example 0..+100..700''')
         self.lf_dp_rvr_6g_dir_entry.grid(row=row, column=4, columnspan = 2)
         self.window_tooltip.bind(self.lf_dp_rvr_6g_dir_entry, '''directory to place json, if blank will auto gen''')
 
-        # row 9
+        # row 10
         row += 1
         self.lf_dp_rvr_duration = tkinter.Label(self.lf_dp_rvr_frame, text='test duration')
         self.lf_dp_rvr_duration.grid(row=row, column= 0)
@@ -995,7 +1011,7 @@ if left blank will default to 20000''')
         self.window_tooltip.bind(self.lf_dp_rvr_number_dut_indexes_combobox, '''Number of DUT indexes valid in the DUT json''')
 
 
-        # row 10 
+        # row 11 
         row += 1
         self.lf_dp_rvr_use_qa_var = tkinter.StringVar(value="Use")
         self.lf_dp_rvr_use_qa_var_check = tkinter.Checkbutton(self.lf_dp_rvr_frame, text="lf_qa", variable=self.lf_dp_rvr_use_qa_var,
@@ -1011,7 +1027,7 @@ lf_qa will compare performance over multiple runs for Chamber View tests and tes
         self.window_tooltip.bind(self.lf_dp_rvr_use_inspect_check, '''Recommended: Wifi Capacity Test Suite Json will include lf_inspect. 
 lf_inspect will compare performance between two individual runs for Chamber View tests and tests that include kpi''')
 
-        # row 11
+        # row 12
         row += 1
         self.lf_dp_rvr_save = ttk.Button(self.lf_dp_rvr_frame, text = 'Create DP Suite', command = self.create_dp_json)
         self.lf_dp_rvr_save.grid(row=row, column=0, sticky="news", padx=20, pady=10)
@@ -1025,7 +1041,7 @@ lf_inspect will compare performance between two individual runs for Chamber View
 
 
         self.lf_dp_rvr_clear = ttk.Button(self.lf_dp_rvr_frame, text = 'Clear DP, RvR Info', command = self.dp_rvr_clear_information)
-        self.lf_dp_rvr_clear.grid(row=11, column=2, sticky="news", padx=20, pady=10)
+        self.lf_dp_rvr_clear.grid(row=row, column=2, sticky="news", padx=20, pady=10)
         self.window_tooltip.bind(self.lf_dp_rvr_clear, 'Clear File Names , use between test suite generation')
 
 
@@ -1550,6 +1566,8 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_dp_rvr_pkt_size_custom_combobox.get()
         self.lf_dp_rvr_download_speed_combobox.get()
         self.lf_dp_rvr_upload_speed_combobox.get()
+        self.lf_dp_rvr_bandwidth_combobox.get()
+        self.lf_dp_rvr_spatial_streams_combobox.get()
         self.lf_dp_rvr_attenuator_combobox.get()
         self.lf_dp_rvr_attenuation_2g_combobox.get()
         self.lf_dp_rvr_attenuation_5g_combobox.get()
@@ -1590,6 +1608,8 @@ lf_inspect will compare performance between two individual runs for Chamber View
                 _lf_dp_rvr_pkt_size_custom_combobox = self.lf_dp_rvr_pkt_size_custom_combobox,
                 _lf_dp_rvr_download_speed_combobox = self.lf_dp_rvr_download_speed_combobox,
                 _lf_dp_rvr_upload_speed_combobox = self.lf_dp_rvr_upload_speed_combobox,
+                _lf_dp_rvr_bandwidth_combobox = self.lf_dp_rvr_bandwidth_combobox,
+                _lf_dp_rvr_spatial_streams_combobox = self.lf_dp_rvr_spatial_streams_combobox,
                 _lf_dp_rvr_attenuator_combobox = self.lf_dp_rvr_attenuator_combobox,      
                 _lf_dp_rvr_attenuation_2g_combobox = self.lf_dp_rvr_attenuation_2g_combobox,
                 _lf_dp_rvr_attenuation_5g_combobox = self.lf_dp_rvr_attenuation_5g_combobox,
