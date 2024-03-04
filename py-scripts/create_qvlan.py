@@ -102,17 +102,6 @@ def parse_args():
     parser.add_argument('--use_ports',
                         help='list of comma separated ports to use with ips, \'=\' separates name and ip { port_name1=ip_addr1,port_name1=ip_addr2 }.  Ports without ips will be left alone',
                         default=None)
-    tg_group = parser.add_mutually_exclusive_group()
-    tg_group.add_argument('--add_to_group',
-                        help='name of test group to add cxs to',
-                        default=None)
-    parser.add_argument('--cxs',
-                        help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group',
-                        default=None)
-    parser.add_argument('--use_qvlans',
-                        help='will create qvlans',
-                        action='store_true',
-                        default=False)
 
     return parser.parse_args()
 
@@ -124,18 +113,10 @@ def main():
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    update_group_args = {
-        "name": None,
-        "action": None,
-        "cxs": None
-    }
-    # update_group_args['name'] =
     if args.first_qvlan_ip in ["dhcp", "DHCP"]:
         dhcp = True
     else:
         dhcp = False
-    update_group_args['action'] = "add"
-    update_group_args['cxs'] = args.cxs
     port_list = []
     ip_list = []
     if args.first_port and args.use_ports:
