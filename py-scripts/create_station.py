@@ -26,12 +26,12 @@ EXAMPLE:
          # For creating station with enterprise authentication with TLS
 
             create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --security <wpa2|wpa3> 
-                --eap_method TLS --radius_identity <username> --radius_passwd <password> --pk_passwd <password> --key_mgmt <key mgmt> --ca_cert <path> --private_key <path> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
+                --eap_method TLS --eap_identity <username> --eap_password <password> --pk_passwd <password> --key_mgmt <key mgmt> --ca_cert <path> --private_key <path> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
 
          # For creating station with enterprise authentication with TTLS or PEAP
 
             create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --security <wpa2|wpa3> 
-                --eap_method <TTLS|PEAP> --radius_identity <username> --radius_passwd <password> --key_mgmt <key mgmt> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
+                --eap_method <TTLS|PEAP> --eap_identity <username> --eap_password <password> --key_mgmt <key mgmt> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
            
 
 SCRIPT_CLASSIFICATION:  Creation
@@ -172,10 +172,10 @@ NOTES:
                 GCMP/CCMP-256
                 ALL  
 
-            --radius_identity <radius_username>
+            --eap_identity <eap_identity>
                     Add this argument to specify the username of radius server
 
-            --radius_passwd <radius_password>
+            --eap_password <eap_password>
                     Add this argument to specify the password of radius server
 
             --pk_passwd <private_key_passsword>
@@ -249,8 +249,8 @@ class CreateStation(Realm):
                  _port=None,
                  _mode=0,
                  _eap_method=None,
-                 _radius_identity=None,
-                 _radius_passwd=None,
+                 _eap_identity=None,
+                 _eap_password=None,
                  _pk_passwd=None,
                  _ca_cert=None,
                  _private_key=None,
@@ -281,8 +281,8 @@ class CreateStation(Realm):
                 self.mode = add_sta.add_sta_modes[_mode];
 
         self.eap_method         = _eap_method
-        self.radius_identity    = _radius_identity
-        self.radius_passwd      = _radius_passwd
+        self.eap_identity       = _eap_identity
+        self.eap_password       = _eap_password
         self.pk_passwd          = _pk_passwd
         self.ca_cert            = _ca_cert
         self.private_key        = _private_key
@@ -342,12 +342,12 @@ class CreateStation(Realm):
             "add_sta", "create_admin_down", 1)
         if(self.eap_method is not None):
             if(self.eap_method == 'TLS'):
-                self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt, pairwise=self.pairwise_cipher, group=self.groupwise_cipher,eap=self.eap_method, identity=self.radius_identity,
-                                                        passwd=self.radius_passwd, private_key=self.private_key,
+                self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt, pairwise=self.pairwise_cipher, group=self.groupwise_cipher,eap=self.eap_method, identity=self.eap_identity,
+                                                        passwd=self.eap_password, private_key=self.private_key,
                                                         ca_cert=self.ca_cert, pk_password=self.pk_passwd)
             elif(self.eap_method == 'TTLS' or self.eap_method == 'PEAP'):
-                self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt, pairwise=self.pairwise_cipher, group=self.groupwise_cipher, eap=self.eap_method, identity=self.radius_identity,
-                                                    passwd=self.radius_passwd)
+                self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt, pairwise=self.pairwise_cipher, group=self.groupwise_cipher, eap=self.eap_method, identity=self.eap_identity,
+                                                    passwd=self.eap_password)
 
             # Security type comes in one of following formats (possibly capitalized),
             # so need to check if substring:
@@ -458,12 +458,12 @@ EXAMPLE:
          # For creating station with enterprise authentication with TLS
 
             create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --security <wpa2|wpa3> 
-                --eap_method TLS --radius_identity <username> --radius_passwd <password> --pk_passwd <password> --key_mgmt <key mgmt> --ca_cert <path> --private_key <path> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
+                --eap_method TLS --eap_identity <username> --eap_password <password> --pk_passwd <password> --key_mgmt <key mgmt> --ca_cert <path> --private_key <path> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
 
          # For creating station with enterprise authentication with TTLS or PEAP
 
             create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --security <wpa2|wpa3> 
-                --eap_method <TTLS|PEAP> --radius_identity <username> --radius_passwd <password> --key_mgmt <key mgmt> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
+                --eap_method <TTLS|PEAP> --eap_identity <username> --eap_password <password> --key_mgmt <key mgmt> --pairwise_cipher <cipher> --groupwise_cipher <cipher>
                 
         # CLI to Connect Clients with given custom wifi command.
         
@@ -608,10 +608,10 @@ NOTES:
                 GCMP/CCMP-256
                 ALL
 
-            --radius_identity <radius_username>
+            --eap_identity <eap_identity>
                     Add this argument to specify the username of radius server
 
-            --radius_passwd <radius_password>
+            --eap_password <eap_password>
                     Add this argument to specify the password of radius server
 
             --pk_passwd <private_key_passsword>
@@ -691,12 +691,16 @@ INCLUDE_IN_README: False
     optional.add_argument("--eap_method",
                           type=str,
                           help='Enter EAP method e.g: TLS')
-    optional.add_argument("--radius_identity",
+    optional.add_argument("--eap_identity",
+                          "--radius_identity",
+                          dest="eap_identity",
                           type=str,
-                          help='Enter the username of radius server')
-    optional.add_argument("--radius_passwd",
+                          help="This is synonymous with the RADIUS username.")
+    optional.add_argument("--eap_password",
+                          "--radius_passwd",
+                          dest="eap_password",
                           type=str,
-                          help='Enter the password of radius server')
+                          help="This is synonymous with the RADIUS user's password.")
     optional.add_argument("--pk_passwd",
                           type=str,
                           help='Enter the private key password')
@@ -754,11 +758,11 @@ def validate_args(args):
         exit(1)
     
     if args.eap_method is not None:
-        if args.radius_identity is None:
-            print("--radius_identity required")
+        if args.eap_identity is None:
+            print("--eap_identity required")
             exit(1)
-        elif args.radius_passwd is None:
-            print("--radius_passwd required")
+        elif args.eap_password is None:
+            print("--eap_password required")
             exit(1)
         elif args.key_mgmt is None:
             print("--key_mgmt required")
@@ -827,8 +831,8 @@ def main():
                                    _password=args.passwd,
                                    _security=args.security,
                                    _eap_method=args.eap_method,
-                                   _radius_identity=args.radius_identity,
-                                   _radius_passwd=args.radius_passwd,
+                                   _eap_identity=args.eap_identity,
+                                   _eap_password=args.eap_password,
                                    _pk_passwd=args.pk_passwd,
                                    _ca_cert=args.ca_cert,
                                    _private_key=args.private_key,
