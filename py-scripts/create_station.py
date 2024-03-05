@@ -333,20 +333,32 @@ class CreateStation(Realm):
 
     def build(self):
         # Build stations
-        self.station_profile.use_security(
-            self.security, self.ssid, self.password)
+        self.station_profile.use_security(self.security,
+                                          self.ssid,
+                                          self.password)
         self.station_profile.set_number_template(self.number_template)
 
         print("Creating stations")
-        self.station_profile.set_command_flag(
-            "add_sta", "create_admin_down", 1)
-        if(self.eap_method is not None):
-            if(self.eap_method == 'TLS'):
-                self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt, pairwise=self.pairwise_cipher, group=self.groupwise_cipher,eap=self.eap_method, identity=self.eap_identity,
-                                                        passwd=self.eap_password, private_key=self.private_key,
-                                                        ca_cert=self.ca_cert, pk_password=self.pk_passwd)
-            elif(self.eap_method == 'TTLS' or self.eap_method == 'PEAP'):
-                self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt, pairwise=self.pairwise_cipher, group=self.groupwise_cipher, eap=self.eap_method, identity=self.eap_identity,
+        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+
+        # Configure station 802.1X settings
+        if self.eap_method is not None:
+            if self.eap_method == 'TLS':
+                self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
+                                                    pairwise=self.pairwise_cipher,
+                                                    group=self.groupwise_cipher,
+                                                    eap=self.eap_method,
+                                                    identity=self.eap_identity,
+                                                    passwd=self.eap_password,
+                                                    private_key=self.private_key,
+                                                    ca_cert=self.ca_cert,
+                                                    pk_password=self.pk_passwd)
+            elif self.eap_method == 'TTLS' or self.eap_method == 'PEAP' :
+                self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
+                                                    pairwise=self.pairwise_cipher,
+                                                    group=self.groupwise_cipher,
+                                                    eap=self.eap_method,
+                                                    identity=self.eap_identity,
                                                     passwd=self.eap_password)
 
             # Security type comes in one of following formats (possibly capitalized),
@@ -361,6 +373,7 @@ class CreateStation(Realm):
             self.station_profile.set_command_flag(command_name="add_sta", param_name="8021x_radius", value=1)  # enable 802.1x flag
             self.station_profile.set_command_flag(command_name="add_sta", param_name="80211u_enable", value=0)  # disable 802.11u flag
             # self.station_profile.set_command_flag(command_name="add_sta", param_name="80211r_pmska_cache", value=1)  # enable 80211r_pmska_cache flag
+
         self.station_profile.set_command_param(
             "set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
