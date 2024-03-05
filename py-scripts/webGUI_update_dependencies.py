@@ -37,7 +37,7 @@ def main():
                 'django','django-celery-beat','django-enum-choices','django-timezone-field',
                 'flower','jsonfield','matplotlib','psycopg2-binary','wheel','pytest','pytest-html','pytest-json',
                 'django-celery-results','celery',
-                'pytest-json-report','pytest-metadata','python-dateutil','requests','pillow','tabulate','selenium']
+                'pytest-json-report','pytest-metadata','python-dateutil','requests','pillow','tabulate','selenium','scapy']
     if args.pyjwt:
         packages.append('pyjwt')
     else:
