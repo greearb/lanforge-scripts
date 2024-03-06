@@ -41,7 +41,7 @@ class StationProfile:
     def __init__(self, lfclient_url, local_realm,
                  ssid="NA",
                  ssid_pass="NA",
-                 bssid=None,
+                 bssid='DEFAULT', # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
                  security="open",
                  number_template_="00000",
                  mode=0,  # shouldn't this be -1 or AUTO?
@@ -83,7 +83,7 @@ class StationProfile:
             "mac": "xx:xx:xx:xx:*:xx",
             "flags": 0,  # (0x400 + 0x20000 + 0x1000000000)  # create admin down
             "flags_mask": 0,
-            "ap": None,
+            "ap": bssid,
         }
         if self.mode:
             self.add_sta_data["mode"] = self.mode
@@ -492,6 +492,7 @@ class StationProfile:
         self.add_sta_data["flags"] = self.add_named_flags(self.desired_add_sta_flags, add_sta.add_sta_flags)
         self.add_sta_data["flags_mask"] = self.add_named_flags(self.desired_add_sta_flags_mask, add_sta.add_sta_flags)
         self.add_sta_data["radio"] = radio_port
+        self.add_sta_data["ap"] = self.bssid
 
         self.add_sta_data["resource"] = radio_resource
         self.add_sta_data["shelf"] = radio_shelf
