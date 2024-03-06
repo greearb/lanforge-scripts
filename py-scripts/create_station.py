@@ -406,7 +406,8 @@ class CreateStation(Realm):
         if self.station_profile.create(
             radio=self.radio,
             sta_names_=self.sta_list,
-            debug=self.debug):
+            debug=self.debug,
+            up_=self.up):
             self._pass("Stations created.")
         else:
             self._fail("Stations not properly created.")
@@ -685,6 +686,9 @@ INCLUDE_IN_README: False
                           default=0)
 
     optional = parser.add_argument_group('Optional arguments')
+    optional.add_argument("--create_admin_down",
+                          help='Create ports in admin down state.',
+                          action='store_true')
     optional.add_argument("--bssid",
                           type=str,
                           help="AP BSSID. For example, \"00:00:00:00:00:00\".",
@@ -893,6 +897,7 @@ def main():
                                    _sta_flags=args.station_flag,
                                    _mode=args.mode,
                                    _radio=args.radio,
+                                   _up=(not args.create_admin_down),
                                    _set_txo_data=None,
                                    _proxy_str=args.proxy,
                                    _custom_wifi_cmd=args.custom_wifi_cmd,
