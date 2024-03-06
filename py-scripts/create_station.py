@@ -342,9 +342,9 @@ class CreateStation(Realm):
 
     def build(self):
         # Build stations
-        self.station_profile.use_security(self.security,
-                                          self.ssid,
-                                          self.password)
+        self.station_profile.use_security(security_type=self.security,
+                                          ssid=self.ssid,
+                                          passwd=self.password)
         self.station_profile.set_number_template(self.number_template)
 
         print("Creating stations")
@@ -403,18 +403,18 @@ class CreateStation(Realm):
                 sgi=self.set_txo_data["sgi"],
             )
 
-        if self.station_profile.create(
-            radio=self.radio,
-            sta_names_=self.sta_list,
-            debug=self.debug,
-            up_=self.up):
+        if self.station_profile.create(radio=self.radio,
+                                       sta_names_=self.sta_list,
+                                       debug=self.debug,
+                                       up_=self.up):
             self._pass("Stations created.")
         else:
             self._fail("Stations not properly created.")
         # Custom Wifi setting
         if self.custom_wifi_cmd:
             for sta in self.sta_list:
-                self.set_custom_wifi(resource=int(sta.split('.')[1]), station=str(sta.split('.')[2]),
+                self.set_custom_wifi(resource=int(sta.split('.')[1]),
+                                     station=str(sta.split('.')[2]),
                                      cmd=self.custom_wifi_cmd)
 
         if self.up:
@@ -438,8 +438,13 @@ class CreateStation(Realm):
         shelf, resource, radio, *nil = LFUtils.name_to_eid(radio)
 
         modify_radio = lf_modify_radio.lf_modify_radio(lf_mgr=mgr)
-        modify_radio.set_wifi_radio(_resource=resource, _radio=radio, _shelf=shelf, _antenna=antenna, _channel=channel,
-                                    _txpower=tx_power,_country_code=country_code)
+        modify_radio.set_wifi_radio(_resource=resource,
+                                    _radio=radio,
+                                    _shelf=shelf,
+                                    _antenna=antenna,
+                                    _channel=channel,
+                                    _txpower=tx_power,
+                                    _country_code=country_code)
         
     def get_station_list(self):
         response = super().json_get("/port/list?fields=_links,alias,device,port+type")
@@ -903,15 +908,15 @@ def main():
                                    _custom_wifi_cmd=args.custom_wifi_cmd,
                                    _debug_on=args.debug)
     
-    if(not args.no_pre_cleanup):
+    if not args.no_pre_cleanup:
         create_station.cleanup()
 
     else:
         already_available_stations = create_station.get_station_list()
-        if(len(already_available_stations) > 0):
+        if len(already_available_stations) > 0:
             used_indices = [int(station_id.split('sta')[1]) for station_id in already_available_stations]
             for new_station in station_list:
-                if(new_station in already_available_stations):
+                if new_station in already_available_stations:
                     print('Some stations are already existing in the LANforge from the given start id.')
                     print('You can create stations from the start id {}'.format(max(used_indices) + 1))
                     exit(1)
@@ -925,7 +930,7 @@ def main():
                                 country_code=args.country_code)
     create_station.build()
 
-    if(args.cleanup):
+    if args.cleanup:
         create_station.cleanup()
 
     if create_station.passes():
