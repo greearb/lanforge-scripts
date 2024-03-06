@@ -285,27 +285,27 @@ class CreateStation(Realm):
             if str.isalpha(_mode):
                 self.mode = add_sta.add_sta_modes[_mode];
 
-        self.eap_method         = _eap_method
-        self.eap_identity       = _eap_identity
+        self.eap_method             = _eap_method
+        self.eap_identity           = _eap_identity
         self.eap_anonymous_identity = _eap_anonymous_identity
-        self.eap_password       = _eap_password
-        self.eap_phase1         = _eap_phase1
-        self.eap_phase2         = _eap_phase2
-        self.pk_passwd          = _pk_passwd
-        self.ca_cert            = _ca_cert
-        self.private_key        = _private_key
-        self.key_mgmt           = _key_mgmt
-        self.pairwise_cipher    = _pairwise_cipher
-        self.groupwise_cipher   = _groupwise_cipher
-        self.sta_list           = _sta_list
-        self.sta_flags          = _sta_flags
-        self.radio              = _radio
-        self.timeout            = 120
-        self.number_template    = _number_template
-        self.debug              = _debug_on
-        self.up                 = _up
-        self.set_txo_data       = _set_txo_data
-        self.custom_wifi_cmd    = _custom_wifi_cmd
+        self.eap_password           = _eap_password
+        self.eap_phase1             = _eap_phase1
+        self.eap_phase2             = _eap_phase2
+        self.pk_passwd              = _pk_passwd
+        self.ca_cert                = _ca_cert
+        self.private_key            = _private_key
+        self.key_mgmt               = _key_mgmt
+        self.pairwise_cipher        = _pairwise_cipher
+        self.groupwise_cipher       = _groupwise_cipher
+        self.sta_list               = _sta_list
+        self.sta_flags              = _sta_flags
+        self.radio                  = _radio
+        self.timeout                = 120
+        self.number_template        = _number_template
+        self.debug                  = _debug_on
+        self.up                     = _up
+        self.set_txo_data           = _set_txo_data
+        self.custom_wifi_cmd        = _custom_wifi_cmd
 
         self.station_profile                    = self.new_station_profile()
         self.station_profile.lfclient_url       = self.lfclient_url
