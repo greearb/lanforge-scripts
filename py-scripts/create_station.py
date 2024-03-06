@@ -243,6 +243,7 @@ add_sta = importlib.import_module("py-json.LANforge.add_sta")
 class CreateStation(Realm):
     def __init__(self,
                  _ssid=None,
+                 _bssid=None,
                  _security=None,
                  _password=None,
                  _host=None,
@@ -276,6 +277,7 @@ class CreateStation(Realm):
         self.host           = _host
         self.port           = _port
         self.ssid           = _ssid
+        self.bssid          = _bssid
         self.security       = _security
         self.password       = _password
         self.mode           = _mode
@@ -308,6 +310,7 @@ class CreateStation(Realm):
         self.station_profile                    = self.new_station_profile()
         self.station_profile.lfclient_url       = self.lfclient_url
         self.station_profile.ssid               = self.ssid
+        self.station_profile.bssid              = self.bssid
         self.station_profile.ssid_pass          = self.password,
         self.station_profile.security           = self.security
         self.station_profile.number_template_   = self.number_template
@@ -682,6 +685,10 @@ INCLUDE_IN_README: False
                           default=0)
 
     optional = parser.add_argument_group('Optional arguments')
+    optional.add_argument("--bssid",
+                          type=str,
+                          help="AP BSSID. For example, \"00:00:00:00:00:00\".",
+                          default="DEFAULT") # TODO: Fix 'null' when not set issue (REST server-side issue)
     optional.add_argument('--mode',
                           help='Mode for your station (as a number)',
                           default=0)
@@ -866,6 +873,7 @@ def main():
 
     create_station = CreateStation(_host=args.mgr,
                                    _port=args.mgr_port,
+                                   _bssid=args.bssid,
                                    _ssid=args.ssid,
                                    _password=args.passwd,
                                    _security=args.security,
