@@ -250,7 +250,10 @@ class CreateStation(Realm):
                  _mode=0,
                  _eap_method=None,
                  _eap_identity=None,
+                 _eap_anonymous_identity="[BLANK]",
                  _eap_password=None,
+                 _eap_phase1="[BLANK]",
+                 _eap_phase2="[BLANK]",
                  _pk_passwd=None,
                  _ca_cert=None,
                  _private_key=None,
@@ -282,7 +285,10 @@ class CreateStation(Realm):
 
         self.eap_method         = _eap_method
         self.eap_identity       = _eap_identity
+        self.eap_anonymous_identity = _eap_anonymous_identity
         self.eap_password       = _eap_password
+        self.eap_phase1         = _eap_phase1
+        self.eap_phase2         = _eap_phase2
         self.pk_passwd          = _pk_passwd
         self.ca_cert            = _ca_cert
         self.private_key        = _private_key
@@ -352,14 +358,19 @@ class CreateStation(Realm):
                                                     passwd=self.eap_password,
                                                     private_key=self.private_key,
                                                     ca_cert=self.ca_cert,
-                                                    pk_password=self.pk_passwd)
+                                                    pk_password=self.pk_passwd,
+                                                    phase1=self.eap_phase1,
+                                                    phase2=self.eap_phase2)
             elif self.eap_method == 'TTLS' or self.eap_method == 'PEAP' :
                 self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
                                                     pairwise=self.pairwise_cipher,
                                                     group=self.groupwise_cipher,
                                                     eap=self.eap_method,
                                                     identity=self.eap_identity,
-                                                    passwd=self.eap_password)
+                                                    anonymous_identity=self.eap_anonymous_identity,
+                                                    passwd=self.eap_password,
+                                                    phase1=self.eap_phase1,
+                                                    phase2=self.eap_phase2)
 
             # Security type comes in one of following formats (possibly capitalized),
             # so need to check if substring:
@@ -709,11 +720,26 @@ INCLUDE_IN_README: False
                           dest="eap_identity",
                           type=str,
                           help="This is synonymous with the RADIUS username.")
+    optional.add_argument("--eap_anonymous_identity",
+                          type=str,
+                          help="",
+                          default="[BLANK]") # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
     optional.add_argument("--eap_password",
                           "--radius_passwd",
                           dest="eap_password",
                           type=str,
                           help="This is synonymous with the RADIUS user's password.")
+    optional.add_argument("--eap_phase1",
+                          type=str,
+                          help="EAP Phase 1 (outer authentication, i.e. TLS tunnel) parameters.\n"
+                               "For example, \"peapver=0\" or \"peapver=1 peaplabel=1\".\n"
+                               "Some WPA Enterprise setups may require \"auth=MSCHAPV2\"",
+                          default="[BLANK]") # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
+    optional.add_argument("--eap_phase2",
+                          type=str,
+                          help="EAP Phase 2 (inner authentication) parameters.\n"
+                               "For example, \"autheap=MSCHAPV2 autheap=MD5\" for EAP-TTLS.",
+                          default="[BLANK]") # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
     optional.add_argument("--pk_passwd",
                           type=str,
                           help='Enter the private key password')
@@ -845,7 +871,10 @@ def main():
                                    _security=args.security,
                                    _eap_method=args.eap_method,
                                    _eap_identity=args.eap_identity,
+                                   _eap_anonymous_identity=args.eap_anonymous_identity,
                                    _eap_password=args.eap_password,
+                                   _eap_phase1=args.eap_phase1,
+                                   _eap_phase2=args.eap_phase2,
                                    _pk_passwd=args.pk_passwd,
                                    _ca_cert=args.ca_cert,
                                    _private_key=args.private_key,
