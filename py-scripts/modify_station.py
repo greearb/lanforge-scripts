@@ -75,7 +75,21 @@ class ModifyStation(Realm):
         self.debug = _debug_on
         self.dhcp = _dhcp
         self.mode = _mode
+        self.ip = _ip
+        self.netmask = _netmask
+        self.gateway = _gateway
+        self.channel = _channel
+        self.txpower = _txpower
+        self.antennas = _antennas
+        self.country = _country
 
+        # Update country regulatory domain if passed a number
+        if _country:
+            if not _country.isnumeric():
+                if _country in LFUtils.COUNTRY_CODES_NUMBERS:
+                    self.country = LFUtils.COUNTRY_CODES_NUMBERS[_country]
+
+        # Initialize station profile
         self.station_profile = self.new_station_profile()
         self.station_profile.station_names = self.station_list
         self.station_profile.up = self.state
@@ -86,25 +100,14 @@ class ModifyStation(Realm):
         self.station_profile.mac = self.mac
         self.station_profile.dhcp = self.dhcp
         self.station_profile.debug = self.debug
-        self.station_profile.desired_add_sta_flags = self.enable_flags
-        if self.enable_flags or self.disable_flags:
-            self.station_profile.desired_add_sta_flags_mask = self.enable_flags + self.disable_flags
         self.station_profile.mode = _mode
         self.station_profile.ip = _ip
         self.station_profile.netmask = _netmask
         self.station_profile.gateway = _gateway
 
-        self.ip = _ip
-        self.netmask = _netmask
-        self.gateway = _gateway
-        self.channel = _channel
-        self.txpower = _txpower
-        self.antennas = _antennas
-        self.country = _country
-        if _country:
-            if not _country.isnumeric():
-                if _country in LFUtils.COUNTRY_CODES_NUMBERS:
-                    self.country = LFUtils.COUNTRY_CODES_NUMBERS[_country]
+        self.station_profile.desired_add_sta_flags = self.enable_flags
+        if self.enable_flags or self.disable_flags:
+            self.station_profile.desired_add_sta_flags_mask = self.enable_flags + self.disable_flags
 
     def list_ports(self):
         response = super().json_get("/port/list?fields=port,alias,down")
@@ -144,13 +147,13 @@ class ModifyStation(Realm):
             raise ValueError("adjust_radio: requires radio eid")
 
         radio_adjuster = mod_radio.lf_modify_radio(lf_mgr=self.host,
-                                                         lf_port=self.port,
-                                                         lf_user=None,
-                                                         lf_passwd=None,
-                                                         debug=self.debug,
-                                                         static_ip=None,
-                                                         ip_mask=None,
-                                                         gateway_ip=None)
+                                                   lf_port=self.port,
+                                                   lf_user=None,
+                                                   lf_passwd=None,
+                                                   debug=self.debug,
+                                                   static_ip=None,
+                                                   ip_mask=None,
+                                                   gateway_ip=None)
 
         eid_hunks: list = radio_eid.split(".")
         if len(eid_hunks) < 3:
@@ -233,9 +236,9 @@ def main():
         --------------------
         Command example:
         ./modify_station.py --mgr localhost --list_ports
-        
+
         ./modify_station.py --mgr localhost --list_stations
-        
+
         ./modify_station.py
             --radio         wiphy0
             --station       1.1.sta0000
