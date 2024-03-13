@@ -141,7 +141,7 @@
                     " --verbosity 11"
                 ]
             },
-            "CC_DUT_AX210_2G_W5":{
+            "CC_DUT_MTK7921_2G_W5":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
@@ -154,19 +154,19 @@
                     " --dut_flag DHCPD-LAN"
                 ]
             },
-            "CC_AX210_2G_W5":{
+            "CC_MTK7921_2G_W5":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario DP_AX210_2G_W5_TX",
+                    " --create_scenario DP_MTK7921_2G_W5_TX",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-1' NA wiphy5,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "DP_AX210_2G_W5_TX":{
+            "DP_MTK7921_2G_W5_TX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -174,12 +174,12 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name DP_AX210_2G_W5_TX",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name DP_MTK7921_2G_W5_TX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan5",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_AX210_2G_W5_TX' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'DP_MTK7921_2G_W5_TX' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME",
