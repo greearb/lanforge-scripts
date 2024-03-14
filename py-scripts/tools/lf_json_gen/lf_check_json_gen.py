@@ -1783,14 +1783,17 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.suite_radios_6g = ""
         for radio in range(0,self.max_radios):
             if "Use" == self.use_radio_var_dict[radio].get():
+                # the radio location may not match the radio number
+                radio_number = self.radio_dict[radio].get()
+                radio_number = radio_number.split('wiphy')[-1]
                 if "Use" == self.use_radio_2g_var_dict[radio].get():
-                    self.suite_radios_2g += "_W{}".format(radio)
+                    self.suite_radios_2g += "_W{}".format(radio_number)
 
                 if "Use" == self.use_radio_5g_var_dict[radio].get():
-                    self.suite_radios_5g += "_W{}".format(radio)
+                    self.suite_radios_5g += "_W{}".format(radio_number)
 
                 if "Use" == self.use_radio_6g_var_dict[radio].get():
-                    self.suite_radios_6g += "_W{}".format(radio)
+                    self.suite_radios_6g += "_W{}".format(radio_number)
 
         radio_message = f"2g: {self.suite_radios_2g}\n5g: {self.suite_radios_5g}\n6g: {self.suite_radios_6g}"
         tkinter.messagebox.showinfo(title="Updated", message= radio_message)  
