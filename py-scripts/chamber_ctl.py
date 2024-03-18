@@ -57,11 +57,11 @@ logger = logging.getLogger(__name__)
 
 
 class Turntable(Realm):
-    UNKNOWN_POSITION : int = -999
-    CHAMBER_NAME     : str = "chamber"
-    CURRENT_POSITION : str = "reported rotation (deg)"
-    CURRENT_TILT     : str = "reported tilt (deg)"
-    TURNTABLE_TYPE   : str = "turntable type"
+    UNKNOWN_POSITION: int = -999
+    CHAMBER_NAME: str = "chamber"
+    CURRENT_POSITION: str = "reported rotation (deg)"
+    CURRENT_TILT: str = "reported tilt (deg)"
+    TURNTABLE_TYPE: str = "turntable type"
 
     def __init__(self,
                  api_session: lanforge_api.LFSession = None,
@@ -113,17 +113,17 @@ class Turntable(Realm):
         # User didn't pass a position angle, so use what turntable is currently at
         if self.position is None or self.position == Turntable.UNKNOWN_POSITION:
             print("self.position[%s] assigning position to [%s][%s]" %
-                (self.position,
-                 self.found_chamber[Turntable.CURRENT_POSITION],
-                 float(self.found_chamber[Turntable.CURRENT_POSITION])))
+                  (self.position,
+                   self.found_chamber[Turntable.CURRENT_POSITION],
+                   float(self.found_chamber[Turntable.CURRENT_POSITION])))
             self.position = float(self.found_chamber[Turntable.CURRENT_POSITION])
 
         # User didn't pass a tilt angle, so use what turntable is currently at
         if self.tilt is None or self.tilt == Turntable.UNKNOWN_POSITION:
             print("self.tilt[%s] assigning tilt to [%s][%s]" %
-                (self.tilt,
-                 self.found_chamber[Turntable.CURRENT_TILT],
-                 float(self.found_chamber[Turntable.CURRENT_TILT])))
+                  (self.tilt,
+                   self.found_chamber[Turntable.CURRENT_TILT],
+                   float(self.found_chamber[Turntable.CURRENT_TILT])))
             self.tilt = float(self.found_chamber[Turntable.CURRENT_TILT])
 
         self.position = Turntable.__validate_angle(self.position, self._adjust_position)
@@ -133,7 +133,6 @@ class Turntable(Realm):
         if self.tilt is not None and self.tilt != 0 and self.found_chamber[Turntable.TURNTABLE_TYPE] != "4":
             logging.warning("attempting to set tilt for chamber %s with non 3D turntable type"
                             % self.found_chamber[Turntable.CHAMBER_NAME])
-
 
         logger.info("Setting new chamber position")
         self.api_command.post_set_chamber(chamber=self.chamber_name,
@@ -154,7 +153,7 @@ class Turntable(Realm):
         self.__wait_for_settle()
         logger.warning("done")
 
-    def __validate_angle(angle:float, adjust_angle:float):
+    def __validate_angle(angle: float, adjust_angle: float):
         """
         Make sure whatever new angle the turntable will be at (position or tilt)
         does not result in turntable spinning more than a full rotation.
@@ -180,7 +179,7 @@ class Turntable(Realm):
                 if angle == 360:
                     angle = 0
                 else:
-                    angle = angle - 360 # Simulate full rotation
+                    angle = angle - 360  # Simulate full rotation
 
         return angle
 
@@ -188,22 +187,22 @@ class Turntable(Realm):
         """
         Wait for turntable to settle at requested position and/or tilt
         """
-        max_wait_ms: int     = 20000
-        check_ms: int        = 250
+        max_wait_ms: int = 20000
+        check_ms: int = 250
         last_position: float = float(self.found_chamber[Turntable.CURRENT_POSITION])
-        last_tilt: float     = float(self.found_chamber[Turntable.CURRENT_TILT])
-        start_ms: int        = lanforge_api._now_ms()
-        until_ms: int        = start_ms + max_wait_ms
-        now_ms: int          = start_ms
+        last_tilt: float = float(self.found_chamber[Turntable.CURRENT_TILT])
+        start_ms: int = lanforge_api._now_ms()
+        until_ms: int = start_ms + max_wait_ms
+        now_ms: int = start_ms
 
         while now_ms <= until_ms:
             if not self.locate_chamber(self.chamber_name):
                 print("chamber %s disappeared" % self.chamber_name)
                 sys.exit(1)
             logger.info("Position %s, Tilt %s, dT %s" %
-                         (float(self.found_chamber[Turntable.CURRENT_POSITION]),
-                          float(self.found_chamber[Turntable.CURRENT_TILT]),
-                          until_ms - now_ms))
+                        (float(self.found_chamber[Turntable.CURRENT_POSITION]),
+                         float(self.found_chamber[Turntable.CURRENT_TILT]),
+                         until_ms - now_ms))
 
             if last_position != float(self.found_chamber[Turntable.CURRENT_POSITION]):
                 last_position = float(self.found_chamber[Turntable.CURRENT_POSITION])
@@ -213,38 +212,38 @@ class Turntable(Realm):
 
             if last_position == self.position and last_tilt == self.tilt:
                 self.api_session.logger.warning("target position %s and tilt %s reached in %s ms" %
-                                (self.position, self.tilt, (now_ms - start_ms)))
+                                                (self.position, self.tilt, (now_ms - start_ms)))
                 break
             time.sleep(check_ms / 1000)
             now_ms = lanforge_api._now_ms()
 
-    def set_speed(self, speed:float=None):
+    def set_speed(self, speed: float = None):
         """
         Set speed in RPM
         """
         self.speed = speed
 
-    def set_position(self, position:float=None):
+    def set_position(self, position: float = None):
         """
         Sets the absolute rotation position of the table
         """
         logger.warning("setting position to %s" % position)
         self.position = position
 
-    def adjust_position(self, position:float=None):
+    def adjust_position(self, position: float = None):
         """
         Add or subtract from the current position of the table
         """
         self._adjust_position = position
 
-    def set_tilt(self, tilt:float=None):
+    def set_tilt(self, tilt: float = None):
         """
         Sets the absolute rotation tilt of the table
         """
         logger.warning("setting tilt to %s" % tilt)
         self.tilt = tilt
 
-    def adjust_tilt(self, tilt:float=None):
+    def adjust_tilt(self, tilt: float = None):
         """
         Add or subtract from the current tilt of the table
         """
@@ -375,6 +374,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
