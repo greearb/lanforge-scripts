@@ -282,36 +282,49 @@ def main():
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
-        description='operate a LANForge-connected turntable.' \
-                    'NOTE: \"--position\" and \"--tilt\" will override their adjust argument counterparts')
-    parser.add_argument("--host", "--mgr", help='specify the GUI to connect to, assumes port 8080')
-    parser.add_argument("--debug", action="store_true",
+        description="Operate a LANForge-connected turntable. "
+                    "NOTE: \"--position\" and \"--tilt\" will override their adjust argument counterparts")
+    parser.add_argument("--host", "--mgr",
+                        help='specify the GUI to connect to, assumes port 8080')
+    parser.add_argument("--debug",
+                        action="store_true",
                         help='turn on debugging')
-    parser.add_argument("--chamber", type=str,
-                        help="""Chamber name (e.g. Chamber-0). Turntables are features of ChamberView chambers.
-    There can be multiple resources per chamber, just like there can be multiple virtual routers per resource.
-    Do NOT use the short name of the chamber or turntable you see in ChamberView (C0), use the FULL NAME
-    of the turntable or chamber from the Modify Chamber window (Chamber-0).""")
-    parser.add_argument("--info", default=False, action="store_true",
+    parser.add_argument("--chamber",
+                        type=str,
+                        help="Chamber name (e.g. Chamber-0). Turntables are features of ChamberView chambers. "
+                             "There can be multiple resources per chamber, just like there can be multiple virtual routers per resource. "
+                             "Do NOT use the short name of the chamber or turntable you see in ChamberView (C0), use the FULL NAME "
+                             "of the turntable or chamber from the Modify Chamber window (Chamber-0).")
+    parser.add_argument("--info",
+                        default=False,
+                        action="store_true",
                         help="Display chamber turntable information")
-    parser.add_argument("--position", type=float,
-                        help="""Set the turn table position to an absolute position (between 0.0 and 359.9).
-     Position resolution is 1/10th of a degree.""")
-    parser.add_argument("--adjust_position", type=float,
-                        help="""Adjust the turn table position a few degrees relative to current position.
-    Negative degrees turn the table clockwise. Positive degrees turn the table anti-clockwise.
-    If the table is at 270deg, '--adjust -5' will set the position of the table to 265deg.
-     Position resolution is 1/10th of a degree.""")
-    parser.add_argument("--tilt", type=float,
-                        help="""Set the turn table tilt to an absolute position (between 0.0 and 359.9).
-     Position resolution is 1/10th of a degree.""")
-    parser.add_argument("--adjust_tilt", type=float,
-                        help="""Adjust the turn table tilt a few degrees relative to current position.
-                        Requires 845D turntable. See \"--adjust_position\" for more details""")
-    parser.add_argument("--speed", "--rpm", type=float,
+    parser.add_argument("--position",
+                        type=float,
+                        help="Set the turn table position to an absolute position (between 0.0 and 359.9). "
+                             "Position resolution is 1/10th of a degree.""")
+    parser.add_argument("--adjust_position",
+                        type=float,
+                        help="Adjust the turn table position a few degrees relative to current position. "
+                             "Negative degrees turn the table clockwise. Positive degrees turn the table anti-clockwise. "
+                             "If the table is at 270deg, '--adjust -5' will set the position of the table to 265deg. "
+                             "Position resolution is 1/10th of a degree.")
+    parser.add_argument("--tilt",
+                        type=float,
+                        help="Set the turn table tilt to an absolute position (between 0.0 and 359.9). "
+                             "Position resolution is 1/10th of a degree.")
+    parser.add_argument("--adjust_tilt",
+                        type=float,
+                        help="Adjust the turn table tilt a few degrees relative to current position. "
+                             "Requires 845D turntable. See \"--adjust_position\" for more details")
+    parser.add_argument("--speed", "--rpm",
+                        type=float,
                         help="Turn table rotation speed, in RPM. Minimum is 0.1 RPM, maximum is 7 RPM")
-    parser.add_argument("--log_level", help="Set log level")
-    parser.add_argument("--no_settle", default=False, action="store_true",
+    parser.add_argument("--log_level",
+                        help="Set log level")
+    parser.add_argument("--no_settle",
+                        default=False,
+                        action="store_true",
                         help="Exit script before turntable reports no movement for more than two pollings.")
 
     args = parser.parse_args()
