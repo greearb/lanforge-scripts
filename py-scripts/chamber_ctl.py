@@ -323,8 +323,6 @@ def main():
                                      stream_warnings=True,
                                      require_session=True,
                                      exit_on_error=True)
-    session.logger.enable(reserved_tag="json_get")
-    session.logger.enable(reserved_tag="json_post")
 
     # Validate arguments
     if not args.chamber:
