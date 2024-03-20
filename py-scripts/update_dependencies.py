@@ -25,7 +25,7 @@ def main():
 
     print("Installing Script Python3 Dependencies")
     packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'websocket-client',
-                'xlsxwriter', 'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search',
+                'xlsxwriter', 'pyshark', 'matplotlib', 'pdfkit', 'pip-search',
                 'pyserial',
                 'pexpect-serial', 'scp','scipy','simple-geometry','kaleido','psutil']
     if args.pyjwt:
