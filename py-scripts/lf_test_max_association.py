@@ -102,6 +102,9 @@ from pprint import pformat
 import time
 import csv
 import platform
+import pandas
+import requests
+from http import HTTPStatus
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -117,11 +120,111 @@ Realm = realm.Realm
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
-lf_radio_info = importlib.import_module("py-scripts.lf_radio_info")
 lf_cleanup = importlib.import_module("py-scripts.lf_cleanup")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 logger = logging.getLogger(__name__)
+
+
+class WiphyInfo:
+    def __init__(self,
+                 eid,
+                 driver,
+                 wifi_capa,
+                 firmware_ver,
+                 max_sta,
+                 max_vap,
+                 max_vifs):
+        self.eid = eid
+        self.driver = driver
+        self.wifi_capa = wifi_capa
+        self.firmware_ver = firmware_ver
+        self.max_sta = max_sta
+        self.max_vap = max_vap
+        self.max_vifs = max_vifs
+
+
+def query_radio_information(mgr: str = "localhost", mgr_port: int = 8080) -> dict[WiphyInfo]:
+    """
+    Queries specified LANforge manager for general information on all radios in testbed.
+
+    :param mgr: LANforge manager IP address
+    :param mgr_port: LANforge manager REST API port (almost always '8080')
+    :returns: Radio information
+    """
+    # First query LANforge system for radio info (returned as JSON)
+    base_url = f"http://{mgr}:{mgr_port}"   # Manager system to query (GUI must be running)
+    endpoint = "/radiostatus/all"           # REST endpoint to query for radio information
+    url = base_url + endpoint
+
+    logger.info(f"Querying LANforge radio information using URL \'{url}\'")
+    request = requests.get(url=url)
+    if request.status_code != HTTPStatus.OK:
+        logger.error(f"Failed to query radio information at URL \'{url}\' with status code {request.status_code}")
+        exit(1)
+
+    json_data = request.json()
+
+    # Now unpack JSON into list of WiphyInformation objects
+    radio_info = {}
+    for key in json_data:
+        # Ignore other standard keys in JSON return are 'handler', 'uri', and 'warnings'
+        # Radio info stored with EID keys like '1.1.wiphy0'
+        if 'wiphy' not in key:
+            continue
+
+        logger.debug(f"Found data for radio \'{key}\'")
+        radio_data = json_data[key]
+
+        # Filter out unnecessary information like PCI(e) bus
+        driver = radio_data['driver'].split('Driver:', maxsplit=1)[-1].split(maxsplit=1)[0]
+
+        this_radio_info = WiphyInfo(eid=radio_data['entity id'],
+                                    driver=driver,
+                                    wifi_capa=radio_data['capabilities'],
+                                    firmware_ver=radio_data['firmware version'],
+                                    max_sta=radio_data['max_sta'],
+                                    max_vap=radio_data['max_vap'],
+                                    max_vifs=radio_data['max_vifs'])
+
+        # Comes in format SHELF.RESOURCE.PORT_NAME, e.g. '1.1.wiphy0'
+        radio_name = this_radio_info.eid.split(".")[2]
+
+        radio_info[radio_name] = this_radio_info
+
+    return radio_info
+
+
+def build_wiphy_info_df(wiphy_info: dict[WiphyInfo]) -> pandas.DataFrame:
+    """
+    Convert dictionary of radio information to a DataFrame
+
+    :param wiphy_info: Dictionary of objects containing radio information
+                       where the key is the radio name and the value is the object.
+    :return: DataFrame containing information radio information
+    :rtype pandas.DataFrame
+    """
+    wiphy_info_dict = {
+        "Name": [],
+        "EID": [],
+        "WiFi Capa.": [],
+        "Driver": [],
+        "Firmware Ver.": [],
+        "Maximum STAs": [],
+        "Maximum vAPs": [],
+        "Maximum vIFs": [],
+    }
+    for wiphy_name, wiphy_data in wiphy_info.items():
+        wiphy_info_dict['Name'].append(wiphy_name)
+        wiphy_info_dict['EID'].append(wiphy_data.eid)
+        wiphy_info_dict['WiFi Capa.'].append(wiphy_data.wifi_capa)
+        wiphy_info_dict['Driver'].append(wiphy_data.driver)
+        wiphy_info_dict['Firmware Ver.'].append(wiphy_data.firmware_ver)
+        wiphy_info_dict['Maximum STAs'].append(wiphy_data.max_sta)
+        wiphy_info_dict['Maximum vAPs'].append(wiphy_data.max_vap)
+        wiphy_info_dict['Maximum vIFs'].append(wiphy_data.max_vifs)
+
+    return pandas.DataFrame(wiphy_info_dict)
 
 
 class max_associate(Realm):
@@ -390,7 +493,7 @@ class max_associate(Realm):
     def build(self):
         self.cleanup()
 
-        wiphy_radio_list = self.wiphy_info.get_radios()
+        wiphy_radio_list = list(self.wiphy_info)
         # logger.info(wiphy_radio_list)
 
         radio6e_enable = []
@@ -407,8 +510,9 @@ class max_associate(Realm):
         for wiphy_radio in wiphy_radio_list:
             # build stations for wiphy0 radio:
             if wiphy_radio in self.radio_name_list[0]:
-                num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
-                radio_driver = self.wiphy_info.get_radio_driver(wiphy_radio)
+                num_stations = self.wiphy_info[wiphy_radio].max_sta
+                radio_driver = self.wiphy_info[wiphy_radio].driver
+
                 end_num_stations += int(num_stations)
                 station_list = LFUtils.portNameSeries(prefix_="sta",
                                                       start_id_=start_num_stations,
@@ -1171,12 +1275,7 @@ INCLUDE_IN_README: False
     else:
         logger.info(
             "If radio is None, will get the all available radios and pass the same ssid, password for each radios.")
-        wiphy_info = lf_radio_info.radio_information(args.mgr,
-                                                     _resource=args.resource,
-                                                     debug_=args.debug,
-                                                     _exit_on_fail=True)
-        wiphy_info.get_lanforge_radio_information()
-        radio_name_list = wiphy_info.get_radios()
+        wiphy_info = query_radio_information(mgr=args.mgr, mgr_port=args.port)
 
         # making the ssid, password, security list same as radio list length
         if len(args.ssid) == len(args.ssid_pw) == len(args.security) < len(radio_name_list):
@@ -1210,12 +1309,8 @@ INCLUDE_IN_README: False
             reset_port_time_max_list = ['0s'] * len(radio_name_list)
 
     # create here & pass in w/ MaxAssociate, or
-    wiphy_info = lf_radio_info.radio_information(args.mgr,
-                                                 _resource=args.resource,
-                                                 debug_=args.debug,
-                                                 _exit_on_fail=True)
-    all_wiphy_data = wiphy_info.get_lanforge_radio_information()
-    logger.info(all_wiphy_data)
+    wiphy_info = query_radio_information(mgr=args.mgr, mgr_port=args.port)
+    logger.info(wiphy_info)
 
     clean_profile = lf_cleanup.lf_clean(args.mgr,
                                         resource=args.resource,
@@ -1298,9 +1393,10 @@ INCLUDE_IN_README: False
         "Test Duration": args.test_duration,
     }
 
+    wiphy_info_df = build_wiphy_info_df(wiphy_info=wiphy_info)
     report.set_table_title("LANForge Radios")
     report.build_table_title()
-    report.set_table_dataframe(all_wiphy_data)
+    report.set_table_dataframe(wiphy_info_df)
     report.build_table()
 
     report.set_table_title("Test Configuration")
