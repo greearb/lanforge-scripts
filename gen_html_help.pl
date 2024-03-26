@@ -43,9 +43,9 @@ for ($i = 0; $i<@ARGV; $i++) {
     my $exe = $script;
     my $cd = 0;
     if ($exe =~ /^py-scripts\/(.*)/) {
-	$exe = $1;
-	$cd = 1;
-	chdir("py-scripts");
+        $exe = $1;
+        $cd = 1;
+        chdir("py-scripts");
     }
     my $script_help_content = `./$exe --help`;
     $script_help_content =~ s/</&lt;/g;
@@ -53,33 +53,33 @@ for ($i = 0; $i<@ARGV; $i++) {
 
     my $summary = `./$exe --help_summary`;
     if ($summary =~ /unrecognized arguments/) {
-	$summary = "";
+        $summary = "";
     }
     $summary =~ s/\n\n/<P>/g;
 
     if ($cd) {
-	chdir("..");
+        chdir("..");
     }
 
     my $rpt = $reports{$script};
     #print("rpt: $rpt  script: $script\n");
     if ($rpt eq undef) {
-	$rpt = "";
+        $rpt = "";
     }
     else {
-	$rpt = "<a href=\"examples/script_results/$rpt\">Example report: $rpt</a><br>";
+        $rpt = "<a href=\"examples/script_results/$rpt\">Example report: $rpt</a><br>";
     }
     #print("rpt2: $rpt  script: $script\n");
 
-    $toc .= "<dt><a href=\"#$script_printable\"</a>$script</a></dt><dd>$rpt " . "$summary</dd>\n";
-    $script_help .= "<dt><a name=\"$script_printable\">$script</dt>\n";
+    $toc .= "<dt><a href=\"#$script_printable\">$script</a></dt><dd>$rpt " . "$summary</dd>\n";
+    $script_help .= "<dt><a name=\"$script_printable\">$script</a></dt>\n";
     $script_help .= "<dd>$rpt<pre>$script_help_content</pre></dd>\n";
 }
 
 print "Script Table of Contents<br><dl>
 $toc
-</dl>
-<P>\n\n";
+
+<br/>\n\n";
 
 print "Script Information<br><dl>
 $script_help
