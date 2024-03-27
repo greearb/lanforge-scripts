@@ -1,0 +1,30 @@
+
+{
+    "ct_TPLINK_AXE1600_2_5_Gbps_eth1.json":{
+        "Notes":[
+            "This json file describes device under test run configuration used as input for --dut_json for lf_check.py",
+            "file generated with command",
+            "./lf_create_dut_json.py --file ct_TPLINK_AXE1600_2_5_Gbps_eth1.json --dut_name TP_AXE16000 --dut_hw TP_AXE1600 --dut_sw DUT_SW --dut_model TP_AXE21600 --dut_serial DUT_SERIAL --dut_name TPLINK_AXE16000 --dut_upstream_port 1.1.eth1 --dut_upstream_alias eth1 --dut_database ./tools/CT_007_TPLINK_AXE16000_2_5_Gbps_eth1.db --ssid_idx ssid_idx==0,SSID_USED==TP-Link66F8,SSID_PW_USED==16480360,BSSID_TO_USE==68:7F:f0:01:66:f7,SECURITY_USED==wpa2 --ssid_idx ssid_idx==1,SSID_USED==TP-Link_66F8_5G_1,SSID_PW_USED==16480360,BSSID_TO_USE==68:7f:f0:01:66:f6,SECURITY_USED==wpa2  --ssid_idx ssid_idx==2,SSID_USED==TP-Link_66F8_5G_2,SSID_PW_USED==16480360,BSSID_TO_USE==68:7f:f0:01:66:f5,SECURITY_USED==wpa2  --ssid_idx ssid_idx==3,SSID_USED==TP-Link_66F8_6G,SSID_PW_USED==16480360,BSSID_TO_USE==68:7f:f0:01:66:f4,SECURITY_USED==wpa3 --log_level debug"
+
+        ]
+    },
+    "test_dut":{
+        "DUT_SET_NAME": "DUT_NAME TPLINK_AXE16000",
+        "USE_DUT_NAME": "TPLINK_AXE16000",
+        "DUT_HW":"TP_AXE1600",
+        "DUT_SW":"DUT_SW",
+        "DUT_MODEL":"TP_AXE21600",
+        "DUT_SERIAL":"DUT_SERIAL",
+        "wireless_network_dict":{
+			"ssid_idx=0":{"ssid_idx": "0", "SSID_USED": "TP-Link_CE22", "SSID_PW_USED": "79814096", "BSSID_TO_USE": "f0:a7:31:0b:ce:24", "SECURITY_USED": "wpa2"},
+			"ssid_idx=1":{"ssid_idx": "1", "SSID_USED": "TP-Link_CE22_5G", "SSID_PW_USED": "79814096", "BSSID_TO_USE": "f0:a7:31:0b:ce:25", "SECURITY_USED": "wpa2"},
+			"ssid_idx=2":{"ssid_idx": "2", "SSID_USED": "TP-Link_CE22_5G", "SSID_PW_USED": "79814096", "BSSID_TO_USE": "f0:a7:31:0b:ce:25", "SECURITY_USED": "wpa2"},
+			"ssid_idx=3":{"ssid_idx": "3", "SSID_USED": "TP-Link_CE22_6G", "SSID_PW_USED": "79814096", "BSSID_TO_USE": "ce:a7:31:0b:ce:26", "SECURITY_USED": "wpa3"}
+ 		},
+        "UPSTREAM_PORT":"1.1.eth1",
+        "UPSTREAM_ALIAS":"eth1",
+        "DATABASE_SQLITE":"./tools/CT_007_TPLINK_CE22.db"
+    }
+}
+
+        
