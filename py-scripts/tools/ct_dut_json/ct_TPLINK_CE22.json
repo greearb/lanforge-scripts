@@ -9,11 +9,11 @@
         ]
     },
     "test_dut":{
-        "DUT_SET_NAME": "DUT_NAME TPLINK_AXE16000",
-        "USE_DUT_NAME": "TPLINK_AXE16000",
-        "DUT_HW":"TP_AXE1600",
+        "DUT_SET_NAME": "DUT_NAME TPLINK_CE22",
+        "USE_DUT_NAME": "TPLINK_CE22",
+        "DUT_HW":"TPLINK_CE22",
         "DUT_SW":"DUT_SW",
-        "DUT_MODEL":"TP_AXE21600",
+        "DUT_MODEL":"TPLINK_CE22",
         "DUT_SERIAL":"DUT_SERIAL",
         "wireless_network_dict":{
 			"ssid_idx=0":{"ssid_idx": "0", "SSID_USED": "TP-Link_CE22", "SSID_PW_USED": "79814096", "BSSID_TO_USE": "f0:a7:31:0b:ce:24", "SECURITY_USED": "wpa2"},
@@ -21,8 +21,8 @@
 			"ssid_idx=2":{"ssid_idx": "2", "SSID_USED": "TP-Link_CE22_5G", "SSID_PW_USED": "79814096", "BSSID_TO_USE": "f0:a7:31:0b:ce:25", "SECURITY_USED": "wpa2"},
 			"ssid_idx=3":{"ssid_idx": "3", "SSID_USED": "TP-Link_CE22_6G", "SSID_PW_USED": "79814096", "BSSID_TO_USE": "ce:a7:31:0b:ce:26", "SECURITY_USED": "wpa3"}
  		},
-        "UPSTREAM_PORT":"1.1.eth1",
-        "UPSTREAM_ALIAS":"eth1",
+        "UPSTREAM_PORT":"1.1.eth2",
+        "UPSTREAM_ALIAS":"eth2",
         "DATABASE_SQLITE":"./tools/CT_007_TPLINK_CE22.db"
     }
 }
