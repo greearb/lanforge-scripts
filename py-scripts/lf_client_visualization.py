@@ -159,8 +159,6 @@ class Client_Visualization(cv_test):
                  raw_lines=None,
                  raw_lines_file="",
                  sets=None,
-                 influx_host="localhost",
-                 influx_port=8086,
                  report_dir="",
                  graph_groups=None,
                  test_rig="Testbed-01",
@@ -194,8 +192,6 @@ class Client_Visualization(cv_test):
         self.raw_lines = raw_lines
         self.raw_lines_file = raw_lines_file
         self.sets = sets
-        self.influx_host = influx_host,
-        self.influx_port = influx_port
         self.report_dir = report_dir
         self.graph_groups = graph_groups
         self.test_rig = test_rig
@@ -530,8 +526,6 @@ INCLUDE_IN_README: False
 
     if args.pull_report:
         Client_Vis.pull_report_from_lanforge()
-
-    # Client_Vis.check_influx_kpi(args)
 
 
 if __name__ == "__main__":

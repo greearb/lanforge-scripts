@@ -528,7 +528,6 @@ def main():
                         help="ssid name to be tested Ex. Netgear_2G")
     parser.add_argument("--ssid_dut_5g", type=str, default="NA",
                         help="ssid name to be tested Ex. Netgear_5G")
-    parser.add_argument("--influx_host", type=str, default="localhost", help="NA")
     parser.add_argument("--local_lf_report_dir", default="",
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from")
     parser.add_argument("-s", "--stations", type=str, default="",
@@ -548,8 +547,6 @@ def main():
                                 pull_report=True,
                                 download_rate=args.download_rate,
                                 upload_rate=args.upload_rate,
-                                influx_host=args.mgr,
-                                influx_port=8086,
                                 stations=args.stations,
                                 local_lf_report_dir=args.local_lf_report_dir,
                                 )
@@ -560,7 +557,6 @@ def main():
                                           inp_download_rate=args.download_rate, inp_upload_rate=args.upload_rate,
                                           ssid_dut_2g=args.ssid_dut_2g, ssid_dut_5g=args.ssid_dut_5g,)
     wifi_capacity.get_data()
-    # WFC_Test.check_influx_kpi(args)
 
 
 if __name__ == "__main__":

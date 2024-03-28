@@ -297,7 +297,6 @@ def main():
     CV_Test.run()
 
     # Mesh does not do KPI currently.
-    # CV_Test.check_influx_kpi(args)
 
 
 if __name__ == "__main__":
