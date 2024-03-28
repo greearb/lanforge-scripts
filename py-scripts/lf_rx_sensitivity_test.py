@@ -21,11 +21,7 @@ the options and how best to input data.
       --raw_line 'txo_sgi: ON' \
       --raw_line 'txo_retries: No Retry' \
       --raw_line 'txo_txpower: 17' \
-      --test_rig Testbed-01 --pull_report \
-      --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-      --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-      --influx_bucket ben \
-      --influx_tag testbed Ferndale-01
+      --test_rig Testbed-01 --pull_report
 
 Note:
     --raw_line 'line contents' will add any setting to the test config.  This is
@@ -246,11 +242,7 @@ def main():
       --raw_line 'txo_sgi: ON' \
       --raw_line 'txo_retries: No Retry' \
       --raw_line 'txo_txpower: 17' \
-      --test_rig Testbed-01 --pull_report \
-      --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-      --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-      --influx_bucket ben \
-      --influx_tag testbed Ferndale-01
+      --test_rig Testbed-01 --pull_report
 
 
     Example 2:
@@ -382,8 +374,6 @@ def main():
                             )
     CV_Test.setup()
     CV_Test.run()
-
-    CV_Test.check_influx_kpi(args)
 
 
 if __name__ == "__main__":
