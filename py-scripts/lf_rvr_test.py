@@ -36,11 +36,7 @@ EXAMPLE-2        :
                         --test_rig Ferndale-Mesh-01 --pull_report \\
                         --raw_line 'attenuator: 1.1.1040' \\
                         --raw_line 'attenuations: 0..+50..950' \\
-                        --raw_line 'attenuator_mod: 3' \\
-                        --influx_host c7-graphana --influx_port 8086 --influx_org Candela \\
-                        --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \\
-                        --influx_bucket ben \\
-                        --influx_tag testbed Ferndale-Mesh
+                        --raw_line 'attenuator_mod: 3'
 
 SCRIPT_CLASSIFICATION:  Test
 
@@ -319,11 +315,7 @@ RSSI curves both upstream and downstream for different types of traffic and diff
                             --test_rig Ferndale-Mesh-01 --pull_report \\
                             --raw_line 'attenuator: 1.1.1040' \\
                             --raw_line 'attenuations: 0..+50..950' \\
-                            --raw_line 'attenuator_mod: 3' \\
-                            --influx_host c7-graphana --influx_port 8086 --influx_org Candela \\
-                            --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \\
-                            --influx_bucket ben \\
-                            --influx_tag testbed Ferndale-Mesh
+                            --raw_line 'attenuator_mod: 3'
 
     SCRIPT_CLASSIFICATION:  Test
 
@@ -541,8 +533,6 @@ RSSI curves both upstream and downstream for different types of traffic and diff
                       )
     CV_Test.setup()
     CV_Test.run()
-
-    CV_Test.check_influx_kpi(args)
 
     if CV_Test.kpi_results_present():
         logger.info("lf_rvr_test_test generated kpi.csv")
