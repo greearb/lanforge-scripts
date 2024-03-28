@@ -23,11 +23,7 @@ the options and how best to input data.
       --set 'Skip 2.4Ghz Tests' 1 --set 'Skip 5Ghz Tests' 1 \
       --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0 \
       --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0 \
-      --pull_report \
-      --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-      --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-      --influx_bucket ben \
-      --influx_tag testbed Ferndale-01
+      --pull_report
 
 Note:
     --enable [option] will attempt to select any checkbox of that name to true.
@@ -342,11 +338,7 @@ def main():
       --set 'Skip 2.4Ghz Tests' 1 --set 'Skip 5Ghz Tests' 1 \\
       --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0 \\
       --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0 \\
-      --test_rig Testbed-01 --test_tag ATH10K --pull_report \\
-      --influx_host c7-graphana --influx_port 8086 --influx_org Candela \\
-      --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \\
-      --influx_bucket ben \\
-      --influx_tag testbed Ferndale-01
+      --test_rig Testbed-01 --test_tag ATH10K --pull_report
       """
     )
     cv_add_base_parser(parser)  # see cv_test_manager.py
@@ -423,8 +415,6 @@ def main():
                          )
     CV_Test.setup()
     CV_Test.run()
-
-    CV_Test.check_influx_kpi(args)
 
     if CV_Test.kpi_results_present():
         logger.info("lf_dataplane_test generated kpi.csv")
