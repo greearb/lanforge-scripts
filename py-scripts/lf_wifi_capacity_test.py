@@ -770,8 +770,6 @@ INCLUDE_IN_README: False
     WFC_Test.setup()
     WFC_Test.run()
 
-    WFC_Test.check_influx_kpi(args)
-
 
     if WFC_Test.kpi_results_present():
         logger.info("lf_wifi_capacity_test generated kpi.csv")
