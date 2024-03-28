@@ -24,9 +24,6 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 cv_test_reports = importlib.import_module("py-json.cv_test_reports")
 lf_rpt = cv_test_reports.lanforge_reports
-InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")
-influx_add_parser_args = InfluxRequest.influx_add_parser_args
-RecordInflux = InfluxRequest.RecordInflux
 logger = logging.getLogger(__name__)
 
 
@@ -37,11 +34,6 @@ def cv_base_adjust_parser(args):
 
     if args.test_tag != "":
         args.set.append(["TestTag", args.test_tag])
-
-    if args.influx_host is not None:
-        if not args.pull_report:
-            print("Specified influx host without pull_report, will enabled pull_request.")
-            args.pull_report = True
 
 
 def cv_add_base_parser(parser):
@@ -80,8 +72,6 @@ def cv_add_base_parser(parser):
                         help="Specify the test rig info for reporting purposes, for instance:  testbed-01")
     parser.add_argument("--test_tag", default="",
                         help="Specify the test tag info for reporting purposes, for instance:  testbed-01")
-
-    influx_add_parser_args(parser)  # csv_to_influx
 
 
 class cv_test(Realm):
@@ -420,44 +410,6 @@ class cv_test(Realm):
                 kpi_csv_data_present = True
 
         return kpi_csv_data_present 
-
-    # Takes cmd-line args struct or something that looks like it.
-    # See csv_to_influx.py::influx_add_parser_args for options, or --help.
-    def check_influx_kpi(self, args):
-        if self.lf_report_dir is None:
-            # Nothing to report on.
-            logger.info("If using influx, no report-dir present.\n")
-            return
-
-        if args.influx_host is None:
-            # No influx configured, return.
-            logger.info("If using influx, influx_host not configured.\n")
-            return
-
-        logger.info("Creating influxdb connection, host: %s:%s org: %s  token: %s  bucket: %s\n" %
-                    (args.influx_host, args.influx_port, args.influx_org, args.influx_token, args.influx_bucket))
-        # lfjson_host would be if we are reading out of LANforge or some other REST
-        # source, which we are not.  So dummy those out.
-        influxdb = RecordInflux(_influx_host=args.influx_host,
-                                _influx_port=args.influx_port,
-                                _influx_org=args.influx_org,
-                                _influx_token=args.influx_token,
-                                _influx_bucket=args.influx_bucket)
-
-        # lf_wifi_capacity_test.py may be run / initiated by a remote system against a lanforge
-        # the local_lf_report_dir is where data is stored,  if there is no local_lf_report_dir then the test is run directly on lanforge
-        if self.lf_report_dir:
-            csv_path = "%s/kpi.csv" % self.lf_report_dir
-        else:
-            kpi_location = self.lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
-            # the lf_report_dir is the parent directory,  need to get the directory name
-            csv_path = "%s/kpi.csv" % kpi_location
-
-        logger.info("Attempt to submit kpi: ", csv_path)
-        logger.info("Posting to influx...\n")
-        influxdb.csv_to_influx(csv_path)
-
-        logger.info("All done posting to influx.\n")
 
     # ************************** chamber view **************************
     def add_text_blob_line(self,
