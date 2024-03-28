@@ -13,18 +13,6 @@ EXAMPLE:
         --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP'
         --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2' --raw_line 'modes: 802.11bgn-AX' --pull_report
 
-        # Sample cli to test Dataplane Test with influx db (Optional):
-
-        ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-        --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth2 --dut linksys-8450
-        --duration 15s --station 1.1.sta01500 --download_speed 85% --upload_speed 0
-        --raw_line 'pkts: Custom;60;142;256;512;1024;MTU' --raw_line 'cust_pkt_sz: 88 1200'
-        --raw_line 'directions: DUT Transmit;DUT Receive' --raw_line 'traffic_types: UDP;TCP'
-        --test_rig Testbed-01 --pull_report
-        --influx_host c7-graphana --influx_port 8086 --influx_org Candela
-        --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==
-        --influx_bucket ben --influx_tag testbed Ferndale-01
-
 
 Example 2:
 
@@ -382,19 +370,6 @@ EXAMPLE:
         --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP'
         --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2' --raw_line 'modes: 802.11bgn-AX' --pull_report
 
-        # Sample cli to test Dataplane Test with influx db (Optional):
-
-        ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-        --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth2 --dut linksys-8450
-        --duration 15s --station 1.1.sta01500 --download_speed 85% --upload_speed 0
-        --raw_line 'pkts: Custom;60;142;256;512;1024;MTU' --raw_line 'cust_pkt_sz: 88 1200'
-        --raw_line 'directions: DUT Transmit;DUT Receive' --raw_line 'traffic_types: UDP;TCP'
-        --test_rig Testbed-01 --pull_report
-        --influx_host c7-graphana --influx_port 8086 --influx_org Candela
-        --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==
-        --influx_bucket ben --influx_tag testbed Ferndale-01
-
-
 Example 2:
 
         # Sample cli to test Dataplane Test with <_dp_cli_config_>.json :
@@ -554,9 +529,6 @@ INCLUDE_IN_README: False
     parser.add_argument('--json',
                         help="Path to JSON configuration file for test. When specified, JSON takes precedence over command line args.",
                         default="")
-    parser.add_argument('--influx_json',
-                        help="Path to Influx JSON configuration",
-                        default="")
     parser.add_argument("-u", "--upstream",
                         type=str,
                         default="",
@@ -655,26 +627,6 @@ INCLUDE_IN_README: False
             json_data_tmp = [[x] for x in json_data["raw_line"]]
             args.raw_line = json_data_tmp
 
-    # use influx json config file
-    if args.influx_json:
-        if os.path.exists(args.influx_json):
-            with open(args.influx_json, 'r') as json_config:
-                influx_json_data = json.load(json_config)
-        else:
-            return FileNotFoundError("Error reading {}".format(args.influx_json))
-        # json configuation takes presidence to command line
-        # influx DB configuration
-        if "influx_host" in influx_json_data:
-            args.influx_host = influx_json_data["influx_host"]
-        if "influx_port" in influx_json_data:
-            args.influx_port = influx_json_data["influx_port"]
-        if "influx_org" in influx_json_data:
-            args.influx_org = influx_json_data["influx_org"]
-        if "influx_token" in influx_json_data:
-            args.influx_token = influx_json_data["influx_token"]
-        if "influx_bucket" in influx_json_data:
-            args.influx_bucket = influx_json_data["influx_bucket"]
-
     cv_base_adjust_parser(args)
 
     CV_Test = DataplaneTest(lf_host=args.mgr,
@@ -703,8 +655,6 @@ INCLUDE_IN_README: False
                             )
     CV_Test.setup()
     CV_Test.run()
-
-    CV_Test.check_influx_kpi(args)
 
     if CV_Test.kpi_results_present():
         logger.info("lf_dataplane_test generated kpi.csv")
