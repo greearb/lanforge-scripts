@@ -13,11 +13,12 @@ While a user can manually configure a test to their liking, save the database, a
 ## Example Test Automation
 | Chamber View Test | Automation Script                                                 |
 | ----------------- | ----------------------------------------------------------------- |
-| WiFi Capacity     | [`WiFi_Capacity.bash`](./WiFi_Capacity/WiFi_Capacity.bash)        |
+| AP-Auto           | [`AP-Auto.bash`](./AP-Auto/AP-Auto.bash)                          |
 | Dataplane         | [`Dataplane.bash`](./Dataplane/Dataplane.bash)                    |
 | Rate vs Range     | [`Rate_vs_Range.bash`](./Rate_vs_Range/Rate_vs_Range.bash.bash)   |
 | TR-398 Issue 2    | [`TR-398_Issue_2.bash`](./TR-398_Issue_2/TR-398_Issue_2.bash)     |
 | TR-398 Issue 4    | [`TR-398_Issue_4.bash`](./TR-398_Issue_4/TR-398_Issue_4.bash)     |
+| WiFi Capacity     | [`WiFi_Capacity.bash`](./WiFi_Capacity/WiFi_Capacity.bash)        |
 
 
 
