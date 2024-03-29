@@ -37,8 +37,9 @@ Read more examples in the [scripting LANforge](http://www.candelatech.com/lfcli_
 
 ## Python Scripts ##
 
-When starting to use Python, please run the update_dependencies.py script located in py-scripts to install all necessary dependencies for this library.
+**NOTE: LANforge Python scripts require Python 3.7+** (which is backwards compatible to Fedora 27 systems).
 
+See the [LANforge Python Scripts README](./py-scripts/README.md) for more information.
 
 ### Python Scripts py-json/LANforge ###
 
@@ -103,10 +104,6 @@ Test scripts and helper scripts
 
 | Name | Purpose |
 |------|---------|
-| `cicd_TipIntegration.py`           | Facebook TIP infrastructure|
-| `cicd_testrail.py`                 | TestRail API binding for Python 3 |
-| `cicd_testrailAndInfraSetup.py`    | Facebook TIP infrastructure |
-| `connection_test.py`               | Standard Script for Connection Testing -  Creates HTML and pdf report as a result (Used for web-console) |
 | `create_bond.py`                   | This script can be used to create a bond |
 | `create_bridge.py`                 | Script for creating a variable number of bridges |
 | `create_chamberview.py`            | Script for creating a chamberview scenario |
@@ -120,22 +117,12 @@ Test scripts and helper scripts
 | `create_vr.py`                     | Script for creating a variable number of bridges |
 | `csv_convert.py`                   | Python script to read in a LANforge Dataplane CSV file and output a csv file that works with a customer's RvRvO visualization tool.|
 | `csv_processor.py`                 | Python script to assist processing csv files|
-| `csv_to_influx.py`                 | Python script to copy the data from a CSV file from the KPI file generated from a Wifi Capacity test to an Influx database|
 | `download_test.py`                 | download_test.py will do lf_report::add_kpi(tags, 'throughput-download-bps', $my_value);|
 | `event_breaker.py`                 | This file is intended to expose concurrency problems in the /events/ URL handler by querying events rapidly. Please use concurrently with event_flood.py. |
 | `event_flood.py`                   | This file is intended to expose concurrency problems in the /events/ URL handler by inserting events rapidly. Please concurrently use with event_breaker.py.|
-| `example_security_connection.py`   | This python script creates a variable number of stations using user-input  security
-| `ftp_html.py`                      | This FTP Test is used to "Verify that N clients connected on Specified band and can simultaneously download some amount of file from FTP server and measures the time taken by client to Download/Upload the file |
 | `grafana_profile.py`               | Class for creating and managing a grafana dashboard |
-| `html_template.py`                 | This script is used for DFS Test Report generation |
-| `influx.py`                        | Class for communicating with influx |
-| `influx2.py`                       | Class for communicating with influx |
-| `layer3_test.py`                   | Python script to test and monitor layer 3 connections |
-| `layer4_test.py`                   | Python script to test and monitor layer 4 connections |
 | `lf_ap_auto_test.py`               | This script is used to automate running AP-Auto tests |
 | `lf_dataplane_test.py`             | This script is used to automate running Dataplane tests |
-| `lf_dfs_test.py`                   | Test testing dynamic frequency selection (dfs) between an AP connected to a controller and Lanforge|
-| `lf_dut_sta_vap_test.py`           | Load an existing scenario, start some layer 3 traffic, and test the Linux based DUT that has SSH server |
 | `lf_ftp_test.py`                   | Python script will create stations and endpoints to generate and verify layer-4 traffic over an ftp connection |
 | `lf_graph.py`                      | Classes for creating images from graphs using data sets |
 | `lf_mesh_test.py`                  | This script is used to automate running Mesh tests |
@@ -145,7 +132,6 @@ Test scripts and helper scripts
 | `lf_snp_test.py`                   | Test scaling and performance (snp) run various configurations and measures data rates |
 | `lf_tr398_test.py`                 | This script is used to automate running TR398 tests |
 | `lf_wifi_capacity_test.py`         | This is a test file which will run a wifi capacity test |
-| `recordinflux.py`                  | recordinflux will record data from existing lanforge endpoints to record to an already existing influx database |
 | `run_cv_scenario.py`               | Set the LANforge to a BLANK database then it will load the specified database and start a graphical report |
 | `rvr_scenario.py`                  | This script will set the LANforge to a BLANK database then it will load the specified database and start a graphical report |
 | `scenario.py`                      | Python script to load a database file and control test groups |
@@ -155,7 +141,6 @@ Test scripts and helper scripts
 | `sta_connect_multi_example.py`     | Example of how to instantiate StaConnect and run the test |
 | `station_layer3.py`                | this script creates one station with given arguments |
 | `stations_connected.py`            | Contains examples of using realm to query stations and get specific information from them |
-| `test_1k_clients_jedtest.py`       | Python script to test 1k client connections |
 | `test_client_admission.py`         | This script will create one station at a time and generate downstream traffic |
 | `test_fileio.py`                   | Test FileIO traffic |
 | `test_generic.py`                  | Test generic traffic using generic cross-connect and endpoint type |
@@ -182,7 +167,6 @@ Test scripts and helper scripts
 | `testgroup2.py`                    | Python script to test creation and control of test groups |
 | `tip_station_powersave.py`         | Generate and test for powersave packets within traffic run over multiple stations |
 | `update_dependencies.py`           | Python script to update dependencies for various Candelatech python scripts |
-| `update_dut.py`                    | This script updates a Device Under Test (DUT) entry in the LANforge test scenario |
 | `wlan_capacity_calculator.py`      | Standard Script for WLAN Capacity Calculator |
 | `ws_generic_monitor_test.py`       | This example is to demonstrate ws_generic_monitor to monitor events triggered by scripts, This script when running, will monitor the events triggered by test_ipv4_connection.py |
 
@@ -266,24 +250,6 @@ perl packages are available through your repository as `.deb` or `.rpm` packages
 |-------------------------|-----------|---------------|
 | Pexpect                 | python3-pexpect | yes |
 | XlsxWriter             | python3-xlsxwriter | yes, Xlsx output |
-
-
-#### Pip v Pip3 ####
-Please use pip3, we are targeting Python 3 with our scripts. If your pip/pip3 repositories have a difficult time connecting,
-it's likely that you are trying to download from **pypi.python.org**. This is a deprecated location. Please update
-using the **pypi.org** servers. Consider updating your ``~/.pypirc`` file:
-
-````
-[distutils]
-index-servers =  
-    pypi  
-
-[pypi]  
-repository: https://upload.pypi.org/legacy/
-````
-
-
-As [described on Python.org](https://packaging.python.org/guides/migrating-to-pypi-org/).
 
 ### License ###
 Code in this repository is released under the BSD license (see license.txt).
