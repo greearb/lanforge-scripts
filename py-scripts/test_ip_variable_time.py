@@ -274,8 +274,6 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-InfluxRequest = importlib.import_module('py-dashboard.InfluxRequest')
-RecordInflux = InfluxRequest.RecordInflux
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
@@ -315,12 +313,6 @@ class IPVariableTime(Realm):
                  kpi_csv=None,
                  kpi_path=None,
                  outfile=None,
-                 influx_host=None,
-                 influx_port=None,
-                 influx_org=None,
-                 influx_token=None,
-                 influx_bucket=None,
-                 influx_tag=None,
                  compared_report=None,
                  ipv6=False,
                  _debug_on=False,
@@ -391,12 +383,6 @@ class IPVariableTime(Realm):
         self.kpi_csv = kpi_csv
         self.kpi_path = kpi_path
         self.epoch_time = int(time.time())
-        self.influx_host = influx_host
-        self.influx_port = influx_port
-        self.influx_org = influx_org
-        self.influx_token = influx_token
-        self.influx_bucket = influx_bucket
-        self.influx_tag = influx_tag
         self.compared_report = compared_report
         self.cx_profile.name_prefix = self.name_prefix
         self.cx_profile.side_a_min_bps = side_a_min_rate
@@ -684,23 +670,6 @@ class IPVariableTime(Realm):
             return ValueError(
                 "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. ")
         self.start()
-
-        if self.influx_org is not None:
-            grapher = RecordInflux(_influx_host=self.influx_host,
-                                   _influx_port=self.influx_port,
-                                   _influx_org=self.influx_org,
-                                   _influx_token=self.influx_token,
-                                   _influx_bucket=self.influx_bucket)
-            devices = [station.split('.')[-1] for station in self.sta_list]
-            tags = dict()
-            tags['script'] = 'test_ip_variable_time'
-            if self.influx_tag:
-                for k in self.influx_tag:
-                    tags[k[0]] = k[1]
-            grapher.monitor_port_data(longevity=Realm.parse_time(self.test_duration).total_seconds(),
-                                      devices=devices,
-                                      monitor_interval=Realm.parse_time(self.monitor_interval).total_seconds(),
-                                      tags=tags)
 
         # Retrieve last data file
         compared_rept = None
@@ -1399,16 +1368,6 @@ INCLUDE_IN_README: False
                         help='how frequently do you want your monitor function to take measurements, 35s, 2h, lowest is 250ms',
                         default='1000ms')
     optional.add_argument('--ipv6', help='Sets the test to use IPv6 traffic instead of IPv4', action='store_true')
-    optional.add_argument('--influx_host')
-    optional.add_argument('--influx_token', help='Username for your Influx database')
-    optional.add_argument('--influx_bucket', help='Password for your Influx database')
-    optional.add_argument('--influx_org', help='Name of your Influx database')
-    optional.add_argument('--influx_port', help='Port where your influx database is located', default=8086)
-    optional.add_argument('--influx_tag', action='append', nargs=2,
-                        help='--influx_tag <key> <val>   Can add more than one of these.')
-    optional.add_argument('--influx_mgr',
-                        help='IP address of the server your Influx database is hosted if different from your LANforge Manager',
-                        default=None)
     parser.add_argument('--use_existing_sta', help='Used an existing stations to a particular AP', action='store_true')
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
     parser.add_argument('--local_lf_report_dir',
@@ -1582,12 +1541,6 @@ INCLUDE_IN_README: False
                                  kpi_csv=kpi_csv,
                                  kpi_path=kpi_path,
                                  outfile=args.csv_outfile,
-                                 influx_host=args.influx_host,
-                                 influx_port=args.influx_port,
-                                 influx_org=args.influx_org,
-                                 influx_token=args.influx_token,
-                                 influx_bucket=args.influx_bucket,
-                                 influx_tag=args.influx_tag,
                                  compared_report=args.compared_report,
                                  ipv6=args.ipv6,
                                  traffic_type=args.traffic_type,
