@@ -50,8 +50,6 @@ removeCX = LFUtils.removeCX
 removeEndps = LFUtils.removeEndps
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-influx = importlib.import_module("py-scripts.influx_utils")
-RecordInflux = influx.RecordInflux
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
@@ -70,8 +68,6 @@ BLANK = "[BLANK]"
 class StaConnect2(Realm):
     def __init__(self, host, port, _dut_ssid="jedway-open-1", _dut_passwd="NA", _dut_bssid="",
                  _user="", _passwd="",  _radio="wiphy0", _sta_mode=0,
-                 _influx_host=None, _influx_db=None, _influx_user=None,
-                 _influx_passwd=None,
                  _resource=1, _upstream_resource=1, _upstream_port="eth1",
                  _sta_name=None, _sta_prefix=None, _bringup_time_sec=300,
                  debug_=False, _dut_security=OPEN, _exit_on_error=False,
@@ -117,10 +113,6 @@ class StaConnect2(Realm):
         self.station_profile = None
         self.l3_udp_profile = None
         self.l3_tcp_profile = None
-        self.influx_host = _influx_host
-        self.influx_db = _influx_db
-        self.influx_user = _influx_user
-        self.influx_passwd = _influx_passwd
         self.name_prefix = "tcp"
         self.use_existing_sta = False
 
@@ -424,16 +416,6 @@ class StaConnect2(Realm):
 
         self.csv_add_column_headers()
 
-        if self.influx_db:
-            grapher = RecordInflux(_influx_host=self.influx_host,
-                                   _influx_db=self.influx_db,
-                                   _influx_user=self.influx_user,
-                                   _influx_passwd=self.influx_passwd,
-                                   _longevity=1,
-                                   _devices=self.station_names,
-                                   _monitor_interval=1,
-                                   _target_kpi=['bps rx'])
-
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
         duration = 0
         maxTime = self.bringup_time_sec
@@ -482,8 +464,7 @@ class StaConnect2(Realm):
             }
             # logger.info("start() - data2: %s", data)
             self.json_post("/cli-json/nc_show_ports", data)
-            if self.influx_db:
-                grapher.getdata()
+
         # LFUtils.wait_until_ports_appear(port_list=self.station_names, debug=self.debug)
         LFUtils.wait_until_ports_appear(self.lfclient_url, port_list=self.station_names, debug=self.debug)
 
@@ -742,26 +723,6 @@ class StaConnect2(Realm):
             tags[k[0]] = k[1]
         '''
 
-        # now = str(datetime.datetime.utcnow().isoformat())
-
-        print(
-            "NOTE:  Adding results to influx, total-download-bps: %s  upload: %s  bi-directional: %s\n" %
-            (total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)))
-
-        '''
-        if self.influxdb is not None:
-            self.influxdb.post_to_influx(
-                "total-download-bps", total_dl_bps, tags, now)
-            self.influxdb.post_to_influx(
-                "total-upload-bps", total_ul_bps, tags, now)
-            self.influxdb.post_to_influx(
-                "total-bi-directional-bps",
-                total_ul_bps +
-                total_dl_bps,
-                tags,
-                now)
-        '''
-
         if self.csv_results_file:
             row = [self.epoch_time, self.time_stamp(), sta_count,
                    ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
@@ -910,12 +871,6 @@ CLI Example:
     parser.add_argument("--prefix", type=str, help="Station prefix. Default: 'sta'", default='sta')
     parser.add_argument("--bringup_time", type=int,
                         help="Seconds to wait for stations to associate and aquire IP. Default: 300", default=300)
-    parser.add_argument('--influx_user', help='Username for your Influx database', default=None)
-    parser.add_argument('--influx_passwd', help='Password for your Influx database', default=None)
-    parser.add_argument('--influx_db', help='Name of your Influx database', default=None)
-    parser.add_argument('--influx_host',
-                        help='Host of your influx database if different from the system you are running on',
-                        default='localhost')
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
     parser.add_argument('--debug_log', default=None, help="Specify a file to send debug output to")
     parser.add_argument('--no_cleanup', help='Do not cleanup before exit', action='store_true')
@@ -1046,10 +1001,6 @@ CLI Example:
                              _radio=args.radio,
                              _sta_mode=args.sta_mode,
                              debug_=args.debug,
-                             _influx_db=args.influx_db,
-                             _influx_passwd=args.influx_passwd,
-                             _influx_user=args.influx_user,
-                             _influx_host=args.influx_host,
                              kpi_csv=kpi_csv,
                              outfile=csv_outfile,
                              download_bps=args.download_bps,
