@@ -8,7 +8,7 @@ Host AP reference : https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf
 
  Supports creating user-specified amount stations on multiple radios
  Supports configuring upload and download requested rates and PDU sizes.
- Supports generating KPI data for storing in influxdb (used by Graphana)
+ Supports generating KPI data
  Supports generating connections with different ToS values.
  Supports generating tcp and/or UDP traffic types.
  Supports iterating over different PDU sizes
@@ -18,17 +18,6 @@ Host AP reference : https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf
  Supports testing connection between two ethernet connection - L3 dataplane
 
 ## EXAMPLE:
-
- ### EXAMPLE using 10 stations on wiphy0, 1 station on wiphy2.  open-auth to ASUS_70 SSID
- Configured to submit KPI info to influxdb-version2.
- The configuration of the radio==shelf.resource.radio , 1.2.wiphy0 will be on resource 2
-./test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
-  --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-  --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-  --test_duration 5s --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-  --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-  --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 \
-  --influx_tag testbed ath11k --influx_tag DUT ROG -o longevity.csv
 
 ### Example command using attenuator
 ./test_l3_longevity.py --test_duration 5m --polling_interval 1s --upstream_port 1.1.eth2 \
@@ -110,10 +99,6 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-csv_to_influx = importlib.import_module("py-scripts.csv_to_influx")
-InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")
-influx_add_parser_args = InfluxRequest.influx_add_parser_args
-RecordInflux = InfluxRequest.RecordInflux
 
 # used for Attenuator and possible vap testing testing
 lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
@@ -168,7 +153,6 @@ class L3VariableTime(Realm):
                  lfclient_host="localhost",
                  lfclient_port=8080,
                  debug=False,
-                 influxdb=None,
                  # kpi_csv object to set kpi values during the test
                  kpi_csv=None,
                  ap_scheduler_stats=False,
@@ -236,7 +220,6 @@ class L3VariableTime(Realm):
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
-        self.influxdb = influxdb
         # kpi_csv object to set kpi.csv values
         self.kpi_csv = kpi_csv
         self.tos = tos.split(",")
@@ -2411,24 +2394,6 @@ class L3VariableTime(Realm):
         for k in self.user_tags:
             tags[k[0]] = k[1]
 
-        now = str(datetime.datetime.utcnow().isoformat())
-
-        print(
-            "NOTE:  Adding results to influx, total-download-bps: %s  upload: %s  bi-directional: %s\n" %
-            (total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)))
-
-        if self.influxdb is not None:
-            self.influxdb.post_to_influx(
-                "total-download-bps", total_dl_bps, tags, now)
-            self.influxdb.post_to_influx(
-                "total-upload-bps", total_ul_bps, tags, now)
-            self.influxdb.post_to_influx(
-                "total-bi-directional-bps",
-                total_ul_bps +
-                total_dl_bps,
-                tags,
-                now)
-
         if self.csv_results_file:
             row = [self.epoch_time, self.time_stamp(), sta_count,
                    ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
@@ -3243,8 +3208,6 @@ Note: for enable flags can us && as separator in vscode
         help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)',
         default="")
 
-    influx_add_parser_args(parser)
-
     parser.add_argument(
         "--cap_ctl_out",
         help="--cap_ctl_out, switch the controller output will be captured",
@@ -3462,14 +3425,6 @@ Note: for enable flags can us && as separator in vscode
         csv_outfile = report.file_add_path(csv_outfile)
         logger.info("csv output file : {csv_outfile}".format(csv_outfile=csv_outfile))
 
-    influxdb = None
-    if args.influx_bucket is not None:
-        influxdb = RecordInflux(_influx_host=args.influx_host,
-                                _influx_port=args.influx_port,
-                                _influx_org=args.influx_org,
-                                _influx_token=args.influx_token,
-                                _influx_bucket=args.influx_bucket)
-
     MAX_NUMBER_OF_STATIONS = 1000
 
     radio_name_list = []
@@ -3667,7 +3622,6 @@ Note: for enable flags can us && as separator in vscode
         side_b_min_rate=dl_rates,
         side_a_min_pdu=ul_pdus,
         side_b_min_pdu=dl_pdus,
-        user_tags=args.influx_tag,
         rates_are_totals=args.rates_are_totals,
         mconn=args.multiconn,
         attenuators=attenuators,
@@ -3678,7 +3632,6 @@ Note: for enable flags can us && as separator in vscode
         lfclient_host=lfjson_host,
         lfclient_port=lfjson_port,
         debug=args.debug,
-        influxdb=influxdb,
         kpi_csv=kpi_csv,  # kpi.csv object
         no_cleanup=args.no_cleanup,
         collect_layer3_data=collect_layer3_data,
