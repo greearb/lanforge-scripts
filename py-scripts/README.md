@@ -1,16 +1,45 @@
-# LANForge Python Scripts
-This directory contains python scripts to intract with LANforge Wifi and Ethernet Traffic Generators for testing Access Points and other Wifi networks.
+# LANforge Python Scripts
+This directory contains Python scripts to configure and test devices with LANforge Traffic Generators.
 
-The scripts are written to support functionality available in Python 3.7 for supporting backward compatibility to older LANforge systems running on Fedora 27. The scripts will run on later versions of Python which are supported on later versions of Fedora.
+For more information, see the following online documentation or email [`support@candelatech.com`](mailto:support@candelatech.com) with questions.
+* [LANforge Scripting Cookbook](http://www.candelatech.com/scripting_cookbook.php)
+* [Querying the LANforge JSON API using Python Cookbook](https://www.candelatech.com/cookbook/cli/json-python)
 
-## LANforge Python Scripts in py-scripts General Classifications
+
+## Setup
+**NOTE: LANforge Python scripts require Python 3.7+** (which is backwards compatible to Fedora 27 systems).
+
+There are two primary methods to use LANforge scripts, on a LANforge system with the scripts pre-installed or by cloning the scripts from the Git repo.
+
+### Pre-installed LANforge System Usage
+For pre-installed LANforge systems, these scripts are installed in `/home/lanforge/scripts/py-scripts/` and require no further setup (dependencies are pre-installed as well). These pre-installed scripts match the LANforge software version on the system.
+
+### Cloning from Git Repository Usage
+For users who clone these scripts from the Git repo, some setup is required.
+
+First, ensure that the LANforge scripts version you cloned matches that of your LANforge system (it is possible to run with the latest version, but this is not recommended). You can do this by doing the following:
+1. Get the version-tagged commits of the repository: `git fetch --tags`
+2. List the version-tagged commits available: `git tag`
+3. Selecting the matching tag for your LANforge system's version by running `git checkout`, e.g. `git checkout lf-5.4.7` to select the LANforge 5.4.7 version of LANforge scripts.
+
+Next, run the `update_dependencies.py` script to install the required script dependencies. We recommend doing so within a Python virtual environment using a tool like [`venv`](https://docs.python.org/3/tutorial/venv.html). This will isolate LANforge script dependencies from other software on your system's dependencies.
+
+Once you have completed dependency installation, you can now use the LANforge Python scripts.
+
+
+## Using LANforge Python Scripts
+
+There are many scripts available within not just the LANforge Python scripts but the entire LANforge scripts repository. While we recognize and continue to address documenting these scripts, this section details some information that may be useful when using these scripts.
+
+To learn more about what a script does, most scripts support a `--help_summary` option which prints a short summary detailing what the script does. All scripts support a `--help` option which prints all arguments supported by a given script.
+
+To learn more about automating Chamber View tests like TR-398, WiFi Capacity Test, and others, see the [Chamber View Examples](./cv_examples/README.md) subdirectory for more information.
+
+### LANforge Python Scripts in py-scripts General Classifications
 
 * create_ - creates network element in LANforge wiphy radio
 * lf_ or test_ - performs a test against an Access Point or Wifi network
 * other files  are various utilities
-
-## Still not sure what the script does ?
-* LANforge scripts support --help , to provide a more detailed description of scripts functionality
 
 ## LANforge Python Scripts Directory Structure
 * py-scripts - configuration, unit test, module, and library scripts
@@ -19,47 +48,6 @@ The scripts are written to support functionality available in Python 3.7 for sup
 * py-json/LANforge - JSON intraction with LANforge Traffic Generator.
 * lanforge_client/ - alpha version of JSON interface to LANforge Traffic Generator.
 
-## Where is the create_basic_argparse and create_bare_argsparse?
-* py-json/LANforge/lfcli_base.py 
-## Updating scripts python library dependencies 
-* for F27 systems from lanforge-scripts run: `pip3 install --user -r python.3.6.requirements.txt --upgrade`
-* from lanforge-scripts run:  `pip3 install --user -r requirements.txt --upgrade`
 ## Scripts accessing Serial ports. 
 * to access serial ports add user to `dialout` and `tty` groups to gain access to serial ports without needing root access.
 * Most scripts run in user space to use the installed python package and not affect the os python packages.
-
-
-
-## References
-* https://www.candelatech.com/cookbook/cli/json-python
-* http://www.candelatech.com/scripting_cookbook.php
-
-
-# Getting Started
-
-The first step is to make sure all dependencies are installed in your system.
-
-## Example of running a chamber view test
-### example from cv_examples/ferndale_ucentral.bash
-* ./create_chamberview_dut.py : Replace arguments with your setup.  Separate your ssid arguments with spaces and ensure the names are lowercase
-  * ./create_chamberview_dut.py --lfmgr `${MGR}` --port `${MGR_PORT}` --dut_name `${DUT}` \
-  --ssid `"ssid_idx=0 ssid=Default-SSID-2g security=WPA2 password=12345678 bssid=c4:41:1e:f5:3f:24"` \
-  --ssid `"ssid_idx=1 ssid=Default-SSID-5gl security=WPA2 password=12345678 bssid=c4:41:1e:f5:3f:25"` \
-  --sw_version `"ucentral-01"` --hw_version `ea8450` --serial_num `1001` --model_num `8450`
-* ./create_chamberview.py : change the lfmgr to your system, set the radio to a working radio on your LANforge system, same with the ethernet port.  Create/update chamber view scenario and apply and build it. Easiest way to get these lines is to build it in the GUI and then copy/tweak what it shows in the 'Text Output' tab after saving and re-opening the scenario.
-  * ./create_chamberview.py --lfmgr `${MGR}` --port `${MGR_PORT}` --delete_scenario \
-  --create_scenario `ucentral-scenario` \
-  --raw_line `"profile_link 1.1 STA-AC 50 'DUT: $DUT Radio-1' NA wiphy0,AUTO -1 NA"` \
-  --raw_line `"profile_link 1.1 STA-AC 50 'DUT: $DUT Radio-1' NA wiphy2,AUTO -1 NA"` \
-  --raw_line `"profile_link 1.1 STA-AC 50 'DUT: $DUT Radio-2' NA wiphy1,AUTO -1 NA"` \
-  --raw_line `"profile_link 1.1 STA-AC 46 'DUT: $DUT Radio-2' NA wiphy3,AUTO -1 NA"` \
-  --raw_line `"profile_link 1.1 upstream-dhcp 1 NA NA $UPSTREAM,AUTO -1 NA" `\
-  --raw_line `"profile_link 1.1 uplink-nat 1 'DUT: upstream LAN 192.168.100.1/24' NA $LF_WAN_PORT,$UPSTREAM -1 NA"` \
-  --raw_line `"profile_link 1.1 STA-AC 1 'DUT: $DUT Radio-2' NA ALL-AX,AUTO -1 NA"`
-* ./lf_wifi_capacity_test.py : Run capacity test on the stations created by the chamber view scenario.
-  * ./lf_wifi_capacity_test.py --config_name Custom --pull_report --mgr `${MGR}` \
-  --port `${MGR_PORT}` \
-  --instance_name `testing` --upstream `1.1.$UPSTREAM` --test_rig `${TESTBED}` --graph_groups `${GROUP_FILE}` \
-  --batch_size `"100"` --protocol `"TCP-IPv4"` --duration `20000`
-
-
