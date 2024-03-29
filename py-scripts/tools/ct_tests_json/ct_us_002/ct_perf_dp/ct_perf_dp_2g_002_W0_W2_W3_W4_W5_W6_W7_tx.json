@@ -276,7 +276,7 @@
                     " --set DUT_SET_NAME"
                 ]
             },
-            "CC_DUT_MTK7915_2G_W5":{
+            "CC_DUT_MTK7915_2G_W7":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
