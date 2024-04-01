@@ -85,6 +85,7 @@ class HttpDownload(Realm):
     def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password,ap_name,
                  target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None,sixg_radio=None, _debug_on=False, _exit_on_error=False,
                  _exit_on_fail=False,client_type="",port_list=[],devices_list=[],macid_list=[],lf_username="lanforge",lf_password="lanforge"):
+        self.ssid_list = []
         self.devices = []
         self.mode_list = []
         self.channel_list = []
@@ -642,6 +643,7 @@ class HttpDownload(Realm):
                     if port in self.port_list:
                         self.channel_list.append(str(port_data['channel']))
                         self.mode_list.append(str(port_data['mode']))
+                        self.ssid_list.append(str(port_data['ssid']))
         elif self.client_type == "Virtual":
             self.devices = self.station_list[0]
             for interface in self.response_port['interfaces']:
@@ -650,6 +652,7 @@ class HttpDownload(Realm):
                         self.channel_list.append(str(port_data['channel']))
                         self.mode_list.append(str(port_data['mode']))
                         self.macid_list.append(str(port_data['mac']))
+                        self.ssid_list.append(str(port_data['ssid']))
 
         x = []
         for fcc in list(result_data.keys()):
@@ -755,6 +758,7 @@ class HttpDownload(Realm):
                         " Clients" : self.devices,
                         " MAC " : self.macid_list,
                         " Channel" : self.channel_list,
+                        " SSID " : self.ssid_list,
                         " Mode" : self.mode_list,
                         " No of times File downloaded " : dataset2,
                         " Average time taken to Download file (ms)" : dataset,
