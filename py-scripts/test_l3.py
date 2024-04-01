@@ -809,6 +809,7 @@ class L3VariableTime(Realm):
         # port data BK -A
         self.bk_port_eid_A = []
         self.bk_port_mac_A = []
+        self.bk_port_ssid_A = []
         self.bk_port_channel_A = []
         self.bk_port_mode_A = []
         self.bk_port_observed_rx_rate_A = []
@@ -840,6 +841,7 @@ class L3VariableTime(Realm):
         # port data BK -B
         self.bk_port_eid_B = []
         self.bk_port_mac_B = []
+        self.bk_port_ssid_B = []
         self.bk_port_channel_B = []
         self.bk_port_mode_B = []
         self.bk_port_observed_rx_rate_B = []
@@ -871,6 +873,7 @@ class L3VariableTime(Realm):
         # port data BE -A
         self.be_port_eid_A = []
         self.be_port_mac_A = []
+        self.be_port_ssid_A = []
         self.be_port_channel_A = []
         self.be_port_mode_A = []
         self.be_port_observed_rx_rate_A = []
@@ -903,6 +906,7 @@ class L3VariableTime(Realm):
         self.be_port_eid_B = []
         self.be_port_mac_B = []
         self.be_port_channel_B = []
+        self.be_port_ssid_B = []
         self.be_port_mode_B = []
         self.be_port_observed_rx_rate_B = []
         self.be_port_observed_tx_rate_B = []
@@ -933,6 +937,7 @@ class L3VariableTime(Realm):
         # port data VI -A
         self.vi_port_eid_A = []
         self.vi_port_mac_A = []
+        self.vi_port_ssid_A = []
         self.vi_port_channel_A = []
         self.vi_port_mode_A = []
         self.vi_port_observed_rx_rate_A = []
@@ -965,6 +970,7 @@ class L3VariableTime(Realm):
         self.vi_port_eid_B = []
         self.vi_port_mac_B = []
         self.vi_port_channel_B = []
+        self.vi_port_ssid_B = []
         self.vi_port_mode_B = []
         self.vi_port_observed_rx_rate_B = []
         self.vi_port_observed_tx_rate_B = []
@@ -1003,6 +1009,7 @@ class L3VariableTime(Realm):
         self.vo_port_eid_A = []
         self.vo_port_mac_A = []
         self.vo_port_channel_A = []
+        self.vo_port_ssid_A = []
         self.vo_port_mode_A = []
         self.vo_port_observed_rx_rate_A = []
         self.vo_port_observed_tx_rate_A = []
@@ -1034,6 +1041,7 @@ class L3VariableTime(Realm):
         self.vo_port_eid_B = []
         self.vo_port_mac_B = []
         self.vo_port_channel_B = []
+        self.vo_port_ssid_B = []
         self.vo_port_mode_B = []
         self.vo_port_observed_rx_rate_B = []
         self.vo_port_observed_tx_rate_B = []
@@ -2505,7 +2513,7 @@ class L3VariableTime(Realm):
 
         # gather port data
         # TODO
-        self.port_data = self.json_get('port/all?fields=alias,port,mac,channel,mode,bps+rx,rx-rate,bps+tx,tx-rate')
+        self.port_data = self.json_get('port/all?fields=alias,port,mac,channel,ssid,mode,bps+rx,rx-rate,bps+tx,tx-rate')
         #self.port_data = self.json_get('port/all')
         self.port_data.pop("handler")
         self.port_data.pop("uri")
@@ -2610,6 +2618,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.bk_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.bk_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_A.append(endp_data[endp_data_key]['tos'])
                                     self.bk_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -2620,6 +2629,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.bk_port_mac_A.append('NA')
+                                self.bk_port_ssid_A.append('NA')
                                 self.bk_port_mode_A.append('NA')
                                 self.bk_port_traffic_type_A.append("NA")
                                 self.bk_port_offered_rx_rate_A.append("NA")
@@ -2667,6 +2677,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.bk_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.bk_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
                                     self.bk_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
@@ -2677,6 +2688,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.bk_port_mac_B.append('NA')
+                                self.bk_port_ssid_B.append('NA')
                                 self.bk_port_mode_B.append('NA')
                                 self.bk_port_traffic_type_B.append("NA")
                                 self.bk_port_offered_rx_rate_B.append("NA")
@@ -2725,6 +2737,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.be_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.be_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.be_port_traffic_type_A.append(endp_data[endp_data_key]['tos'])
                                     self.be_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -2735,6 +2748,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.be_port_mac_A.append('NA')
+                                self.be_port_ssid_A.append('NA')
                                 self.be_port_mode_A.append('NA')
                                 self.be_port_traffic_type_A.append("NA")
                                 self.be_port_offered_rx_rate_A.append("NA")
@@ -2782,6 +2796,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.be_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.be_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.be_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
                                     self.be_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
@@ -2792,6 +2807,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.be_port_mac_B.append('NA')
+                                self.be_port_ssid_B.append('NA')
                                 self.be_port_mode_B.append('NA')
                                 self.be_port_traffic_type_B.append("NA")
                                 self.be_port_offered_rx_rate_B.append("NA")
@@ -2840,6 +2856,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.vi_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.vi_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_A.append(endp_data[endp_data_key]['tos'])
                                     self.vi_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -2850,6 +2867,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vi_port_mac_A.append('NA')
+                                self.vi_port_ssid_A.append('NA')
                                 self.vi_port_mode_A.append('NA')
                                 self.vi_port_traffic_type_A.append("NA")
                                 self.vi_port_offered_rx_rate_A.append("NA")
@@ -2897,6 +2915,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.vi_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.vi_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
                                     self.vi_port_offered_rx_rate_B.append(self.cx_profile.side_a_min_bps)  # a side tx
@@ -2907,6 +2926,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vi_port_mac_B.append('NA')
+                                self.vi_port_ssid_B.append('NA')
                                 self.vi_port_mode_B.append('NA')
                                 self.vi_port_traffic_type_B.append("NA")
                                 self.vi_port_offered_rx_rate_B.append("NA")
@@ -2955,6 +2975,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.vo_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.vo_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.vo_port_traffic_type_A.append(endp_data[endp_data_key]['tos'])
                                     self.vo_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -2965,6 +2986,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vo_port_mac_A.append('NA')
+                                self.vo_port_ssid_A.append('NA')
                                 self.vo_port_mode_A.append('NA')
                                 self.vo_port_traffic_type_A.append("NA")
                                 self.vo_port_offered_rx_rate_A.append("NA")
@@ -3012,6 +3034,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.vo_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.vo_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vo_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
                                     self.vo_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
@@ -3022,6 +3045,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vo_port_mac_B.append('NA')
+                                self.vo_port_ssid_B.append('NA')
                                 self.vo_port_mode_B.append('NA')
                                 self.vo_port_traffic_type_B.append("NA")
                                 self.vo_port_offered_rx_rate_B.append("NA")
@@ -3072,6 +3096,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.bk_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.bk_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_A.append(endp_data[endp_data_key]['tos'])
                                     self.bk_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -3082,6 +3107,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.bk_port_mac_A.append('NA')
+                                self.bk_port_ssid_A.append('NA')
                                 self.bk_port_mode_A.append('NA')
                                 self.bk_port_traffic_type_A.append("NA")
                                 self.bk_port_offered_rx_rate_A.append("NA")
@@ -3129,6 +3155,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.bk_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.bk_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
                                     self.bk_port_offered_rx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -3139,6 +3166,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.bk_port_mac_B.append('NA')
+                                self.bk_port_ssid_B.append('NA')
                                 self.bk_port_mode_B.append('NA')
                                 self.bk_port_traffic_type_B.append("NA")
                                 self.bk_port_offered_rx_rate_B.append("NA")
@@ -3189,6 +3217,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.be_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.be_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.be_port_traffic_type_A.append(endp_data[endp_data_key]['tos'])
                                     self.be_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -3199,6 +3228,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.be_port_mac_A.append('NA')
+                                self.be_port_ssid_A.append('NA')
                                 self.be_port_mode_A.append('NA')
                                 self.be_port_traffic_type_A.append("NA")
                                 self.be_port_offered_rx_rate_A.append("NA")
@@ -3242,10 +3272,12 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.be_port_eid_B.append(eid_tmp_port)
+
                             for port_data in self.port_data['interfaces']:
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.be_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.be_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.be_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
                                     self.be_port_offered_rx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -3256,6 +3288,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.be_port_mac_B.append('NA')
+                                self.be_port_ssid_B.append('NA')
                                 self.be_port_mode_B.append('NA')
                                 self.be_port_traffic_type_B.append("NA")
                                 self.be_port_offered_rx_rate_B.append("NA")
@@ -3304,6 +3337,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.vi_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.vi_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_A.append(endp_data[endp_data_key]['tos'])
                                     self.vi_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -3314,6 +3348,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vi_port_mac_A.append('NA')
+                                self.vi_port_ssid_A.append('NA')
                                 self.vi_port_mode_A.append('NA')
                                 self.vi_port_traffic_type_A.append("NA")
                                 self.vi_port_offered_rx_rate_A.append("NA")
@@ -3360,16 +3395,19 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.vi_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.vi_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
                                     self.vi_port_offered_rx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
                                     self.vi_port_offered_tx_rate_B.append(self.cx_profile.side_a_min_bps)  # a side tx
                                     self.vi_port_channel_B.append(port_data[port_data_key]["channel"])
+
                                     port_found = True
                                     break
 
                             if port_found is False:
                                 self.vi_port_mac_B.append('NA')
+                                self.vi_port_ssid_B.append('NA')
                                 self.vi_port_mode_B.append('NA')
                                 self.vi_port_traffic_type_B.append("NA")
                                 self.vi_port_offered_rx_rate_B.append("NA")
@@ -3417,6 +3455,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.vo_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.vo_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.vo_port_traffic_type_A.append(endp_data[endp_data_key]['tos'])
                                     self.vo_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -3427,6 +3466,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vo_port_mac_A.append('NA')
+                                self.vo_port_ssid_A.append('NA')
                                 self.vo_port_mode_A.append('NA')
                                 self.vo_port_traffic_type_A.append("NA")
                                 self.vo_port_offered_rx_rate_A.append("NA")
@@ -3474,6 +3514,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.vo_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.vo_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vo_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
                                     self.vo_port_offered_rx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -3484,6 +3525,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vo_port_mac_B.append('NA')
+                                self.vo_port_ssid_B.append('NA')
                                 self.vo_port_mode_B.append('NA')
                                 self.vo_port_traffic_type_B.append("NA")
                                 self.vo_port_offered_rx_rate_B.append("NA")
@@ -3536,6 +3578,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.bk_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.bk_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_A.append('BK')
                                     self.bk_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -3546,6 +3589,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.bk_port_mac_A.append('NA')
+                                self.bk_port_ssid_A.append('NA')
                                 self.bk_port_mode_A.append('NA')
                                 self.bk_port_traffic_type_A.append("NA")
                                 self.bk_port_offered_rx_rate_A.append("NA")
@@ -3592,6 +3636,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.bk_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.bk_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_B.append('BK')
                                     self.bk_port_offered_rx_rate_B.append(self.cx_profile.side_a_min_bps)  # a side tx
@@ -3602,6 +3647,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.bk_port_mac_B.append('NA')
+                                self.bk_port_ssid_B.append('NA')
                                 self.bk_port_mode_B.append('NA')
                                 self.bk_port_traffic_type_B.append("NA")
                                 self.bk_port_offered_rx_rate_B.append("NA")
@@ -3649,6 +3695,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.be_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.be_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.be_port_traffic_type_A.append('BE')
                                     self.be_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -3659,6 +3706,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.be_port_mac_A.append('NA')
+                                self.be_port_ssid_A.append('NA')
                                 self.be_port_mode_A.append('NA')
                                 self.be_port_traffic_type_A.append("NA")
                                 self.be_port_offered_rx_rate_A.append("NA")
@@ -3706,6 +3754,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.be_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.be_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.be_port_traffic_type_B.append('BE')
                                     self.be_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
@@ -3716,6 +3765,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.be_port_mac_B.append('NA')
+                                self.be_port_ssid_B.append('NA')
                                 self.be_port_mode_B.append('NA')
                                 self.be_port_traffic_type_B.append("NA")
                                 self.be_port_offered_rx_rate_B.append("NA")
@@ -3764,6 +3814,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.vi_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.vi_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_A.append('VI')
                                     self.vi_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -3774,6 +3825,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vi_port_mac_A.append('NA')
+                                self.vi_port_ssid_A.append('NA')
                                 self.vi_port_mode_A.append('NA')
                                 self.vi_port_traffic_type_A.append("NA")
                                 self.vi_port_offered_rx_rate_A.append("NA")
@@ -3821,6 +3873,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.vi_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.vi_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_B.append('VI')
                                     self.vi_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
@@ -3831,6 +3884,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vi_port_mac_B.append('NA')
+                                self.vi_port_ssid_B.append('NA')
                                 self.vi_port_mode_B.append('NA')
                                 self.vi_port_traffic_type_B.append("NA")
                                 self.vi_port_offered_rx_rate_B.append("NA")
@@ -3878,6 +3932,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.vo_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.vo_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.vo_port_traffic_type_A.append('VO')
                                     self.vo_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -3888,6 +3943,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vo_port_mac_A.append('NA')
+                                self.vo_port_ssid_A.append('NA')
                                 self.vo_port_mode_A.append('NA')
                                 self.vo_port_traffic_type_A.append("NA")
                                 self.vo_port_offered_rx_rate_A.append("NA")
@@ -3935,6 +3991,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.vo_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.vo_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vo_port_traffic_type_B.append('VO')
                                     self.vo_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
@@ -3945,6 +4002,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vo_port_mac_B.append('NA')
+                                self.vo_port_ssid_B.append('NA')
                                 self.vo_port_mode_B.append('NA')
                                 self.vo_port_traffic_type_B.append("NA")
                                 self.vo_port_offered_rx_rate_B.append("NA")
@@ -3995,6 +4053,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.bk_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.bk_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_A.append('BK')
                                     self.bk_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -4005,6 +4064,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.bk_port_mac_A.append('NA')
+                                self.bk_port_ssid_A.append('NA')
                                 self.bk_port_mode_A.append('NA')
                                 self.bk_port_traffic_type_A.append("NA")
                                 self.bk_port_offered_rx_rate_A.append("NA")
@@ -4051,6 +4111,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.bk_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.bk_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_B.append('BK')
                                     self.bk_port_offered_rx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -4061,6 +4122,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.bk_port_mac_B.append('NA')
+                                self.bk_port_ssid_B.append('NA')
                                 self.bk_port_mode_B.append('NA')
                                 self.bk_port_traffic_type_B.append("NA")
                                 self.bk_port_offered_rx_rate_B.append("NA")
@@ -4110,6 +4172,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.be_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.be_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.be_port_traffic_type_A.append('BE')
                                     self.be_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -4120,6 +4183,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.be_port_mac_A.append('NA')
+                                self.be_port_ssid_A.append('NA')
                                 self.be_port_mode_A.append('NA')
                                 self.be_port_traffic_type_A.append("NA")
                                 self.be_port_offered_rx_rate_A.append("NA")
@@ -4167,6 +4231,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.be_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.be_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.be_port_traffic_type_B.append('BE')
                                     self.be_port_offered_rx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -4177,6 +4242,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.be_port_mac_B.append('NA')
+                                self.be_port_ssid_B.append('NA')
                                 self.be_port_mode_B.append('NA')
                                 self.be_port_traffic_type_B.append("NA")
                                 self.be_port_offered_rx_rate_B.append("NA")
@@ -4225,6 +4291,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.vi_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.vi_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_A.append('VI')
                                     self.vi_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -4235,6 +4302,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vi_port_mac_A.append('NA')
+                                self.vi_port_ssid_A.append('NA')
                                 self.vi_port_mode_A.append('NA')
                                 self.vi_port_traffic_type_A.append("NA")
                                 self.vi_port_offered_rx_rate_A.append("NA")
@@ -4282,6 +4350,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.vi_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.vi_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_B.append('VI')
                                     self.vi_port_offered_rx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -4292,6 +4361,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vi_port_mac_B.append('NA')
+                                self.vi_port_ssid_B.append('NA')
                                 self.vi_port_mode_B.append('NA')
                                 self.vi_port_traffic_type_B.append("NA")
                                 self.vi_port_offered_rx_rate_B.append("NA")
@@ -4339,6 +4409,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_A.append(port_data[port_data_key]['mac'])
+                                    self.vo_port_ssid_A.append(port_data[port_data_key]['ssid'])
                                     self.vo_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.vo_port_traffic_type_A.append('VO')
                                     self.vo_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -4349,6 +4420,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vo_port_mac_A.append('NA')
+                                self.vo_port_ssid_A.append('NA')
                                 self.vo_port_mode_A.append('NA')
                                 self.vo_port_traffic_type_A.append("NA")
                                 self.vo_port_offered_rx_rate_A.append("NA")
@@ -4393,6 +4465,7 @@ class L3VariableTime(Realm):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_B.append(port_data[port_data_key]['mac'])
+                                    self.vo_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.vo_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vo_port_traffic_type_B.append('VO')
                                     self.vo_port_offered_rx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
@@ -4403,6 +4476,7 @@ class L3VariableTime(Realm):
 
                             if port_found is False:
                                 self.vo_port_mac_B.append('NA')
+                                self.vo_port_ssid_B.append('NA')
                                 self.vo_port_mode_B.append('NA')
                                 self.vo_port_traffic_type_B.append("NA")
                                 self.vo_port_offered_rx_rate_B.append("NA")
@@ -4428,6 +4502,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.bk_resource_eid_A,
                 "port_A": self.bk_port_eid_A,
                 "mac_A": self.bk_port_mac_A,
+                "ssid_A" : self.bk_port_ssid_A,
                 "channel_A": self.bk_port_channel_A,
                 "mode_A": self.bk_port_mode_A,
                 "traffic_type_A": self.bk_port_traffic_type_A,
@@ -4446,6 +4521,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.bk_resource_eid_B,
                 "port_B": self.bk_port_eid_B,
                 "mac_B": self.bk_port_mac_B,
+                "ssid_B" : self.bk_port_ssid_B,
                 "channel_B": self.bk_port_channel_B,
                 "mode_B": self.bk_port_mode_B,
                 "traffic_type_B": self.bk_port_traffic_type_B,
@@ -4469,6 +4545,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.be_resource_eid_A,
                 "port_A": self.be_port_eid_A,
                 "mac_A": self.be_port_mac_A,
+                "ssid_A" : self.be_port_ssid_A,
                 "channel_A": self.be_port_channel_A,
                 "mode_A": self.be_port_mode_A,
                 "traffic_type_A": self.be_port_traffic_type_A,
@@ -4487,6 +4564,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.be_resource_hw_ver_B,
                 "port_B": self.be_port_eid_B,
                 "mac_B": self.be_port_mac_B,
+                "ssid_B": self.be_port_ssid_B,
                 "channel_B": self.be_port_channel_B,
                 "mode_B": self.be_port_mode_B,
                 "traffic_type_B": self.be_port_traffic_type_B,
@@ -4510,6 +4588,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.vi_resource_eid_A,
                 "port_A": self.vi_port_eid_A,
                 "mac_A": self.vi_port_mac_A,
+                "ssid_A": self.vi_port_ssid_A,
                 "channel_A": self.vi_port_channel_A,
                 "mode_A": self.vi_port_mode_A,
                 "traffic_type_A": self.vi_port_traffic_type_A,
@@ -4528,6 +4607,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.vi_resource_eid_B,
                 "port_B": self.vi_port_eid_B,
                 "mac_B": self.vi_port_mac_B,
+                "ssid_B" : self.vi_port_ssid_B,
                 "channel_B": self.vi_port_channel_B,
                 "mode_B": self.vi_port_mode_B,
                 "traffic_type_B": self.vi_port_traffic_type_B,
@@ -4551,6 +4631,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.vo_resource_eid_A,
                 "port_A": self.vo_port_eid_A,
                 "mac_A": self.vo_port_mac_A,
+                "ssid_A" : self.vo_port_ssid_A,
                 "channel_A": self.vo_port_channel_A,
                 "mode_A": self.vo_port_mode_A,
                 "traffic_type_A": self.vo_port_traffic_type_A,
@@ -4569,6 +4650,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.vo_resource_eid_B,
                 "port_B": self.vo_port_eid_B,
                 "mac_B": self.vo_port_mac_B,
+                "ssid_B" : self.vo_port_ssid_B,
                 "channel_B": self.vo_port_channel_B,
                 "mode_B": self.vo_port_mode_B,
                 "traffic_type_B": self.vo_port_traffic_type_B,
@@ -4599,6 +4681,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.bk_resource_eid_A,
                 "port_A": self.bk_port_eid_A,
                 "mac_A": self.bk_port_mac_A,
+                "ssid_A" : self.bk_port_ssid_A,
                 "channel_A": self.bk_port_channel_A,
                 "mode_A": self.bk_port_mode_A,
                 "traffic_type_A": self.bk_port_traffic_type_A,
@@ -4617,6 +4700,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.bk_resource_eid_B,
                 "port_B": self.bk_port_eid_B,
                 "mac_B": self.bk_port_mac_B,
+                "ssid_B" : self.bk_port_ssid_B,
                 "channel_B": self.bk_port_channel_B,
                 "mode_B": self.bk_port_mode_B,
                 "traffic_type_B": self.bk_port_traffic_type_B,
@@ -4640,6 +4724,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.be_resource_eid_A,
                 "port_A": self.be_port_eid_A,
                 "mac_A": self.be_port_mac_A,
+                "ssid_A" : self.be_port_ssid_A,
                 "channel_A": self.be_port_channel_A,
                 "mode_A": self.be_port_mode_A,
                 "traffic_type_A": self.be_port_traffic_type_A,
@@ -4658,6 +4743,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.be_resource_eid_B,
                 "port_B": self.be_port_eid_B,
                 "mac_B": self.be_port_mac_B,
+                "ssid_B": self.be_port_ssid_B,
                 "channel_B": self.be_port_channel_B,
                 "mode_B": self.be_port_mode_B,
                 "traffic_type_B": self.be_port_traffic_type_B,
@@ -4681,6 +4767,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.vi_resource_eid_A,
                 "port_A": self.vi_port_eid_A,
                 "mac_A": self.vi_port_mac_A,
+                "ssid_A": self.vi_port_ssid_A,
                 "channel_A": self.vi_port_channel_A,
                 "mode_A": self.vi_port_mode_A,
                 "traffic_type_A": self.vi_port_traffic_type_A,
@@ -4699,6 +4786,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.vi_resource_eid_B,
                 "port_B": self.vi_port_eid_B,
                 "mac_B": self.vi_port_mac_B,
+                "ssid_B" : self.vi_port_ssid_B,
                 "channel_B": self.vi_port_channel_B,
                 "mode_B": self.vi_port_mode_B,
                 "traffic_type_B": self.vi_port_traffic_type_B,
@@ -4722,6 +4810,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.vo_resource_eid_A,
                 "port_A": self.vo_port_eid_A,
                 "mac_A": self.vo_port_mac_A,
+                "ssid_A" : self.vo_port_ssid_A,
                 "channel_A": self.vo_port_channel_A,
                 "mode_A": self.vo_port_mode_A,
                 "traffic_type_A": self.vo_port_traffic_type_A,
@@ -4740,6 +4829,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.vo_resource_eid_B,
                 "port_B": self.vo_port_eid_B,
                 "mac_B": self.vo_port_mac_B,
+                "ssid_B" : self.vo_port_ssid_B,
                 "channel_B": self.vo_port_channel_B,
                 "mode_B": self.vo_port_mode_B,
                 "traffic_type_B": self.vo_port_traffic_type_B,
@@ -5138,6 +5228,7 @@ class L3VariableTime(Realm):
                     " Port Name ": self.client_dict_A[tos]['port_A'],
                     " Mode ": self.client_dict_A[tos]['mode_A'],
                     " Mac ": self.client_dict_A[tos]['mac_A'],
+                    " SSID ": self.client_dict_A[tos]['ssid_A'],
                     " Channel ": self.client_dict_A[tos]['channel_A'],
                     " Type of traffic ": self.client_dict_A[tos]['traffic_type_A'],
                     " Traffic Protocol ": self.client_dict_A[tos]['traffic_protocol_A'],
@@ -5206,6 +5297,7 @@ class L3VariableTime(Realm):
                     " Port Name ": self.client_dict_B[tos]['port_B'],
                     " Mode ": self.client_dict_B[tos]['mode_B'],
                     " Mac ": self.client_dict_B[tos]['mac_B'],
+                    " SSID ": self.client_dict_B[tos]['ssid_B'],
                     " Channel ": self.client_dict_B[tos]['channel_B'],
                     " Type of traffic ": self.client_dict_B[tos]['traffic_type_B'],
                     " Traffic Protocol ": self.client_dict_B[tos]['traffic_protocol_B'],
