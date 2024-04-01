@@ -625,9 +625,22 @@ class RealDevice(Realm):
                  manager_ip=None,
                  port=8080,
                  server_ip=None,
-                 ssid=None,
-                 encryption=None,
-                 passwd=None,
+                 ssid_2g=None,
+                 passwd_2g=None,
+                 encryption_2g=None,
+                 eap_method_2g=None,
+                 eap_identity_2g=None,
+                 ssid_5g=None,
+                 passwd_5g=None,
+                 encryption_5g=None,
+                 eap_method_5g=None,
+                 eap_identity_5g=None,
+                 ssid_6g=None,
+                 passwd_6g=None,
+                 encryption_6g=None,
+                 eap_method_6g=None,
+                 eap_identity_6g=None,
+                 selected_bands=['5g'],
                  _debug_on=False,
                  _exit_on_error=False):
         super().__init__(lfclient_host=manager_ip,
@@ -635,9 +648,31 @@ class RealDevice(Realm):
         self.manager_ip = manager_ip
         self.manager_port = port
         self.server_ip = server_ip
-        self.ssid = ssid
-        self.encryption = encryption
-        self.passwd  = passwd
+
+        self.ssid_2g = ssid_2g
+        self.passwd_2g = passwd_2g
+        self.encryption_2g = encryption_2g
+
+        self.ssid_5g = ssid_5g
+        self.passwd_5g = passwd_5g
+        self.encryption_5g = encryption_5g
+
+        self.ssid_6g = ssid_6g
+        self.passwd_6g = passwd_6g
+        self.encryption_6g = encryption_6g
+
+        # for enterprise authentication
+        self.eap_method_2g = eap_method_2g
+        self.eap_identity_2g = eap_identity_2g
+
+        self.eap_method_5g = eap_method_5g
+        self.eap_identity_5g = eap_identity_5g
+
+        self.eap_method_6g = eap_method_6g
+        self.eap_identity_6g = eap_identity_6g
+
+        self.selected_bands = selected_bands
+
         self.devices = []
         self.devices_data = {}
         self.selected_device_eids = []
@@ -653,29 +688,53 @@ class RealDevice(Realm):
         self.linux = 0
         self.windows = 0
         self.mac = 0
-    
-    # To configure interop devices to an ssid at the time of device selection for testing
-    # Step 1: queries all interop devices from both interop tab and resource manager
-    # Step 2: displays port, username and os details of all real devices
-    # Step 3: the user then should select the devices from the list using serial numbers
-    # Step 4: the devices get configured and then the script waits for 2 minutes for the configuration to apply
-    # Step 5: then it checks both android and laptops for the expected configuration. If the configuration is not as expected, then the respective device is eliminated from the test
-    # Step 6: The script then proceeds for the test
-    async def query_all_devices_to_configure_wifi(self):
-        
-        all_devices = {}
-        selected_androids = []
-        selected_laptops = []
-        selected_t_devices = {}
+
+        for band in selected_bands:
+            if (band.lower() == '2g' and None in [self.ssid_2g, self.encryption_2g, self.passwd_2g]):
+                logging.critical(
+                    '2G band is selected for connectivity for required ssid, encryption and password are not properly provided. Aborting the test')
+                exit(1)
+            elif (band.lower() == '5g' and None in [self.ssid_5g, self.encryption_5g, self.passwd_5g]):
+                logging.critical(
+                    '5G band is selected for connectivity for required ssid, encryption and password are not properly provided. Aborting the test')
+                exit(1)
+            elif (band.lower() == '6g' and None in [self.ssid_6g, self.encryption_6g, self.passwd_6g]):
+                logging.critical(
+                    '6G band is selected for connectivity for required ssid, encryption and password are not properly provided. Aborting the test')
+                exit(1)
+
+    def query_all_devices_to_configure_wifi(self):
+        self.all_devices = {}
+        self.selected_2g_serials = []
+        self.selected_5g_serials = []
+        self.selected_6g_serials = []
 
         index = 1 # serial number for selection of devices
         
         # fetch all androids
-        androids_obj = interop_connectivity.Android(lanforge_ip=self.manager_ip, port=self.manager_port, server_ip=self.server_ip, ssid=self.ssid, passwd=self.passwd, encryption=self.encryption)
-        androids = androids_obj.get_devices()
-        for android in androids:
+        self.androids_obj = interop_connectivity.Android(
+            lanforge_ip=self.manager_ip,
+            port=self.manager_port,
+            server_ip=self.server_ip,
+            ssid_2g=self.ssid_2g,
+            passwd_2g=self.passwd_2g,
+            encryption_2g=self.encryption_2g,
+            eap_method_2g=self.eap_method_2g,
+            eap_identity_2g=self.eap_identity_2g,
+            ssid_5g=self.ssid_5g,
+            passwd_5g=self.passwd_5g,
+            encryption_5g=self.encryption_5g,
+            eap_method_5g=self.eap_method_5g,
+            eap_identity_5g=self.eap_identity_5g,
+            ssid_6g=self.ssid_6g,
+            passwd_6g=self.passwd_6g,
+            encryption_6g=self.encryption_6g,
+            eap_method_6g=self.eap_method_6g,
+            eap_identity_6g=self.eap_identity_6g)
+        self.androids = self.androids_obj.get_devices()
+        for android in self.androids:
             shelf, resource, serial = android
-            all_devices[index] = {
+            self.all_devices[index] = {
                 'port': '{}.{}'.format(shelf, resource),
                 'username': serial,
                 'os': 'Android'
@@ -683,10 +742,27 @@ class RealDevice(Realm):
             index += 1
 
         # fetch all laptops
-        laptops_obj = interop_connectivity.Laptop(lanforge_ip=self.manager_ip, port=self.manager_port, server_ip=self.server_ip, ssid=self.ssid, passwd=self.passwd, encryption=self.encryption)
-        laptops = laptops_obj.get_resources_data()
-        for laptop in laptops:
-            all_devices[index] = {
+        self.laptops_obj = interop_connectivity.Laptop(lanforge_ip=self.manager_ip,
+                                                       port=self.manager_port,
+                                                       server_ip=self.server_ip,
+                                                       ssid_2g=self.ssid_2g,
+                                                       passwd_2g=self.passwd_2g,
+                                                       encryption_2g=self.encryption_2g,
+                                                       eap_method_2g=self.eap_method_2g,
+                                                       eap_identity_2g=self.eap_identity_2g,
+                                                       ssid_5g=self.ssid_5g,
+                                                       passwd_5g=self.passwd_5g,
+                                                       encryption_5g=self.encryption_5g,
+                                                       eap_method_5g=self.eap_method_5g,
+                                                       eap_identity_5g=self.eap_identity_5g,
+                                                       ssid_6g=self.ssid_6g,
+                                                       passwd_6g=self.passwd_6g,
+                                                       encryption_6g=self.encryption_6g,
+                                                       eap_method_6g=self.eap_method_6g,
+                                                       eap_identity_6g=self.eap_identity_6g)
+        self.laptops = self.laptops_obj.get_resources_data()
+        for laptop in self.laptops:
+            self.all_devices[index] = {
                 'port': '{}.{}'.format(laptop['shelf'], laptop['resource']),
                 'username': laptop['hostname'],
                 'os': laptop['os']
@@ -694,36 +770,86 @@ class RealDevice(Realm):
             index += 1
 
         pd.set_option('display.max_rows', None)
-        df = pd.DataFrame(data=all_devices).transpose()
+        df = pd.DataFrame(data=self.all_devices).transpose()
         print(df)
 
-        select_serials = input('Select the serial numbers of devices to run the test(e.g. 1,2,3,.. or enter "all" to select all devices): ')
-        if('all' != select_serials):
-            select_serials = list(map(int, select_serials.split(',')))
-            for seleted_serial in select_serials:
-                selected_username = all_devices[seleted_serial]['username']
-                selected_os = all_devices[seleted_serial]['os']
-                if(selected_os == 'Android'):
-                    for android in androids:
-                        if(android[2] == selected_username):
-                            selected_androids.append(android)
-                            break
+        select_serials = input(
+            'Select the serial numbers of devices to run the test(e.g. 2G=1,2,3:5G=4,5,6:6G=7,8,9): ').lower()
+        for band in select_serials.split(':'):
+            if ('2g' in band) and ('2g' in self.selected_bands or '2G' in self.selected_bands or '2.4G' in self.selected_bands):
+                if ('all' in band):
+                    self.selected_2g_serials = list(range(index - 1))
                 else:
-                    for laptop in laptops:
-                        if(laptop['hostname'] == selected_username):
-                            selected_laptops.append(laptop)
-        else:
-            selected_androids = androids
-            selected_laptops = laptops
-        
+                    self.selected_2g_serials = list(map(int, band.strip('2g=').split(',')))
+            elif ('5g' in band) and ('5g' in self.selected_bands or '5G' in self.selected_bands):
+                if ('all' in band):
+                    self.selected_5g_serials = list(range(index - 1))
+                else:
+                    self.selected_5g_serials = list(map(int, band.strip('5g=').split(',')))
+            elif ('6g' in band):
+                if ('all' in band and '6g' in self.selected_bands or '6G' in self.selected_bands):
+                    self.selected_6g_serials = list(range(index - 1))
+                else:
+                    self.selected_6g_serials = list(map(int, band.strip('6g=').split(',')))
+
+        print(self.selected_2g_serials, self.selected_5g_serials, self.selected_6g_serials)
+        return [self.selected_2g_serials, self.selected_5g_serials, self.selected_6g_serials]
+
+    # To configure interop devices to an ssid at the time of device selection for testing
+    # Step 1: queries all interop devices from both interop tab and resource manager
+    # Step 2: displays port, username and os details of all real devices
+    # Step 3: the user then should select the devices from the list using serial numbers
+    # Step 4: the devices get configured and then the script waits for 2 minutes for the configuration to apply
+    # Step 5: then it checks both android and laptops for the expected configuration. If the configuration is not as expected, then the respective device is eliminated from the test
+    # Step 6: The script then proceeds for the test
+    async def configure_wifi(self, select_serials=None):
+        self.station_list = []
+        selected_androids = []
+        selected_laptops = []
+        selected_t_devices = {}
+        if(select_serials is None):
+            if (len(set(self.selected_2g_serials).intersection(self.selected_5g_serials)) == len(
+                    set(self.selected_2g_serials).intersection(self.selected_6g_serials)) == len(
+                    set(self.selected_5g_serials).intersection(self.selected_6g_serials)) == 0):
+                select_serials = self.selected_2g_serials + self.selected_5g_serials + self.selected_6g_serials
+            else:
+                logging.critical(
+                    'While performing connectivity, found one or more devices selected are in common between different bands. Aborting the test')
+                exit(1)
+        for selected_serial in select_serials:
+            selected_username = self.all_devices[selected_serial]['username']
+            selected_os = self.all_devices[selected_serial]['os']
+            if(selected_os == 'Android'):
+                for android in self.androids:
+                    if (android[2] == selected_username):
+                        if (selected_serial in self.selected_2g_serials):
+                            android.append('2g')
+                        elif (selected_serial in self.selected_5g_serials):
+                            android.append('5g')
+                        elif (selected_serial in self.selected_6g_serials):
+                            android.append('6g')
+                        selected_androids.append(android)
+                        break
+            else:
+                for laptop in self.laptops:
+                    if (laptop['hostname'] == selected_username):
+                        if (selected_serial in self.selected_2g_serials):
+                            laptop['band'] = '2g'
+                        elif (selected_serial in self.selected_5g_serials):
+                            laptop['band'] = '5g'
+                        elif (selected_serial in self.selected_6g_serials):
+                            laptop['band'] = '6g'
+                        selected_laptops.append(laptop)
+                        break
+
         if(selected_androids != []):
-            await androids_obj.stop_app(port_list=selected_androids)
-            await androids_obj.configure_wifi(port_list=selected_androids)
+            await self.androids_obj.stop_app(port_list=selected_androids)
+            await self.androids_obj.configure_wifi(port_list=selected_androids)
 
         if(selected_laptops != []):
-            await laptops_obj.rm_station(port_list=selected_laptops)
-            await laptops_obj.add_station(port_list=selected_laptops)
-            await laptops_obj.set_port(port_list=selected_laptops)
+            await self.laptops_obj.rm_station(port_list=selected_laptops)
+            await self.laptops_obj.add_station(port_list=selected_laptops)
+            await self.laptops_obj.set_port(port_list=selected_laptops)
 
         logging.info('Applying the new Wi-Fi configuration. Waiting for 2 minutes for the new configuration to apply.')
         time.sleep(120)
@@ -733,26 +859,38 @@ class RealDevice(Realm):
         exclude_androids = []
         for android in selected_androids:    
 
+            if (android[3] == '2g'):
+                curr_ssid = self.ssid_2g
+            elif (android[3] == '5g'):
+                curr_ssid = self.ssid_5g
+            elif (android[3] == '6g'):
+                curr_ssid = self.ssid_6g
+
             # get resource id for the android device from interop tab
             resource_id = self.json_get('/adb/1/1/{}'.format(android[2]))['devices']['resource-id']
 
             # if there is no resource id in interop tab
             if(resource_id == ''):
-                logging.warning('The android with serial {} is missing resource id. Excluding it from testing'.format(android[2]))
+                logging.warning(
+                    'The android with serial {} is missing resource id. Excluding it from testing'.format(android[2]))
                 exclude_androids.append(android)
                 continue
 
             # fetching port data for the android device
-            current_android_port_data = self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
+            current_android_port_data = \
+            self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
 
             # fetching resource data for android device
-            current_android_resource_data = self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
+            current_android_resource_data = \
+            self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
 
             current_android_port_data.update(current_android_resource_data)
             
             # checking if the android is connected to the desired ssid
-            if(current_android_port_data['ssid'] != self.ssid):
-                logging.warning('The android with serial {} is not conneted to the given SSID {}. Excluding it from testing'.format(android[2], self.ssid))
+            if (current_android_port_data['ssid'] != curr_ssid):
+                logging.warning(
+                    'The android with serial {} is not conneted to the given SSID {}. Excluding it from testing'.format(
+                        android[2], curr_ssid))
                 exclude_androids.append(android)
                 continue
 
@@ -762,7 +900,9 @@ class RealDevice(Realm):
                 exclude_androids.append(android)
                 continue
 
-            username = self.json_get('resource/{}/{}?fields=user'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']['user']
+            username = \
+            self.json_get('resource/{}/{}?fields=user'.format(resource_id.split('.')[0], resource_id.split('.')[1]))[
+                'resource']['user']
 
             self.selected_devices.append(resource_id)
             self.selected_macs.append(current_android_port_data['mac'])
@@ -788,33 +928,50 @@ class RealDevice(Realm):
         # for laptops
         exclude_laptops = []
         for laptop in selected_laptops:
-            
+
+            if (laptop['band'] == '2g'):
+                curr_ssid = self.ssid_2g
+            elif (laptop['band'] == '5g'):
+                curr_ssid = self.ssid_5g
+            elif (laptop['band'] == '6g'):
+                curr_ssid = self.ssid_6g
+
             # check SSID and IP values from port manager
-            current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+            current_laptop_port_data = self.json_get(
+                '/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
             if(current_laptop_port_data is None):
-                logging.warning('The laptop with port {}.{}.{} not found. Excluding it from testing'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+                logging.warning(
+                    'The laptop with port {}.{}.{} not found. Excluding it from testing'.format(laptop['shelf'],
+                                                                                                laptop['resource'],
+                                                                                                laptop['sta_name']))
                 exclude_laptops.append(laptop)
                 continue
 
             current_laptop_port_data = current_laptop_port_data['interface']
 
             # checking if the laptop is connected to the desired ssid
-            if(current_laptop_port_data['ssid'] != self.ssid):
-                logging.warning('The laptop with port {}.{}.{} is not conneted to the given SSID. Excluding it from testing'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+            if (current_laptop_port_data['ssid'] != curr_ssid):
+                logging.warning(
+                    'The laptop with port {}.{}.{} is not conneted to the given SSID {}. Excluding it from testing'.format(
+                        laptop['shelf'], laptop['resource'], laptop['sta_name'], curr_ssid))
                 exclude_laptops.append(laptop)
                 continue
 
             # checking if the laptop is active or down
             if(current_laptop_port_data['ip'] == '0.0.0.0'):
-                logging.warning('The laptop with port {}.{}.{} is down. Excluding it from testing'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+                logging.warning(
+                    'The laptop with port {}.{}.{} is down. Excluding it from testing'.format(laptop['shelf'],
+                                                                                              laptop['resource'],
+                                                                                              laptop['sta_name']))
                 exclude_laptops.append(laptop)
                 continue
 
-            current_laptop_resource_data = self.json_get('resource/{}/{}'.format(laptop['shelf'], laptop['resource']))['resource']
+            current_laptop_resource_data = self.json_get('resource/{}/{}'.format(laptop['shelf'], laptop['resource']))[
+                'resource']
             hostname = current_laptop_resource_data['hostname']
 
             current_laptop_port_data.update(current_laptop_resource_data)
-            
+
             # adding port id to selected_device_eids
             current_resource_id = '{}.{}.{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name'])
             self.selected_devices.append(current_resource_id)
@@ -954,8 +1111,9 @@ class RealDevice(Realm):
         df = pd.DataFrame(data=t_devices).transpose()
         print(df)
 
-        self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
-        
+        self.selected_device_eids = input(
+            'Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
+
         # if all is seleceted making the list as empty string so that it would consider all devices
         if(self.selected_device_eids == ['all']):
             self.selected_device_eids = ['']
@@ -972,7 +1130,16 @@ class RealDevice(Realm):
                     }
                     self.selected_devices.append(device)
                     self.selected_macs.append(self.devices_data[device]['mac'])
-                    self.report_labels.append('{} {} {}'.format(selected_device, [ 'Win' if 'Win' in self.devices_data[device]['hw version'] else 'Lin' if 'Lin' in self.devices_data[device]['hw version'] else 'Mac' if 'Mac' in self.devices_data[device]['hw version'] else 'android'][0], [ self.devices_data[device]['user'] if self.devices_data[device]['user'] != '' else self.devices_data[device]['hostname'] ][0])[:25])
+                    self.report_labels.append('{} {} {}'.format(selected_device, [
+                        'Win' if 'Win' in self.devices_data[device]['hw version'] else 'Lin' if 'Lin' in
+                                                                                                self.devices_data[
+                                                                                                    device][
+                                                                                                    'hw version'] else 'Mac' if 'Mac' in
+                                                                                                                                self.devices_data[
+                                                                                                                                    device][
+                                                                                                                                    'hw version'] else 'android'][
+                        0], [self.devices_data[device]['user'] if self.devices_data[device]['user'] != '' else
+                             self.devices_data[device]['hostname']][0])[:25])
                     if('Win' in 'Win' in self.devices_data[device]['hw version']):
                         self.windows += 1
                         self.windows_list.append(device)
@@ -988,6 +1155,7 @@ class RealDevice(Realm):
         df = pd.DataFrame(data=selected_t_devices).transpose()
         print(df)
         return [self.selected_devices, self.report_labels, self.selected_macs]
+
 
 def main():
     help_summary='''\
@@ -1039,6 +1207,33 @@ This script is a standard library which support different functionality of inter
     parser.add_argument('--passwd', '--pw', type=str, default='',
                         help='APPLY: Password for Interop device WiFi connection')
 
+    parser.add_argument('--ssid_2g', type=str, default='',
+                        help='APPLY: 2G SSID for Interop device WiFi connection')
+
+    parser.add_argument('--encryption_2g', type=str, default='',
+                        help='APPLY: 2G Encryption for Interop device WiFi connection')
+
+    parser.add_argument('--passwd_2g', type=str, default='',
+                        help='APPLY: 2G Password for Interop device WiFi connection')
+
+    parser.add_argument('--ssid_5g', type=str, default='',
+                        help='APPLY: 5G SSID for Interop device WiFi connection')
+
+    parser.add_argument('--encryption_5g', type=str, default='',
+                        help='APPLY: 5G Encryption for Interop device WiFi connection')
+
+    parser.add_argument('--passwd_5g', type=str, default='',
+                        help='APPLY: 5G Password for Interop device WiFi connection')
+
+    parser.add_argument('--ssid_6g', type=str, default='',
+                        help='APPLY: 6G SSID for Interop device WiFi connection')
+
+    parser.add_argument('--encryption_6g', type=str, default='',
+                        help='APPLY: 6G Encryption for Interop device WiFi connection')
+
+    parser.add_argument('--passwd_6g', type=str, default='',
+                        help='APPLY: 6G Password for Interop device WiFi connection')
+
     parser.add_argument('--log_dur', '--ld', type=float, default=0,
                         help='LOG: Gather ADB logs for a duration of this many minutes')
     
@@ -1052,7 +1247,8 @@ This script is a standard library which support different functionality of inter
                         help='LOG: the filename destination on the LF device where the log file should be stored'
                              'Give "stdout" to receive content as keyed text message')
 
-    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
+    parser.add_argument('--help_summary', default=None, action="store_true",
+                        help='Show summary of what this script does')
 
     args = parser.parse_args()
 
@@ -1063,9 +1259,15 @@ This script is a standard library which support different functionality of inter
     if(args.config_wifi):
         real_devices = RealDevice(manager_ip=args.host,
                                   server_ip=args.server_ip,
-                                  ssid=args.ssid,
-                                  encryption=args.crypt,
-                                  passwd=args.passwd)
+                                  ssid_2g=args.ssid_2g,
+                                  passwd_2g=args.passwd_2g,
+                                  encryption_2g=args.encryption_2g,
+                                  ssid_5g=args.ssid_5g,
+                                  passwd_5g=args.passwd_5g,
+                                  encryption_5g=args.encryption_5g,
+                                  ssid_6g=args.ssid_6g,
+                                  passwd_6g=args.passwd_6g,
+                                  encryption_6g=args.encryption_6g)
         asyncio.run(real_devices.query_all_devices_to_configure_wifi())
     else:
         obj = BaseInteropWifi(manager_ip=args.host,
