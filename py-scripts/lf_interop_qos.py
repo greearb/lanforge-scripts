@@ -111,6 +111,7 @@ class ThroughputQOS(Realm):
                  devices_available=[],input_devices_list=[],mac_id1_list=[],mac_id_list=[]):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
+        self.ssid_list = []
         self.upstream = upstream
         self.host = host
         self.port = port
@@ -659,8 +660,24 @@ class ThroughputQOS(Realm):
             data_set=list(res["graph_df"].values())[0]
         return data_set, load, res
 
+    def get_ssid_list(self,station_names):
+        ssid_list = []
+        port_data = self.json_get('/ports/all/')['interfaces']
+        interfaces_dict = dict()
+        for port in port_data:
+            interfaces_dict.update(port)
+        for sta in station_names:
+            if sta in interfaces_dict:
+                ssid_list.append(interfaces_dict[sta]['ssid'])
+            else:
+                ssid_list.append('-')
+        return ssid_list
+
     def generate_report(self, data, input_setup_info, report_path='', result_dir_name='Qos_Test_report',
                         selected_real_clients_names=None):
+        # getting ssid list for devices, on which the test ran
+        self.ssid_list = self.get_ssid_list(self.input_devices_list)
+
         if selected_real_clients_names is not None:
             self.num_stations = selected_real_clients_names
         data_set, load, res = self.generate_graph_data_set(data)
@@ -860,6 +877,7 @@ class ThroughputQOS(Realm):
                     bk_dataframe = {
                         " Client Name " : self.real_client_list,
                         " MAC " : self.mac_id_list,
+                        " SSID " : self.ssid_list,
                         " Type of traffic " : bk_tos_list,
                         " Traffic Direction " : traffic_direction_list,
                         " Traffic Protocol " : traffic_type_list,
@@ -935,6 +953,7 @@ class ThroughputQOS(Realm):
                     be_dataframe = {
                         " Client Name " : self.real_client_list,
                         " MAC " : self.mac_id_list,
+                        " SSID " : self.ssid_list,
                         " Type of traffic " : be_tos_list,
                         " Traffic Direction " : traffic_direction_list,
                         " Traffic Protocol " : traffic_type_list,
@@ -1010,6 +1029,7 @@ class ThroughputQOS(Realm):
                     vi_dataframe = {
                         " Client Name " : self.real_client_list,
                         " MAC " : self.mac_id_list,
+                        " SSID " : self.ssid_list,
                         " Type of traffic " : vi_tos_list,
                         " Traffic Direction " : traffic_direction_list,
                         " Traffic Protocol " : traffic_type_list,
@@ -1086,6 +1106,7 @@ class ThroughputQOS(Realm):
                     vo_dataframe = {
                         " Client Name " : self.real_client_list,
                         " MAC " : self.mac_id_list,
+                        " SSID " : self.ssid_list,
                         " Type of traffic " : vo_tos_list,
                         " Traffic Direction " : traffic_direction_list,
                         " Traffic Protocol " : traffic_type_list,
@@ -1295,8 +1316,8 @@ def main():
     input_setup_info = {
         "contact": "support@candelatech.com"
     }
-    throughput_qos.cleanup()
     throughput_qos.generate_report(data=data, input_setup_info=input_setup_info)
+    throughput_qos.cleanup()
 
 
 
