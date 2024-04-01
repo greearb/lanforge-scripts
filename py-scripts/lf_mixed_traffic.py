@@ -9,40 +9,50 @@ PURPOSE:
         multicast test.
 
 EXAMPLE:
-        # CLI To run the MIXED TRAFFIC Test with Virtual Clients on 5GHz band for single time
 
-         python3 lf_mixed_traffic.py --mgr 192.168.200.57 --fiveg_ssid Netgear5g --fiveg_passwd lanforge --fiveg_security wpa2 --band 5G
-          --num_stations 15 --fiveg_radio wiphy0 --tests 1 2 3 4 5 --target 192.168.200.211 --ping_interval 1 --upstream_port eth1
-          --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB
-          --http_file_size 5MB --direction Download --mc_tos "VI" --side_b_min_bps 3000000 --virtual --qos_serial --mixed_traffic_loop 1
-          --ping_test_duration 1m --qos_test_duration 1m --ftp_test_duration 1m --http_test_duration 1m --multicast_test_duration 1m
+        # CLI for Mixed Traffic Test: Run with Real Clients on 2.4GHz & 5GHz Bands, Single Iteration per Band.
 
-        # CLI To run the MIXED TRAFFIC Test with Real Clients on 5GHz band for three times
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100
+            --twog_ssid NETGEAR-2G --twog_passwd Password@123 --twog_security wpa2 --twog_radio wiphy0 --twog_num_stations 5
+            --fiveg_ssid NETGEAR-5G --fiveg_passwd Password@123 --fiveg_security wpa2 --fiveg_radio wiphy1 --fiveg_num_stations 5
+            --band 2.4G,5G --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1
+            --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_tcp --tos "VI"
+            --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "BE" --real --qos_serial --mixed_traffic_loop 1
+            --ping_test_duration 1m --qos_test_duration 30s --ftp_test_duration 30s --http_test_duration 30s --multicast_test_duration 30s
+            --pre_cleanup
 
-          python3 lf_mixed_traffic.py --mgr 192.168.200.57 --fiveg_ssid Netgear5g --fiveg_passwd lanforge --fiveg_security wpa2 --band 5G
-           --tests 1 2 3 4 5 --target 192.168.200.211 --ping_interval 1 --upstream_port eth1 --side_a_min 1000000 --side_b_min 1000000 
-           --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "VI" --mixed_traffic_loop 3
-           --real --qos_serial --ping_test_duration 1m --qos_test_duration 1m --ftp_test_duration 1m --http_test_duration 1m --side_b_min_bps 3000000
-           --multicast_test_duration 1m
+        # CLI for Mixed Traffic Test: Run on 2.4GHz & 5GHz Bands Simultaneously with Real Clients in a Single Iteration.
 
-        # CLI To run the MIXED TRAFFIC Test with Real clients on 2.4GHz,5GHz,6GHz bands for three times
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100
+            --twog_ssid NETGEAR-2G --twog_passwd Password@123 --twog_security wpa2 --twog_radio wiphy0 --twog_num_stations 5
+            --fiveg_ssid NETGEAR-5G --fiveg_passwd Password@123 --fiveg_security wpa2 --fiveg_radio wiphy1 --fiveg_num_stations 5
+            --band 2.4G,5G --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1
+            --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_tcp --tos "VI"
+            --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "BE" --real --qos_serial --mixed_traffic_loop 1
+            --ping_test_duration 1m --qos_test_duration 30s --ftp_test_duration 30s --http_test_duration 30s --multicast_test_duration 30s
+            --all_bands --pre_cleanup
 
-          python3 lf_mixed_traffic.py --mgr 192.168.200.63 --twog_ssid Netgear-2g --fiveg_ssid Netgear-5g --sixg_ssid Netgear-6g
-          --twog_passwd sharedsecret --fiveg_passwd sharedsecret --sixg_passwd sharedsecret --twog_security wpa2 --fiveg_security wpa2 
-          --sixg_security wpa3 --band 2.4G,5G,6G --tests 1 2 3 4 5 --target 192.168.68.53 --ping_interval 1 --upstream_port 1.1.eth1 
-          --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB 
-          --http_file_size 5MB --direction Download --mc_tos "VI" --real --qos_serial --ping_test_duration 30s --qos_test_duration 30s 
-          --ftp_test_duration 30s --http_test_duration 30s --multicast_test_duration 30s --mixed_traffic_loop 3
+        # CLI for Mixed Traffic Test: Run with Virtual Clients on 2.4GHz & 5GHz Bands, Single Iteration per Band.
 
-        # CLI To run the MIXED TRAFFIC Test with Virtual clients on 2.4GHz,5GHz,6GHz bands for two times
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100
+            --twog_ssid NETGEAR-2G --twog_passwd Password@123 --twog_security wpa2 --twog_radio wiphy0 --twog_num_stations 5
+            --fiveg_ssid NETGEAR-5G --fiveg_passwd Password@123 --fiveg_security wpa2 --fiveg_radio wiphy1 --fiveg_num_stations 5
+            --band 2.4G,5G --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1
+            --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_tcp --tos "VI"
+            --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "BE" --virtual --qos_serial --mixed_traffic_loop 1
+            --ping_test_duration 1m --qos_test_duration 30s --ftp_test_duration 30s --http_test_duration 30s --multicast_test_duration 30s
+            --pre_cleanup
 
-          python3 lf_mixed_traffic.py --mgr 192.168.200.63 --twog_ssid Netgear-2g --fiveg_ssid Netgear-5g --sixg_ssid Netgear-6g
-          --twog_passwd sharedsecret --fiveg_passwd sharedsecret --sixg_passwd sharedsecret --twog_security wpa2 --fiveg_security wpa2 
-          --sixg_security wpa3 --twog_radio 1.1.wiphy0 --fiveg_radio 1.1.wiphy1 --sixg_radio 1.1.wiphy2 --num_stations 5 --band 2.4G,5G,6G 
-          --tests 1 2 3 4 5 --target 192.168.68.53 --ping_interval 1 --upstream_port 1.1.eth1 --side_a_min 1000000 --side_b_min 1000000 
-          --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB --http_file_size 5MB --side_b_min_bps 3000000 --mixed_traffic_loop 2
-          --direction Download --mc_tos "VI" --virtual --qos_serial --ping_test_duration 30s --qos_test_duration 30s --ftp_test_duration 30s 
-          --http_test_duration 30s --multicast_test_duration 30s
+        # CLI for Mixed Traffic Test: Run on 2.4GHz & 5GHz Bands Simultaneously with Virtual Clients in a Single Iteration.
+
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100
+            --twog_ssid NETGEAR-2G --twog_passwd Password@123 --twog_security wpa2 --twog_radio wiphy0 --twog_num_stations 5
+            --fiveg_ssid NETGEAR-5G --fiveg_passwd Password@123 --fiveg_security wpa2 --fiveg_radio wiphy1 --fiveg_num_stations 5
+            --band 2.4G,5G --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1
+            --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_tcp --tos "VI"
+            --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "BE" --virtual --qos_serial --mixed_traffic_loop 1
+            --ping_test_duration 1m --qos_test_duration 30s --ftp_test_duration 30s --http_test_duration 30s --multicast_test_duration 30s
+            --all_bands --pre_cleanup
 
 SCRIPT_CLASSIFICATION:  Multiples Tests, Creation, Report Generation (Both individual & Overall)
 
@@ -65,6 +75,7 @@ LICENSE:
 INCLUDE_IN_README: False
 """
 import argparse
+import asyncio
 import importlib
 import logging
 import platform
@@ -109,14 +120,44 @@ class Mixed_Traffic(Realm):
                  real_client=False,
                  virtual_client=True,
                  selected_test_list="",
+                 server_ip="",
                  ssid="",
                  passwd="",
                  security="",
+
+                 twog_ssid="",
+                 fiveg_ssid="",
+                 sixg_ssid="",
+                 twog_password="",
+                 fiveg_password="",
+                 sixg_password="",
+                 twog_security="",
+                 fiveg_security="",
+                 sixg_security="",
+
+                 twog_radio='',
+                 fiveg_radio='',
+                 sixg_radio='',
+
+                 twog_mode='',
+                 fiveg_mode='',
+                 sixg_mode='',
+
+                 twog_num_stations='',
+                 fiveg_num_stations='',
+                 sixg_num_stations='',
+
+                 twog_start_id='',
+                 fiveg_start_id='',
+                 sixg_start_id='',
+
+                 selected_bands="",
+
                  band="",
                  mode="",
-                 radio="",
+                 # radio="",
                  number_template="0000",
-                 sta_list="",
+                 # sta_list="",
                  num_stations=0,
                  upstream_port="",
                  qos_tos_list="",
@@ -134,6 +175,8 @@ class Mixed_Traffic(Realm):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
 
+        self.report_path = None
+        self.lf_report_mt = None
         self.test_duration1 = None
         self.station_lists = []
         self.wifi_mode_list = []
@@ -163,7 +206,7 @@ class Mixed_Traffic(Realm):
         self.mac_list = []
         self.android_list = []
         self.user_query = []
-        self.available_device_list = []
+        # self.available_device_list = []
         self.res = None
         self.load = None
         self.data_set = None
@@ -178,11 +221,43 @@ class Mixed_Traffic(Realm):
         self.ssid = ssid
         self.passwd = passwd
         self.security = security
-        self.band = band
+
+        self.server_ip = server_ip
+        self.ssid_2g = twog_ssid
+        self.ssid_5g = fiveg_ssid
+        self.ssid_6g = sixg_ssid
+
+        self.passwd_2g = twog_password
+        self.passwd_5g = fiveg_password
+        self.passwd_6g = sixg_password
+
+        self.security_2g = twog_security
+        self.security_5g = fiveg_security
+        self.security_6g = sixg_security
+
+        self.radio_2g = twog_radio
+        self.radio_5g = fiveg_radio
+        self.radio_6g = sixg_radio
+
+        self.mode_2g = twog_mode
+        self.mode_5g = fiveg_mode
+        self.mode_6g = sixg_mode
+
+        self.num_stations_2g = twog_num_stations
+        self.num_stations_5g = fiveg_num_stations
+        self.num_stations_6g = sixg_num_stations
+
+        self.start_id_2g = twog_start_id
+        self.start_id_5g = fiveg_start_id
+        self.start_id_6g = sixg_start_id
+
+        self.selected_bands = selected_bands
+
+        self.band = ''
         self.mode = mode
-        self.radio = radio
+        # self.radio = radio
         self.number_template = number_template
-        self.station_list = sta_list
+        self.station_list = []
         self.num_staions = num_stations
         self.upstream_port = upstream_port
         self.dut_model = dut_model
@@ -207,13 +282,20 @@ class Mixed_Traffic(Realm):
         self.qos_serial_run = qos_serial
 
         # Base Profile obj
-        self.base_interop_profile = lf_base_interop_profile.RealDevice(manager_ip=self.host)
+        self.base_interop_profile = lf_base_interop_profile.RealDevice(manager_ip=self.host,
+                                                                       server_ip=self.server_ip,
+                                                                       ssid_2g=self.ssid_2g,
+                                                                       passwd_2g=self.passwd_2g,
+                                                                       encryption_2g=self.security_2g,
+                                                                       ssid_5g=self.ssid_5g,
+                                                                       passwd_5g=self.passwd_5g,
+                                                                       encryption_5g=self.security_5g,
+                                                                       ssid_6g=self.ssid_6g,
+                                                                       passwd_6g=self.passwd_6g,
+                                                                       encryption_6g=self.security_6g,
+                                                                       selected_bands=self.selected_bands)
         # LF Cleanup obj
         self.cleanup = lf_cleanup.lf_clean(host=self.host, port=self.port, resource='all')
-        self.lf_report_mt = lf_report_pdf.lf_report(_output_pdf=f"mixed_traffic_test_{self.band}.pdf",
-                                                    _output_html=f"mixed_traffic_test_{self.band}.html", _path=path,
-                                                    _results_dir_name=f"Mixed_Traffic_Test_Report_{band}")
-        self.report_path = self.lf_report_mt.get_path_date_time()
         # sorting out the test duration for each test
         duration_suffixes = {'s': 1, 'S': 1, 'm': 60, 'M': 60, 'h': 3600, 'H': 3600}
         if self.test_duration:
@@ -267,6 +349,15 @@ class Mixed_Traffic(Realm):
             time_obj = time.gmtime(self.total_all_test_duration)
             self.time_formate = time.strftime("%H:%M:%S", time_obj)
 
+    def report_obj(self, band, path):
+        if band is None:
+            band = 'all'
+        self.lf_report_mt = lf_report_pdf.lf_report(_output_pdf=f"mixed_traffic_test_{band}.pdf",
+                                                    _output_html=f"mixed_traffic_test_{band}.html",
+                                                    _path=path,
+                                                    _results_dir_name=f"Mixed_Traffic_Test_Report_{band}")
+        self.report_path = self.lf_report_mt.get_path_date_time()
+
     def pre_cleanup(self):  # cleaning pre-existing stations and cross connections
         if not self.real:
             self.cleanup.sta_clean()
@@ -281,39 +372,59 @@ class Mixed_Traffic(Realm):
         self.cleanup.layer3_endp_clean()
         self.cleanup.layer4_endp_clean()
 
-    def virtual_client_creation(self):
-        if "2.4G" in self.band:
+    def virtual_client_creation(self, ssid, password, security, band, radio, num_stations, start_id, all_sta=False):
+        start_id = start_id
+        station_list = []
+        if start_id != 0:
+            start_id = int(start_id)
+
+        if (num_stations is not None) and (int(num_stations) > 0):
+            num_stations_converted = int(num_stations)
+            num_sta = num_stations_converted
+            station_list = LFUtils.port_name_series(prefix="sta",
+                                                    start_id=start_id,
+                                                    end_id=start_id + num_sta - 1,
+                                                    padding_number=10000,
+                                                    radio=radio)
+        # updating num stations and station list
+        if not all_sta:
+            self.station_list = station_list
+            self.num_staions = num_stations
+            self.radio = radio
+        logger.info("Virtual station list for {band} : {station_list}".format(band=band, station_list=station_list))
+        if "2.4G" in band:
             self.station_profile.mode = 13
-        elif "5G" in self.band:
+        elif "5G" in band:
             self.station_profile.mode = 14
-        elif "6G" in self.band:
+        elif "6G" in band:
             self.station_profile.mode = 15
         # station build
-        self.station_profile.use_security(self.security, self.ssid, self.passwd)
+        self.station_profile.use_security(security, ssid, password)
         self.station_profile.set_number_template("00")
         logger.info("Creating  Virtual Stations...")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        if self.station_profile.create(radio=self.radio, sta_names_=self.station_list, debug=self.debug):
+        if self.station_profile.create(radio=radio, sta_names_=station_list, debug=self.debug):
             self._pass("Stations created.")
         else:
             self._fail("Stations not properly created.")
         self.station_profile.admin_up()
+        logger.info("Waiting until the all station ports are up. Max time out is 300 seconds.")
         if not LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
-                                                 port_list=self.station_list,
-                                                 debug_=self.debug,
-                                                 timeout=10):
+                                                 port_list=station_list,
+                                                 debug_=self.debug):
             self._fail("Unable to bring all stations up")
             return
         logger.info("Waiting to get IP for all stations...")
-        if Realm.wait_for_ip(self=self, station_list=self.station_list, timeout_sec=-1):
+        if Realm.wait_for_ip(self=self, station_list=station_list, timeout_sec=-1):
             self._pass("All stations got IPs", print_=True)
             self._pass("Station build finished", print_=True)
         else:
             self._fail("Stations failed to get IPs", print_=True)
             self._fail("FAIL: Station build failed", print_=True)
             logger.info("Please re-check the configuration applied")
+        return station_list
 
     def convert_seconds(self, seconds):
         if seconds < 60:
@@ -332,12 +443,37 @@ class Mixed_Traffic(Realm):
                 return f"{str(round(abs(hours), 1))} hours"
 
     def selecting_devices_from_available(self):
-        self.available_device_list = self.base_interop_profile.get_devices()
-        self.user_query = self.base_interop_profile.query_user()
-        logger.info("Available Devices List: {}".format(self.available_device_list))
-        logger.info("Query Result: {}".format(self.user_query))
-        # fetching windows list
+        selected_serial_list = self.base_interop_profile.query_all_devices_to_configure_wifi()
+        logger.info(f"Selected Serial List: {selected_serial_list}")
+        return selected_serial_list
+
+    def real_client_wifi_config(self, selected_serial_list, all_devices=False):
+        self.user_query = []
+        logging.info(f"Ready for Connectivity: {selected_serial_list}")
+        if not all_devices:
+            self.base_interop_profile.selected_devices = []
+            self.base_interop_profile.report_labels = []
+            self.base_interop_profile.selected_macs = []
+        user_query_list = asyncio.run(self.base_interop_profile.configure_wifi(select_serials=selected_serial_list))
+
+        logger.info("Query Result: {}".format(user_query_list))
+        # removing the postfix name for the
+        for index, sublist in enumerate(user_query_list):
+            new_sublist = []
+            for item in sublist:
+                if index == 0:
+                    if '.wlan0' not in item and '.wlan1' not in item and '.en0' not in item and '.sta0' not in item:
+                        item += '.wlan0'
+                elif index == 1:
+                    item = item.replace('.wlan0', '').replace('.en0', '').replace('.sta0', '').replace('wlan1', '')
+                new_sublist.append(item)
+            self.user_query.append(new_sublist)
+
+        logger.info("UPDATE: Query Result: {}".format(self.user_query))
+        # fetching window's list
         for port in self.user_query[0]:
+            if 'wlan0' not in port:
+                port = port + '.wlan0'
             eid = self.name_to_eid(port)
             self.eid_list.append(str(eid[0]) + '.' + str(eid[1]))
         for eid in self.eid_list:
@@ -348,9 +484,10 @@ class Mixed_Traffic(Realm):
             for port in self.user_query[0]:
                 if eid + '.' in port:
                     self.windows_ports.append(port)
-        return self.available_device_list, self.user_query
+        return self.user_query
 
-    def ping_test(self, target='', interval='', _ping_test=ping_test):
+    def ping_test(self, ssid='', password='', security='', target='', interval='', _ping_test=ping_test,
+                  all_bands=False):
         # setting ping test duration & converting sec into minutes passing it float values for ping test
         if self.test_duration:
             minutes, seconds = divmod(self.test_duration, 60)
@@ -361,8 +498,8 @@ class Mixed_Traffic(Realm):
         self.target = target
         self.interval = interval
         # starting part of the ping test
-        self.ping_test_obj = ping_test.Ping(host=self.host, port=self.port, ssid=self.ssid, security=self.security,
-                                            password=self.passwd, lanforge_password="lanforge", target=self.target,
+        self.ping_test_obj = ping_test.Ping(host=self.host, port=self.port, ssid=ssid, security=security,
+                                            password=password, lanforge_password="lanforge", target=self.target,
                                             interval=self.interval, sta_list=[], virtual=self.virtual, real=self.real,
                                             duration=ping_test_duration)
         if not self.ping_test_obj.check_tab_exists():
@@ -420,6 +557,7 @@ class Mixed_Traffic(Realm):
                             'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                             'mac': current_device_data['mac'],
                             'channel': current_device_data['channel'],
+                            'ssid': current_device_data['ssid'],
                             'mode': current_device_data['mode'],
                             'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
                             'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
@@ -442,6 +580,7 @@ class Mixed_Traffic(Realm):
                                 'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                                 'mac': current_device_data['mac'],
                                 'channel': current_device_data['channel'],
+                                'ssid': current_device_data['ssid'],
                                 'mode': current_device_data['mode'],
                                 'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
                                 'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
@@ -469,6 +608,7 @@ class Mixed_Traffic(Realm):
                                 'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                                 'mac': current_device_data['mac'],
                                 'channel': current_device_data['channel'],
+                                'ssid': current_device_data['ssid'],
                                 'mode': current_device_data['mode'],
                                 'name': station,
                                 'os': 'Virtual',
@@ -492,6 +632,7 @@ class Mixed_Traffic(Realm):
                                     'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                                     'mac': current_device_data['mac'],
                                     'channel': current_device_data['channel'],
+                                    'ssid': current_device_data['ssid'],
                                     'mode': current_device_data['mode'],
                                     'name': station,
                                     'os': 'Virtual',
@@ -499,11 +640,15 @@ class Mixed_Traffic(Realm):
                                     'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]}
                                 result_json[station]['remarks'] = self.ping_test_obj.generate_remarks(result_json[station])
         logger.info("Final Result Json For Ping Test: {}".format(result_json))
-        self.ping_test_obj.generate_report(result_json=result_json, result_dir=f'Ping_Test_Report_{self.band}',
+        if all_bands:
+            band = ''
+        else:
+            band = '_' + self.band
+        self.ping_test_obj.generate_report(result_json=result_json, result_dir=f'Ping_Test_Report{band}',
                                            report_path=self.report_path)
 
     def qos_test(self, ssid, password, security, ap_name, upstream, tos, traffic_type, side_a_min=0, side_b_min=0,
-                 side_a_max=0, side_b_max=0, _qos_test=qos_test, _qos_test_virtual=qos_test_virtual):
+                 side_a_max=0, side_b_max=0, _qos_test=qos_test, _qos_test_virtual=qos_test_virtual, all_bands=False):
         if self.test_duration:
             self.qos_test_duration = self.test_duration
         test_results = {'test_results': []}
@@ -536,7 +681,10 @@ class Mixed_Traffic(Realm):
             self.qos_test_obj.build()
             self.qos_test_obj.start()
             time.sleep(10)
-            connections_download, connections_upload, drop_a_per, drop_b_per = self.qos_test_obj.monitor()
+            try:
+                connections_download, connections_upload, drop_a_per, drop_b_per = self.qos_test_obj.monitor()
+            except Exception as e:
+                print(f"Failed at Monitoring the CX... {e}")
             self.qos_test_obj.stop()
             time.sleep(5)
             test_results['test_results'].append(
@@ -559,63 +707,34 @@ class Mixed_Traffic(Realm):
 
                 if len(result_dicts) == 1:
                     print("yes - 1")
-                    self.result1 = result_dicts
-                    self.data1 = self.result1[0]
+                    self.result1 = result_dicts[0]
+                    self.data1 = self.result1
                 if len(result_dicts) == 2:
                     print("yes - 2")
-                    self.result1, self.result2 = result_dicts
+                    self.result1, self.result2 = result_dicts[0], result_dicts[1]
                     self.data1 = self.result2
                 if len(result_dicts) == 3:
                     print("yes - 3")
-                    self.result1, self.result2, self.result3 = result_dicts
+                    self.result1, self.result2, self.result3 = result_dicts[0], result_dicts[1], result_dicts[2]
                     self.data1 = self.result3
                 if len(result_dicts) == 4:
                     print("yes - 4")
-                    self.result1, self.result2, self.result3, self.result4 = result_dicts
+                    self.result1, self.result2, self.result3, self.result4 = result_dicts[0], result_dicts[1], result_dicts[2], result_dicts[3]
                     self.data1 = self.result4
-                # print("RS1", self.result1)
-                # print("RS2", self.result2)
-                # print("RS3", self.result3)
-                # print("RS4", self.result4)
-                # print("DATA", self.data1)
                 self.data = self.data1
-
+            if all_bands:
+                band = ''
+            else:
+                band = '_' + self.band
             self.qos_test_obj.generate_report(data=self.data,
                                               input_setup_info={"contact": "support@candelatech.com"},
                                               report_path=self.report_path,
-                                              result_dir_name=f"Qos_Test_Report_{qos_tos_real}_{self.band}")
+                                              result_dir_name=f"Qos_Test_Report_{qos_tos_real}{band}")
 
             self.data_set, self.load, self.res = self.qos_test_obj.generate_graph_data_set(self.data)
 
         # Qos Test for Virtual station
         def qos_test_overall_virtual(qos_tos_virtual=None):
-            radio_2g = "",
-            ssid_2g = "",
-            password_2g = "",
-            security_2g = "",
-            radio_5g = "",
-            ssid_5g = "",
-            password_5g = "",
-            security_5g = "",
-            radio_6g = '',
-            ssid_6g = "",
-            password_6g = "",
-            security_6g = "",
-            if "2.4G" in self.band or "2.4g" in self.band:
-                ssid_2g = self.ssid,
-                password_2g = self.passwd,
-                security_2g = self.security
-                radio_2g = self.radio,
-            if "5G" in self.band or "5g" in self.band:
-                ssid_5g = self.ssid,
-                password_5g = self.passwd,
-                security_5g = self.security,
-                radio_5g = self.radio,
-            if "6G" in self.band or "6g" in self.band:
-                ssid_6g = self.ssid,
-                password_6g = self.passwd,
-                security_6g = self.security
-                radio_6g = self.radio
             self.throughput_qos_obj = qos_test_virtual.ThroughputQOS(host=self.host,
                                                                      port=self.port,
                                                                      number_template="0000",
@@ -625,21 +744,21 @@ class Mixed_Traffic(Realm):
                                                                      create_sta=False,
                                                                      name_prefix="TOS-",
                                                                      upstream=self.upstream_port,
-                                                                     ssid=self.ssid,
-                                                                     password=self.passwd,
-                                                                     security=self.security,
-                                                                     ssid_2g=ssid_2g,
-                                                                     password_2g=password_2g,
-                                                                     security_2g=security_2g,
-                                                                     ssid_5g=ssid_5g,
-                                                                     password_5g=password_5g,
-                                                                     security_5g=security_5g,
-                                                                     ssid_6g=ssid_6g,
-                                                                     password_6g=password_6g,
-                                                                     security_6g=security_6g,
-                                                                     radio_2g=radio_2g,
-                                                                     radio_5g=radio_5g,
-                                                                     radio_6g=radio_6g,
+                                                                     ssid=ssid,
+                                                                     password=password,
+                                                                     security=security,
+                                                                     ssid_2g=self.ssid_2g,
+                                                                     password_2g=self.passwd_2g,
+                                                                     security_2g=self.security_2g,
+                                                                     ssid_5g=self.ssid_5g,
+                                                                     password_5g=self.passwd_5g,
+                                                                     security_5g=self.security_5g,
+                                                                     ssid_6g=self.ssid_6g,
+                                                                     password_6g=self.passwd_6g,
+                                                                     security_6g=self.security_6g,
+                                                                     radio_2g=self.radio_2g,
+                                                                     radio_5g=self.radio_5g,
+                                                                     radio_6g=self.radio_6g,
                                                                      test_duration=self.qos_test_duration,
                                                                      use_ht160=False,
                                                                      side_a_min_rate=int(side_a_min),
@@ -654,28 +773,19 @@ class Mixed_Traffic(Realm):
             # throughput_qos.pre_cleanup()
             self.throughput_qos_obj.build()
 
-            # if args.create_sta:
-            #     if not throughput_qos.passes():
-            #         print(throughput_qos.get_fail_message())
-            #         throughput_qos.exit_fail()
-
             self.throughput_qos_obj.start(False, False)
             time.sleep(10)
-            connections_download, connections_upload, drop_a_per, drop_b_per = self.throughput_qos_obj.monitor()
+            try:
+                connections_download, connections_upload, drop_a_per, drop_b_per = self.throughput_qos_obj.monitor()
+            except Exception as e:
+                print(f"Failed at Monitoring the CX... {e}")
             print("connections download", connections_download)
             print("connections upload", connections_upload)
             self.throughput_qos_obj.stop()
             time.sleep(5)
             test_results['test_results'].append(self.throughput_qos_obj.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
             self.data.update({self.band: test_results})  # right now it will only work for single band
-            # if args.create_sta:
-            #     if not throughput_qos.passes():
-            #         print(throughput_qos.get_fail_message())
-            #         throughput_qos.exit_fail()
-            #     # LFUtils.wait_until_ports_admin_up(port_list=station_list)
             self.throughput_qos_obj.cx_profile.cleanup()
-            # LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
-            #                                    debug=self.debug)
             print("DAta", self.data)
             if self.qos_serial_run:
                 self.result1, self.result2, self.result3, self.result4 = {}, {}, {}, {}
@@ -702,13 +812,7 @@ class Mixed_Traffic(Realm):
                     print("yes - 4")
                     self.result1, self.result2, self.result3, self.result4 = result_dicts[0], result_dicts[1], result_dicts[2], result_dicts[3]
                     self.data1 = self.result4
-                print("RS1", self.result1)
-                print("RS2", self.result2)
-                print("RS3", self.result3)
-                print("RS4", self.result4)
-                print("DATA", self.data1)
                 self.data = self.data1
-                # self.throughput_qos_obj.tos = qos_tos_virtual
 
             test_end_time = datetime.datetime.now().strftime("%b %d %H:%M:%S")
             print("Test ended at: ", test_end_time)
@@ -722,11 +826,14 @@ class Mixed_Traffic(Realm):
                         self.virtual_channel_list.append(port_data['channel'])
             self.throughput_qos_obj.mac_list = self.virtual_mac_list
             self.throughput_qos_obj.channel_list = self.virtual_channel_list
-
+            if all_bands:
+                band = ''
+            else:
+                band = '_' + self.band
             self.throughput_qos_obj.generate_report(data=self.data,
                                                     input_setup_info={"contact": "support@candelatech.com"},
                                                     report_path=self.report_path,
-                                                    result_dir_name=f"Qos_Test_Report_{qos_tos_virtual}_{self.band}"
+                                                    result_dir_name=f"Qos_Test_Report_{qos_tos_virtual}{band}"
                                                     )
             self.data_set, self.load, self.res = self.throughput_qos_obj.generate_graph_data_set(self.data)
 
@@ -743,40 +850,32 @@ class Mixed_Traffic(Realm):
             else:
                 qos_test_overall_virtual()
 
-    def ftp_test(self, bands, directions, file_sizes, ftp_test=ftp_test):
+    def ftp_test(self, ssid, password, security, bands, directions, file_sizes, ftp_test=ftp_test, all_bands=False):
         if self.test_duration:
             self.ftp_test_duration = self.test_duration
         interation_num = 0
         ftp_data = {}
-
-        twog_radio, fiveg_radio, sixg_radio = "whipy0", "whipy1", "whipy2"
         client_type = ""
         if self.real:
             client_type = "Real"
         if self.virtual:
             client_type = "Virtual"
-            if "2.4g" in self.band or "2.4g" in self.band:
-                twog_radio = self.radio
-            if "5G" in self.band or "5g" in self.band:
-                fiveg_radio = self.radio
-            if "6G" in self.band or "6g" in self.band:
-                sixg_radio = self.radio
         # For all combinations ftp_data of directions, file size and client counts, run the test
         for direction in directions:
             for file_size in file_sizes:
                 self.ftp_test_obj = ftp_test.FtpTest(lfclient_host=self.host,
                                                         lfclient_port=self.port,
                                                         upstream=self.upstream_port,
-                                                        dut_ssid=self.ssid,
-                                                        dut_passwd=self.passwd,
-                                                        dut_security=self.security,
+                                                        dut_ssid=ssid,
+                                                        dut_passwd=password,
+                                                        dut_security=security,
                                                         ap_name=self.dut_model,
                                                         band=self.band,
                                                         file_size=file_size,
                                                         direction=direction,
-                                                        twog_radio=twog_radio,
-                                                        fiveg_radio=fiveg_radio,
-                                                        sixg_radio=sixg_radio,
+                                                        twog_radio=self.radio_2g,
+                                                        fiveg_radio=self.radio_5g,
+                                                        sixg_radio=self.radio_6g,
                                                         lf_username=self.lf_username,
                                                         lf_password=self.lf_password,
                                                         traffic_duration=self.ftp_test_duration,
@@ -818,14 +917,18 @@ class Mixed_Traffic(Realm):
                 self.ftp_test_obj.cx_profile.cleanup()
                 time2 = datetime.datetime.now()
                 logger.info("FTP Test ended at {}".format(time2))
-
+        if all_bands:
+            band = ''
+        else:
+            band = '_' + self.band
         date = str(datetime.datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
         self.ftp_test_obj.generate_report(ftp_data, date, input_setup_info="", test_rig="", test_tag="",
-                                            dut_hw_version="", dut_sw_version="", dut_model_num="", dut_serial_num="",
-                                            test_id="", bands=bands, csv_outfile=f"ftp_test_{self.band}", local_lf_report_dir="",
-                                            _results_dir_name=f'Ftp_Test_Report_{self.band}', report_path=self.report_path)
+                                          dut_hw_version="", dut_sw_version="", dut_model_num="", dut_serial_num="",
+                                          test_id="", bands=bands, csv_outfile=f"ftp_test{band}",
+                                          local_lf_report_dir="", _results_dir_name=f'Ftp_Test_Report{band}',
+                                          report_path=self.report_path)
 
-    def http_test(self, http_file_size, target_per_ten, http_test=http_test):
+    def http_test(self, ssid, password, security, http_file_size, target_per_ten, http_test=http_test, all_bands=False):
         if self.test_duration:
             self.http_test_duration = self.test_duration
         # Error checking to prevent case issues
@@ -875,12 +978,12 @@ class Mixed_Traffic(Realm):
             http_sta_list = self.station_list
             num_stations = len(self.station_list)
         self.http_obj = http_test.HttpDownload(lfclient_host=self.host, lfclient_port=self.port,
-                                                upstream=self.upstream_port, num_sta=len(self.user_query[0]) if self.real else len(self.station_list),
-                                                security=self.security, ap_name=self.dut_model, ssid=self.ssid,
-                                                password=self.passwd, target_per_ten=target_per_ten,
-                                                file_size=http_file_size, bands=self.band,
-                                                client_type=client_type,
-                                                lf_username=self.lf_username, lf_password=self.lf_password)
+                                               upstream=self.upstream_port,
+                                               num_sta=len(self.user_query[0]) if self.real else len(self.station_list),
+                                               ap_name=self.dut_model, ssid=ssid, password=password, security=security,
+                                               target_per_ten=target_per_ten, file_size=http_file_size, bands=self.band,
+                                               client_type=client_type, lf_username=self.lf_username,
+                                               lf_password=self.lf_password)
         if self.real:
             self.http_obj.port_list = self.user_query[0]
             self.http_obj.devices_list = self.user_query[1]
@@ -903,10 +1006,10 @@ class Mixed_Traffic(Realm):
             # self.http_obj.station_list = [[self.station_list]]
             self.cleanup.layer4_endp_clean()
             self.station_profile.admin_up()
+            logger.info("Waiting until the all station ports are up. Max time out is 300 seconds.")
             if not LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
                                                         port_list=self.station_list,
-                                                        debug_=self.debug,
-                                                        timeout=10):
+                                                        debug_=self.debug):
                 self._fail("Unable to bring all stations up")
                 return
             logger.info("Waiting to get IP for all stations...")
@@ -1016,8 +1119,8 @@ class Mixed_Traffic(Realm):
 
         test_setup_info = {
             "AP Name": self.dut_model,
-            "SSID": self.ssid,
-            "Security": self.security,
+            "SSID": ssid,
+            "Security": security,
             "No of Devices": len(http_sta_list),
             "File size": http_file_size,
             "File location": "/usr/local/lanforge/nginx/html",
@@ -1041,17 +1144,23 @@ class Mixed_Traffic(Realm):
         if self.virtual:
             self.http_obj.station_list = [self.station_list]
             self.http_obj.devices = self.station_list
+        if all_bands:
+            band = ''
+        else:
+            band = '_' + self.band
         self.http_obj.generate_report(date, num_stations=len(http_sta_list), duration=self.http_test_duration,
                                       test_setup_info=test_setup_info, dataset=self.dataset, lis=self.lis,
-                                      bands=Bands, threshold_2g="", threshold_5g="", threshold_both="", dataset1=self.dataset1,
+                                      bands=Bands, threshold_2g="", threshold_5g="", threshold_both="",
+                                      dataset1=self.dataset1,
                                       dataset2=self.dataset2, result_data=result_data, test_rig="", test_tag="",
                                       dut_hw_version="", dut_sw_version="", dut_model_num="", dut_serial_num="",
-                                      test_id="", test_input_infor="", csv_outfile="", _results_dir_name=f'Webpage_Test_Report_{self.band}',
+                                      test_id="", test_input_infor="", csv_outfile="",
+                                      _results_dir_name=f'Webpage_Test_Report{band}',
                                       report_path=self.report_path)
         self.cleanup.layer4_endp_clean()
 
     def multicast_test(self, endp_types=None, mc_tos=None, side_a_min=0, side_b_min=0, side_a_pdu=0, side_b_pdu=0,
-                       _multicast_test=multicast_test):
+                       _multicast_test=multicast_test, all_bands=False):
         # use for creating multicast dictionary
         if self.test_duration:
             self.multicast_test_duration = self.test_duration
@@ -1076,9 +1185,13 @@ class Mixed_Traffic(Realm):
         dut_model_num = "1.0"
         dut_serial_num = "123456"
         test_id = "test l3"
-
-        report = lf_report_pdf.lf_report(_path=self.report_path, _results_dir_name=f"Multicast_Test_{self.band}",
-                                         _output_html=f"multicast_test_{self.band}.html", _output_pdf=f"multicast_test_{self.band}.pdf")
+        if all_bands:
+            band = ''
+        else:
+            band = '_' + self.band
+        report = lf_report_pdf.lf_report(_path=self.report_path, _results_dir_name=f"Multicast_Test{band}",
+                                         _output_html=f"multicast_test{band}.html",
+                                         _output_pdf=f"multicast_test{band}.pdf")
         kpi_path = self.report_path
         logger.info("Report and kpi_path :{kpi_path}".format(kpi_path=kpi_path))
         kpi_csv = lf_kpi_csv.lf_kpi_csv(_kpi_path=kpi_path,
@@ -1340,6 +1453,7 @@ class Mixed_Traffic(Realm):
                     'Wireless Client': self.ping_test_obj.device_names,
                     'MAC': self.ping_test_obj.device_mac,
                     'Channel': self.ping_test_obj.device_channels,
+                    'SSID': self.ping_test_obj.device_ssid,
                     'Mode': self.ping_test_obj.device_modes,
                     'Packets Sent': self.ping_test_obj.packets_sent,
                     'Packets Received': self.ping_test_obj.packets_received,
@@ -1382,6 +1496,7 @@ class Mixed_Traffic(Realm):
                     'Wireless Client': self.ping_test_obj.device_names,
                     'MAC': self.ping_test_obj.device_mac,
                     'Channel': self.ping_test_obj.device_channels,
+                    'SSID': self.ping_test_obj.device_ssid,
                     'Mode': self.ping_test_obj.device_modes,
                     'Min Latency (ms)': self.ping_test_obj.device_min,
                     'Average Latency (ms)': self.ping_test_obj.device_avg,
@@ -1532,6 +1647,7 @@ class Mixed_Traffic(Realm):
                     " Clients": sta_list,
                     " MAC ": self.ftp_test_obj.mac_id_list,
                     " Channel": self.ftp_test_obj.channel_list,
+                    " SSID ": self.ftp_test_obj.ssid_list,
                     " Mode": self.ftp_test_obj.mode_list,
                     " No of times File downloaded ": self.ftp_test_obj.url_data,
                     " Time Taken to Download file (ms)": self.ftp_test_obj.uc_avg}
@@ -1578,6 +1694,7 @@ class Mixed_Traffic(Realm):
                     " Clients": self.user_query[1] if self.real else self.station_list,
                     " MAC ": self.user_query[2] if self.real else self.http_obj.macid_list,
                     " Channel": self.http_obj.channel_list,
+                    " SSID ": self.http_obj.ssid_list,
                     " Mode": self.http_obj.mode_list,
                     " No of times File downloaded ": self.dataset2,
                     " Average time taken to Download file (ms)": self.dataset}
@@ -1650,6 +1767,7 @@ class Mixed_Traffic(Realm):
                             " Port Name ": self.client_dict_A[tos]['port_A'],
                             " Mode ": self.client_dict_A[tos]['mode_A'],
                             " Mac ": self.client_dict_A[tos]['mac_A'],
+                            " SSID ": self.client_dict_A[tos]['ssid_A'],
                             " Channel ": self.client_dict_A[tos]['channel_A'],
                             " Type of traffic ": self.client_dict_A[tos]['traffic_type_A'],
                             " Traffic Protocol ": self.client_dict_A[tos]['traffic_protocol_A'],
@@ -1668,6 +1786,7 @@ class Mixed_Traffic(Realm):
             self.lf_report_mt.build_footer()
             self.lf_report_mt.write_html()
             self.lf_report_mt.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+
 
 def main():
     help_summary = '''\
@@ -1694,40 +1813,50 @@ PURPOSE:
         multicast test.
 
 EXAMPLE:
-        # CLI To run the MIXED TRAFFIC Test with Virtual Clients on 5GHz band for single time
 
-         python3 lf_mixed_traffic.py --mgr 192.168.200.57 --fiveg_ssid Netgear5g --fiveg_passwd lanforge --fiveg_security wpa2 --band 5G
-          --num_stations 15 --fiveg_radio wiphy0 --tests 1 2 3 4 5 --target 192.168.200.211 --ping_interval 1 --upstream_port eth1
-          --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB
-          --http_file_size 5MB --direction Download --mc_tos "VI" --side_b_min_bps 3000000 --virtual --qos_serial --mixed_traffic_loop 1
-          --ping_test_duration 1m --qos_test_duration 1m --ftp_test_duration 1m --http_test_duration 1m --multicast_test_duration 1m
-
-        # CLI To run the MIXED TRAFFIC Test with Real Clients on 5GHz band for three times
-
-          python3 lf_mixed_traffic.py --mgr 192.168.200.57 --fiveg_ssid Netgear5g --fiveg_passwd lanforge --fiveg_security wpa2 --band 5G
-           --tests 1 2 3 4 5 --target 192.168.200.211 --ping_interval 1 --upstream_port eth1 --side_a_min 1000000 --side_b_min 1000000 
-           --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "VI" --mixed_traffic_loop 3
-           --real --qos_serial --ping_test_duration 1m --qos_test_duration 1m --ftp_test_duration 1m --http_test_duration 1m --side_b_min_bps 3000000
-           --multicast_test_duration 1m
-
-        # CLI To run the MIXED TRAFFIC Test with Real clients on 2.4GHz,5GHz,6GHz bands for three times
-
-          python3 lf_mixed_traffic.py --mgr 192.168.200.63 --twog_ssid Netgear-2g --fiveg_ssid Netgear-5g --sixg_ssid Netgear-6g
-          --twog_passwd sharedsecret --fiveg_passwd sharedsecret --sixg_passwd sharedsecret --twog_security wpa2 --fiveg_security wpa2 
-          --sixg_security wpa3 --band 2.4G,5G,6G --tests 1 2 3 4 5 --target 192.168.68.53 --ping_interval 1 --upstream_port 1.1.eth1 
-          --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB 
-          --http_file_size 5MB --direction Download --mc_tos "VI" --real --qos_serial --ping_test_duration 30s --qos_test_duration 30s 
-          --ftp_test_duration 30s --http_test_duration 30s --multicast_test_duration 30s --mixed_traffic_loop 3
-
-        # CLI To run the MIXED TRAFFIC Test with Virtual clients on 2.4GHz,5GHz,6GHz bands for two times
-
-          python3 lf_mixed_traffic.py --mgr 192.168.200.63 --twog_ssid Netgear-2g --fiveg_ssid Netgear-5g --sixg_ssid Netgear-6g
-          --twog_passwd sharedsecret --fiveg_passwd sharedsecret --sixg_passwd sharedsecret --twog_security wpa2 --fiveg_security wpa2 
-          --sixg_security wpa3 --twog_radio 1.1.wiphy0 --fiveg_radio 1.1.wiphy1 --sixg_radio 1.1.wiphy2 --num_stations 5 --band 2.4G,5G,6G 
-          --tests 1 2 3 4 5 --target 192.168.68.53 --ping_interval 1 --upstream_port 1.1.eth1 --side_a_min 1000000 --side_b_min 1000000 
-          --traffic_type lf_udp --tos "VI,VO,BK,BE" --ftp_file_sizes 10MB --http_file_size 5MB --side_b_min_bps 3000000 --mixed_traffic_loop 2
-          --direction Download --mc_tos "VI" --virtual --qos_serial --ping_test_duration 30s --qos_test_duration 30s --ftp_test_duration 30s 
-          --http_test_duration 30s --multicast_test_duration 30s
+        # CLI for Mixed Traffic Test: Run with Real Clients on 2.4GHz & 5GHz Bands, Single Iteration per Band.
+        
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 
+            --twog_ssid NETGEAR-2G --twog_passwd Password@123 --twog_security wpa2 --twog_radio wiphy0 --twog_num_stations 5 
+            --fiveg_ssid NETGEAR-5G --fiveg_passwd Password@123 --fiveg_security wpa2 --fiveg_radio wiphy1 --fiveg_num_stations 5 
+            --band 2.4G,5G --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1 
+            --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_tcp --tos "VI" 
+            --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "BE" --real --qos_serial --mixed_traffic_loop 1
+            --ping_test_duration 1m --qos_test_duration 30s --ftp_test_duration 30s --http_test_duration 30s --multicast_test_duration 30s 
+            --pre_cleanup
+            
+        # CLI for Mixed Traffic Test: Run on 2.4GHz & 5GHz Bands Simultaneously with Real Clients in a Single Iteration.
+        
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 
+            --twog_ssid NETGEAR-2G --twog_passwd Password@123 --twog_security wpa2 --twog_radio wiphy0 --twog_num_stations 5 
+            --fiveg_ssid NETGEAR-5G --fiveg_passwd Password@123 --fiveg_security wpa2 --fiveg_radio wiphy1 --fiveg_num_stations 5 
+            --band 2.4G,5G --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1 
+            --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_tcp --tos "VI" 
+            --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "BE" --real --qos_serial --mixed_traffic_loop 1
+            --ping_test_duration 1m --qos_test_duration 30s --ftp_test_duration 30s --http_test_duration 30s --multicast_test_duration 30s 
+            --all_bands --pre_cleanup
+            
+        # CLI for Mixed Traffic Test: Run with Virtual Clients on 2.4GHz & 5GHz Bands, Single Iteration per Band.
+        
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 
+            --twog_ssid NETGEAR-2G --twog_passwd Password@123 --twog_security wpa2 --twog_radio wiphy0 --twog_num_stations 5 
+            --fiveg_ssid NETGEAR-5G --fiveg_passwd Password@123 --fiveg_security wpa2 --fiveg_radio wiphy1 --fiveg_num_stations 5 
+            --band 2.4G,5G --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1 
+            --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_tcp --tos "VI" 
+            --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "BE" --virtual --qos_serial --mixed_traffic_loop 1
+            --ping_test_duration 1m --qos_test_duration 30s --ftp_test_duration 30s --http_test_duration 30s --multicast_test_duration 30s 
+            --pre_cleanup
+            
+        # CLI for Mixed Traffic Test: Run on 2.4GHz & 5GHz Bands Simultaneously with Virtual Clients in a Single Iteration.
+        
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 
+            --twog_ssid NETGEAR-2G --twog_passwd Password@123 --twog_security wpa2 --twog_radio wiphy0 --twog_num_stations 5 
+            --fiveg_ssid NETGEAR-5G --fiveg_passwd Password@123 --fiveg_security wpa2 --fiveg_radio wiphy1 --fiveg_num_stations 5 
+            --band 2.4G,5G --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1 
+            --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_tcp --tos "VI" 
+            --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "BE" --virtual --qos_serial --mixed_traffic_loop 1
+            --ping_test_duration 1m --qos_test_duration 30s --ftp_test_duration 30s --http_test_duration 30s --multicast_test_duration 30s 
+            --all_bands --pre_cleanup
 
 SCRIPT_CLASSIFICATION:  Multiples Tests, Creation, Report Generation (Both individual & Overall)
 
@@ -1768,28 +1897,51 @@ INCLUDE_IN_README: False
                                           '5 --> Multicast Test \n'
                                           'eg: --tests 1 2 3 4 5', nargs="+", default=["2"])
     # virtual stations
-    optional.add_argument('--start_id',
-                          help='Specify the station starting id \n e.g: --start_id <value> default 0',
-                          default=0)
+    # optional.add_argument('--start_id',
+    #                       help='Specify the station starting id \n e.g: --start_id <value> default 0',
+    #                       default=0)
     optional.add_argument('--upstream_port',
                           help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
                           default='eth1')
-    optional.add_argument('--num_stations', type=int, help='number of virtual stations', default=0)
-    optional.add_argument('--mode', help='Mode for your station (as a number)', default=0)
+    optional.add_argument('--server_ip', help='specify the server ip to login to the app',
+                          default='10.0.0.10')
+    # optional.add_argument('--num_stations', type=int, help='number of virtual stations', default=0)
+    # optional.add_argument('--mode', help='Mode for your station (as a number)', default=0)
     optional.add_argument('--lf_username', help='Specify the lanforge ssh user name', default="lanforge")
     optional.add_argument('--lf_password', help='Specify the lanforge ssh password', default="lanforge")
-    optional.add_argument('--twog_radio', type=str, help='specify radio for 2.4G clients [default = wiphy1]', default='wiphy1')
-    optional.add_argument('--fiveg_radio', type=str, help='specify radio for 5G client [default = wiphy0]', default='wiphy0')
-    optional.add_argument('--sixg_radio', type=str, help='specify radio for 6G clients [default = wiphy2]', default='wiphy2')
-    optional.add_argument('--twog_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 2.4G clients', default=None)
-    optional.add_argument('--twog_ssid', help='WiFi SSID for script object to associate for 2.4G clients', default=None)
-    optional.add_argument('--twog_passwd', help='WiFi passphrase/password/key for 2.4G clients', default=None)
-    optional.add_argument('--fiveg_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 5G clients', default=None)
-    optional.add_argument('--fiveg_ssid', help='WiFi SSID for script object to associate for 5G clients', default=None)
-    optional.add_argument('--fiveg_passwd', help='WiFi passphrase/password/key for 5G clients', default=None)
-    optional.add_argument('--sixg_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 2.4G clients', default=None)
-    optional.add_argument('--sixg_ssid', help='WiFi SSID for script object to associate for 2.4G clients', default=None)
-    optional.add_argument('--sixg_passwd', help='WiFi passphrase/password/key for 2.4G clients', default=None)
+    optional.add_argument('--twog_radio', type=str, help='specify radio for 2.4G clients [default = wiphy1]',
+                          default='wiphy1')
+    optional.add_argument('--fiveg_radio', type=str, help='specify radio for 5G client [default = wiphy0]',
+                          default='wiphy0')
+    optional.add_argument('--sixg_radio', type=str, help='specify radio for 6G clients [default = wiphy2]',
+                          default='wiphy2')
+    optional.add_argument('--twog_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 2.4G clients',
+                          default='')
+    optional.add_argument('--twog_ssid', help='WiFi SSID for script object to associate for 2.4G clients', default='')
+    optional.add_argument('--twog_passwd', help='WiFi passphrase/password/key for 2.4G clients', default='')
+    optional.add_argument('--twog_mode', help='Mode for your twog station (as a number)', default=0)
+    optional.add_argument('--twog_num_stations', type=int, help='number of virtual stations for twog band', default=0)
+    optional.add_argument('--twog_start_id', help='Specify the station starting id for twog stations.\n e.g: '
+                                                  '--twog_start_id <value> default 2000', default=2000)
+
+    optional.add_argument('--fiveg_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 5G clients',
+                          default='')
+    optional.add_argument('--fiveg_ssid', help='WiFi SSID for script object to associate for 5G clients', default='')
+    optional.add_argument('--fiveg_passwd', help='WiFi passphrase/password/key for 5G clients', default='')
+    optional.add_argument('--fiveg_mode', help='Mode for your fiveg station (as a number)', default=0)
+    optional.add_argument('--fiveg_num_stations', type=int, help='number of virtual stations for fiveg band', default=0)
+    optional.add_argument('--fiveg_start_id', help='Specify the station starting id for fiveg stations.\n e.g: '
+                                                   '--fiveg_start_id <value> default 5000', default=5000)
+
+    optional.add_argument('--sixg_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 6G clients',
+                          default='')
+    optional.add_argument('--sixg_ssid', help='WiFi SSID for script object to associate for 6G clients', default='')
+    optional.add_argument('--sixg_passwd', help='WiFi passphrase/password/key for 6G clients', default='')
+    optional.add_argument('--sixg_mode', help='Mode for your sixg station (as a number)', default=0)
+    optional.add_argument('--sixg_num_stations', type=int, help='number of virtual stations for sixg band', default=0)
+    optional.add_argument('--sixg_start_id', help='Specify the station starting id for sixg stations.\n e.g: '
+                                                  '--sixg_start_id <value> default 6000', default=6000)
+
     optional.add_argument('--dut_model', help='Specify the Dut Name. eg: --dut_model EAP101', default="Cisco")
     optional.add_argument('--dut_firmware', help='Specify the dut firmware. eg: --dut_firmware V1.0.0.10',
                           default="V1.0.0.10")
@@ -1815,7 +1967,7 @@ INCLUDE_IN_README: False
     optional.add_argument('--side_b_min', help='Endpoint-b Min CX Rate', default=6200000)
     optional.add_argument('--side_b_max', help='Endpoint-b Max CX Rate', default=0)
     #ftp test args
-    optional.add_argument('--band', nargs="+", help='select bands for virtul clients Example : "5G","2.4G" ',
+    optional.add_argument('--band', nargs="+", help='select bands for virtual clients Example : "5G","2.4G" ',
                           default=["5G"])
     required.add_argument('--direction', nargs="+", help='Enter the traffic direction. Example : "Download","Upload"',
                           default=["Download", "Upload"])
@@ -1840,10 +1992,13 @@ INCLUDE_IN_README: False
     parser.add_argument('--side_b_min_pdu',
                         help='--side_b_min_pdu, upstream pdu size, comma separated list for multiple iterations. Default MTU',
                         default="MTU")
-    parser.add_argument('--polling_interval',help="--polling_interval <seconds>", default='60s')
+    parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
 
     parser.add_argument('--pre_cleanup', help='Use this if you want to clean Generic, Layer-3, L3 Endps &'
                                               ' Layer 4-7 tabs data', default=None, action="store_true")
+
+    parser.add_argument('--all_bands', help='to run the tests with respective bands',default=None,
+                        action="store_true")
 
     # logging configuration
     optional.add_argument("--lf_logger_config_json",
@@ -1874,7 +2029,7 @@ INCLUDE_IN_README: False
     radio,ssid,security,password = [],[],[],[]
     Bands = args.band[0].split(',')
     # Virtual stations setting up the start_id, num_sta, sta_list
-    num_sta = args.num_stations
+    # num_sta = args.num_stations
     station_list = []
     
     #for creating directory and placing reports
@@ -1882,113 +2037,223 @@ INCLUDE_IN_README: False
     directory = datetime.datetime.now().strftime("%b %d %H:%M:%S") + str(' mixed_traffic_test')
     overall_path = os.path.join(parent_dir,directory)
     os.mkdir(overall_path)
-    
+    mixed_obj = Mixed_Traffic(host=args.mgr,
+                              port=args.mgr_port,
+                              lf_username=args.lf_username,
+                              lf_password=args.lf_password,
+                              real_client=args.real,
+                              virtual_client=args.virtual,
+                              selected_test_list=args.tests,
+                              server_ip=args.server_ip,
+
+                              twog_ssid=args.twog_ssid,
+                              fiveg_ssid=args.fiveg_ssid,
+                              sixg_ssid=args.sixg_ssid,
+                              twog_password=args.twog_passwd,
+                              fiveg_password=args.fiveg_passwd,
+                              sixg_password=args.sixg_passwd,
+                              twog_security=args.twog_security,
+                              fiveg_security=args.fiveg_security,
+                              sixg_security=args.sixg_security,
+
+                              twog_radio=args.twog_radio,
+                              fiveg_radio=args.fiveg_radio,
+                              sixg_radio=args.sixg_radio,
+
+                              twog_num_stations=args.twog_num_stations,
+                              fiveg_num_stations=args.fiveg_num_stations,
+                              sixg_num_stations=args.sixg_num_stations,
+
+                              twog_start_id=args.twog_start_id,
+                              fiveg_start_id=args.fiveg_start_id,
+                              sixg_start_id=args.sixg_start_id,
+
+                              twog_mode=args.twog_mode,
+                              fiveg_mode=args.fiveg_mode,
+                              sixg_mode=args.sixg_mode,
+
+                              selected_bands=Bands,
+                              number_template="",
+                              upstream_port=args.upstream_port,
+                              qos_tos_list=args.tos,
+                              dut_model=args.dut_model,
+                              dut_firmware=args.dut_firmware,
+                              qos_serial=args.qos_serial,
+                              test_duration=args.test_duration,
+                              ping_test_duration=args.ping_test_duration,
+                              qos_test_duration=args.qos_test_duration,
+                              ftp_test_duration=args.ftp_test_duration,
+                              http_test_duration=args.http_test_duration,
+                              multicast_test_duration=args.multicast_test_duration,
+                              # path=path
+                              )
+    # pre-cleaning & creating / selecting clients for both real and virtual
+    twog_selected_devices, fiveg_selected_devices, sixg_selected_devices = None, None, None
+    if args.virtual:
+        if args.pre_cleanup:
+            mixed_obj.pre_cleanup()
+    elif args.real:
+        if args.pre_cleanup:
+            mixed_obj.pre_cleanup()
+        selected_serial_list = mixed_obj.selecting_devices_from_available()
+        if selected_serial_list:
+            twog_selected_devices = selected_serial_list[0] if len(selected_serial_list) > 0 else None
+            fiveg_selected_devices = selected_serial_list[1] if len(selected_serial_list) > 1 else None
+            sixg_selected_devices = selected_serial_list[2] if len(selected_serial_list) > 2 else None
+        if args.all_bands:
+            set_2g = set(twog_selected_devices)
+            set_5g = set(fiveg_selected_devices)
+            set_6g = set(sixg_selected_devices)
+            if set_2g & set_5g or set_2g & set_6g or set_5g & set_6g:
+                print("Please Check your selected clients...! Dont select the same clients, if your using --all_bands argument")
+                exit(0)
+            else:
+                print("No Duplicates Devices Present.")
+
+    # iteration-based logic
     for times in range(1,args.mixed_traffic_loop+1):
         multiple_directory = datetime.datetime.now().strftime("%b %d %H:%M:%S") + str('Mixed_Traffic_Test_Iteration_') + str(times)
         multiple_directory_path = os.path.join(overall_path,multiple_directory)
         os.mkdir(multiple_directory_path)
-        for band in Bands:
-            path = os.path.join(parent_dir,directory)
-            if band == "2.4G":
-                security = args.twog_security
-                ssid = args.twog_ssid
-                password = args.twog_passwd
-                radio = args.twog_radio
-                directory = str(' 2.4GHz')
-            elif band == "5G":
-                security = args.fiveg_security
-                ssid = args.fiveg_ssid
-                password = args.fiveg_passwd
-                radio = args.fiveg_radio
-                directory = str(' 5GHz')
-            elif band == "6G":
-                security = args.sixg_security
-                ssid = args.sixg_ssid
-                password = args.sixg_passwd
-                radio = args.sixg_radio
-                directory = str(' 6GHz')
-            elif band == "Both":
-                security = [args.twog_security, args.fiveg_security]
-                ssid = [args.twog_ssid, args.fiveg_ssid]
-                password = [args.twog_passwd, args.fiveg_passwd]
-                directory = str(' Both')
-            path = os.path.join(multiple_directory_path,directory)
-            os.mkdir(path)
+        if not args.all_bands:
+            for band in Bands:  # band-based logic
+                mixed_obj.band = band
+                path = os.path.join(parent_dir, directory)
+                if band == "2.4G":
+                    security = args.twog_security
+                    ssid = args.twog_ssid
+                    password = args.twog_passwd
+                    radio = args.twog_radio
+                    directory = str(' 2.4GHz')
+                    if args.real:
+                        mixed_obj.real_client_wifi_config(selected_serial_list=twog_selected_devices)
+                    elif args.virtual:
+                        mixed_obj.virtual_client_creation(ssid=ssid, password=password, security=security, band=band,
+                                                          radio=radio, num_stations=args.twog_num_stations,
+                                                          start_id=args.twog_start_id)
+                elif band == "5G":
+                    security = args.fiveg_security
+                    ssid = args.fiveg_ssid
+                    password = args.fiveg_passwd
+                    radio = args.fiveg_radio
+                    directory = str(' 5GHz')
+                    if args.real:
+                        mixed_obj.real_client_wifi_config(selected_serial_list=fiveg_selected_devices)
+                    elif args.virtual:
+                        mixed_obj.virtual_client_creation(ssid=ssid, password=password, security=security, band=band,
+                                                          radio=radio, num_stations=args.fiveg_num_stations,
+                                                          start_id=args.fiveg_start_id)
+                elif band == "6G":
+                    security = args.sixg_security
+                    ssid = args.sixg_ssid
+                    password = args.sixg_passwd
+                    radio = args.sixg_radio
+                    directory = str(' 6GHz')
+                    if args.real:
+                        mixed_obj.real_client_wifi_config(selected_serial_list=sixg_selected_devices)
+                    elif args.virtual:
+                        mixed_obj.virtual_client_creation(ssid=ssid, password=password, security=security, band=band,
+                                                          radio=radio, num_stations=args.sixg_num_stations,
+                                                          start_id=args.sixg_start_id)
+                path = os.path.join(multiple_directory_path, directory)
+                os.mkdir(path)
+                mixed_obj.report_obj(band=band, path=path)  # setting a report object
+                # updating ssid, security's for report
+                mixed_obj.ssid = ssid
+                mixed_obj.security = security
 
-            if args.virtual:
-                start_id = 0
-                if args.start_id != 0:
-                    start_id = int(args.start_id)
-
-                if (args.num_stations is not None) and (int(args.num_stations) > 0):
-                    num_stations_converted = int(args.num_stations)
-                    num_sta = num_stations_converted
-                station_list = LFUtils.port_name_series(prefix="sta",
-                                                        start_id=start_id,
-                                                        end_id=start_id + num_sta - 1,
-                                                        padding_number=10000,
-                                                        radio=radio)
-            logger.info("Station_list {}".format(station_list))
-
-            Mixed_Traffic_obj = Mixed_Traffic(host=args.mgr,
-                                            port=args.mgr_port,
-                                            lf_username=args.lf_username,
-                                            lf_password=args.lf_password,
-                                            real_client=args.real,
-                                            virtual_client=args.virtual,
-                                            selected_test_list=args.tests,
-                                            ssid=ssid,
-                                            passwd=password,
-                                            security=security,
-                                            band=band,
-                                            mode=args.mode,
-                                            sta_list=station_list,
-                                            number_template="",
-                                            num_stations=num_sta,
-                                            radio=radio,
-                                            upstream_port=args.upstream_port,
-                                            qos_tos_list=args.tos,
-                                            dut_model=args.dut_model,
-                                            dut_firmware=args.dut_firmware,
-                                            qos_serial=args.qos_serial,
-                                            test_duration=args.test_duration,
-                                            ping_test_duration=args.ping_test_duration,
-                                            qos_test_duration=args.qos_test_duration,
-                                            ftp_test_duration=args.ftp_test_duration,
-                                            http_test_duration=args.http_test_duration,
-                                            multicast_test_duration=args.multicast_test_duration,
-                                            path=path)
-            logger.info("Selected Tests List".format(args.tests))
-            if args.virtual:
-                if args.pre_cleanup:
-                    Mixed_Traffic_obj.pre_cleanup()
-                Mixed_Traffic_obj.virtual_client_creation()
-            elif args.real:
-                if args.pre_cleanup:
-                    Mixed_Traffic_obj.pre_cleanup()
-                Mixed_Traffic_obj.selecting_devices_from_available()
+                logger.info(f"Selected Tests List: {args.tests}")
+                if args.tests:
+                    if "1" in args.tests:
+                        mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
+                                            interval=args.ping_interval)
+                    if "2" in args.tests:
+                        mixed_obj.qos_test(ssid=ssid, password=password, security=security, ap_name=args.dut_model,
+                                           upstream=args.upstream_port, tos=args.tos, traffic_type=args.traffic_type,
+                                           side_a_min=args.side_a_min, side_b_min=args.side_b_min,
+                                           side_a_max=args.side_a_max, side_b_max=args.side_b_min)
+                    if "3" in args.tests:
+                        mixed_obj.ftp_test(ssid=ssid, password=password, security=security, bands=band,
+                                           directions=args.direction, file_sizes=args.ftp_file_sizes)
+                    if "4" in args.tests:
+                        mixed_obj.http_test(ssid=ssid, password=password, security=security,
+                                            http_file_size=args.http_file_size, target_per_ten=args.target_per_ten)
+                    if "5" in args.tests:
+                        mixed_obj.multicast_test(endp_types=args.mc_traffic_type, mc_tos=args.mc_tos,
+                                                 side_a_min=args.side_a_min_bps, side_b_min=args.side_b_min_bps,
+                                                 side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu)
+                    # generating overall report
+                    mixed_obj.generate_all_report()
+                else:
+                    print("No Test Selected. Please select the Tests.")
+                    exit(0)
+        else:
+            # the tests will run irr-respect to bands
+            mixed_obj.band = Bands[0]   # since all the test are band specific, passing band first item in the list #Todo: need to modify this , for now hardcoded
+            mixed_obj.radio = args.twog_radio   # taking a first twog-radio in a list as a default radio #Todo: need to modify this , for now hardcoded
+            path = os.path.join(multiple_directory_path)
+            mixed_obj.report_obj(band=None, path=path)  # setting a report object
+            if args.real:
+                selected_serial_list = [twog_selected_devices, fiveg_selected_devices, sixg_selected_devices]
+                logger.info(f"All Selected Clients: {selected_serial_list}")
+                for client_list in selected_serial_list:
+                    if client_list:
+                        mixed_obj.real_client_wifi_config(selected_serial_list=client_list, all_devices=True)
+            elif args.virtual:
+                sta_list_2g, sta_list_5g, sta_list_6g = [], [], []
+                if args.twog_num_stations:
+                    sta_list_2g = mixed_obj.virtual_client_creation(ssid=args.twog_ssid, password=args.twog_passwd,
+                                                      security=args.twog_security, band='2.4G',
+                                                      radio=args.twog_radio, num_stations=args.twog_num_stations,
+                                                      start_id=args.twog_start_id, all_sta=True)
+                if args.fiveg_num_stations:
+                    sta_list_5g = mixed_obj.virtual_client_creation(ssid=args.fiveg_ssid, password=args.fiveg_passwd,
+                                                      security=args.fiveg_security, band='5G',
+                                                      radio=args.fiveg_radio, num_stations=args.fiveg_num_stations,
+                                                      start_id=args.fiveg_start_id, all_sta=True)
+                if args.sixg_num_stations:
+                    sta_list_6g = mixed_obj.virtual_client_creation(ssid=args.sixg_ssid, password=args.sixg_passwd,
+                                                      security=args.sixg_security, band='6G',
+                                                      radio=args.sixg_radio, num_stations=args.sixg_num_stations,
+                                                      start_id=args.sixg_start_id, all_sta=True)
+                # updating num stations and station list
+                virtual_station_list = sta_list_2g + sta_list_5g + sta_list_6g
+                logger.info("Selected Virtual Station List:", virtual_station_list)
+                mixed_obj.station_list = virtual_station_list
+                mixed_obj.num_staions = args.twog_num_stations + args.fiveg_num_stations + args.sixg_num_stations
+            ssid = str(args.twog_ssid + ',' + args.fiveg_ssid + ',' + args.sixg_ssid)
+            security = str(args.twog_security + ',' + args.fiveg_security + ',' + args.sixg_security)
+            mixed_obj.ssid = ssid
+            mixed_obj.security = security
+            # tests will run with respect to bands
+            logger.info("Selected Tests List: ".format(args.tests))
             if args.tests:
                 if "1" in args.tests:
-                    Mixed_Traffic_obj.ping_test(target=args.target, interval=args.ping_interval)
+                    mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
+                                        interval=args.ping_interval, all_bands=True)
                 if "2" in args.tests:
-                    Mixed_Traffic_obj.qos_test(ssid=ssid, password=password, security=security,
-                                            ap_name=args.dut_model, upstream=args.upstream_port, tos=args.tos,
-                                            traffic_type=args.traffic_type, side_a_min=args.side_a_min,
-                                            side_b_min=args.side_b_min, side_a_max=args.side_a_max, side_b_max=args.side_b_min)
+                    mixed_obj.qos_test(ssid=ssid, password=password, security=security, ap_name=args.dut_model,
+                                       upstream=args.upstream_port, tos=args.tos, traffic_type=args.traffic_type,
+                                       side_a_min=args.side_a_min, side_b_min=args.side_b_min,
+                                       side_a_max=args.side_a_max, side_b_max=args.side_b_min, all_bands=True)
                 if "3" in args.tests:
-                    Mixed_Traffic_obj.ftp_test(bands=band, directions=args.direction, file_sizes=args.ftp_file_sizes)
+                    mixed_obj.ftp_test(ssid=ssid, password=password, security=security, bands=Bands,
+                                       directions=args.direction, file_sizes=args.ftp_file_sizes, all_bands=True)
                 if "4" in args.tests:
-                    Mixed_Traffic_obj.http_test(http_file_size=args.http_file_size,
-                                                target_per_ten=args.target_per_ten)
+                    mixed_obj.http_test(ssid=ssid, password=password, security=security,
+                                        http_file_size=args.http_file_size, target_per_ten=args.target_per_ten,
+                                        all_bands=True)
                 if "5" in args.tests:
-                    Mixed_Traffic_obj.multicast_test(endp_types=args.mc_traffic_type, mc_tos=args.mc_tos,
-                                                    side_a_min=args.side_a_min_bps, side_b_min=args.side_b_min_bps,
-                                                    side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu)
+                    mixed_obj.multicast_test(endp_types=args.mc_traffic_type, mc_tos=args.mc_tos,
+                                             side_a_min=args.side_a_min_bps, side_b_min=args.side_b_min_bps,
+                                             side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu,
+                                             all_bands=True)
                 # generating overall report
-                Mixed_Traffic_obj.generate_all_report()
+                mixed_obj.generate_all_report()
             else:
                 print("No Test Selected. Please select the Tests.")
                 exit(0)
+
 
 if __name__ == "__main__":
     main()
