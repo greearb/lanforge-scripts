@@ -100,6 +100,7 @@ class Ping(Realm):
                  debug=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
+        self.ssid_list = []
         self.host = host
         self.lanforge_password = lanforge_password
         self.port = port
@@ -364,6 +365,7 @@ class Ping(Realm):
         self.devices_with_errors = []
         self.report_names = []
         self.remarks = []
+        self.device_ssid = []
         # packet_count_data = {}
         for device, device_data in self.result_json.items():
             self.packets_sent.append(device_data['sent'])
@@ -373,6 +375,7 @@ class Ping(Realm):
             self.device_modes.append(device_data['mode'])
             self.device_channels.append(device_data['channel'])
             self.device_mac.append(device_data['mac'])
+            self.device_ssid.append(device_data['ssid'])
             self.device_min.append(float(device_data['min_rtt'].replace(',', '')))
             self.device_max.append(float(device_data['max_rtt'].replace(',', '')))
             self.device_avg.append(float(device_data['avg_rtt'].replace(',', '')))
@@ -438,6 +441,7 @@ class Ping(Realm):
             'Wireless Client': self.device_names,
             'MAC': self.device_mac,
             'Channel': self.device_channels,
+            'SSID ' : self.device_ssid,
             'Mode': self.device_modes,
             'Packets Sent': self.packets_sent,
             'Packets Received': self.packets_received,
@@ -487,6 +491,7 @@ class Ping(Realm):
             'Wireless Client': self.device_names,
             'MAC': self.device_mac,
             'Channel': self.device_channels,
+            'SSID ' : self.device_ssid,
             'Mode': self.device_modes,
             'Min Latency (ms)': self.device_min,
             'Average Latency (ms)': self.device_avg,
@@ -887,6 +892,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                             'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                             'mac': current_device_data['mac'],
                             'channel': current_device_data['channel'],
+                            'ssid' : current_device_data['ssid'],
                             'mode': current_device_data['mode'],
                             'name': station,
                             'os': 'Virtual',
@@ -927,6 +933,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                 'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                                 'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                                 'mac': current_device_data['mac'],
+                                'ssid' : current_device_data['ssid'],
                                 'channel': current_device_data['channel'],
                                 'mode': current_device_data['mode'],
                                 'name': station,
@@ -953,6 +960,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                         'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                         'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                         'mac': current_device_data['mac'],
+                        'ssid' : current_device_data['ssid'],
                         'channel': current_device_data['channel'],
                         'mode': current_device_data['mode'],
                         'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
@@ -977,6 +985,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                             'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                             'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                             'mac': current_device_data['mac'],
+                            'ssid' : current_device_data['ssid'],
                             'channel': current_device_data['channel'],
                             'mode': current_device_data['mode'],
                             'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
