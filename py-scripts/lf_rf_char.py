@@ -954,8 +954,7 @@ def now_millis() -> int:
     return round(time.time() * 1000)
 
 
-def main():
-    # arguments
+def parse_args():
     parser = argparse.ArgumentParser(
         prog='lf_rf_char.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -986,6 +985,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument("--lf_port", help="IP Port the LANforge GUI is listening on (8080 is default)", default=8080)
     parser.add_argument("--lf_user", type=str, help="user: lanforge", default='lanforge')
     parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge", default='lanforge')
+
+    # vAP Configuration
     parser.add_argument("--vap_port", type=str, help=" port : 1.1.vap3  provide full eid  (endpoint id", required=True)
     parser.add_argument("--vap_radio", type=str, help=" --vap_radio wiphy0", required=True)
     parser.add_argument("--vap_channel", type=str,
@@ -1010,6 +1011,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument('--reset_vap', action='store_true',
                         help="""Specify this if DHCP leases do not disappear from the vAP.
             Default behavior is to not reset the vAP""")
+
     # Reporting Configuration
     parser.add_argument('--local_lf_report_dir',
                         help="""--local_lf_report_dir override the report path, primary use when running test in test suite.
@@ -1057,7 +1059,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument('--frame', help="--frame <bytes>  , e.g. --frame 1400", default='1400')
     parser.add_argument('--frame_interval', help="--frame_interval <fractions of second>  , e.g. --frame_interval .01 ", default='.01')
 
-    # TODO
+    # Other Configuration
     parser.add_argument('--timeout_sec',
                         help="number of seconds to allow for starting traffic; if traffic has not started by this time, script will abort")
     parser.add_argument('--dhcp_poll_ms',
@@ -1065,7 +1067,11 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument('--dhcp_lookup_attempts',
                         help="number of attempts to check for DHCP lease before aborting script")
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
