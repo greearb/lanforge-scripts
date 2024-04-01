@@ -1252,11 +1252,13 @@ def main():
     rf_char.vap_antenna = args.vap_antenna
     rf_char.vap_port = args.vap_port
     rf_char.vap_txpower = args.vap_txpower
-    bw_list = ( "20", "40", "80", "160" )
+
+    # Verify vAP bandwidth is supported
+    bw_list = ( "20", "40", "80", "160")
     if args.vap_bw not in bw_list:
-        print("vAP bandwidth [{}] unknown. Please choose from: {}".format(
-            args.vap_bw, ", ".join(bw_list)))
+        logger.error(f"vAP bandwidth [{args.vap_bw}] unknown. Please choose from: {bw_list}")
         exit(1)
+
     rf_char.vap_bw = args.vap_bw
     rf_char.reset_vap = args.reset_vap
     if args.vap_mode:
@@ -2575,10 +2577,10 @@ def main():
 
     if args.final_report_dir:
         if args.final_report_dir[0] == "/":
-            print("moving the report directory to "+args.final_report_dir)
+            logger.info("moving the report directory to " + args.final_report_dir)
             os.rename(report.get_report_path(), args.final_report_dir)
         else:
-            print("final dir: /home/lanforge/html-reports/"+args.final_report_dir)
+            logger.info("final dir: /home/lanforge/html-reports/" + args.final_report_dir)
             os.rename(report.get_report_path(),
                       "/home/lanforge/html-reports/"+args.final_report_dir)
 
