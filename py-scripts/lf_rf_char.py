@@ -962,102 +962,153 @@ def parse_args():
             lf_rf_char.py : RF Characteristics test
             ''',
         description='''\
-lf_rf_char.py
------------
-
 Summary :
 ---------
-
 Gather Tx and Rx RF Characteristic for a specific duration and polling interval
 
 Example :
 ---------
-
-./lf_rf_char.py --lf_mgr 192.168.0.104 --lf_port 8080 --lf_user lanforge --lf_passwd lanforge \
-    --vap_port 1.1.vap3 --vap_radio 1.1.wiphy3 --vap_channel 36 --vap_antenna 0 \
-    --log_level debug --debug --duration 10s --polling_interval 1s --frame 1400 \
-    --frame_interval .01
+./lf_rf_char.py \
+    --lf_mgr            192.168.0.104 \
+    --vap_port          1.1.vap3 \
+    --vap_radio         1.1.wiphy3 \
+    --vap_channel       36 \
+    --vap_antenna       0 \
+    --duration          10s \
+    --polling_interval  1s \
+    --frame             1400 \
+    --frame_interval    .01
 
 for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             ''')
     # LANforge configuration
-    parser.add_argument("--lf_mgr", type=str, help="address of the LANforge GUI machine (localhost is default)", default='localhost')
-    parser.add_argument("--lf_port", help="IP Port the LANforge GUI is listening on (8080 is default)", default=8080)
-    parser.add_argument("--lf_user", type=str, help="user: lanforge", default='lanforge')
-    parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge", default='lanforge')
+    parser.add_argument("--mgr", "--lf_mgr",
+                        dest="lf_mgr",
+                        help="address of the LANforge GUI machine (localhost is default)",
+                        type=str,
+                        default='localhost')
+    parser.add_argument("--mgr_port", "--lf_port",
+                        dest="lf_port",
+                        help="IP Port the LANforge GUI is listening on (8080 is default)",
+                        default=8080)
+    parser.add_argument("--lf_user",
+                        help="user: lanforge",
+                        type=str,
+                        default='lanforge')
+    parser.add_argument("--lf_passwd",
+                        help="passwd: lanforge",
+                        type=str,
+                        default='lanforge')
 
     # vAP Configuration
-    parser.add_argument("--vap_port", type=str, help=" port : 1.1.vap3  provide full eid  (endpoint id", required=True)
-    parser.add_argument("--vap_radio", type=str, help=" --vap_radio wiphy0", required=True)
-    parser.add_argument("--vap_channel", type=str,
-                        help="""Specify the channel of the radio e.g. 6 (2.4G), 36 (5G), 1e(6G)
-            Please append 'e' for all 6Ghz channels.
-            This parameter is required to use --vap_bw parammeter.""")
-    parser.add_argument("--vap_antenna", help='number of spatial streams: 0 Diversity (All), 1 Fixed-A (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 (8x8)')
+    parser.add_argument("--vap_port",
+                        help="port: 1.1.vap3  provide full eid (endpoint id)",
+                        type=str,
+                        required=True)
+    parser.add_argument("--vap_radio",
+                        help="--vap_radio wiphy0",
+                        type=str,
+                        required=True)
+    parser.add_argument("--vap_channel",
+                        help="Specify the channel of the radio e.g. 6 (2.4G), 36 (5G), 1e (6G) "
+                             "Please append 'e' for all 6Ghz channels. "
+                             "This parameter is required to use --vap_bw parammeter.",
+                        type=str)
+    parser.add_argument("--vap_antenna",
+                        help='number of spatial streams: 0 Diversity (All), 1 Fixed-A (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 (8x8)')
     parser.add_argument("--vap_mode",
-                        default="AUTO",
-                        help="""WiFi modes defined by www.candelatech.com/lfcli_ug.php#add_vap
-            Includes 802.11a, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX, aAX
-            """)
+                        help="WiFi modes defined by www.candelatech.com/lfcli_ug.php#add_vap "
+                             "Includes 802.11a, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX, aAX",
+                        default="AUTO")
     parser.add_argument('--vap_txpower',
-                        help="""set a custom level for tx power on vap_radio. Values include:
-            DEFAULT, 0dBm, 1dBm, 2dBm, 5dBm, 10dBm, 15dBm, 20dBm, 25dBm
-            The values may be any integer between -1(auto/default) and 30
-            """)
+                        help="set a custom level for tx power on vap_radio. Values include: "
+                             "DEFAULT, 0dBm, 1dBm, 2dBm, 5dBm, 10dBm, 15dBm, 20dBm, 25dBm "
+                             "The values may be any integer between -1(auto/default) and 30")
     parser.add_argument('--vap_bw',
-                        help="""Specify the bandwidth for the vAP. Options: 
-            20 | 40 | 80 | 160
-            Not all bandwidth settings are available for all radios.""")
+                        help="Specify the bandwidth for the vAP. Options: "
+                             "20 | 40 | 80 | 160 "
+                             "Not all bandwidth settings are available for all radios.")
     parser.add_argument('--reset_vap', action='store_true',
-                        help="""Specify this if DHCP leases do not disappear from the vAP.
-            Default behavior is to not reset the vAP""")
+                        help="Specify this if DHCP leases do not disappear from the vAP. "
+                             "Default behavior is to not reset the vAP")
 
     # Reporting Configuration
     parser.add_argument('--local_lf_report_dir',
-                        help="""--local_lf_report_dir override the report path, primary use when running test in test suite.
-        The lowest actual directory will be <local_lf_report_dir>/<time-date>_rf_characteristics/
-        If you specify final_report_dir, that directory will be moved the the <final_report_dir> directory""",
+                        help="--local_lf_report_dir override the report path, primary use when running test in test suite. "
+                             "The lowest actual directory will be <local_lf_report_dir>/<time-date>_rf_characteristics/ "
+                             "If you specify final_report_dir, that directory will be moved the the <final_report_dir> directory",
                         default="")
     parser.add_argument('--final_report_dir',
-                        help="""moves the default report directory (mv <time-date>_rf_characteristics) to new name.
-        If this is not a full qualified path, it will default to /home/lanforge/html-reports/<final_report_dir>
-                        """)
-    parser.add_argument('--no_pdf', action='store_true',
-                        help="specify this to skip PDF generation")
-    parser.add_argument('--no_html', action='store_true',
-                        help="""specify this to skip generating a HTML report and charts, only csv output would be created.
-     Implies --no_pdf as HTML report is basis for PDF report""")
-    parser.add_argument("--test_rig", default="lanforge",
-                        help="test rig for kpi.csv, testbed that the tests are run on")
-    parser.add_argument("--test_tag", default="kpi_generation",
-                        help="test tag for kpi.csv,  test specific information to differenciate the test")
-    parser.add_argument("--dut_hw_version", default="",
-                        help="dut hw version for kpi.csv, hardware version of the device under test")
-    parser.add_argument("--dut_sw_version", default="",
-                        help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument("--dut_model_num", "--dut_model_no", default="",
-                        help="dut model for kpi.csv,  model number / name of the device under test")
-    parser.add_argument("--dut_serial_num", "--dut_serial_no", default="",
-                        help="dut serial num for kpi.csv,  model serial number ")
-
-    parser.add_argument("--test_priority", default="95",
-                        help="dut model for kpi.csv,  test-priority is arbitrary number")
-    parser.add_argument("--test_id", default="kpi_unit_test", help="test-id for kpi.csv,  script or test name")
-    parser.add_argument("--csv_outfile", default="lf_rf_char", help=" csv outfile")
+                        help="moves the default report directory (mv <time-date>_rf_characteristics) to new name. "
+                             "If this is not a full qualified path, it will default to /home/lanforge/html-reports/<final_report_dir>")
+    parser.add_argument('--no_pdf',
+                        help="specify this to skip PDF generation",
+                        action='store_true')
+    parser.add_argument('--no_html',
+                        help="specify this to skip generating a HTML report and charts, only csv output would be created. "
+                             "Implies --no_pdf as HTML report is basis for PDF report",
+                        action='store_true')
+    parser.add_argument("--test_rig",
+                        help="test rig for kpi.csv, testbed that the tests are run on",
+                        default="lanforge")
+    parser.add_argument("--test_tag",
+                        help="test tag for kpi.csv, test specific information to differenciate the test",
+                        default="kpi_generation")
+    parser.add_argument("--dut_hw_version",
+                        help="dut hw version for kpi.csv, hardware version of the device under test",
+                        default="")
+    parser.add_argument("--dut_sw_version",
+                        help="dut sw version for kpi.csv, software version of the device under test",
+                        default="")
+    parser.add_argument("--dut_model_num", "--dut_model_no",
+                        dest="dut_model_num",
+                        help="dut model for kpi.csv,  model number / name of the device under test",
+                        default="")
+    parser.add_argument("--dut_serial_num", "--dut_serial_no",
+                        dest="dut_serial_num",
+                        help="dut serial num for kpi.csv,  model serial number ",
+                        default="")
+    parser.add_argument("--test_priority",
+                        help="dut model for kpi.csv, test-priority is arbitrary number",
+                        default="95")
+    parser.add_argument("--test_id",
+                        help="test-id for kpi.csv,  script or test name",
+                        default="kpi_unit_test")
+    parser.add_argument("--csv_outfile",
+                        help="csv outfile",
+                        default="lf_rf_char")
 
     # Logging Configuration
-    parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
-    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
-    parser.add_argument('--debug', help='Legacy debug flag', action='store_true')
+    parser.add_argument('--log_level',
+                        default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument("--lf_logger_config_json",
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--debug',
+                        help='Legacy debug flag',
+                        action='store_true')
 
     # Test Configuration
-    parser.add_argument('--desc', help="--desc <test description> , if not provided will section not printed")
-    parser.add_argument('--polynomial', help="--polynomial store_true , show polynomial lines on retries graph", action="store_true")
-    parser.add_argument('--interpolate', help="--interpolate store_true , show interpolation on retries graph", action="store_true")
-    parser.add_argument('--duration', help="--duration <seconds>", default='20s')
-    parser.add_argument('--polling_interval', help="--polling_interval <h m s ms>", default='1000ms')
-    parser.add_argument('--frame', help="--frame <bytes>  , e.g. --frame 1400", default='1400')
-    parser.add_argument('--frame_interval', help="--frame_interval <fractions of second>  , e.g. --frame_interval .01 ", default='.01')
+    parser.add_argument('--desc',
+                        help="--desc <test description> , if not provided will section not printed")
+    parser.add_argument('--polynomial',
+                        help="--polynomial store_true , show polynomial lines on retries graph",
+                        action="store_true")
+    parser.add_argument('--interpolate',
+                        help="--interpolate store_true , show interpolation on retries graph",
+                        action="store_true")
+    parser.add_argument('--duration',
+                        help="--duration <seconds>",
+                        default='20s')
+    parser.add_argument('--polling_interval',
+                        help="--polling_interval <h m s ms>",
+                        default='1000ms')
+    parser.add_argument('--frame',
+                        help="--frame <bytes>  , e.g. --frame 1400",
+                        default='1400')
+    parser.add_argument('--frame_interval',
+                        help="--frame_interval <fractions of second>  , e.g. --frame_interval .01 ",
+                        default='.01')
 
     # Other Configuration
     parser.add_argument('--timeout_sec',
