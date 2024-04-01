@@ -102,6 +102,7 @@ class FtpTest(LFCliBase):
                  real_client_list1=[],uc_avg=[],url_data=[],channel_list=[],mode_list=[],cx_list=[]):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         logger.info("Test is about to start")
+        self.ssid_list = []
         self.host = lfclient_host
         self.port = lfclient_port
         #self.radio = radio
@@ -617,6 +618,7 @@ class FtpTest(LFCliBase):
                         self.channel_list.append(str(port_data['channel']))
                         self.mode_list.append(str(port_data['mode']))
                         self.mac_id_list.append(str(port_data['mac']))
+                        self.ssid_list.append(str(port_data['ssid']))
         elif self.clients_type == "Real":
             response_port = self.json_get("/port/all")
             for interface in response_port['interfaces']:
@@ -624,6 +626,7 @@ class FtpTest(LFCliBase):
                     if port in self.input_devices_list:
                         self.channel_list.append(str(port_data['channel']))
                         self.mode_list.append(str(port_data['mode']))
+                        self.ssid_list.append(str(port_data['ssid']))
 
         # data in json format
         #data = self.json_get("layer4/list?fields=bytes-rd")
@@ -1239,6 +1242,7 @@ class FtpTest(LFCliBase):
                         " Clients" : client_list,
                         " MAC " : self.mac_id_list,
                         " Channel" : self.channel_list,
+                        " SSID " : self.ssid_list,
                         " Mode" : self.mode_list,
                         " No of times File downloaded " : self.url_data,
                         " Time Taken to Download file (ms)" : self.uc_avg,
