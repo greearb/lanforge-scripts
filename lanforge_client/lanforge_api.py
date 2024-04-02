@@ -19705,6 +19705,7 @@ class LFJsonQuery(JsonQuery):
         /alerts/$event_id
         /alerts/before/$event_id
         /alerts/between/$start_event_id/$end_event_id
+        /alerts/first/$event_count
         /alerts/last/$event_count
         /alerts/since/$event_id
 
@@ -19791,22 +19792,22 @@ class LFJsonQuery(JsonQuery):
                                    plural_key="alerts")
     #
     """
-        Below are 7 methods defined by LFClient URL Responders
+        Below are 21 methods defined by LFClient URL Responders
     """
 
-    def alerts_since(self,
-                     event_id: int = None,
-                     response_json_list: list = None,
-                     debug : bool = False,
-                     wait_sec : float = None,
-                     request_timeout_sec : float = None,
-                     max_timeout_sec : float = None,
-                     errors_warnings : list = None):
+    def alerts_before(self,
+                      event_id: int = None,
+                      response_json_list: list = None,
+                      debug : bool = False,
+                      wait_sec : float = None,
+                      request_timeout_sec : float = None,
+                      max_timeout_sec : float = None,
+                      errors_warnings : list = None):
         """
-        Select alerts since an alert ID
-        :param event_id: earliest to start at
+        Select alerts before alert_id (inclusive)
+        :param event_id: id to stop selecting at
         """
-        response = self.json_get(url="/alerts/alerts_since/{event_id}".format(event_id=event_id),
+        response = self.json_get(url="/alerts/before/{event_id}".format(event_id=event_id),
                                  debug=debug,
                                  wait_sec=wait_sec,
                                  request_timeout_sec=request_timeout_sec,
@@ -19815,8 +19816,137 @@ class LFJsonQuery(JsonQuery):
         if not response:
             return None
         return self.extract_values(response=response,
-                                   singular_key="event",
-                                   plural_key="events")
+                                   singular_key="alert",
+                                   plural_key="alerts")
+        #
+
+    def alerts_before_time(self,
+                           time_stamp: string = None,
+                           response_json_list: list = None,
+                           debug : bool = False,
+                           wait_sec : float = None,
+                           request_timeout_sec : float = None,
+                           max_timeout_sec : float = None,
+                           errors_warnings : list = None):
+        """
+        Select alerts before time_stamp
+        :param time_stamp: time to select up to (YYYY-MM-DD+HH:MM:SS)
+        """
+        response = self.json_get(url="/alerts/before=time/{time_stamp}".format(time_stamp=time_stamp),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="alert",
+                                   plural_key="alerts")
+        #
+
+    def alerts_between(self,
+                       start_event_id: int = None,
+                       end_event_id: int = None,
+                       response_json_list: list = None,
+                       debug : bool = False,
+                       wait_sec : float = None,
+                       request_timeout_sec : float = None,
+                       max_timeout_sec : float = None,
+                       errors_warnings : list = None):
+        """
+        Select alerts between start and end IDs
+        :param start_event_id: alerts id to start at
+        :param end_event_id: alerts id to end at
+        """
+        response = self.json_get(url="/alerts/between/{start_event_id}/{end_event_id}".format(start_event_id=start_event_id, end_event_id=end_event_id),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="alert",
+                                   plural_key="alerts")
+        #
+
+    def alerts_between_time(self,
+                            start_time_stamp: string = None,
+                            end_time_stamp: string = None,
+                            response_json_list: list = None,
+                            debug : bool = False,
+                            wait_sec : float = None,
+                            request_timeout_sec : float = None,
+                            max_timeout_sec : float = None,
+                            errors_warnings : list = None):
+        """
+        Select alerts between start_time_stamp and end_time_stamp
+        :param start_time_stamp: time to select from (YYYY-MM-DD+HH:MM:SS)
+        :param end_time_stamp: time to select up to (YYYY-MM-DD+HH:MM:SS)
+        """
+        response = self.json_get(url="/alerts/between=time/{start_time_stamp}/{end_time_stamp}".format(start_time_stamp=start_time_stamp, end_time_stamp=end_time_stamp),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="alert",
+                                   plural_key="alerts")
+        #
+
+    def alerts_first_events(self,
+                            event_count: int = None,
+                            response_json_list: list = None,
+                            debug : bool = False,
+                            wait_sec : float = None,
+                            request_timeout_sec : float = None,
+                            max_timeout_sec : float = None,
+                            errors_warnings : list = None):
+        """
+        Select first event_count alerts
+        :param event_count: number from start to select
+        """
+        response = self.json_get(url="/alerts/first/{event_count}".format(event_count=event_count),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="alert",
+                                   plural_key="alerts")
+        #
+
+    def alerts_first_events_time(self,
+                                 time_stamp: string = None,
+                                 response_json_list: list = None,
+                                 debug : bool = False,
+                                 wait_sec : float = None,
+                                 request_timeout_sec : float = None,
+                                 max_timeout_sec : float = None,
+                                 errors_warnings : list = None):
+        """
+        Select alerts up to time_stamp
+        :param time_stamp: time to select up to (YYYY-MM-DD+HH:MM:SS)
+        """
+        response = self.json_get(url="/alerts/first=time/{time_stamp}".format(time_stamp=time_stamp),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="alert",
+                                   plural_key="alerts")
         #
 
     def alerts_last_events(self,
@@ -19840,11 +19970,86 @@ class LFJsonQuery(JsonQuery):
         if not response:
             return None
         return self.extract_values(response=response,
-                                   singular_key="event",
-                                   plural_key="events")
+                                   singular_key="alert",
+                                   plural_key="alerts")
         #
 
-    def alerts_before(self,
+    def alerts_last_events_time(self,
+                                time_stamp: string = None,
+                                response_json_list: list = None,
+                                debug : bool = False,
+                                wait_sec : float = None,
+                                request_timeout_sec : float = None,
+                                max_timeout_sec : float = None,
+                                errors_warnings : list = None):
+        """
+        Select alerts since time_stamp
+        :param time_stamp: time to select from (YYYY-MM-DD+HH:MM:SS)
+        """
+        response = self.json_get(url="/alerts/last=time/{time_stamp}".format(time_stamp=time_stamp),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="alert",
+                                   plural_key="alerts")
+        #
+
+    def alerts_since(self,
+                     event_id: int = None,
+                     response_json_list: list = None,
+                     debug : bool = False,
+                     wait_sec : float = None,
+                     request_timeout_sec : float = None,
+                     max_timeout_sec : float = None,
+                     errors_warnings : list = None):
+        """
+        Select alerts since an alert ID (inclusive)
+        :param event_id: earliest to start at
+        """
+        response = self.json_get(url="/alerts/alerts_since/{event_id}".format(event_id=event_id),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="alert",
+                                   plural_key="alerts")
+        #
+
+    def alerts_since_time(self,
+                          time_stamp: string = None,
+                          response_json_list: list = None,
+                          debug : bool = False,
+                          wait_sec : float = None,
+                          request_timeout_sec : float = None,
+                          max_timeout_sec : float = None,
+                          errors_warnings : list = None):
+        """
+        Select alerts since time_stamp
+        :param time_stamp: time to select from (YYYY-MM-DD+HH:MM:SS)
+        """
+        response = self.json_get(url="/alerts/alerts_since=time/{time_stamp}".format(time_stamp=time_stamp),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="alert",
+                                   plural_key="alerts")
+        #
+
+    def events_before(self,
                       event_id: int = None,
                       response_json_list: list = None,
                       debug : bool = False,
@@ -19853,10 +20058,35 @@ class LFJsonQuery(JsonQuery):
                       max_timeout_sec : float = None,
                       errors_warnings : list = None):
         """
-        Select first alerts before alert_id
-        :param event_id: id to stop selecting at
+        Select events before event_id (inclusive)
+        :param event_id: id to select
         """
-        response = self.json_get(url="/alerts/before/{event_id}".format(event_id=event_id),
+        response = self.json_get(url="/events/before/{event_id}".format(event_id=event_id),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="event",
+                                   plural_key="events")
+        #
+
+    def events_before_time(self,
+                           time_stamp: string = None,
+                           response_json_list: list = None,
+                           debug : bool = False,
+                           wait_sec : float = None,
+                           request_timeout_sec : float = None,
+                           max_timeout_sec : float = None,
+                           errors_warnings : list = None):
+        """
+        Select events before time_stamp
+        :param time_stamp: time to select up to (YYYY-MM-DD+HH:MM:SS)
+        """
+        response = self.json_get(url="/events/before=time/{time_stamp}".format(time_stamp=time_stamp),
                                  debug=debug,
                                  wait_sec=wait_sec,
                                  request_timeout_sec=request_timeout_sec,
@@ -19884,6 +20114,83 @@ class LFJsonQuery(JsonQuery):
         :param end_event_id: end selection at this id
         """
         response = self.json_get(url="/events/between/{start_event_id}/{end_event_id}".format(start_event_id=start_event_id, end_event_id=end_event_id),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="event",
+                                   plural_key="events")
+        #
+
+    def events_between_time(self,
+                            start_time_stamp: string = None,
+                            end_time_stamp: string = None,
+                            response_json_list: list = None,
+                            debug : bool = False,
+                            wait_sec : float = None,
+                            request_timeout_sec : float = None,
+                            max_timeout_sec : float = None,
+                            errors_warnings : list = None):
+        """
+        Select events between start_time_stamp and end_time_stamp
+        :param start_time_stamp: start time to select from (YYYY-MM-DD+HH:MM:SS)
+        :param end_time_stamp: end time to select up to (YYYY-MM-DD+HH:MM:SS)
+        """
+        response = self.json_get(url="/events/between=time/{start_time_stamp}/{end_time_stamp}".format(start_time_stamp=start_time_stamp, end_time_stamp=end_time_stamp),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="event",
+                                   plural_key="events")
+        #
+
+    def events_first_events(self,
+                            event_count: int = 1,
+                            response_json_list: list = None,
+                            debug : bool = False,
+                            wait_sec : float = None,
+                            request_timeout_sec : float = None,
+                            max_timeout_sec : float = None,
+                            errors_warnings : list = None):
+        """
+        Select first event_count events
+        :param event_count: number from start to select
+        """
+        response = self.json_get(url="/events/first/{event_count}".format(event_count=event_count),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="event",
+                                   plural_key="events")
+        #
+
+    def events_first_events_time(self,
+                                 time_stamp: string = None,
+                                 response_json_list: list = None,
+                                 debug : bool = False,
+                                 wait_sec : float = None,
+                                 request_timeout_sec : float = None,
+                                 max_timeout_sec : float = None,
+                                 errors_warnings : list = None):
+        """
+        Select events up to time_stamp
+        :param time_stamp: time to select up to (YYYY-MM-DD+HH:MM:SS)
+        """
+        response = self.json_get(url="/events/first=time/{time_stamp}".format(time_stamp=time_stamp),
                                  debug=debug,
                                  wait_sec=wait_sec,
                                  request_timeout_sec=request_timeout_sec,
@@ -19946,6 +20253,31 @@ class LFJsonQuery(JsonQuery):
                                    plural_key="events")
         #
 
+    def events_last_events_time(self,
+                                time_stamp: string = None,
+                                response_json_list: list = None,
+                                debug : bool = False,
+                                wait_sec : float = None,
+                                request_timeout_sec : float = None,
+                                max_timeout_sec : float = None,
+                                errors_warnings : list = None):
+        """
+        Select events since time_stamp
+        :param time_stamp: time to select from (YYYY-MM-DD+HH:MM:SS)
+        """
+        response = self.json_get(url="/events/last=time/{time_stamp}".format(time_stamp=time_stamp),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="event",
+                                   plural_key="events")
+        #
+
     def events_since(self,
                      event_id: int = None,
                      response_json_list: list = None,
@@ -19955,10 +20287,35 @@ class LFJsonQuery(JsonQuery):
                      max_timeout_sec : float = None,
                      errors_warnings : list = None):
         """
-        Select events since an id
-        :param event_id: event id to start at
+        Select events since an event ID (inclusive)
+        :param event_id: earliest to start at
         """
         response = self.json_get(url="/events/since/{event_id}".format(event_id=event_id),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="event",
+                                   plural_key="events")
+        #
+
+    def events_since_time(self,
+                          time_stamp: string = None,
+                          response_json_list: list = None,
+                          debug : bool = False,
+                          wait_sec : float = None,
+                          request_timeout_sec : float = None,
+                          max_timeout_sec : float = None,
+                          errors_warnings : list = None):
+        """
+        Select events since time_stamp
+        :param time_stamp: time to select from (YYYY-MM-DD+HH:MM:SS)
+        """
+        response = self.json_get(url="/events/since=time/{time_stamp}".format(time_stamp=time_stamp),
                                  debug=debug,
                                  wait_sec=wait_sec,
                                  request_timeout_sec=request_timeout_sec,
@@ -20991,6 +21348,7 @@ class LFJsonQuery(JsonQuery):
         /events/$event_id
         /events/before/$event_id
         /events/between/$start_event_id/$end_event_id
+        /events/first/$event_count
         /events/last/$event_count
         /events/since/$event_id
 
@@ -21077,7 +21435,7 @@ class LFJsonQuery(JsonQuery):
                                    plural_key="alerts")
     #
     """
-        Below are 7 methods defined by LFClient URL Responders
+        Below are 21 methods defined by LFClient URL Responders
     """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
