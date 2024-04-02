@@ -1121,8 +1121,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     return parser.parse_args()
 
 
+def validate_args(args: argparse.Namespace):
+    """
+    Partial argument validation (some happens later on)
+
+    :param args: Parsed arguments
+    """
+    # vAP radio required as full EID
+    if not args.vap_radio.startswith("1."):
+        logger.error("--vap_radio requires EID format: 1.1.wiphy0")
+        exit(1)
+
+    # vAP port required as full EID
+    if not args.vap_port.startswith("1."):
+        logger.error("--vap_port requires EID format: 1.1.vap0000")
+        exit(1)
+
+    # Verify vAP bandwidth is supported
+    bw_list = ( "20", "40", "80", "160")
+    if args.vap_bw not in bw_list:
+        logger.error(f"vAP bandwidth [{args.vap_bw}] unknown. Please choose from: {bw_list}")
+        exit(1)
+
+
 def main():
     args = parse_args()
+    validate_args(args)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
@@ -1136,22 +1160,6 @@ def main():
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-
-    if not args.vap_radio:
-        logger.error("No radio name provided")
-        exit(1)
-    vap_radio : str = args.vap_radio
-    if not vap_radio.startswith("1."):
-        logger.error("--vap_radio requires EID format: 1.1.wiphy0")
-        exit(1)
-
-    if not args.vap_port:
-        logger.error("No --vap_port vAP name provided, please use EID format, e.g.: 1.1.vap0000")
-        exit(1)
-    vap_port : str = args.vap_port
-    if not vap_port.startswith("1."):
-        logger.error("--vap_port requires EID format: 1.1.vap0000")
-        exit(1)
 
     # Gather data for test reporting
     # for kpi.csv generation
@@ -1252,13 +1260,6 @@ def main():
     rf_char.vap_antenna = args.vap_antenna
     rf_char.vap_port = args.vap_port
     rf_char.vap_txpower = args.vap_txpower
-
-    # Verify vAP bandwidth is supported
-    bw_list = ( "20", "40", "80", "160")
-    if args.vap_bw not in bw_list:
-        logger.error(f"vAP bandwidth [{args.vap_bw}] unknown. Please choose from: {bw_list}")
-        exit(1)
-
     rf_char.vap_bw = args.vap_bw
     rf_char.reset_vap = args.reset_vap
     if args.vap_mode:
