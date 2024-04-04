@@ -705,6 +705,78 @@ class lf_rf_char(Realm):
         self.command.post_show_vrcx(shelf=1, resource=self.resource, cx_name='all')
 
 
+    def verify_dut_stations(self, deadline_millis: int, dhcp_lookup_ms: int, max_dhcp_lookups: int):
+        """
+        Verify that there exists one or more station DUTs with DHCP leases from the vAP DUT.
+        This method will reset the vAP if necessary.
+        """
+        begin_lease_lookup_ms = now_millis()
+        last_vap_reset = now_millis()
+        try_count = int(max_dhcp_lookups)
+        found_station : bool = False
+
+        # Iterate for defined number of tries, counting down 'try_count' until we find
+        # stations with DHCP leases corresponding to this vAP
+        while try_count > 0:
+            if self.dut_info():
+                found_station = True
+                break
+
+            attempt_num = 1 + max_dhcp_lookups - try_count
+            logger.info(f"Looking for DUT info from vAP DUT data, attempt {attempt_num}/{max_dhcp_lookups}")
+
+            if now_millis() >= deadline_millis:
+                raise ValueError("Time expired for DHCP lease lookups")
+
+            # Request non-cached vAP port update from server
+            self.command.post_nc_show_ports(shelf=1,
+                                            resource=self.resource,
+                                            port=self.port_name,
+                                            probe_flags=(LFJsonCommand.NcShowPortsProbeFlags.WIFI \
+                                                            | LFJsonCommand.NcShowPortsProbeFlags.MII \
+                                                            | LFJsonCommand.NcShowPortsProbeFlags.ETHTOOL \
+                                                            | LFJsonCommand.NcShowPortsProbeFlags.EASY_IP_INFO),
+                                            debug=self.debug)
+            # rf_char.command.post_show_vr(shelf=1, resource=rf_char.resource, router='all', debug=rf_char.debug)
+
+            if not self.vap_eid:
+                self.vap_eid = f"1.{self.resource}.{self.port_name}"
+
+            self.command.post_probe_port(shelf=1,
+                                         resource=self.resource,
+                                         port=self.port_name,
+                                         key='probe_port.quiet.' + self.vap_eid)
+            time.sleep(dhcp_lookup_ms/1000)
+            try_count -= 1
+
+            # A vAP can take about 15 seconds to acquire a lease, hopefully 10.
+            # Do not reset a vAP sooner than that or it just takes longer.
+            if now_millis() > (last_vap_reset + 16000):
+                v_name = self.vap_port
+                logger.warning(f"Resetting vAP port {v_name}")
+
+                if v_name.find('.') > -1:
+                    v_name = self.vap_port[ self.vap_port.rindex('.')+1 :]
+
+                self.command.post_reset_port(shelf=1,
+                                             resource=self.resource,
+                                             port=v_name)
+
+                LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
+                                                  resource_id=self.resource,
+                                                  port_list=[self.port_name])
+                last_vap_reset = now_millis()
+
+        if found_station:
+            lease_lookup_time = float((now_millis() - begin_lease_lookup_ms) / 1000.0)
+            logger.info(f"Station DUT DHCP lease lookup time took {lease_lookup_time} sec")
+        else:
+            logger.error(f"Unable to find station DUT with DHCP lease after {max_dhcp_lookups} inspections of DHCP table")
+            sys.exit(1)
+
+        if now_millis() >= deadline_millis:
+            raise ValueError("time expired for DHCP lease lookups")
+
     def start(self):
         # first read with
         self.json_vap_api.port = self.vap_port
@@ -1098,11 +1170,17 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # Other Configuration
     parser.add_argument('--timeout_sec',
-                        help="number of seconds to allow for starting traffic; if traffic has not started by this time, script will abort")
+                        help="number of seconds to allow for starting traffic; if traffic has not started by this time, script will abort",
+                        type=int,
+                        default=30)
     parser.add_argument('--dhcp_poll_ms',
-                        help="wait between checking vap probe results for new DHCP leases (milliseconds)")
+                        help="wait between checking vap probe results for new DHCP leases (milliseconds)",
+                        type=int,
+                        default=250)
     parser.add_argument('--dhcp_lookup_attempts',
-                        help="number of attempts to check for DHCP lease before aborting script")
+                        help="number of attempts to check for DHCP lease before aborting script",
+                        type=int,
+                        default=20)
 
     return parser.parse_args()
 
@@ -1173,20 +1251,6 @@ def main():
     dut_serial_num = args.dut_serial_num
     # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
-
-    max_dhcp_lookups : int = 20
-    if args.dhcp_lookup_attempts:
-        max_dhcp_lookups = int(args.dhcp_lookup_attempts)
-
-    timeout_sec : int = 30
-    if args.timeout_sec:
-        timeout_sec = int(args.timeout_sec)
-
-    deadline_millis : int = now_millis() + (timeout_sec * 1000)
-
-    dhcp_lookup_ms : int = 250
-    if args.dhcp_poll_ms:
-        dhcp_lookup_ms = int(args.dhcp_poll_ms)
 
     # Create report, when running with the test framework (lf_check.py)
     # results need to be in the same directory
@@ -1280,66 +1344,15 @@ def main():
     # identify latest event
     rf_char.bookmark_events()
 
-    # modify and reset
+    # Configure vAP, sleep to ensure properly configured
     rf_char.configure_vap()
     time.sleep(1)
-    begin_lease_lookup_ms = now_millis()
-    last_vap_reset = now_millis()
-    try_count = int(max_dhcp_lookups)
-    found_station : bool = False
-    while try_count > 0:
-        if rf_char.dut_info():
-            found_station = True
-            break
-        logger.warning("Looking for DUT info from vAP DUT data, attempt %s/%s" %
-                       ((1 + max_dhcp_lookups - try_count), max_dhcp_lookups))
-        # logger.warning("now_millis[%d] deadline_millis[%d]" % (now_millis(), deadline_millis))
-        if now_millis() >= deadline_millis:
-            raise ValueError("time expired for DHCP lease lookups")
-        rf_char.command.post_nc_show_ports(shelf=1,
-                                           resource=rf_char.resource,
-                                           port=rf_char.port_name,
-                                           probe_flags=(LFJsonCommand.NcShowPortsProbeFlags.WIFI \
-                                                        | LFJsonCommand.NcShowPortsProbeFlags.MII \
-                                                        | LFJsonCommand.NcShowPortsProbeFlags.ETHTOOL \
-                                                        | LFJsonCommand.NcShowPortsProbeFlags.EASY_IP_INFO),
-                                           debug=rf_char.debug)
-        # rf_char.command.post_show_vr(shelf=1, resource=rf_char.resource, router='all', debug=rf_char.debug)
-        if not rf_char.vap_eid:
-            rf_char.vap_eid = "1.%s.%s" % (rf_char.resource, rf_char.port_name)
-        rf_char.command.post_probe_port(shelf=1,
-                                        resource=rf_char.resource,
-                                        port=rf_char.port_name,
-                                        key='probe_port.quiet.'+rf_char.vap_eid)
-        time.sleep(dhcp_lookup_ms/1000)
-        try_count -= 1
 
-        # a vAP can take about 15 seconds to aquire a lease, hopefully 10
-        # do not reset a vAP sooner than that or it just takes longer
-        if now_millis() > (last_vap_reset + 16000):
-            v_name = args.vap_port
-            logger.warning("resetting "+v_name)
-            if v_name.find('.') > -1:
-                v_name = args.vap_port[ args.vap_port.rindex('.')+1 :]
-            rf_char.command.post_reset_port(shelf=1, resource=rf_char.resource, port=v_name)
-            LFUtils.wait_until_ports_admin_up(base_url=rf_char.lfclient_url,
-                                              resource_id=rf_char.resource,
-                                              port_list=[rf_char.port_name])
-            last_vap_reset = now_millis()
-    # ~while
-    if found_station:
-        logger.warning("==  ==  ==  ==  Lease Lookup Time  %f sec  ==  ==  ==  ==" %
-                       float((now_millis() - begin_lease_lookup_ms)/1000.0))
-    else:
-        logger.error("==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  \n"
-                     + "   Unable to find station using %s inspections of dhcp table\n" % max_dhcp_lookups)
-        sys.exit(1)
-
-    if now_millis() >= deadline_millis:
-        raise ValueError("time expired for DHCP lease lookups")
-
-
-
+    # Reset any existing station DHCP leases
+    deadline_millis = now_millis() + (args.timeout_sec * 1000)
+    rf_char.verify_dut_stations(deadline_millis=deadline_millis,
+                                dhcp_lookup_ms=args.dhcp_poll_ms,
+                                max_dhcp_lookups=args.dhcp_lookup_attempts)
 
     dut_mac = rf_char.dut_mac
     dut_ip = rf_char.dut_ip
