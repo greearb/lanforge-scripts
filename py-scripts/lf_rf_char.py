@@ -1009,6 +1009,11 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                         help="--vap_radio wiphy0",
                         type=str,
                         required=True)
+    parser.add_argument('--vap_bw',
+                        help="Specify the bandwidth for the vAP. "
+                             "Not all bandwidth settings are available for all radios.",
+                        choices={"20", "40", "80", "160"},
+                        required=True)
     parser.add_argument("--vap_channel",
                         help="Specify the channel of the radio e.g. 6 (2.4G), 36 (5G), 1e (6G) "
                              "Please append 'e' for all 6Ghz channels. "
@@ -1024,10 +1029,6 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                         help="set a custom level for tx power on vap_radio. Values include: "
                              "DEFAULT, 0dBm, 1dBm, 2dBm, 5dBm, 10dBm, 15dBm, 20dBm, 25dBm "
                              "The values may be any integer between -1(auto/default) and 30")
-    parser.add_argument('--vap_bw',
-                        help="Specify the bandwidth for the vAP. Options: "
-                             "20 | 40 | 80 | 160 "
-                             "Not all bandwidth settings are available for all radios.")
     parser.add_argument('--reset_vap', action='store_true',
                         help="Specify this if DHCP leases do not disappear from the vAP. "
                              "Default behavior is to not reset the vAP")
@@ -1135,12 +1136,6 @@ def validate_args(args: argparse.Namespace):
     # vAP port required as full EID
     if not args.vap_port.startswith("1."):
         logger.error("--vap_port requires EID format: 1.1.vap0000")
-        exit(1)
-
-    # Verify vAP bandwidth is supported
-    bw_list = ( "20", "40", "80", "160")
-    if args.vap_bw not in bw_list:
-        logger.error(f"vAP bandwidth [{args.vap_bw}] unknown. Please choose from: {bw_list}")
         exit(1)
 
 
