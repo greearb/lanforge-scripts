@@ -1141,22 +1141,24 @@ def validate_args(args: argparse.Namespace):
             exit(1)
 
 
-def main():
-    args = parse_args()
-    validate_args(args)
-
-    # set up logger
+def configure_logger(log_level: str, logger_json_config: str = None):
     logger_config = lf_logger_config.lf_logger_config()
 
-    # set the logger level to debug
-    if args.log_level:
-        logger_config.set_level(level=args.log_level)
+    if log_level:
+        logger_config.set_level(level=log_level)
 
     # lf_logger_config_json will take presidence to changing debug levels
-    if args.lf_logger_config_json:
-        # logger_config.lf_logger_config_json = "lf_logger_config.json"
-        logger_config.lf_logger_config_json = args.lf_logger_config_json
+    if logger_json_config:
+        logger_config.lf_logger_config_json = logger_json_config
         logger_config.load_lf_logger_config()
+
+
+def main():
+    args = parse_args()
+    configure_logger(log_level=args.log_level,
+                     logger_json_config=args.lf_logger_config_json)
+
+    validate_args(args)
 
     # Gather data for test reporting
     # for kpi.csv generation
