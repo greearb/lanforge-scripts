@@ -530,32 +530,14 @@ class lf_rf_char(Realm):
 
     def modify_radio(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
-        # tx power is value can be any integer between -1 and 30, inclusive
-        # or a value in this table:
-        tx_powers = {
-            "auto" : -1,
-            "default" : -1,
-        }
-        tx_pow = -1 #default
-        if not self.vap_txpower:
-            self.vap_txpower = "default"
-        self.vap_txpower = str(self.vap_txpower).lower()
-        if self.vap_txpower in tx_powers:
-            tx_pow = tx_powers[self.vap_txpower]
-            logger.info("setting vap_txpower to default")
-            self.vap_txpower = "default"
-        elif "d" in self.vap_txpower:
-            tx_pow = self.vap_txpower[0 : self.vap_txpower.find('d')]
-            if (int(tx_pow) > -2) and (int(tx_pow) < 31):
-                logger.info("setting vap_txpower to [{}]".format(tx_pow))
-                self.vap_txpower = tx_pow
-            else:
-                logger.error("vap_txpower[{}] out of range, using default".format(self.vap_txpower))
-                tx_pow = -1
-                self.vap_txpower = "default"
+
+        # Set vAP transmit power. This should already be validated in argument validation step.
+        # Transmit power can be any integer between -1 and 30, inclusive
+        if self.vap_txpower == "DEFAULT":
+            tx_pow = -1
         else:
-            logger.warning("Do not understand value of vap_txpower[{}], using default".format(self.vap_txpower))
-            self.vap_txpower = "default"
+            txpower_int_str = self.vap_txpower.strip("dBm")
+            tx_pow = int(txpower_int_str)
 
         self.command.post_set_wifi_radio(shelf=self.shelf,
                                          resource=self.resource,
@@ -1027,9 +1009,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                              "Includes 802.11a, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX, aAX",
                         default="AUTO")
     parser.add_argument('--vap_txpower',
-                        help="set a custom level for tx power on vap_radio. Values include: "
-                             "DEFAULT, 0dBm, 1dBm, 2dBm, 5dBm, 10dBm, 15dBm, 20dBm, 25dBm "
-                             "The values may be any integer between -1(auto/default) and 30")
+                        help="Transmit power used by vAP radio measured in dBm, e.g. \'25dBm\'"
+                             "Accepted values are \'DEFAULT\' or an integer between -1 to 30, inclusive.",
+                        type=str,
+                        default="DEFAULT")
     parser.add_argument('--reset_vap', action='store_true',
                         help="Specify this if DHCP leases do not disappear from the vAP. "
                              "Default behavior is to not reset the vAP")
@@ -1138,6 +1121,24 @@ def validate_args(args: argparse.Namespace):
     if not args.vap_port.startswith("1."):
         logger.error("--vap_port requires EID format: 1.1.vap0000")
         exit(1)
+
+    # vAP TX power must be either DEFAULT or valid dBm value
+    if args.vap_txpower != "DEFAULT":
+        if not args.vap_txpower.endswith("dBm"):
+            logger.error("vAP TX power must be either \'DEFAULT\' or an integer value in the format \'X dBm\', "
+                         "where X is an integer between -1 and 30 inclusive")
+            exit(1)
+
+        txpower_int_str = args.vap_txpower.strip("dBm")
+        if not txpower_int_str.isnumeric():
+            logger.error("When not \'DEFAULT\', vAP TX power must be an integer value in the format \'X dBm\', "
+                         "where X is an integer between -1 and 30 inclusive")
+            exit(1)
+
+        txpower_int = int(txpower_int_str)
+        if not(-1 <= txpower_int and txpower_int <= 30):
+            logger.error("vAP TX power must be either \'DEFAULT\' or an integer within range -1 to 30, inclusive")
+            exit(1)
 
 
 def main():
