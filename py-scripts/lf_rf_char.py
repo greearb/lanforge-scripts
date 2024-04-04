@@ -1018,7 +1018,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                         help="Specify the channel of the radio e.g. 6 (2.4G), 36 (5G), 1e (6G) "
                              "Please append 'e' for all 6Ghz channels. "
                              "This parameter is required to use --vap_bw parammeter.",
-                        type=str)
+                        type=str,
+                        required=True)
     parser.add_argument("--vap_antenna",
                         help='number of spatial streams: 0 Diversity (All), 1 Fixed-A (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 (8x8)')
     parser.add_argument("--vap_mode",
