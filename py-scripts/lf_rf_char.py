@@ -528,7 +528,8 @@ class lf_rf_char(Realm):
 
 
 
-    def modify_radio(self):
+    def configure_vap(self):
+        """Configure vAP including mode, channel, channel width, txpower."""
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
 
         # Set vAP transmit power. This should already be validated in argument validation step.
@@ -639,16 +640,16 @@ class lf_rf_char(Realm):
         r_name = self.vap_radio
         if self.vap_radio.find('.') > -1:
             r_name = self.vap_radio[self.vap_radio.rindex('.')+1:]
-        if self.debug:
-            logger.info("modify_radio: setting vap mode to [{}]".format(self.vap_mode))
-            logger.info("modify_radio: vap_radio           [{}]".format(self.vap_radio))
-            logger.info("modify_radio: vap                 [{}]".format(self.vap))
-            logger.info("modify_radio: vap_port            [{}]".format(self.vap_port))
-            logger.info("modify_radio: port_name           [{}]".format(self.port_name))
-            logger.info("modify_radio: vap_channel         [{}]".format(self.vap_channel))
-            logger.info("modify_radio: vap_bw              [{}]".format(self.vap_bw))
-            logger.info("modify_radio: vap_flags           [{}]".format(vap_flags))
-            logger.info("modify_radio: vap_flagmask        [{}]".format(vap_flagmask))
+
+        logger.debug("configure_vap: vap_mode            [{}]".format(self.vap_mode))
+        logger.debug("configure_vap: vap_radio           [{}]".format(self.vap_radio))
+        logger.debug("configure_vap: vap                 [{}]".format(self.vap))
+        logger.debug("configure_vap: vap_port            [{}]".format(self.vap_port))
+        logger.debug("configure_vap: port_name           [{}]".format(self.port_name))
+        logger.debug("configure_vap: vap_channel         [{}]".format(self.vap_channel))
+        logger.debug("configure_vap: vap_bw              [{}]".format(self.vap_bw))
+        logger.debug("configure_vap: vap_flags           [{}]".format(vap_flags))
+        logger.debug("configure_vap: vap_flagmask        [{}]".format(vap_flagmask))
 
         self.command.post_add_vap(shelf=1,
                                   resource=self.resource,
@@ -1280,7 +1281,7 @@ def main():
     rf_char.bookmark_events()
 
     # modify and reset
-    rf_char.modify_radio()
+    rf_char.configure_vap()
     time.sleep(1)
     begin_lease_lookup_ms = now_millis()
     last_vap_reset = now_millis()
@@ -1336,6 +1337,10 @@ def main():
 
     if now_millis() >= deadline_millis:
         raise ValueError("time expired for DHCP lease lookups")
+
+
+
+
     dut_mac = rf_char.dut_mac
     dut_ip = rf_char.dut_ip
 
