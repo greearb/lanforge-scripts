@@ -182,7 +182,7 @@ class lf_rf_char(Realm):
     def remove_generic_cx(self):
         # self.command.die_on_error = False
         # self.exit_on_error = False
-        logger.info("Stopping generic connections")
+        logger.debug("Stopping generic connections")
 
         generics = self.json_get("/generic/list")
         if generics:
@@ -254,7 +254,8 @@ class lf_rf_char(Realm):
         other_findings : dict = {}
         # look for event containing the vap_name then get the station IP from events
 
-        logger.warning("Inspecting %d Events for vAP %s" % (len(event_recs), self.port_name))
+        logger.info(f"Gathering station DUT info from vAP \'{self.port_name}\' events")
+        logger.debug(f"Inspecting {len(event_recs)} Events for vAP \'{self.port_name}\'")
         for record in event_recs:
             if not (('event description' in record) or record['event description']):
                 continue
@@ -292,16 +293,16 @@ class lf_rf_char(Realm):
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
             self.dut_mac = json_stations['station']['station bssid']
             sta_ap = json_stations['station']['ap']
-            logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
+            logger.debug("Station DUT associated to BSSID: {mac}".format(mac=self.dut_mac))
         except BaseException:
             # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
-            logger.info("Looking for vap-eid: %s" % self.vap_eid)
+            logger.debug(f"Searching for vAP \'{self.vap_eid}\' in station DUT association info")
             try:
                 pronoun = 'stations'
                 if pronoun not in json_stations:
                     pronoun = 'station'
                 if pronoun not in json_stations:
-                    logger.warning(" no station info in json_stations, try again...")
+                    logger.info("Did not find station DUT, trying again")
                     return False
 
                 for s in json_stations[pronoun]:
@@ -329,15 +330,15 @@ class lf_rf_char(Realm):
 
         # Make sure the station is on correct IP vap
         if (sta_ap != self.vap_eid):
-            logger.info(" Detected STA on AP: %s, expected it to be on AP: %s" % (sta_ap, self.vap_eid))
+            logger.warning(f"Detected station DUT associated to AP \'{sta_ap}\', expected it to be associated to vAP DUT \'{self.vap_eid}\'")
             return False
 
         if not dut_ip:
             # get the IP from port probe
-            logger.warning("DUT IP not found in event records, checking port probe...")
+            logger.warning("Station DUT IP not found in event records, checking port probe instead")
             self.lf_command = ["../lf_portmod.pl", "--manager", self.lf_mgr, "--card", str(self.resource), "--port_name", self.port_name,
                                "--cli_cmd", "probe_port 1 {resource} {port}".format(resource=self.resource, port=self.port_name)]
-            logger.info("command: {cmd}".format(cmd=self.lf_command))
+            logger.debug("command: {cmd}".format(cmd=self.lf_command))
             summary_output = ''
             process_begin_ms = now_millis()
             summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -348,7 +349,7 @@ class lf_rf_char(Realm):
                 # sys.stdout.flush() # please see comments regarding the necessity of this line
             summary.wait()
             process_end_ms = now_millis()
-            logger.info("lfportmod took %d ms" % (process_end_ms - process_begin_ms))
+            logger.debug("lfportmod took %d ms" % (process_end_ms - process_begin_ms))
             logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
 
             search_dhcp_lease = False
@@ -362,7 +363,6 @@ class lf_rf_char(Realm):
                     search_dhcp_lease = True
                     continue
 
-                # print("X=X=X "+line)
                 if (search_dhcp_lease):
                     pat = "(\\S+)\\s+(\\S+)\\s+(\\S+)"
                     m = re.search(pat, line)
@@ -378,18 +378,19 @@ class lf_rf_char(Realm):
                             dut_ip = m.group(2)
                 # there should only be one connection
 
-            logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac, ip=dut_ip))
+            logger.debug(f"Port probe MAC: {dut_mac}, IP: {dut_ip}")
             if dut_mac != self.dut_mac:
-                logger.info("mac mismatch: probe mac:[{mac}] stations mac:[{station_mac}]".
-                            format(mac=dut_mac, station_mac=self.dut_mac))
-                logger.info("waiting for mac:[{station_mac}]".format(station_mac=self.dut_mac))
+                logger.error(f"Port probe MAC mismatch. Expected {self.dut_mac}, found {dut_mac}")
                 return False
             self.dut_ip = dut_ip
             #self.dut_hostname = dut_hostname
 
+        logger.info(f"Found station DUT with MAC {self.dut_mac} and IPv4 address {self.dut_ip}")
         return True
 
     def clear_dhcp_lease(self):
+        logger.info(f"Clearing vAP DUT \'{self.vap_port}\' DHCP leases")
+
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
         # may have to add extra to
         extra = 'dhcp_leases'
@@ -399,6 +400,8 @@ class lf_rf_char(Realm):
                                               extra=extra)
 
     def clear_port_counters(self):
+        logger.info(f"Clearing port counters for vAP DUT \'{self.vap_port}\' and parent radio \'{self.vap_radio}\'")
+
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
         # may have to add extra to
         self.command.post_clear_port_counters(shelf=self.shelf,
@@ -678,7 +681,8 @@ class lf_rf_char(Realm):
                 queried_mode = response["mode"]
             else:
                 logger.warning("get_port did not provide vap[mode]")
-        logger.info("done polling for vap mode")
+
+        logger.debug("done polling for vap mode")
 
         if self.reset_vap:
             logger.warning("resetting vap [{}]".format(self.port_name))
@@ -1241,7 +1245,6 @@ def main():
 
     # Gather data for test reporting
     # for kpi.csv generation
-    logger.info("read in command line paramaters")
     local_lf_report_dir = args.local_lf_report_dir
     test_rig = args.test_rig
     test_tag = args.test_tag
@@ -1254,7 +1257,7 @@ def main():
 
     # Create report, when running with the test framework (lf_check.py)
     # results need to be in the same directory
-    logger.info("configure reporting")
+    logger.info("Configuring test reporting")
 
     do_html = True
     html_file = "rf_char.html"
@@ -1294,7 +1297,9 @@ def main():
         csv_outfile = "{}_{}_lf_rf_char.csv".format(
             args.csv_outfile, current_time)
         csv_outfile = report.file_add_path(csv_outfile)
-        logger.info("csv output file : {}".format(csv_outfile))
+        logger.info(f"Test CSV data will be output to file \'{csv_outfile}\'")
+    else:
+        logger.info(f"No CSV output file specified, disabling test CSV data output")
 
     # begin creating the report
     report.set_title("RF Characteristics Test")
@@ -1308,13 +1313,14 @@ def main():
         report.build_description()
 
     # Set up the RF Characteristic test
-    logger.info("Configure RF Characteristic test")
+    logger.info("Configuring test")
     rf_char = lf_rf_char(lf_mgr=args.lf_mgr,
                          lf_port=args.lf_port,
                          lf_user=args.lf_user,
                          lf_passwd=args.lf_passwd,
                          debug=args.debug)
 
+    logger.info("Performing pre-test cleanup")
     rf_char.remove_generic_cx()
 
 
@@ -1338,10 +1344,8 @@ def main():
         rf_char.vap_mode = rf_char.command.AddVapMode[args.vap_mode].value
         logger.debug("Set vap_mode to {} => {}".format(args.vap_mode, rf_char.vap_mode))
 
-    logger.info("clear dhcp leases")
+    # Clear active vAP DHCP leases and identify latest event
     rf_char.clear_dhcp_lease()
-
-    # identify latest event
     rf_char.bookmark_events()
 
     # Configure vAP, sleep to ensure properly configured
@@ -1379,6 +1383,7 @@ def main():
     rf_char.set_port_report_timer(port=args.vap_port, milliseconds=polling_interval_milliseconds)
     rf_char.set_port_report_timer(port=args.vap_radio, milliseconds=polling_interval_milliseconds)
 
+    # Enable additional vAP parent radio settings to get more statistics
     flags_list = ['extra_rxstatus', 'extra_txstatus']
     rf_char.set_wifi_radio(radio=args.vap_radio, flags_list=flags_list)
 
@@ -1403,9 +1408,8 @@ def main():
 
     if now_millis() > deadline_millis:
         raise ValueError("Time expired to start traffic")
-    # Start traffic : Currently manually done
+
     rf_char.clear_port_counters()
-    logger.info("cleared port counters")
     rf_char.duration = args.duration
     rf_char.polling_interval = args.polling_interval
     logger.debug("frame size {frame}".format(frame=args.frame))
@@ -1415,9 +1419,15 @@ def main():
     if now_millis() > deadline_millis:
         raise ValueError("Time expired to start traffic")
     begin_traffic_ms = now_millis()
-    # run the test
-    logger.warning("starting traffic")
+
+    # Run the test
+    logger.info("Beginning test")
     json_port_stats, json_wifi_stats, *nil = rf_char.start()
+    time_elapsed = float((now_millis() - begin_traffic_ms) / 1000)
+    logger.info(f"Traffic time took {time_elapsed} seconds")
+
+    # Test complete, begin building report
+    logger.info("Building test report")
 
     # get dataset for the radio
     if args.vap_port not in json_wifi_stats:
@@ -1442,8 +1452,6 @@ def main():
     tx_interval_time = rf_char.tx_interval_time
 
     # TX pkts, TX retries,  TX Failed %
-    logger.warning("traffic time took %f s" % float((now_millis() - begin_traffic_ms)/1000))
-    logger.warning("building report")
     report.set_table_title("TX pkts , TX retries, TX Failed %")
     report.build_table_title()
 
