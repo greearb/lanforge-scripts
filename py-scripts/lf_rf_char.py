@@ -79,12 +79,25 @@ if sys.version_info[0] != 3:
 # TODO try to have utilites in own file
 class RfCharTest(Realm):
     def __init__(self,
-                 lf_mgr=None,
-                 lf_port=None,
-                 lf_user=None,
-                 lf_passwd=None,
-                 debug=False
-                 ):
+                 lf_mgr: str,
+                 lf_port: str,
+                 lf_user: str,
+                 lf_passwd: str,
+                 debug: bool,
+                 vap_port: str,
+                 vap_radio: str,
+                 vap_channel: str,
+                 vap_antenna: str,
+                 vap_txpower: str,
+                 vap_bw: str,
+                 vap_mode: str,
+                 reset_vap: str,
+                 polling_interval: str,
+                 duration: str,
+                 timeout_sec: str,
+                 frame: str,
+                 frame_interval: str,
+                 **kwargs):
         super().__init__(lfclient_host=lf_mgr,
                          lfclient_port=lf_port,
                          debug_=True)
@@ -93,20 +106,30 @@ class RfCharTest(Realm):
         self.lf_user = lf_user
         self.lf_passwd = lf_passwd
         self.debug = debug
-        self.vap_port = ''
-        self.radio = ''
-        self.vap = ''
-        self.mode = ''
-        self.port = ''
-        self.shelf = ''
-        self.resource = ''
-        self.duration = ''
-        self.polling_interval = ''
-        self.frame = ''
-        self.frame_interval = ''
+
+        self.vap_port = self.vap_eid = vap_port  # TODO: Refactor to just vap_port
+        self.vap_radio = vap_radio
+        self.vap_channel = vap_channel
+        self.vap_antenna = vap_antenna
+        self.vap_txpower = vap_txpower
+        self.vap_bw = vap_bw
+        self.vap_mode = LFJsonCommand.AddVapMode[vap_mode].value
+        self.reset_vap = reset_vap
+
+        self.polling_interval = polling_interval
+        self.duration = duration
+        self.timeout_sec = timeout_sec # max seconds to establish the traffic command
+
+        self.frame = frame
+        self.frame_interval = frame_interval
+
+        # Get shelf and resource from EIDs
+        # Shelf and resource for parent radio and vAP should be the same, so just reference vAP's
+        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+        _, _, self.radio_port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
+
         self.gen_endpoint = ''
         self.cx_state = ''
-        self.timeout_sec = 30 # max seconds to establish the traffic command
         self.bookmark_event_id : int = 0
 
         # create api_json
@@ -138,19 +161,6 @@ class RfCharTest(Realm):
         self.command = self.session.get_command()
         self.query: LFJsonQuery
         self.query = self.session.get_query()
-
-        # vap configuration
-        self.shelf : int = 1
-        self.resource : int = -1
-        self.port_name : str = ''
-        self.vap_radio : str = ''
-        self.vap_channel : str = ''
-        self.vap_bw : int = 0 # 20, 40, 80, 160
-        self.vap_mode : str = "0"
-        self.vap_antenna = ''
-        self.vap_txpower : int = -1
-        self.vap_eid = ''
-        self.reset_vap = False
 
         # get dut information
         self.lf_command = ''
@@ -218,7 +228,12 @@ class RfCharTest(Realm):
 
 
     def get_recent_lease_events(self):
-        # check lease info from dhcp events
+        """
+        Check DHCP lease info from DHCP events.
+
+        Assumes have bookmarked last event by calling `bookmark_events()`
+        before calling this function.
+        """
         events_rec = self.json_get("/events/since/%d" % self.bookmark_event_id, debug_=self.debug)
         if not events_rec:
             return None
@@ -391,8 +406,6 @@ class RfCharTest(Realm):
     def clear_dhcp_lease(self):
         logger.info(f"Clearing vAP DUT \'{self.vap_port}\' DHCP leases")
 
-        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
-        # may have to add extra to
         extra = 'dhcp_leases'
         self.command.post_clear_port_counters(shelf=self.shelf,
                                               resource=self.resource,
@@ -419,10 +432,7 @@ class RfCharTest(Realm):
 
     # set_port 1 1 vap3 NA NA NA NA NA NA NA NA NA 32768 5000 NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA
     # set_port 1 1 vap3 NA NA NA NA NA NA NA NA NA 32768 1000
-    def set_port_report_timer(self, port=None, milliseconds=1000):
-        if port is not None:
-            self.port = port
-            self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.port)
+    def set_port_report_timer(self, port, milliseconds=1000):
         self.command.post_set_port(shelf=self.shelf,
                                    resource=self.resource,
                                    port=self.port_name,
@@ -431,17 +441,14 @@ class RfCharTest(Realm):
                                    debug=self.debug)
 
     # enable extra_rxstatus extra_txstatus
-    def set_wifi_radio(self, radio=None, flags_list=[]):
-        if radio is not None:
-            self.radio = radio
-            self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
-
+    def set_wifi_radio(self, flags_list=[]):
         flag_val = 0
         # flag_val = LFPost.set_flags(SetWifiRadioFlags0, flag_names=['extra_rxstatus', 'extra_tx_status'])
         flag_val = self.command.set_flags(self.command.SetWifiRadioFlags, flag_val, flag_names=flags_list)
+
         self.command.post_set_wifi_radio(shelf=self.shelf,
                                          resource=self.resource,
-                                         radio=self.port_name,
+                                         radio=self.radio_port_name,
                                          flags=flag_val,
                                          flags_mask=flag_val,
                                          # do not adjust radio mode
@@ -533,8 +540,6 @@ class RfCharTest(Realm):
 
     def configure_vap(self):
         """Configure vAP including mode, channel, channel width, txpower."""
-        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
-
         # Set vAP transmit power. This should already be validated in argument validation step.
         # Transmit power can be any integer between -1 and 30, inclusive
         if self.vap_txpower == "DEFAULT":
@@ -551,13 +556,12 @@ class RfCharTest(Realm):
                                          txpower=tx_pow,
                                          # do not set radio mode here
                                          debug=self.debug)
+
         vap_flags = "NA"
         vap_flagmask = "NA"
         t_channel : int = 0
         t_band : int = 0
         if self.vap_bw:
-            if not self.vap_channel:
-                raise Exception("setting bandwidth requires --vap_channel parameter")
             if "e" in self.vap_channel:
                 # we are 6Ghz
                 t_channel = int( self.vap_channel[0:-1])
@@ -646,7 +650,6 @@ class RfCharTest(Realm):
 
         logger.debug("configure_vap: vap_mode            [{}]".format(self.vap_mode))
         logger.debug("configure_vap: vap_radio           [{}]".format(self.vap_radio))
-        logger.debug("configure_vap: vap                 [{}]".format(self.vap))
         logger.debug("configure_vap: vap_port            [{}]".format(self.vap_port))
         logger.debug("configure_vap: port_name           [{}]".format(self.port_name))
         logger.debug("configure_vap: vap_channel         [{}]".format(self.vap_channel))
@@ -742,9 +745,6 @@ class RfCharTest(Realm):
                                                             | LFJsonCommand.NcShowPortsProbeFlags.EASY_IP_INFO),
                                             debug=self.debug)
             # rf_char.command.post_show_vr(shelf=1, resource=rf_char.resource, router='all', debug=rf_char.debug)
-
-            if not self.vap_eid:
-                self.vap_eid = f"1.{self.resource}.{self.port_name}"
 
             self.command.post_probe_port(shelf=1,
                                          resource=self.resource,
@@ -1203,6 +1203,17 @@ def validate_args(args: argparse.Namespace):
     # vAP port required as full EID
     if not args.vap_port.startswith("1."):
         logger.error("--vap_port requires EID format: 1.1.vap0000")
+        exit(1)
+
+    # vAP mode must be one of available options
+    #
+    # Could limit this by using argparse choices, but that would also show unintuitive "p_802_11a"
+    # option to user, somewhat confusing that it's 802.11a
+    if args.vap_mode in ("a", "802.11a"):
+        args.vap_mode = "p_802_11a"
+
+    if args.vap_mode not in LFJsonCommand.AddVapMode.__members__:
+        logger.error(f"Invalid mode \'{args.vap_mode}\'. Valid modes are: {LFJsonCommand.AddVapMode.__members__}")
         exit(1)
 
     # vAP TX power must be either DEFAULT or valid dBm value
@@ -2511,35 +2522,10 @@ def main():
 
     # Set up the RF Characteristic test
     logger.info("Configuring test")
-    rf_char = RfCharTest(lf_mgr=args.lf_mgr,
-                         lf_port=args.lf_port,
-                         lf_user=args.lf_user,
-                         lf_passwd=args.lf_passwd,
-                         debug=args.debug)
+    rf_char = RfCharTest(**vars(args))
 
     logger.info("Performing pre-test cleanup")
     rf_char.remove_generic_cx()
-
-
-    # TODO need to get the DUT IP and put into test_input infor
-    rf_char.vap_radio = args.vap_radio
-    rf_char.vap_channel = args.vap_channel
-    rf_char.vap_antenna = args.vap_antenna
-    rf_char.vap_port = args.vap_port
-    rf_char.vap_txpower = args.vap_txpower
-    rf_char.vap_bw = args.vap_bw
-    rf_char.reset_vap = args.reset_vap
-    if args.vap_mode:
-        if args.vap_mode in ("a", "802.11a"):
-            args.vap_mode = "p_802_11a"
-        if args.vap_mode not in rf_char.command.AddVapMode.__members__:
-            logger.error("""Unable to find mode [{}] in AddVapMode.
-     Please see https://www.candelatech.com/lfcli_ug.php#add_vap
-     Availble values: """.format(args.vap_mode))
-            pprint(rf_char.command.AddVapMode.__members__)
-            exit(1)
-        rf_char.vap_mode = rf_char.command.AddVapMode[args.vap_mode].value
-        logger.debug("Set vap_mode to {} => {}".format(args.vap_mode, rf_char.vap_mode))
 
     # Clear active vAP DHCP leases and identify latest event
     rf_char.clear_dhcp_lease()
@@ -2582,7 +2568,7 @@ def main():
 
     # Enable additional vAP parent radio settings to get more statistics
     flags_list = ['extra_rxstatus', 'extra_txstatus']
-    rf_char.set_wifi_radio(radio=args.vap_radio, flags_list=flags_list)
+    rf_char.set_wifi_radio(flags_list=flags_list)
 
     if now_millis() > deadline_millis:
         raise ValueError("Time expired to start traffic")
@@ -2607,11 +2593,6 @@ def main():
         raise ValueError("Time expired to start traffic")
 
     rf_char.clear_port_counters()
-    rf_char.duration = args.duration
-    rf_char.polling_interval = args.polling_interval
-    logger.debug("frame size {frame}".format(frame=args.frame))
-    rf_char.frame = args.frame
-    rf_char.frame_interval = args.frame_interval
 
     if now_millis() > deadline_millis:
         raise ValueError("Time expired to start traffic")
