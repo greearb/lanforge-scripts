@@ -570,85 +570,85 @@ class RfCharTest(Realm):
         vap_flagmask = "NA"
         t_channel : int = 0
         t_band : int = 0
+
+        if "e" in self.vap_channel:
+            # we are 6Ghz
+            t_channel = int( self.vap_channel[0:-1])
+            logger.warning("6gz channel is {}".format(t_channel))
+            if (t_channel >= 1) and (t_channel <= 233):
+                t_band=6
+        else:
+            t_channel = int(self.vap_channel)
+            if (t_channel >= 1) and (t_channel <= 15):
+                t_band=2
+            elif (t_channel >= 32) and (t_channel <= 177):
+                t_band=5
+            elif (t_channel >= 191):
+                t_band=6
+        if t_channel == 0:
+            raise Exception("strange channel: {}".format(self.vap_channel))
+        if t_band < 2:
+            raise Exception("strange bandwidth: {}".format(t_band))
+
+        default_flags_24g = self.command.AddVapFlags.use_bss_load \
+            | self.command.AddVapFlags.use_bss_transition \
+            | self.command.AddVapFlags.use_rrm_report
+        default_flags_5g = self.command.AddVapFlags.enable_80211d \
+            | self.command.AddVapFlags.p_80211h_enable \
+            | self.command.AddVapFlags.use_bss_load \
+            | self.command.AddVapFlags.use_bss_transition \
+            | self.command.AddVapFlags.use_rrm_report
+        default_flags_6g = self.command.AddVapFlags.use_bss_load \
+            | self.command.AddVapFlags.use_bss_transition \
+            | self.command.AddVapFlags.use_rrm_report
+        t_flags: int = -1
+        t_flagmask: int = self.command.AddVapFlags.disable_ht40 \
+                            | self.command.AddVapFlags.disable_ht80 \
+                            | self.command.AddVapFlags.ht160_enable
+        if t_band == 6:
+            # have to specify hostapd_config in flags to make sure that custom config
+            # checkbox gets turned off
+            t_flagmask |= self.command.AddVapFlags.hostapd_config
+        if self.vap_bw and (not t_band or self.vap_bw == "NA"):
+            # logger.error("unable to set bandwidth without knowing channel")
+            raise Exception("unable to set bandwidth without knowing channel")
         if self.vap_bw:
-            if "e" in self.vap_channel:
-                # we are 6Ghz
-                t_channel = int( self.vap_channel[0:-1])
-                logger.warning("6gz channel is {}".format(t_channel))
-                if (t_channel >= 1) and (t_channel <= 233):
-                    t_band=6
+            if t_band == 2:
+                t_flags = default_flags_24g
+                t_flagmask |= default_flags_24g
+            elif t_band == 5:
+                t_flags = default_flags_5g
+                t_flagmask |= default_flags_5g
+            elif t_band == 6:
+                t_flags = default_flags_6g
+                t_flagmask |= default_flags_6g
             else:
-                t_channel = int(self.vap_channel)
-                if (t_channel >= 1) and (t_channel <= 15):
-                    t_band=2
-                elif (t_channel >= 32) and (t_channel <= 177):
-                    t_band=5
-                elif (t_channel >= 191):
-                    t_band=6
-            if t_channel == 0:
-                raise Exception("strange channel: {}".format(self.vap_channel))
-            if t_band < 2:
-                raise Exception("strange bandwidth: {}".format(t_band))
+                raise ValueError("Unknown band %s" % t_band)
 
-            default_flags_24g = self.command.AddVapFlags.use_bss_load \
-                | self.command.AddVapFlags.use_bss_transition \
-                | self.command.AddVapFlags.use_rrm_report
-            default_flags_5g = self.command.AddVapFlags.enable_80211d \
-                | self.command.AddVapFlags.p_80211h_enable \
-                | self.command.AddVapFlags.use_bss_load \
-                | self.command.AddVapFlags.use_bss_transition \
-                | self.command.AddVapFlags.use_rrm_report
-            default_flags_6g = self.command.AddVapFlags.use_bss_load \
-                | self.command.AddVapFlags.use_bss_transition \
-                | self.command.AddVapFlags.use_rrm_report
-            t_flags: int = -1
-            t_flagmask: int = self.command.AddVapFlags.disable_ht40 \
-                              | self.command.AddVapFlags.disable_ht80 \
-                              | self.command.AddVapFlags.ht160_enable
-            if t_band == 6:
-                # have to specify hostapd_config in flags to make sure that custom config
-                # checkbox gets turned off
-                t_flagmask |= self.command.AddVapFlags.hostapd_config
-            if self.vap_bw and (not t_band or self.vap_bw == "NA"):
-                # logger.error("unable to set bandwidth without knowing channel")
-                raise Exception("unable to set bandwidth without knowing channel")
-            if self.vap_bw:
+            if self.vap_bw == "20":
+                t_flags |= self.command.AddVapFlags.disable_ht40
+                    # disabling ht80 appears to remove usefulness of disable_ht40
+                    # | self.command.AddVapFlags.disable_ht80
+            if self.vap_bw == "40":
+                t_flags |= self.command.AddVapFlags.disable_ht80
+            if self.vap_bw == "80":
+                # disabling ht40 implies forcing 20Mhz
+                # t_flags |= self.command.AddVapFlags.disable_ht40
                 if t_band == 2:
-                    t_flags = default_flags_24g
-                    t_flagmask |= default_flags_24g
-                elif t_band == 5:
-                    t_flags = default_flags_5g
-                    t_flagmask |= default_flags_5g
-                elif t_band == 6:
-                    t_flags = default_flags_6g
-                    t_flagmask |= default_flags_6g
-                else:
-                    raise ValueError("Unknown band %s" % t_band)
+                    raise ValueError("80 mhz bandwidth only available within 5ghz and 6gz frequencies")
+            if self.vap_bw == "160":
+                if t_band == 2:
+                    raise ValueError("80 mhz bandwidth only available within 5ghz and 6gz frequencies")
+                if t_band == 5 and not (t_channel in (36, 100)):
+                    raise ValueError("160 mhz bandwidth only available within 5ghz channels 36 and 100")
+                t_flags |= self.command.AddVapFlags.ht160_enable
 
-                if self.vap_bw == "20":
-                    t_flags |= self.command.AddVapFlags.disable_ht40
-                        # disabling ht80 appears to remove usefulness of disable_ht40
-                        # | self.command.AddVapFlags.disable_ht80
-                if self.vap_bw == "40":
-                    t_flags |= self.command.AddVapFlags.disable_ht80
-                if self.vap_bw == "80":
-                    # disabling ht40 implies forcing 20Mhz
-                    # t_flags |= self.command.AddVapFlags.disable_ht40
-                    if t_band == 2:
-                        raise ValueError("80 mhz bandwidth only available within 5ghz and 6gz frequencies")
-                if self.vap_bw == "160":
-                    if t_band == 2:
-                        raise ValueError("80 mhz bandwidth only available within 5ghz and 6gz frequencies")
-                    if t_band == 5 and not (t_channel in (36, 100)):
-                        raise ValueError("160 mhz bandwidth only available within 5ghz channels 36 and 100")
-                    t_flags |= self.command.AddVapFlags.ht160_enable
-
-            if t_flags > -1:
-                vap_flags = str(hex(t_flags))
-                vap_flagmask = str(hex(t_flagmask))
-            else:
-                logger.warning("t_flags does not look right: %s" % t_flags)
-                time.sleep(5)
+        if t_flags > -1:
+            vap_flags = str(hex(t_flags))
+            vap_flagmask = str(hex(t_flagmask))
+        else:
+            logger.warning("t_flags does not look right: %s" % t_flags)
+            time.sleep(5)
 
         v_name = self.vap_port
         if self.vap_port.find('.') > -1:
