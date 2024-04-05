@@ -1310,144 +1310,27 @@ def configure_reporting(no_html: bool,
     return report
 
 
-def main():
-    args = parse_args()
-    configure_logger(log_level=args.log_level,
-                     logger_json_config=args.lf_logger_config_json)
-    validate_args(args)
-
-    report = configure_reporting(**vars(args))
-    generate_html = not args.no_html
-
-    # Set up the RF Characteristic test
-    logger.info("Configuring test")
-    rf_char = RfCharTest(lf_mgr=args.lf_mgr,
-                         lf_port=args.lf_port,
-                         lf_user=args.lf_user,
-                         lf_passwd=args.lf_passwd,
-                         debug=args.debug)
-
-    logger.info("Performing pre-test cleanup")
-    rf_char.remove_generic_cx()
-
-
-    # TODO need to get the DUT IP and put into test_input infor
-    rf_char.vap_radio = args.vap_radio
-    rf_char.vap_channel = args.vap_channel
-    rf_char.vap_antenna = args.vap_antenna
-    rf_char.vap_port = args.vap_port
-    rf_char.vap_txpower = args.vap_txpower
-    rf_char.vap_bw = args.vap_bw
-    rf_char.reset_vap = args.reset_vap
-    if args.vap_mode:
-        if args.vap_mode in ("a", "802.11a"):
-            args.vap_mode = "p_802_11a"
-        if args.vap_mode not in rf_char.command.AddVapMode.__members__:
-            logger.error("""Unable to find mode [{}] in AddVapMode.
-     Please see https://www.candelatech.com/lfcli_ug.php#add_vap
-     Availble values: """.format(args.vap_mode))
-            pprint(rf_char.command.AddVapMode.__members__)
-            exit(1)
-        rf_char.vap_mode = rf_char.command.AddVapMode[args.vap_mode].value
-        logger.debug("Set vap_mode to {} => {}".format(args.vap_mode, rf_char.vap_mode))
-
-    # Clear active vAP DHCP leases and identify latest event
-    rf_char.clear_dhcp_lease()
-    rf_char.bookmark_events()
-
-    # Configure vAP, sleep to ensure properly configured
-    rf_char.configure_vap()
-    time.sleep(1)
-
-    # Reset any existing station DHCP leases
-    deadline_millis = now_millis() + (args.timeout_sec * 1000)
-    rf_char.verify_dut_stations(deadline_millis=deadline_millis,
-                                dhcp_lookup_ms=args.dhcp_poll_ms,
-                                max_dhcp_lookups=args.dhcp_lookup_attempts)
-
-    dut_mac = rf_char.dut_mac
-    dut_ip = rf_char.dut_ip
-
-    test_setup_info = {
-        "DUT Name": rf_char.dut_hostname,
-        "DUT Model": args.dut_model_num,
-        "DUT Hardware Version": args.dut_hw_version,
-        "DUT Software Version": args.dut_sw_version,
-        "DUT Serial Number": args.dut_serial_num,
-        "DUT MAC": dut_mac,
-        "DUT IP": dut_ip
-    }
-
-    report.set_table_title("Device Under Test Information")
-    report.build_table_title()
-    report.test_setup_table(value="Device Under Test", test_setup_data=test_setup_info)
-
-    # Set the report timer
-    # use the duration in seconds to set the report timer
-    # TODO call only once
-    polling_interval_milliseconds = rf_char.duration_time_to_milliseconds(args.polling_interval)
-    # polling_interval_milliseconds = polling_interval_seconds*1000
-    rf_char.set_port_report_timer(port=args.vap_port, milliseconds=polling_interval_milliseconds)
-    rf_char.set_port_report_timer(port=args.vap_radio, milliseconds=polling_interval_milliseconds)
-
-    # Enable additional vAP parent radio settings to get more statistics
-    flags_list = ['extra_rxstatus', 'extra_txstatus']
-    rf_char.set_wifi_radio(radio=args.vap_radio, flags_list=flags_list)
-
-    if now_millis() > deadline_millis:
-        raise ValueError("Time expired to start traffic")
-
-    test_input_info = {
-        "LANforge ip": args.lf_mgr,
-        "LANforge port": args.lf_port,
-        "Test Duration": args.duration,
-        "Polling Interval": args.polling_interval,
-        "GUI Report Interval (ms) vap and vap radio": str(polling_interval_milliseconds),
-        "vAP Channel": args.vap_channel,
-        "vAP Mode:": args.vap_mode,
-        "vAP Bandwidth:": args.vap_bw,
-        "vAP TX Power (dBm):": "Requested: {}<br/>\nApplied: {}".format(args.vap_txpower, rf_char.vap_txpower)
-    }
-
-    report.set_table_title("Test Configuration")
-    report.build_table_title()
-    report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
-
-    if now_millis() > deadline_millis:
-        raise ValueError("Time expired to start traffic")
-
-    rf_char.clear_port_counters()
-    rf_char.duration = args.duration
-    rf_char.polling_interval = args.polling_interval
-    logger.debug("frame size {frame}".format(frame=args.frame))
-    rf_char.frame = args.frame
-    rf_char.frame_interval = args.frame_interval
-
-    if now_millis() > deadline_millis:
-        raise ValueError("Time expired to start traffic")
-    begin_traffic_ms = now_millis()
-
-    # Run the test
-    logger.info("Beginning test")
-    json_port_stats, json_wifi_stats, *nil = rf_char.start()
-    time_elapsed = float((now_millis() - begin_traffic_ms) / 1000)
-    logger.info(f"Traffic time took {time_elapsed} seconds")
-
-    # Test complete, begin building report
-    logger.info("Building test report")
-
-    # get dataset for the radio
-    if args.vap_port not in json_wifi_stats:
+def generate_report(rf_char: RfCharTest,
+                    json_wifi_stats: dict,
+                    report,
+                    generate_html: bool,
+                    final_report_dir: str,
+                    interpolate: bool,
+                    polynomial: bool,
+                    **kwargs):
+    """Generate HTML and PDF reports after test completes."""
+    # Get dataset for the radio
+    if rf_char.vap_port not in json_wifi_stats:
         pprint(json_wifi_stats)
-        raise ValueError("lf_rf_char: radio dataset for [%s] not found:" % args.vap_port)
+        raise ValueError("lf_rf_char: radio dataset for [%s] not found:" % rf_char.vap_port)
 
-    wifi_stats_json = json_wifi_stats[args.vap_port]
+    wifi_stats_json = json_wifi_stats[rf_char.vap_port]
     if not wifi_stats_json:
         pprint(json_wifi_stats)
         raise ValueError("lf_rf_char: skipping empty wifi_stats_json:")
 
     if not wifi_stats_json:
-        logger.error("unable to find json_wifi_stats[%s]: " % args.vap_port)
+        logger.error("unable to find json_wifi_stats[%s]: " % rf_char.vap_port)
         pprint(json_wifi_stats)
         raise ValueError("wifi_stats_json empty")
 
@@ -1481,9 +1364,9 @@ def main():
         graph = lf_bar_line_graph(
             _data_set1=[tx_pkts, tx_retries],
             _data_set2=[tx_failed],
-            _data_set2_poly=[args.polynomial],
+            _data_set2_poly=[polynomial],
             _data_set2_poly_degree=[3],
-            _data_set2_interp1d=[args.interpolate],  # interpolate 1d
+            _data_set2_interp1d=[interpolate],  # interpolate 1d
             _xaxis_name="Time Interval (s)",
             _y1axis_name="TX Packets",
             _y2axis_name="TX Failed %",
@@ -2608,14 +2491,145 @@ def main():
     if platform.system() == 'Linux':
         report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
-    if args.final_report_dir:
-        if args.final_report_dir[0] == "/":
-            logger.info("moving the report directory to " + args.final_report_dir)
-            os.rename(report.get_report_path(), args.final_report_dir)
+    if final_report_dir:
+        if final_report_dir[0] == "/":
+            logger.info("moving the report directory to " + final_report_dir)
+            os.rename(report.get_report_path(), final_report_dir)
         else:
-            logger.info("final dir: /home/lanforge/html-reports/" + args.final_report_dir)
+            logger.info("final dir: /home/lanforge/html-reports/" + final_report_dir)
             os.rename(report.get_report_path(),
-                      "/home/lanforge/html-reports/"+args.final_report_dir)
+                      "/home/lanforge/html-reports/" + final_report_dir)
+
+
+def main():
+    args = parse_args()
+    configure_logger(log_level=args.log_level,
+                     logger_json_config=args.lf_logger_config_json)
+    validate_args(args)
+
+    report = configure_reporting(**vars(args))
+
+    # Set up the RF Characteristic test
+    logger.info("Configuring test")
+    rf_char = RfCharTest(lf_mgr=args.lf_mgr,
+                         lf_port=args.lf_port,
+                         lf_user=args.lf_user,
+                         lf_passwd=args.lf_passwd,
+                         debug=args.debug)
+
+    logger.info("Performing pre-test cleanup")
+    rf_char.remove_generic_cx()
+
+
+    # TODO need to get the DUT IP and put into test_input infor
+    rf_char.vap_radio = args.vap_radio
+    rf_char.vap_channel = args.vap_channel
+    rf_char.vap_antenna = args.vap_antenna
+    rf_char.vap_port = args.vap_port
+    rf_char.vap_txpower = args.vap_txpower
+    rf_char.vap_bw = args.vap_bw
+    rf_char.reset_vap = args.reset_vap
+    if args.vap_mode:
+        if args.vap_mode in ("a", "802.11a"):
+            args.vap_mode = "p_802_11a"
+        if args.vap_mode not in rf_char.command.AddVapMode.__members__:
+            logger.error("""Unable to find mode [{}] in AddVapMode.
+     Please see https://www.candelatech.com/lfcli_ug.php#add_vap
+     Availble values: """.format(args.vap_mode))
+            pprint(rf_char.command.AddVapMode.__members__)
+            exit(1)
+        rf_char.vap_mode = rf_char.command.AddVapMode[args.vap_mode].value
+        logger.debug("Set vap_mode to {} => {}".format(args.vap_mode, rf_char.vap_mode))
+
+    # Clear active vAP DHCP leases and identify latest event
+    rf_char.clear_dhcp_lease()
+    rf_char.bookmark_events()
+
+    # Configure vAP, sleep to ensure properly configured
+    rf_char.configure_vap()
+    time.sleep(1)
+
+    # Reset any existing station DHCP leases
+    deadline_millis = now_millis() + (args.timeout_sec * 1000)
+    rf_char.verify_dut_stations(deadline_millis=deadline_millis,
+                                dhcp_lookup_ms=args.dhcp_poll_ms,
+                                max_dhcp_lookups=args.dhcp_lookup_attempts)
+
+    dut_mac = rf_char.dut_mac
+    dut_ip = rf_char.dut_ip
+
+    test_setup_info = {
+        "DUT Name": rf_char.dut_hostname,
+        "DUT Model": args.dut_model_num,
+        "DUT Hardware Version": args.dut_hw_version,
+        "DUT Software Version": args.dut_sw_version,
+        "DUT Serial Number": args.dut_serial_num,
+        "DUT MAC": dut_mac,
+        "DUT IP": dut_ip
+    }
+
+    report.set_table_title("Device Under Test Information")
+    report.build_table_title()
+    report.test_setup_table(value="Device Under Test", test_setup_data=test_setup_info)
+
+    # Set the report timer
+    # use the duration in seconds to set the report timer
+    # TODO call only once
+    polling_interval_milliseconds = rf_char.duration_time_to_milliseconds(args.polling_interval)
+    # polling_interval_milliseconds = polling_interval_seconds*1000
+    rf_char.set_port_report_timer(port=args.vap_port, milliseconds=polling_interval_milliseconds)
+    rf_char.set_port_report_timer(port=args.vap_radio, milliseconds=polling_interval_milliseconds)
+
+    # Enable additional vAP parent radio settings to get more statistics
+    flags_list = ['extra_rxstatus', 'extra_txstatus']
+    rf_char.set_wifi_radio(radio=args.vap_radio, flags_list=flags_list)
+
+    if now_millis() > deadline_millis:
+        raise ValueError("Time expired to start traffic")
+
+    test_input_info = {
+        "LANforge ip": args.lf_mgr,
+        "LANforge port": args.lf_port,
+        "Test Duration": args.duration,
+        "Polling Interval": args.polling_interval,
+        "GUI Report Interval (ms) vap and vap radio": str(polling_interval_milliseconds),
+        "vAP Channel": args.vap_channel,
+        "vAP Mode:": args.vap_mode,
+        "vAP Bandwidth:": args.vap_bw,
+        "vAP TX Power (dBm):": "Requested: {}<br/>\nApplied: {}".format(args.vap_txpower, rf_char.vap_txpower)
+    }
+
+    report.set_table_title("Test Configuration")
+    report.build_table_title()
+    report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
+
+    if now_millis() > deadline_millis:
+        raise ValueError("Time expired to start traffic")
+
+    rf_char.clear_port_counters()
+    rf_char.duration = args.duration
+    rf_char.polling_interval = args.polling_interval
+    logger.debug("frame size {frame}".format(frame=args.frame))
+    rf_char.frame = args.frame
+    rf_char.frame_interval = args.frame_interval
+
+    if now_millis() > deadline_millis:
+        raise ValueError("Time expired to start traffic")
+    begin_traffic_ms = now_millis()
+
+    # Run the test
+    logger.info("Beginning test")
+    json_port_stats, json_wifi_stats, *nil = rf_char.start()
+    time_elapsed = float((now_millis() - begin_traffic_ms) / 1000)
+    logger.info(f"Traffic time took {time_elapsed} seconds")
+
+    # Test complete, begin building report
+    logger.info("Building test report")
+    generate_report(rf_char=rf_char,
+                    json_wifi_stats=json_wifi_stats,
+                    report=report,
+                    generate_html=(not args.no_html),
+                    **vars(args))
 
     # remove previous generic endpoints
     rf_char.remove_generic_cx()
