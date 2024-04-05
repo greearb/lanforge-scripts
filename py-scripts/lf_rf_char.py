@@ -1236,37 +1236,30 @@ def configure_logger(log_level: str, logger_json_config: str = None):
         logger_config.load_lf_logger_config()
 
 
-def main():
-    args = parse_args()
-    configure_logger(log_level=args.log_level,
-                     logger_json_config=args.lf_logger_config_json)
+# TODO: Specify KPI CSV required args as parameters when implement KPI CSV generation.
+#       Currently live in kwargs but are unused
+def configure_reporting(no_html: bool,
+                        no_pdf: bool,
+                        local_lf_report_dir: str,
+                        csv_outfile: str,
+                        desc: str,
+                        **kwargs):
+    """
+    Set up reporting data structures for later use.
 
-    validate_args(args)
+    Do this before running the test to ensure required file permissions.
 
-    # Gather data for test reporting
-    # for kpi.csv generation
-    local_lf_report_dir = args.local_lf_report_dir
-    test_rig = args.test_rig
-    test_tag = args.test_tag
-    dut_hw_version = args.dut_hw_version
-    dut_sw_version = args.dut_sw_version
-    dut_model_num = args.dut_model_num
-    dut_serial_num = args.dut_serial_num
-    # test_priority = args.test_priority  # this may need to be set per test
-    test_id = args.test_id
-
-    # Create report, when running with the test framework (lf_check.py)
-    # results need to be in the same directory
+    NOTE: When running within the test framework (lf_check.py), results must be
+    in the same directory.
+    """
     logger.info("Configuring test reporting")
 
-    do_html = True
     html_file = "rf_char.html"
-    if args.no_html:
-        do_html = False
+    if no_html:
         html_file = None
 
     pdf_file = "rf_char.pdf"
-    if args.no_pdf:
+    if no_pdf:
         pdf_file = None
 
     if local_lf_report_dir != "":
@@ -1279,38 +1272,52 @@ def main():
                                      _output_html=html_file,
                                      _output_pdf=pdf_file)
 
-    kpi_path = report.get_report_path()
-    logger.info("Report and kpi_path :{kpi_path}".format(kpi_path=kpi_path))
-
-    kpi_csv = lf_kpi_csv.lf_kpi_csv(
-        _kpi_path=kpi_path,
-        _kpi_test_rig=test_rig,
-        _kpi_test_tag=test_tag,
-        _kpi_dut_hw_version=dut_hw_version,
-        _kpi_dut_sw_version=dut_sw_version,
-        _kpi_dut_model_num=dut_model_num,
-        _kpi_dut_serial_num=dut_serial_num,
-        _kpi_test_id=test_id)
-
-    if args.csv_outfile is not None:
-        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        csv_outfile = "{}_{}_lf_rf_char.csv".format(
-            args.csv_outfile, current_time)
-        csv_outfile = report.file_add_path(csv_outfile)
-        logger.info(f"Test CSV data will be output to file \'{csv_outfile}\'")
-    else:
-        logger.info(f"No CSV output file specified, disabling test CSV data output")
-
-    # begin creating the report
+    # Configure report header
     report.set_title("RF Characteristics Test")
     report.build_banner_left()
     report.start_content_div2()
     report.set_obj_html("Objective", "RF Characteristics Test: Report RX and TX characteristics")
     report.build_objective()
 
-    if args.desc:
-        report.set_desc_html("Test Description", "{desc}".format(desc=args.desc))
+    if desc:
+        report.set_desc_html("Test Description", desc)
         report.build_description()
+
+    kpi_path = report.get_report_path()
+    logger.info("Report and kpi_path :{kpi_path}".format(kpi_path=kpi_path))
+
+    # Configure report CSV generation
+    # TODO: Use KPI CSV?
+    #kpi_csv = lf_kpi_csv.lf_kpi_csv(
+    #    _kpi_path=kpi_path,
+    #    _kpi_test_rig=test_rig,
+    #    _kpi_test_tag=test_tag,
+    #    _kpi_dut_hw_version=dut_hw_version,
+    #    _kpi_dut_sw_version=dut_sw_version,
+    #    _kpi_dut_model_num=dut_model_num,
+    #    _kpi_dut_serial_num=dut_serial_num,
+    #    _kpi_test_id=test_id)
+
+    if csv_outfile is not None:
+        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        csv_outfile = "{}_{}_lf_rf_char.csv".format(
+            csv_outfile, current_time)
+        csv_outfile = report.file_add_path(csv_outfile)
+        logger.info(f"Test CSV data will be output to file \'{csv_outfile}\'")
+    else:
+        logger.info(f"No CSV output file specified, disabling test CSV data output")
+
+    return report
+
+
+def main():
+    args = parse_args()
+    configure_logger(log_level=args.log_level,
+                     logger_json_config=args.lf_logger_config_json)
+    validate_args(args)
+
+    report = configure_reporting(**vars(args))
+    generate_html = not args.no_html
 
     # Set up the RF Characteristic test
     logger.info("Configuring test")
@@ -1470,7 +1477,7 @@ def main():
 
     # lf_bar_line_graph
     # failed %
-    if html_file:
+    if generate_html:
         graph = lf_bar_line_graph(
             _data_set1=[tx_pkts, tx_retries],
             _data_set2=[tx_failed],
@@ -1562,7 +1569,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # graph RSSI
-    if html_file:
+    if generate_html:
         graph = lf_line_graph(
             _data_set=data_set,
             _xaxis_name="Time Interval (s)",
@@ -1618,7 +1625,7 @@ def main():
     report.build_table()
     report.set_csv_filename("data-rates.csv")
     report.write_dataframe_to_csv()
-    if html_file:
+    if generate_html:
         graph = lf_line_graph(
             _data_set=data_set,
             _xaxis_name="Time Interval (s)",
@@ -1707,7 +1714,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # RX MODE
-    if html_file:
+    if generate_html:
         graph = lf_bar_graph(_data_set=[rx_mode_value_percent],
                              _xaxis_name="RX Mode",
                              _yaxis_name="Percent Packets RX per Mode",
@@ -1807,7 +1814,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # TX MODE
-    if html_file:
+    if generate_html:
         graph = lf_bar_graph(_data_set=[tx_mode_value_percent],
                              _xaxis_name="TX Mode",
                              _yaxis_name="Percent Packets TX per Mode",
@@ -1900,7 +1907,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # RX BW
-    if html_file:
+    if generate_html:
         graph = lf_bar_graph(_data_set=[rx_bw_value_percent],
                              _xaxis_name="RX BW",
                              _yaxis_name="Percent Packets RX per BW",
@@ -1989,7 +1996,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # TX BW
-    if html_file:
+    if generate_html:
         graph = lf_bar_graph(_data_set=[tx_bw_value_percent],
                              _xaxis_name="TX BW",
                              _yaxis_name="Percent Packets TX per BW",
@@ -2062,7 +2069,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # RX NSS
-    if html_file:
+    if generate_html:
         graph = lf_bar_graph(_data_set=[rx_nss_value_percent],
                              _xaxis_name="RX NSS",
                              _yaxis_name="Percent RX Packets of NSS",
@@ -2135,7 +2142,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # TX NSS
-    if html_file:
+    if generate_html:
         graph = lf_bar_graph(_data_set=[tx_nss_value_percent],
                              _xaxis_name="TX NSS",
                              _yaxis_name="Percent TX Packets of NSS",
@@ -2236,7 +2243,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # RX MCS encoding
-    if html_file:
+    if generate_html:
         graph = lf_bar_graph(_data_set=[rx_mcs_value_percent],
                              _xaxis_name="RX MCS encoding",
                              _yaxis_name="Percent RX Packets per MCS encoding",
@@ -2321,7 +2328,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # TX MCS encoding
-    if html_file:
+    if generate_html:
         graph = lf_bar_graph(_data_set=[tx_mcs_value_percent],
                              _xaxis_name="TX MCS encoding",
                              _yaxis_name="Percentage Received Packets with MCS encoding",
@@ -2410,7 +2417,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # RX ampdu encoding
-    if html_file:
+    if generate_html:
         graph = lf_bar_graph(_data_set=[rx_ampdu_value_percent],
                              _xaxis_name="RX ampdu",
                              _yaxis_name="Percent Packets RX with AMPDU Count",
@@ -2496,7 +2503,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # TX ampdu
-    if html_file:
+    if generate_html:
         graph = lf_bar_graph(_data_set=[tx_ampdu_value_percent],
                              _xaxis_name="TX ampdu",
                              _yaxis_name="Percent Packets TX with AMPDU Count",
@@ -2561,7 +2568,7 @@ def main():
     report.write_dataframe_to_csv()
 
     # TX msdu
-    if html_file:
+    if generate_html:
         graph = lf_bar_graph(_data_set=[tx_msdu_value_percent],
                              _xaxis_name="TX MSDU",
                              _yaxis_name="Percent Packets TX per MSDU",
