@@ -77,7 +77,7 @@ if sys.version_info[0] != 3:
 
 # RF Characteristics Test
 # TODO try to have utilites in own file
-class lf_rf_char(Realm):
+class RfCharTest(Realm):
     def __init__(self,
                  lf_mgr=None,
                  lf_port=None,
@@ -1321,7 +1321,7 @@ def main():
 
     # Set up the RF Characteristic test
     logger.info("Configuring test")
-    rf_char = lf_rf_char(lf_mgr=args.lf_mgr,
+    rf_char = RfCharTest(lf_mgr=args.lf_mgr,
                          lf_port=args.lf_port,
                          lf_user=args.lf_user,
                          lf_passwd=args.lf_passwd,
