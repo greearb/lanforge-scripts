@@ -12,7 +12,7 @@ There need to be a vAP in a Virtual Router  on LANforge , goal is to eventually 
 EXAMPLE:
 
 ./lf_rf_char.py --lf_mgr 192.168.0.104 --lf_port 8080 --lf_user lanforge --lf_passwd lanforge \
-    --vap_port 1.1.vap3 --vap_radio 1.1.wiphy3 --vap_channel 36 --vap_antenna 0 \
+    --vap_port 1.1.vap3 --vap_radio 1.1.wiphy3 --vap_channel 36 --vap_antenna all \
     --log_level debug --debug --duration 10s --polling_interval 1s --frame 1400 \
     --frame_interval .01
 
@@ -78,6 +78,15 @@ if sys.version_info[0] != 3:
 # RF Characteristics Test
 # TODO try to have utilites in own file
 class RfCharTest(Realm):
+    ANT_STR_TO_INT = {
+        "all": 0,
+        "1x1": 1,
+        "2x2": 4,
+        "3x3": 7,
+        "4x4": 8,
+        "8x8": 9,
+    }
+
     def __init__(self,
                  lf_mgr: str,
                  lf_port: str,
@@ -110,7 +119,7 @@ class RfCharTest(Realm):
         self.vap_port = self.vap_eid = vap_port  # TODO: Refactor to just vap_port
         self.vap_radio = vap_radio
         self.vap_channel = vap_channel
-        self.vap_antenna = vap_antenna
+        self.vap_antenna = RfCharTest.ANT_STR_TO_INT[vap_antenna]
         self.vap_txpower = vap_txpower
         self.vap_bw = vap_bw
         self.vap_mode = LFJsonCommand.AddVapMode[vap_mode].value
@@ -1080,7 +1089,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                         type=str,
                         required=True)
     parser.add_argument("--vap_antenna",
-                        help='number of spatial streams: 0 Diversity (All), 1 Fixed-A (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 (8x8)')
+                        help="Spatial stream configuration of vAP. Support for each configuration depends on the radio used.",
+                        type=str,
+                        choices={"all", "1x1", "2x2", "3x3", "4x4", "8x8"},
+                        default="all")
     parser.add_argument("--vap_mode",
                         help="WiFi modes defined by www.candelatech.com/lfcli_ug.php#add_vap "
                              "Includes 802.11a, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX, aAX",
