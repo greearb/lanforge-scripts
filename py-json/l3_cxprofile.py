@@ -580,7 +580,7 @@ class L3CXProfile(LFCliBase):
                 else:
                     cx_name = cx_name
 
-                match =re.search("[^-_a-zA-Z0-9]", str(cx_name))
+                match =re.search("[^-._a-zA-Z0-9]", str(cx_name))
                 if match:
                     pprint.pprint(["name_prefix", self.name_prefix,
                                    "side_a_info.2", side_a_info[2]])
@@ -876,7 +876,7 @@ class L3CXProfile(LFCliBase):
                 safer_info_2 = re.sub("[^-_a-zA-Z0-9]", "_", side_a_info[2])
                 cx_name = "%s%s-%i" % (self.name_prefix, safer_info_2, len(self.created_cx))
 
-                match = re.search("[^-_a-zA-Z0-9]", str(cx_name))
+                match = re.search("[^-._a-zA-Z0-9]", str(cx_name))
                 if match:
                     pprint.pprint(["name_prefix", self.name_prefix,
                                    "side_a_info.2", side_a_info[2]])
