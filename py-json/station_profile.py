@@ -150,6 +150,7 @@ class StationProfile:
         self.ip = None
         self.netmask = None
         self.gateway = None
+        self.mac = None
 
     def set_wifi_txo(self, txo_ena=1,
                      tx_power=255,
