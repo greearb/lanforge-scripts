@@ -32,7 +32,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario CC_AX210_6G_AC_W5 ",
-                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: USE_DUT_NAME radio-4' NA wiphy5,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: USE_DUT_NAME Radio-4' NA wiphy5,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
@@ -116,7 +116,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario CC_MTK7922_6G_AC_W6 ",
-                    " --raw_line \"profile_link 1.1 STA-AC 4 'DUT: USE_DUT_NAME radio-4' NA wiphy6,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AC 4 'DUT: USE_DUT_NAME Radio-4' NA wiphy6,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
@@ -159,7 +159,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario CC_MTK7922_6G_W6 ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME radio-4' NA wiphy6,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-4' NA wiphy6,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
