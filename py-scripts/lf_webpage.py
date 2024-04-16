@@ -60,9 +60,10 @@ import importlib
 import time
 import argparse
 import paramiko
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import logging
+import json
 from lf_graph import lf_bar_graph_horizontal
 
 
@@ -84,7 +85,7 @@ from lf_interop_qos import ThroughputQOS
 class HttpDownload(Realm):
     def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password,ap_name,
                  target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None,sixg_radio=None, _debug_on=False, _exit_on_error=False,
-                 _exit_on_fail=False,client_type="",port_list=[],devices_list=[],macid_list=[],lf_username="lanforge",lf_password="lanforge"):
+                 _exit_on_fail=False,client_type="",port_list=[],devices_list=[],macid_list=[],lf_username="lanforge",lf_password="lanforge", result_dir="", dowebgui=False, web_ui_device_list=[], test_name=None):
         self.ssid_list = []
         self.devices = []
         self.mode_list = []
@@ -105,6 +106,10 @@ class HttpDownload(Realm):
         self.bands = bands
         self.debug = _debug_on
         self.port_list = port_list
+        self.result_dir = result_dir
+        self.test_name = test_name
+        self.dowebgui = dowebgui
+        self.web_ui_device_list = web_ui_device_list
         self.eid_list = []
         self.devices_list = devices_list
         self.macid_list = []
@@ -136,7 +141,8 @@ class HttpDownload(Realm):
                             ssid=self.ssid,
                             password=self.password,
                             security=self.security,
-                            tos="BK"
+                            tos="BK",
+                            device_list=self.web_ui_device_list
                             )
         self.port_list,self.devices_list,self.macid_list=object.phantom_check()
         for port in self.port_list:
@@ -151,7 +157,18 @@ class HttpDownload(Realm):
             for port in self.port_list:
                 if eid + '.' in port:
                     self.windows_ports.append(port)
-        return self.port_list,self.devices_list,self.macid_list
+        if self.dowebgui == "True":
+            if object.device_found == False:
+                print("No Device is available to run the test hence aborting the testllmlml")
+                df1 = pd.DataFrame([{
+                    "client": [],
+                    "status": "Stopped",
+                    "url_data": 0
+                }]
+                )
+                df1.to_csv('{}/http_datavalues.csv'.format(self.result_dir), index=False)
+                raise ValueError("Aborting the test....")
+        return self.port_list, self.devices_list, self.macid_list
 
     def set_values(self):
         # This method will set values according user input
@@ -293,6 +310,63 @@ class HttpDownload(Realm):
 
     def stop(self):
         self.http_profile.stop_cx()
+
+    def monitor_for_runtime_csv(self, duration):
+
+        time_now = datetime.now()
+        starttime = time_now.strftime("%d/%m %I:%M:%S %p")
+        # duration = self.traffic_duration
+        endtime = time_now + timedelta(seconds=duration)
+        end_time = endtime
+        endtime = endtime.isoformat()[0:19]
+        current_time = datetime.now().isoformat()[0:19]
+        self.data = {}
+        self.data["client"] = self.devices_list
+        # self.data["url_data"] = []
+        self.data_for_webui = {}
+        self.data_for_webui["client"] = self.devices_list
+
+        while (current_time < endtime):
+
+            # data in json format
+            # data = self.json_get("layer4/list?fields=bytes-rd")
+            # uc_avg_data = self.json_get("layer4/list?fields=uc-avg")
+            # uc_max_data = self.json_get("layer4/list?fields=uc-max")
+            # uc_min_data = self.json_get("layer4/list?fields=uc-min")
+            # total_url_data = self.json_get("layer4/list?fields=total-urls")
+            # bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
+
+            url_times = self.my_monitor('total-urls')
+
+            if len(url_times) == len(self.devices_list):
+
+                self.data["status"] = ["RUNNING"] * len(self.devices_list)
+                self.data["url_data"] = url_times
+            else:
+                self.data["status"] = ["RUNNING"] * len(self.devices_list)
+                self.data["url_data"] = [0] * len(self.devices_list)
+            time_difference = abs(end_time - datetime.now())
+            total_hours = time_difference.total_seconds() / 3600
+            remaining_minutes = (total_hours % 1) * 60
+            self.data["start_time"] = [starttime] * len(self.devices_list)
+            self.data["end_time"] = [end_time.strftime("%d/%m %I:%M:%S %p")] * len(self.devices_list)
+            self.data["remaining_time"] = [[str(int(total_hours)) + " hr and " + str(
+                int(remaining_minutes)) + " min" if int(total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][
+                                               0]] * len(self.devices_list)
+            df1 = pd.DataFrame(self.data)
+            df1.to_csv('{}/http_datavalues.csv'.format(self.result_dir), index=False)
+            time.sleep(5)
+            if self.dowebgui == "True":
+                with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
+                                                                                                 self.test_name),
+                          'r') as file:
+                    data = json.load(file)
+                    if data["status"] != "Running":
+                        print('Test is stopped by the user')
+                        self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.devices_list)
+                        break
+
+            current_time = datetime.now().isoformat()[0:19]
 
     def my_monitor(self, data_mon):
         # data in json format
@@ -576,8 +650,12 @@ class HttpDownload(Realm):
                         result_data, test_rig,
                         test_tag, dut_hw_version, dut_sw_version, dut_model_num, dut_serial_num, test_id,
                         test_input_infor, csv_outfile, _results_dir_name='webpage_test', report_path=''):
-        report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html",
-                                     _output_pdf="Webpage.pdf", _path=report_path)
+        if self.dowebgui == "True" and report_path == '':
+            report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html",
+                                         _output_pdf="Webpage.pdf", _path=self.result_dir)
+        else:
+            report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html",
+                                         _output_pdf="Webpage.pdf", _path=report_path)
 
         if bands == "Both":
             num_stations = num_stations * 2
@@ -881,7 +959,17 @@ def main():
     optional.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
     optional.add_argument("--test_id", default="lf_webpage", help="test-id for kpi.csv,  script or test name")
     optional.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
-
+    #ARGS for webGUI
+    required.add_argument('--dowebgui', help="If true will execute script for webgui", default=False)  # FOR WEBGUI
+    optional.add_argument('--result_dir',
+                          help='Specify the result dir to store the runtime logs <Do not use in CLI, --used by webui>',
+                          default='')
+    optional.add_argument('--web_ui_device_list',
+                          help='Enter the devices on which the test should be run <Do not use in CLI,--used by webui>',
+                          default=[])
+    optional.add_argument('--test_name',
+                          help='Specify test name to store the runtime csv results <Do not use in CLI, --used by webui>',
+                          default=None)
     args = parser.parse_args()
     args.bands.sort()
 
@@ -964,7 +1052,11 @@ def main():
                             fiveg_radio=args.fiveg_radio,
                             sixg_radio=args.sixg_radio,
                             client_type=args.client_type,
-                            lf_username=args.lf_username,lf_password=args.lf_password
+                            lf_username=args.lf_username,lf_password=args.lf_password,
+                            result_dir=args.result_dir,  # FOR WEBGUI
+                            dowebgui=args.dowebgui,  # FOR WEBGUI
+                            web_ui_device_list=args.web_ui_device_list,  # FOR WEBGUI
+                            test_name=args.test_name,  # FOR WEBGUI
                             )
         if args.client_type == "Real":
             port_list,device_list,macid_list = http.get_real_client_list()
@@ -974,15 +1066,22 @@ def main():
         http.precleanup()
         http.build()
         test_time = datetime.now()
-        test_time = test_time.strftime("%b %d %H:%M:%S")
+        #Solution For Leap Year conflict changed it to %Y
+        test_time = test_time.strftime("%Y %d %H:%M:%S")
         print("Test started at ", test_time)
         http.start()
-        time.sleep(args.duration)
+        if args.dowebgui:
+            # FOR WEBGUI, -This fumction is called to fetch the runtime data from layer-4
+            http.monitor_for_runtime_csv(args.duration)
+        else:
+            time.sleep(args.duration)
         http.stop()
         uc_avg_val = http.my_monitor('uc-avg')
         url_times = http.my_monitor('total-urls')
         rx_bytes_val = http.my_monitor('bytes-rd')
         rx_rate_val = http.my_monitor('rx rate')
+        if args.dowebgui:
+            http.data_for_webui["url_data"] = url_times  # storing the layer-4 url data at the end of test
 
         if bands == "5G":
             list5G.extend(uc_avg_val)
@@ -1051,11 +1150,11 @@ def main():
     print("result", result_data)
     print("Test Finished")
     test_end = datetime.now()
-    test_end = test_end.strftime("%b %d %H:%M:%S")
+    test_end = test_end.strftime("%Y %d %H:%M:%S")
     print("Test ended at ", test_end)
     s1 = test_time
     s2 = test_end  # for example
-    FMT = '%b %d %H:%M:%S'
+    FMT = '%Y %d %H:%M:%S'
     test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
 
     info_ssid = []
@@ -1146,6 +1245,14 @@ def main():
                           dut_serial_num=args.dut_serial_num, test_id=args.test_id,
                           test_input_infor=test_input_infor, csv_outfile=args.csv_outfile)
     http.postcleanup()
+    # FOR WEBGUI, filling csv at the end to get the last terminal logs
+    if args.dowebgui:
+        http.data_for_webui["status"] = ["STOPPED"] * len(http.devices_list)
+        http.data_for_webui["start_time"] = http.data["start_time"]
+        http.data_for_webui["end_time"] = http.data["end_time"]
+        http.data_for_webui["remaining_time"] = http.data["remaining_time"]
+        df1 = pd.DataFrame(http.data_for_webui)
+        df1.to_csv('{}/http_datavalues.csv'.format(http.result_dir), index=False)
 
 if __name__ == '__main__':
     main()
