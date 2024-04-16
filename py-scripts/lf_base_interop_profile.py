@@ -1095,7 +1095,7 @@ class RealDevice(Realm):
         return self.devices
     
     # querying the user the required mobiles to test
-    def query_user(self):
+    def query_user(self, dowebgui=False, device_list=""):
         print('The available real devices are:')
         # print('Port\t\thw version\t\t\tMAC')
         t_devices = {}
@@ -1111,8 +1111,11 @@ class RealDevice(Realm):
         df = pd.DataFrame(data=t_devices).transpose()
         print(df)
 
-        self.selected_device_eids = input(
-            'Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
+        if dowebgui:
+            self.selected_device_eids=device_list.split(",")
+        else:
+            self.selected_device_eids = input(
+-            'Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
 
         # if all is seleceted making the list as empty string so that it would consider all devices
         if(self.selected_device_eids == ['all']):
