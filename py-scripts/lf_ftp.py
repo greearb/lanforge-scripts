@@ -64,9 +64,10 @@ import sys
 import importlib
 import paramiko
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import os
+import json
 import matplotlib.patches as mpatches
 import pandas as pd
 import logging
@@ -99,7 +100,7 @@ class FtpTest(LFCliBase):
                  lf_username="lanforge",lf_password="lanforge",clients_type= "Virtual",real_client_list=[],
                  working_resources_list=[],hw_list=[],windows_list=[],mac_list=[],linux_list=[],android_list=[],
                  eid_list=[],mac_id_list=[],devices_available=[],mac_id1_list=[],user_list=[],input_devices_list=[],
-                 real_client_list1=[],uc_avg=[],url_data=[],channel_list=[],mode_list=[],cx_list=[]):
+                 real_client_list1=[],uc_avg=[],url_data=[],channel_list=[],mode_list=[],cx_list=[], dowebgui=False, device_list=[], test_name=None, result_dir=None):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         logger.info("Test is about to start")
         self.ssid_list = []
@@ -107,6 +108,8 @@ class FtpTest(LFCliBase):
         self.port = lfclient_port
         #self.radio = radio
         self.ap_name = ap_name
+        self.result_dir = result_dir
+        self.test_name = test_name
         self.upstream = upstream
         self.sta_prefix = sta_prefix
         self.sta_start_id = start_id
@@ -126,6 +129,8 @@ class FtpTest(LFCliBase):
         self.fiveg_radio = fiveg_radio
         self.sixg_radio = sixg_radio
         self.duration = duration
+        self.dowebgui = dowebgui
+        self.device_list = device_list
         self.traffic_duration = traffic_duration
         self.ssh_port = ssh_port
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
@@ -242,8 +247,46 @@ class FtpTest(LFCliBase):
                     print(eid + ' ' + device)
                     self.user_list.append(device)
         print("AVAILABLE DEVICES TO RUN TEST : ",self.user_list)
+        logging.info(self.user_list)
+        if len(self.device_list) != 0:
+            devices_list = self.device_list
+            available_list = []
+            not_available = []
+            for input_device in devices_list.split(','):
+                found = False
+                for device in self.devices_available:
+                    if input_device + " " in device:
+                        available_list.append(input_device)
+                        found = True
+                        break
+                if found == False:
+                    not_available.append(input_device)
+                    logging.warning(device + " is not available to run test")
 
-        devices_list = input("Enter the desired resources to run the test:")
+            if len(available_list) > 0:
+
+                logging.info("Test is initiated on devices: %s", available_list)
+                devices_list = ','.join(available_list)
+            else:
+                devices_list = ""
+                logging.warning("Test can not be initiated on any selected devices hence aborting the test")
+                df1 = pd.DataFrame({
+                    "client": self.client_list,
+                    "url_data": 0,
+                    "bytes_rd": 0,
+                    "uc_min": 0,
+                    "uc_max": 0,
+                    "uc_avg": 0,
+                    'status': 'Stopped'
+                }
+                )
+                df1.to_csv('{}/ftp_datavalues.csv'.format(self.result_dir), index=False)
+                raise ValueError("No Device is available to run the test hence aborting the test")
+            logging.info("device got from webui are: %s", devices_list)
+        else:
+            logging.info("AVAILABLE DEVICES TO RUN TEST : %s", self.user_list)
+            devices_list = input("Enter the desired resources to run the test:")
+            logging.info("devices list %s", devices_list)
         #print("devices list",devices_list)
         resource_eid_list = devices_list.split(',')
         resource_eid_list2 = [eid + ' ' for eid in resource_eid_list]
@@ -256,8 +299,8 @@ class FtpTest(LFCliBase):
             for ports_m in original_port_list:
                 if eid in ports_m and 'p2p0' not in ports_m:
                     self.input_devices_list.append(ports_m)
-        print("INPUT DEVICES LIST",self.input_devices_list)
-        
+        logging.info("INPUT DEVICES LIST %s", self.input_devices_list)
+
         # user desired real client list 1.1 wlan0 ---
         for port in self.input_devices_list:
             for eid in self.windows_eid_list:
@@ -275,7 +318,7 @@ class FtpTest(LFCliBase):
             for i in self.mac_id1_list:
                 if eid in i:
                     self.mac_id_list.append(i.strip(eid+' '))
-        print("MAC ID LIST",self.mac_id_list)
+        logging.info("MAC ID LIST %s", self.mac_id_list)
         return self.real_client_list
 
     def set_values(self):
@@ -313,7 +356,7 @@ class FtpTest(LFCliBase):
             if rad == self.sixg_radio:
                 self.station_profile.mode = 15
                 self.count = self.count + 1
-                
+
             elif rad == self.fiveg_radio:
 
                 # select mode(All stations will connects to 5G)
@@ -518,7 +561,7 @@ class FtpTest(LFCliBase):
                                             debug_=self.debug, suppress_related_commands_=True,timeout=1000, interop=True,ftp=True,
                                             user=self.lf_username, passwd=self.lf_password,
                                             source="", upload_name=self.input_devices_list[client],proxy_auth_type=0x200)
-            
+
             # check Both band present then build stations with another station list
             # if self.count == 2:
             #     self.station_list = self.station_list1
@@ -607,6 +650,75 @@ class FtpTest(LFCliBase):
         # assume data is MB if no designator is on end of str
         else:
             return float(upper[:-2]) * 10 ** 6
+    # FOR WEB-UI // function usd to fetch runtime values and fill the csv.
+    def monitor_for_runtime_csv(self):
+
+        time_now = datetime.now()
+        start_time = time_now.strftime("%d/%m %I:%M:%S %p")
+        duration = self.traffic_duration
+        endtime = time_now + timedelta(seconds=duration)
+        end_time = endtime
+        endtime = endtime.isoformat()[0:19]
+        current_time = datetime.now().isoformat()[0:19]
+        self.data = {}
+        self.data["url_data"] = []
+        temp_data = {}
+        while (current_time < endtime):
+
+            # data in json format
+            # data = self.json_get("layer4/list?fields=bytes-rd")
+            # uc_avg_data = self.json_get("layer4/list?fields=uc-avg")
+            # uc_max_data = self.json_get("layer4/list?fields=uc-max")
+            # uc_min_data = self.json_get("layer4/list?fields=uc-min")
+            total_url_data = self.json_get("layer4/list?fields=total-urls")
+            # bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
+            self.data["client"] = self.cx_list
+
+            if 'endpoint' in total_url_data.keys():
+                # list of layer 4 connections name
+                if type(total_url_data['endpoint']) is dict:
+                    temp_data[self.cx_list[0]] = total_url_data['endpoint']['total-urls']
+                else:
+                    for cx in total_url_data['endpoint']:
+                        for CX in cx:
+                            for created_cx in self.cx_list:
+                                if CX == created_cx:
+                                    temp_data[created_cx] = cx[CX]['total-urls']
+
+                if temp_data != {}:
+
+                    self.data["status"] = ["RUNNING"] * len(list(temp_data.keys()))
+                    self.data["url_data"] = list(temp_data.values())
+                else:
+                    self.data["status"] = ["RUNNING"] * len(self.cx_list)
+                    self.data["url_data"] = [0] * len(self.cx_list)
+                time_difference = abs(end_time - datetime.now())
+                total_hours = time_difference.total_seconds() / 3600
+                remaining_minutes = (total_hours % 1) * 60
+                self.data["start_time"] = [start_time] * len(self.cx_list)
+                self.data["end_time"] = [end_time.strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
+                self.data["remaining_time"] = [[str(int(total_hours)) + " hr and " + str(
+                    int(remaining_minutes)) + " min" if int(total_hours) != 0 or int(
+                    remaining_minutes) != 0 else '<1 min'][0]] * len(self.cx_list)
+                df1 = pd.DataFrame(self.data)
+                df1.to_csv('{}/ftp_datavalues.csv'.format(self.result_dir), index=False)
+
+            else:
+
+                logger.info("No layer 4-7 endpoints - No endpoint in reponse")
+
+            time.sleep(5)
+            if self.dowebgui == "True":
+                with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
+                                                                                                 self.test_name),
+                          'r') as file:
+                    data = json.load(file)
+                    if data["status"] != "Running":
+                        logging.info('Test is stopped by the user')
+                        self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
+                        break
+
+            current_time = datetime.now().isoformat()[0:19]
 
     def my_monitor(self):
         dataset = []
@@ -637,9 +749,11 @@ class FtpTest(LFCliBase):
         bytes_rd = self.json_get("layer4/list?fields=bytes-rd") 
         print(uc_avg_data)
         print(total_url_data)
+        self.data_for_webui = {}
 
         if 'endpoint' in uc_avg_data.keys():
             # list of layer 4 connections name
+            self.data_for_webui["client"] = self.cx_list
             if type(uc_avg_data['endpoint']) is dict:
                 self.uc_avg.append(uc_avg_data['endpoint']['uc-avg'])
                 self.uc_max.append(uc_max_data['endpoint']['uc-max'])
@@ -647,7 +761,13 @@ class FtpTest(LFCliBase):
                 #reading uc-avg data in json format
                 self.url_data.append(total_url_data['endpoint']['total-urls'])
                 dataset.append(bytes_rd['endpoint']['bytes-rd'])
-                self.bytes_rd=[float(f"{(i / 1000000): .4f}") for i in dataset]
+                if self.dowebgui == "True":
+                    self.data_for_webui["url_data"] = self.url_data
+                    self.data_for_webui["start_time"] = self.data["start_time"]
+                    self.data_for_webui["end_time"] = self.data["end_time"]
+                    self.data_for_webui["remaining_time"] = [0] * len(self.cx_list)
+                    self.data_for_webui["status"] = ["STOPPED"] * len(self.url_data)
+                self.bytes_rd=[float(f"{(i / 1000000): .4f}") for i in dataset]            
             else:
                 for cx in uc_avg_data['endpoint']:
                     for CX in cx:
@@ -674,10 +794,26 @@ class FtpTest(LFCliBase):
                         for created_cx in self.cx_list:
                             if CX == created_cx:    
                                 dataset.append(cx[CX]['bytes-rd'])
-                                self.bytes_rd=[float(f"{(i / 1000000): .4f}") for i in dataset]            
+                                self.bytes_rd=[float(f"{(i / 1000000): .4f}") for i in dataset]
+                if self.dowebgui == "True":
+                    # FOR WEB-UI // storing values in self which is used to update the csv at the end.
+                    self.data_for_webui["url_data"] = self.url_data
+                    self.data_for_webui["bytes_rd"] = self.bytes_rd
+                    self.data_for_webui["uc_min"] = self.uc_min
+                    self.data_for_webui["uc_max"] = self.uc_max
+                    self.data_for_webui["uc_avg"] = self.uc_avg
+                    self.data_for_webui["start_time"] = self.data["start_time"]
+                    self.data_for_webui["end_time"] = self.data["end_time"]
+                    self.data_for_webui["remaining_time"] = [0] * len(self.cx_list)      
             logger.info(f"uc_min,uc_max,uc_avg {self.uc_min},{self.uc_max},{self.uc_avg}")
             print("total urls",self.url_data)
         else:
+            if self.dowebgui == "True":
+                self.data["status"] = ["STOPPED"] * len(self.cx_list)
+                if len(self.data["url_data"]) == 0:
+                    self.data["url_data"] = [0] * len(self.cx_list)
+                df1 = pd.DataFrame(self.data)
+                df1.to_csv('{}/ftp_datavalues.csv'.format(self.result_dir), index=False)
             logger.info("No layer 4-7 endpoints")
             exit()
    
@@ -1115,7 +1251,12 @@ class FtpTest(LFCliBase):
             if self.clients_type == "Virtual":
                 client_list = self.station_list
         self.report = lf_report.lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf", _path=report_path)
-
+        if self.dowebgui == "True" and report_path == '':
+            self.report = lf_report.lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html",
+                                              _output_pdf="ftp_test.pdf", _path=self.result_dir)
+        else:
+            self.report = lf_report.lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html",
+                                              _output_pdf="ftp_test.pdf", _path=report_path)
         self.report.set_title("FTP Test")
         self.report.set_date(date)
         self.report.build_banner()
@@ -1533,6 +1674,8 @@ INCLUDE_IN_README: False
     #parser.add_argument('--both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
     required.add_argument('--traffic_duration', help='duration for layer 4 traffic running in minutes or seconds or hours. Example : 30s,3m,48h')
     required.add_argument('--clients_type',help='Enter the type of clients on which the test is to be run. Example: "Virtual","Real"')
+    #webGUI ARGS
+    required.add_argument('--dowebgui', help="If true will execute script for webgui", default=False)
     # allow for test run as seconds, minutes, etc
     # TODO: add --debug support
     optional.add_argument('--ssh_port', type=int, help="specify the shh port: eg 22 [default = 22]", default=22)
@@ -1546,7 +1689,9 @@ INCLUDE_IN_README: False
                         default=["2MB", "500MB", "1000MB"])
     optional.add_argument('--num_stations', type=int, help='number of virtual stations', default=0)
     #parser.add_argument('--num_stations_real', type=int, help='--num_stations_real is number of stations', default=0)
-
+    optional.add_argument('--result_dir', help='Specify the result dir to store the runtime logs', default='')
+    optional.add_argument('--device_list', help='Enter the devices on which the test should be run', default=[])
+    optional.add_argument('--test_name', help='Specify test name to store the runtime csv results', default=None)
     # kpi_csv arguments
     optional.add_argument(
         "--test_rig",
@@ -1656,6 +1801,7 @@ INCLUDE_IN_README: False
                 # Start Test
                 obj = FtpTest(lfclient_host=args.mgr,
                               lfclient_port=args.mgr_port,
+                              result_dir=args.result_dir,
                               upstream=args.upstream_port,
                               dut_ssid=args.ssid,
                               dut_passwd=args.passwd,
@@ -1673,7 +1819,10 @@ INCLUDE_IN_README: False
                               #duration=pass_fail_duration(band, file_size),
                               traffic_duration=args.traffic_duration,
                               ssh_port=args.ssh_port,
-                              clients_type= args.clients_type
+                              clients_type= args.clients_type,
+                              dowebgui=args.dowebgui,
+                              device_list=args.device_list,
+                              test_name=args.test_name,
                               )
 
                 interation_num = interation_num + 1
@@ -1692,7 +1841,11 @@ INCLUDE_IN_README: False
                 print("Traffic started running at ",time1)
                 obj.start(False, False)
 
-                time.sleep(args.traffic_duration)
+                # FOR WEB-UI // to fetch runtime values during the execution and fill the csv.
+                if args.dowebgui:
+                    obj.monitor_for_runtime_csv()
+                else:
+                    time.sleep(args.traffic_duration)
                 # # return list of download/upload completed time stamp
                 # time_list = obj.my_monitor(time1)
                 # # print("pass_fail_duration - time_list:{time_list}".format(time_list=time_list))
@@ -1737,6 +1890,12 @@ INCLUDE_IN_README: False
                         dut_serial_num=args.dut_serial_num, test_id=args.test_id,
                         bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir)
 
+# FOR WEB-UI // to fetch the last logs of the execution.
+    if args.dowebgui:
+        obj.data_for_webui["status"] = ["STOPPED"] * len(obj.url_data)
+
+        df1 = pd.DataFrame(obj.data_for_webui)
+        df1.to_csv('{}/ftp_datavalues.csv'.format(obj.result_dir), index=False)
 
 if __name__ == '__main__':
     main()
