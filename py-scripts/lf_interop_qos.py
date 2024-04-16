@@ -63,6 +63,8 @@ import pandas as pd
 import importlib
 import copy
 import logging
+import json
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +85,7 @@ from lf_graph import lf_bar_graph
 from lf_graph import lf_bar_graph_horizontal
 from datetime import datetime, timedelta
 
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class ThroughputQOS(Realm):
     def __init__(self,
@@ -95,6 +98,9 @@ class ThroughputQOS(Realm):
                  num_stations=10,
                  host="localhost",
                  port=8080,
+                 test_name=None,
+                 device_list=[],
+                 result_dir=None,
                  ap_name="",
                  traffic_type=None,
                  direction="",
@@ -106,15 +112,20 @@ class ThroughputQOS(Realm):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,
-                 user_list=[],real_client_list=[],real_client_list1=[],hw_list=[],laptop_list=[],android_list=[],mac_list=[],windows_list=[],linux_list=[],
-                 total_resources_list=[],working_resources_list=[],hostname_list=[],username_list=[],eid_list=[],
-                 devices_available=[],input_devices_list=[],mac_id1_list=[],mac_id_list=[]):
+                 dowebgui=False,
+                 ip="localhost",
+                 user_list=[], real_client_list=[], real_client_list1=[], hw_list=[], laptop_list=[], android_list=[], mac_list=[], windows_list=[], linux_list=[],
+                 total_resources_list=[], working_resources_list=[], hostname_list=[], username_list=[], eid_list=[],
+                 devices_available=[], input_devices_list=[], mac_id1_list=[], mac_id_list=[]):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
         self.ssid_list = []
         self.upstream = upstream
         self.host = host
         self.port = port
+        self.test_name = test_name
+        self.device_list = device_list
+        self.result_dir = result_dir
         self.ssid = ssid
         self.security = security
         self.password = password
@@ -161,6 +172,9 @@ class ThroughputQOS(Realm):
         self.user_list = user_list
         self.mac_id_list = mac_id_list
         self.mac_id1_list = mac_id1_list
+        self.dowebgui = dowebgui
+        self.ip = ip
+        self.device_found = False
 
     def os_type(self):
         response = self.json_get("/resource/all")
@@ -246,14 +260,40 @@ class ThroughputQOS(Realm):
                 if eid in device:
                     print(eid + ' ' + device)
                     self.user_list.append(device)
-        print("AVAILABLE DEVICES TO RUN TEST:", self.user_list)
+        #checking for the availability of slected devices to run test
+        if len(self.device_list) != 0:
+            devices_list = self.device_list
+            available_list = []
+            not_available = []
+            for input_device in devices_list.split(','):
+                found = False
+                for device in self.devices_available:
+                    if input_device + " " in device:
+                        available_list.append(input_device)
+                        found = True
+                        break
+                if found == False:
+                    not_available.append(input_device)
+                    logger.warning(input_device + " is not available to run test")
 
-        devices_list = input("Enter the desired resources to run the test:")
-        #print("devices list",devices_list)
+            if len(available_list) > 0:
+
+                logger.info("Test is initiated on devices: {}".format(available_list))
+                devices_list = ','.join(available_list)
+                self.device_found = True
+            else:
+                devices_list = ""
+                self.device_found = False
+                logger.warning("Test can not be initiated on any selected devices")
+        else:
+            logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(self.user_list))
+
+            devices_list = input("Enter the desired resources to run the test:")
         resource_eid_list = devices_list.split(',')
+        logger.info("devices list {}".format(devices_list, resource_eid_list))
         resource_eid_list2 = [eid + ' ' for eid in resource_eid_list]
         resource_eid_list1 = [resource + '.' for resource in resource_eid_list]
-        #print("resource eid list",resource_eid_list)
+        logger.info("resource eid list {}".format(resource_eid_list1, original_port_list))
 
         #User desired eids are fetched ---
 
@@ -261,8 +301,8 @@ class ThroughputQOS(Realm):
             for ports_m in original_port_list:
                 if eid in ports_m:
                     self.input_devices_list.append(ports_m)
-        print("INPUT DEVICES LIST:", self.input_devices_list)
-        
+        logger.info("INPUT DEVICES LIST {}".format(self.input_devices_list))
+
         # user desired real client list 1.1 wlan0 ---
         
         for i in resource_eid_list2:
@@ -328,7 +368,7 @@ class ThroughputQOS(Realm):
         for client in range(len(self.real_client_list)):
             traffic_direction_list.append(direction)
             traffic_type_list.append(traffic_type)
-        print("tos: {}".format(self.tos))    
+        logger.info("tos: {}".format(self.tos))
 
         for ip_tos in self.tos:
             for i in self.real_client_list1:
@@ -338,18 +378,18 @@ class ThroughputQOS(Realm):
                         cx_names=cxs.replace(" ","")
                         #print(cx_names)
                 cx_list.append(cx_names)
-        print('cx_list',cx_list)
-        count=0
+        logger.info('cx_list {}'.format(cx_list))
+        count = 0
         for ip_tos in range(len(self.tos)):
             for device in range(len(self.input_devices_list)):
-                print("## ip_tos: {}".format(ip_tos))
-                print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (
-                self.traffic_type, self.tos[ip_tos], self.cx_profile.get_cx_count()))
+                logger.info("## ip_tos: {}".format(ip_tos))
+                logger.info("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (
+                    self.traffic_type, self.tos[ip_tos], self.cx_profile.get_cx_count()))
                 self.cx_profile.create(endp_type=self.traffic_type, side_a=[self.input_devices_list[device]],
                                     side_b=self.upstream,
                                     sleep_time=0, tos=self.tos[ip_tos],cx_name="%s-%i" % (cx_list[count], len(self.cx_profile.created_cx)))
                 count += 1
-            print("cross connections with TOS type created.")
+            logger.info("cross connections with TOS type created.")
 
     def monitor(self):
         throughput, upload,download,upload_throughput,download_throughput,connections_upload, connections_download = {}, [], [],[],[],{},{}
@@ -360,14 +400,20 @@ class ThroughputQOS(Realm):
             raise ValueError("Monitor needs a list of Layer 3 connections")
         # monitor columns
         start_time = datetime.now()
-        test_start_time = datetime.now().strftime("%b %d %H:%M:%S")
+        test_start_time = datetime.now().strftime("%Y %d %H:%M:%S")
         print("Test started at: ", test_start_time)
         print("Monitoring cx and endpoints")
         end_time = start_time + timedelta(seconds=int(self.test_duration))
+        self.overall = []
         index = -1
         connections_upload = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
         connections_download = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
-        [(upload.append([]), download.append([]), drop_a.append([]), drop_b.append([])) for i in range(len(self.cx_profile.created_cx))]
+        connections_upload_realtime = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+        connections_download_realtime = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+        [(upload.append([]), download.append([]), drop_a.append([]), drop_b.append([])) for i in
+         range(len(self.cx_profile.created_cx))]
+        if self.dowebgui == "True":
+            runtime_dir = self.result_dir
         while datetime.now() < end_time:
             index += 1
             response = list(
@@ -375,8 +421,129 @@ class ThroughputQOS(Realm):
                     ','.join(self.cx_profile.created_cx.keys()), ",".join(['bps rx a', 'bps rx b', 'rx drop %25 a', 'rx drop %25 b']))).values())[2:]
             throughput[index] = list(
                 map(lambda i: [x for x in i.values()], response))
-            time.sleep(1)
-        print("throughput", throughput)
+            if self.dowebgui == "True":
+                temp_upload, temp_download, temp_drop_a, temp_drop_b = [], [], [], []
+                [(temp_upload.append([]), temp_download.append([]), temp_drop_a.append([]), temp_drop_b.append([])) for
+                 i in range(len(self.cx_profile.created_cx))]
+                for i in range(len(throughput[index])):
+                    temp_upload[i].append(throughput[index][i][1])
+                    temp_download[i].append(throughput[index][i][0])
+                    temp_drop_a[i].append(throughput[index][i][2])
+                    temp_drop_b[i].append(throughput[index][i][3])
+                upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in temp_upload]
+                download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in temp_download]
+                drop_a_per = [float(round(sum(i) / len(i), 2)) for i in temp_drop_a]
+                drop_b_per = [float(round(sum(i) / len(i), 2)) for i in temp_drop_b]
+                keys = list(connections_upload_realtime.keys())
+                keys = list(connections_download_realtime.keys())
+                for i in range(len(download_throughput)):
+                    connections_download_realtime.update({keys[i]: float(f"{(download_throughput[i]):.2f}")})
+                for i in range(len(upload_throughput)):
+                    connections_upload_realtime.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
+
+                real_time_qos = self.evaluate_qos(connections_download_realtime, connections_upload_realtime,
+                                                  drop_a_per, drop_b_per)
+                time_difference = abs(end_time - datetime.now())
+                total_hours = time_difference.total_seconds() / 3600
+                remaining_minutes = (total_hours % 1) * 60
+                for key1, key2 in zip(real_time_qos[0], real_time_qos[1]):
+                    if self.direction == "Bi-direction":
+                        self.overall.append({
+                            "BE_dl": real_time_qos[0][key1]["beQOS"],
+                            "BE_ul": real_time_qos[1][key2]["beQOS"],
+                            "BK_dl": real_time_qos[0][key1]["bkQOS"],
+                            "BK_ul": real_time_qos[1][key2]["bkQOS"],
+                            "VI_dl": real_time_qos[0][key1]["videoQOS"],
+                            "VI_ul": real_time_qos[1][key2]["videoQOS"],
+                            "VO_dl": real_time_qos[0][key1]["voiceQOS"],
+                            "VO_ul": real_time_qos[1][key2]["voiceQOS"],
+                            "timestamp": datetime.now().strftime("%d/%m %I:%M:%S %p"),
+                            "start_time": start_time.strftime("%d/%m %I:%M:%S %p"),
+                            "end_time": end_time.strftime("%d/%m %I:%M:%S %p"),
+                            "remaining_time": [
+                                str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
+                                    total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
+                            'status': 'Running'
+                        })
+                    elif self.direction == "Upload":
+                        self.overall.append({
+                            "BE_dl": 0,
+                            "BE_ul": real_time_qos[1][key2]["beQOS"],
+                            "BK_dl": 0,
+                            "BK_ul": real_time_qos[1][key2]["bkQOS"],
+                            "VI_dl": 0,
+                            "VI_ul": real_time_qos[1][key2]["videoQOS"],
+                            "VO_dl": 0,
+                            "VO_ul": real_time_qos[1][key2]["voiceQOS"],
+                            "timestamp": datetime.now().strftime("%d/%m %I:%M:%S %p"),
+                            "start_time": start_time.strftime("%d/%m %I:%M:%S %p"),
+                            "end_time": end_time.strftime("%d/%m %I:%M:%S %p"),
+                            "remaining_time": [
+                                str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
+                                    total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
+                            'status': 'Running'
+                        })
+                    else:
+                        self.overall.append({
+                            "BE_dl": real_time_qos[0][key1]["beQOS"],
+                            "BE_ul": 0,
+                            "BK_dl": real_time_qos[0][key1]["bkQOS"],
+                            "BK_ul": 0,
+                            "VI_dl": real_time_qos[0][key1]["videoQOS"],
+                            "VI_ul": 0,
+                            "VO_dl": real_time_qos[0][key1]["voiceQOS"],
+                            "VO_ul": 0,
+                            "timestamp": datetime.now().strftime("%d/%m %I:%M:%S %p"),
+                            "start_time": start_time.strftime("%d/%m %I:%M:%S %p"),
+                            "end_time": end_time.strftime("%d/%m %I:%M:%S %p"),
+                            "remaining_time": [
+                                str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
+                                    total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
+                            'status': 'Running'
+                        })
+                df1 = pd.DataFrame(self.overall)
+                df1.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
+
+                with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
+                          'r') as file:
+                    data = json.load(file)
+                    if data["status"] != "Running":
+                        logger.warning('Test is stopped by the user')
+                        break
+                d=datetime.now()
+                if d - start_time <= timedelta(hours=1):
+                    time.sleep(5)
+                elif d - start_time > timedelta(hours=1) or d - start_time <= timedelta(
+                        hours=6):
+                    if end_time - d < timedelta(seconds=10):
+                        time.sleep(5)
+                    else:
+                        time.sleep(10)
+                elif d - start_time > timedelta(hours=6) or d - start_time <= timedelta(
+                        hours=12):
+                    if end_time - d < timedelta(seconds=30):
+                        time.sleep(5)
+                    else:
+                        time.sleep(30)
+                elif d - start_time > timedelta(hours=12) or d - start_time <= timedelta(
+                        hours=24):
+                    if end_time - d < timedelta(seconds=60):
+                        time.sleep(5)
+                    else:
+                        time.sleep(60)
+                elif d - start_time > timedelta(hours=24) or d - start_time <= timedelta(
+                        hours=48):
+                    if end_time - d < timedelta(seconds=60):
+                        time.sleep(5)
+                    else:
+                        time.sleep(90)
+                elif d - start_time > timedelta(hours=48):
+                    if end_time - d < timedelta(seconds=120):
+                        time.sleep(5)
+                    else:
+                        time.sleep(120)
+            else:
+                time.sleep(1)
         # # rx_rate list is calculated
         for index, key in enumerate(throughput):
             for i in range(len(throughput[key])):
@@ -399,8 +566,8 @@ class ThroughputQOS(Realm):
             connections_upload.update({keys[i]: float(f"{(upload_throughput[i] ):.2f}")})
         print("upload: ", upload_throughput)
         print("download: ", download_throughput)
-        print("connections download",connections_download)
-        print("connections",connections_upload)
+        logger.info("connections download {}".format(connections_download))
+        logger.info("connections {}".format(connections_upload))
 
         return connections_download,connections_upload, drop_a_per, drop_b_per
 
@@ -623,7 +790,7 @@ class ThroughputQOS(Realm):
             table_df.update({"No of Stations": []})
             table_df.update({"Throughput for Load {}".format(rate_down+"-download"): []})
             graph_df.update({rate_down+"download": download_throughput_df})
-            print("...........graph_df",graph_df)
+            #print("...........graph_df",graph_df)
             table_df.update({"No of Stations": str(len(self.input_devices_list))})
             table_df["Throughput for Load {}".format(rate_down+"-download")].append(download_throughput[0])
             res_copy=copy.copy(res)
@@ -654,8 +821,8 @@ class ThroughputQOS(Realm):
             overall_throughput[1].append(round(sum(overall_list[1]+overall_list[5]),2))
             overall_throughput[2].append(round(sum(overall_list[2]+overall_list[6]),2))
             overall_throughput[3].append(round(sum(overall_list[3]+overall_list[7]),2))
-            print("overall thr",overall_throughput)
-            data_set=overall_throughput
+            # print("overall thr", overall_throughput)
+            data_set = overall_throughput
         else:
             data_set=list(res["graph_df"].values())[0]
         return data_set, load, res
@@ -800,7 +967,7 @@ class ThroughputQOS(Realm):
             vo_tos_list.append(tos_type[3])
             load_list.append(load)
             traffic_direction_list.append(self.direction)
-        print(traffic_type_list,traffic_direction_list,bk_tos_list,be_tos_list,vi_tos_list,vo_tos_list)
+        #print(traffic_type_list,traffic_direction_list,bk_tos_list,be_tos_list,vi_tos_list,vo_tos_list)
         if self.direction == "Bi-direction":
             load = 'Upload'+':'+rate_up + ','+ 'Download'+':'+ rate_down
             for key in res['test_results'][0][0]:
@@ -819,10 +986,10 @@ class ThroughputQOS(Realm):
             if "throughput_table_df" in res:
                 res.pop("throughput_table_df")
             if "graph_df" in res:
-                res.pop("graph_df")     
-                print(res)
-                print(load)   
-                print(data_set)  
+                res.pop("graph_df")
+                logger.info(res)
+                logger.info(load)
+                logger.info(data_set)
                 if "BK" in self.tos:
                     if self.direction=="Bi-direction":
                         individual_set=list[2]
@@ -847,7 +1014,7 @@ class ThroughputQOS(Realm):
                         _obj=f"The below graph represents individual throughput for {len(self.input_devices_list)} clients running BK "
                                 f"(WiFi) traffic.  X- axis shows “Throughput in Mbps” and Y-axis shows “number of clients”.")
                     report.build_objective()
-                    print(upload_list,download_list,individual_download_list,individual_upload_list)
+                    # print(upload_list, download_list, individual_download_list, individual_upload_list)
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _xaxis_name="Throughput in Mbps",
                                             _yaxis_name="Client names",
                                             _yaxis_categories=[i for i in self.real_client_list1],
@@ -922,7 +1089,7 @@ class ThroughputQOS(Realm):
                         _obj=f"The below graph represents individual throughput for {len(self.input_devices_list)} clients running BE "
                                 f"(WiFi) traffic.  X- axis shows “number of clients” and Y-axis shows "
                                 f"“Throughput in Mbps”.")
-                    print("individual set",individual_set)
+                    #print("individual set",individual_set)
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                             _xaxis_name="Throughput in Mbps",
@@ -1208,6 +1375,12 @@ def main():
     
     required = parser.add_argument_group('Required arguments to run lf_interop_qos.py')
     optional = parser.add_argument_group('Optional arguments to run lf_interop_qos.py')
+    optional.add_argument('--device_list',
+                          help='Enter the devices on which the test should be run', default=[])
+    optional.add_argument('--test_name',
+                          help='Specify test name to store the runtime csv results', default=None)
+    optional.add_argument('--result_dir',
+                          help='Specify the result dir to store the runtime logs', default='')
     required.add_argument('--mgr',
                               '--lfmgr',
                               default='localhost',
@@ -1236,6 +1409,7 @@ def main():
     required.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
     required.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
     required.add_argument('--tos', help='Enter the tos. Example1 : "BK,BE,VI,VO" , Example2 : "BK,VO", Example3 : "VI" ')
+    required.add_argument('--dowebgui', help="If true will execute script for webgui", default=False)
     optional.add_argument('-d',
                               '--debug',
                               action="store_true",
@@ -1252,8 +1426,10 @@ def main():
     print("--------------------------------------------")
     print(args)
     print("--------------------------------------------")
-    
-    test_results ={'test_results':[]}
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    test_results = {'test_results': []}
 
     loads = {}
     station_list = []
@@ -1283,6 +1459,7 @@ def main():
 
     for index in range(len(loads["download"])):
         throughput_qos = ThroughputQOS(host=args.mgr,
+                                        ip=args.mgr,
                                         port=args.mgr_port,
                                         number_template="0000",
                                         ap_name=args.ap_name,
@@ -1297,30 +1474,64 @@ def main():
                                         side_b_min_rate=int(loads['download'][index]),
                                         traffic_type=args.traffic_type,
                                         tos=args.tos,
+                                        dowebgui=args.dowebgui,
+                                        test_name=args.test_name,
+                                        result_dir=args.result_dir,
+                                        device_list=args.device_list,
                                         _debug_on=args.debug)
         throughput_qos.os_type()
         throughput_qos.phantom_check()
+        # checking if we have atleast one device available for running test
+        if throughput_qos.dowebgui == "True":
+            if throughput_qos.device_found == False:
+                logger.warning("No Device is available to run the test hence aborting the test")
+                df1 = pd.DataFrame([{
+                    "BE_dl": 0,
+                    "BE_ul": 0,
+                    "BK_dl": 0,
+                    "BK_ul": 0,
+                    "VI_dl": 0,
+                    "VI_ul": 0,
+                    "VO_dl": 0,
+                    "VO_ul": 0,
+                    "timestamp": datetime.now().strftime('%H:%M:%S'),
+                    'status': 'Stopped'
+                }]
+                )
+                df1.to_csv('{}/overall_throughput.csv'.format(throughput_qos.result_dir), index=False)
+                raise ValueError("Aborting the test....")
         throughput_qos.build()
         throughput_qos.start(False, False)
         time.sleep(10)
-        connections_download,connections_upload, drop_a_per, drop_b_per = throughput_qos.monitor()
-        print("connections download",connections_download)
-        print("connections upload",connections_upload)
+        connections_download, connections_upload, drop_a_per, drop_b_per = throughput_qos.monitor()
+        logger.info("connections download {}".format(connections_download))
+        logger.info("connections upload {}".format(connections_upload))
         throughput_qos.stop()
         time.sleep(5)
         test_results['test_results'].append(throughput_qos.evaluate_qos(connections_download,connections_upload, drop_a_per, drop_b_per))
         data.update(test_results)
-    test_end_time = datetime.now().strftime("%b %d %H:%M:%S")
+    test_end_time = datetime.now().strftime("%Y %d %H:%M:%S")
     print("Test ended at: ", test_end_time)
     
     input_setup_info = {
         "contact": "support@candelatech.com"
     }
-    throughput_qos.generate_report(data=data, input_setup_info=input_setup_info)
     throughput_qos.cleanup()
+    throughput_qos.generate_report(data=data, input_setup_info=input_setup_info, report_path=throughput_qos.result_dir)
+   #updating webgui running json with latest entry and test status completed 
+    if throughput_qos.dowebgui == "True":
+        last_entry = throughput_qos.overall[len(throughput_qos.overall) - 1]
+        last_entry["status"] = "Stopped"
+        last_entry["timestamp"] = datetime.now().strftime("%d/%m %I:%M:%S %p")
+        last_entry["remaining_time"] = "0"
+        last_entry["end_time"] = last_entry["timestamp"]
+        throughput_qos.overall.append(
+            last_entry
+        )
+        df1 = pd.DataFrame(throughput_qos.overall)
+        df1.to_csv('{}/overall_throughput.csv'.format(args.result_dir, ), index=False)
 
 
 
 if __name__ == "__main__":
     main()
-
