@@ -299,13 +299,25 @@ def main():
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--host", type=str, default="localhost",
-                        help="URL of the LANforge GUI machine (localhost is default, http://localhost:8080)")
-    parser.add_argument("--csv_file", help="name of the csv output file", type=str)
-    parser.add_argument("--cx_list", "--cx_names", help="comma separated list of voip connection names, or 'ALL'",
+    parser.add_argument("--host", "--mgr",
+                        dest="host",
+                        help="URL of the LANforge GUI machine (localhost is default, http://localhost:8080)",
+                        type=str,
+                        default="localhost")
+    parser.add_argument("--csv_file",
+                        help="name of the csv output file",
                         type=str)
-    parser.add_argument("--debug", help='Enable debugging', default=False, action="store_true")
-    parser.add_argument("--log_level", help='debug message verbosity', type=str)
+    parser.add_argument("--cx_list", "--cx_names",
+                        dest="cx_list",
+                        help="comma separated list of voip connection names, or 'ALL'",
+                        type=str)
+    parser.add_argument("--debug",
+                        help='Enable debugging',
+                        action="store_true",
+                        default=False)
+    parser.add_argument("--log_level",
+                        help='debug message verbosity',
+                        type=str)
 
     args = parser.parse_args()
     if args.host is not None:
