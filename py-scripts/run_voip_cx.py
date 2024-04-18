@@ -294,8 +294,7 @@ class VoipReport():
         self.csv_fileh.close()
 
 
-def main():
-    lfjson_host = "localhost"
+def parse_args():
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter)
@@ -319,7 +318,13 @@ def main():
                         help='debug message verbosity',
                         type=str)
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    lfjson_host = "localhost"
+    args = parse_args()
+
     if args.host is not None:
         lfjson_host = args.host
     if args.debug is not None:
