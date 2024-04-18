@@ -101,9 +101,6 @@ class VoipReport():
         )
         self.csv_data: list = []
         try:
-            if not self.csv_filename:
-                raise ValueError("no filename provided")
-                exit(1)
             self.csv_fileh = open(self.csv_filename, "w")
             self.csv_writer = csv.writer(self.csv_fileh)
             self.csv_writer.writerow(self.ep_col_names)
@@ -305,10 +302,12 @@ def parse_args():
                         default="localhost")
     parser.add_argument("--csv_file",
                         help="name of the csv output file",
+                        required=True,
                         type=str)
     parser.add_argument("--cx_list", "--cx_names",
                         dest="cx_list",
                         help="comma separated list of voip connection names, or 'ALL'",
+                        required=True,
                         type=str)
     parser.add_argument("--debug",
                         help='Enable debugging',
@@ -329,8 +328,6 @@ def main():
         lfjson_host = args.host
     if args.debug is not None:
         debug = args.debug
-    if not args.cx_list:
-        print("Please list voip connection names (ex: cx1,cx2,cx3) or ALL")
 
     lfapi_session = LFSession(lfclient_url=lfjson_host,
                               debug=debug,
