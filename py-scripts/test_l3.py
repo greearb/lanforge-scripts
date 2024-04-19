@@ -526,6 +526,7 @@ import platform
 import itertools
 import pandas as pd
 import traceback
+import json
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -632,6 +633,12 @@ class L3VariableTime(Realm):
                  ap_file="",
                  ap_band_list=['2g', '5g', '6g'],
 
+                 #  for webgui
+                 dowebgui=False,
+                 test_name="",
+                 ip="",
+                 #for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
+                 result_dir="",
                  # wifi extra configuration
                  key_mgmt_list=[],
                  pairwise_list=[],
@@ -706,6 +713,10 @@ class L3VariableTime(Realm):
         self.endp_types = endp_types.split(",")
         self.side_b = side_b
         self.side_a = side_a
+        self.dowebgui = dowebgui
+        self.test_name = test_name
+        self.ip = ip
+        self.result_dir = result_dir
         # if it is a dataplane test the side_a is not none and an ethernet port
         if self.side_a is not None:
             self.dataplane = True
@@ -1358,10 +1369,11 @@ class L3VariableTime(Realm):
         sta_name = 'no_station'
 
         eid = port_eid
-        logger.info("endp-stats-for-port, port-eid: {}".format(port_eid))
         eid = self.name_to_eid(port_eid)
-        logger.debug(
-            "eid: {eid}".format(eid=eid))
+        if self.dowebgui != True:
+            logger.info("endp-stats-for-port, port-eid: {}".format(port_eid))
+            logger.debug(
+                "eid: {eid}".format(eid=eid))
 
         # Convert all eid elements to strings
         eid[0] = str(eid[0])
@@ -1370,7 +1382,8 @@ class L3VariableTime(Realm):
 
         for endp in endps:
             # pprint(endp)
-            logger.info(endp)
+            if self.dowebgui != True:
+                logger.debug(pformat(endp))
             eid_endp = endp["eid"].split(".")
             logger.debug(
                 "Comparing eid:{eid} to endp-id {eid_endp}".format(eid=eid, eid_endp=eid_endp))
@@ -1564,6 +1577,10 @@ class L3VariableTime(Realm):
     # Common code to generate timestamp for CSV files.
     def time_stamp(self):
         return time.strftime('%m_%d_%Y_%H_%M_%S',
+                             time.localtime(self.epoch_time))
+    # Time Constrains use for webGUI compatibility
+    def get_time_stamp_local(self):
+        return time.strftime('%Y-%m-%d-%H-%M-%S',
                              time.localtime(self.epoch_time))
 
     # Cleanup any older config that a previous run of this test may have
@@ -1863,7 +1880,7 @@ class L3VariableTime(Realm):
                     self.__get_rx_values()
 
                     end_time = self.parse_time(self.test_duration) + cur_time
-
+                    start_time = cur_time
                     logger.info(
                         "Monitoring throughput for duration: %s" %
                         self.test_duration)
@@ -1877,6 +1894,7 @@ class L3VariableTime(Realm):
                     total_dl_ll_bps = 0
                     total_ul_ll_bps = 0
                     reset_timer = 0
+                    self.overall = []
 
                     # Monitor loop
                     while cur_time < end_time:
@@ -1901,8 +1919,32 @@ class L3VariableTime(Realm):
 
                         log_msg = "main loop, total-dl: {total_dl_bps} total-ul: {total_ul_bps} total-dl-ll: {total_dl_ll_bps}".format(
                             total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
+                        #Added logic creating a csv file for webGUI to get runtime data
+                        if self.dowebgui == True:
+                            time_difference = abs(end_time - datetime.datetime.now())
+                            total_hours = time_difference.total_seconds() / 3600
+                            remaining_minutes = (total_hours % 1) * 60
+                            remaining_time = [
+                                str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
+                                    total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0]
+                            self.overall.append(
+                                {self.tos[0]: total_dl_bps + total_ul_bps, "timestamp": self.get_time_stamp_local(),
+                                 "status": "Running",
+                                 "start_time": start_time.strftime('%Y-%m-%d-%H-%M-%S'),
+                                 "end_time": end_time.strftime('%Y-%m-%d-%H-%M-%S'), "remaining_time": remaining_time})
+                            df1 = pd.DataFrame(self.overall)
+                            df1.to_csv('{}/overall_multicast_throughput.csv'.format(self.result_dir), index=False)
+                            with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip,
+                                                                                                             self.test_name),
+                                      'r') as file:
+                                data = json.load(file)
+                                if data["status"] != "Running":
+                                    logging.warning('Test is stopped by the user')
+                                    self.overall[len(self.overall) - 1]["end_time"] = self.get_time_stamp_local()
+                                    break
+                        if self.dowebgui != True:
+                            logger.debug(log_msg)
 
-                        logger.debug(log_msg)
 
                         # AP OUTPUT
                         # call to AP to return values
@@ -1932,11 +1974,16 @@ class L3VariableTime(Realm):
                                         "query-port: %s: incomplete response:" % url)
                                     logger.info(pformat(response))
                                 else:
-                                    # print("response".format(response))
-                                    logger.info(pformat(response))
+                                    if self.dowebgui != True:
+                                        # print("response".format(response))
+                                        logger.info(pformat(response))
                                     port_data = response['interface']
                                     logger.info(
                                         "From LANforge: port_data, response['insterface']:{}".format(port_data))
+                                    mac = port_data['mac']
+                                    if self.dowebgui != True:
+                                        logger.info(
+                                            "From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
                                     logger.debug("mac : {mac}".format(mac=mac))
 
@@ -1952,8 +1999,9 @@ class L3VariableTime(Realm):
                                         port_data["port"], endps)
 
                                 if tx_dl_mac_found:
-                                    logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(
-                                        mac=mac, ap_row_tx_dl=ap_row_tx_dl))
+                                    if self.dowebgui != True:
+                                        logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(
+                                            mac=mac, ap_row_tx_dl=ap_row_tx_dl))
                                     # Find latency, jitter for connections
                                     # using this port.
                                     latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
@@ -2009,9 +2057,10 @@ class L3VariableTime(Realm):
                                         total_dl_pkts_ll,
                                         dl_tx_drop_percent,
                                         ap_row_rx_ul)  # ap_ul_row added
+                                if self.dowebgui != True:
+                                    logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(
+                                        ap_row_rx_ul=ap_row_rx_ul))
 
-                                logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(
-                                    ap_row_rx_ul=ap_row_rx_ul))
 
                         ####################################
                         else:
@@ -2031,7 +2080,7 @@ class L3VariableTime(Realm):
                                         "interface" not in response):
                                     logger.info(
                                         "query-port: %s: incomplete response:" % url)
-                                    pprint(response)
+                                    logger.debug(pformat(response))
                                 else:
                                     port_data = response['interface']
                                     latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
@@ -2090,7 +2139,7 @@ class L3VariableTime(Realm):
                     # drop rows that have eth
                     all_dl_ports_stations_df = all_dl_ports_stations_df[~all_dl_ports_stations_df['Name'].str.contains(
                         'eth')]
-                    logger.info(pformat(all_dl_ports_stations_df))
+                    # logger.info(pformat(all_dl_ports_stations_df))
 
                     # save to csv file
                     all_dl_ports_stations_file_name = self.outfile[:-4]
@@ -2526,8 +2575,9 @@ class L3VariableTime(Realm):
         self.resource_data.pop("handler")
         self.resource_data.pop("uri")
         # self.resource_data.pop("warnings")
-        logger.info("self.resource_data type: {dtype}".format(dtype=type(self.port_data)))
-        #logger.info("self.resource_data : {data}".format(data=self.port_data))
+        if self.dowebgui != True:
+            logger.info("self.resource_data type: {dtype}".format(dtype=type(self.port_data)))
+        # logger.info("self.resource_data : {data}".format(data=self.port_data))
 
         # This is to handle the case where there is only one resourse 
         if "resource" in self.resource_data.keys():
@@ -6224,7 +6274,15 @@ INCLUDE_IN_README: False
         '--ap_file', help="--ap_file 'ap_file.txt'", default=None)
     test_l3_parser.add_argument(
         '--ap_band_list', help="--ap_band_list '2g,5g,6g' supported bands", default='2g,5g,6g')
-
+    #WebGUI argumemnts
+    test_l3_parser.add_argument(
+        '--dowebgui',
+        help='--dowebgui True  if running through webgui',
+        default="False")
+    test_l3_parser.add_argument(
+        '--test_name',
+        help='Test name when running through webgui'
+    )
     parser.add_argument('--help_summary',
                         default=None,
                         action="store_true",
@@ -6234,9 +6292,19 @@ INCLUDE_IN_README: False
     args = parser.parse_args()
 
     if args.help_summary:
-        print(help_summary)
+        logger.info(help_summary)
         exit(0)
 
+    dowebgui = False
+    test_name = ""
+    ip = ""
+    if args.dowebgui:
+        logger.info("In webGUI execution")
+        if args.dowebgui == "True":
+            dowebgui = True
+            test_name = args.test_name
+            ip = args.lfmgr
+            logger.info("dowebgui", dowebgui, test_name, ip)
 
     # initialize pass / fail
     test_passed = False
@@ -6887,6 +6955,13 @@ INCLUDE_IN_README: False
         ap_file=args.ap_file,
         ap_band_list=args.ap_band_list.split(','),
 
+        # for webgui execution
+        test_name=test_name,
+        dowebgui=dowebgui,
+        ip=ip,
+        #for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
+        result_dir=local_lf_report_dir,
+
         # wifi extra configuration
         key_mgmt_list=key_mgmt_list,
         pairwise_list=pairwise_list,
@@ -6993,7 +7068,16 @@ INCLUDE_IN_README: False
     if ip_var_test.passes():
         test_passed = True
         logger.info("Full test passed, all connections increased rx bytes")
-
+    if ip_var_test.dowebgui == True:
+        last_entry = ip_var_test.overall[len(ip_var_test.overall) - 1]
+        last_entry["status"] = "Stopped"
+        last_entry["timestamp"] = ip_var_test.get_time_stamp_local()
+        last_entry["end_time"] = ip_var_test.get_time_stamp_local()
+        ip_var_test.overall.append(
+            last_entry
+        )
+        df1 = pd.DataFrame(ip_var_test.overall)
+        df1.to_csv('{}/overall_multicast_throughput.csv'.format(ip_var_test.result_dir), index=False)
     if test_passed:
         ip_var_test.exit_success()
     else:
