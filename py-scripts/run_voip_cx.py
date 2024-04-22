@@ -32,28 +32,100 @@ logger = logging.getLogger(__name__)
 # Realm = realm.Realm
 
 
+class VoipEndp:
+    def __init__(self,
+                 name: str,
+                 num_calls: int = 0,
+                 **kwargs):
+        self._name: str = name
+
+        self._phone_num: str = None
+        self._mobile_bt_mac: str = None
+
+        self._num_calls = num_calls
+
+    @property
+    def name(self):
+        """Endpoint name."""
+        return self._name
+
+    @property
+    def num_calls(self):
+        """Number of calls for endpoint when in loop mode."""
+        return self._num_calls
+
+    @num_calls.setter
+    def num_calls(self, num_calls: str):
+        """Set number of calls for endpoint when in loop mode."""
+        self._num_calls= num_calls
+
+    @property
+    def phone_num(self):
+        """Endpoint phone number."""
+        return self._phone_num
+
+    @phone_num.setter
+    def phone_num(self, phone_num: str):
+        """Set endpoint phone number."""
+        self._phone_num = phone_num
+
+    @property
+    def mobile_bt_mac(self):
+        """Endpoint Bluetooth MAC, if resource is a phone."""
+        return self._mobile_bt_mac
+
+    @mobile_bt_mac.setter
+    def mobile_bt_mac(self, mobile_bt_mac: str):
+        """Set endpoint Bluetooth MAC, if resource is a phone."""
+        self._mobile_bt_mac = mobile_bt_mac
+
+
+class VoipCx:
+    def __init__(self,
+                 name: str,
+                 endp_a: VoipEndp = None,
+                 endp_b: VoipEndp = None,
+                 **kwargs):
+        self._name = name
+
+        self._endp_a = endp_a
+        self._endp_b = endp_b
+
+    @property
+    def name(self):
+        """VoIP CX name."""
+        return self._name
+
+    @property
+    def endp_a(self):
+        """VoIP CX endpoint A."""
+        return self._endp_a
+
+    @property
+    def endp_b(self):
+        """VoIP CX endpoint B."""
+        return self._endp_b
+
+
 class VoipReport():
-    def __init__(self, lfsession: LFSession = None, args=None):
-
+    def __init__(self,
+                 lfsession: LFSession,
+                 csv_file: str,
+                 cx_names_str: str,
+                 debug: bool,
+                 **kwargs):
+        """Initialize VoIP test."""
         self.lfsession = lfsession
-        self.csv_filename = args.csv_file
-        self.cx_list: list = []
-        self.voip_endp_list: list = []
-        if not args.cx_list:
-            raise ValueError("no cx names")
-        if isinstance(args.cx_list, list):
-            self.cx_list.extend(args.cx_list)
-        elif isinstance(args.cx_list, str):
-            if args.cx_list.find(',') < 0:
-                self.cx_list.append(args.cx_list)
-            else:
-                self.cx_list.extend(args.cx_list.split(','))
-        # pprint(["self.cx_list:", self.cx_list])
+        self.debug = debug
 
-        self.__init_csv_output(csv_file=args.csv_file)
+        self.__init_csv_output(csv_file=csv_file)
+        self.__initialize_voip_cxs(cx_names_str=cx_names_str,
+                                   **kwargs)
 
     def __init_csv_output(self, csv_file: str):
         """Initialize CSV output file."""
+
+        # Parse CSV file, if specified. Otherwise, use generate default in `/home/lanforge/report-data/`
         csv_file_name = f"/home/lanforge/report-data/voip-{time.time()}.csv"
         if csv_file:
             self.csv_filename = csv_file
@@ -107,7 +179,7 @@ class VoipReport():
         )
         self.csv_data: list = []
 
-        # Try to open CSV file
+        # Attempt to open CSV file
         try:
             self.csv_fileh = open(self.csv_filename, "w")
             self.csv_writer = csv.writer(self.csv_fileh)
@@ -117,6 +189,100 @@ class VoipReport():
             e.print_exc()
             traceback.print_exc()
             exit(1)
+
+    def __initialize_voip_cxs(self, cx_names_str: str, **kwargs):
+        """
+        Given user-specified list, initialize data structures
+        used to store, configure, and query VoIP CXs.
+        """
+        self.cxs = []
+        self.endps_a = []
+        self.endps_b = []
+
+        # Parse out CX list string into actual list of CX names
+        cx_list = []
+        if cx_names_str.find(',') < 0:
+            # Only one cx name specified
+            cx_list.append(cx_names_str)
+        else:
+            # Multiple cx names specified
+            cx_list.extend(cx_names_str.split(','))
+
+        # If only one CX and is 'all' or 'ALL', user specified to use all VoIP CXs.
+        # Check for equality, as want to make sure user can specify
+        # a cx name with string 'all' or 'ALL' in it.
+        if len(cx_list) == 1 and (cx_list[0] == "all") or (cx_list[0]== "ALL"):
+            logger.debug(f"Querying all VoIP CXs")
+        else:
+            logger.debug(f"Querying parsed VoIP CXs: {cx_list}")
+
+        # TODO: Don't hardcode endpoint names
+        #queried_endps = self.__query_voip_endps(endp_list=["all"])
+
+        queried_cxs = self.__query_voip_cxs(cx_list=cx_list)
+        for queried_cx in queried_cxs:
+            # Queried Cx data is a list of dicts, where each dict
+            # has a single key which is the CX name. For example:
+            # [
+            #   {'TEST1': {'name': 'TEST1'}},
+            # ]
+            cx_name = list(queried_cx.keys())[0]
+
+            # CX endpoint A
+            endp_a = VoipEndp(name=cx_name + "-A")
+            self.endps_a.append(endp_a)
+
+            # CX endpoint B
+            endp_b = VoipEndp(name=cx_name + "-B")
+            self.endps_b.append(endp_b)
+
+            cx = VoipCx(name=cx_name,
+                        endp_a=endp_a,
+                        endp_b=endp_b,
+                        **kwargs)
+            self.cxs.append(cx)
+
+
+    def __query_voip_cxs(self, cx_list: list[str], columns: list[str] = ["name"]):
+        """Query and return all VoIP CXs."""
+        e_w_list: list = []
+        lf_query: LFJsonQuery = self.lfsession.get_query()
+        response = lf_query.get_voip(eid_list=cx_list,
+                                     requested_col_names=columns,
+                                     errors_warnings=e_w_list,
+                                     debug=True)
+        if not response:
+            logger.error(f"Unable to query \'{columns}\' data for VoIP CXs \'{cx_list}\'")
+            exit(1)
+
+        # When multiple to return, returned as list of dicts.
+        # When one to return, returned as just dict.
+        # Package into list of dict (with single element) to simplify processing.
+        if isinstance(response, dict):
+            response = [response]
+
+        return response
+
+
+    def __query_voip_endps(self, endp_list: list[str], columns: list[str] = ["name"]):
+        """Query and return all VoIP endpoints."""
+        e_w_list: list = []
+        lf_query: LFJsonQuery = self.lfsession.get_query()
+        response = lf_query.get_voip_endp(eid_list=endp_list,
+                                          requested_col_names=columns,
+                                          errors_warnings=e_w_list,
+                                          debug=True)
+        if not response:
+            logger.error(f"Unable to query \'{columns}\' data for VoIP endpoints \'{endp_list}\'")
+            exit(1)
+
+        # When multiple to return, returned as list of dicts.
+        # When one to return, returned as just dict.
+        # Package into list of dict (with single element) to simplify processing.
+        if isinstance(response, dict):
+            response = [response]
+
+        return response
 
     def start(self):
         # query list of voip connections, warn on any not found
@@ -128,6 +294,9 @@ class VoipReport():
                                      requested_col_names=("name"),
                                      errors_warnings=e_w_list,
                                      debug=True)
+        lf_cmd: LFJsonCommand = self.lfsession.get_command()
+        e_w_list: list = []
+
         # print(" - - - - - - -  - - - - - - -  - - - - - - -  - - - - - - - ")
         # pprint(response)
         # print(" - - - - - - -  - - - - - - -  - - - - - - -  - - - - - - - ")
@@ -314,7 +483,7 @@ def parse_args():
                         required=True,
                         type=str)
     parser.add_argument("--cx_list", "--cx_names",
-                        dest="cx_list",
+                        dest="cx_names_str",
                         help="comma separated list of voip connection names, or 'ALL'",
                         required=True,
                         type=str)
@@ -330,18 +499,14 @@ def parse_args():
 
 
 def main():
-    lfjson_host = "localhost"
     args = parse_args()
+    lfapi_session = LFSession(lfclient_url=args.host,
+                              debug=args.debug)
 
-    if args.host is not None:
-        lfjson_host = args.host
-    if args.debug is not None:
-        debug = args.debug
-
-    lfapi_session = LFSession(lfclient_url=lfjson_host,
-                              debug=debug,
-                              )
-    voip_report = VoipReport(lfsession=lfapi_session, args=args)
+    # The '**vars(args)' unpacks arguments into named parameters
+    # of the VoipReport initializer.
+    voip_report = VoipReport(lfsession=lfapi_session,
+                             **vars(args))
     voip_report.start()
     voip_report.monitor()
     voip_report.report()
