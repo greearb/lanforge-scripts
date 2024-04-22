@@ -18,21 +18,16 @@
 
     EXAMPLE-3:
     Command Line Interface to run ping plotter test with only real clients
-    python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61 --ssid RDT_wpa2 --security wpa2_personal
-    --passwd OpenWifi
+    python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61
 
     EXAMPLE-4:
     Command Line Interface to run ping plotter test with both real and virtual clients
     python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
     --passwd OpenWifi --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61
-
-    EXAMPLE-5:
-    Command Line Interface to run ping plotter test with existing Wi-Fi configuration on the real devices
-    python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --passwd OpenWifi --use_default_config
     
-    EXAMPLE-6:
+    EXAMPLE-5:
     Command Line Interface to run ping plotter test with a different target
-    python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --passwd OpenWifi --use_default_config --target 192.168.1.61
+    python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --target 192.168.1.61
     
     SCRIPT_CLASSIFICATION : Test
 
@@ -66,6 +61,9 @@ import logging
 import matplotlib.pyplot as plt
 import csv
 import asyncio
+import json
+import shutil
+import requests
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
@@ -109,6 +107,8 @@ class Ping(Realm):
                  virtual=None,
                  duration=1,
                  real=None,
+                 do_webUI=False,
+                 ui_report_dir=None,
                  debug=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
@@ -143,11 +143,13 @@ class Ping(Realm):
         self.Devices = None
         self.start_time = ""
         self.stop_time = ""
+        self.do_webUI = do_webUI
+        self.ui_report_dir = ui_report_dir
 
     def change_target_to_ip(self):
 
         # checking if target is an IP or a port
-        if(self.target.count('.') != 3):
+        if(self.target.count('.') != 3 and self.target.split('.')[-2].isnumeric()):
             # checking if target is eth1 or 1.1.eth1
             target_port_list = self.name_to_eid(self.target)
             shelf, resource, port, _ = target_port_list
@@ -212,8 +214,9 @@ class Ping(Realm):
 
         for sta_name in self.real_sta_list:
             if sta_name not in real_devices.devices_data:
-                logger.error('Real station not in devices data')
-                raise ValueError('Real station not in devices data')
+                logger.error('Real station not in devices data, ignoring it from testing')
+                continue
+                # raise ValueError('Real station not in devices data')
 
             self.real_sta_data_dict[sta_name] = real_devices.devices_data[sta_name]
 
@@ -540,6 +543,47 @@ class Ping(Realm):
             # report.move_csv_file()
             report_obj.build_graph()
 
+    def store_csv(self, data=None):
+        if(data is None):
+            data = self.result_json
+
+        if('status' in data.keys() and data['status'] == 'Aborted'):
+            return False
+        else:
+            data['status'] = 'Running'
+            interval = timedelta(seconds=int(self.interval))
+            for device, device_data in data.items():
+                if(device == 'status'):
+                    continue
+                new_dict = {}
+                sequence_numbers = {}
+                for seq in device_data['rtts'].keys():
+                    sequence_numbers[int(seq)] = ((int(seq) -1) * interval + self.start_time).strftime("%d/%m/%Y %H:%M:%S")
+                for seq in sorted(list(sequence_numbers.keys())):
+                    new_dict[sequence_numbers[seq]] = device_data['rtts'][seq]
+                # for seq,rtt in device_data['rtts'].items():
+                #     new_dict[((int(seq) -1) * interval + self.start_time).strftime("%d/%m/%Y %H:%M:%S")] = rtt
+                data[device]['webui_rtts'] = new_dict
+        with open(self.ui_report_dir + '/runtime_ping_data.json', 'w') as f:
+            json.dump(data, f, indent=4)
+        
+        return True
+
+    def set_webUI_stop(self):
+        with open(self.ui_report_dir + '/runtime_ping_data.json', 'r') as f:
+            data = json.load(f)
+
+        if('status' in data.keys() and data['status'] != 'Aborted'):
+            data['status'] = 'Completed'
+
+            with open(self.ui_report_dir + '/runtime_ping_data.json', 'w') as f:
+                json.dump(data, f, indent=4)
+
+    def copy_reports(self, report_path):
+        logging.info('Copying PDF report and CSVs to webUI result directory')
+        for file in os.listdir(report_path):
+            if(file.endswith('.csv') or file.endswith('.pdf')):
+                shutil.copy2(report_path + '/' + file, self.ui_report_dir)
 
     def generate_report(self, result_json=None, result_dir='Ping_Plotter_Test_Report', report_path=''):
         if result_json is not None:
@@ -565,6 +609,9 @@ class Ping(Realm):
         self.report_names = []
         self.remarks = []
         # packet_count_data = {}
+        if(self.do_webUI and 'status' in self.result_json.keys()):
+            del self.result_json['status']
+
         for device, device_data in self.result_json.items():
             self.packets_sent.append(int(device_data['sent']))
             self.packets_received.append(int(device_data['recv']))
@@ -627,6 +674,30 @@ class Ping(Realm):
         report.build_banner()
 
         # test setup info
+        if(self.do_webUI):
+            self.real_sta_list = self.sta_list
+            for resource in self.real_sta_list:
+                shelf, r_id, _ = resource.split('.')
+                url = 'http://{}:{}/resource/{}/{}?fields=hw version'.format(self.host, self.port, shelf, r_id)
+                hw_version = requests.get(url)
+                hw_version = hw_version.json()
+                if('resource' in hw_version.keys()):
+                    hw_version = hw_version['resource']
+                    if('hw version' in hw_version.keys()):
+                        hw_version = hw_version['hw version']
+                        print(hw_version)
+                        if('Win' in hw_version):
+                            self.windows += 1
+                        elif('Lin' in hw_version):
+                            self.linux += 1
+                        elif('Apple' in hw_version):
+                            self.mac += 1
+                        else:
+                            self.android += 1
+                    else:
+                        logging.warning('Malformed response for hw version query on resource manager.')
+                else:
+                    logging.warning('Malformed response for hw version query on resource manager.')
         test_setup_info = {
             'SSID': [self.ssid if self.ssid else 'TEST CONFIGURED'][0],
             'Security': [self.security if self.ssid else 'TEST CONFIGURED'][0],
@@ -810,6 +881,9 @@ class Ping(Realm):
         report.write_html()
         report.write_pdf()
 
+        if(self.do_webUI):
+            self.copy_reports(report_path_date_time)
+
 
 def main():
 
@@ -845,21 +919,16 @@ connectivity problems.
 
         EXAMPLE-3:
         Command Line Interface to run ping plotter test with only real clients
-        python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61 --ssid RDT_wpa2 --security wpa2_personal
-        --passwd OpenWifi
+        python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61
 
         EXAMPLE-4:
         Command Line Interface to run ping plotter test with both real and virtual clients
         python3 lf_interop_ping_plotter.py --mgr 192.168.200.103 --real --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
         --passwd OpenWifi --ping_interval 1 --ping_duration 1m --server_ip 192.168.1.61
-
-        EXAMPLE-5:
-        Command Line Interface to run ping plotter test with existing Wi-Fi configuration on the real devices
-        python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --passwd OpenWifi --use_default_config
         
-        EXAMPLE-6:
+        EXAMPLE-5:
         Command Line Interface to run ping plotter test with a different target
-        python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --passwd OpenWifi --use_default_config --target 192.168.1.61
+        python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --target 192.168.1.61
         
         SCRIPT_CLASSIFICATION : Test
 
@@ -885,6 +954,7 @@ connectivity problems.
     )
     required = parser.add_argument_group('Required arguments')
     optional = parser.add_argument_group('Optional arguments')
+    webUI_args = parser.add_argument_group('webUI arguments')\
 
     # optional arguments
     optional.add_argument('--mgr',
@@ -896,7 +966,7 @@ connectivity problems.
     optional.add_argument('--target',
                           type=str,
                           help='Target URL or port for ping plotter test',
-                          default='eth1')
+                          default='1.1.eth1')
     
     optional.add_argument('--ping_interval',
                           type=str,
@@ -965,6 +1035,17 @@ connectivity problems.
     optional.add_argument('--no_cleanup',
                           action="store_true",
                           help='specify this flag to stop cleaning up generic cxs after the test')
+
+    # webUI arguments
+    webUI_args.add_argument('--do_webUI',
+                            action='store_true',
+                            help='specify this flag when triggering a test from webUI')
+    
+    webUI_args.add_argument('--resources',
+                            help='Specify the real device ports seperated by comma')
+
+    webUI_args.add_argument('--ui_report_dir',
+                            help='Specify the results directory to store the reports for webUI')
     
     # logging configuration:
     parser.add_argument('--log_level', default=None,
@@ -1005,7 +1086,11 @@ connectivity problems.
     if (args.security != 'open' and args.passwd == '[BLANK]'):
         print('--passwd required')
         exit(0)
-    if(args.use_default_config == False):
+    
+    # configure = not args.use_default_config # removed connectivity from this script, unblock this line to enable connectivity for real devices
+    configure = False # comment this line to enable connectivity for real devices
+
+    if(configure):
         if(args.ssid is None):
             print('--ssid required for Wi-Fi configuration')
             exit(0)
@@ -1040,7 +1125,17 @@ connectivity problems.
         duration = float(duration.replace('h', '')) * 60
         report_duration = '{:02}:00:00'.format(int(args.ping_duration.replace('h', '')))
 
-    configure = not args.use_default_config
+    # webUI argument check
+    do_webUI = args.do_webUI
+    webUI_resources = args.resources
+    ui_report_dir = args.ui_report_dir
+    if(do_webUI and webUI_resources is None):
+        print('--resources argument is required when --do_webUI is specified')
+        exit(0)
+    if(do_webUI and ui_report_dir is None):
+        print('--ui_report_dir argument is required when --do_webUI is specified')
+        exit(0)
+
     debug = args.debug
 
     if (debug):
@@ -1062,7 +1157,7 @@ connectivity problems.
 
     # ping object creation
     ping = Ping(host=mgr_ip, port=mgr_port, ssid=ssid, security=security, password=password, radio=radio,
-                lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=report_duration, debug=debug)
+                lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=report_duration, do_webUI=do_webUI, ui_report_dir=ui_report_dir, debug=debug)
     
     # creating virtual stations if --virtual flag is specified
     if (args.virtual):
@@ -1077,7 +1172,19 @@ connectivity problems.
 
     # selecting real clients if --real flag is specified
     if (args.real):
-        Devices = RealDevice(manager_ip=mgr_ip, server_ip=server_ip, ssid=ssid, encryption=security, passwd=password)
+        # NOTE: Removed connectivity from ping plotter, adding it in mixed traffic test
+        Devices = RealDevice(manager_ip=mgr_ip,
+                            server_ip=server_ip,
+                            ssid_2g='Test Configured',
+                            passwd_2g='',
+                            encryption_2g='',
+                            ssid_5g='Test Configured',
+                            passwd_5g='',
+                            encryption_5g='',
+                            ssid_6g='Test Configured',
+                            passwd_6g='',
+                            encryption_6g='',
+                            selected_bands=['5G'])
         if(configure):
             # Run the event loop
             asyncio.run(Devices.query_all_devices_to_configure_wifi())
@@ -1086,7 +1193,11 @@ connectivity problems.
         else:
             Devices.get_devices()
             ping.Devices = Devices
-            ping.select_real_devices(real_devices=Devices)
+            if(not do_webUI):
+                ping.select_real_devices(real_devices=Devices)
+            else:
+                webUI_resources = webUI_resources.split(',')
+                ping.select_real_devices(real_devices=Devices, real_sta_list=webUI_resources, base_interop_obj=Devices)
 
     # station precleanup
     ping.cleanup()
@@ -1131,7 +1242,6 @@ connectivity problems.
         rtts[station] = {}
     while(loop_timer <= duration):
         t_init = datetime.now()
-        print(ping.generic_endps_profile.created_endp, "/generic/{}".format(','.join(ping.generic_endps_profile.created_endp)))
         result_data = ping.get_results()
         # logging.info(result_data)
         if (args.virtual):
@@ -1465,6 +1575,11 @@ connectivity problems.
                             ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
                             # ping.result_json[station]['dropped_packets'] = dropped_packets
 
+        if(ping.do_webUI):
+            if(not ping.store_csv()):
+                logging.info('Aborted test from webUI')
+                break
+
         time.sleep(1)
         # loop_timer += 1
         # print(loop_timer)
@@ -1475,6 +1590,9 @@ connectivity problems.
 
     logging.info('Stopping the test')
     ping.stop_generic()
+    
+    if(ping.do_webUI):
+        ping.set_webUI_stop()
 
     logging.info(ping.result_json)
 
