@@ -285,49 +285,25 @@ class VoipReport():
         return response
 
     def start(self):
-        # query list of voip connections, warn on any not found
-        lf_query: LFJsonQuery = self.lfsession.get_query()
-        lf_cmd: LFJsonCommand = self.lfsession.get_command()
+        """Start specified VoIP CXs."""
+        logger.debug(f"Starting CXs")
+
         e_w_list: list = []
-
-        response = lf_query.get_voip(eid_list=self.cx_list,
-                                     requested_col_names=("name"),
-                                     errors_warnings=e_w_list,
-                                     debug=True)
         lf_cmd: LFJsonCommand = self.lfsession.get_command()
-        e_w_list: list = []
 
-        # print(" - - - - - - -  - - - - - - -  - - - - - - -  - - - - - - - ")
-        # pprint(response)
-        # print(" - - - - - - -  - - - - - - -  - - - - - - -  - - - - - - - ")
+        for cx in self.cxs:
+            e_w_list.clear()
+            cx_name = cx.name
 
-        if not response:
-            raise ValueError("unable to find voip connections")
-
-        if isinstance(response, dict):
-            response = [response]
-
-        for entry in response:
-            for (key, value) in entry.items():
-                if key == "name":
-                    key = value
-                if str(self.cx_list[0]).lower() == "all":
-                    print(f"adding endpoints for {key}")
-                elif key not in self.cx_list:
-                    print(f"cx [{key}] not found in {self.cx_list}")
-                    continue
-                self.voip_endp_list.append(f"{key}-A")
-                self.voip_endp_list.append(f"{key}-B")
-                # start cx
-                try:
-                    # print(f"Starting cx {key}")
-                    lf_cmd.post_set_cx_state(cx_name=key,
-                                             test_mgr='ALL',
-                                             suppress_related_commands=True,
-                                             cx_state=lf_cmd.SetCxStateCxState.RUNNING.value,
-                                             errors_warnings=e_w_list)
-                except Exception as e:
-                    pprint(['exception:', e, "cx:", key, e_w_list])
+            try:
+                logger.debug(f"Starting CX \'{cx_name}\'")
+                lf_cmd.post_set_cx_state(cx_name=cx_name,
+                                        test_mgr='ALL',
+                                        suppress_related_commands=True,
+                                        cx_state=lf_cmd.SetCxStateCxState.RUNNING.value,
+                                        errors_warnings=e_w_list)
+            except Exception as e:
+                pprint(['exception:', e, "cx:", cx_name, e_w_list])
 
     def write_rows(self):
         if self.last_written_row >= (len(self.csv_data) - 1):
@@ -359,7 +335,6 @@ class VoipReport():
     def monitor(self):
         if not self.ep_col_names:
             raise ValueError("no endpoint names")
-        num_running_ep = 1
         lf_query: LFJsonQuery = self.lfsession.get_query()
         # lf_cmd: LFJsonCommand = self.lfsession.get_command()
         e_w_list: list = []
@@ -371,9 +346,12 @@ class VoipReport():
         wait_flag_A = True
         wait_flag_B = True
 
+        all_endps = [cx.endp_a.name for cx in self.cxs] + [cx.endp_b.name for cx in self.cxs]
+        num_running_ep = len(all_endps)
+
         # stop until endpoints actually starts the test else script terminates early.
         while wait_flag_A or wait_flag_B:
-            response = lf_query.get_voip_endp(eid_list=self.voip_endp_list,
+            response = lf_query.get_voip_endp(eid_list=all_endps,
                                                   debug=False,
                                                   errors_warnings=e_w_list)
 
@@ -401,8 +379,7 @@ class VoipReport():
             time.sleep(1)
             try:
                 # pprint(["self.voip.endp_list:", self.voip_endp_list])
-                num_running_ep = len(self.voip_endp_list)
-                response = lf_query.get_voip_endp(eid_list=self.voip_endp_list,
+                response = lf_query.get_voip_endp(eid_list=all_endps,
                                                   debug=False,
                                                   errors_warnings=e_w_list)
                 if not response:
