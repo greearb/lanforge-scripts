@@ -39,7 +39,6 @@ class VoipReport():
         self.csv_filename = args.csv_file
         self.cx_list: list = []
         self.voip_endp_list: list = []
-        self.last_written_row = 0
         if not args.cx_list:
             raise ValueError("no cx names")
         if isinstance(args.cx_list, list):
@@ -50,11 +49,18 @@ class VoipReport():
             else:
                 self.cx_list.extend(args.cx_list.split(','))
         # pprint(["self.cx_list:", self.cx_list])
+
+        self.__init_csv_output(csv_file=args.csv_file)
+
+    def __init_csv_output(self, csv_file: str):
+        """Initialize CSV output file."""
         csv_file_name = f"/home/lanforge/report-data/voip-{time.time()}.csv"
-        if args.csv_file:
-            self.csv_filename = args.csv_file
+        if csv_file:
+            self.csv_filename = csv_file
         else:
             self.csv_filename = csv_file_name
+        logger.info(f"Test CSV output file is \'{csv_file_name}\'")
+
         self.ep_col_names: list = (
             "epoch_time",
             "name",
@@ -100,10 +106,13 @@ class VoipReport():
             # "entity id"
         )
         self.csv_data: list = []
+
+        # Try to open CSV file
         try:
             self.csv_fileh = open(self.csv_filename, "w")
             self.csv_writer = csv.writer(self.csv_fileh)
             self.csv_writer.writerow(self.ep_col_names)
+            self.last_written_row = 0
         except Exception as e:
             e.print_exc()
             traceback.print_exc()
