@@ -195,6 +195,8 @@ class VoipReport():
         Given user-specified list, initialize data structures
         used to store, configure, and query VoIP CXs.
         """
+        logger.info("Initializing local CX data structures")
+
         self.cxs = []
         self.endps_a = []
         self.endps_b = []
@@ -241,6 +243,61 @@ class VoipReport():
                         endp_b=endp_b,
                         **kwargs)
             self.cxs.append(cx)
+
+        # Allow for user to specify VoIP endpoints settings,
+        # regardless of whether specified individually or as all
+        self.num_cxs = len(self.cxs)
+        self.__configure_voip_endps(**kwargs)
+
+    def __configure_voip_endps(self, **kwargs):
+        """Configure settings on remote VoIP endpoints."""
+        logger.info("Configuring remote VoIP endpoints")
+
+        # Set endpoint number of phone calls (also referred to as loop call count)
+        if "num_calls" in kwargs:
+            num_calls = kwargs["num_calls"]
+
+            if num_calls:
+                for endp in (self.endps_a + self.endps_b):
+                    endp.num_calls = num_calls
+
+        # Set endpoint phone numbers
+        if "side_a_phone_nums" in kwargs:
+            side_a_phone_nums = kwargs["side_a_phone_nums"]
+
+            if side_a_phone_nums:
+                if len(side_a_phone_nums) != self.num_cxs:
+                    logger.error("Number of endpoint A phone numbers does not match number of VoIP CXs.")
+                    exit(1)
+
+                for ix, phone_num in enumerate(side_a_phone_nums):
+                    self.endps_a[ix].phone_num = phone_num
+
+        if "side_b_phone_nums" in kwargs:
+            side_b_phone_nums = kwargs["side_b_phone_nums"]
+
+            if side_b_phone_nums:
+                if len(side_b_phone_nums) != self.num_cxs:
+                    logger.error("Number of endpoint B phone numbers does not match number of VoIP CXs.")
+                    exit(1)
+
+                for ix, phone_num in enumerate(side_b_phone_nums):
+                    self.endps_b[ix].phone_num = phone_num
+
+        # TODO: BT MAC
+        e_w_list: list = []
+        lf_cmd: LFJsonCommand = self.lfsession.get_command()
+        for endp in (self.endps_a + self.endps_b):
+            e_w_list.clear()
+            logger.debug(f"Configuring endpoint \'{endp.name}\'")
+            try:
+                lf_cmd.post_add_voip_endp(alias=endp.name,
+                                          phone_num=endp.phone_num)
+                lf_cmd.post_set_voip_info(name=endp.name,
+                                          loop_call_count=endp.num_calls)
+            except Exception as e:
+                logger.error(f"Error configuring endpoint \'{endp.name}\'")
+                logger.error(pprint(['exception:', e, e_w_list]))
 
 
     def __query_voip_cxs(self, cx_list: list[str], columns: list[str] = ["name"]):
@@ -471,6 +528,28 @@ def parse_args():
     parser.add_argument("--log_level",
                         help='debug message verbosity',
                         type=str)
+
+    # Could make this endpoint specific (like phone nums), but stick w/ simple for now
+    parser.add_argument("--num_calls", "--loop_call_count",
+                        dest="num_calls",
+                        help="Number of calls to make in looped mode.",
+                        type=int)
+
+    # Configuration to apply to CXs/endpoints
+    # TODO: Provide example usage
+    parser.add_argument("--side_a_phone_nums", "--side_a_phone_numbers",
+                        dest="side_a_phone_nums",
+                        help="List of phone numbers to configure on side A VoIP endpoints. "
+                             "Order and length must match the order of connections passed in the "
+                             "\'--cx_list\' argument. Specify \'NA\' to skip the endpoint.",
+                        nargs="*")
+    parser.add_argument("--side_b_phone_nums", "--side_b_phone_numbers",
+                        dest="side_b_phone_nums",
+                        help="List of phone numbers to configure on side A VoIP endpoints. "
+                             "Order and length must match the order of connections passed in the "
+                             "\'--cx_list\' argument. Specify \'NA\' to skip the endpoint.",
+                        nargs="*")
+
 
     return parser.parse_args()
 
