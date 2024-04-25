@@ -1,5 +1,30 @@
 #!/usr/bin/env python3
-# This script will start a named set of voip connections and report their data to a csv file
+"""
+This script will start a named set of voip connections and report their data to a csv file
+
+Example usage:
+- Configure two VoIP CXs, TEST1 and TEST2.
+    + TEST1:
+        * 3 looped phone calls
+        * Endpoint A: 1234 phone number, 11:11:11:11:11:11 Bluetooth MAC
+        * Endpoint B: 5678 phone number, 22:22:22:22:22:22 Bluetooth MAC
+    + TEST2:
+        * 2 looped phone calls
+        * Endpoint A: 8765 phone number, 33:33:33:33:33:33 Bluetooth MAC
+        * Endpoint B: 4321 phone number, 44:44:44:44:44:44 Bluetooth MAC
+
+    ./run_voip_cx.py \
+        --mgr                       192.168.100.110 \
+        --csv_file                  out.csv \
+        --cx_names                  TEST1,TEST2 \
+        --num_calls                 3                 2 \
+        --side_a_phone_nums         1234              5678 \
+        --side_b_phone_nums         8765              4321 \
+        --side_a_mobile_bt_macs     11:11:11:11:11:11 22:22:22:22:22:22 \
+        --side_b_mobile_bt_macs     33:33:33:33:33:33 44:44:44:44:44:44
+"""
+
+
 import argparse
 import csv
 import importlib
@@ -574,7 +599,6 @@ def parse_args():
                         nargs="*")
 
     # Configuration to apply to CXs/endpoints
-    # TODO: Provide example usage
     parser.add_argument("--side_a_phone_nums", "--side_a_phone_numbers",
                         dest="side_a_phone_nums",
                         help="List of phone numbers to configure on side A VoIP endpoints. "
