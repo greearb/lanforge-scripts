@@ -2380,9 +2380,11 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(AddChamberChamberFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        OPEN = 0x4         # (3) Door is open, no real isolation right now.
-        PHANTOM = 0x1      # (1) Chamber is not actually here right now.
-        VIRTUAL = 0x2      # (2) No real chamber, open-air grouping of equipment.
+        OPEN = 0x4                # (3) Door is open, no real isolation right now.
+        PHANTOM = 0x1             # (1) Chamber is not actually here right now.
+        TT_OVERRIDE = 0x800       # (11) LANforge should override manual turntable control
+        TT_STOP_NOW = 0x400       # (10) Turntable must immediately stop all movement.
+        VIRTUAL = 0x2             # (2) No real chamber, open-air grouping of equipment.
 
         # use to get in value of flag
         @classmethod
@@ -3733,8 +3735,8 @@ class LFJsonCommand(JsonCommand):
                        flags: str = None,                        # Flags for this group, see above.
                        flags_mask: str = None,                   # Mask for flags that we care about, use 0xFFFFFFFF or
                        # leave blank for all.
-                       name: str = None,                         # The name of the test group. Must be unique across all
-                       # groups. [R]
+                       name: str = None,                         # The name of the connection group. Must be unique across
+                       # all groups. [R]
                        response_json_list: list = None,
                        debug: bool = False,
                        errors_warnings: list = None,
@@ -4318,6 +4320,7 @@ class LFJsonCommand(JsonCommand):
         ALLOW_11W = 0x800                   # Set 11w (MFP/PMF) to optional.
         BSS_TRANS = 0x400                   # Enable BSS Transition logic
         DHCP_SERVER = 0x1                   # This should provide DHCP server.
+        DISABLE_MLO = 0x8000                # Sta created w/out MLO enabled.
         EAP_PEAP = 0x200                    # Enable EAP-PEAP
         EAP_TTLS = 0x80                     # Use 802.1x EAP-TTLS
         ENABLE_POWERSAVE = 0x1000           # Enable power-save when creating stations.
@@ -5077,7 +5080,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_tgcx(self, 
                       cxname: str = None,                       # The name of the CX. [R]
-                      tgname: str = None,                       # The name of the test group. [R]
+                      tgname: str = None,                       # The name of the connection group. [R]
                       response_json_list: list = None,
                       debug: bool = False,
                       errors_warnings: list = None,
@@ -5858,6 +5861,8 @@ class LFJsonCommand(JsonCommand):
                            gateway_port: str = None,                 # IP Port for SIP gateway (defaults to 5060).
                            ip_addr: str = None,                      # Use this IP for local IP address. Useful when there
                            # are multiple IPs on a port.
+                           mobile_bt_mac: str = None,                # Mobile Bluetooth MAC address in xx:xx:xx:xx:xx:xx
+                           # format.
                            peer_phone_num: str = None,               # Use AUTO to use phone number of peer endpoint,
                            # otherwise specify a number: user[@host[:port]]
                            phone_num: str = None,                    # Phone number for Endpoint
@@ -5899,6 +5904,8 @@ class LFJsonCommand(JsonCommand):
             data["gateway_port"] = gateway_port
         if ip_addr is not None:
             data["ip_addr"] = ip_addr
+        if mobile_bt_mac is not None:
+            data["mobile_bt_mac"] = mobile_bt_mac
         if peer_phone_num is not None:
             data["peer_phone_num"] = peer_phone_num
         if phone_num is not None:
@@ -5948,6 +5955,7 @@ class LFJsonCommand(JsonCommand):
                                 display_name=param_map.get("display_name"),
                                 gateway_port=param_map.get("gateway_port"),
                                 ip_addr=param_map.get("ip_addr"),
+                                mobile_bt_mac=param_map.get("mobile_bt_mac"),
                                 peer_phone_num=param_map.get("peer_phone_num"),
                                 phone_num=param_map.get("phone_num"),
                                 port=param_map.get("port"),
@@ -7253,7 +7261,7 @@ class LFJsonCommand(JsonCommand):
         SEND_EVENT = 2      # Send event when clearing counters.
 
     def post_clear_group(self, 
-                         name: str = None,                         # The name of the test group. [W]
+                         name: str = None,                         # The name of the connection group. [W]
                          response_json_list: list = None,
                          debug: bool = False,
                          errors_warnings: list = None,
@@ -7891,7 +7899,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getavglatency(self, 
                            aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
-                           cx: str = None,                           # Cross-connect or Test-Group name [W]
+                           cx: str = None,                           # Cross-connect or Connection-Group name [W]
                            response_json_list: list = None,
                            debug: bool = False,
                            errors_warnings: list = None,
@@ -7940,7 +7948,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getinrxbps(self, 
                         aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                        cx: str = None,                           # Cross-connect or Test-Group name [W]
+                        cx: str = None,                           # Cross-connect or Connection-Group name [W]
                         response_json_list: list = None,
                         debug: bool = False,
                         errors_warnings: list = None,
@@ -7989,7 +7997,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getinrxrate(self, 
                          aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                         cx: str = None,                           # Cross-connect or Test-Group name [W]
+                         cx: str = None,                           # Cross-connect or Connection-Group name [W]
                          response_json_list: list = None,
                          debug: bool = False,
                          errors_warnings: list = None,
@@ -8038,7 +8046,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getintxrate(self, 
                          aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                         cx: str = None,                           # Cross-connect or Test-Group name [W]
+                         cx: str = None,                           # Cross-connect or Connection-Group name [W]
                          response_json_list: list = None,
                          debug: bool = False,
                          errors_warnings: list = None,
@@ -8234,7 +8242,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getpktdrops(self, 
                          aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
-                         cx: str = None,                           # Cross-connect or Test-Group name [W]
+                         cx: str = None,                           # Cross-connect or Connection-Group name [W]
                          response_json_list: list = None,
                          debug: bool = False,
                          errors_warnings: list = None,
@@ -8283,7 +8291,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getrxendperrpkts(self, 
                               aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
-                              cx: str = None,                           # Cross-connect or Test-Group name [W]
+                              cx: str = None,                           # Cross-connect or Connection-Group name [W]
                               response_json_list: list = None,
                               debug: bool = False,
                               errors_warnings: list = None,
@@ -8332,7 +8340,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getrxpkts(self, 
                        aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                       cx: str = None,                           # Cross-connect or Test-Group name [W]
+                       cx: str = None,                           # Cross-connect or Connection-Group name [W]
                        response_json_list: list = None,
                        debug: bool = False,
                        errors_warnings: list = None,
@@ -8430,7 +8438,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_gettxpkts(self, 
                        aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                       cx: str = None,                           # Cross-connect or Test-Group name [W]
+                       cx: str = None,                           # Cross-connect or Connection-Group name [W]
                        response_json_list: list = None,
                        debug: bool = False,
                        errors_warnings: list = None,
@@ -9956,7 +9964,7 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#quiesce_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_quiesce_group(self, 
-                           name: str = None,                         # The name of the test group, or 'all' [R]
+                           name: str = None,                         # The name of the connection group, or 'all' [R]
                            response_json_list: list = None,
                            debug: bool = False,
                            errors_warnings: list = None,
@@ -10948,7 +10956,7 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_group(self, 
-                      name: str = None,                         # The name of the test group. [W]
+                      name: str = None,                         # The name of the connection group. [W]
                       response_json_list: list = None,
                       debug: bool = False,
                       errors_warnings: list = None,
@@ -11399,7 +11407,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_tgcx(self, 
                      cxname: str = None,                       # The name of the CX. [W]
-                     tgname: str = None,                       # The name of the test group. [W]
+                     tgname: str = None,                       # The name of the connection group. [W]
                      response_json_list: list = None,
                      debug: bool = False,
                      errors_warnings: list = None,
@@ -15001,7 +15009,7 @@ class LFJsonCommand(JsonCommand):
         ScriptWL = "ScriptWL"          # For iterating through WanLink settings
 
     def post_set_script(self, 
-                        endp: str = None,                         # Endpoint, Test Group or Attenuator name or ID. [R]
+                        endp: str = None,                         # Endpoint, Connection Group or Attenuator name or ID. [R]
                         flags: str = None,                        # See above for description of the defined flags.
                         group_action: str = None,                 # How to handle group script operations: ALL, Sequential
                         loop_count: str = None,                   # How many times to loop before stopping (0 is infinite).
@@ -15182,6 +15190,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_voip_info
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_voip_info(self, 
+                           aq_audio_band: str = None,                # Audio band for AQ scoring. 0: narrow-band, 1:
+                           # wide-band, 2: super-wide-band. Default is 0.
                            aq_call_report_count: str = None,         # Number of AQ Call Report. Default is 0.
                            codec: str = None,                        # Codec to use for the voice stream, supported values:
                            # G711U, G711A, SPEEX, g726-16, g726-24, g726-32,
@@ -15221,6 +15231,8 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if aq_audio_band is not None:
+            data["aq_audio_band"] = aq_audio_band
         if aq_call_report_count is not None:
             data["aq_call_report_count"] = aq_call_report_count
         if codec is not None:
@@ -15279,7 +15291,8 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_set_voip_info(aq_call_report_count=param_map.get("aq_call_report_count"),
+        self.post_set_voip_info(aq_audio_band=param_map.get("aq_audio_band"),
+                                aq_call_report_count=param_map.get("aq_call_report_count"),
                                 codec=param_map.get("codec"),
                                 first_call_delay=param_map.get("first_call_delay"),
                                 jitter_buffer_sz=param_map.get("jitter_buffer_sz"),
@@ -16189,6 +16202,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_wifi_extra2
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_wifi_extra2(self, 
+                             bss_color: str = None,                    # Initial BSS Color requested. Zero means do not use
+                             # bss-color.
                              corrupt_gtk_rekey_mic: str = None,        # Per-million: AP corrupts GTK Rekey MIC.
                              freq_24: str = None,                      # Frequency list for 2.4Ghz band, see above.
                              freq_5: str = None,                       # Frequency list for 5Ghz band, see above.
@@ -16226,6 +16241,8 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if bss_color is not None:
+            data["bss_color"] = bss_color
         if corrupt_gtk_rekey_mic is not None:
             data["corrupt_gtk_rekey_mic"] = corrupt_gtk_rekey_mic
         if freq_24 is not None:
@@ -16282,7 +16299,8 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_set_wifi_extra2(corrupt_gtk_rekey_mic=param_map.get("corrupt_gtk_rekey_mic"),
+        self.post_set_wifi_extra2(bss_color=param_map.get("bss_color"),
+                                  corrupt_gtk_rekey_mic=param_map.get("corrupt_gtk_rekey_mic"),
                                   freq_24=param_map.get("freq_24"),
                                   freq_5=param_map.get("freq_5"),
                                   ignore_assoc=param_map.get("ignore_assoc"),
@@ -16573,7 +16591,9 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         block_traffic = 0x2      # Disable all tx/rx traffic for a given radio. This can only be
-        enable_agg = 0x1         # Enable aggregation. This can only be enabled on Intel radios.
+        enable_agg = 0x1         # Enable aggregation. This can only be enabled on Intel radios (feature disabled
+        # +for now).
+        enable_bf = 0x10         # Enable Beamforming.
         enable_ldpc = 0x4        # Enable LDPC wifi feature, should help throughput.
         enable_stbc = 0x8        # Enable STBC wifi feature.
 
@@ -16603,7 +16623,7 @@ class LFJsonCommand(JsonCommand):
                           txo_pream: str = None,                    # Select rate preamble: 0 == OFDM, 1 == CCK, 2 == HT, 3
                           # == VHT, 4 == HE_SU, 5 = EHT.
                           txo_retries: str = None,                  # Configure number of retries. 0 or 1 means no retries).
-                          txo_sgi: str = None,                      # Should rates be sent with short-guard-interval or not?
+                          txo_sgi: str = None,                      # Guard interval and LTF, see above.
                           txo_txpower: str = None,                  # Configure TX power in db. Use 255 for system defaults.
                           # See notes above.
                           response_json_list: list = None,
@@ -17739,8 +17759,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_group(self, 
-                        group: str = None,                        # Can be name of test group. Use 'all' or leave blank for
-                        # all groups.
+                        group: str = None,                        # Can be name of connection group. Use 'all' or leave
+                        # blank for all groups.
                         response_json_list: list = None,
                         debug: bool = False,
                         errors_warnings: list = None,
@@ -18146,7 +18166,7 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_script_results
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_script_results(self, 
-                                 endpoint: str = None,                     # Name of endpoint, test-group, or 'all'. [R]
+                                 endpoint: str = None,                     # Name of endpoint, cx-group, or 'all'. [R]
                                  key: str = None,                          # Optional 'key' to be used in keyed-text message
                                  # result.
                                  response_json_list: list = None,
@@ -18785,7 +18805,8 @@ class LFJsonCommand(JsonCommand):
                         # minutes for dumpcap/tshark, and forever for wireshark
                         flags: str = None,                        # Flags that control how the sniffing is done.
                         outfile: str = None,                      # Optional file location for saving a capture.
-                        port: str = None,                         # The port we are trying to run the packet sniffer on. [R]
+                        port: str = None,                         # The port we are trying to run the packet sniffer on. See
+                        # above. [R]
                         resource: int = None,                     # Resource number. [W]
                         shelf: int = 1,                           # Shelf number. [R][D:1]
                         snaplen: str = None,                      # Amount of each packet to store. Default is to store all
@@ -18900,7 +18921,7 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#start_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_start_group(self, 
-                         name: str = None,                         # The name of the test group. [R]
+                         name: str = None,                         # The name of the connection group. [R]
                          response_json_list: list = None,
                          debug: bool = False,
                          errors_warnings: list = None,
@@ -19043,7 +19064,7 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#stop_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_stop_group(self, 
-                        name: str = None,                         # The name of the test group, or 'all' [R]
+                        name: str = None,                         # The name of the connection group, or 'all' [R]
                         response_json_list: list = None,
                         debug: bool = False,
                         errors_warnings: list = None,
@@ -19623,21 +19644,22 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        'api':         # Android SDK API Version
-        'app-id':      # Interop app identifier reported by adb.
-        'device':      # Android device identifier.
+        'api':         # SDK API Version
+        'app-id':      # Interop app identifier.
+        'device':      # Interop device identifier.
         'device-type': # Interop device type
-        'model':       # Android device model identifier.
-        'name':        # Android device serial number and LANforge Resource location.
-        'phantom':     # If the device is phantom, that means we cannot find it (maybe it was
-                       # unplugged?).
-        'product':     # Android device product identifier.
-        'release':     # Android SDK Release
-        'resource-id': # Identifier for the Resource this ADB device is associated.
-        'timed-out':   # The device has timed out too many times while running adb commands. Go
-                       # check on it?
-        'unauth':      # The device is un-authorized.  Enable ADB debugging on device to use it.
-        'user-name':   # LANforge interop app username for this ADB device.
+        'model':       # Interop device model identifier.
+        'name':        # Interop device serial number and LANforge Resource location.
+        'phantom':     # LANforge is unable to communicate with this device. Maybe it is
+                       # unplugged?
+        'product':     # Interop device product identifier.
+        'release':     # SDK Release
+        'resource-id': # Identifier for the Resource this Interop device is associated.
+        'timed-out':   # The device has timed out too many times while running commands. It may
+                       # need to be reconnected.
+        'unauth':      # The device is un-authorized. Enable debugging on device to use it.
+                       # (Android only)
+        'user-name':   # LANforge Interop app username for this Interop device.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -21984,16 +22006,16 @@ class LFJsonQuery(JsonQuery):
         /ports/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        4way+time+%28us%29, activity, alias, anqp+time+%28us%29, ap, avg+chain+rssi, beacon, 
-        bps+rx, bps+rx+ll, bps+tx, bps+tx+ll, bytes+rx+ll, bytes+tx+ll, chain+rssi, 
-        channel, collisions, connections, crypt, cx+ago, cx+time+%28us%29, device, dhcp+%28ms%29, 
-        down, entity+id, gateway+ip, hardware, ip, ipv6+address, ipv6+gateway, key%2Fphrase, 
-        login-fail, login-ok, logout-fail, logout-ok, mac, mask, misc, mode, mtu, 
-        no+cx+%28us%29, noise, parent+dev, phantom, port, port+type, pps+rx, pps+tx, 
-        qlen, reset, retry+failed, rx+bytes, rx+crc, rx+drop, rx+errors, rx+fifo, 
-        rx+frame, rx+length, rx+miss, rx+over, rx+pkts, rx-rate, sec, signal, ssid, 
-        status, time-stamp, tx+abort, tx+bytes, tx+crr, tx+errors, tx+fifo, tx+hb, 
-        tx+pkts, tx+wind, tx-failed+%25, tx-rate, wifi+retries        # hidden columns:
+        4way+time+%28us%29, activity, aid, alias, anqp+time+%28us%29, ap, avg+chain+rssi, 
+        beacon, bps+rx, bps+rx+ll, bps+tx, bps+tx+ll, bss+color, bytes+rx+ll, bytes+tx+ll, 
+        chain+rssi, channel, collisions, connections, crypt, cx+ago, cx+time+%28us%29, 
+        device, dhcp+%28ms%29, down, entity+id, gateway+ip, hardware, ip, ipv6+address, 
+        ipv6+gateway, key%2Fphrase, login-fail, login-ok, logout-fail, logout-ok, mac, 
+        mask, misc, mode, mtu, no+cx+%28us%29, noise, parent+dev, phantom, port, port+type, 
+        pps+rx, pps+tx, qlen, reset, retry+failed, rx+bytes, rx+crc, rx+drop, rx+errors, 
+        rx+fifo, rx+frame, rx+length, rx+miss, rx+over, rx+pkts, rx-rate, sec, signal, 
+        ssid, status, time-stamp, tx+abort, tx+bytes, tx+crr, tx+errors, tx+fifo, 
+        tx+hb, tx+pkts, tx+wind, tx-failed+%25, tx-rate, wifi+retries        # hidden columns:
         antenna_count, beacon_rx_signal, port_cur_flags_h, port_cur_flags_l, port_supported_flags_h, 
         port_supported_flags_l, resource, rx_multicast, tx_dropped
     Example URL: /port?fields=4way+time+%28us%29,activity
@@ -22010,6 +22032,7 @@ class LFJsonQuery(JsonQuery):
         'activity':       # Percent of the channel that is utilized over the last minute.This
                           # includes locally generated traffic as well as anyother systems active on
                           # this channel.This is a per-radio value.
+        'aid':            # Reported STA association ID (AID)
         'alias':          # User-specified alias for this Port.
         'anqp time (us)': # Time (in micro-seconds) it took to complete the last WiFi ANQP
                           # request/response session.
@@ -22021,6 +22044,7 @@ class LFJsonQuery(JsonQuery):
         'bps tx':         # Average bits per second transmitted for the last 30 seconds.
         'bps tx ll':      # Bits per second transmitted, including low-level framing (Ethernet
                           # Only).
+        'bss color':      # Reported Wireless BSS Color
         'bytes rx ll':    # Bytes received, including low-level framing (Ethernet Only).
         'bytes tx ll':    # Bytes transmitted, including low-level framing (Ethernet Only).
         'chain rssi':     # Wireless signal per-chain RSSI.
@@ -22733,9 +22757,9 @@ class LFJsonQuery(JsonQuery):
         /rfgen/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        bb-gain, burst+offset, chirp+width, duration, entity+id, frequency, frequency+modulation, 
-        gain, if-gain, name, ofdm+header+modulation, ofdm+payload+modulation, one+burst, 
-        pulse+count, pulse+interval, pulse+repetition+frequency+1, pulse+repetition+frequency+2, 
+        bb-gain, burst+offset, chirp+width, entity+id, frequency, frequency+modulation, 
+        gain, if-gain, name, ofdm+duration, ofdm+header+modulation, ofdm+payload+modulation, 
+        one+burst, pulse+count, pulse+interval, pulse+repetition+frequency+1, pulse+repetition+frequency+2, 
         pulse+repetition+frequency+3, pulse+width, sample+rate, state, status, sweep+time, 
         time+period+1+off, time+period+1+on, time+period+2+off, time+period+2+on, 
         time+period+3+off, time+period+3+on, trials+center, trials+high, trials+low, 
@@ -22752,13 +22776,13 @@ class LFJsonQuery(JsonQuery):
         'bb-gain':                      # RX Gain AMP, (0-62, 2db steps)
         'burst offset':                 # FCC5 burst offset.For W53 this is the blank-time.
         'chirp width':                  # W53 Chirp width in khz.
-        'duration':                     # Duration for OFDM radar test.
         'entity id':                    # -
         'frequency':                    # The RF generator's center frequency in Mhz.
         'frequency modulation':         # Frequency Modulation for FCC5 configuration.
         'gain':                         # Main RF Gain AMP
         'if-gain':                      # Fine precision RF Tx and Rx gain AMP (0-40)
         'name':                         # Attenuator module identifier (shelf . resource . serial-num).
+        'ofdm duration':                # Duration for OFDM radar test.
         'ofdm header modulation':       # Type of interval for OFDM Header modulation.
         'ofdm payload modulation':      # Type of interval for OFDM Payload modulation.
         'one burst':                    # Run one pulse train and then stop.
@@ -23909,12 +23933,13 @@ class LFJsonQuery(JsonQuery):
         v_rx_bw_80, v_rx_bw_he_ru, v_rx_mcs_0, v_rx_mcs_1, v_rx_mcs_10, v_rx_mcs_11, 
         v_rx_mcs_12, v_rx_mcs_13, v_rx_mcs_2, v_rx_mcs_3, v_rx_mcs_4, v_rx_mcs_5, 
         v_rx_mcs_6, v_rx_mcs_7, v_rx_mcs_8, v_rx_mcs_9, v_rx_mode_cck, v_rx_mode_eht, 
-        v_rx_mode_he_ext_su, v_rx_mode_he_mu, v_rx_mode_he_su, v_rx_mode_he_tb, v_rx_mode_ht, 
-        v_rx_mode_ht_gf, v_rx_mode_ofdm, v_rx_mode_vht, v_rx_nss_1, v_rx_nss_2, v_rx_nss_3, 
-        v_rx_nss_4, v_rx_ru_106, v_tx_bw_160, v_tx_bw_20, v_tx_bw_320, v_tx_bw_40, 
-        v_tx_bw_80, v_tx_mcs_0, v_tx_mcs_1, v_tx_mcs_10, v_tx_mcs_11, v_tx_mcs_12, 
-        v_tx_mcs_13, v_tx_mcs_2, v_tx_mcs_3, v_tx_mcs_4, v_tx_mcs_5, v_tx_mcs_6, 
-        v_tx_mcs_7, v_tx_mcs_8, v_tx_mcs_9, v_tx_mode_cck, v_tx_mode_eht, v_tx_mode_he_ext_su, 
+        v_rx_mode_eht_mu, v_rx_mode_eht_trig, v_rx_mode_he_ext_su, v_rx_mode_he_mu, 
+        v_rx_mode_he_su, v_rx_mode_he_tb, v_rx_mode_ht, v_rx_mode_ht_gf, v_rx_mode_ofdm, 
+        v_rx_mode_vht, v_rx_nss_1, v_rx_nss_2, v_rx_nss_3, v_rx_nss_4, v_rx_ru_106, 
+        v_tx_bw_160, v_tx_bw_20, v_tx_bw_320, v_tx_bw_40, v_tx_bw_80, v_tx_mcs_0, 
+        v_tx_mcs_1, v_tx_mcs_10, v_tx_mcs_11, v_tx_mcs_12, v_tx_mcs_13, v_tx_mcs_2, 
+        v_tx_mcs_3, v_tx_mcs_4, v_tx_mcs_5, v_tx_mcs_6, v_tx_mcs_7, v_tx_mcs_8, v_tx_mcs_9, 
+        v_tx_mode_cck, v_tx_mode_eht, v_tx_mode_eht_mu, v_tx_mode_eht_trig, v_tx_mode_he_ext_su, 
         v_tx_mode_he_mu, v_tx_mode_he_su, v_tx_mode_he_tb, v_tx_mode_ht, v_tx_mode_ht_gf, 
         v_tx_mode_ofdm, v_tx_mode_vht, v_tx_nss_1, v_tx_nss_2, v_tx_nss_3, v_tx_nss_4, 
               # hidden columns:
@@ -24039,6 +24064,8 @@ class LFJsonQuery(JsonQuery):
         'v_rx_mcs_9':            # Port level stat: Received packets with MCS 9 encoding.
         'v_rx_mode_cck':         # Port level stat: Received packets with CCK (/b) encoding.
         'v_rx_mode_eht':         # Port level stat: Received packets with EHT (/be) encoding.
+        'v_rx_mode_eht_mu':      # Port level stat: Received packets with EHT MU (/be+) encoding.
+        'v_rx_mode_eht_trig':    # Port level stat: Received packets with EHT Trigger (/be+) encoding.
         'v_rx_mode_he_ext_su':   # Port level stat: Received packets with extended HE single-user (/ax+)
                                  # encoding.
         'v_rx_mode_he_mu':       # Port level stat: Received packets with HE MU (/ax+) encoding.
@@ -24074,6 +24101,8 @@ class LFJsonQuery(JsonQuery):
         'v_tx_mcs_9':            # Port level stat: Transmitted packets with MCS 9 encoding.
         'v_tx_mode_cck':         # Port level stat: Transmitted packets with CCK (/b) encoding.
         'v_tx_mode_eht':         # Port level stat: Transmitted packets with EHT (/be) encoding.
+        'v_tx_mode_eht_mu':      # Port level stat: Transmitted packets with EHT MU (/be+) encoding.
+        'v_tx_mode_eht_trig':    # Port level stat: Transmitted packets with EHT Trigger (/be+) encoding.
         'v_tx_mode_he_ext_su':   # Port level stat: Transmitted packets with extended HE single-user (/ax+)
                                  # encoding.
         'v_tx_mode_he_mu':       # Port level stat: Transmitted packets with HE MU (/ax+) encoding.
