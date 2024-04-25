@@ -254,12 +254,24 @@ class VoipReport():
         logger.info("Configuring remote VoIP endpoints")
 
         # Set endpoint number of phone calls (also referred to as loop call count)
+        #
+        # Since number of calls on both endpoints of a VoIP CX must match,
+        # apply configured number of calls to both endpoints per CX
         if "num_calls" in kwargs:
             num_calls = kwargs["num_calls"]
 
             if num_calls:
-                for endp in (self.endps_a + self.endps_b):
-                    endp.num_calls = num_calls
+                if len(num_calls) == 1:
+                    # Apply same number of calls to all CXs' endpoints
+                    for endp in (self.endps_a + self.endps_b):
+                        endp.num_calls = num_calls[0]
+                elif len(num_calls) == self.num_cxs:
+                    for ix, cx_num_calls in enumerate(num_calls):
+                        self.endps_a[ix].num_calls = cx_num_calls
+                        self.endps_b[ix].num_calls = cx_num_calls
+                else:
+                    logger.error("Number of phone numbers does not match number of VoIP CXs.")
+                    exit(1)
 
         # Set endpoint phone numbers
         if "side_a_phone_nums" in kwargs:
@@ -532,8 +544,11 @@ def parse_args():
     # Could make this endpoint specific (like phone nums), but stick w/ simple for now
     parser.add_argument("--num_calls", "--loop_call_count",
                         dest="num_calls",
-                        help="Number of calls to make in looped mode.",
-                        type=int)
+                        help="Number of calls to make in looped mode. "
+                             "If one number specified, applies to all CXs specified. "
+                             "If more than one number specified, each number matches the CX specified "
+                             "\'--cx_list\' argument (order and length must match).",
+                        nargs="*")
 
     # Configuration to apply to CXs/endpoints
     # TODO: Provide example usage
