@@ -296,7 +296,29 @@ class VoipReport():
                 for ix, phone_num in enumerate(side_b_phone_nums):
                     self.endps_b[ix].phone_num = phone_num
 
-        # TODO: BT MAC
+        # Set endpoint Bluetooth MAC addresses
+        if "side_a_mobile_bt_macs" in kwargs:
+            side_a_mobile_bt_macs = kwargs["side_a_mobile_bt_macs"]
+
+            if side_a_mobile_bt_macs:
+                if len(side_a_mobile_bt_macs) != self.num_cxs:
+                    logger.error("Number of endpoint A mobile Bluetooth MACs does not match number of VoIP CXs.")
+                    exit(1)
+
+                for ix, bt_mac in enumerate(side_a_mobile_bt_macs):
+                    self.endps_a[ix].mobile_bt_mac = bt_mac
+
+        if "side_b_mobile_bt_macs" in kwargs:
+            side_b_mobile_bt_macs = kwargs["side_b_mobile_bt_macs"]
+
+            if side_b_mobile_bt_macs:
+                if len(side_b_mobile_bt_macs) != self.num_cxs:
+                    logger.error("Number of endpoint B mobile Bluetooth MACs does not match number of VoIP CXs.")
+                    exit(1)
+
+                for ix, bt_mac in enumerate(side_b_mobile_bt_macs):
+                    self.endps_b[ix].mobile_bt_mac = bt_mac
+
         e_w_list: list = []
         lf_cmd: LFJsonCommand = self.lfsession.get_command()
         for endp in (self.endps_a + self.endps_b):
@@ -304,7 +326,8 @@ class VoipReport():
             logger.debug(f"Configuring endpoint \'{endp.name}\'")
             try:
                 lf_cmd.post_add_voip_endp(alias=endp.name,
-                                          phone_num=endp.phone_num)
+                                          phone_num=endp.phone_num,
+                                          mobile_bt_mac=endp.mobile_bt_mac)
                 lf_cmd.post_set_voip_info(name=endp.name,
                                           loop_call_count=endp.num_calls)
             except Exception as e:
@@ -564,7 +587,16 @@ def parse_args():
                              "Order and length must match the order of connections passed in the "
                              "\'--cx_list\' argument.",
                         nargs="*")
-
+    parser.add_argument("--side_a_mobile_bt_macs",
+                        help="List of Bluetooth MAC addresses to configure on side A VoIP endpoints. "
+                             "Order and length must match the order of connections passed in the "
+                             "\'--cx_list\' argument.",
+                        nargs="*")
+    parser.add_argument("--side_b_mobile_bt_macs",
+                        help="List of Bluetooth MAC addresses to configure on side A VoIP endpoints. "
+                             "Order and length must match the order of connections passed in the "
+                             "\'--cx_list\' argument.",
+                        nargs="*")
 
     return parser.parse_args()
 
