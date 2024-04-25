@@ -541,13 +541,13 @@ def parse_args():
                         dest="side_a_phone_nums",
                         help="List of phone numbers to configure on side A VoIP endpoints. "
                              "Order and length must match the order of connections passed in the "
-                             "\'--cx_list\' argument. Specify \'NA\' to skip the endpoint.",
+                             "\'--cx_list\' argument.",
                         nargs="*")
     parser.add_argument("--side_b_phone_nums", "--side_b_phone_numbers",
                         dest="side_b_phone_nums",
                         help="List of phone numbers to configure on side A VoIP endpoints. "
                              "Order and length must match the order of connections passed in the "
-                             "\'--cx_list\' argument. Specify \'NA\' to skip the endpoint.",
+                             "\'--cx_list\' argument.",
                         nargs="*")
 
 
