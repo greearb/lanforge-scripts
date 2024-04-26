@@ -248,12 +248,19 @@ class VoipReport():
 
         queried_cxs = self.__query_voip_cxs(cx_list=cx_list)
         for queried_cx in queried_cxs:
-            # Queried Cx data is a list of dicts, where each dict
+            # Queried Cx data (queried_cxs) is a list of dicts, where each dict
             # has a single key which is the CX name. For example:
             # [
             #   {'TEST1': {'name': 'TEST1'}},
             # ]
-            cx_name = list(queried_cx.keys())[0]
+            # Except for when only one CX is returned, in which case it is as follows:
+            # [
+            #   {'name': 'TEST1'},
+            # ]
+            if len(queried_cxs) == 1:
+                cx_name = queried_cx['name']
+            else:
+                cx_name = list(queried_cx.keys())[0]
 
             # CX endpoint A
             endp_a = VoipEndp(name=cx_name + "-A")
