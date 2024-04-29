@@ -85,7 +85,8 @@ from lf_interop_qos import ThroughputQOS
 class HttpDownload(Realm):
     def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password,ap_name,
                  target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None,sixg_radio=None, _debug_on=False, _exit_on_error=False,
-                 _exit_on_fail=False,client_type="",port_list=[],devices_list=[],macid_list=[],lf_username="lanforge",lf_password="lanforge", result_dir="", dowebgui=False, web_ui_device_list=[], test_name=None):
+                 _exit_on_fail=False,client_type="",port_list=[],devices_list=[],macid_list=[],lf_username="lanforge",lf_password="lanforge", result_dir="", dowebgui=False, web_ui_device_list=[], test_name=None,
+                 get_url_from_file=None, file_path=None):
         self.ssid_list = []
         self.devices = []
         self.mode_list = []
@@ -129,6 +130,8 @@ class HttpDownload(Realm):
         self.created_cx = {}
         self.station_list = []
         self.radio = []
+        self.get_url_from_file = get_url_from_file
+        self.file_path = file_path
 
     #Todo- Make use of lf_base_interop_profile.py : Real device class to fetch available devices data
     def get_real_client_list(self):
@@ -274,9 +277,16 @@ class HttpDownload(Realm):
                                 shelf=eid[0], resource=eid[1], port=eid[2])]['ip']
 
                 # create http profile
-                self.http_profile.create(ports=self.station_profile.station_names, sleep_time=.5,
-                                        suppress_related_commands_=None, http=True,user=self.lf_username, passwd=self.lf_password,
-                                        http_ip=ip_upstream + "/webpage.html",proxy_auth_type=0x200,timeout = 1000)
+                if self.get_url_from_file:  # enabling the GET-URL-FROM-FILE flag if its ture
+                    self.http_profile.create(ports=self.station_profile.station_names, sleep_time=.5,
+                                             suppress_related_commands_=None, http=True, user=self.lf_username,
+                                             passwd=self.lf_password, http_ip=self.file_path, proxy_auth_type=0x200,
+                                             timeout=1000, get_url_from_file=True)
+                else:
+                    self.http_profile.create(ports=self.station_profile.station_names, sleep_time=.5,
+                                             suppress_related_commands_=None, http=True, user=self.lf_username,
+                                             passwd=self.lf_password, http_ip=ip_upstream + "/webpage.html",
+                                             proxy_auth_type=0x200, timeout=1000)
                 if self.count == 2:
                     self.station_profile.mode = 6
         else:
@@ -885,6 +895,16 @@ def main():
     Command Line Interface to run download scenario on 6GHz band for Virtual clients
     python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.200.165 --sixg_ssid Cisco-6g --sixg_security wpa3 --sixg_passwd sharedsecret 
     --sixg_radio wiphy0 --upstream_port eth1 --duration 1h --bands 6G --client_type Virtual --file_size 2MB --num_stations 3
+    
+    EXAMPLE-5:
+    Command Line Interface to run the download or upload HTTP urls from a file using Virtual clients on 5GHz band
+    Note: The file should contain the the URLs in following mentioned formate 
+            formate : "dl https://google.com /dev/null"
+      
+    Verified CLI:      
+    python3 lf_webpage.py --ap_name "Netgear1234" --mgr 192.168.200.38 --fiveg_ssid NETGEAR_5G --fiveg_security wpa2 
+    --fiveg_passwd Password@123 --fiveg_radio 1.1.wiphy1 --upstream_port 1.1.eth2 --duration 1m --bands 5G 
+    --client_type Virtual --num_stations 5 --get_url_from_file --file_path /home/lanforge/Desktop/dummy.txt
 
     SCRIPT_CLASSIFICATION : Test
 
@@ -970,6 +990,10 @@ def main():
     optional.add_argument('--test_name',
                           help='Specify test name to store the runtime csv results <Do not use in CLI, --used by webui>',
                           default=None)
+    optional.add_argument('--get_url_from_file', help='Specify to enable the get url from file flag for cx',
+                          action='store_true')
+    optional.add_argument('--file_path', help='Specify the path of the file, which has the URLs to download'
+                                              ' or upload the URLs', default=None)
     args = parser.parse_args()
     args.bands.sort()
 
@@ -1057,11 +1081,18 @@ def main():
                             dowebgui=args.dowebgui,  # FOR WEBGUI
                             web_ui_device_list=args.web_ui_device_list,  # FOR WEBGUI
                             test_name=args.test_name,  # FOR WEBGUI
+                            get_url_from_file=args.get_url_from_file,
+                            file_path=args.file_path
                             )
         if args.client_type == "Real":
             port_list,device_list,macid_list = http.get_real_client_list()
             args.num_stations = len(port_list)
-        http.file_create(ssh_port=args.ssh_port)
+        if not args.get_url_from_file:
+            http.file_create(ssh_port=args.ssh_port)
+        else:
+            if args.file_path is None:
+                print("WARNING: Please Specify the path of the file, if you select the --get_url_from_file")
+                exit(0)
         http.set_values()
         http.precleanup()
         http.build()
@@ -1191,14 +1222,11 @@ def main():
         "SSID": ssid,
         "Security" : security,
         "No of Devices" : args.num_stations,
-        "File size" : args.file_size,
-        "File location" : "/usr/local/lanforge/nginx/html",
         "Traffic Direction" : "Download",
         "Traffic Duration ": duration
     }
     test_input_infor = {
         "LANforge ip": args.mgr,
-        "File Size": args.file_size,
         "Bands": args.bands,
         "Upstream": args.upstream_port,
         "Stations": args.num_stations,
@@ -1207,7 +1235,12 @@ def main():
         "Duration": args.duration,
         "Contact": "support@candelatech.com"
     }
-
+    if not args.file_path:
+        test_setup_info["File size"] = args.file_size
+        test_setup_info["File location"] = "/usr/local/lanforge/nginx/html"
+        test_input_infor["File size"] = args.file_size
+    else:
+        test_setup_info["File location (URLs from the File)"] = args.file_path
     #dataset = http.download_time_in_sec(result_data=result_data)
     for i in result_data:
         dataset = result_data[i]['dl_time']
