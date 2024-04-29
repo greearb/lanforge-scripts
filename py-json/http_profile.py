@@ -113,7 +113,7 @@ class HTTPProfile(LFCliBase):
 
     def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
                https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None,
-               https_ip=None, interop=None,timeout=10,proxy_auth_type=0x2200,windows_list=[]):
+               https_ip=None, interop=None,timeout=10,proxy_auth_type=0x2200,windows_list=[], get_url_from_file=False):
         if ports is None:
             ports = []
         cx_post_data = []
@@ -157,11 +157,18 @@ class HTTPProfile(LFCliBase):
 
             if http:
                 if http_ip is not None:
-                    self.port_util.set_http(port_name=name, resource=resource, on=True)
-                    url = "%s http://%s %s" % (self.direction, http_ip, self.dest)
+                    if get_url_from_file:
+                        self.port_util.set_http(port_name=name, resource=resource, on=True)
+                        url = "%s %s %s" % ("", http_ip, "")
+                        logger.info("HTTP url:{}".format(url))
+                    else:
+                        self.port_util.set_http(port_name=name, resource=resource, on=True)
+                        url = "%s http://%s %s" % (self.direction, http_ip, self.dest)
+                        logger.info("HTTP url:{}".format(url))
                 else:
                     self.port_util.set_http(port_name=name, resource=resource, on=True)
                     url = "%s http://%s/ %s" % (self.direction, ip_addr, self.dest)
+                    logger.info("HTTP url:{}".format(url))
             if https:
                 if https_ip is not None:
                     self.port_util.set_http(port_name=name, resource=resource, on=True)
@@ -288,3 +295,11 @@ class HTTPProfile(LFCliBase):
             self.local_realm.json_post(url, cx_data, debug_=debug_,
                                        suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
+
+        # enabling geturl from file for each endpoint
+        if get_url_from_file:
+            for cx in list(self.created_cx.keys()):
+                self.local_realm.json_post("/cli-json/set_endp_flag", {"name": cx,
+                                                                       "flag": "GetUrlsFromFile",
+                                                                       "val": 1
+                                                                       }, suppress_related_commands_=True)
