@@ -778,17 +778,17 @@ class RealDevice(Realm):
         for band in select_serials.split(':'):
             if ('2g' in band) and ('2g' in self.selected_bands or '2G' in self.selected_bands or '2.4G' in self.selected_bands):
                 if ('all' in band):
-                    self.selected_2g_serials = list(range(index - 1))
+                    self.selected_2g_serials = list(range(1, index))
                 else:
                     self.selected_2g_serials = list(map(int, band.strip('2g=').split(',')))
             elif ('5g' in band) and ('5g' in self.selected_bands or '5G' in self.selected_bands):
                 if ('all' in band):
-                    self.selected_5g_serials = list(range(index - 1))
+                    self.selected_5g_serials = list(range(1, index))
                 else:
                     self.selected_5g_serials = list(map(int, band.strip('5g=').split(',')))
             elif ('6g' in band):
                 if ('all' in band and '6g' in self.selected_bands or '6G' in self.selected_bands):
-                    self.selected_6g_serials = list(range(index - 1))
+                    self.selected_6g_serials = list(range(1, index))
                 else:
                     self.selected_6g_serials = list(map(int, band.strip('6g=').split(',')))
 
@@ -823,22 +823,28 @@ class RealDevice(Realm):
                 for android in self.androids:
                     if (android[2] == selected_username):
                         if (selected_serial in self.selected_2g_serials):
-                            android.append('2g')
+                            if '2g' not in android:
+                                android.append('2g')
                         elif (selected_serial in self.selected_5g_serials):
-                            android.append('5g')
+                            if '5g' not in android:
+                                android.append('5g')
                         elif (selected_serial in self.selected_6g_serials):
-                            android.append('6g')
+                            if '6g' not in android:
+                                android.append('6g')
                         selected_androids.append(android)
                         break
             else:
                 for laptop in self.laptops:
                     if (laptop['hostname'] == selected_username):
                         if (selected_serial in self.selected_2g_serials):
-                            laptop['band'] = '2g'
+                            if '2g' not in laptop:
+                                laptop['band'] = '2g'
                         elif (selected_serial in self.selected_5g_serials):
-                            laptop['band'] = '5g'
+                            if '5g' not in laptop:
+                                laptop['band'] = '5g'
                         elif (selected_serial in self.selected_6g_serials):
-                            laptop['band'] = '6g'
+                            if '6g' not in laptop:
+                                laptop['band'] = '6g'
                         selected_laptops.append(laptop)
                         break
 
@@ -876,13 +882,20 @@ class RealDevice(Realm):
                 exclude_androids.append(android)
                 continue
 
+            # fetching resource data for android device
+            current_android_resource_data = \
+            self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
+
+            if(current_android_resource_data['phantom']):
+                logging.warning(
+                    'The android with serial {} is in phantom state in resource manager. Excluding it from testing'.format(android[2]))
+                exclude_androids.append(android)
+                continue
+
             # fetching port data for the android device
             current_android_port_data = \
             self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
 
-            # fetching resource data for android device
-            current_android_resource_data = \
-            self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
 
             current_android_port_data.update(current_android_resource_data)
             
@@ -1099,6 +1112,7 @@ class RealDevice(Realm):
         print('The available real devices are:')
         # print('Port\t\thw version\t\t\tMAC')
         t_devices = {}
+        all_devices_list = []
         for device, device_details in self.devices_data.items():
             # 'eid' and 'hw version' originally comes from resource data. Snuck into port data to make life easier
             t_devices[device_details['eid']] = {
@@ -1106,6 +1120,7 @@ class RealDevice(Realm):
                 'hw version': device_details['hw version'],
                 'MAC': device_details['mac']
             }
+            all_devices_list.append(device_details['eid'])
             # print('{}\t{}\t\t\t{}'.format(device, device_details['hw version'], device_details['mac']))
         pd.set_option('display.max_rows', None)
         df = pd.DataFrame(data=t_devices).transpose()
@@ -1114,18 +1129,21 @@ class RealDevice(Realm):
         if dowebgui:
             self.selected_device_eids=device_list.split(",")
         else:
-            self.selected_device_eids = input(
--            'Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
+            self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
 
         # if all is seleceted making the list as empty string so that it would consider all devices
         if(self.selected_device_eids == ['all']):
-            self.selected_device_eids = ['']
+            self.selected_device_eids = all_devices_list
         print('You have selected the below devices for testing')
         # print('Port\t\thw version\t\t\tMAC')
         selected_t_devices = {}
         for selected_device in self.selected_device_eids:
             for device, device_details in self.devices_data.items():
                 if(selected_device + '.' in device):
+                    # filtering interfaces other than wlan0 for android
+                    if('Apple' not in self.devices_data[device]['hw version'] and 'Linux' not in self.devices_data[device]['hw version'] and 'Win' not in self.devices_data[device]['hw version']):
+                        if('wlan0' not in device):
+                            continue
                     selected_t_devices[device] = {
                         'Eid': selected_device,
                         'hw version': self.devices_data[device]['hw version'],
