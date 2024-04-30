@@ -1393,8 +1393,19 @@ class L3VariableTime(Realm):
             # Note: the endp eid is shelf.resource.port.endp-id, the eid can be treated somewhat as
             # child class of port-eid , and look up the port the eid is using.
             if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
-                lat += int(endp["delay"])
-                jit += int(endp["jitter"])
+                if((endp['delay'] is str and not endp['delay'].isnumeric()) or endp['delay'] is None):
+                    logging.warning('Expected integer response for delay, received non-numeric string instead. Replacing with 0')
+                    lat += 0
+                else:
+                    lat += int(endp['delay'])
+                
+                if((endp['jitter'] is str and not endp['jitter'].isnumeric()) or endp['jitter'] is None):
+                    logging.warning('Expected integer response for jitter, received non-numeric string instead. Replacing with 0')
+                    jit += 0
+                else:
+                    jit += int(endp["jitter"])
+                # lat += int(endp["delay"])
+                # jit += int(endp["jitter"])
                 name = endp["name"]
                 logger.debug("endp name {name}".format(name=name))
                 sta_name = name.replace('-A', '')
@@ -1421,17 +1432,61 @@ class L3VariableTime(Realm):
                 name = endp["name"]
                 if name.endswith("-A"):
                     logger.info("name has -A")
-                    total_dl_rate += int(endp["rx rate"])
-                    total_dl_rate_ll += int(endp["rx rate ll"])
-                    total_dl_pkts_ll += int(endp["rx pkts ll"])
-                    dl_tx_drop_percent = round(endp["rx drop %"], 2)
+
+                    if (type(endp['rx rate']) == str and not endp['rx rate'].isnumeric()) or endp['rx rate'] is None:
+                        logging.warning('Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
+                        total_dl_rate += 0
+                    else:
+                        total_dl_rate += int(endp["rx rate"])
+
+                    if (type(endp['rx rate ll']) == str and not endp['rx rate ll'].isnumeric()) or endp['rx rate ll'] is None:
+                        logging.warning('Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
+                        total_dl_rate_ll += 0
+                    else:
+                        total_dl_rate_ll += int(endp["rx rate ll"])
+
+                    if (type(endp['rx pkts ll']) == str and not endp['rx pkts ll'].isnumeric()) or endp['rx pkts ll'] is None:
+                        logging.warning('Expected integer response for rx pkts ll, received non-numeric string instead. Replacing with 0')
+                        total_dl_pkts_ll += 0
+                    else:
+                        total_dl_pkts_ll += int(endp["rx pkts ll"])
+
+                    if (type(endp['rx drop %']) == str and not endp['rx drop %'].isnumeric()) or endp['rx drop %'] is None:
+                        logging.warning('Expected integer response for rx drop %, received non-numeric string instead. Replacing with 0')
+                        dl_tx_drop_percent = 0
+                    else:
+                        dl_tx_drop_percent = round(endp["rx drop %"], 2)
 
                 # -B upload side
                 else:
-                    total_ul_rate += int(endp["rx rate"])
-                    total_ul_rate_ll += int(endp["rx rate ll"])
-                    total_ul_pkts_ll += int(endp["rx pkts ll"])
-                    ul_rx_drop_percent = round(endp["rx drop %"], 2)
+                    if (type(endp['rx rate']) == str and not endp['rx rate'].isnumeric()) or endp['rx rate'] is None:
+                        logging.warning('Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
+                        total_ul_rate += 0
+                    else:
+                        total_ul_rate += int(endp["rx rate"])
+
+                    if (type(endp['rx rate ll']) == str and not endp['rx rate ll'].isnumeric()) or endp['rx rate ll'] is None:
+                        logging.warning('Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
+                        total_ul_rate_ll += 0
+                    else:
+                        total_ul_rate_ll += int(endp["rx rate ll"])
+
+                    if (type(endp['rx pkts ll']) == str and not endp['rx pkts ll'].isnumeric()) or endp['rx pkts ll'] is None:
+                        logging.warning('Expected integer response for rx pkts ll, received non-numeric string instead. Replacing with 0')
+                        total_ul_pkts_ll += 0
+                    else:
+                        total_ul_pkts_ll += int(endp["rx pkts ll"])
+
+                    if (type(endp['rx drop %']) == str and not endp['rx drop %'].isnumeric()) or endp['rx drop %'] is None:
+                        logging.warning('Expected integer response for rx drop %, received non-numeric string instead. Replacing with 0')
+                        ul_rx_drop_percent = 0
+                    else:
+                        ul_rx_drop_percent = round(endp["rx drop %"], 2)
+
+                    # total_ul_rate += int(endp["rx rate"])
+                    # total_ul_rate_ll += int(endp["rx rate ll"])
+                    # total_ul_pkts_ll += int(endp["rx pkts ll"])
+                    # ul_rx_drop_percent = round(endp["rx drop %"], 2)
 
         return lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent
 
@@ -1473,6 +1528,9 @@ class L3VariableTime(Realm):
                             "multicast endpoint: {item} value:\n".format(item=item))
                         logger.debug(endp_value)
                         for value_name, value in endp_value.items():
+                            if type(value) == str and not value.isnumeric():
+                                logging.warning('Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
+                                value = 0
                             if value_name == 'rx rate':
                                 # This hack breaks for mcast or if someone names endpoints weirdly.
                                 # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
@@ -1514,6 +1572,9 @@ class L3VariableTime(Realm):
                             if value_name == 'rx drop %':
                                 endp_rx_drop_map[item] = value
                             if value_name == 'rx rate':
+                                if type(value) == str and not value.isnumeric():
+                                    logging.warning('Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
+                                    value = 0
                                 # This hack breaks for mcast or if someone names endpoints weirdly.
                                 # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
                                 if item.endswith("-A"):
@@ -1521,6 +1582,9 @@ class L3VariableTime(Realm):
                                 elif item.endswith("-B"):
                                     total_ul += int(value)
                             if value_name == 'rx rate ll':
+                                if type(value) == str and not value.isnumeric():
+                                    logging.warning('Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
+                                    value = 0
                                 # This hack breaks for mcast or if someone
                                 # names endpoints weirdly.
                                 if item.endswith("-A"):
