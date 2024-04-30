@@ -562,9 +562,7 @@ class Laptop():
         resources_list = []
         for resource_data in resources:
             port, resource = list(resource_data.keys())[0], list(resource_data.values())[0]
-            shelf, resource_id = port.split('.')
-            hostname = resource_data[port]['hostname']
-            sta_name = self.get_station_name(shelf=shelf, resource=resource_id)
+
             # filtering LANforges from resources
             if (resource['ct-kernel']):
                 continue
@@ -577,6 +575,10 @@ class Laptop():
             if (resource['phantom']):
                 logger.info('The laptop on port {} is in phantom state.'.format(port))
                 continue
+
+            shelf, resource_id = port.split('.')
+            hostname = resource_data[port]['hostname']
+            sta_name = self.get_station_name(shelf=shelf, resource=resource_id)
 
             hw_version = resource['hw version']
 
