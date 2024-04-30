@@ -594,144 +594,157 @@ class ThroughputQOS(Realm):
             endp_data = self.json_get('endp/all?fields=name,tx+pkts+ll,rx+pkts+ll,delay')
             endp_data.pop("handler")
             endp_data.pop("uri")
-            endps = endp_data['endpoint']
-            if int(self.cx_profile.side_b_min_bps) != 0:
-                for i in range(len(endps)):
-                    if i < len(endps) // 2:
-                        tx_endps_download.update(endps[i])
-                    if i >= len(endps) // 2:
-                        rx_endps_download.update(endps[i])
-                for sta in self.cx_profile.created_cx.keys():
-                    temp = sta.rsplit('-', 1)
-                    temp = int(temp[1])
-                    if temp in range(0, len(self.input_devices_list)):
-                        if int(self.cx_profile.side_b_min_bps) != 0:
-                            tos_download[self.tos[0]].append(connections_download[sta])
-                            tos_drop_dict['rx_drop_a'][self.tos[0]].append(drop_a_per[temp])
-                            tx_b_download[self.tos[0]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                            rx_a_download[self.tos[0]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
-                        else:
-                            tos_download[self.tos[0]].append(float(0))
-                            tos_drop_dict['rx_drop_a'][self.tos[0]].append(float(0))
-                            tx_b_download[self.tos[0]].append(int(0))
-                            rx_a_download[self.tos[0]].append(int(0))
-                    elif temp in range(len(self.input_devices_list), 2 * len(self.input_devices_list)):
-                        if len(self.tos) < 2:
-                            break
-                        else:
+            if('endpoint' not in endp_data.keys()):
+                logging.warning('Malformed response for /endp/all?fields=name,tx+pkts+ll,rx+pkts+ll,delay')
+            else:
+                endps = endp_data['endpoint']
+                if int(self.cx_profile.side_b_min_bps) != 0:
+                    for endp in endps:
+                        if(list(endp.keys())[0].endswith('-A')):
+                            rx_endps_download.update(endp)
+                        elif(list(endp.keys())[0].endswith('-B')):
+                            tx_endps_download.update(endp)
+                    # for i in range(len(endps)):
+                    #     if i < len(endps) // 2:
+                    #         tx_endps_download.update(endps[i])
+                    #     if i >= len(endps) // 2:
+                    #         rx_endps_download.update(endps[i])
+                    for sta in self.cx_profile.created_cx.keys():
+                        temp = sta.rsplit('-', 1)
+                        temp = int(temp[1])
+                        if temp in range(0, len(self.input_devices_list)):
                             if int(self.cx_profile.side_b_min_bps) != 0:
-                                tos_download[self.tos[1]].append(connections_download[sta])
-                                tos_drop_dict['rx_drop_a'][self.tos[1]].append(drop_a_per[temp])
-                                tx_b_download[self.tos[1]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_download[self.tos[1]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                tos_download[self.tos[0]].append(connections_download[sta])
+                                tos_drop_dict['rx_drop_a'][self.tos[0]].append(drop_a_per[temp])
+                                tx_b_download[self.tos[0]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_download[self.tos[0]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
                             else:
-                                tos_download[self.tos[1]].append(float(0))
-                                tos_drop_dict['rx_drop_a'][self.tos[1]].append(float(0))
-                                tx_b_download[self.tos[1]].append(int(0))
-                                rx_a_download[self.tos[1]].append(int(0))
-                    elif temp in range(2 * len(self.input_devices_list), 3 * len(self.input_devices_list)):
-                        if len(self.tos) < 3:
-                            break
-                        else:
-                            if int(self.cx_profile.side_b_min_bps) != 0:
-                                tos_download[self.tos[2]].append(connections_download[sta])
-                                tos_drop_dict['rx_drop_a'][self.tos[2]].append(drop_a_per[temp])
-                                tx_b_download[self.tos[2]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_download[self.tos[2]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                tos_download[self.tos[0]].append(float(0))
+                                tos_drop_dict['rx_drop_a'][self.tos[0]].append(float(0))
+                                tx_b_download[self.tos[0]].append(int(0))
+                                rx_a_download[self.tos[0]].append(int(0))
+                        elif temp in range(len(self.input_devices_list), 2 * len(self.input_devices_list)):
+                            if len(self.tos) < 2:
+                                break
                             else:
-                                tos_download[self.tos[2]].append(float(0))
-                                tos_drop_dict['rx_drop_a'][self.tos[2]].append(float(0))
-                                tx_b_download[self.tos[2]].append(int(0))
-                                rx_a_download[self.tos[2]].append(int(0))
-                    elif temp in range(3 * len(self.input_devices_list), 4 * len(self.input_devices_list)):
-                        if len(self.tos) < 4:
-                            break
-                        else:
-                            if int(self.cx_profile.side_b_min_bps) != 0:
-                                tos_download[self.tos[3]].append(connections_download[sta])
-                                tos_drop_dict['rx_drop_a'][self.tos[3]].append(drop_a_per[temp])
-                                tx_b_download[self.tos[3]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_download[self.tos[3]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                if int(self.cx_profile.side_b_min_bps) != 0:
+                                    tos_download[self.tos[1]].append(connections_download[sta])
+                                    tos_drop_dict['rx_drop_a'][self.tos[1]].append(drop_a_per[temp])
+                                    tx_b_download[self.tos[1]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_download[self.tos[1]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                else:
+                                    tos_download[self.tos[1]].append(float(0))
+                                    tos_drop_dict['rx_drop_a'][self.tos[1]].append(float(0))
+                                    tx_b_download[self.tos[1]].append(int(0))
+                                    rx_a_download[self.tos[1]].append(int(0))
+                        elif temp in range(2 * len(self.input_devices_list), 3 * len(self.input_devices_list)):
+                            if len(self.tos) < 3:
+                                break
                             else:
-                                tos_download[self.tos[3]].append(float(0))
-                                tos_drop_dict['rx_drop_a'][self.tos[3]].append(float(0))
-                                tx_b_download[self.tos[3]].append(int(0))
-                                rx_a_download[self.tos[3]].append(int(0))
-                tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
-                tos_download.update({"beQOS": float(f"{sum(tos_download['BE']):.2f}")})
-                tos_download.update({"videoQOS": float(f"{sum(tos_download['VI']):.2f}")})
-                tos_download.update({"voiceQOS": float(f"{sum(tos_download['VO']):.2f}")})
-                tos_download.update({'tx_b': tx_b_download})
-                tos_download.update({'rx_a': rx_a_download})
-            if int(self.cx_profile.side_a_min_bps) != 0:
-                for i in range(len(endps)):
-                    if i < len(endps) // 2:
-                        tx_endps_upload.update(endps[i])
-                    if i >= len(endps) // 2:
-                        rx_endps_upload.update(endps[i])
-                for sta in self.cx_profile.created_cx.keys():
-                    temp = sta.rsplit('-', 1)
-                    temp = int(temp[1])
-                    if temp in range(0, len(self.input_devices_list)):
-                        if int(self.cx_profile.side_a_min_bps) != 0:
-                            tos_upload[self.tos[0]].append(connections_upload[sta])
-                            tos_drop_dict['rx_drop_b'][self.tos[0]].append(drop_b_per[temp])
-                            tx_b_upload[self.tos[0]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                            rx_a_upload[self.tos[0]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
-                        else:
-                            tos_upload[self.tos[0]].append(float(0))
-                            tos_drop_dict['rx_drop_b'][self.tos[0]].append(float(0))
-                            tx_b_upload[self.tos[0]].append(int(0))
-                            rx_a_upload[self.tos[0]].append(int(0))
-                    elif temp in range(len(self.input_devices_list), 2 * len(self.input_devices_list)):
-                        if len(self.tos) < 2:
-                            break
-                        else:
+                                if int(self.cx_profile.side_b_min_bps) != 0:
+                                    tos_download[self.tos[2]].append(connections_download[sta])
+                                    tos_drop_dict['rx_drop_a'][self.tos[2]].append(drop_a_per[temp])
+                                    tx_b_download[self.tos[2]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_download[self.tos[2]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                else:
+                                    tos_download[self.tos[2]].append(float(0))
+                                    tos_drop_dict['rx_drop_a'][self.tos[2]].append(float(0))
+                                    tx_b_download[self.tos[2]].append(int(0))
+                                    rx_a_download[self.tos[2]].append(int(0))
+                        elif temp in range(3 * len(self.input_devices_list), 4 * len(self.input_devices_list)):
+                            if len(self.tos) < 4:
+                                break
+                            else:
+                                if int(self.cx_profile.side_b_min_bps) != 0:
+                                    tos_download[self.tos[3]].append(connections_download[sta])
+                                    tos_drop_dict['rx_drop_a'][self.tos[3]].append(drop_a_per[temp])
+                                    tx_b_download[self.tos[3]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_download[self.tos[3]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                else:
+                                    tos_download[self.tos[3]].append(float(0))
+                                    tos_drop_dict['rx_drop_a'][self.tos[3]].append(float(0))
+                                    tx_b_download[self.tos[3]].append(int(0))
+                                    rx_a_download[self.tos[3]].append(int(0))
+                    tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
+                    tos_download.update({"beQOS": float(f"{sum(tos_download['BE']):.2f}")})
+                    tos_download.update({"videoQOS": float(f"{sum(tos_download['VI']):.2f}")})
+                    tos_download.update({"voiceQOS": float(f"{sum(tos_download['VO']):.2f}")})
+                    tos_download.update({'tx_b': tx_b_download})
+                    tos_download.update({'rx_a': rx_a_download})
+                if int(self.cx_profile.side_a_min_bps) != 0:
+                    for endp in endps:
+                        if(list(endp.keys())[0].endswith('-A')):
+                            rx_endps_upload.update(endp)
+                        elif(list(endp.keys())[0].endswith('-B')):
+                            tx_endps_upload.update(endp)
+                    # for i in range(len(endps)):
+                    #     if i < len(endps) // 2:
+                    #         tx_endps_upload.update(endps[i])
+                    #     if i >= len(endps) // 2:
+                    #         rx_endps_upload.update(endps[i])
+                    for sta in self.cx_profile.created_cx.keys():
+                        temp = sta.rsplit('-', 1)
+                        temp = int(temp[1])
+                        if temp in range(0, len(self.input_devices_list)):
                             if int(self.cx_profile.side_a_min_bps) != 0:
-                                tos_upload[self.tos[1]].append(connections_upload[sta])
-                                tos_drop_dict['rx_drop_b'][self.tos[1]].append(drop_b_per[temp])
-                                tx_b_upload[self.tos[1]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_upload[self.tos[1]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                tos_upload[self.tos[0]].append(connections_upload[sta])
+                                tos_drop_dict['rx_drop_b'][self.tos[0]].append(drop_b_per[temp])
+                                tx_b_upload[self.tos[0]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_upload[self.tos[0]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
                             else:
-                                tos_upload[self.tos[i+1]].append(float(0))
-                                tos_drop_dict['rx_drop_b'][self.tos[1]].append(float(0))
-                                tx_b_upload[self.tos[1]].append(int(0))
-                                rx_a_upload[self.tos[1]].append(int(0))
-                    elif temp in range(2 * len(self.input_devices_list), 3 * len(self.input_devices_list)):
-                        if len(self.tos) < 3:
-                            break
-                        else:
-                            if int(self.cx_profile.side_a_min_bps) != 0:
-                                tos_upload[self.tos[2]].append(connections_upload[sta])
-                                tos_drop_dict['rx_drop_b'][self.tos[2]].append(drop_b_per[temp])
-                                tx_b_upload[self.tos[2]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_upload[self.tos[2]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                tos_upload[self.tos[0]].append(float(0))
+                                tos_drop_dict['rx_drop_b'][self.tos[0]].append(float(0))
+                                tx_b_upload[self.tos[0]].append(int(0))
+                                rx_a_upload[self.tos[0]].append(int(0))
+                        elif temp in range(len(self.input_devices_list), 2 * len(self.input_devices_list)):
+                            if len(self.tos) < 2:
+                                break
                             else:
-                                tos_upload[self.tos[2]].append(float(0))
-                                tos_drop_dict['rx_drop_b'][self.tos[2]].append(float(0))
-                                tx_b_upload[self.tos[2]].append(int(0))
-                                rx_a_upload[self.tos[2]].append(int(0))
-                    elif temp in range(3 * len(self.input_devices_list), 4 * len(self.input_devices_list)):
-                        if len(self.tos) < 4:
-                            break
-                        else:
-                            if int(self.cx_profile.side_a_min_bps) != 0:
-                                tos_upload[self.tos[3]].append(connections_upload[sta])
-                                tos_drop_dict['rx_drop_b'][self.tos[3]].append(drop_b_per[temp])
-                                tx_b_upload[self.tos[3]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_upload[self.tos[3]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                if int(self.cx_profile.side_a_min_bps) != 0:
+                                    tos_upload[self.tos[1]].append(connections_upload[sta])
+                                    tos_drop_dict['rx_drop_b'][self.tos[1]].append(drop_b_per[temp])
+                                    tx_b_upload[self.tos[1]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_upload[self.tos[1]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                else:
+                                    tos_upload[self.tos[i+1]].append(float(0))
+                                    tos_drop_dict['rx_drop_b'][self.tos[1]].append(float(0))
+                                    tx_b_upload[self.tos[1]].append(int(0))
+                                    rx_a_upload[self.tos[1]].append(int(0))
+                        elif temp in range(2 * len(self.input_devices_list), 3 * len(self.input_devices_list)):
+                            if len(self.tos) < 3:
+                                break
                             else:
-                                tos_upload[self.tos[3]].append(float(0))
-                                tos_drop_dict['rx_drop_b'][self.tos[3]].append(float(0))
-                                tx_b_upload[self.tos[3]].append(int(0))
-                                rx_a_upload[self.tos[3]].append(int(0))
-                
-                tos_upload.update({"bkQOS": float(f"{sum(tos_upload['BK']):.2f}")})
-                tos_upload.update({"beQOS": float(f"{sum(tos_upload['BE']):.2f}")})
-                tos_upload.update({"videoQOS": float(f"{sum(tos_upload['VI']):.2f}")})
-                tos_upload.update({"voiceQOS": float(f"{sum(tos_upload['VO']):.2f}")})
-                tos_upload.update({'tx_b': tx_b_upload})
-                tos_upload.update({'rx_a': rx_a_upload})
+                                if int(self.cx_profile.side_a_min_bps) != 0:
+                                    tos_upload[self.tos[2]].append(connections_upload[sta])
+                                    tos_drop_dict['rx_drop_b'][self.tos[2]].append(drop_b_per[temp])
+                                    tx_b_upload[self.tos[2]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_upload[self.tos[2]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                else:
+                                    tos_upload[self.tos[2]].append(float(0))
+                                    tos_drop_dict['rx_drop_b'][self.tos[2]].append(float(0))
+                                    tx_b_upload[self.tos[2]].append(int(0))
+                                    rx_a_upload[self.tos[2]].append(int(0))
+                        elif temp in range(3 * len(self.input_devices_list), 4 * len(self.input_devices_list)):
+                            if len(self.tos) < 4:
+                                break
+                            else:
+                                if int(self.cx_profile.side_a_min_bps) != 0:
+                                    tos_upload[self.tos[3]].append(connections_upload[sta])
+                                    tos_drop_dict['rx_drop_b'][self.tos[3]].append(drop_b_per[temp])
+                                    tx_b_upload[self.tos[3]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_upload[self.tos[3]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                else:
+                                    tos_upload[self.tos[3]].append(float(0))
+                                    tos_drop_dict['rx_drop_b'][self.tos[3]].append(float(0))
+                                    tx_b_upload[self.tos[3]].append(int(0))
+                                    rx_a_upload[self.tos[3]].append(int(0))
+                    
+                    tos_upload.update({"bkQOS": float(f"{sum(tos_upload['BK']):.2f}")})
+                    tos_upload.update({"beQOS": float(f"{sum(tos_upload['BE']):.2f}")})
+                    tos_upload.update({"videoQOS": float(f"{sum(tos_upload['VI']):.2f}")})
+                    tos_upload.update({"voiceQOS": float(f"{sum(tos_upload['VO']):.2f}")})
+                    tos_upload.update({'tx_b': tx_b_upload})
+                    tos_upload.update({'rx_a': rx_a_upload})
 
         else:
             print("no RX values available to evaluate QOS")
