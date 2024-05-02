@@ -82,7 +82,7 @@ NOTES:
 
 STATUS: Functional
 
-VERIFIED_ON: 30-Apr-2024
+VERIFIED_ON: 02-May-2024
              GUI Version:  5.4.8
              Build Date :  Sun Apr 21 01:42:42 PM PDT 2024
              Kernel Version: 6.2.16+
@@ -96,6 +96,7 @@ INCLUDE_IN_README: False
 import argparse
 import asyncio
 import importlib
+import json
 import logging
 import platform
 import sys
@@ -197,6 +198,13 @@ class Mixed_Traffic(Realm):
                  target='192.168.1.3',
                  multicast_endp_types=None,
                  multicast_tos=None,
+                 
+                 
+                #  for webui
+                 dowebgui = False,
+                 result_dir = None,
+                 test_name = None,
+                 device_list = None,
                  debug=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
@@ -321,7 +329,20 @@ class Mixed_Traffic(Realm):
         self.target = target
         self.multicast_endp_types = multicast_endp_types
         self.multicast_tos = multicast_tos
-
+        # for webui
+        self.dowebgui = dowebgui
+        self.device_list = device_list
+        self.result_dir = result_dir
+        self.test_name = test_name
+        
+        
+        if self.dowebgui:
+            self.stopped = False
+            self.ping_execution = False
+            self.qos_execution = False
+            self.ftp_execution = False
+            self.http_execution = False
+            self.mc_execution = False
         # Base Profile obj
         self.base_interop_profile = lf_base_interop_profile.RealDevice(manager_ip=self.host,
                                                                        server_ip=self.server_ip,
@@ -503,8 +524,13 @@ class Mixed_Traffic(Realm):
     def select_real_devices(self, real_devices, real_sta_list=None, base_interop_obj=None):
         self.real_sta_data_dict = {}
         if real_sta_list is None:
-            self.user_query = real_devices.query_user()
-            self.real_sta_list = self.user_query[0]
+            if self.dowebgui:
+                self.user_query = real_devices.query_user(dowebgui=self.dowebgui
+                                                          ,device_list=self.device_list)
+                self.real_sta_list = self.user_query[0]
+            else:
+                self.user_query = real_devices.query_user()
+                self.real_sta_list = self.user_query[0]
 
             # fetching window's list
             for port in self.user_query[0]:
@@ -635,7 +661,58 @@ class Mixed_Traffic(Realm):
             for ports in ports_data_dict:
                 port, port_data = list(ports.keys())[0], list(ports.values())[0]
                 ports_data[port] = port_data
-            time.sleep(ping_test_duration * 60)
+            if self.dowebgui:
+                start_time = datetime.datetime.now()
+                end_time = start_time+datetime.timedelta(seconds=ping_test_duration*60)
+                temp_json = []
+                while(datetime.datetime.now()<end_time):
+                    temp_json = []
+                    temp_checked_sta=[]
+                    temp_result_data = self.ping_test_obj.get_results()
+                    if(type(temp_result_data) == dict):
+                        for station in self.ping_test_obj.real_sta_list:
+                            current_device_data = ports_data[station]
+                            if (station in temp_result_data['name']):
+                                temp_json.append({
+                                'device':station,
+                                'sent': temp_result_data['tx pkts'],
+                                'recv': temp_result_data['rx pkts'],
+                                'dropped': temp_result_data['dropped'],
+                                'status':"Running",
+                                'start_time':start_time.strftime("%d/%m %I:%M:%S %p"),
+                                'end_time':end_time.strftime("%d/%m %I:%M:%S %p"),
+                                "remaining_time":""
+                            })
+                    else:
+                        for station in self.ping_test_obj.real_sta_list:
+                            current_device_data = ports_data[station]
+                            for ping_device in temp_result_data:
+                                ping_endp, ping_data = list(ping_device.keys())[0], list(ping_device.values())[0]
+                                if station.split('.')[2] in ping_endp and station not in temp_checked_sta:
+                                    temp_checked_sta.append(station)
+                                    temp_json.append ({
+                                            'device':station,
+                                            'sent': ping_data['tx pkts'],
+                                            'recv': ping_data['rx pkts'],
+                                            'dropped': ping_data['dropped'],
+                                            'status':"Running",
+                                            'start_time':start_time.strftime("%d/%m %I:%M:%S %p"),
+                                            'end_time':end_time.strftime("%d/%m %I:%M:%S %p"),
+                                            "remaining_time":""
+                                        })       
+                    df1=pd.DataFrame(temp_json)
+                    df1.to_csv('{}/ping_datavalues.csv'.format(self.result_dir),index=False)
+                    try:
+                        with open(self.result_dir+"/../../Running_instances/{}_{}_running.json".format(self.host,self.test_name), 'r') as file:
+                            data = json.load(file)
+                            if data["status"] != "Running":
+                                logging.info('Test is stopped by the user')
+                                break
+                    except:
+                        logging.info("execption while reading running json in ping")
+                    time.sleep(3)
+            else:
+                time.sleep(ping_test_duration * 60)
             logger.info('Stopping the PING Test...')
             self.ping_test_obj.stop_generic()
             # getting result dict
@@ -738,7 +815,22 @@ class Mixed_Traffic(Realm):
                                         'remarks': [],
                                         'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]}
                                     result_json[station]['remarks'] = self.ping_test_obj.generate_remarks(result_json[station])
-            logger.info("Final Result Json For Ping Test: {}".format(result_json))
+            if self.dowebgui:
+                temp_json = []
+                for station in result_json:
+                    logging.info(station,result_json[station],"final dataset")
+                    temp_json.append({'device':station,
+                                        'sent': result_json[station]['sent'],
+                                        'recv': result_json[station]['recv'],
+                                        'dropped': result_json[station]['dropped'],
+                                        'status':"Stopped",
+                                        'start_time':start_time.strftime("%d/%m %I:%M:%S %p"),
+                                        'end_time':end_time.strftime("%d/%m %I:%M:%S %p"),
+                                        "remaining_time":""})
+                df1=pd.DataFrame(temp_json)
+                df1.to_csv('{}/ping_datavalues.csv'.format(self.result_dir),index=False)
+            else:
+                logger.info("Final Result Json For Ping Test: {}".format(result_json))
             if all_bands:
                 band = ''
             else:
@@ -779,6 +871,10 @@ class Mixed_Traffic(Realm):
                                                         side_a_max_rate=int(side_a_max),
                                                         side_b_max_rate=int(side_b_max),
                                                         traffic_type=traffic_type,
+                                                        dowebgui = "True" if self.dowebgui else "False",
+                                                        test_name=self.test_name,
+                                                        result_dir=self.result_dir,
+                                                        ip=self.host,
                                                         _debug_on=False)
 
                 self.qos_test_obj.input_devices_list = self.user_query[0]
@@ -997,7 +1093,10 @@ class Mixed_Traffic(Realm):
                                                             lf_password=self.lf_password,
                                                             traffic_duration=self.ftp_test_duration,
                                                             ssh_port=22,
-                                                            clients_type=client_type)
+                                                            clients_type=client_type,
+                                                            dowebgui = "True" if self.dowebgui else "False",
+                                                            result_dir=self.result_dir,
+                                                            test_name=self.test_name)
                     interation_num = interation_num + 1
                     self.ftp_test_obj.file_create()
                     if self.real:
@@ -1025,8 +1124,10 @@ class Mixed_Traffic(Realm):
                     time1 = datetime.datetime.now()
                     logger.info("FTP Traffic started running at {}".format(time1))
                     self.ftp_test_obj.start(False, False)
-
-                    time.sleep(self.ftp_test_duration)
+                    if self.dowebgui:    
+                        self.ftp_test_obj.monitor_for_runtime_csv()
+                    else:
+                        time.sleep(self.ftp_test_duration)
 
                     self.ftp_test_obj.stop()
                     logger.info("FTP Traffic stopped running")
@@ -1108,7 +1209,9 @@ class Mixed_Traffic(Realm):
                                                 ap_name=self.dut_model, ssid=ssid, password=password, security=security,
                                                 target_per_ten=target_per_ten, file_size=http_file_size, bands=self.band,
                                                 client_type=client_type, lf_username=self.lf_username,
-                                                lf_password=self.lf_password)
+                                                lf_password=self.lf_password,dowebgui = "True" if self.dowebgui else "False",
+                                                result_dir=self.result_dir,
+                                                test_name=self.test_name)
             if self.real:
                 self.http_obj.port_list = self.user_query[0]
                 self.http_obj.devices_list = self.user_query[1]
@@ -1162,7 +1265,10 @@ class Mixed_Traffic(Realm):
             test_time = datetime.datetime.now().strftime("%b %d %H:%M:%S")
             logger.info("HTTP Test started at {}".format(test_time))
             self.http_obj.start()
-            time.sleep(self.http_test_duration)
+            if self.dowebgui:
+                self.http_obj.monitor_for_runtime_csv(self.http_test_duration)
+            else:    
+                time.sleep(self.http_test_duration)
             self.http_obj.stop()
             uc_avg_val = self.http_obj.my_monitor('uc-avg')
             url_times = self.http_obj.my_monitor('total-urls')
@@ -1422,7 +1528,11 @@ class Mixed_Traffic(Realm):
                                                                     network_auth_type_list=[],
                                                                     anqp_3gpp_cell_net_list=[],
                                                                     ieee80211w_list=[],
-                                                                    interopt_mode=True)
+                                                                    interopt_mode=True,
+                                                                    test_name = self.test_name,
+                                                                    dowebgui = True,
+                                                                    ip = self.host,
+                                                                    result_dir = self.result_dir)
             if self.real:
                 if self.user_query[0]:
                     logger.info("No station pre clean up any existing cxs on LANforge")
@@ -2129,7 +2239,7 @@ NOTES:
 
 STATUS: Functional
 
-VERIFIED_ON: 30-Apr-2024
+VERIFIED_ON: 02-May-2024
              GUI Version:  5.4.8
              Build Date :  Sun Apr 21 01:42:42 PM PDT 2024
              Kernel Version: 6.2.16+
@@ -2266,6 +2376,13 @@ INCLUDE_IN_README: False
 
     parser.add_argument('--all_bands', help='to run the tests with respective bands',default=None,
                         action="store_true")
+    
+    # For webgui execution
+    parser.add_argument('--dowebgui', help='to run the tests with webgui',default=None,
+                        action="store_true")
+    parser.add_argument('--device_list', help='device list recieved from webgui tos', type=str, default="")
+    parser.add_argument('--result_dir', help='result_dir for real time data for webui', type=str, default="")
+    parser.add_argument('--test_name', help='test name for webui', type=str, default="")
 
     # logging configuration
     optional.add_argument("--lf_logger_config_json",
@@ -2357,7 +2474,16 @@ INCLUDE_IN_README: False
     #for creating directory and placing reports
     parent_dir = os.getcwd()
     directory = datetime.datetime.now().strftime("%b %d %H:%M:%S") + str(' mixed_traffic_test')
-    overall_path = os.path.join(parent_dir,directory)
+    overall_csv=[]
+    overall_status = {}
+    if args.dowebgui:
+        overall_path = os.path.join(args.result_dir,directory)
+        overall_status = {"ping":"notstarted","qos":"notstarted","ftp":"notstarted","http":"notstarted","mc":"notstarted","time":datetime.datetime.now().strftime("%Y %d %H:%M:%S"),"status":"running"}
+        overall_csv.append(overall_status.copy())
+        df1 = pd.DataFrame(overall_csv)
+        df1.to_csv('{}/overall_status.csv'.format(args.result_dir), index=False)
+    else:
+        overall_path = os.path.join(parent_dir,directory)
     os.mkdir(overall_path)
     mixed_obj = Mixed_Traffic(host=args.mgr,
                               port=args.mgr_port,
@@ -2413,6 +2539,12 @@ INCLUDE_IN_README: False
                               target=args.target,
                               multicast_endp_types=args.mc_traffic_type,
                               multicast_tos=args.mc_tos,
+                              
+                            #  for Webgui 
+                              dowebgui=args.dowebgui,
+                              device_list=args.device_list,
+                              test_name=args.test_name,
+                              result_dir=args.result_dir,
                               # path=path
                               )
     # pre-cleaning & creating / selecting clients for both real and virtual
@@ -2803,27 +2935,206 @@ INCLUDE_IN_README: False
                         t5.join()
                 else:
                     if "1" in args.tests:
-                        mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
+                        if mixed_obj.dowebgui:
+                            try:
+                                with open(mixed_obj.result_dir+"/../../Running_instances/{}_{}_running.json".format(mixed_obj.host,mixed_obj.test_name), 'r') as file:
+                                    data = json.load(file)
+                                    if data["status"] != "Running":
+                                        logging.info('Test is stopped by the user')
+                                        mixed_obj.stopped = True
+                                if not mixed_obj.stopped: 
+                                    overall_status['ping']="started"
+                                    overall_status["time"]=datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                                    overall_csv.append(overall_status.copy())
+                                    df1 = pd.DataFrame(overall_csv)
+                                    df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
+                                    mixed_obj.ping_execution=True
+                                    mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
+                                                interval=args.ping_interval, all_bands=True)
+                            except:
+                                logger.info("Error while running for webui during ping execution")
+                            try:
+                                overall_status['ping']="stopped"
+                                overall_status["time"]=datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                                overall_csv.append(overall_status.copy())
+                                df1 = pd.DataFrame(overall_csv)
+                                df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
+                            except Exception as e:
+                                logger.info(e)
+                        else:
+                            mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
                                             interval=args.ping_interval, all_bands=True)
                     if "2" in args.tests:
-                        mixed_obj.qos_test(ssid=ssid, password=password, security=security, ap_name=args.dut_model,
+                        if mixed_obj.dowebgui:
+                            try:
+                                with open(mixed_obj.result_dir+"/../../Running_instances/{}_{}_running.json".format(mixed_obj.host,mixed_obj.test_name), 'r') as file:
+                                    data = json.load(file)
+                                    if data["status"] != "Running":
+                                        logging.info('Test is stopped by the user')
+                                        mixed_obj.stopped = True
+                                if not mixed_obj.stopped:
+                                    overall_status['qos']="started"
+                                    overall_status["time"]=datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                                    if overall_status['ping'] == "stopped":
+                                        overall_status['ping'] == "completed"
+                                    overall_csv.append(overall_status.copy())
+                                    df1 = pd.DataFrame(overall_csv)
+                                    df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
+                                    mixed_obj.qos_execution=True
+                                    mixed_obj.qos_test(ssid=ssid, password=password, security=security, ap_name=args.dut_model,
                                         upstream=args.upstream_port, tos=args.tos, traffic_type=args.traffic_type,
                                         side_a_min=args.side_a_min, side_b_min=args.side_b_min,
                                         side_a_max=args.side_a_max, side_b_max=args.side_b_min, all_bands=True)
+                            except:
+                                logger.info("Error while running for webui during qos execution")
+                            try:
+                                overall_status['qos']="stopped"
+                                overall_status["time"]=datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                                overall_csv.append(overall_status.copy())
+                                df1 = pd.DataFrame(overall_csv)
+                                df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
+                            except Exception as e:
+                                logger.info(e)   
+                        else:
+                            mixed_obj.qos_test(ssid=ssid, password=password, security=security, ap_name=args.dut_model,
+                                            upstream=args.upstream_port, tos=args.tos, traffic_type=args.traffic_type,
+                                            side_a_min=args.side_a_min, side_b_min=args.side_b_min,
+                                            side_a_max=args.side_a_max, side_b_max=args.side_b_min, all_bands=True)
                     if "3" in args.tests:
-                        mixed_obj.ftp_test(ssid=ssid, password=password, security=security, bands=Bands,
-                                        directions=args.direction, file_sizes=args.ftp_file_sizes, all_bands=True)
+                        if mixed_obj.dowebgui:
+                            try:
+                                with open(mixed_obj.result_dir+"/../../Running_instances/{}_{}_running.json".format(mixed_obj.host,mixed_obj.test_name), 'r') as file:
+                                    data = json.load(file)
+                                    if data["status"] != "Running":
+                                        logging.info('Test is stopped by the user')
+                                        mixed_obj.stopped = True
+                                if not mixed_obj.stopped:
+                                    overall_status['ftp']="started"
+                                    if overall_status['ping'] == "stopped":
+                                        overall_status['ping'] == "completed"
+                                    if overall_status['qos'] == "stopped":
+                                        overall_status['qos'] == "completed"
+                                    overall_status["time"]=datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                                    overall_csv.append(overall_status.copy())
+                                    df1 = pd.DataFrame(overall_csv)
+                                    df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
+                                    mixed_obj.ftp_execution=True
+                                    mixed_obj.ftp_test(ssid=ssid, password=password, security=security, bands=Bands,
+                                                                                directions=args.direction, file_sizes=args.ftp_file_sizes, all_bands=True)
+                            except:    
+                                logger.info("Error while running for webui during ftp execution")
+                            try:
+                                overall_status['ftp']="stopped"
+                                overall_status["time"]=datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                                overall_csv.append(overall_status.copy())
+                                df1 = pd.DataFrame(overall_csv)
+                                df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
+                            except Exception as e:
+                                logger.info(e)   
+                        else:
+                            mixed_obj.ftp_test(ssid=ssid, password=password, security=security, bands=Bands,
+                                            directions=args.direction, file_sizes=args.ftp_file_sizes, all_bands=True)
                     if "4" in args.tests:
-                        mixed_obj.http_test(ssid=ssid, password=password, security=security,
+                        if mixed_obj.dowebgui:
+                            try:
+                                with open(mixed_obj.result_dir+"/../../Running_instances/{}_{}_running.json".format(mixed_obj.host,mixed_obj.test_name), 'r') as file:
+                                    data = json.load(file)
+                                    if data["status"] != "Running":
+                                        logging.info('Test is stopped by the user')
+                                        mixed_obj.stopped = True
+                                if not mixed_obj.stopped:
+                                    overall_status['http']="started"
+                                    if overall_status['ping'] == "stopped":
+                                        overall_status['ping'] == "completed"
+                                    if overall_status['qos'] == "stopped":
+                                        overall_status['qos'] == "completed"
+                                    if overall_status['ftp'] == "stopped":
+                                        overall_status['ftp'] == "completed"
+                                    overall_status["time"]=datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                                    overall_csv.append(overall_status.copy())
+                                    df1 = pd.DataFrame(overall_csv)
+                                    df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
+                                    mixed_obj.http_execution=True
+                                    mixed_obj.http_test(ssid=ssid, password=password, security=security,
+                                            http_file_size=args.http_file_size, target_per_ten=args.target_per_ten,
+                                            all_bands=True)
+                            except:    
+                                logger.info("Error while running for webui during http execution")
+                            try:
+                                overall_status['http']="stopped"
+                                overall_status["time"]=datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                                overall_csv.append(overall_status.copy())
+                                df1 = pd.DataFrame(overall_csv)
+                                df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
+                            except Exception as e:
+                                logger.info(e)   
+                        else:
+                            mixed_obj.http_test(ssid=ssid, password=password, security=security,
                                             http_file_size=args.http_file_size, target_per_ten=args.target_per_ten,
                                             all_bands=True)
                     if "5" in args.tests:
-                        mixed_obj.multicast_test(endp_types=args.mc_traffic_type, mc_tos=args.mc_tos,
-                                                side_a_min=args.side_a_min_bps, side_b_min=args.side_b_min_bps,
-                                                side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu,
-                                                all_bands=True)
+                        if mixed_obj.dowebgui:
+                            try:
+                                with open(mixed_obj.result_dir+"/../../Running_instances/{}_{}_running.json".format(mixed_obj.host,mixed_obj.test_name), 'r') as file:
+                                    data = json.load(file)
+                                    if data["status"] != "Running":
+                                        logging.info('Test is stopped by the user')
+                                        mixed_obj.stopped = True
+                                if not mixed_obj.stopped:
+                                    overall_status['mc']="started"
+                                    if overall_status['ping'] == "stopped":
+                                        overall_status['ping'] == "completed"
+                                    if overall_status['qos'] == "stopped":
+                                        overall_status['qos'] == "completed"
+                                    if overall_status['ftp'] == "stopped":
+                                        overall_status['ftp'] == "completed"
+                                    if overall_status['http'] == "stopped":
+                                        overall_status['http'] == "completed"
+                                    overall_status["time"]=datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                                    overall_csv.append(overall_status.copy())
+                                    df1 = pd.DataFrame(overall_csv)
+                                    df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
+                                    mixed_obj.mc_execution=True
+                                    mixed_obj.multicast_test(endp_types=args.mc_traffic_type, mc_tos=args.mc_tos,
+                                                    side_a_min=args.side_a_min_bps, side_b_min=args.side_b_min_bps,
+                                                    side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu,
+                                                    all_bands=True)
+                            except Exception as e:    
+                                logger.info(e)
+                            try:
+                                overall_status['mc']="stopped"
+                                overall_status["time"]=datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                                overall_csv.append(overall_status)
+                                df1 = pd.DataFrame(overall_csv)
+                                df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
+                            except Exception as e:
+                                logger.info(e)   
+                        else:
+                            mixed_obj.multicast_test(endp_types=args.mc_traffic_type, mc_tos=args.mc_tos,
+                                                    side_a_min=args.side_a_min_bps, side_b_min=args.side_b_min_bps,
+                                                    side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu,
+                                                    all_bands=True)
                 # generating overall report
                 mixed_obj.generate_all_report()
+                if mixed_obj.dowebgui:
+                    try:
+                        overall_status["status"] = "completed"
+                        if overall_status['ping'] == "stopped":
+                            overall_status['ping'] == "completed"
+                        if overall_status['qos'] == "stopped":
+                                overall_status['qos'] == "completed"
+                        if overall_status['ftp'] == "stopped":
+                                overall_status['ftp'] == "completed"
+                        if overall_status['http'] == "stopped":
+                                overall_status['http'] == "completed"
+                        if overall_status['mc'] == "stopped":
+                                overall_status['mc'] == "completed"
+                        overall_status["time"]=datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                        overall_csv.append(overall_status.copy())
+                        df1 = pd.DataFrame(overall_csv)
+                        df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
+                    except Exception as e:
+                        logging.info("Error while wrinting status file for webui",e)
             else:
                 print("No Test Selected. Please select the Tests.")
                 exit(0)
