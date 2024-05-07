@@ -158,31 +158,6 @@ class SniffRadio(Realm):
         self.monitor.admin_down()
         time.sleep(2)
 
-    def get_sniff_info(self):
-        try:
-            # creating shh client object we use this object to connect to router
-            ssh = paramiko.SSHClient()
-            # automatically adds the missing host key
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(hostname=self.lfclient_host, port=22, username='lanforge', password='lanforge',
-                        allow_agent=False, look_for_keys=False, banner_timeout=600)
-            command = "sudo iw dev {sniffer} info".format(sniffer=self.monitor_name)
-            stdin, stdout, stderr = ssh.exec_command(command)
-            self.monitor_info = stdout.readlines()
-            logger.info("sudo iw dev {sniffer} info: \n {monitor_info}".format(sniffer=self.monitor_name, monitor_info=self.monitor_info))
-            # self.monitor_info = [line.replace(
-            #    '\n', '') for line in self.monitor_info]
-            ssh.close()
-            time.sleep(1)
-        except paramiko.ssh_exception.NoValidConnectionsError as e:
-            print("####", e, "####")
-            exit(1)
-        except TimeoutError as e:
-            print("####", e, "####")
-            exit(1)
-
-        return self.monitor_info
-
     # for 6E
     # For example for channel 7 with 80Mhz bw , here are the monitor commands possible
     # iw dev moni10a set freq 5955 80 5985
@@ -495,10 +470,6 @@ def main():
 
     # check
     obj.start()
-
-    # the informaiton is gotten during start
-    # obj.get_sniff_info()
-
     obj.cleanup()
 
     if args.do_6ghz_workaround:
