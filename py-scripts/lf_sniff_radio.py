@@ -78,7 +78,8 @@ class SniffRadio(Realm):
                  debug_on_=True,
                  monitor_name=None,
                  sniff_snapshot_bytes=None,
-                 sniff_flags=None):
+                 sniff_flags=None,
+                 **kwargs):
         super().__init__(lfclient_host, lfclient_port)
         self.lfclient_host = lfclient_host
         self.lfclient_port = lfclient_port
@@ -461,19 +462,15 @@ def main():
         except:
             print(f"Strange sniff length [{args.sniff_bytes}], please choose a positive value")
             exit(1)
+
+    # The '**vars(args)' unpacks arguments into named parameters
+    # of the SniffRadio initializer. Argument names must match initializer
+    # parameter names to be set.
     obj = SniffRadio(lfclient_host=args.mgr,
                      lfclient_port=args.mgr_port,
-                     radio=args.radio,
-                     outfile=args.outfile,
-                     duration=args.duration,
-                     channel=args.channel,
-                     channel_freq=args.channel_freq,
-                     channel_bw=args.channel_bw,
-                     center_freq=args.center_freq,
-                     radio_mode=args.radio_mode,
-                     monitor_name=args.monitor_name,
                      sniff_flags=sniff_flags_choice,
-                     sniff_snapshot_bytes=sniff_snaplen_choice)
+                     sniff_snapshot_bytes=sniff_snaplen_choice,
+                     **vars(args))
     obj.setup(int(args.disable_ht40), int(args.disable_ht80), int(args.ht160_enable))
 
     if args.do_6ghz_workaround:
