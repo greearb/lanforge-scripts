@@ -377,6 +377,54 @@ def parse_args():
     return parser.parse_args()
 
 
+def do_6ghz_workaround(args):
+    """Workaround for Intel AX210 or BE200 radio 6GHz monitor mode firmware limitation."""
+    # TODO: Decouple by removing args dependency
+    if args.num_stations:
+        num_sta = int(args.num_stations)
+    elif args.station_list:
+        num_sta = len(args.station_list)
+
+    if not args.station_list:
+        station_list = LFUtils.portNameSeries(
+            prefix_=args.sta_prefix, start_id_=int(
+                args.number_template), end_id_=num_sta + int(
+                args.number_template) - 1, padding_number_=10000, radio=args.radio)
+    else:
+        if ',' in args.station_list[0]:
+            station_list = args.station_list[0].split(',')
+        elif ' ' in args.station_list[0]:
+            station_list = args.station_list[0].split()
+        else:
+            station_list = args.station_list
+
+    create_l3 = createL3.CreateL3(host=args.mgr,
+                                    port=args.mgr_port,
+                                    number_template=str(args.number_template),
+                                    sta_list=station_list,
+                                    name_prefix="VT",
+                                    upstream=args.upstream_port,
+                                    ssid=args.ssid,
+                                    password=args.password,
+                                    radio=args.radio,
+                                    security=args.security,
+                                    side_a_min_rate=args.side_a_min_rate,
+                                    side_b_min_rate=args.side_b_min_rate,
+                                    mode=args.mode,
+                                    ap=args.ap,
+                                    _debug_on=True)
+    create_l3.build()
+    create_l3.start()
+
+    # Allow station to scan
+    logger.info("wait {scan_time} for scan on AX210".format(scan_time=args.do_6ghz_workaround_scan_time))
+    for i in range(0, int(args.do_6ghz_workaround_scan_time)):
+        logger.info("Intel station performing scan, please wait: {scan_time}".format(scan_time=(int(args.do_6ghz_workaround_scan_time) - i)))
+        time.sleep(1)
+
+    return create_l3
+
+
 def main():
     args = parse_args()
 
@@ -395,48 +443,8 @@ def main():
     # if args.channel is None and args.channel_freq is None:
     #    print('--channel or --channel_freq most be entered')
 
-    # Workaround for Intel AX210 or BE200 radio 6GHz monitor mode firmware limitation
     if args.do_6ghz_workaround:
-        if args.num_stations:
-            num_sta = int(args.num_stations)
-        elif args.station_list:
-            num_sta = len(args.station_list)
-
-        if not args.station_list:
-            station_list = LFUtils.portNameSeries(
-                prefix_=args.sta_prefix, start_id_=int(
-                    args.number_template), end_id_=num_sta + int(
-                    args.number_template) - 1, padding_number_=10000, radio=args.radio)
-        else:
-            if ',' in args.station_list[0]:
-                station_list = args.station_list[0].split(',')
-            elif ' ' in args.station_list[0]:
-                station_list = args.station_list[0].split()
-            else:
-                station_list = args.station_list
-
-        create_l3 = createL3.CreateL3(host=args.mgr,
-                                      port=args.mgr_port,
-                                      number_template=str(args.number_template),
-                                      sta_list=station_list,
-                                      name_prefix="VT",
-                                      upstream=args.upstream_port,
-                                      ssid=args.ssid,
-                                      password=args.password,
-                                      radio=args.radio,
-                                      security=args.security,
-                                      side_a_min_rate=args.side_a_min_rate,
-                                      side_b_min_rate=args.side_b_min_rate,
-                                      mode=args.mode,
-                                      ap=args.ap,
-                                      _debug_on=True)
-        create_l3.build()
-        create_l3.start()
-        # allow 10 seconds for a scan
-        logger.info("wait {scan_time} for scan on AX210".format(scan_time=args.do_6ghz_workaround_scan_time))
-        for i in range(0, int(args.do_6ghz_workaround_scan_time)):
-            logger.info("AX210 scan network, Please wait: {scan_time}".format(scan_time=(int(args.do_6ghz_workaround_scan_time) - i)))
-            time.sleep(1)
+        workaround_cx = do_6ghz_workaround(args)
 
     sniff_flags_choice = None
     if args.sniff_using:
@@ -469,7 +477,7 @@ def main():
     obj.setup(int(args.disable_ht40), int(args.disable_ht80), int(args.ht160_enable))
 
     if args.do_6ghz_workaround:
-        create_l3.stop()
+        workaround_cx.stop()
 
     # TODO: Add wait-for logic instead of a sleep
     time.sleep(5)
@@ -479,7 +487,7 @@ def main():
     obj.cleanup()
 
     if args.do_6ghz_workaround:
-        create_l3.cleanup()
+        workaround_cx.cleanup()
 
     # TODO:  Check if passed or not.
 
