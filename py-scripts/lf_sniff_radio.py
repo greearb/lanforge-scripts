@@ -202,10 +202,7 @@ class SniffRadio(Realm):
         self.monitor.cleanup()
 
 
-def main():
-    help_summary='''\
-     This script is intended to sniff the radio specified by the user on a particular channel for a specified duration.
-    '''
+def parse_args():
     parser = argparse.ArgumentParser(
         prog="lf_sniff_radio.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -376,7 +373,16 @@ def main():
                              'mate_kill_dumpcap:  kill previously issued dumpcap',
                         default=None)
     parser.add_argument('--help_summary',help='shows summary of the script',action='store_true')
-    args = parser.parse_args()
+
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+
+    help_summary='''\
+     This script is intended to sniff the radio specified by the user on a particular channel for a specified duration.
+    '''
     if args.help_summary:
         print(help_summary)
         exit(0)
