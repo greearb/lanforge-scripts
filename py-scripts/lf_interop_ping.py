@@ -265,7 +265,7 @@ class Ping(Realm):
         self.generic_endps_profile.stop_cx()
 
     def get_results(self):
-        logging.info(self.generic_endps_profile.created_endp)
+        logging.debug(self.generic_endps_profile.created_endp)
         results = self.json_get(
             "/generic/{}".format(','.join(self.generic_endps_profile.created_endp)))
         if (len(self.generic_endps_profile.created_endp) > 1):
