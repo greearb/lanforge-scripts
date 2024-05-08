@@ -566,7 +566,12 @@ class Ping(Realm):
                 data[device]['webui_rtts'] = new_dict
         with open(self.ui_report_dir + '/runtime_ping_data.json', 'w') as f:
             json.dump(data, f, indent=4)
-        
+        test_name = self.ui_report_dir.split("/")[-1]
+        with open(self.ui_report_dir + '/../../Running_instances/{}_{}_running.json'.format(self.host,test_name), 'r') as f:
+            run_status = json.load(f)
+            if run_status["status"] != "Running":
+                logging.info('Test is stopped by the user')
+                return False
         return True
 
     def set_webUI_stop(self):
@@ -1591,11 +1596,11 @@ connectivity problems.
     logging.info('Stopping the test')
     ping.stop_generic()
     
-    if(ping.do_webUI):
-        ping.set_webUI_stop()
 
     logging.info(ping.result_json)
 
+    if(ping.do_webUI):
+        ping.set_webUI_stop()
     # print('----',rtts)
     # station post cleanup
     if(not args.no_cleanup):
