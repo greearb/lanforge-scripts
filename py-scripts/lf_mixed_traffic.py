@@ -105,7 +105,7 @@ import time
 import datetime
 import pandas as pd
 from multiprocessing import Process, Pipe
-import traceback
+# import traceback
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -818,7 +818,7 @@ class Mixed_Traffic(Realm):
             if self.dowebgui:
                 temp_json = []
                 for station in result_json:
-                    logging.info(station,result_json[station],"final dataset")
+                    logging.debug('{} {}'.format(station,result_json[station]))
                     temp_json.append({'device':station,
                                         'sent': result_json[station]['sent'],
                                         'recv': result_json[station]['recv'],
@@ -840,8 +840,9 @@ class Mixed_Traffic(Realm):
             self.ping_test_status = True
             if(conn):
                 conn.send([self.ping_test_obj, True])
-        except:
-            traceback.print_exc()
+        except Exception as e:
+            # traceback.print_exc()
+            logging.exception(e)
             if(conn):
                 conn.send(['', False])
 
@@ -1057,8 +1058,9 @@ class Mixed_Traffic(Realm):
                 if(conn):
                     conn.send([self.throughput_qos_obj, self.data_set, self.load, self.res, True])
             self.qos_test_status = True
-        except:
-            traceback.print_exc()
+        except Exception as e:
+            # traceback.print_exc()
+            logging.exception(e)
             if(conn):
                 conn.send(['', '', '', '', False])
 
@@ -1148,8 +1150,9 @@ class Mixed_Traffic(Realm):
             self.ftp_test_status = True
             if(conn):
                 conn.send([self.ftp_test_obj, True])
-        except:
-            traceback.print_exc()
+        except Exception as e:
+            # traceback.print_exc()
+            logging.exception(e)
             if(conn):
                 conn.send(['', False])
 
@@ -1392,8 +1395,9 @@ class Mixed_Traffic(Realm):
             self.http_test_status = True
             if(conn):
                 conn.send([self.http_obj, self.dataset, self.dataset1, self.dataset2, self.bytes_rd, self.lis, True])
-        except:
-            traceback.print_exc()
+        except Exception as e:
+            # traceback.print_exc()
+            logging.exception(e)
             if(conn):
                 conn.send(
                     [[], [], {}, {}, '', '', False]
@@ -1593,8 +1597,9 @@ class Mixed_Traffic(Realm):
                         True
                     ]
                 )
-        except:
-            traceback.print_exc()
+        except Exception as e:
+            # traceback.print_exc()
+            logging.exception(e)
             if(conn):
                 conn.send(
                     [
