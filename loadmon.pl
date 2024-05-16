@@ -20,9 +20,10 @@
 use diagnostics;
 use warnings;
 use strict;
-#use Time::localtime;
+use Getopt::Long;
 use POSIX;
 use Data::Dumper;
+
 $| = 1;
 
 package main;
@@ -31,6 +32,12 @@ our $QQ=q{"};
 our $Q=q{'};
 our $LC=q({);
 our $RC=q(});
+
+our $do_fork = 0;
+our $default_interval = 30;
+our $interval = -1;
+our $do_syslog = 0;
+my $help = 0;
 
 our @prog_names = (
     "btserver",
@@ -99,14 +106,14 @@ sub monitor {
 
     for my $pid (@{$self->{ra_pid_list}}) {
         next unless ( -d "/proc/$pid/fd" );
-        $cmd = "ls /proc/$pid/fd | wc -l";
+        $cmd = "ls /proc/$pid/fd 2>/dev/null | wc -l";
         @lines=`$cmd`;
         chomp(@lines);
         # print Data::Dumper->Dump(['fh_lines', \@lines]), "\n";
         if (@lines > 0 ) {
             $self->{total_fh} += int($lines[0]);
         }
-        $cmd = "ls /proc/$pid/task/ | wc -l";
+        $cmd = "ls /proc/$pid/task/ 2>/dev/null | wc -l";
         my $threads = `$cmd`;
         chomp $threads;
         $self->{total_threads} += int($threads);
@@ -121,7 +128,7 @@ sub report {
 
     # print Data::Dumper->Dump(['report', $self] ), "\n";
     if ($num_pids < 1) {
-        print $fh "0";
+        # print $fh "0";
         return;
     }
     if (!$fh) {
@@ -163,6 +170,32 @@ sub print_totals {
     print $fh qq(${LC}"tt_num_pids":$tt_num_pids, "tt_mem_kb":$tt_mem_kb, "tt_fh":$tt_fh, "tt_threads":$tt_threads${RC});
 }
 
+sub mainloop {
+    my ($_syslog, $_interv) = @_;
+    my $out_fh;
+    if ($_syslog) {
+        open($out_fh, "|-", "systemd-cat -t loadmon")
+            or die("Unable to open systemd-cat: $!");
+    }
+    else {
+        $out_fh = *STDOUT;
+    }
+
+    while (1) {
+        print $out_fh '[';
+        for my $name (@main::prog_names) {
+            my $lmonitor = $monitor_map{$name};
+            # print "$name ";
+            $lmonitor->monitor();
+            $lmonitor->report(*$out_fh);
+            # print ",";
+        }
+        print_totals(*$out_fh);
+        print $out_fh "]\n";
+        sleep($_interv);
+    }
+}
+
 ## - - -
 #           M A I N
 ## - - -
@@ -170,18 +203,47 @@ for my $name (@main::prog_names) {
     $monitor_map{$name} = loadmon->new($name);
 }
 
+my $usage = qq{$0 # utility to record system load
+  --interval <seconds>      # default 30 sec
+  --syslog                  # report results to syslog/journalctl
+  --background              # place self into background
+  Pipe this to syslog using "| logger -t loadmon" or better yet:
+  "| systemd-cat -t loadmon" or use --syslog.
+  Format this data using journalctl:
+    journalctl -t loadmon | tail -1 | ./parse_loadmon.pl
+};
 
-while (1) {
-    print STDOUT '[';
-    for my $name (@main::prog_names) {
-        my $lmonitor = $monitor_map{$name};
-        # print "$name ";
-        $lmonitor->monitor();
-        $lmonitor->report(*STDOUT);
-        print ",";
+if (! GetOptions(
+    'background' => \$do_fork,
+    'interval=i' => \$interval,
+    'syslog'     => \$do_syslog,
+    'help'       => \$help)
+) {
+    print $usage;
+    exit 1;
+}
+if ($help) {
+    print $usage;
+    exit 0;
+}
+
+if ($interval < 1) {
+    $interval = $default_interval;
+}
+if ($do_fork) {
+    my $pid = fork;
+    die "Failure to fork: $!" unless defined $pid;
+
+    if ($pid == 0) {
+        mainloop($do_syslog, $interval);
     }
-    print_totals(*STDOUT);
-    print "]\n";
-    sleep(30);
+    else {
+        print STDERR "Placing progress in background...\n";
+    }
+    exit;
+}
+else {
+    print STDERR "Monitor output to STDOUT...\n";
+    mainloop($do_syslog, $interval);
 }
 #
