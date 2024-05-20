@@ -47,5 +47,7 @@ fi
 mkdir venv-3.10
 /usr/local/bin/python3 -m venv venv-3.10
 . venv-3.10/bin/activate
-/usr/local/bin/pip3.10 install pandas
-# 
+# /usr/local/bin/pip3.10 install pandasS
+cd $HOME/scripts/py-scripts
+./update_dependencies.py
+#
