@@ -182,6 +182,8 @@ if (( do_clean == 1 )); then
       echo "No files found to clean up! This is unexpected"
       exit 1
     fi
+    echo "Cleaning finished."
+    exit 0
 fi
 
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
