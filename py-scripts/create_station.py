@@ -356,14 +356,24 @@ class CreateStation(Realm):
             # When add support for other parameters, need to be careful here.
             # Default from args is currently 'None' when unspecified
             if self.key_mgmt:
-                # For whatever reason, only setting the key mgmt here can clear
-                # the 'Key/Phrase' field set by 'add_sta'. For authentication that
-                # requires a password, assume user will set it. Otherwise, add this
-                # hack to get around unfortunate argparse/initializer default settings
+                # For whatever reason, setting the key mgmt here (using 'set_wifi_extra')
+                # clears the 'Key/Phrase' field set by 'add_sta'. Following workaround uses
+                # the 'set_wifi_extra' command's 'psk' parameter to set the 'WPA PSK'
+                # field in the 'Advanced Configuration' tab
+                #
+                # Hack to get around unfortunate argparse/initializer default settings which
+                # would result in 'null' password when password is not specified
                 if not self.password:
                     self.password = "[BLANK]"
+                
+                # Have to set 'Advanced/802.1X' flag in order for 'psk' argument to take.
+                # This works around limitation in the GUI which does a check for 'Key/Phrase'
+                # length when WPA/WPA2/WPA3 enabled (but that field is sadly also cleared here)
                 self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
                                                     psk=self.password)
+                self.station_profile.set_command_flag(command_name="add_sta",
+                                                      param_name="8021x_radius",
+                                                      value=1)  # Enable Advanced/802.1X flag
         else:
             # Configure station 802.1X settings
             if self.eap_method == 'TLS':
