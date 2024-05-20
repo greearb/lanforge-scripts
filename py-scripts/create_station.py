@@ -350,8 +350,22 @@ class CreateStation(Realm):
         print("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
 
-        # Configure station 802.1X settings
-        if self.eap_method is not None:
+        if not self.eap_method:
+            # Not 802.1X, but user may have specified other parameters
+            #
+            # When add support for other parameters, need to be careful here.
+            # Default from args is currently 'None' when unspecified
+            if self.key_mgmt:
+                # For whatever reason, only setting the key mgmt here can clear
+                # the 'Key/Phrase' field set by 'add_sta'. For authentication that
+                # requires a password, assume user will set it. Otherwise, add this
+                # hack to get around unfortunate argparse/initializer default settings
+                if not self.password:
+                    self.password = "[BLANK]"
+                self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
+                                                    psk=self.password)
+        else:
+            # Configure station 802.1X settings
             if self.eap_method == 'TLS':
                 self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
                                                     pairwise=self.pairwise_cipher,
@@ -819,6 +833,7 @@ def validate_args(args):
         print("--radio required")
         exit(1)
     
+    # TODO: Revisit these requirements. May have made some incorrect assumptions
     if args.eap_method is not None:
         if args.eap_identity is None:
             print("--eap_identity required")
