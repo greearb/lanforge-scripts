@@ -187,15 +187,19 @@ class Android():
         data_list = []
 
         for port_data in port_list:
-            shelf, resource, serial, band = port_data
+            if len(port_data) == 4:
+                shelf, resource, serial, band = port_data
 
-            if (band == '2g'):
-                curr_ssid, curr_passwd, curr_encryption, curr_eap_method, curr_eap_identity = self.ssid_2g, self.passwd_2g, self.encryption_2g, self.eap_method_2g, self.eap_identity_2g
-            elif (band == '5g'):
-                curr_ssid, curr_passwd, curr_encryption, curr_eap_method, curr_eap_identity = self.ssid_5g, self.passwd_5g, self.encryption_5g, self.eap_method_5g, self.eap_identity_5g
-            elif (band == '6g'):
-                curr_ssid, curr_passwd, curr_encryption, curr_eap_method, curr_eap_identity = self.ssid_6g, self.passwd_6g, self.encryption_6g, self.eap_method_6g, self.eap_identity_6g
-
+                if (band == '2g'):
+                    curr_ssid, curr_passwd, curr_encryption, curr_eap_method, curr_eap_identity = self.ssid_2g, self.passwd_2g, self.encryption_2g, self.eap_method_2g, self.eap_identity_2g
+                elif (band == '5g'):
+                    curr_ssid, curr_passwd, curr_encryption, curr_eap_method, curr_eap_identity = self.ssid_5g, self.passwd_5g, self.encryption_5g, self.eap_method_5g, self.eap_identity_5g
+                elif (band == '6g'):
+                    curr_ssid, curr_passwd, curr_encryption, curr_eap_method, curr_eap_identity = self.ssid_6g, self.passwd_6g, self.encryption_6g, self.eap_method_6g, self.eap_identity_6g
+            else:
+                shelf, resource, serial, ssid, passwd, enc, eap_method, eap_identity = port_data
+                curr_ssid, curr_passwd, curr_encryption, curr_eap_method, curr_eap_identity = ssid, passwd, enc, eap_method, eap_identity
+            
             username = self.get_username(shelf, resource)
 
             if (username is None):
@@ -205,7 +209,7 @@ class Android():
                     'user-name']
 
             # check if the encryption is personal
-            if (curr_eap_method is None):
+            if (curr_eap_method is None or curr_eap_method == ""):
                 data = {
                     'shelf': 1,
                     'resource': 1,
@@ -468,17 +472,32 @@ class Laptop():
             sta_name = port_data['sta_name']
             band = port_data['band']
             if (band == '2g'):
-                curr_ssid = self.ssid_2g
-                curr_passwd = self.passwd_2g
-                curr_enc = self.enc_2g
+                if ("ssid" in port_data):
+                    curr_ssid = port_data['ssid']
+                    curr_enc = self.set_encoding(port_data['enc'])
+                    curr_passwd = port_data['passwd']
+                else:
+                    curr_ssid = self.ssid_2g
+                    curr_passwd = self.passwd_2g
+                    curr_enc = self.enc_2g
             elif (band == '5g'):
-                curr_ssid = self.ssid_5g
-                curr_passwd = self.passwd_5g
-                curr_enc = self.enc_5g
+                if ("ssid" in port_data):
+                    curr_ssid = port_data['ssid']
+                    curr_enc = self.set_encoding(port_data['enc'])
+                    curr_passwd = port_data['passwd']
+                else:
+                    curr_ssid = self.ssid_5g
+                    curr_passwd = self.passwd_5g
+                    curr_enc = self.enc_5g
             elif (band == '6g'):
-                curr_ssid = self.ssid_6g
-                curr_passwd = self.passwd_6g
-                curr_enc = self.enc_6g
+                if ("ssid" in port_data):
+                    curr_ssid = port_data['ssid']
+                    curr_enc = self.set_encoding(port_data['enc'])
+                    curr_passwd = port_data['passwd']
+                else:
+                    curr_ssid = self.ssid_6g
+                    curr_passwd = self.passwd_6g
+                    curr_enc = self.enc_6g
 
             data = {
                 'shelf': shelf,
