@@ -6,21 +6,30 @@
 # this is the comcast python upgrade steps:
 #
 set -eu
-cd /home/lanforge/Downloads
+
 # wget https://yumrepo.sys.comcast.net/cats/candela/Python-3.10.11.tar.xz
 PYVER="" #3.10.14"
 SHORTVER=""
 VENVD="" #venv-3.10"
 BUILD_DEST=""
-PORTAPYD="/home/lanforge/python"
+PORTAPYD="$HOME/python"
 DEST_TYPE=""
+OSSL_DOM="https://www.openssl.org/source/"
+OSSL_SRC="openssl-3.0.13.tar.gz"
+OSSL_DIR="${OSSL_SRC%.tar.gz}"
+OSSL_URL="${OSSL_DOM}/$OSSL_SRC"
+OSSL_DEST="${HOME}/python/$OSSL_DIR"
+
 declare -A source_urls=(
+    ["3.8.19"]="https://www.python.org/ftp/python/3.8.19/Python-3.8.19.tar.xz"
     ["3.9.17"]="https://www.python.org/ftp/python/3.9.17/Python-3.9.17.tar.xz"
     ["3.10.14"]="https://www.python.org/ftp/python/3.10.14/Python-3.10.14.tar.xz"
 )
 declare -A dest_dirs=(
+  ["local-3.8.19"]="/usr/local/lib/python3.8"
   ["local-3.9.17"]="/usr/local/lib/python3.9"
   ["local-3.10.14"]="/usr/local/lib/python3.10"
+  ["portable-3.8.19"]="$PORTAPYD/python3.8.19"
   ["portable-3.9.17"]="$PORTAPYD/python3.9.17"
   ["portable-3.10.14"]="$PORTAPYD//python3.10"
 )
@@ -31,6 +40,8 @@ declare -A build_choices=(
 )
 
 declare -A dirs_to_clean=(
+  ["/usr/local-3.8.19"]="${dest_dirs['local-3.8.19']}"
+  ["$PORTAPYD-3.8.19"]="${dest_dirs['portable-3.8.19']}"
   ["/usr/local-3.9.17"]="${dest_dirs['local-3.9.17']}"
   ["$PORTAPYD-3.9.17"]="${dest_dirs['portable-3.9.17']}"
   ["/usr/local-3.10.14"]="${dest_dirs['local-3.10.14']}"
@@ -40,7 +51,7 @@ declare -A dirs_to_clean=(
 function help() {
         cat <<EOF
 $0 options:
-    -a pyver            # python version: 3.9.17, 3.10.14
+    -a pyver            # python version: 3.8.19, 3.9.17, 3.10.14
     -b local|portable   # local: install to /usr/local
                         # portable: install to $PORTAPYD/<pyver>
     -c                  # remove $PORTAPYD/<pyver>
@@ -81,8 +92,10 @@ while getopts $opts opt; do
           1>&2  echo "No matching -b action [${OPTARG:-}], choose local or portable "
           show_help=1
         else
-          BUILD_DEST="${build_choices[$OPTARG]}"
+          BUILD_DEST="${OPTARG}-${PYVER}"
+          BUILD_DEST="${dest_dirs[$BUILD_DEST]}"
           DEST_TYPE="$OPTARG"
+          echo "Directories: BUILD_DEST[$BUILD_DEST] DEST_TYPE[$DEST_TYPE]"
         fi
         ;;
     c)
@@ -119,28 +132,22 @@ if (( show_help == 1 )); then
     exit 0
 fi
 
-if [[ ! -f Python-$PYVER.tar.xz ]]; then
-    echo "Downloading python $PYVER source..."
-    wget https://www.python.org/ftp/python/$PYVER/Python-$PYVER.tar.xz
-fi
-
-
 if (( do_clean == 1 )); then
   echo "Cleaning $BUILD_DEST $PYVER "
   if [[ ! -d "$BUILD_DEST" ]]; then
     1>&2 echo "Unable to find $BUILD_DEST"
-    exit 1
   else
     echo "Build dest: $BUILD_DEST"
   fi
-  if [[ ! -d "${dest_dirs[${DEST_TYPE}-$PYVER]}" ]]; then
-    1>&2 echo "Unable to find ${dest_dirs[$PYVER]}/"
-    exit 1
+  # set -veux
+  dir_key="${DEST_TYPE}-$PYVER"
+  if [[ ! -d "${dest_dirs[$dir_key]}" ]]; then
+    1>&2 echo "Unable to find ${dest_dirs[$dir_key]}/ dir_key[$dir_key]"
   else
-    echo "will remove"
+    echo "Cleaning! will remove:"
     echo "$HOME/Downloads/Python-$PYVER"
-    echo "$BUILD_DEST/Python-$PYVER"
-    echo "$BUILD_DEST/lib/python-$PYVER"
+    echo "$BUILD_DEST/lib/python$SHORTVER"
+    echo "$BUILD_DEST/"
   fi
 fi
 
@@ -149,11 +156,12 @@ fi
 ##    Clean things
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if (( do_clean == 1 )); then
-    echo "Will remove these files:"
+
+    read -p "Will remove these files...[enter]"
     rm -f /tmp/clean-list.txt
     dirlist=(
+      "$HOME/$VENVD"
       "$HOME/Downloads/Python-$PYVER"
-      "$BUILD_DEST/Python-$PYVER"
       "$BUILD_DEST/lib/python$SHORTVER"
       "$BUILD_DEST/bin/python3"
       "$BUILD_DEST/bin/python$SHORTVER"
@@ -177,7 +185,7 @@ if (( do_clean == 1 )); then
       less /tmp/clean-list.txt
       read -p "\nProceed to remove files? [enter|ctrl-c] "
       sleep 1
-      cat /tmp/clean-list.txt | xargs sudo rm -rf
+      cat /tmp/clean-list.txt | sudo xargs -n100 rm -rf
     else
       echo "No files found to clean up! This is unexpected"
       exit 1
@@ -185,6 +193,40 @@ if (( do_clean == 1 )); then
     echo "Cleaning finished."
     exit 0
 fi
+
+
+
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+#   Download source
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+set -v
+mkdir -p $PORTAPYD ||:
+sudo chown -R lanforge: $PORTAPYD
+set +v
+cd $HOME/Downloads
+if [[ ! -f Python-$PYVER.tar.xz ]]; then
+    echo "Downloading python $PYVER source..."
+    wget https://www.python.org/ftp/python/$PYVER/Python-$PYVER.tar.xz
+fi
+if [[ ! -f $OSSL_SRC ]]; then
+  echo "Downloading openssl..."
+  wget -O $OSSL_SRC $OSSL_URL
+  tar xf $OSSL_SRC
+  PKI=$(sudo find /etc/ -name openssl.cnf -printf "%h\n")
+  echo "Configuring openssl..."
+  cd $OSSL_DIR
+  ./config \
+    --prefix=$OSSL_DEST \
+    --libdir=lib \
+    --openssldir=$PKI
+  sleep 1
+  echo "Building openssl..."
+  make -j1 depend
+  make -j$(nproc)
+  make install_sw
+  cd -
+fi
+
 
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 ##    Build things
@@ -210,7 +252,10 @@ else
     sudo chown -R $LOGNAME: .
     make clean ||:
     make distclean ||:
+    set -v
     ./configure \
+      --with-openssl=$HOME/Downloads/$OSSL_DIR \
+      --with-openssl-rpath=auto \
       --with-ensurepip \
       --enable-optimizations \
       --prefix=$BUILD_DEST
@@ -219,6 +264,7 @@ else
       echo "Build error"
       exit 1
     }
+    set +v
     echo "About to install...."
     # sleep 5
     sudo make install
@@ -238,19 +284,19 @@ else
     echo "Rebuilding $VENVD..."
     rm -rf $VENVD
     mkdir $VENVD
-    /usr/local/bin/python3 -m venv $VENVD
+    $BUILD_DEST/bin/python3 -m venv $VENVD
     . $VENVD/bin/activate
     # /usr/local/bin/pip3.10 install pandasS
     $HOME/scripts/py-scripts/update_dependencies.py
 fi
 # check if lanforge/.bashrc is updated to source venv
-if grep -q venv3-10 $HOME/.bashrc; then
-    echo "Found venv3-10 alias"
+if grep -q "$VENVD" $HOME/.bashrc; then
+    echo "Found $VENVD alias"
 else
-    echo "Creating venv3-10 alias..."
+    echo "Creating $VENVD alias..."
     (
-        echo "alias venv3-10='. \$HOME/$VENVD/bin/activate'"
-        echo "if [[ -r \$HOME/USE_VENV3-10 ]]; then . \$HOME/$VENVD/bin/activate; fi"
+        echo "alias $VENVD='. \$HOME/$VENVD/bin/activate'"
+        echo "if [[ -r \$HOME/USE_$VENVD ]]; then . \$HOME/$VENVD/bin/activate; fi"
     ) >> "$HOME/.bashrc"
 fi
 # uncomment this you want new shells to automatically source venv
