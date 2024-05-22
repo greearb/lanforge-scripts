@@ -411,13 +411,13 @@ class CreateStation(Realm):
             self.station_profile.set_command_flag(command_name="add_sta", param_name="8021x_radius", value=1)  # enable 802.1x flag
             # self.station_profile.set_command_flag(command_name="add_sta", param_name="80211r_pmska_cache", value=1)  # enable 80211r_pmska_cache flag
 
-            # User may want to enable 802.11u, so need to double check (band-aid fix for now).
-            # If not specified, then disable it, as the StationProfile class enables it by default,
-            # and that may cause headaches.
-            #
-            # Note that station flags are also set in CreateStation constructor.
-            if self.sta_flags and not "80211u_enable" in self.sta_flags:
-                self.station_profile.set_command_flag(command_name="add_sta", param_name="80211u_enable", value=0)
+        # User may want to enable 802.11u, so need to double check (band-aid fix for now).
+        # If not specified, then disable it, as the StationProfile class enables it by default,
+        # and that may cause headaches.
+        #
+        # Note that station flags are also set in CreateStation constructor.
+        if not self.sta_flags or (self.sta_flags and not "80211u_enable" in self.sta_flags):
+            self.station_profile.set_command_flag(command_name="add_sta", param_name="80211u_enable", value=0)
 
         self.station_profile.set_command_param(
             "set_port", "report_timer", 1500)
