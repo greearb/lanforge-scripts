@@ -1383,7 +1383,7 @@ class L3VariableTime(Realm):
         for endp in endps:
             # pprint(endp)
             if self.dowebgui != True:
-                logger.debug(pformat(endp))
+                logging.info(pformat(endp))
             eid_endp = endp["eid"].split(".")
             logger.debug(
                 "Comparing eid:{eid} to endp-id {eid_endp}".format(eid=eid, eid_endp=eid_endp))
