@@ -322,18 +322,14 @@ class CreateStation(Realm):
                 logger.info(f"Selected Flags: '{flags}'")
                 self.station_profile.set_command_flag("add_sta", flags, 1)
 
-        if self.debug:
-            print("----- Station List ----- ----- ----- ----- ----- ----- \n")
-            pprint.pprint(self.sta_list)
-            print("---- ~Station List ----- ----- ----- ----- ----- ----- \n")
+        logger.debug(pprint.pformat(self.sta_list))
 
     def cleanup(self):
         for station in self.sta_list:
-            print('Removing the station {} if exists'.format(station))
+            logger.info('Removing the station {} if exists'.format(station))
             self.rm_port(station, check_exists=True)
         if (not LFUtils.wait_until_ports_disappear(base_url=self.station_profile.lfclient_url, port_list=self.sta_list, debug=self.debug)):
-            print('All stations are not removed or a timeout occurred.')
-            print('Aborting the test.')
+            logger.info('All stations are not removed or a timeout occurred. Aborting.')
             exit(1)
 
     def build(self):
@@ -343,7 +339,7 @@ class CreateStation(Realm):
                                           passwd=self.password)
         self.station_profile.set_number_template(self.number_template)
 
-        print("Creating stations")
+        logger.info("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
 
         if not self.eap_method:
@@ -838,29 +834,29 @@ INCLUDE_IN_README: False
 
 def validate_args(args):
     if args.radio is None:
-        print("--radio required")
+        logger.error("--radio required")
         exit(1)
     
     # TODO: Revisit these requirements. May have made some incorrect assumptions
     if args.eap_method is not None:
         if args.eap_identity is None:
-            print("--eap_identity required")
+            logger.error("--eap_identity required")
             exit(1)
         elif args.eap_password is None:
-            print("--eap_password required")
+            logger.error("--eap_password required")
             exit(1)
         elif args.key_mgmt is None:
-            print("--key_mgmt required")
+            logger.error("--key_mgmt required")
             exit(1)
         elif args.eap_method == 'TLS':
             if args.pk_passwd is None:
-                print("--pk_passwd required")
+                logger.error("--pk_passwd required")
                 exit(1)
             elif args.ca_cert is None:
-                print('--ca_cert required')
+                logger.error('--ca_cert required')
                 exit(1)
             elif args.private_key is None:
-                print('--private_key required')
+                logger.error('--private_key required')
                 exit(0)
 
         # Only need to check WPA3 ciphers because user requests 802.1X authentication.
@@ -873,10 +869,10 @@ def validate_args(args):
         #   '<type1|type2>'
         if 'wpa3' in args.security or 'WPA3' in args.security:
             if args.pairwise_cipher == '[BLANK]':
-                print('--pairwise_cipher required')
+                logger.error('--pairwise_cipher required')
                 exit(1)
             elif args.groupwise_cipher == '[BLANK]':
-                print('--groupwise_cipher required')
+                logger.error('--groupwise_cipher required')
                 exit(1)
         
 
@@ -904,7 +900,7 @@ def main():
                                             padding_number=10000,
                                             radio=args.radio)
 
-    print("station_list {}".format(station_list))
+    logger.info("Stations to create: {}".format(station_list))
 
     create_station = CreateStation(_host=args.mgr,
                                    _port=args.mgr_port,
@@ -943,8 +939,8 @@ def main():
             used_indices = [int(station_id.split('sta')[1]) for station_id in already_available_stations]
             for new_station in station_list:
                 if new_station in already_available_stations:
-                    print('Some stations are already existing in the LANforge from the given start id.')
-                    print('You can create stations from the start id {}'.format(max(used_indices) + 1))
+                    logger.error('Some stations are already existing in the LANforge from the given start id.')
+                    logger.error('You can create stations from the start id {}'.format(max(used_indices) + 1))
                     exit(1)
 
 
@@ -960,7 +956,7 @@ def main():
         create_station.cleanup()
 
     if create_station.passes():
-        print('Created %s stations' % num_sta)
+        logger.info('Created %s stations' % num_sta)
         create_station.exit_success()
     else:
         create_station.exit_fail()
