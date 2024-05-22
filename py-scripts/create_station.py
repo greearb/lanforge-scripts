@@ -475,12 +475,14 @@ class CreateStation(Realm):
         
     def get_station_list(self):
         response = super().json_get("/port/list?fields=_links,alias,device,port+type")
+
         available_stations = []
         for interface_name in response['interfaces']:
-            # print('sta' in list(interface_name.keys())[0])
-            if('sta' in list(interface_name.keys())[0]):
+            if 'sta' in list(interface_name.keys())[0]:
                 available_stations.append(list(interface_name.keys())[0])
-        return(available_stations)
+
+        logger.debug(f"The following stations currently exist: ")
+        return available_stations
 
 def parse_args():
     parser = LFCliBase.create_basic_argparse(  # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
