@@ -316,10 +316,6 @@ class CreateStation(Realm):
         self.station_profile.number_template_   = self.number_template
         self.station_profile.mode               = self.mode
 
-        # if self.sta_flags is not None:
-        #     self.station_profile.desired_add_sta_flags = self.sta_flags
-        #     self.station_profile.desired_add_sta_mask = self.sta_flags
-
         if self.sta_flags is not None:
             _flags = self.sta_flags.split(',')
             for flags in _flags:
@@ -890,10 +886,6 @@ def main():
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
-
-    # if args.debug:
-    #    pprint.pprint(args)
-    #    time.sleep(5)
 
     start_id = 0
     if args.start_id != 0:
