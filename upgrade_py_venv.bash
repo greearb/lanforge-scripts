@@ -286,7 +286,6 @@ else
     mkdir $VENVD
     $BUILD_DEST/bin/python3 -m venv $VENVD
     . $VENVD/bin/activate
-    # /usr/local/bin/pip3.10 install pandasS
     $HOME/scripts/py-scripts/update_dependencies.py
 fi
 # check if lanforge/.bashrc is updated to source venv
