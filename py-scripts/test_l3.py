@@ -1991,8 +1991,12 @@ class L3VariableTime(Realm):
                             remaining_time = [
                                 str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
                                     total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0]
+                            total= 0
+                            for k,v in endp_rx_map.items():
+                                if 'MLT-' in k:
+                                    total += v
                             self.overall.append(
-                                {self.tos[0]: total_dl_bps + total_ul_bps, "timestamp": self.get_time_stamp_local(),
+                                {self.tos[0]: total, "timestamp": self.get_time_stamp_local(),
                                  "status": "Running",
                                  "start_time": start_time.strftime('%Y-%m-%d-%H-%M-%S'),
                                  "end_time": end_time.strftime('%Y-%m-%d-%H-%M-%S'), "remaining_time": remaining_time})
