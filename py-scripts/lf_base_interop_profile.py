@@ -792,17 +792,17 @@ class RealDevice(Realm):
                 if ('all' in band):
                     self.selected_2g_serials = list(range(1, index))
                 else:
-                    self.selected_2g_serials = list(map(int, band.strip('2g=').split(',')))
+                    self.selected_2g_serials = list(map(int, band.replace('2g=','').strip().split(',')))
             elif ('5g' in band) and ('5g' in self.selected_bands or '5G' in self.selected_bands):
                 if ('all' in band):
                     self.selected_5g_serials = list(range(1, index))
                 else:
-                    self.selected_5g_serials = list(map(int, band.strip('5g=').split(',')))
+                    self.selected_5g_serials = list(map(int, band.replace('5g=','').strip().split(',')))
             elif ('6g' in band):
                 if ('all' in band and '6g' in self.selected_bands or '6G' in self.selected_bands):
                     self.selected_6g_serials = list(range(1, index))
                 else:
-                    self.selected_6g_serials = list(map(int, band.strip('6g=').split(',')))
+                    self.selected_6g_serials = list(map(int, band.replace('6g=','').strip().split(',')))
 
         print(self.selected_2g_serials, self.selected_5g_serials, self.selected_6g_serials)
         return [self.selected_2g_serials, self.selected_5g_serials, self.selected_6g_serials]
