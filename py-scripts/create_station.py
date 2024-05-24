@@ -241,6 +241,32 @@ lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
 add_sta = importlib.import_module("py-json.LANforge.add_sta")
 
 class CreateStation(Realm):
+    # Map values displayed in GUI to values accepted by the server
+    # Key is value displayed in GUI, value is value accepted by server
+    KEY_MGMT_MAP = {
+        "DEFAULT": "DEFAULT",
+        "NONE": "NONE",
+        "WPA-PSK": "WPA-PSK",
+        "FT-PSK (11r)": "FT-PSK",
+        "FT-EAP (11r)": "FT-EAP",
+        "FT-SAE (11r)": "FT-SAE",
+        "FT-EAP-SHA384 (11r)": "FT-EAP-SHA-384",
+        "WPA-EAP": "WPA-EAP",
+        "OSEN": "OSEN",
+        "IEEE8021X": "IEEE8021X",
+        "WPA-PSK-SHA256": "WPA-PSK-SHA256",
+        "WPA-EAP-SHA256": "WPA-EAP-SHA256",
+        "PSK & EAP 128": "WPA-PSK WPA-EAP",
+        "PSK & EAP 256": "WPA-PSK-256 WPA-EAP-256",
+        "PSK & EAP 128/256": "WPA-PSK WPA-EAP WPA-PSK-256 WPA-EAP-256",
+        "SAE": "SAE",
+        "WPA-EAP-SUITE-B": "WPA-EAP-SUITE-B",
+        "WPA-EAP-SUITE-B-192": "WPA-EAP-SUITE-B-192",
+        "FILS-SHA256": "FILS-SHA256",
+        "FILS-SHA384": "FILS-SHA384",
+        "OWE": "OWE",
+    }
+
     def __init__(self,
                  _ssid=None,
                  _bssid=None,
@@ -294,7 +320,14 @@ class CreateStation(Realm):
         self.pk_passwd              = _pk_passwd
         self.ca_cert                = _ca_cert
         self.private_key            = _private_key
-        self.key_mgmt               = _key_mgmt
+
+        # Translate from options displayed in the GUI to options
+        # that the server actually understands
+        if _key_mgmt in self.KEY_MGMT_MAP:
+            self.key_mgmt = self.KEY_MGMT_MAP[_key_mgmt]
+        else:
+            self.key_mgmt = _key_mgmt
+
         self.pairwise_cipher        = _pairwise_cipher
         self.groupwise_cipher       = _groupwise_cipher
         self.sta_list               = _sta_list
@@ -792,10 +825,7 @@ INCLUDE_IN_README: False
                           help='Enter private key path e.g: /home/lanforge/client.p12')
     optional.add_argument("--key_mgmt",
                           type=str,
-                          help='Add the key management value\n'
-                               'default = 0 \n'
-                               'wpa2    = WPA-EAP \n'
-                               'wpa3    = WPA-SHA256')
+                          help="Authentication key management. Combinations are supported.\n")
     optional.add_argument("--pairwise_cipher",
                           help='Pairwise Ciphers\n'
                                'DEFAULT\n'
