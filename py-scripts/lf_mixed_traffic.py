@@ -688,7 +688,7 @@ class Mixed_Traffic(Realm):
                             current_device_data = ports_data[station]
                             for ping_device in temp_result_data:
                                 ping_endp, ping_data = list(ping_device.keys())[0], list(ping_device.values())[0]
-                                if station.split('.')[2] in ping_endp and station not in temp_checked_sta:
+                                if station.split('-')[-1] in ping_endp and station not in temp_checked_sta:
                                     temp_checked_sta.append(station)
                                     temp_json.append ({
                                             'device':station,
@@ -899,7 +899,7 @@ class Mixed_Traffic(Realm):
 
 
                 self.qos_test_obj.cleanup()
-                print("Data", self.data)
+                logging.debug('data:{}'.format(self.data))
 
                 if self.qos_serial_run:
                     self.result1, self.result2, self.result3, self.result4 = {}, {}, {}, {}
@@ -990,7 +990,7 @@ class Mixed_Traffic(Realm):
                 test_results['test_results'].append(self.throughput_qos_obj.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
                 self.data.update({self.band: test_results})  # right now it will only work for single band
                 self.throughput_qos_obj.cx_profile.cleanup()
-                print("DAta", self.data)
+                logging.debug('data:{}'.format(self.data))
                 if self.qos_serial_run:
                     self.result1, self.result2, self.result3, self.result4 = {}, {}, {}, {}
                     # separating dictionaries for each value in the list
@@ -1534,7 +1534,7 @@ class Mixed_Traffic(Realm):
                                                                     ieee80211w_list=[],
                                                                     interopt_mode=True,
                                                                     test_name = self.test_name,
-                                                                    dowebgui = True,
+                                                                    dowebgui = self.dowebgui,
                                                                     ip = self.host,
                                                                     result_dir = self.result_dir)
             if self.real:
