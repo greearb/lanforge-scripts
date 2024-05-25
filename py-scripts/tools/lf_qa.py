@@ -841,6 +841,9 @@ class csv_sql:
         self.test_rig_list = test_rig_list
         logger.info("test_rig_list: {}".format(test_rig_list))
 
+        # Time now generating the report
+        time_now = round(time.time() * 1000)
+
         # create the rest of the graphs
         for test_rig in test_rig_list:
             for test_tag in test_tag_list:
@@ -862,115 +865,123 @@ class csv_sql:
                         # This code is since the dut is not passed in to lf_qa.py when
                         # regernation of graphs from db
 
-                        units_list = list(df_tmp['Units'])
-                        logger.info(
-                            "GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig, test_tag, group))
-                        # group of Score will have subtest
-                        if group == 'Score':
-                            # Print out the Standard Score report
-                            kpi_fig = (
-                                px.scatter(
-                                    df_tmp,
-                                    x="Date",
-                                    y="numeric-score",
-                                    custom_data=[
-                                        'numeric-score',
-                                        'Subtest-Pass',
-                                        'Subtest-Fail',
-                                        'kernel'
-                                        ],
-                                    color="short-description",
-                                    hover_name="short-description",
-                                    size_max=60)).update_traces(
-                                mode='lines+markers')
+                        # find the last Date in the dataframe see if it is a test no longer run
+                        recent_test_run = df_tmp["Date"].iloc[-1]
+                        oldest_test_run = df_tmp["Date"].iloc[0]
+                        # if the recent test is over a week old do not include in run
+                        # 1 day = 86400 seconds
+                        # 1 week = 604800 seconds
+                        logger.info(f"time_now: {time_now} recent_test_run: {recent_test_run} difference: {int(time_now)-int(recent_test_run)} oldest_test_run {oldest_test_run}")
+                        if (int(time_now) - int(recent_test_run)) < 604800:
+                            units_list = list(df_tmp['Units'])
+                            logger.info(
+                                "GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig, test_tag, group))
+                            # group of Score will have subtest
+                            if group == 'Score':
+                                # Print out the Standard Score report
+                                kpi_fig = (
+                                    px.scatter(
+                                        df_tmp,
+                                        x="Date",
+                                        y="numeric-score",
+                                        custom_data=[
+                                            'numeric-score',
+                                            'Subtest-Pass',
+                                            'Subtest-Fail',
+                                            'kernel'
+                                            ],
+                                        color="short-description",
+                                        hover_name="short-description",
+                                        size_max=60)).update_traces(
+                                    mode='lines+markers')
 
-                            kpi_fig.update_traces(
-                                hovertemplate="<br>".join([
-                                    "kernel-version: %{customdata[4]}",
-                                    "numeric-score: %{customdata[0]}",
-                                    "Subtest-Pass: %{customdata[1]}",
-                                    "Subtest-Fail: %{customdata[2]}"
-                                ])
-                            )
+                                kpi_fig.update_traces(
+                                    hovertemplate="<br>".join([
+                                        "kernel-version: %{customdata[4]}",
+                                        "numeric-score: %{customdata[0]}",
+                                        "Subtest-Pass: %{customdata[1]}",
+                                        "Subtest-Fail: %{customdata[2]}"
+                                    ])
+                                )
 
-                            kpi_fig.update_layout(
-                                title="{test_id} : {group} : {test_tag} : {test_rig}".format(
-                                    test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
-                                xaxis_title="Time",
-                                yaxis_title="{}".format(units_list[-1]),
-                                xaxis={'type': 'date'}
-                            )
-                            kpi_fig.update_layout(autotypenumbers='convert types')
+                                kpi_fig.update_layout(
+                                    title="{test_id} : {group} : {test_tag} : {test_rig}".format(
+                                        test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
+                                    xaxis_title="Time",
+                                    yaxis_title="{}".format(units_list[-1]),
+                                    xaxis={'type': 'date'}
+                                )
+                                kpi_fig.update_layout(autotypenumbers='convert types')
 
-                            self.generate_png(df_tmp=df_tmp,
-                                              group=group,
-                                              test_id_list=test_id_list,
-                                              test_tag=test_tag,
-                                              test_rig=test_rig,
-                                              kpi_path_list=kpi_path_list,
-                                              kpi_fig=kpi_fig)
+                                self.generate_png(df_tmp=df_tmp,
+                                                group=group,
+                                                test_id_list=test_id_list,
+                                                test_tag=test_tag,
+                                                test_rig=test_rig,
+                                                kpi_path_list=kpi_path_list,
+                                                kpi_fig=kpi_fig)
 
-                        else:
-                            kpi_fig = (
-                                px.scatter(
-                                    df_tmp,
-                                    x="Date",
-                                    y="numeric-score",
-                                    custom_data=[
-                                        'Date',
-                                        'test_dir',
-                                        'numeric-score',
-                                        'kernel',
-                                        'radio_fw',
-                                        'gui_ver',
-                                        'gui_build_date',
-                                        'server_ver',
-                                        'server_build_date',
-                                        'dut-hw-version',
-                                        'dut-sw-version',
-                                        'dut-model-num',
-                                        'dut-serial-num'
-                                        ],
-                                    color="short-description",
-                                    hover_name="short-description",
-                                    size_max=60)).update_traces(
-                                mode='lines+markers')
+                            else:
+                                kpi_fig = (
+                                    px.scatter(
+                                        df_tmp,
+                                        x="Date",
+                                        y="numeric-score",
+                                        custom_data=[
+                                            'Date',
+                                            'test_dir',
+                                            'numeric-score',
+                                            'kernel',
+                                            'radio_fw',
+                                            'gui_ver',
+                                            'gui_build_date',
+                                            'server_ver',
+                                            'server_build_date',
+                                            'dut-hw-version',
+                                            'dut-sw-version',
+                                            'dut-model-num',
+                                            'dut-serial-num'
+                                            ],
+                                        color="short-description",
+                                        hover_name="short-description",
+                                        size_max=60)).update_traces(
+                                    mode='lines+markers')
 
-                            kpi_fig.update_layout(
-                                title="{test_id} : {group} : {test_tag} : {test_rig}".format(
-                                    test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
-                                xaxis_title="Time",
-                                yaxis_title="{units}".format(units=units_list[-1]),
-                                xaxis={'type': 'date'}
-                            )
+                                kpi_fig.update_layout(
+                                    title="{test_id} : {group} : {test_tag} : {test_rig}".format(
+                                        test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
+                                    xaxis_title="Time",
+                                    yaxis_title="{units}".format(units=units_list[-1]),
+                                    xaxis={'type': 'date'}
+                                )
 
-                            kpi_fig.update_traces(
-                                hovertemplate="<br>".join([
-                                    "Date: %{customdata[0]}",
-                                    "test_dir: %{customdata[1]}",
-                                    "numeric-score: %{customdata[2]}",
-                                    "kernel-version: %{customdata[3]}",
-                                    "radio-fw: %{customdata[4]}",
-                                    "gui-version: %{customdata[5]}",
-                                    "gui-build-date: %{customdata[6]}",
-                                    "server-version: %{customdata[7]}",
-                                    "server-build-date: %{customdata[8]}",
-                                    "dut-hw-version: %{customdata[9]}",
-                                    "dut-sw-version: %{customdata[10]}",
-                                    "dut-model-num: %{customdata[11]}",
-                                    "dut-serial-num: %{customdata[12]}",
-                                ])
-                            )
+                                kpi_fig.update_traces(
+                                    hovertemplate="<br>".join([
+                                        "Date: %{customdata[0]}",
+                                        "test_dir: %{customdata[1]}",
+                                        "numeric-score: %{customdata[2]}",
+                                        "kernel-version: %{customdata[3]}",
+                                        "radio-fw: %{customdata[4]}",
+                                        "gui-version: %{customdata[5]}",
+                                        "gui-build-date: %{customdata[6]}",
+                                        "server-version: %{customdata[7]}",
+                                        "server-build-date: %{customdata[8]}",
+                                        "dut-hw-version: %{customdata[9]}",
+                                        "dut-sw-version: %{customdata[10]}",
+                                        "dut-model-num: %{customdata[11]}",
+                                        "dut-serial-num: %{customdata[12]}",
+                                    ])
+                                )
 
-                            kpi_fig.update_layout(autotypenumbers='convert types')
+                                kpi_fig.update_layout(autotypenumbers='convert types')
 
-                            self.generate_png(df_tmp=df_tmp,
-                                              group=group,
-                                              test_id_list=test_id_list,
-                                              test_tag=test_tag,
-                                              test_rig=test_rig,
-                                              kpi_path_list=kpi_path_list,
-                                              kpi_fig=kpi_fig)
+                                self.generate_png(df_tmp=df_tmp,
+                                                group=group,
+                                                test_id_list=test_id_list,
+                                                test_tag=test_tag,
+                                                test_rig=test_rig,
+                                                kpi_path_list=kpi_path_list,
+                                                kpi_fig=kpi_fig)
 
 
 # Feature, Sum up the subtests passed/failed from the kpi files for each
