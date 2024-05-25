@@ -869,10 +869,10 @@ class csv_sql:
                         recent_test_run = df_tmp["Date"].iloc[-1]
                         oldest_test_run = df_tmp["Date"].iloc[0]
                         # if the recent test is over a week old do not include in run
-                        # 1 day = 86400 seconds
-                        # 1 week = 604800 seconds
+                        # 1 day = 86400000 milli seconds
+                        # 1 week = 604800000 milli seconds
                         logger.info(f"time_now: {time_now} recent_test_run: {recent_test_run} difference: {int(time_now)-int(recent_test_run)} oldest_test_run {oldest_test_run}")
-                        if (int(time_now) - int(recent_test_run)) < 604800:
+                        if (int(time_now) - int(recent_test_run)) < 604800000:
                             units_list = list(df_tmp['Units'])
                             logger.info(
                                 "GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig, test_tag, group))
