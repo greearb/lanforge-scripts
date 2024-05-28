@@ -885,7 +885,8 @@ class inspect_sql:
             logger.debug("df_2 empty exiting")
             exit(1)
 
-        # this can be a common function
+        # Time now generating the report
+        time_now = round(time.time() * 1000)
         # iterate though the unique values of the dataframe
         for test_tag in df_1['test-tag'].unique():
             for graph_group in df_1['Graph-Group'].unique():
@@ -898,209 +899,224 @@ class inspect_sql:
                     # For comparing two databases there only needs to be a single entry
                     if not df_tmp.empty:
                         logger.debug("df_tmp {}".format(df_tmp))
-                        # find the same information in db2
-                        df_tmp_comp = df_2.loc[
-                            (df_2['Graph-Group'] == str(graph_group))
-                            & (df_2['test-tag'] == str(test_tag))
-                            & (df_2['short-description'] == str(description))]
-                        logger.debug("df_tmp_comp {}".format(df_tmp_comp))
-                        if not df_tmp_comp.empty:
-                            logger.info("db2 contains: {group} {tag} {desc}".format(group=graph_group, tag=test_tag, desc=description))
+                        # Check the time stamp to avoid reporting older data,
 
-                            df_tmp.drop_duplicates(inplace=True)
-                            df_tmp.sort_values(by='Date', inplace=True, ascending=False)
-
-                            db_index_1 = int(self.db_index_list[0])
-                            logger.debug("First row {first}".format(first=df_tmp.iloc[db_index_1]))
-                            df_data_1 = df_tmp.iloc[db_index_1]
-                            logger.debug("type: {data} {data1}".format(data=type(df_data_1), data1=df_data_1))
-
-                            df_tmp_comp.drop_duplicates(inplace=True)
-                            df_tmp_comp.sort_values(by='Date', inplace=True, ascending=False)
-
-                            db_index_2 = int(self.db_index_list[1])
-                            logger.debug("First row {first}".format(first=df_tmp_comp.iloc[db_index_2]))
-                            df_data_2 = df_tmp_comp.iloc[db_index_2]
-                            logger.debug("type: {data} {data2}".format(data=type(df_data_2), data2=df_data_2))
-
-                            percent_delta = 0
-                            if((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
-                                percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
-
-                            self.performance_total += 1                                
-
-                            # AP auto basic connectivity the failure is if the connection took longer then 500 ms
-                            if 'Basic Client Connectivity' in df_data_2['short-description']:
-                                # currently AP auto is a failure if greater then 500 ms
-                                if float(df_data_2['numeric-score']) > 500:
-                                    self.test_result = "Critical"
-                                    background = self.background_red
-                                    self.performance_critical += 1
-                                    logger.info("Basic Client Connectivity {connect_time} > 500 ms so failed".format(connect_time=float(df_data_2['numeric-score'])))
-                                else:
-                                    self.test_result = "Good"
-                                    background = self.background_green
-                                    self.performance_good += 1
-                                    logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
+                        # find the last Date in the dataframe see if it is a test no longer run
+                        recent_test_run = df_tmp["Date"].iloc[-1]
+                        oldest_test_run = df_tmp["Date"].iloc[0]
+                        # if the recent test is over a week old do not include in run
+                        # 1 day = 86400000 milli seconds
+                        # 1 week = 604800000 milli seconds
+                        time_difference = int(time_now) -int(recent_test_run)
+                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} oldest_test_run: {oldest_test_run}".format(
+                            time_now=time_now,time_difference=time_difference, oldest_test_run=oldest_test_run))
+                        if (time_difference) < 604800000:
 
 
-                            elif percent_delta >= 90:
-                                logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
-                                self.test_result = "Good"
-                                background = self.background_green
-                                self.performance_good += 1
-                            elif percent_delta >= 70:
-                                logger.info("Performance Fair {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
-                                self.test_result = "Fair"
-                                background = self.background_purple
-                                self.performance_fair += 1
-                            elif percent_delta >= 50:
-                                logger.info("Performance Poor {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
-                                self.test_result = "Poor"
-                                background = self.background_orange
-                                self.performance_poor += 1
-                            elif percent_delta == 0:
-                                # for UL in test-tag and DL 0 or DL in test-tag and UL 0 this case should not be a failure
-                                if 'DL' in df_data_1['short-description'] and 'UL' in df_data_1['test-tag']:
-                                    logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
-                                    background = self.background_green
-                                    self.performance_good += 1
-                                    self.test_result = "Good"
-                                elif 'UL' in df_data_1['short-description'] and 'DL' in df_data_1['test-tag']:
-                                    logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
-                                    background = self.background_green
-                                    self.performance_good += 1
-                                    self.test_result = "Good"
 
-                                # negative logic like Stations Failed IP if zero is a goot thing
-                                elif 'Failed' in df_data_1['short-description']:
-                                    if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) !=0.0)):
-                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                            # find the same information in db2
+                            df_tmp_comp = df_2.loc[
+                                (df_2['Graph-Group'] == str(graph_group))
+                                & (df_2['test-tag'] == str(test_tag))
+                                & (df_2['short-description'] == str(description))]
+                            logger.debug("df_tmp_comp {}".format(df_tmp_comp))
+                            if not df_tmp_comp.empty:
+                                logger.info("db2 contains: {group} {tag} {desc}".format(group=graph_group, tag=test_tag, desc=description))
+
+                                df_tmp.drop_duplicates(inplace=True)
+                                df_tmp.sort_values(by='Date', inplace=True, ascending=False)
+
+                                db_index_1 = int(self.db_index_list[0])
+                                logger.debug("First row {first}".format(first=df_tmp.iloc[db_index_1]))
+                                df_data_1 = df_tmp.iloc[db_index_1]
+                                logger.debug("type: {data} {data1}".format(data=type(df_data_1), data1=df_data_1))
+
+                                df_tmp_comp.drop_duplicates(inplace=True)
+                                df_tmp_comp.sort_values(by='Date', inplace=True, ascending=False)
+
+                                db_index_2 = int(self.db_index_list[1])
+                                logger.debug("First row {first}".format(first=df_tmp_comp.iloc[db_index_2]))
+                                df_data_2 = df_tmp_comp.iloc[db_index_2]
+                                logger.debug("type: {data} {data2}".format(data=type(df_data_2), data2=df_data_2))
+
+                                percent_delta = 0
+                                if((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
+                                    percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
+
+                                self.performance_total += 1                                
+
+                                # AP auto basic connectivity the failure is if the connection took longer then 500 ms
+                                if 'Basic Client Connectivity' in df_data_2['short-description']:
+                                    # currently AP auto is a failure if greater then 500 ms
+                                    if float(df_data_2['numeric-score']) > 500:
+                                        self.test_result = "Critical"
                                         background = self.background_red
                                         self.performance_critical += 1
-                                        self.test_result = "Critical"
+                                        logger.info("Basic Client Connectivity {connect_time} > 500 ms so failed".format(connect_time=float(df_data_2['numeric-score'])))
                                     else:
-                                        logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                         self.test_result = "Good"
                                         background = self.background_green
                                         self.performance_good += 1
-                                else:             
+                                        logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
+
+
+                                elif percent_delta >= 90:
+                                    logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    self.test_result = "Good"
+                                    background = self.background_green
+                                    self.performance_good += 1
+                                elif percent_delta >= 70:
+                                    logger.info("Performance Fair {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    self.test_result = "Fair"
+                                    background = self.background_purple
+                                    self.performance_fair += 1
+                                elif percent_delta >= 50:
+                                    logger.info("Performance Poor {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    self.test_result = "Poor"
+                                    background = self.background_orange
+                                    self.performance_poor += 1
+                                elif percent_delta == 0:
+                                    # for UL in test-tag and DL 0 or DL in test-tag and UL 0 this case should not be a failure
+                                    if 'DL' in df_data_1['short-description'] and 'UL' in df_data_1['test-tag']:
+                                        logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
+                                        background = self.background_green
+                                        self.performance_good += 1
+                                        self.test_result = "Good"
+                                    elif 'UL' in df_data_1['short-description'] and 'DL' in df_data_1['test-tag']:
+                                        logger.info("For test {test} the {discription} DL not being monitored Not Applicable")
+                                        background = self.background_green
+                                        self.performance_good += 1
+                                        self.test_result = "Good"
+
+                                    # negative logic like Stations Failed IP if zero is a goot thing
+                                    elif 'Failed' in df_data_1['short-description']:
+                                        if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) !=0.0)):
+                                            logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                            background = self.background_red
+                                            self.performance_critical += 1
+                                            self.test_result = "Critical"
+                                        else:
+                                            logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                            self.test_result = "Good"
+                                            background = self.background_green
+                                            self.performance_good += 1
+                                    else:             
+                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                        self.test_result = "Critical"
+                                        background = self.background_red
+                                        self.performance_critical += 1
+                                else:
                                     logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                     self.test_result = "Critical"
                                     background = self.background_red
                                     self.performance_critical += 1
-                            else:
-                                logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
-                                self.test_result = "Critical"
-                                background = self.background_red
-                                self.performance_critical += 1
 
-                            # we can get most anything from the dataframe
-                            # TODO use the dataframe export line to CSV?
-                            row = [
-                                df_data_1['test-rig'],
-                                df_data_1['test-tag'],
-                                df_data_1['Graph-Group'],
-                                df_data_1['test-id'],
-                                df_data_1['short-description'],
-                                df_data_1['Units'],
-                                df_data_1['dut-hw-version'],
-                                df_data_1['dut-sw-version'],
-                                df_data_1['dut-model-num'],
-                                df_data_1['kernel'],
-                                df_data_1['gui_build_date'],
-                                df_data_1['numeric-score'],
-                                df_data_2['dut-hw-version'],
-                                df_data_2['dut-sw-version'],
-                                df_data_2['dut-model-num'],
-                                df_data_2['kernel'],
-                                df_data_2['gui_build_date'],
-                                df_data_2['numeric-score'],
-                                percent_delta,
-                                self.test_result
-                            ]
+                                # we can get most anything from the dataframe
+                                # TODO use the dataframe export line to CSV?
+                                row = [
+                                    df_data_1['test-rig'],
+                                    df_data_1['test-tag'],
+                                    df_data_1['Graph-Group'],
+                                    df_data_1['test-id'],
+                                    df_data_1['short-description'],
+                                    df_data_1['Units'],
+                                    df_data_1['dut-hw-version'],
+                                    df_data_1['dut-sw-version'],
+                                    df_data_1['dut-model-num'],
+                                    df_data_1['kernel'],
+                                    df_data_1['gui_build_date'],
+                                    df_data_1['numeric-score'],
+                                    df_data_2['dut-hw-version'],
+                                    df_data_2['dut-sw-version'],
+                                    df_data_2['dut-model-num'],
+                                    df_data_2['kernel'],
+                                    df_data_2['gui_build_date'],
+                                    df_data_2['numeric-score'],
+                                    percent_delta,
+                                    self.test_result
+                                ]
 
-                            self.csv_results_writer.writerow(row)
-                            self.csv_results_file.flush()
+                                self.csv_results_writer.writerow(row)
+                                self.csv_results_file.flush()
 
-                            # Set the relative path for results
-                            report_path_1 = df_data_1['kpi_path'] + "readme.html"
-                            relative_report_1 = os.path.relpath(report_path_1, self.lf_inspect_report_path)
+                                # Set the relative path for results
+                                report_path_1 = df_data_1['kpi_path'] + "readme.html"
+                                relative_report_1 = os.path.relpath(report_path_1, self.lf_inspect_report_path)
 
-                            report_dir_path_1 = df_data_1['kpi_path']
-                            relative_report_dir_path_1 = os.path.relpath(report_dir_path_1, self.lf_inspect_report_path)
+                                report_dir_path_1 = df_data_1['kpi_path']
+                                relative_report_dir_path_1 = os.path.relpath(report_dir_path_1, self.lf_inspect_report_path)
 
-                            report_path_2 = df_data_2['kpi_path'] + "readme.html"
-                            relative_report_2 = os.path.relpath(report_path_2, self.lf_inspect_report_path)
+                                report_path_2 = df_data_2['kpi_path'] + "readme.html"
+                                relative_report_2 = os.path.relpath(report_path_2, self.lf_inspect_report_path)
 
-                            report_dir_path_2 = df_data_2['kpi_path']
-                            relative_report_dir_path_2 = os.path.relpath(report_dir_path_2, self.lf_inspect_report_path)
+                                report_dir_path_2 = df_data_2['kpi_path']
+                                relative_report_dir_path_2 = os.path.relpath(report_dir_path_2, self.lf_inspect_report_path)
 
-                            self.html_results += """
-                            <tr><td>""" + str(df_data_1['test-rig']) + """</td>
-                            <td>""" + str(df_data_1['test-tag']) + """</td>
-                            <td>""" + str(df_data_1['Graph-Group']) + """</td>
-                            <td>""" + str(df_data_1['test-id']) + """</td>
-                            <td>""" + str(df_data_1['short-description']) + """</td>
-                            <td>""" + str(df_data_1['Units']) + """</td>
-                            <td>""" + str(df_data_1['dut-model-num']) + """</td>
-                            <td>""" + str(df_data_1['kernel']) + """</td>
-                            <td>""" + str(df_data_1['gui_build_date']) + """</td>
-                            <td>""" + str(df_data_1['numeric-score']) + """</td>
-                            <td>""" + str(df_data_2['dut-model-num']) + """</td>
-                            <td>""" + str(df_data_2['kernel']) + """</td>
-                            <td>""" + str(df_data_2['gui_build_date']) + """</td>
-                            <td>""" + str(df_data_2['numeric-score']) + """</td>
+                                self.html_results += """
+                                <tr><td>""" + str(df_data_1['test-rig']) + """</td>
+                                <td>""" + str(df_data_1['test-tag']) + """</td>
+                                <td>""" + str(df_data_1['Graph-Group']) + """</td>
+                                <td>""" + str(df_data_1['test-id']) + """</td>
+                                <td>""" + str(df_data_1['short-description']) + """</td>
+                                <td>""" + str(df_data_1['Units']) + """</td>
+                                <td>""" + str(df_data_1['dut-model-num']) + """</td>
+                                <td>""" + str(df_data_1['kernel']) + """</td>
+                                <td>""" + str(df_data_1['gui_build_date']) + """</td>
+                                <td>""" + str(df_data_1['numeric-score']) + """</td>
+                                <td>""" + str(df_data_2['dut-model-num']) + """</td>
+                                <td>""" + str(df_data_2['kernel']) + """</td>
+                                <td>""" + str(df_data_2['gui_build_date']) + """</td>
+                                <td>""" + str(df_data_2['numeric-score']) + """</td>
 
-                            <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
-                            <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
-                            <td><a href=""" + str(relative_report_1) + """ target=\"_blank\">report_1</a></td>
-                            <td><a href=""" + str(relative_report_dir_path_1) + """ target=\"_blank\">report_dir_1</a></td>
-                            <td><a href=""" + str(relative_report_2) + """ target=\"_blank\">report_2</a></td>
-                            <td><a href=""" + str(relative_report_dir_path_2) + """ target=\"_blank\">report_dir_2</a></td>
+                                <td style=""" + str(background) + """>""" + str(percent_delta) + """</td>
+                                <td style=""" + str(background) + """>""" + str(self.test_result) + """</td>
+                                <td><a href=""" + str(relative_report_1) + """ target=\"_blank\">report_1</a></td>
+                                <td><a href=""" + str(relative_report_dir_path_1) + """ target=\"_blank\">report_dir_1</a></td>
+                                <td><a href=""" + str(relative_report_2) + """ target=\"_blank\">report_2</a></td>
+                                <td><a href=""" + str(relative_report_dir_path_2) + """ target=\"_blank\">report_dir_2</a></td>
 
 
-                            </tr>"""
+                                </tr>"""
 
-                            self.junit_test = "{test_tag} {group} {test_id} {description}".format(
-                                test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'], description=df_data_1['short-description'])
-                            # record the junit results
-                            self.junit_results += """
-                                <testcase name="{name}" classname="{suite}" id="{description}" time="{time}">
-                                """.format(name=self.junit_test, suite=self.test_suite, description=description, time="1")
-
-                            # remove junit xml characters
-                            str_df_data_1 = str(df_data_1).replace('<', '').replace('>', '')
-                            str_df_data_2 = str(df_data_2).replace('<', '').replace('>', '')
-
-                            # Start properties
-                            self.junit_results += """
-                            <properties>
-                            """
-
-                            self.junit_results += """
-                                <property name="Performance" value="{test_result}" />
-                                <property name="Last Run" value="{numeric_score_1}" />
-                                <property name="Prev Run" value="{numeric_score_2}" />
-                                <property name="percent" value="{percent}" />
-                                <property name="Last Data" value="{df_data_1}" />
-                                <property name="Perv Data" value="{df_data_2}" />
-                                """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
-                                           percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
-                            
-                            # End properties
-                            self.junit_results += """
-                            </properties>
-                            """                
-
-                            if self.test_result != "Good" and self.test_result != "Fair":
+                                self.junit_test = "{test_tag} {group} {test_id} {description}".format(
+                                    test_tag=test_tag, group=graph_group, test_id=df_data_1['test-id'], description=df_data_1['short-description'])
+                                # record the junit results
                                 self.junit_results += """
-                                    <failure message="Performance: {result}  Percent: {percent}">
-                                    </failure>""".format(result=self.test_result, percent=percent_delta)
+                                    <testcase name="{name}" classname="{suite}" id="{description}" time="{time}">
+                                    """.format(name=self.junit_test, suite=self.test_suite, description=description, time="1")
 
-                            self.junit_results += """
-                                </testcase>
+                                # remove junit xml characters
+                                str_df_data_1 = str(df_data_1).replace('<', '').replace('>', '')
+                                str_df_data_2 = str(df_data_2).replace('<', '').replace('>', '')
+
+                                # Start properties
+                                self.junit_results += """
+                                <properties>
                                 """
+
+                                self.junit_results += """
+                                    <property name="Performance" value="{test_result}" />
+                                    <property name="Last Run" value="{numeric_score_1}" />
+                                    <property name="Prev Run" value="{numeric_score_2}" />
+                                    <property name="percent" value="{percent}" />
+                                    <property name="Last Data" value="{df_data_1}" />
+                                    <property name="Perv Data" value="{df_data_2}" />
+                                    """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
+                                            percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+                                
+                                # End properties
+                                self.junit_results += """
+                                </properties>
+                                """                
+
+                                if self.test_result != "Good" and self.test_result != "Fair":
+                                    self.junit_results += """
+                                        <failure message="Performance: {result}  Percent: {percent}">
+                                        </failure>""".format(result=self.test_result, percent=percent_delta)
+
+                                self.junit_results += """
+                                    </testcase>
+                                    """
 
         # finish the results table
         self.finish_html_results()
