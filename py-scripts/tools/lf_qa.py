@@ -871,8 +871,10 @@ class csv_sql:
                         # if the recent test is over a week old do not include in run
                         # 1 day = 86400000 milli seconds
                         # 1 week = 604800000 milli seconds
-                        logger.info(f"time_now: {time_now} recent_test_run: {recent_test_run} difference: {int(time_now)-int(recent_test_run)} oldest_test_run {oldest_test_run}")
-                        if (int(time_now) - int(recent_test_run)) < 604800000:
+                        time_difference = int(time_now) -int(recent_test_run)
+                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} oldest_test_run: {oldest_test_run}".format(
+                            time_now=time_now,recent_test_run=recent_test_run,time_difference=time_difference, oldest_test_run=oldest_test_run))
+                        if (time_difference) < 604800000:  # TODO have window be configurable
                             units_list = list(df_tmp['Units'])
                             logger.info(
                                 "GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig, test_tag, group))
