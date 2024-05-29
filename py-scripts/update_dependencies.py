@@ -19,7 +19,6 @@ def main():
         NOTES: Run this as lanforge user (not root)
         '''
     )
-    parser.add_argument('--pyjwt', help='Install PyJWT which is necessary for GhostRequest', action="store_true")
 
     args = parser.parse_args()
 
@@ -28,10 +27,6 @@ def main():
                 'xlsxwriter', 'pyshark', 'matplotlib', 'pdfkit', 'pip-search',
                 'pyserial',
                 'pexpect-serial', 'scp','scipy','simple-geometry','kaleido','psutil']
-    if args.pyjwt:
-        packages.append('pyjwt')
-    else:
-        print('Not installing PyJWT')
     packages_installed = []
     packages_failed = []
     subprocess.call("pip3 uninstall jwt", shell=True)
