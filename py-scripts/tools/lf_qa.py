@@ -40,13 +40,15 @@ class csv_sql:
                  _file='kpi.csv',
                  _database='qa_db',
                  _table='qa_table',
-                 _png=False):
+                 _png=False,
+                 _test_window_days='7'):
         self.path = _path
         self.path_comp = _path_comp
         self.lf_qa_report_path = _lf_qa_report_path
         logger.debug("lf_qa path: {path}".format(path=self.path))
         logger.debug("lf_qa path_comp: {path}".format(path=self.path_comp))
         logger.debug("lf_qa lf_qa_report_path: {path}".format(path=self.lf_qa_report_path))
+        self.test_window_days=_test_window_days
         self.file = _file
         self.database = _database
         self.table = _table
@@ -843,6 +845,7 @@ class csv_sql:
 
         # Time now generating the report
         time_now = round(time.time() * 1000)
+        test_window_epoch = int(self.test_window_days) * 86400000
 
         # create the rest of the graphs
         for test_rig in test_rig_list:
@@ -874,7 +877,8 @@ class csv_sql:
                         time_difference = int(time_now) -int(recent_test_run)
                         logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} oldest_test_run: {oldest_test_run}".format(
                             time_now=time_now,recent_test_run=recent_test_run,time_difference=time_difference, oldest_test_run=oldest_test_run))
-                        if (time_difference) < 604800000:  # TODO have window be configurable
+                        ##if (time_difference) < 604800000:  # TODO have window be configurable
+                        if (time_difference) < test_window_epoch:  # TODO have window be configurable
                             units_list = list(df_tmp['Units'])
                             logger.info(
                                 "GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig, test_tag, group))
@@ -1048,6 +1052,8 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         help="--dir <results directory> default lf_qa",
         default="lf_qa")
 
+    parser.add_argument('--test_window_days', help="--test_window,  days to look back for test results , used to elimnate older tests being reported default 7 days", default="7")
+
     parser.add_argument('--test_suite', help="--test_suite , the test suite is to help identify which suite was run ", default="lf_qa")
 
     parser.add_argument('--server', help="--server , server switch is deprecated ", default="")
@@ -1089,6 +1095,8 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
     __table = args.table
     __png = args.png
     __dir = args.dir
+    __test_window_days = args.test_window_days
+
 
     logger.info("config:\
             path:{path} file:{file}\
@@ -1124,7 +1132,8 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         _file=__file,
         _database=__database,
         _table=__table,
-        _png=__png)
+        _png=__png,
+        _test_window_days=__test_window_days)
     # csv_dash.sub_test_information()
 
     if args.store:
