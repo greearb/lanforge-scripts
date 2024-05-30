@@ -343,8 +343,8 @@ class inspect_sql:
                         # find the same information in db2
 
                         # find the last Date in the dataframe see if it is a test no longer run
-                        recent_test_run = df_tmp["Date"].iloc[-1]
-                        oldest_test_run = df_tmp["Date"].iloc[0]
+                        oldest_test_run = df_tmp["Date"].iloc[-1]
+                        recent_test_run = df_tmp["Date"].iloc[0]
 
                         # if the recent test is over a week old do not include in run
                         # 1 day = 86400000 milli seconds
@@ -630,8 +630,9 @@ class inspect_sql:
                     if not df_tmp.empty and len(df_tmp.index) >= 2:
 
                         # find the last Date in the dataframe see if it is a test no longer run
-                        recent_test_run = df_tmp["Date"].iloc[-1]
-                        oldest_test_run = df_tmp["Date"].iloc[0]
+                        # assending is false thus newest is at 0
+                        oldest_test_run = df_tmp["Date"].iloc[-1]
+                        recent_test_run = df_tmp["Date"].iloc[0]
                         # if the recent test is over a week old do not include in run
                         # 1 day = 86400000 milli seconds
                         # 1 week = 604800000 milli seconds
@@ -939,8 +940,8 @@ class inspect_sql:
                         # Check the time stamp to avoid reporting older data,
 
                         # find the last Date in the dataframe see if it is a test no longer run
-                        recent_test_run = df_tmp["Date"].iloc[-1]
-                        oldest_test_run = df_tmp["Date"].iloc[0]
+                        oldest_test_run = df_tmp["Date"].iloc[-1]
+                        recent_test_run = df_tmp["Date"].iloc[0]
                         # if the recent test is over a week old do not include in run
                         # 1 day = 86400000 milli seconds
                         # 1 week = 604800000 milli seconds
