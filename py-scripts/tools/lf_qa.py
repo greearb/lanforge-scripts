@@ -875,8 +875,8 @@ class csv_sql:
                         # 1 day = 86400000 milli seconds
                         # 1 week = 604800000 milli seconds
                         time_difference = int(time_now) -int(recent_test_run)
-                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} oldest_test_run: {oldest_test_run}".format(
-                            time_now=time_now,recent_test_run=recent_test_run,time_difference=time_difference, oldest_test_run=oldest_test_run))
+                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} test_window_epoch: {test_window_epoch} oldest_test_run: {oldest_test_run}".format(
+                            time_now=time_now,recent_test_run=recent_test_run,test_window_epoch=test_window_epoch, time_difference=time_difference, oldest_test_run=oldest_test_run))
                         ##if (time_difference) < 604800000:  # TODO have window be configurable
                         if (time_difference) < test_window_epoch:  # TODO have window be configurable
                             units_list = list(df_tmp['Units'])
