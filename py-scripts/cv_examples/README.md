@@ -11,20 +11,21 @@ While a user can manually configure a test to their liking, save the database, a
 
 
 ## Example Test Automation
-| Chamber View Test | Automation Script                                                 |
-| ----------------- | ----------------------------------------------------------------- |
-| AP-Auto           | [`AP-Auto.bash`](./AP-Auto/AP-Auto.bash)                          |
-| Dataplane         | [`Dataplane.bash`](./Dataplane/Dataplane.bash)                    |
-| Rate vs Range     | [`Rate_vs_Range.bash`](./Rate_vs_Range/Rate_vs_Range.bash.bash)   |
-| TR-398 Issue 2    | [`TR-398_Issue_2.bash`](./TR-398_Issue_2/TR-398_Issue_2.bash)     |
-| TR-398 Issue 4    | [`TR-398_Issue_4.bash`](./TR-398_Issue_4/TR-398_Issue_4.bash)     |
-| WiFi Capacity     | [`WiFi_Capacity.bash`](./WiFi_Capacity/WiFi_Capacity.bash)        |
+| Chamber View Test     | Automation Script                                                                  |
+|-----------------------|------------------------------------------------------------------------------------|
+| AP-Auto               | [`AP-Auto.bash`](./AP-Auto/AP-Auto.bash)                                           |
+| Continuous Throughput | [`Continuous_Throughput.bash`](./Continuous_Throughput/Continuous_Throughput.bash) |
+| Dataplane             | [`Dataplane.bash`](./Dataplane/Dataplane.bash)                                     |
+| Rate vs Range         | [`Rate_vs_Range.bash`](./Rate_vs_Range/Rate_vs_Range.bash)                         |
+| TR-398 Issue 2        | [`TR-398_Issue_2.bash`](./TR-398_Issue_2/TR-398_Issue_2.bash)                      |
+| TR-398 Issue 4        | [`TR-398_Issue_4.bash`](./TR-398_Issue_4/TR-398_Issue_4.bash)                      |
+| WiFi Capacity         | [`WiFi_Capacity.bash`](./WiFi_Capacity/WiFi_Capacity.bash)                         |
 
 
 
 ## Automating Chamber View in Your Testbed
 
-As your use case for a given Chamber View test will be different than the examples shown, you will invevitably craft and adjust your automation scripts as your goals evolve. **To customize your scripts, we suggest the following workflow, which was used to create the examples in this directory.**
+As your use case for a given Chamber View test will be different than the examples shown, you will inevitably craft and adjust your automation scripts as your goals evolve. **To customize your scripts, we suggest the following workflow, which was used to create the examples in this directory.**
 
 ### Step 1: Manual Setup
 In order to automate your Chamber View testing, you must first manually configure the test scenario.
@@ -51,7 +52,7 @@ Specific configuration depends on the test you're configuring, but generally you
 As you will likely need this configuration in the future, be it exactly or as a fallback, we suggest you save the current configuration in a new database.
 
 1. Navigate to the 'Status' tab.
-2. In the top right corner, use the the 'Saved Test Configurations' section to save a new database.
+2. In the top right corner, use the 'Saved Test Configurations' section to save a new database.
     - You can reset to this configuration by selecting a saved configuration and clicking 'Load'.
     - **NOTE:** Loading a database will overwrite any existing configuration on the testbed.
 
@@ -83,7 +84,7 @@ As you will likely need this configuration in the future, be it exactly or as a 
 - If using an example script, adjust the `TEST_CFG` variable to point to your config file.
 
 #### 4. Repeat as you adjust your Chamber View Scenario and Chamber View test configuration
-- Any time you adjust the Chamber View test configuration in the GUI, repeat the [transfer the test configuration](#1-transfer-the-test-configuration-to-your-script), the [reflect the scenario](#2-adjust-the-script-to-reflect-your-configured-chamber-view-scenario), and [reference the configuration](#3-adjust-the-script-to-reference-the-new-config) steps to transfer the test configuration to your script. If you do not, the script will not use the changes you made.
+- Any time you adjust the Chamber View test configuration in the GUI, repeat the [transfer the test configuration](#1-transfer-the-test-configuration-to-your-script), the [reflect the scenario](#2-adjust-the-script-to-reflect-your-configured-chamber-view-scenario), and [reference the configuration](#3-adjust-the-script-to-reference-the-new-test-configuration) steps to transfer the test configuration to your script. If you do not, the script will not use the changes you made.
 
 
 ## Chamber View Scenarios (and Test Assumptions)
