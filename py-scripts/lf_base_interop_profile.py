@@ -1079,8 +1079,25 @@ class RealDevice(Realm):
             await self.laptops_obj.add_station(port_list=selected_laptops)
             await self.laptops_obj.set_port(port_list=selected_laptops)
 
-        logging.info('Applying the new Wi-Fi configuration. Waiting for 2 minutes for the new configuration to apply.')
-        time.sleep(120)
+        logging.info('Applying the new Wi-Fi configuration. Waiting.......')
+        # selecting devices only those connected to given SSID and contains IP
+        # for androids
+        
+        return [selected_androids, selected_laptops]
+    
+    def monitor_connection(self,selected_androids,selected_laptops):
+        station_list = []
+        selected_t_devices = {}
+        selected_devices = []
+        selected_macs = []
+        report_labels= []
+        androids = 0
+        android_list = []
+        linuxs = 0
+        linux_list = []
+        macs = 0
+        mac_list = []
+        
         # selecting devices only those connected to given SSID and contains IP
         # for androids
         exclude_androids = []
@@ -1094,8 +1111,6 @@ class RealDevice(Realm):
 
             # if there is no resource id in interop tab
             if(resource_id == ''):
-                logging.warning(
-                    'The android with serial {} is missing resource id. Excluding it from testing'.format(android[2]))
                 exclude_androids.append(android)
                 continue
 
@@ -1111,15 +1126,11 @@ class RealDevice(Realm):
             
             # checking if the android is connected to the desired ssid
             if (current_android_port_data['ssid'] != curr_ssid):
-                logging.warning(
-                    'The android with serial {} is not conneted to the given SSID {}. Excluding it from testing'.format(
-                        android[2], curr_ssid))
                 exclude_androids.append(android)
                 continue
 
             # checking if the android is active or down
             if(current_android_port_data['ip'] == '0.0.0.0'):
-                logging.warning('The android with serial {} is down. Excluding it from testing'.format(android[2]))
                 exclude_androids.append(android)
                 continue
 
@@ -1127,14 +1138,14 @@ class RealDevice(Realm):
             self.json_get('resource/{}/{}?fields=user'.format(resource_id.split('.')[0], resource_id.split('.')[1]))[
                 'resource']['user']
 
-            self.selected_devices.append(resource_id)
-            self.selected_macs.append(current_android_port_data['mac'])
-            self.report_labels.append('{} android {}'.format(resource_id, username)[:25])
-            self.android += 1
-            self.android_list.append(resource_id)
+            selected_devices.append(resource_id)
+            selected_macs.append(current_android_port_data['mac'])
+            report_labels.append('{} android {}'.format(resource_id, username))
+            androids += 1
+            android_list.append(resource_id)
             
             current_sta_name = resource_id + '.wlan0'
-            self.station_list.append(current_sta_name)
+            station_list.append(current_sta_name)
 
             self.devices_data[current_sta_name] = current_android_port_data
             self.devices_data[current_sta_name]['ostype'] = 'android'
@@ -1157,10 +1168,6 @@ class RealDevice(Realm):
             current_laptop_port_data = self.json_get(
                 '/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
             if(current_laptop_port_data is None):
-                logging.warning(
-                    'The laptop with port {}.{}.{} not found. Excluding it from testing'.format(laptop['shelf'],
-                                                                                                laptop['resource'],
-                                                                                                laptop['sta_name']))
                 exclude_laptops.append(laptop)
                 continue
 
@@ -1168,18 +1175,11 @@ class RealDevice(Realm):
 
             # checking if the laptop is connected to the desired ssid
             if (current_laptop_port_data['ssid'] != curr_ssid):
-                logging.warning(
-                    'The laptop with port {}.{}.{} is not conneted to the given SSID {}. Excluding it from testing'.format(
-                        laptop['shelf'], laptop['resource'], laptop['sta_name'], curr_ssid))
                 exclude_laptops.append(laptop)
                 continue
 
             # checking if the laptop is active or down
             if(current_laptop_port_data['ip'] == '0.0.0.0'):
-                logging.warning(
-                    'The laptop with port {}.{}.{} is down. Excluding it from testing'.format(laptop['shelf'],
-                                                                                              laptop['resource'],
-                                                                                              laptop['sta_name']))
                 exclude_laptops.append(laptop)
                 continue
 
@@ -1191,9 +1191,9 @@ class RealDevice(Realm):
 
             # adding port id to selected_device_eids
             current_resource_id = '{}.{}.{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name'])
-            self.selected_devices.append(current_resource_id)
-            self.selected_macs.append(current_laptop_port_data['mac'])
-            self.report_labels.append('{} {} {}'.format(current_resource_id, laptop['os'], hostname)[:25])
+            selected_devices.append(current_resource_id)
+            selected_macs.append(current_laptop_port_data['mac'])
+            report_labels.append('{} {} {}'.format(current_resource_id, laptop['os'], hostname))
 
             selected_t_devices[current_resource_id] = {
                 'MAC': current_laptop_port_data['mac']
@@ -1204,18 +1204,18 @@ class RealDevice(Realm):
                 selected_t_devices[current_resource_id]['hw version'] = 'Win'
                 current_laptop_port_data['ostype'] = 'windows'
             elif(laptop['os'] == 'Lin'):
-                self.linux += 1
-                self.linux_list.append(current_resource_id)
+                linuxs += 1
+                linux_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Lin'
                 current_laptop_port_data['ostype'] = 'linux'
             elif(laptop['os'] == 'Apple'):
-                self.mac += 1
-                self.mac_list.append(current_resource_id)
+                macs += 1
+                mac_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Mac'
                 current_laptop_port_data['ostype'] = 'macos'
             
             current_sta_name = current_resource_id
-            self.station_list.append(current_sta_name)
+            station_list.append(current_sta_name)
 
             self.devices_data[current_sta_name] = current_laptop_port_data
 
@@ -1224,8 +1224,8 @@ class RealDevice(Realm):
 
         df = pd.DataFrame(data=selected_t_devices).transpose()
         print(df)
-        return [self.selected_devices, self.report_labels, self.selected_macs]
- 
+        return [selected_devices, report_labels, selected_macs]
+    
     # getting data of all real devices already configured to an SSID
     def get_devices(self):
         devices            = []
