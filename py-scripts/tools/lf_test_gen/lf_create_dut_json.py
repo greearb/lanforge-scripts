@@ -87,16 +87,16 @@ class lf_create_dut_json():
 
         self.last_idx = 0
 
+    # Return path
 
-    # Return path 
     def get_dir(self):
         return os.path.dirname(os.path.abspath(self.file))
 
     def get_file(self):
         return self.file
-    
 
     # Helper methods
+
     def create(self):
         file_fd = open(self.file, 'w')
         dut_json = """
@@ -118,35 +118,35 @@ class lf_create_dut_json():
         "UPSTREAM_ALIAS":"{dut_upstream_alias}",
         "DATABASE_SQLITE":"{dut_database}",
         "wireless_network_dict":{{\n
-    """.format(file=self.file,dut_name=self.dut_name,use_dut_name=self.dut_name, dut_hw=self.dut_hw, dut_sw=self.dut_sw,
-        dut_model=self.dut_model, dut_serial=self.dut_serial, dut_upstream_port=self.dut_upstream_port, dut_upstream_alias=self.dut_upstream_alias,
-        dut_database=self.dut_database)
+    """.format(file=self.file, dut_name=self.dut_name, use_dut_name=self.dut_name, dut_hw=self.dut_hw, dut_sw=self.dut_sw,
+               dut_model=self.dut_model, dut_serial=self.dut_serial, dut_upstream_port=self.dut_upstream_port, dut_upstream_alias=self.dut_upstream_alias,
+               dut_database=self.dut_database)
 
         idx_count = 0
-        for idx in range(0,len(self.use_idx_entry_var_dict)):
-                if self.use_idx_entry_var_dict[idx].get() == "Use":
-                    self.last_idx = idx
-                    idx_count += 1
+        for idx in range(0, len(self.use_idx_entry_var_dict)):
+            if self.use_idx_entry_var_dict[idx].get() == "Use":
+                self.last_idx = idx
+                idx_count += 1
 
-        for idx in range(0,len(self.use_idx_entry_var_dict)):
+        for idx in range(0, len(self.use_idx_entry_var_dict)):
             if "Use" == self.use_idx_entry_var_dict[idx].get():
                 if self.last_idx != idx:
-                    dut_json += """ 
+                    dut_json += """
                     "ssid_idx={idx}":{{"ssid_idx":"{idx_1}", "SSID_USED":"{ssid}","SSID_PW_USED":"{ssid_pw}","BSSID_TO_USE":"{bssid}","SECURITY_USED":"{security}"}},
-                """.format(idx=idx,idx_1=idx,ssid=self.lf_idx_ssid_entry_var_dict[idx].get(),ssid_pw=self.lf_idx_ssid_pw_entry_var_dict[idx].get(),
-                bssid=self.lf_idx_bssid_entry_var_dict[idx].get(),security=self.lf_idx_security_entry_var_dict[idx].get())
-                else:                
-                        dut_json += """ 
+                """.format(idx=idx, idx_1=idx, ssid=self.lf_idx_ssid_entry_var_dict[idx].get(), ssid_pw=self.lf_idx_ssid_pw_entry_var_dict[idx].get(),
+                           bssid=self.lf_idx_bssid_entry_var_dict[idx].get(), security=self.lf_idx_security_entry_var_dict[idx].get())
+                else:
+                    dut_json += """
                     "ssid_idx={idx}":{{"ssid_idx":"{idx_1}", "SSID_USED":"{ssid}","SSID_PW_USED":"{ssid_pw}","BSSID_TO_USE":"{bssid}","SECURITY_USED":"{security}"}}
-                    """.format(idx=idx,idx_1=idx,ssid=self.lf_idx_ssid_entry_var_dict[idx].get(),ssid_pw=self.lf_idx_ssid_pw_entry_var_dict[idx].get(),
-                    bssid=self.lf_idx_bssid_entry_var_dict[idx].get(),security=self.lf_idx_security_entry_var_dict[idx].get())
+                    """.format(idx=idx, idx_1=idx, ssid=self.lf_idx_ssid_entry_var_dict[idx].get(), ssid_pw=self.lf_idx_ssid_pw_entry_var_dict[idx].get(),
+                               bssid=self.lf_idx_bssid_entry_var_dict[idx].get(), security=self.lf_idx_security_entry_var_dict[idx].get())
 
         dut_json += """
         }
     }
 }
 """
-   
+
         file_fd.write(dut_json)
         file_fd.close()
 
@@ -158,7 +158,7 @@ def main():
         prog='lf_create_dut_json.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-        lf_create_dut_json.py creates lf_dut.json file for --json_dut input to lf_check.py 
+        lf_create_dut_json.py creates lf_dut.json file for --json_dut input to lf_check.py
         The lf_dut.json file contains dut configuration information
         NOTE: cannot have extra blank lines at the end of the json to work properly
 
@@ -205,9 +205,9 @@ INCLUDE_IN_README: False
     parser.add_argument('--dut_sw', help='--dut_sw <dut software version> ', default='dut_sw')
     parser.add_argument('--dut_model', help='--dut_model <dut model> ', default='dut_model')
     parser.add_argument('--dut_serial', help='--dut_serial <dut_serial_num> ', default='123456578')
-    parser.add_argument('--dut_upstream_port', help='--dut_upstream_port shelf.resource.<port>  example 1.1.eth3 default eth1',default='1.1.eth2')
+    parser.add_argument('--dut_upstream_port', help='--dut_upstream_port shelf.resource.<port>  example 1.1.eth3 default eth1', default='1.1.eth2')
     parser.add_argument('--dut_upstream_alias', help='--dut_upstream_alias <port>  example eth3 ', default='eth2')
-    parser.add_argument('--dut_database', help='--dut_database <db location>   example ./tools/CT_007_AXE160000_2_5_Gbps_eth1.db default ./tools/DUT_DB',default='./tools/DUT_DB')
+    parser.add_argument('--dut_database', help='--dut_database <db location>   example ./tools/CT_007_AXE160000_2_5_Gbps_eth1.db default ./tools/DUT_DB', default='./tools/DUT_DB')
 
     parser.add_argument(
         '--ssid_idx',
@@ -215,7 +215,7 @@ INCLUDE_IN_README: False
         nargs=1,
         required=True,
         help='''
-            The ssid_idx is used to enter multiple ssid, ssid password, bssid, security types 
+            The ssid_idx is used to enter multiple ssid, ssid password, bssid, security types
 
         Example:
         --ssid_idx ssid_idx==0,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
@@ -264,7 +264,6 @@ INCLUDE_IN_README: False
     _dut_upstream_port = args.dut_upstream_port
     _dut_upstream_alias = args.dut_upstream_alias
     _dut_database = args.dut_database
-
 
     dut_json = lf_create_dut_json(_file=_file,
                                   _dut_name=_dut_name,
