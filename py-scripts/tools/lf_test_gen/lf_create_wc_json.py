@@ -18,7 +18,7 @@ NOTES:
 
 STATUS: Development
 
-VERIFIED_ON:  
+VERIFIED_ON:
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
@@ -43,7 +43,6 @@ if sys.version_info[0] != 3:
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("lf_logger_config")
-
 
 
 class lf_create_wc_json():
@@ -94,7 +93,7 @@ class lf_create_wc_json():
         self.radio_batch_dict = _radio_batch_dict
         self.lf_wc_use_qa_var = _lf_wc_use_qa_var
         self.lf_wc_use_inspect_var = _lf_wc_use_inspect_var
-        self.radio_index =""
+        self.radio_index = ""
 
         self.lf_radio_2g = _lf_radio_2g
         self.lf_radio_5g = _lf_radio_5g
@@ -110,7 +109,7 @@ class lf_create_wc_json():
         self.dir_2g = _dir_2g
         self.dir_5g = _dir_5g
         self.dir_6g = _dir_6g
-        
+
         self.file_2g = _file_2g
         self.file_5g = _file_5g
         self.file_6g = _file_6g
@@ -125,16 +124,14 @@ class lf_create_wc_json():
         if "UL" in self.lf_wc_dut_traffic_direction:
             self.traffic_direction += "_UL"
 
-        self.lf_wc_sta_protocol =   self.lf_wc_sta_protocol_combobox.get()
-        self.wc_sta_protocol = self.lf_wc_sta_protocol.replace(' and ','_')
-
-
+        self.lf_wc_sta_protocol = self.lf_wc_sta_protocol_combobox.get()
+        self.wc_sta_protocol = self.lf_wc_sta_protocol.replace(' and ', '_')
 
         if self.file_2g == "":
             self.file_2g = "ct_perf_wc_2g" + _suite_radios_2g + self.traffic_direction + "_" + self.wc_sta_protocol + ".json"
         if self.file_5g == "":
             self.file_5g = "ct_perf_wc_5g" + _suite_radios_5g + self.traffic_direction + "_" + self.wc_sta_protocol + ".json"
-        if self.file_6g == "":            
+        if self.file_6g == "":
             self.file_6g = "ct_perf_wc_6g" + _suite_radios_6g + self.traffic_direction + "_" + self.wc_sta_protocol + ".json"
 
         self.dir_file_2g = ""
@@ -149,27 +146,25 @@ class lf_create_wc_json():
         if self.dir_5g != "":
             self.dir_file_5g = self.dir_5g + "/" + self.file_5g
         else:
-            self.dir_file_5g = self.file_5g            
+            self.dir_file_5g = self.file_5g
 
         if self.dir_6g != "":
             self.dir_file_6g = self.dir_6g + "/" + self.file_6g
         else:
-            self.dir_file_6g = self.file_6g            
+            self.dir_file_6g = self.file_6g
 
         if _wc_duration == "":
             self.wc_duration = '20000'
         else:
             self.wc_duration = _wc_duration.split(' ', 1)[0]
 
-
-
         self.use_radio_2g_var_dict = _use_radio_2g_var_dict
         self.use_radio_5g_var_dict = _use_radio_5g_var_dict
         self.use_radio_6g_var_dict = _use_radio_6g_var_dict
 
-        self.suite_radios_2g = "ct_perf_wc_2g" + _suite_radios_2g + self.traffic_direction + "_" + self.wc_sta_protocol 
-        self.suite_radios_5g = "ct_perf_wc_5g" + _suite_radios_5g + self.traffic_direction + "_" + self.wc_sta_protocol  
-        self.suite_radios_6g = "ct_perf_wc_6g" + _suite_radios_6g + self.traffic_direction + "_" + self.wc_sta_protocol  
+        self.suite_radios_2g = "ct_perf_wc_2g" + _suite_radios_2g + self.traffic_direction + "_" + self.wc_sta_protocol
+        self.suite_radios_5g = "ct_perf_wc_5g" + _suite_radios_5g + self.traffic_direction + "_" + self.wc_sta_protocol
+        self.suite_radios_6g = "ct_perf_wc_6g" + _suite_radios_6g + self.traffic_direction + "_" + self.wc_sta_protocol
 
         self.suite_test_name_2g_dict = _suite_test_name_2g_dict
         self.suite_test_name_5g_dict = _suite_test_name_5g_dict
@@ -190,13 +185,13 @@ class lf_create_wc_json():
         return os.path.dirname(os.path.abspath(self.dir_file_2g))
 
     def get_dir_5g(self):
-        return  os.path.dirname(os.path.abspath(self.dir_file_5g))
+        return os.path.dirname(os.path.abspath(self.dir_file_5g))
 
     def get_dir_6g(self):
         return os.path.dirname(os.path.abspath(self.dir_file_6g))
 
-
     # Helper methods
+
     def create_suite(self):
 
         if self.test_suite_band == "2g":
@@ -230,18 +225,18 @@ class lf_create_wc_json():
         lf_wc_sta_profile = self.lf_wc_sta_profile_combobox.get()
 
         dut_indexes = ''
-        for index in range(0,int(lf_wc_number_dut_indexes)):
+        for index in range(0, int(lf_wc_number_dut_indexes)):
             if index == 0:
                 dut_indexes += f"""" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",\n """
             elif index == int(lf_wc_number_dut_indexes) - 1:
                 dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'","""
-            else:                
+            else:
                 dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",\n """
 
         # The perspective is with regards to the DUT
         if "DL" in self.traffic_direction:
             dl_rate = self.dl_rate
-        else: 
+        else:
             dl_rate = "0"
         if "UL" in self.traffic_direction:
             ul_rate = self.ul_rate
@@ -249,8 +244,7 @@ class lf_create_wc_json():
             ul_rate = "0"
 
         lf_wc_sta_protocol = self.lf_wc_sta_protocol
-        wc_sta_protocol = self.wc_sta_protocol 
-
+        wc_sta_protocol = self.wc_sta_protocol
 
         traffic_direction = self.traffic_direction
 
@@ -262,7 +256,7 @@ class lf_create_wc_json():
             "When doing a create_chamberview.py --create_scenario <name> ",
             "has no correlation to the --instance_name , instance name is used ",
             "as a unique identifier for tha chamber-view test run"
-        ]  
+        ]
     }},
     "test_suites":{{
     """.format(wifi="ct_wc_tests_scripts")
@@ -270,26 +264,25 @@ class lf_create_wc_json():
         "{test_suite}":{{
     """.format(test_suite=self.suite_radios_band)
 
-        
         # find the last radio to include in test
         count_band_radios = 0
-        for radio in range(0,self.radio_dict_size):
+        for radio in range(0, self.radio_dict_size):
             if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
                 self.last_band_radio = radio
                 count_band_radios += 1
 
         if count_band_radios > 0:
 
-            for radio in range(0,self.radio_dict_size):
+            for radio in range(0, self.radio_dict_size):
                 if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
                     wc_test_name = str(self.suite_test_name_band_dict[radio].get()) + f"_{band}_W{radio}" + f"{traffic_direction}" + f"_{wc_sta_protocol}"
                     wc_batch_size = str(self.radio_batch_dict[radio].get())
                     wc_sta_max = wc_batch_size.rsplit(',', 1)
                     if len(wc_sta_max) == 1:
                         wc_sta_max_int = int(wc_sta_max[0])
-                    else:                        
+                    else:
                         wc_sta_max_int = int(wc_sta_max[1])
-                    wc_duration = self.wc_duration                        
+                    wc_duration = self.wc_duration
                     self.wc_band_json += f"""
             "CC_DUT_{wc_test_name}":{{
                 "enabled":"TRUE",
@@ -335,11 +328,11 @@ class lf_create_wc_json():
             }}
             """
                     if radio != self.last_band_radio:
-                        self.wc_band_json += ""","""                        
+                        self.wc_band_json += ""","""
 
                     if radio == self.last_band_radio:
                         if self.lf_wc_use_qa_var.get() == "Use":
-                            self.wc_band_json +=""",
+                            self.wc_band_json += """,
             "lf_qa":{
                 "enabled":"TRUE",
                 "timeout":"600",
@@ -351,7 +344,7 @@ class lf_create_wc_json():
                 ]
             }"""
                         if self.lf_wc_use_inspect_var.get() == "Use":
-                            self.wc_band_json +=""",
+                            self.wc_band_json += """,
             "lf_inspect":{
                 "enabled":"TRUE",
                 "timeout":"600",
@@ -362,13 +355,12 @@ class lf_create_wc_json():
                     " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
                 ]
             }"""
-        self.wc_band_json += """ 
+        self.wc_band_json += """
         }
-    } 
-}    
+    }
+}
     """
 
-            
         file_band_fd.write(self.wc_band_json)
         file_band_fd.close()
 
@@ -420,7 +412,6 @@ INCLUDE_IN_README: False
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
-
     args = parser.parse_args()
 
     # set up logger
@@ -435,8 +426,6 @@ INCLUDE_IN_README: False
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-
-
 
 
 if __name__ == '__main__':
