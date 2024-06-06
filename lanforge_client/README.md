@@ -2,28 +2,60 @@
 
 ---
 
-This library provides a set of methods to operate the [LANforge JSON REST API](http://www.candelatech.com/cookbook.php?vol=cli&book=JSON:+Querying+the+LANforge+Client+for+JSON+Data). This is a generated library that includes JSON POST commands for every [LANforge CLI command](https://www.candelatech.com/lfcli_ug.php). If you are new to this API, please start at the beginning of the [LANforge Scripting Cookbook](http://www.candelatech.com/scripting_cookbook.php). 
+This library provides a set of methods to operate the [LANforge JSON REST API](http://www.candelatech.com/cookbook.php?vol=cli&book=JSON:+Querying+the+LANforge+Client+for+JSON+Data). This is a generated library that includes Python classes and methods to perform JSON POSTs for every [LANforge CLI command](https://www.candelatech.com/lfcli_ug.php) and JSON GETs for JSON endpoints presented by the LANforge GUI.
+
+If you are new to this API, please start at the beginning of the [LANforge Scripting Cookbook](http://www.candelatech.com/scripting_cookbook.php). 
 
 ## Requirements
 
-* Python 3.7 -- this library should operate on Fedora 30 and later which ships with Python 3.7. We discourage operation on earlier (Fedora 27) releases of Fedora. 
-* pip3 -- You will likely be using py-scripts and you will need to do a `pip3 install -r` [requirements.txt](https://github.com/greearb/lanforge-scripts/blob/master/requirements.txt)
-* LANforge GUI 5.4.5
+**NOTE:** Most users also run scripts in [`lanforge-scripts/py-scripts/`](https://github.com/greearb/lanforge-scripts/tree/master/py-scripts), so make sure to follow the [setup instructions](https://github.com/greearb/lanforge-scripts/blob/master/py-scripts/README.md#setup) to use them.
+
+- Minimum LANforge GUI 5.4.5
+  - As the GUI runs the JSON API, you must ensure that the GUI is running when using the JSON API
+  - To configure the GUI to automatically start, see [this cookbook](https://www.candelatech.com/cookbook.php?vol=misc&book=Automatically+starting+LANforge+GUI+on+login) in the documentation.
+- Minimum Python 3.7
+  - This library is tested on systems which run Python 3.7+ or newer, including LANforge systems Fedora 30+, as they ship with Python 3.7 or newer
+    - We discourage operation on earlier releases of Fedora (e.g. Fedora 27)
 
 ## Features
 
-The **lanforge_client** package contains both the CLI compatibility plus a logging and REST classes.
+The **lanforge_client** package contains Python library code to query and configure LANforge systems in addition to utility and logging methods.
 
-* `logg.py` defines the standard logger methods found in library
-* `strutil.py` defines string utility methods
-* `lanforge_api`module
-* `LFJsonQuery(JsonQuery)` defines methods for the GET requests supported by the LANforge GUI. Methods in this class start with `get_`.
-* `LFJsonCommand(JsonCommand)` defines methods for the POST requests supported by the LANforge GUI. 
-* `LFSession` script session tracking. This provides diagnostic tracing between the scripts and the LANforge GUI. It also provides the basis for callback IDs for specific types of CLI commands
+A brief listing of available library code is as follows:
+
+- [`lanforge_api.py`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py)
+  - Contains the core Python library including classes to configure and query LANforge systems
+  - [`LFSession`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L24487)
+    - Provides a session abstraction for querying/configuring the LANforge system
+    - Additionally provides diagnostic tracing and callback IDs for specific types of CLI commands
+  - [`LFJsonQuery`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L19610)
+    - Defines GET requests to query the LANforge system
+    - Available endpoints are visible by performing a GET request to the root endpoint or navigating to that endpoint in your browser
+      - e.g. `http://192.168.1.101:8080/`
+    - Each endpoint contains a corresponding `get_xxx()` method. For example, `/ports` can be queried by calling the [`get_port()`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L22141) method.
+  - [`LFJsonCommand`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L1392)
+    - Defines POST requests to configure the LANforge system
+    - Each method corresponds to a respective CLI command
+    - Helper classes define flags and types which the CLI commands require
+    - For example, the [`add_sta`](http://www.candelatech.com/lfcli_ug.php#add_sta) CLI command can be configured using the [`post_add_sta()`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L4770) method.
+- [`logg.py`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/logg.py)
+  - [`Logg`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/logg.py#L17) class and helper methods to configure LANforge API logging for [`LFJsonQuery`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L19610)s and [`LFJsonCommand`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L1392)s.
+- [`strutil.py`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/strutil.py)
+  - Helper functions for working with strings
 
 ## Intended Usage
 
-This library can be used directly, plus it can be used in conjunction with the LANforge [Realm](https://github.com/greearb/lanforge-scripts/blob/master/py-json/realm.py) class. It is different than than the *Realm*class. *Realm* extends the [lfcli_base](https://github.com/greearb/lanforge-scripts/blob/master/py-json/LANforge/lfcli_base.py) class that provides its own (nearly identical) REST API. The lanforge_client REST methods are built into the *BaseLFJsonRequest* class. 
+### Suggested Workflow
+Generally, the workflow for a script using LANforge API will look something like:
+1. Import `lanforge_client`
+2. Initiate a [`LFSession`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L24487)
+  - Ensure the script URI is directed at the manager LANforge for your testbed (should your testbed have more than one LANforge)
+  - Also make sure that the GUI is running. To configure the GUI to automatically start, see [this cookbook](https://www.candelatech.com/cookbook.php?vol=misc&book=Automatically+starting+LANforge+GUI+on+login) in the documentation.
+3. Use a combination of [`LFJsonCommand`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L1392) to configure or [`LFJsonRequest`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L215) to query the LANforge, respectively.
+
+
+### Things to Keep in Mind
+This library can be used directly, plus it can be used in conjunction with the LANforge [Realm](https://github.com/greearb/lanforge-scripts/blob/master/py-json/realm.py) class. It is different than than the *Realm* class. *Realm* extends the [lfcli_base](https://github.com/greearb/lanforge-scripts/blob/master/py-json/LANforge/lfcli_base.py) class that provides its own (nearly identical) REST API. The lanforge_client REST methods are built into the *BaseLFJsonRequest* class. 
 
 You would use the *Realm* class to execute high-level operations like:
 
