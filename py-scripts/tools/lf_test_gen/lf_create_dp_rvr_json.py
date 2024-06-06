@@ -18,7 +18,7 @@ NOTES:
 
 STATUS: Development
 
-VERIFIED_ON:  
+VERIFIED_ON:
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
@@ -45,10 +45,9 @@ logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("lf_logger_config")
 
 
-
 class lf_create_dp_rvr_json():
     def __init__(self,
-                _suite_type,
+                 _suite_type,
                  _file_2g,
                  _file_5g,
                  _file_6g,
@@ -107,9 +106,9 @@ class lf_create_dp_rvr_json():
         self.lf_dp_rvr_use_inspect_var = _lf_dp_rvr_use_inspect_var
         self.lf_dp_rvr_number_dut_indexes_combobox = _lf_dp_rvr_number_dut_indexes_combobox
 
-        # configuration 
+        # configuration
         self.lf_dp_rvr_duration_combobox = _lf_dp_rvr_duration_combobox
-        self.lf_dp_rvr_traffic_type_combobox = _lf_dp_rvr_traffic_type_combobox 
+        self.lf_dp_rvr_traffic_type_combobox = _lf_dp_rvr_traffic_type_combobox
         self.lf_dp_rvr_dut_traffic_direction_combobox = _lf_dp_rvr_dut_traffic_direction_combobox
         self.lf_dp_rvr_pkt_size_combobox = _lf_dp_rvr_pkt_size_combobox
         self.lf_dp_rvr_pkt_custom_size_combobox = _lf_dp_rvr_pkt_size_custom_combobox
@@ -149,8 +148,8 @@ class lf_create_dp_rvr_json():
         self.use_radio_6g_var_dict = _use_radio_6g_var_dict
 
         self.suite_radios_2g = _suite_radios_2g
-        self.suite_radios_5g =  _suite_radios_5g
-        self.suite_radios_6g =  _suite_radios_6g
+        self.suite_radios_5g = _suite_radios_5g
+        self.suite_radios_6g = _suite_radios_6g
 
         self.suite_test_name_2g_dict = _suite_test_name_2g_dict
         self.suite_test_name_5g_dict = _suite_test_name_5g_dict
@@ -178,17 +177,16 @@ class lf_create_dp_rvr_json():
         return self.file_6g
 
     def get_dir_2g(self):
-        return  os.path.dirname(os.path.abspath(self.dir_file_2g))
+        return os.path.dirname(os.path.abspath(self.dir_file_2g))
 
     def get_dir_5g(self):
-        return  os.path.dirname(os.path.abspath(self.dir_file_5g))
+        return os.path.dirname(os.path.abspath(self.dir_file_5g))
 
     def get_dir_6g(self):
         return os.path.dirname(os.path.abspath(self.dir_file_6g))
 
-
-
     # Helper methods
+
     def create_suite(self):
 
         traffic_direction = ''
@@ -204,7 +202,7 @@ class lf_create_dp_rvr_json():
             notes_title = "ct_dp_tests_scripts"
             if self.test_suite_band == "2g":
                 self.suite_radios_2g = "ct_perf_dp_2g" + self.suite_radios_2g + traffic_direction
-            elif self.test_suite_band == '5g':                
+            elif self.test_suite_band == '5g':
                 self.suite_radios_5g = "ct_perf_dp_5g" + self.suite_radios_5g + traffic_direction
             elif self.test_suite_band == '6g':
                 self.suite_radios_6g = "ct_perf_dp_6g" + self.suite_radios_6g + traffic_direction
@@ -215,7 +213,7 @@ class lf_create_dp_rvr_json():
             notes_title = "ct_rvr_tests_scripts"
             if self.test_suite_band == "2g":
                 self.suite_radios_2g = "ct_perf_rvr_2g" + self.suite_radios_2g + traffic_direction
-            elif self.test_suite_band == '5g':                
+            elif self.test_suite_band == '5g':
                 self.suite_radios_5g = "ct_perf_rvr_5g" + self.suite_radios_5g + traffic_direction
             elif self.test_suite_band == '6g':
                 self.suite_radios_6g = "ct_perf_rvr_6g" + self.suite_radios_6g + traffic_direction
@@ -240,14 +238,13 @@ class lf_create_dp_rvr_json():
             dut_radio = self.lf_radio_2g
             lf_dp_rvr_attenuation = self.lf_dp_rvr_attenuation_2g_combobox.get()
 
-
         elif self.test_suite_band == "5g":
             if self.file_5g == "":
                 self.file_5g = self.suite_radios_5g + ".json"
             if self.dir_5g != "":
                 self.dir_file_5g = self.dir_5g + "/" + self.file_5g
             else:
-                self.dir_file_5g = self.file_5g            
+                self.dir_file_5g = self.file_5g
             file_band_fd = open(self.dir_file_5g, 'w')
             self.use_radio_band_var_dict = self.use_radio_5g_var_dict
             self.suite_test_name_band_dict = self.suite_test_name_5g_dict
@@ -256,14 +253,13 @@ class lf_create_dp_rvr_json():
             dut_radio = self.lf_radio_5g
             lf_dp_rvr_attenuation = self.lf_dp_rvr_attenuation_5g_combobox.get()
 
-
         elif self.test_suite_band == "6g":
             if self.file_6g == "":
                 self.file_6g = self.suite_radios_6g + ".json"
             if self.dir_6g != "":
                 self.dir_file_6g = self.dir_6g + "/" + self.file_6g
             else:
-                self.dir_file_6g = self.file_6g            
+                self.dir_file_6g = self.file_6g
             file_band_fd = open(self.dir_file_6g, 'w')
             self.use_radio_band_var_dict = self.use_radio_6g_var_dict
             self.suite_test_name_band_dict = self.suite_test_name_6g_dict
@@ -272,8 +268,7 @@ class lf_create_dp_rvr_json():
             dut_radio = self.lf_radio_6g
             lf_dp_rvr_attenuation = self.lf_dp_rvr_attenuation_6g_combobox.get()
 
-
-        # configuration 
+        # configuration
         lf_dp_rvr_duration = self.lf_dp_rvr_duration_combobox.get().split(' ', 1)[0]
         lf_dp_rvr_traffic_type = self.lf_dp_rvr_traffic_type_combobox.get()
         lf_dp_rvr_dut_traffic_direction = self.lf_dp_rvr_dut_traffic_direction_combobox.get()
@@ -288,12 +283,12 @@ class lf_create_dp_rvr_json():
         lf_dp_rvr_number_dut_indexes = self.lf_dp_rvr_number_dut_indexes_combobox.get()
 
         dut_indexes = ''
-        for index in range(0,int(lf_dp_rvr_number_dut_indexes)):
+        for index in range(0, int(lf_dp_rvr_number_dut_indexes)):
             if index == 0:
                 dut_indexes += f"""" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",\n """
             elif index == int(lf_dp_rvr_number_dut_indexes) - 1:
                 dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'","""
-            else:                
+            else:
                 dut_indexes += f"""\t\t\t\t\t" --ssid 'ssid_idx={index} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",\n """
 
         self.dp_rvr_band_json = """
@@ -304,7 +299,7 @@ class lf_create_dp_rvr_json():
             "When doing a create_chamberview.py --create_scenario <name> ",
             "has no correlation to the --instance_name , instance name is used ",
             "as a unique identifier for tha chamber-view test run"
-        ]  
+        ]
     }},
     "test_suites":{{
     """.format(notes=notes_title)
@@ -312,24 +307,23 @@ class lf_create_dp_rvr_json():
         "{test_suite}":{{
     """.format(test_suite=self.suite_radios_band)
 
-        
         # find the last radio to include in test
         count_band_radios = 0
-        for radio in range(0,self.radio_dict_size):
+        for radio in range(0, self.radio_dict_size):
             if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
                 self.last_band_radio = radio
                 count_band_radios += 1
 
         if count_band_radios > 0:
 
-            for radio in range(0,self.radio_dict_size):
+            for radio in range(0, self.radio_dict_size):
                 if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
                     dp_rvr_test_name = str(self.suite_test_name_band_dict[radio].get()) + f"_{band}_W{radio}" + f"{traffic_direction}"
                     dp_rvr_batch_size = str(self.radio_batch_dict[radio].get())
                     dp_rvr_sta_max = dp_rvr_batch_size.rsplit(',', 1)
                     if len(dp_rvr_sta_max) == 1:
                         dp_rvr_sta_max_int = int(dp_rvr_sta_max[0])
-                    else:                        
+                    else:
                         dp_rvr_sta_max_int = int(dp_rvr_sta_max[1])
                     attenuator = ''
                     attenuation = ''
@@ -394,7 +388,7 @@ class lf_create_dp_rvr_json():
 
                     if radio == self.last_band_radio:
                         if self.lf_dp_rvr_use_qa_var.get() == "Use":
-                            self.dp_rvr_band_json +=""",
+                            self.dp_rvr_band_json += """,
             "lf_qa":{
                 "enabled":"TRUE",
                 "timeout":"600",
@@ -406,7 +400,7 @@ class lf_create_dp_rvr_json():
                 ]
             }"""
                         if self.lf_dp_rvr_use_inspect_var.get() == "Use":
-                            self.dp_rvr_band_json +=""",            
+                            self.dp_rvr_band_json += """,
             "lf_inspect":{
                 "enabled":"TRUE",
                 "timeout":"600",
@@ -418,16 +412,14 @@ class lf_create_dp_rvr_json():
                 ]
             }"""
 
-        self.dp_rvr_band_json += """ 
+        self.dp_rvr_band_json += """
         }
-    } 
-}    
+    }
+}
     """
 
-            
         file_band_fd.write(self.dp_rvr_band_json)
         file_band_fd.close()
-
 
 
 def main():
@@ -477,7 +469,6 @@ INCLUDE_IN_README: False
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
-
     args = parser.parse_args()
 
     # set up logger
@@ -492,8 +483,6 @@ INCLUDE_IN_README: False
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-
-
 
 
 if __name__ == '__main__':
