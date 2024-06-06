@@ -18,7 +18,7 @@ VERIFIED_ON: Underdevelopment
 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2023 Candela Technologies Inc
+    Copyright 2024 Candela Technologies Inc
 
 INCLUDE_IN_README: True
 '''
@@ -35,7 +35,8 @@ from pprint import pformat
 import os
 import logging
 
-sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+# sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 from lanforge_client.lanforge_api import LFSession
@@ -162,13 +163,23 @@ LICENSE:
 INCLUDE_IN_README: True
             ''')
     # http://www.candelatech.com/lfcli_ug.php#show_rfgen
+    # http://www.candelatech.com/lfcli_ug.php#set_rfgen
     parser.add_argument("--host", "--mgr", dest='mgr', help='specify the GUI to connect to',default="192.168.0.19")
     parser.add_argument("--mgr_port", help="specify the GUI to connect to, default 8080", default="8080")
     parser.add_argument("--lf_user", help="lanforge user name default lanforge", default="lanforge")
     parser.add_argument("--lf_passwd", help="lanforge password defualt lanforge ", default="lanforge")
     parser.add_argument("--resource", help='(add wl endp) LANforge resource Default', default=1)
     parser.add_argument("--shelf", help='(add wl endp) LANforge Shelf name/id', default=1)
-    parser.add_argument("--id", help='ct712 id  default= all', default='57b068dc22276763')
+   
+    parser.add_argument("--id","--lf_hackrf","--sdr_serial_num",dest=id, help='ct712 id  default= all', default='57b068dc22276763')
+    parser.add_argument("--one_burst", help='net to one burst', store=True)
+    parser.add_argument("--rf_type", help='rf_type', required=True)
+    parser.add_argument("--gain", help='gain 14', default=14)
+    parser.add_argument("--if_gain", help='(transmit) if_gain 30', default=14)
+    parser.add_argument("--bb_gain", help='(receive) bb_gain 20', default=20)
+
+
+
 
 
     # Logging Configuration
