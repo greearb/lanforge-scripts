@@ -18,7 +18,7 @@ NOTES:
 
 STATUS: Development
 
-VERIFIED_ON:  
+VERIFIED_ON:
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
@@ -45,40 +45,39 @@ logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("lf_logger_config")
 
 
-
 class lf_create_ap_auto_json():
     def __init__(self,
-                _file_2g,
-                _file_5g,
-                _file_6g,
-                _ap_auto_duration,
-                _use_radio_dict,
-                _radio_dict,
-                _radio_type_dict,
-                _radio_max_sta_dict,
-                _use_radio_var_dict,
-                _use_radio_2g_var_dict,
-                _use_radio_5g_var_dict,
-                _use_radio_6g_var_dict,
-                _suite_radios_2g,
-                _suite_radios_5g,
-                _suite_radios_6g,
-                _suite_test_name_2g_dict,
-                _suite_test_name_5g_dict,
-                _suite_test_name_6g_dict,
-                _radio_count,
-                _radio_batch_dict,
-                _lf_ap_auto_basic_client_connectivity,
-                _lf_ap_auto_multi_band_performance,
-                _lf_ap_auto_multi_station_throughput_vs_pkt_size,
-                _lf_ap_auto_stability,
-                _lf_ap_auto_channel_switching_test,
-                _lf_ap_auto_throughput_vs_pkt_size,
-                _lf_ap_auto_capacity,
-                _lf_ap_auto_band_steering,
-                _lf_ap_auto_long_term,
-                _lf_ap_auto_use_qa_var,
-                _lf_ap_auto_use_inspect_var
+                 _file_2g,
+                 _file_5g,
+                 _file_6g,
+                 _ap_auto_duration,
+                 _use_radio_dict,
+                 _radio_dict,
+                 _radio_type_dict,
+                 _radio_max_sta_dict,
+                 _use_radio_var_dict,
+                 _use_radio_2g_var_dict,
+                 _use_radio_5g_var_dict,
+                 _use_radio_6g_var_dict,
+                 _suite_radios_2g,
+                 _suite_radios_5g,
+                 _suite_radios_6g,
+                 _suite_test_name_2g_dict,
+                 _suite_test_name_5g_dict,
+                 _suite_test_name_6g_dict,
+                 _radio_count,
+                 _radio_batch_dict,
+                 _lf_ap_auto_basic_client_connectivity,
+                 _lf_ap_auto_multi_band_performance,
+                 _lf_ap_auto_multi_station_throughput_vs_pkt_size,
+                 _lf_ap_auto_stability,
+                 _lf_ap_auto_channel_switching_test,
+                 _lf_ap_auto_throughput_vs_pkt_size,
+                 _lf_ap_auto_capacity,
+                 _lf_ap_auto_band_steering,
+                 _lf_ap_auto_long_term,
+                 _lf_ap_auto_use_qa_var,
+                 _lf_ap_auto_use_inspect_var
                  ):
         self.test_suite_band = ""
         self.use_radio_dict = _use_radio_dict
@@ -102,7 +101,7 @@ class lf_create_ap_auto_json():
 
         self.lf_ap_auto_use_qa_var = _lf_ap_auto_use_qa_var
         self.lf_ap_auto_use_inspect_var = _lf_ap_auto_use_inspect_var
-        self.radio_index =""
+        self.radio_index = ""
 
         # TODO Future copy generated file to alternate file (low priority until requeste)
 
@@ -114,7 +113,6 @@ class lf_create_ap_auto_json():
             self.ap_auto_duration = '20000'
         else:
             self.ap_auto_duration = _ap_auto_duration
-
 
         self.use_radio_2g_var_dict = _use_radio_2g_var_dict
         self.use_radio_5g_var_dict = _use_radio_5g_var_dict
@@ -143,8 +141,8 @@ class lf_create_ap_auto_json():
     def get_file_6g(self):
         return self.file_6g
 
-
     # Helper methods
+
     def create_suite(self):
 
         if self.test_suite_band == "2g":
@@ -153,7 +151,7 @@ class lf_create_ap_auto_json():
             self.suite_test_name_band_dict = self.suite_test_name_2g_dict
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_2g
-            self.radio_index ="Radio-1"
+            self.radio_index = "Radio-1"
             radio_index = self.radio_index
 
         elif self.test_suite_band == "5g":
@@ -162,7 +160,7 @@ class lf_create_ap_auto_json():
             self.suite_test_name_band_dict = self.suite_test_name_5g_dict
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_5g
-            self.radio_index ="Radio-2"
+            self.radio_index = "Radio-2"
             radio_index = self.radio_index
 
         elif self.test_suite_band == "6g":
@@ -171,7 +169,7 @@ class lf_create_ap_auto_json():
             self.suite_test_name_band_dict = self.suite_test_name_6g_dict
             band = self.test_suite_band.upper()
             self.suite_radios_band = self.suite_radios_6g
-            self.radio_index ="Radio-3"
+            self.radio_index = "Radio-3"
             radio_index = self.radio_index
 
         self.ap_auto_band_json = """
@@ -182,7 +180,7 @@ class lf_create_ap_auto_json():
             "When doing a create_chamberview.py --create_scenario <name> ",
             "has no correlation to the --instance_name , instance name is used ",
             "as a unique identifier for tha chamber-view test run"
-        ]  
+        ]
     }},
     "test_suites":{{
     """.format(wifi="ct_ap_auto_tests_scripts")
@@ -190,26 +188,25 @@ class lf_create_ap_auto_json():
         "{test_suite}":{{
     """.format(test_suite=self.suite_radios_band)
 
-        
         # find the last radio to include in test
         count_band_radios = 0
-        for radio in range(0,self.radio_dict_size):
+        for radio in range(0, self.radio_dict_size):
             if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
                 self.last_band_radio = radio
                 count_band_radios += 1
 
         if count_band_radios > 0:
 
-            for radio in range(0,self.radio_dict_size):
+            for radio in range(0, self.radio_dict_size):
                 if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
                     ap_auto_test_name = str(self.suite_test_name_band_dict[radio].get()) + f"_{band}_W{radio}"
                     ap_auto_batch_size = str(self.radio_batch_dict[radio].get())
                     ap_auto_sta_max = ap_auto_batch_size.rsplit(',', 1)
                     if len(ap_auto_sta_max) == 1:
                         ap_auto_sta_max_int = int(ap_auto_sta_max[0])
-                    else:                        
+                    else:
                         ap_auto_sta_max_int = int(ap_auto_sta_max[1])
-                    ap_auto_duration = self.ap_auto_duration                        
+                    ap_auto_duration = self.ap_auto_duration
                     self.ap_auto_band_json += f"""
             "CC_DUT_{ap_auto_test_name}":{{
                 "enabled":"TRUE",
@@ -255,11 +252,11 @@ class lf_create_ap_auto_json():
             }}
             """
                     if radio != self.last_band_radio:
-                        self.ap_auto_band_json += ""","""                        
+                        self.ap_auto_band_json += ""","""
 
                     if radio == self.last_band_radio:
                         if self.lf_ap_auto_use_qa_var.get() == "Use":
-                            self.ap_auto_band_json +=""",
+                            self.ap_auto_band_json += """,
             "lf_qa":{
                 "enabled":"TRUE",
                 "timeout":"600",
@@ -271,7 +268,7 @@ class lf_create_ap_auto_json():
                 ]
             }"""
                         if self.lf_ap_auto_use_inspect_var.get() == "Use":
-                            self.ap_auto_band_json +=""",
+                            self.ap_auto_band_json += """,
             "lf_inspect":{
                 "enabled":"TRUE",
                 "timeout":"600",
@@ -282,13 +279,12 @@ class lf_create_ap_auto_json():
                     " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
                 ]
             }"""
-        self.ap_auto_band_json += """ 
+        self.ap_auto_band_json += """
         }
-    } 
-}    
+    }
+}
     """
 
-            
         file_band_fd.write(self.ap_auto_band_json)
         file_band_fd.close()
 
@@ -340,7 +336,6 @@ INCLUDE_IN_README: False
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
-
     args = parser.parse_args()
 
     # set up logger
@@ -355,8 +350,6 @@ INCLUDE_IN_README: False
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-
-
 
 
 if __name__ == '__main__':
