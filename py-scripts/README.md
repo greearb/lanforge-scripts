@@ -9,22 +9,67 @@ For more information, see the following online documentation or email [`support@
 ## Setup
 **NOTE: LANforge Python scripts require Python 3.7+** (which is backwards compatible to Fedora 27 systems).
 
-There are two primary methods to use LANforge scripts, on a LANforge system with the scripts pre-installed or by cloning the scripts from the Git repo.
+There are two primary methods of accessing LANforge scripts:
+
+1. LANforge system with the scripts pre-installed
+
+2. Cloning or downloading the scripts from the [Git repo](https://github.com/greearb/lanforge-scripts)
 
 ### Pre-installed LANforge System Usage
-For pre-installed LANforge systems, these scripts are installed in `/home/lanforge/scripts/py-scripts/` and require no further setup (dependencies are pre-installed as well). These pre-installed scripts match the LANforge software version on the system.
+On pre-installed LANforge systems, LANforge scripts are installed in `/home/lanforge/scripts/py-scripts/`. No further setup is required (dependencies come pre-installed). These pre-installed scripts match the LANforge software version on the system.
 
 ### Cloning from Git Repository Usage
-For users who clone these scripts from the Git repo, some setup is required.
+For users who clone or download these scripts from the Git repo, some setup is required. We assume you already have Python and Git installed.
 
-First, ensure that the LANforge scripts version you cloned matches that of your LANforge system (it is possible to run with the latest version, but this is not recommended). You can do this by doing the following:
-1. Get the version-tagged commits of the repository: `git fetch --tags`
-2. List the version-tagged commits available: `git tag`
-3. Selecting the matching tag for your LANforge system's version by running `git checkout`, e.g. `git checkout lf-5.4.7` to select the LANforge 5.4.7 version of LANforge scripts.
+Primarily there are two main setup components to complete before running LANforge scripts on a non-LANforge system. First, ensure that the LANforge scripts version you cloned matches that of your LANforge system (it is possible to run with the latest version, but this is not recommended). Second, install the required LANforge scripts dependencies (we strongly suggest virtual environments, e.g. `virtualenv`).
 
-Next, run the `update_dependencies.py` script to install the required script dependencies. We recommend doing so within a Python virtual environment using a tool like [`venv`](https://docs.python.org/3/tutorial/venv.html). This will isolate LANforge script dependencies from other software on your system's dependencies.
+#### Setup Instructions
+1. Open a shell and clone LANforge scripts
 
-Once you have completed dependency installation, you can now use the LANforge Python scripts.
+    ```Bash
+    git clone https://github.com/greearb/lanforge-scripts
+    ```
+
+2. Get the version-tagged commits of the repository
+
+    ```Bash
+    git fetch --tags
+    ```
+
+3. List the version-tagged commits available
+
+    ```Bash
+    git tag
+    ```
+
+4. Select the matching tag for your LANforge system's version
+
+    ```Bash
+    # Checkout LANforge 5.4.7 version of LANforge scripts.
+    git checkout lf-5.4.7
+    ```
+
+5. Create and source a Python virtual environment (optional but **strongly suggested**)
+
+    We suggest Python's [builtin virtual environment tool](https://docs.python.org/3/tutorial/venv.html) for simplicity, although other tools with more configuration like [Anaconda](https://anaconda.org/) will work as well.
+
+    ```Bash
+    # Create Python virtual environment named 'venv'
+    virtualenv venv
+
+    # Enter the Python virtual environment (Linux)
+    source venv/bin/activate
+    ```
+
+6. Enter the `lanforge-scripts/py-scripts/` directory
+
+7. Run the dependency installation script
+
+    ```Bash
+    ./update_dependencies.py
+    ```
+
+Once you have successfully completed these steps, you can now use the LANforge Python scripts.
 
 
 ## Using LANforge Python Scripts
@@ -49,5 +94,16 @@ To learn more about automating Chamber View tests like TR-398, WiFi Capacity Tes
 * lanforge_client/ - alpha version of JSON interface to LANforge Traffic Generator.
 
 ## Scripts accessing Serial ports. 
-* to access serial ports add user to `dialout` and `tty` groups to gain access to serial ports without needing root access.
-* Most scripts run in user space to use the installed python package and not affect the os python packages.
+On Linux, you must explicitly allow users to access serial devices. Otherwise, using a USB serial device requires root permissions (e.g. have to use `sudo`).
+
+There are several methods to do so, each depending on the distribution (all requiring root access to the system). Often the easiest is to perform the following:
+
+1. Add your user to the `dialout` and `tty` groups
+
+    ```Bash
+    sudo usermod -a -G dialout,tty $USER
+    ```
+
+2. Log out and log back in (full logout required, not just closing the terminal)
+
+    - Can also run the `newgrp` command, but this will only affect the currently running login session (i.e. that shell)
