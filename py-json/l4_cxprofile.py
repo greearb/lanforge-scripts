@@ -63,9 +63,6 @@ class L4CXProfile(LFCliBase):
                 "cx_name": self.created_cx[cx_name],
                 "cx_state": "RUNNING"
             }, debug_=self.debug)
-            # this is for a visual affect someone watching the screen, leave as print
-            print(".", end='')
-        print("")
 
     def stop_cx(self):
         logger.info("Stopping CXs...")
@@ -75,9 +72,6 @@ class L4CXProfile(LFCliBase):
                 "cx_name": self.created_cx[cx_name],
                 "cx_state": "STOPPED"
             }, debug_=self.debug)
-            # this is for a visual affect someone watching the screen, leave as print
-            print(".", end='')
-        print("")
 
     @staticmethod
     def compare_vals(old_list, new_list):

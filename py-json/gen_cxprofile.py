@@ -130,9 +130,6 @@ class GenCXProfile(LFCliBase):
             #     "cx_name": cx_name,
             #     "cx_state": "RUNNING"
             # })
-            # this is for a visual affect someone watching the screen, leave as print
-            print(".", end='')
-        print("")
 
     def stop_cx(self):
         logger.info("Stopping CXs...")
@@ -147,9 +144,6 @@ class GenCXProfile(LFCliBase):
             #     "cx_name": cx_name,
             #     "cx_state": "STOPPED"
             # })
-            # this is for a visual affect someone watching the screen, leave as print
-            print(".", end='')
-        print("")
 
     def cleanup(self):
         logger.info("Cleaning up cxs and endpoints")

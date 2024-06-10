@@ -401,8 +401,6 @@ class L3CXProfile(LFCliBase):
                 "test_mgr": "ALL",
                 "cross_connect": cx_name
             }, debug_=self.debug)
-            # this is for a visual affect someone watching the screen, leave as print
-            print(".", end='')
 
     def start_cx(self):
         logger.info("Starting CXs...")
@@ -414,11 +412,6 @@ class L3CXProfile(LFCliBase):
                 "cx_name": cx_name,
                 "cx_state": "RUNNING"
             }, debug_=self.debug)
-            # this is for a visual affect someone watching the screen, leave as print
-            if self.debug:
-                print(".", end='')
-        if self.debug:
-            print("")
 
     def quiesce_cx(self):
         logger.info("Quiesce CXs...")
@@ -426,17 +419,11 @@ class L3CXProfile(LFCliBase):
             # TODO see why quiesce_cx does not work
             # self.local_realm.quiesce_cx(cx_name)
             self.local_realm.drain_stop_cx(cx_name)
-            # this is for a visual affect someone watching the screen, leave as print
-            print(".", end='')
-        print("")
 
     def stop_cx(self):
         logger.info("Stopping CXs...")
         for cx_name in self.created_cx.keys():
             self.local_realm.stop_cx(cx_name)
-            # this is for a visual affect someone watching the screen, leave as print
-            print(".", end='')
-        print("")
 
     def cleanup_prefix(self):
         self.local_realm.cleanup_cxe_prefix(self.name_prefix)

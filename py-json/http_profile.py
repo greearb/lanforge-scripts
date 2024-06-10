@@ -62,8 +62,6 @@ class HTTPProfile(LFCliBase):
                 "cx_name": self.created_cx[cx_name],
                 "cx_state": "RUNNING"
             }, debug_=self.debug)
-            print(".", end='')
-        print("")
 
     def stop_cx(self):
         logger.info("Stopping CXs...")
@@ -73,8 +71,6 @@ class HTTPProfile(LFCliBase):
                 "cx_name": self.created_cx[cx_name],
                 "cx_state": "STOPPED"
             }, debug_=self.debug)
-            print(".", end='')
-        print("")
 
     def cleanup(self):
         logger.info("Cleaning up cxs and endpoints")
