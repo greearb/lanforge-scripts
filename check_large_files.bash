@@ -534,6 +534,8 @@ clean_mnt_lf_files() {
 
 clean_pcap_files() {
     note "Purging pcap data..."
+    cd /tmp
+    rm -f *pcap *pcapng
     cd /home/lanforge
     local vile_list=(`find tmp/ report-data/ local/tmp/ lf_reports/ html-reports/ Documents/ \
         -type f -a \( \
@@ -972,6 +974,7 @@ survey_pcap_files() {
             -o -name '*.pcapng.gz'  \
             -o -name '*.pcapng.xz'  \
         \) 2>/dev/null ||:`)
+    pcap_list+=(`find /tmp -type f -a \( -name '*pcap' -o -name '*.pcapng' \)`)
     fnum=$(( 0 + ${#pcap_list[@]} ))
 
     if (( $fnum > 0 )); then
