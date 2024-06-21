@@ -2,9 +2,11 @@
 
 ---
 
-This library provides a set of methods to operate the [LANforge JSON REST API](http://www.candelatech.com/cookbook.php?vol=cli&book=JSON:+Querying+the+LANforge+Client+for+JSON+Data). This is a generated library that includes Python classes and methods to perform JSON POSTs for every [LANforge CLI command](https://www.candelatech.com/lfcli_ug.php) and JSON GETs for JSON endpoints presented by the LANforge GUI.
+This library provides a set of methods to operate the [LANforge JSON API](http://www.candelatech.com/cookbook.php?vol=cli&book=JSON:+Querying+the+LANforge+Client+for+JSON+Data). This is a generated library that includes Python classes and methods to perform JSON POSTs for every [LANforge CLI command](https://www.candelatech.com/lfcli_ug.php) and JSON GETs for JSON endpoints presented by the LANforge GUI.
 
 If you are new to this API, please start at the beginning of the [LANforge Scripting Cookbook](http://www.candelatech.com/scripting_cookbook.php). 
+
+Example scripts are located in the [`examples/`](./examples/) directory. See the [`README.md`](./examples/README.md) for more information on available examples.
 
 ## Requirements
 
@@ -74,6 +76,8 @@ You would use the *lanforge_client* package in places where:
 The Realm class is useful. As the *lanforge_client* package stabilizes, we anticipate replacing lower level parts of the *Realm* based operations to call into the *lanforge_client* package.
 
 ## Getting started
+
+**NOTE:** Example scripts are located in the [`examples/`](./examples/) directory. See the [`README.md`](./examples/README.md) for more information on available examples.
 
 Below is an example of instantiating a LFSession object and getting the LFJsonQuery (for GETs) and LFJsonCommand (for POSTs).
 
