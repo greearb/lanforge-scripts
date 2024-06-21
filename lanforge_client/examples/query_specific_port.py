@@ -41,9 +41,9 @@ def main(mgr: str,
     else:
         column_names = ["down", "phantom", "ip"]
 
-    # Always query for port
-    if "port" not in column_names:
-        column_names.append("port")
+    # Always query for port alias
+    if "alias" not in column_names:
+        column_names.append("alias")
 
     # Instantiate a LANforge API session with the specified LANforge system.
     #
@@ -73,14 +73,14 @@ def main(mgr: str,
     print()
 
     # Always print port EID first
-    queried_port_eid = query_results.get("port")
-    if not queried_port_eid:
-        print("ERROR: Port EID not found in queried results")
+    queried_port_alias = query_results.get("alias")
+    if not queried_port_alias:
+        print("ERROR: Port alias not found in queried results")
         exit(1)
     else:
-        query_results.pop("port")
-        column_name = "port"
-        column_data = queried_port_eid
+        query_results.pop("alias")
+        column_name = "alias"
+        column_data = queried_port_alias
         print(f"{column_name:<20}{column_data:<20}")
 
     for column_name in query_results:
