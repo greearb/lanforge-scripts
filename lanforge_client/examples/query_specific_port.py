@@ -48,7 +48,7 @@ def main(mgr: str,
     # Instantiate a LANforge API session with the specified LANforge system.
     #
     # The JSON API port is almost always 8080. The LANforge server port,
-    # # which isn't relevant here, are in the 4001+ range
+    # which isn't relevant here, are in the 4001+ range
     session = lanforge_api.LFSession(
         lfclient_url=f"http://{mgr}:{mgr_port}",
     )
@@ -60,7 +60,7 @@ def main(mgr: str,
     #
     # NOTE: Currently specifying an empty 'eid_list' will not return all ports
     #       as one might expect, given that a GET to '/port' will return all ports.
-    # To work around this, specify the eid_list using only the '/list' string
+    #       To work around this, specify the eid_list using only the '/list' string
     query_results = query.get_port(eid_list=[port_eid],
                                    requested_col_names=column_names)
     if not query_results:
@@ -90,8 +90,10 @@ def main(mgr: str,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog="show_all_ports.py",
-        description="Example script to demonstrate using LANforge API to print out port status information",
+        prog="query_specific_port.py",
+        description="Example script to demonstrate using LANforge API to print out port status information "
+                    "for a specific port. This example supports specifying specific column names to query "
+                    "via the \'--column_names\' argument. Run with \'--help\' for more details.",
     )
     parser.add_argument("--mgr",
                         default="localhost",
@@ -107,7 +109,7 @@ if __name__ == "__main__":
                         help="Comma separated list of port data to query (columns in 'Port Mgr' table). "
                              "The value strings are parsed directly into the URL, so whitespace should "
                              "be URL encoded. For example, \'port type\' and \'parent dev\' would be "
-                             "specified by passing \'--column_names \'port+type\',\'parent+dev\'")
+                             "specified by passing \'--column_names \"port+type\",\"parent+dev\"\'")
     args = parser.parse_args()
 
     # The '**vars()' unpacks the 'args' variable's contents
