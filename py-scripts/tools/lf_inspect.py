@@ -571,8 +571,8 @@ class inspect_sql:
                                 self.junit_results += """
                                 </properties>
                                 """                
-
-                                if self.test_result != "Good" and self.test_result != "Fair":
+                                # Anything other then Good is a failure for allure
+                                if self.test_result != "Good":
                                     self.junit_results += """
                                         <failure message="Performance: {result}  Percent: {percent}">
                                         </failure>""".format(result=self.test_result, percent=percent_delta)
@@ -835,7 +835,7 @@ class inspect_sql:
                             </properties>
                             """                
                             # need to have tests return error messages
-                            if self.test_result != "Good" and self.test_result != "Fair":
+                            if self.test_result != "Good":
                                 self.junit_results += """
                                     <failure message="Performance: {result}  Percent: {percent}">
                                     </failure>""".format(result=self.test_result, percent=percent_delta)
@@ -1145,7 +1145,7 @@ class inspect_sql:
                                 </properties>
                                 """                
 
-                                if self.test_result != "Good" and self.test_result != "Fair":
+                                if self.test_result != "Good":
                                     self.junit_results += """
                                         <failure message="Performance: {result}  Percent: {percent}">
                                         </failure>""".format(result=self.test_result, percent=percent_delta)
