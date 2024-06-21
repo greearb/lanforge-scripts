@@ -35,7 +35,7 @@ def main(mgr: str,
     # Instantiate a LANforge API session with the specified LANforge system.
     #
     # The JSON API port is almost always 8080. The LANforge server port,
-    # # which isn't relevant here, are in the 4001+ range
+    # which isn't relevant here, are in the 4001+ range
     session = lanforge_api.LFSession(
         lfclient_url=f"http://{mgr}:{mgr_port}",
     )
@@ -75,8 +75,10 @@ def main(mgr: str,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog="show_all_ports.py",
-        description="Example script to demonstrate using LANforge API to print out port status information",
+        prog="query_all_ports.py",
+        description="Example script to demonstrate using LANforge API to print out port status information. "
+                    "See the \'query_specific_port.py\' script to query for a specific port and querying for "
+                    "specific port data.",
     )
     parser.add_argument("--mgr",
                         default="localhost",
