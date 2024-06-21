@@ -35,14 +35,15 @@ def main(mgr: str,
          column_names: str,
          **kwargs):
     # Parse out column names into list, if specified.
-    # Otherwise, use default empty list to query default columns
+    # Otherwise, use default to handful of standard columns
     if column_names != "":
         column_names = column_names.split(",")
     else:
-        column_names = []
+        column_names = ["down", "phantom", "ip"]
 
     # Always query for port
-    column_names.append("port")
+    if "port" not in column_names:
+        column_names.append("port")
 
     # Instantiate a LANforge API session with the specified LANforge system.
     #
@@ -61,8 +62,11 @@ def main(mgr: str,
     #       as one might expect, given that a GET to '/port' will return all ports.
     # To work around this, specify the eid_list using only the '/list' string
     query_results = query.get_port(eid_list=[port_eid],
-                                   requested_col_names=column_names,
-                                   debug=True)
+                                   requested_col_names=column_names)
+    if not query_results:
+        print(
+            f"ERROR: Failed to query port \'{port_eid}\' for columns: {column_names}")
+        exit(1)
 
     for field in ["COLUMN NAME", "COLUMN DATA"]:
         print(f"{field:<20}", end="")

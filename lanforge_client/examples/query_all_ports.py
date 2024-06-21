@@ -48,7 +48,10 @@ def main(mgr: str,
     # NOTE: Currently specifying an empty 'eid_list' will not return all ports
     #       as one might expect, given that a GET to '/port' will return all ports.
     # To work around this, specify the eid_list using only the '/list' string
-    query_results = query.get_port(eid_list=["/list"], debug=True)
+    query_results = query.get_port(eid_list=["/list"])
+    if not query_results:
+        print(f"ERROR: Failed to query all ports")
+        exit(1)
 
     # Print table header
     for field in ["PORT EID", "PHANTOM", "DOWN"]:
