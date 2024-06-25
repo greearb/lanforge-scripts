@@ -61,6 +61,7 @@ def main(mgr: str,
     # NOTE: Currently specifying an empty 'eid_list' will not return all ports
     #       as one might expect, given that a GET to '/port' will return all ports.
     #       To work around this, specify the eid_list using only the '/list' string
+    #
     query_results = query.get_port(eid_list=[port_eid],
                                    requested_col_names=column_names)
     if not query_results:

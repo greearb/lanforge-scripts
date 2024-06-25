@@ -65,7 +65,8 @@ def main(mgr: str,
     #
     # NOTE: Currently specifying an empty 'eid_list' will not return all JSON endpoint data
     #       as one might expect, given that an arbitrary GET to the same JSON endpoint will.
-    # To work around this, specify the eid_list using only the '/list' string
+    #       To work around this, specify the eid_list using only the '/list' string
+    #
     query_results = query.get_stations(eid_list=["/list"],
                                        requested_col_names=column_names)
     if not query_results:
