@@ -45,6 +45,7 @@ class Roam(Realm):
                  security=None,
                  password=None,
                  num_sta=None,
+                 station_flag=None,
                  option=None,
                  identity=None,
                  ttls_pass=None,
@@ -77,6 +78,7 @@ class Roam(Realm):
         self.security = security
         self.password = password
         self.num_sta = num_sta
+        self.station_flag = station_flag
         self.option = option
         self.identity = identity
         self.ttls_pass = ttls_pass
@@ -238,6 +240,15 @@ class Roam(Realm):
 
     def create_clients(self, start_id=0, sta_prefix='sta'):
         station_profile = self.new_station_profile()
+
+
+        if self.station_flag is not None:
+            _flags = self.station_flag.split(',')
+            for flags in _flags:
+                logger.info(f"Selected Flags: '{flags}'")
+                station_profile.set_command_flag("add_sta", flags, 1)
+
+
         radio = self.station_radio
         sta_list = self.get_station_list()
         print("Available list of stations on lanforge-GUI :", sta_list)
@@ -490,7 +501,7 @@ class Roam(Realm):
                                     if(current_step_bssid_data[bssid_index] in self.bssid_based_totals):
                                         self.bssid_based_totals[current_step_bssid_data[bssid_index]] += 1
                                     else:
-                                        self.bssid_based_totals[current_step_bssid_data[bssid_index]] = 0
+                                        self.bssid_based_totals[current_step_bssid_data[bssid_index]] = 1
 
                     logging.info('Iteration {} complete'.format(current_iteration))
                     logging.info('{}'.format(current_iteration_roam_data))
@@ -654,7 +665,7 @@ class Roam(Realm):
                                         _yticks_font=8,
                                         _graph_title='BSSID based Successful vs Failed',
                                         _title_size=16,
-                                        _color=['orange', 'darkgreen', 'red'],
+                                        _color=['darkgreen', 'darkgreen', 'red'],
                                         _color_edge=['black'],
                                         _bar_height=0.15,
                                         _legend_loc="best",
@@ -662,7 +673,7 @@ class Roam(Realm):
                                         _dpi=96,
                                         _show_bar_value=False,
                                         _enable_csv=True,
-                                        _color_name=['orange', 'darkgreen', 'red'])
+                                        _color_name=['darkgreen', 'darkgreen', 'red'])
 
         bssid_based_graph_png = bssid_based_graph.build_bar_graph_horizontal()
         logging.info('graph name {}'.format(bssid_based_graph_png))
@@ -848,6 +859,11 @@ def main():
 
     optional.add_argument('--station_list',
                           help='List of stations to perform roam test (comma seperated)')
+    
+    optional.add_argument('--station_flag',
+                          help='station flags to add. eg: --station_flag use-bss-transition',
+                          required=False,
+                          default=None)
 
     optional.add_argument('--sniff_radio',
                           help='Sniffer Radio',
@@ -932,6 +948,7 @@ def main():
             security=args.security,
             password=args.password,
             num_sta=args.num_sta,
+            station_flag=args.station_flag,
             option=args.option,
             identity=args.identity,
             ttls_pass=args.ttls_pass,
