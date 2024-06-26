@@ -2,7 +2,19 @@
 Q='"'
 A="'"
 function set_background() {
-   gsettings set "org.mate.background" "$1" "$2"
+   set -x
+   if [[ -x /usr/bin/gsettings ]]; then
+      gsettings set "org.mate.background" "$1" "$2"
+   elif [[ -x /usr/bin/pcmanfm ]]; then
+      if [[ $1 = picture-filename ]]; then
+         local background=${2//\'/}
+         echo "** [$2] -> [$background] **"
+         pcmanfm --wallpaper-mode=center -w $background
+      fi
+   else
+      echo "No gsettings or pcmanfm, not setting background"
+   fi
+   set +x
 }
 . /etc/os-release
 SourceFile="/usr/share/backgrounds/mate/desktop/Ubuntu-Mate-Cold-no-logo.png"
