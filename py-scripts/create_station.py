@@ -751,6 +751,10 @@ INCLUDE_IN_README: False
                           default=0)
 
     optional = parser.add_argument_group('Optional arguments')
+    optional.add_argument("--prefix",
+                          type=str,
+                          help="Station prefix. Default: \'sta\'",
+                          default="sta")
     optional.add_argument("--create_admin_down",
                           help='Create ports in admin down state.',
                           action='store_true')
@@ -926,7 +930,7 @@ def main():
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
-    station_list = LFUtils.port_name_series(prefix="sta",
+    station_list = LFUtils.port_name_series(prefix=args.prefix,
                                             start_id=start_id,
                                             end_id=start_id + num_sta - 1,
                                             padding_number=10000,
