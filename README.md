@@ -1,23 +1,33 @@
-# LANforge Perl, Python, and Shell Scripts #
-This is a collection of scripts and scripting libraries designed to work
-with LANforge systems. On your LANforge system, these scripts are
-typically installed into `/home/lanforge/scripts`. The `LANforge/` sub directory holds
-the perl modules (`.pm` files) that are common to the perl scripts.
+# LANforge Perl, Python, and Shell Scripts
 
-## LANforge CLI Users Guide:  https://www.candelatech.com/lfcli_ug.php ##
-The LANforge CLI Users Guide is a good place to start for understanding scripts
+**This repository contains a collection of scripts and Python and Perl-based scripting libraries designed to automate LANforge systems.**
 
-## LANforge on system cli help and cli command composer ##
-The LANforge has an on system help / system query, when on LANforge browse to 
-http://local_host:8080
+## Overview
+These scripts span a variety of use cases, including automating Chamber View tests, configuring LANforge ports and traffic pairs, and much more.
 
-The LANforge has an on system cli help and cli command composer 
-http://local_host:8080/help 
+**No additional setup is required to run these scripts on a system with LANforge pre-installed**. On your LANforge system, you can find this repository in the `/home/lanforge/scripts/` directory. (e.g. CT523c, CT521b). The contents of the directory match the version of LANforge installed on your system (see the [tagged releases](https://github.com/greearb/lanforge-scripts/tags) to clone specific version.)
 
-### Commonly Used ###
+For more advanced users needing to develop their own automation, we offer the following:
+- Auto-generated Python library in [`lanforge_client/`](./lanforge_client/)
+  - **NOTE: This library is under development and subject to change as it progresses.**
+  - Designed to make LANforge CLI commands and LANforge JSON API endpoints available in Python.
+  - See the [`README`](./lanforge_client/README.md) for more details.
+- Perl modules in [`LANforge/`](./LANforge/)
+  - See the [`README`](./LANforge/README.md) for more details.
+
+## Quick Tips
+
+### Documentation Links
+
+- [LANforge CLI Users Guide](https://www.candelatech.com/lfcli_ug.php)
+- [LANforge Scripting Cookbook](http://www.candelatech.com/scripting_cookbook.php)
+- [Querying the LANforge JSON API using Python Cookbook](https://www.candelatech.com/cookbook/cli/json-python)
+
+### Commonly Used Scripts
 The `lf_*.pl` scripts are typically more complete and general purpose
-scripts, though some are ancient and very specific.  In particular,
-these scripts are more modern and may be a good place to start:
+scripts, though some are ancient and very specific.
+
+In particular, these scripts are more modern and may be a good place to start:
 
 | Name             | Purpose   |
 |------------------|-----------|
@@ -32,8 +42,29 @@ these scripts are more modern and may be a good place to start:
 The `lf_wifi_rest_example.pl` script shows how one might call the other scripts from
 within a script.
 
-### Examples and Documents ###
-Read more examples in the [scripting LANforge](http://www.candelatech.com/lfcli_api_cookbook.php) cookbook.
+### Exploring LANforge JSON API/Crafting CLI Commands
+
+When the LANforge GUI is running, a user can use the web-based LANforge Command Composer tool to generate CLI commands, either for use directly through the telnet interface (port 4001) or indirectly through the `cli-json/` LANFORGE JSON API endpoint.
+
+To access this tool, perform the following steps:
+1. Navigate to the Help page (either from the LANforge or remotely)
+    - From the LANforge system (e.g. through VNC): [`http://localhost:8080/help`](http://localhost:8080/help)
+    - Remotely:
+      - Directly by IP address: `http://192.168.1.101:8080/help`
+      - If your network supports DNS resolution: `http://ct523c-cafe:8080/help`
+
+2. Click on the link for your desired command, e.g. `add_sta`
+    - Each CLI command will display two links. The link *on the left side* takes you to the Command Composer tool
+
+3. Set the desired fields for the command
+
+4. Click the `Parse Command` at the top
+   - This generates CLI output for the fields you configured at the top of the webpage
+   - Generated output includes:
+     - CLI command for use in the telnet interface
+     - Commands to manually send data to the `cli-json/` LANFORGE JSON API endpoint
+
+More information on other LANforge JSON API endpoints can be by navigating to the main (root) endpoint `http://localhost:8080/` or querying it through `curl` (very verbose, e.g. `curl http://localhost:8080 | jq`).
 
 ## Python Scripts ##
 
@@ -84,7 +115,6 @@ Core communication files to LANforge
 | `qvlan_profile.py`                | Class: QVLANProfile (new_qvlan_profile) Use example: create_qvlan.py (802.1Q VLAN) |
 | `realm.py`                        | Class: The Realm Class is inherited by most python tests.  Realm Class inherites from LFCliBase. The Realm Class contains the configurable components for LANforge,  For example L3 / L4 cross connects, stations.  http://www.candelatech.com/cookbook.php?vol=cli&book=Python_Create_Test_Scripts_With_the_Realm_Class |
 | `realm_test.py`                   | Python script meant to test functionality of realm methods |
-| `show_ports.py`                   | Python script example of how to check a LANforge json url  |
 | `station_profile.py`              | Class: StationProfile (new_station_profile) Use example: most scripts create and use station profiles |
 | `test_base.py`                    | Class: TestBase, basic class for creating tests, uses basic functions for cleanup, starting/stopping, and passing of tests |
 | `test_group_profile.py`           | Class: TestGroupProfile (new_test_group_profile) Use example: test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic |
@@ -120,7 +150,6 @@ Test scripts and helper scripts
 | `download_test.py`                 | download_test.py will do lf_report::add_kpi(tags, 'throughput-download-bps', $my_value);|
 | `event_breaker.py`                 | This file is intended to expose concurrency problems in the /events/ URL handler by querying events rapidly. Please use concurrently with event_flood.py. |
 | `event_flood.py`                   | This file is intended to expose concurrency problems in the /events/ URL handler by inserting events rapidly. Please concurrently use with event_breaker.py.|
-| `grafana_profile.py`               | Class for creating and managing a grafana dashboard |
 | `lf_ap_auto_test.py`               | This script is used to automate running AP-Auto tests |
 | `lf_dataplane_test.py`             | This script is used to automate running Dataplane tests |
 | `lf_ftp_test.py`                   | Python script will create stations and endpoints to generate and verify layer-4 traffic over an ftp connection |
