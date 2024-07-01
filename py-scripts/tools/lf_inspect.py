@@ -327,7 +327,7 @@ class inspect_sql:
 
         # Time now generating the report
         time_now = round(time.time() * 1000)
-        test_window_epoch = int(self.test_window_days) * 86400000
+        test_window_epoch = int(float(self.test_window_days) * 86400000)
 
         # iterate though the unique values of the dataframe
         for test_tag in df_1['test-tag'].unique():
@@ -616,7 +616,7 @@ class inspect_sql:
 
         # Time now generating the report
         time_now = round(time.time() * 1000)
-        test_window_epoch = int(self.test_window_days) * 86400000
+        test_window_epoch = int(float(self.test_window_days) * 86400000)
 
         # iterate though the unique values of the dataframe
         for test_tag in df3['test-tag'].unique():
@@ -924,7 +924,7 @@ class inspect_sql:
 
         # Time now generating the report
         time_now = round(time.time() * 1000)
-        test_window_epoch = int(self.test_window_days) * 86400000
+        test_window_epoch = int(float(self.test_window_days) * 86400000)
         # iterate though the unique values of the dataframe
         for test_tag in df_1['test-tag'].unique():
             for graph_group in df_1['Graph-Group'].unique():
