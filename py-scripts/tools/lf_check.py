@@ -171,6 +171,7 @@ class lf_check():
                  _test_list,
                  _server_override,
                  _db_override,
+                 _test_window_days,
                  _production,
                  _csv_results,
                  _outfile,
@@ -215,6 +216,7 @@ class lf_check():
         self.test_list = _test_list
         self.server_override = _server_override
         self.db_override = _db_override
+        self.test_window_days = _test_window_days
         self.production_run = _production
         self.report_path = _report_path
         self.log_path = _log_path
@@ -1024,6 +1026,16 @@ junit.xml path: allure serve {junit_path}
                     "DATABASE_SQLITE not in test_rig_parameters json")
         else:
             self.database_sqlite = self.db_override
+
+        if self.test_window_days is None:
+            if "TEST_WINDOW_DAYS" in self.json_rig["test_rig_parameters"]:
+                self.test_window_days = self.json_rig["test_rig_parameters"]["TEST_WINDOW_DAYS"]
+            else:
+                self.logger.info("TEST_WINDOW_DAYS not in test_rig_parameters json setting to 2")
+                self.test_window_days = '2'
+        else:
+            self.test_window_days = self.test_window_days
+        
         if "LF_MGR_IP" in self.json_rig["test_rig_parameters"]:
             self.lf_mgr_ip = self.json_rig["test_rig_parameters"]["LF_MGR_IP"]
         else:
@@ -1235,6 +1247,9 @@ junit.xml path: allure serve {junit_path}
         if 'DATABASE_SQLITE' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'DATABASE_SQLITE', self.database_sqlite)
+        if 'TEST_WINDOW_DAYS' in self.test_dict[self.test]['args']:
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'TEST_WINDOW_DAYS', self.test_window_days)
         if 'TEST_SUITE' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'TEST_SUITE', self.test_suite)
@@ -2130,6 +2145,10 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     parser.add_argument('--new_test_run',
         help="--new_test_run is used to allow for a new set of allure links in results",
         action='store_true')
+    parser.add_argument("--test_window_days",dest='test_window_days',
+                        help="""This is the test window in days for reporing results,
+So older results will not be reported
+If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
 
 
     # logging configuration:
@@ -2143,6 +2162,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
     parser.add_argument("--no_exit","--no_exit_if_no_gui",dest='no_exit_if_no_gui',
                         help="--no_exit_if_no_gui store true , if gui unavailable do not exit to allow gui restart",
                         action='store_true')
+
 
     args = parser.parse_args()
 
@@ -2314,6 +2334,8 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
 
                 server_override = args.server_override
                 db_override = args.db_override
+                test_window_days = args.test_window_days
+
 
                 if args.production:
                     production = True
@@ -2384,6 +2406,7 @@ This is to allow multiple DUTs connected to a LANforge to have different upstrea
                                  _test_list=test_list,
                                  _server_override=server_override,
                                  _db_override=db_override,
+                                 _test_window_days=test_window_days,
                                  _production=production,
                                  _csv_results=csv_results,
                                  _outfile=outfile,
