@@ -6392,6 +6392,14 @@ INCLUDE_IN_README: False
 
     debug = args.debug
 
+    # Validate existing station list configuration if specified before starting test
+    if not args.use_existing_station_list and args.existing_station_list:
+        logger.error("Existing stations specified, but argument \'--use_existing_station_list\' not specified")
+        exit(1)
+    elif args.use_existing_station_list and not args.existing_station_list:
+        logger.error("Argument \'--use_existing_station_list\' specified, but no existing stations provided. See \'--existing_station_list\'")
+        exit(1)
+
     # Gather data for test reporting
     # for kpi.csv generation
     logger.info("read in command line paramaters")
