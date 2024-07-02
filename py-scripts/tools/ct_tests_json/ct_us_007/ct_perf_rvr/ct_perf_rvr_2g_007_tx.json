@@ -544,7 +544,7 @@
                 "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE --test_suite  TEST_SUITE"
+                    " --server TEST_SERVER --path REPORT_PATH --store --png  --test_window_days TEST_WINDOW_DAYS --database DATABASE_SQLITE --test_suite  TEST_SUITE"
                 ]
             },
             "lf_inspect":{
