@@ -537,7 +537,7 @@
                     " --raw_line 'directions: DUT Receive' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7922_6G_W7_RX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 000,100,200,300,400,450,460,470,480,490,500' ",
+                    " --raw_line 'attenuations: 000,100,200,300,400,450,460,470' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME",
