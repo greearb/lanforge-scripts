@@ -29,7 +29,6 @@ def main():
                 'pexpect-serial', 'scp','scipy','simple-geometry','kaleido','psutil']
     packages_installed = []
     packages_failed = []
-    subprocess.call("pip3 uninstall jwt", shell=True)
     subprocess.call('pip3 install --upgrade pip', shell=True)
     for package in packages:
         if os.name == 'nt':
