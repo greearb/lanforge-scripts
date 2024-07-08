@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-
+import pathlib
 import subprocess
 import argparse
 import os
+import os.path
+import sys
+import sysconfig
 
 
 def main():
@@ -19,6 +22,17 @@ def main():
         NOTES: Run this as lanforge user (not root)
         '''
     )
+    sysconfig_dir = sysconfig.get_path("stdlib", sysconfig.get_default_scheme())
+    external_marker = pathlib.Path(f"{sysconfig_dir}/EXTERNALLY-MANAGED")
+    if external_marker.is_file():
+        print(f"PEP 668 EXTERNALLY-MANAGED detected. Testing for virtual environment...")
+        if sys.prefix == sys.base_prefix:
+            print("Cannot continue, pip3 commands are not in a virtual environment.")
+            exit(1)
+        else:
+            print("Virtual environment detected, proceeding...")
+    else:
+        print("PEP 668 not detected.")
 
     args = parser.parse_args()
 
