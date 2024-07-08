@@ -22,6 +22,7 @@ def main():
         NOTES: Run this as lanforge user (not root)
         '''
     )
+    # TODO: add --create_venv option (with PEP 668 in mind).
     sysconfig_dir = sysconfig.get_path("stdlib", sysconfig.get_default_scheme())
     external_marker = pathlib.Path(f"{sysconfig_dir}/EXTERNALLY-MANAGED")
     if external_marker.is_file():
