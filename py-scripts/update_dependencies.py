@@ -37,10 +37,27 @@ def main():
     args = parser.parse_args()
 
     print("Installing Script Python3 Dependencies")
-    packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'websocket-client',
-                'xlsxwriter', 'pyshark', 'matplotlib', 'pdfkit', 'pip-search',
-                'pyserial',
-                'pexpect-serial', 'scp','scipy','simple-geometry','kaleido','psutil']
+
+    packages = [
+        'cryptography',
+        'kaleido',
+        'matplotlib',
+        'numpy',
+        'pandas',
+        'paramiko',
+        'pdfkit',
+        'pexpect-serial',
+        'pip-search',
+        'plotly',
+        'psutil',
+        'pyserial',
+        'pyshark',
+        'scipy',
+        'scp',
+        'simple-geometry',
+        'websocket-client',
+        'xlsxwriter',
+    ]
     packages_installed = []
     packages_failed = []
     subprocess.call('pip3 install --upgrade pip', shell=True)
