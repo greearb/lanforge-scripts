@@ -243,6 +243,24 @@ add_sta = importlib.import_module("py-json.LANforge.add_sta")
 class CreateStation(Realm):
     # Map values displayed in GUI to values accepted by the server
     # Key is value displayed in GUI, value is value accepted by server
+    EAP_METHOD_MAP = {
+        "DEFAULT": "DEFAULT",
+        "EAP-MD5": "MD5",
+        "MSCHAPV2": "MSCHAPV2",
+        "EAP-OTP": "OTP",
+        "EAP-GTC": "GTC",
+        "EAP-TLS": "TLS",
+        "EAP-PEAP": "PEAP",
+        "EAP-TTLS": "TTLS",
+        "EAP-SIM": "SIM",
+        "EAP-AKA": "AKA",
+        "EAP-PSK": "PSK",
+        "EAP-IKEV2": "IKEV2",
+        "EAP-FAST": "FAST",
+        "WFA-UNAUTH-TLS": "WFA-UNAUTH-TLS",
+        "TTLS PEAP TLS": "TTLS PEAP TLS",
+    }
+
     KEY_MGMT_MAP = {
         "DEFAULT": "DEFAULT",
         "NONE": "NONE",
@@ -313,7 +331,13 @@ class CreateStation(Realm):
             if str.isalpha(_mode):
                 self.mode = add_sta.add_sta_modes[_mode];
 
-        self.eap_method             = _eap_method
+        # Translate from options displayed in the GUI to options
+        # that the server actually understands
+        if _eap_method in self.EAP_METHOD_MAP:
+            self.eap_method = self.EAP_METHOD_MAP[_eap_method]
+        else:
+            self.eap_method = _eap_method
+
         self.eap_identity           = _eap_identity
         self.eap_anonymous_identity = _eap_anonymous_identity
         self.eap_password           = _eap_password
