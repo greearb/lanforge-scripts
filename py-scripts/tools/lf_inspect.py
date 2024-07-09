@@ -397,8 +397,8 @@ class inspect_sql:
                                         background = self.background_green
                                         self.performance_good += 1
                                         logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
-
-                                elif percent_delta >= 90:
+                                # changing the performce to > 80 7/9/2024 - 
+                                elif percent_delta >= 80:
                                     logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                     self.test_result = "Good"
                                     background = self.background_green
@@ -677,7 +677,7 @@ class inspect_sql:
                                     logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
 
 
-                            elif percent_delta >= 90:
+                            elif percent_delta >= 80:
                                 logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                 self.test_result = "Good"
                                 background = self.background_green
@@ -996,7 +996,7 @@ class inspect_sql:
                                         logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
 
 
-                                elif percent_delta >= 90:
+                                elif percent_delta >= 80:
                                     logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
                                     self.test_result = "Good"
                                     background = self.background_green
@@ -1478,7 +1478,7 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
 
     report.set_text("Percentages are calculated by:  (numeric_score_2 / numeric_score_1) * 100 ")
     report.build_text_simple()
-    report.set_text("Good: % > 90, Fair: % > 70, Poor: % > 50, Critical: % < 50 ")
+    report.set_text("Good: % > 80, Fair: % > 70, Poor: % > 50, Critical: % < 50 ")
     report.build_text_simple()
 
     report.set_table_title("LF Inspect Suite Summary Total Tests Run: {tests}".format(tests=inspect_db.performance_total))
