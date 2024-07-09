@@ -925,7 +925,7 @@ def main():
     if args.start_id != 0:
         start_id = int(args.start_id)
 
-    num_sta = 2
+    num_sta = 1
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
