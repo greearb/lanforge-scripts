@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import pathlib
+import platform
 import subprocess
 import argparse
 import os
 import os.path
 import sys
 import sysconfig
+from pprint import pprint
 
 
 def main():
@@ -23,7 +25,8 @@ def main():
         '''
     )
     # TODO: add --create_venv option (with PEP 668 in mind).
-    sysconfig_dir = sysconfig.get_path("stdlib", sysconfig.get_default_scheme())
+
+    sysconfig_dir = sysconfig.get_path("stdlib")
     external_marker = pathlib.Path(f"{sysconfig_dir}/EXTERNALLY-MANAGED")
     if external_marker.is_file():
         print(f"PEP 668 EXTERNALLY-MANAGED detected. Testing for virtual environment...")
