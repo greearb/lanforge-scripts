@@ -40,7 +40,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7915_5G_1_W0_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan0",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan0",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -109,7 +109,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7915_5G_2_W0_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan0",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan0",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -178,7 +178,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7915_5G_1_W1_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan1",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -247,7 +247,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7915_5G_2_W1_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan1",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -316,7 +316,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_1_W2_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan2",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan2",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -385,7 +385,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W2_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan2",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan2",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -454,7 +454,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_1_W3_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan3",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan3",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -523,7 +523,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W3_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan3",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan3",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -592,7 +592,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_1_W4_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan4",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan4",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -661,7 +661,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W4_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan4",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan4",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -730,7 +730,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_1_W5_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan5",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan5",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -799,7 +799,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_AX210_5G_2_W5_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan5",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan5",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -868,7 +868,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7921_5G_1_W6_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan6",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan6",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -937,7 +937,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7921_5G_2_W6_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan6",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan6",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -1006,7 +1006,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7922_5G_1_W7_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan7",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan7",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
@@ -1075,7 +1075,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7922_5G_2_W7_TX",
-                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan7",
+                    " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 30s --station 1.1.wlan7",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
