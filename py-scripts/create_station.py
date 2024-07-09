@@ -287,6 +287,19 @@ class CreateStation(Realm):
         "OWE": "OWE",
     }
 
+    GROUPWISE_CIPHER_MAP = {
+        "DEFAULT": "DEFAULT",
+        "CCMP": "CCMP",
+        "WEP104": "WEP104",
+        "WEP40": "WEP40",
+        "GTK_NOT_USED": "GTK_NOT_USED",
+        "GCMP-256 (wpa3)": "GCMP-256",
+        "CCMP-256 (wpa3)": "CCMP-256",
+        "GCMP/CCMP-256 (wpa3)": "GCMP-256 CCMP-256",
+        "All": "CCMP TKIP WEP104 WEP40 CCMP-256 GCMP-256",
+    }
+
+
     def __init__(self,
                  _ssid=None,
                  _bssid=None,
@@ -355,7 +368,11 @@ class CreateStation(Realm):
             self.key_mgmt = _key_mgmt
 
         self.pairwise_cipher        = _pairwise_cipher
-        self.groupwise_cipher       = _groupwise_cipher
+        if _groupwise_cipher in self.GROUPWISE_CIPHER_MAP:
+            self.groupwise_cipher = self.GROUPWISE_CIPHER_MAP[_groupwise_cipher]
+        else:
+            self.groupwise_cipher = _groupwise_cipher
+
         self.sta_list               = _sta_list
         self.sta_flags              = _sta_flags
         self.radio                  = _radio
