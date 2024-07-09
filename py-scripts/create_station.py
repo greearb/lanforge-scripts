@@ -287,6 +287,18 @@ class CreateStation(Realm):
         "OWE": "OWE",
     }
 
+    PAIRWISE_CIPHER_MAP = {
+        "DEFAULT": "DEFAULT",
+        "CCMP": "CCMP",
+        "TKIP": "TKIP",
+        "NONE": "NONE",
+        "CCMP TKIP": "CCMP TKIP",
+        "CCMP-256": "CCMP-256",
+        "GCMP (wpa3)": "GCMP",
+        "GCMP-256 (wpa3)": "GCMP-256",
+        "CCMP/GCMP-256 (wpa3)": "GCMP-256 CCMP-256",
+    }
+
     GROUPWISE_CIPHER_MAP = {
         "DEFAULT": "DEFAULT",
         "CCMP": "CCMP",
@@ -367,7 +379,11 @@ class CreateStation(Realm):
         else:
             self.key_mgmt = _key_mgmt
 
-        self.pairwise_cipher        = _pairwise_cipher
+        if _pairwise_cipher in self.PAIRWISE_CIPHER_MAP:
+            self.pairwise_cipher = self.PAIRWISE_CIPHER_MAP[_pairwise_cipher]
+        else:
+            self.pairwise_cipher = _pairwise_cipher
+
         if _groupwise_cipher in self.GROUPWISE_CIPHER_MAP:
             self.groupwise_cipher = self.GROUPWISE_CIPHER_MAP[_groupwise_cipher]
         else:
