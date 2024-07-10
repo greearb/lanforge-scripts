@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import pathlib
 import platform
-from subprocess import PIPE, call, run
+from subprocess import PIPE, call, run, Popen
 import argparse
 import os
 import os.path
@@ -44,12 +44,16 @@ class UpdateDependencies:
         self.scripts_path: str = str(os.path.expanduser("~/scripts"))
         self.py_version: str = sys.version[0:sys.version.find('.', 2)]
         self.venv_path: str = f"{self.scripts_path}/venv-{self.py_version}"
+        self.venv_activate: str = f"{self.venv_path}/bin/activate"
+        if os.name == "nt":
+            self.venv_path = f"{self.scripts_path}\\venv-{self.py_version}"
+            self.venv_activate = f"{self.venv_path}\\bin\\activate.bat"
 
     def upgrade_pip(self):
         print("Upgrading pip...")
         try:
             # this call (on fedora) very likely needs to be done thru sudo
-            call('pip3 install --upgrade pip', shell=True)
+            call('sudo pip3 install --upgrade pip', shell=True)
         except Exception as e:
             print(e)
 
@@ -62,9 +66,11 @@ class UpdateDependencies:
         try:
             if os.name == "nt":
                 self.system_python_path = run(["where", "python3"], shell=True, check=True, stdout=PIPE,
+                                              stderr=sys.stderr,
                                               timeout=1).stdout.decode('UTF-8').rstrip()
             else:
-                self.system_python_path = run(["which", "python3"], stdout=PIPE, timeout=1).stdout.decode(
+                self.system_python_path = run(["which", "python3"], stdout=PIPE, timeout=1,
+                                              stderr=sys.stderr).stdout.decode(
                     'UTF-8').rstrip()
 
             if not self.system_python_path:
@@ -86,7 +92,7 @@ class UpdateDependencies:
                 elif pathlib.Path(f"{possible_path}/python3").is_file():
                     self.chosen_python_path = f"{possible_path}/python3"
             else:
-                print(f"* unable to find python at {possible_path}")
+                print(f"* Unable to find python at {possible_path}")
                 exit(1)
         except Exception as e:
             print(e)
@@ -95,16 +101,17 @@ class UpdateDependencies:
     def remove_venv(self, venv_directory: pathlib.Path = None):
         """
         Check to see if the venv_directory has a bin/activate file. If so,
-        remove the directory
+        remove the directory. This method does not refer to self.venv_path because
+        self.venv_path refers to the creation target.
         :param venv_directory:  containing virtual environment
-        :return:
+        :return: False if unable to find directory
         """
         has_bin_activate = False
         if venv_directory and venv_directory.is_dir():
             if os.name == 'nt':
                 if os.path.isfile(f"{venv_directory}\\bin\\activate.bat"):
                     print(f"Removing {venv_directory}...")
-                    res = call(f"rmdir {venv_directory} /s /q")
+                    res = call(f"rmdir {venv_directory} /s /q", stderr=sys.stderr, stdout=sys.stdout, shell=True)
                     return res == 0
                 else:
                     print(f"* Not removing {venv_directory}, bin\\activate.bat not found.")
@@ -112,7 +119,7 @@ class UpdateDependencies:
             else:
                 if os.path.isfile(f"{venv_directory}/bin/activate"):
                     print(f"Removing {venv_directory}...")
-                    res = call(f"rm -rf {venv_directory}")
+                    res = call(f"rm -rf {venv_directory}", stderr=sys.stderr, stdout=sys.stdout, shell=True)
                     return res == 0
                 else:
                     print(f"* Not removing {venv_directory}, bin/activate not found.")
@@ -122,9 +129,42 @@ class UpdateDependencies:
             exit(1)
 
     def create_venv(self):
-        """Create a virtual environment
+        """Create a virtual environment. Tests for bin/activate first and does not attempt to recreate it.
         """
-        print(f"Creating a python virtual environment at {self.venv_path}...")
+        print(f"Checking for venv at {self.venv_path}...")
+        if not os.path.isfile(self.venv_activate):
+            print(f"Creating a python virtual environment at {self.venv_path}...")
+            proc = run(["python3", "-m", "venv", self.venv_path], stdout=PIPE, stderr=PIPE)
+            if proc.returncode == 0:
+                # double check
+                if os.path.isfile(self.venv_activate):
+                    print("...created")
+                else:
+                    raise Exception("venv finished but no bin/activate found")
+            else:
+                print(proc.stdout.decode('UTF-8'))
+                print(proc.stderr.decode('UTF-8'))
+                print("* unable to proceed")
+                exit(1)
+
+        # enter the venv and install packages
+        print("Entering venv and installing packages...")
+        proc = run(f"""bash -c ". {self.venv_activate} && {__file__}" """,
+                   stdout=sys.stdout,
+                   stderr=sys.stderr,
+                   shell=True)
+        if proc.returncode == 0:
+            print("...installed")
+        else:
+            print(proc.stdout.decode('UTF-8'))
+            print(proc.stderr.decode('UTF-8'))
+            print("* failed to install packages")
+            exit(1)
+        if os.path.is_symlink(f"{self.scripts_path}/venv"):
+            print("Found default venv link--removing...")
+            os.unlink(f"{self.scripts_path}/venv")
+        print(f"Symlinking {self.venv_path} -> {self.scripts_path}/venv")
+        os.symlink(self.venv_path, f"{self.scripts_path}/venv")
 
     def install_pkg(self, package: str):
         if os.name == 'nt':
@@ -148,7 +188,7 @@ class UpdateDependencies:
             self.install_pkg(package=package)
 
         print("\nInstall complete.")
-        print(f"Packages Installed Success: {self.packages_installed}\n")
+        print(f"Successfully installed : {self.packages_installed}\n")
         if not self.packages_failed:
             return
         print(f"Failed to install: {self.packages_failed}\n"
@@ -205,8 +245,10 @@ def main():
 
     parser.add_argument("--do_pip_upgrade", "--upgrade_pip",
                         required=False, default=False, action="store_true",
-                        help="The command `pip3 install --upgrade pip` will be run before the virtual environment "
-                             "is created. Requires a version of python3-pip to be installed.")
+                        help="The command `sudo pip3 install --upgrade pip` will be run before the virtual"
+                             " environment is created. Requires a version of python3-pip to be installed. "
+                             "This option will help if pip is installed but packages fail with "
+                             "permission errors.")
 
     venv_detected: bool = False
     sysconfig_dir = sysconfig.get_path("stdlib")
