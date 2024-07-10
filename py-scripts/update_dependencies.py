@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
-import pathlib
-import platform
-from subprocess import PIPE, call, run, Popen
 import argparse
 import os
 import os.path
+import pathlib
 import sys
 import sysconfig
-from pprint import pprint
+from subprocess import PIPE, call, run
 
 """
 List of packages
 """
 pip_packages: list = [
+    'setuptools',
     'cryptography',
     'kaleido',
     'matplotlib',
@@ -44,10 +43,16 @@ class UpdateDependencies:
         self.scripts_path: str = str(os.path.expanduser("~/scripts"))
         self.py_version: str = sys.version[0:sys.version.find('.', 2)]
         self.venv_path: str = f"{self.scripts_path}/venv-{self.py_version}"
-        self.venv_activate: str = f"{self.venv_path}/bin/activate"
+        # self.venv_activate: str = f"{self.venv_path}/bin/activate"
+        self.py = "python3"
         if os.name == "nt":
             self.venv_path = f"{self.scripts_path}\\venv-{self.py_version}"
-            self.venv_activate = f"{self.venv_path}\\bin\\activate.bat"
+            # self.venv_activate = f"{self.venv_path}\\bin\\activate.bat"
+            self.py = "py.exe"
+
+    @staticmethod
+    def venv_detected():
+        return sys.prefix != sys.base_prefix
 
     def upgrade_pip(self):
         print("Upgrading pip...")
@@ -65,7 +70,7 @@ class UpdateDependencies:
         """
         try:
             if os.name == "nt":
-                self.system_python_path = run(["where", "python3"], shell=True, check=True, stdout=PIPE,
+                self.system_python_path = run(["where", "py.exe"], shell=True, check=True, stdout=PIPE,
                                               stderr=sys.stderr,
                                               timeout=1).stdout.decode('UTF-8').rstrip()
             else:
@@ -87,16 +92,24 @@ class UpdateDependencies:
                 return possible_path
 
             if os.path.isdir(possible_path):
-                if os.name == "nt" and pathlib.Path(f"{possible_path}/python3.exe").is_file():
-                    self.chosen_python_path = f"{possible_path}\\python3.exe"
+                if os.name == "nt" and pathlib.Path(f"{possible_path}/{self.py}").is_file():
+                    self.chosen_python_path = f"{possible_path}\\{self.py}"
                 elif pathlib.Path(f"{possible_path}/python3").is_file():
-                    self.chosen_python_path = f"{possible_path}/python3"
+                    self.chosen_python_path = f"{possible_path}/{self.py}"
             else:
                 print(f"* Unable to find python at {possible_path}")
                 exit(1)
         except Exception as e:
             print(e)
             exit(1)
+
+    def get_venv_path(self):
+        return self.venv_path
+
+    def get_venv_activate(self):
+        if os.name == "nt":
+            return f"{self.venv_path}\\bin\\activate.bat"
+        return f"{self.venv_path}/bin/activate"
 
     def remove_venv(self, venv_directory: pathlib.Path = None):
         """
@@ -131,13 +144,16 @@ class UpdateDependencies:
     def create_venv(self):
         """Create a virtual environment. Tests for bin/activate first and does not attempt to recreate it.
         """
+        if not (self.venv_path.startswith("/") or self.venv_path.startswith("C:")):
+            raise Exception("self.venv_path needs to be a fully qualified path")
+
         print(f"Checking for venv at {self.venv_path}...")
-        if not os.path.isfile(self.venv_activate):
-            print(f"Creating a python virtual environment at {self.venv_path}...")
-            proc = run(["python3", "-m", "venv", self.venv_path], stdout=PIPE, stderr=PIPE)
+        if not os.path.isfile(self.get_venv_activate()):
+            print(f"Creating a python virtual environment at [{self.venv_path}]...")
+            proc = run([self.py, "-m", "venv", self.venv_path], stdout=PIPE, stderr=PIPE)
             if proc.returncode == 0:
                 # double check
-                if os.path.isfile(self.venv_activate):
+                if os.path.isfile(self.get_venv_activate()):
                     print("...created")
                 else:
                     raise Exception("venv finished but no bin/activate found")
@@ -149,7 +165,7 @@ class UpdateDependencies:
 
         # enter the venv and install packages
         print("Entering venv and installing packages...")
-        proc = run(f"""bash -c ". {self.venv_activate} && {__file__}" """,
+        proc = run(f"""bash -c ". {self.get_venv_activate()} && {__file__} --venv_path {self.venv_path}" """,
                    stdout=sys.stdout,
                    stderr=sys.stderr,
                    shell=True)
@@ -160,24 +176,28 @@ class UpdateDependencies:
             print(proc.stderr.decode('UTF-8'))
             print("* failed to install packages")
             exit(1)
-        if os.path.is_symlink(f"{self.scripts_path}/venv"):
-            print("Found default venv link--removing...")
+
+    def make_symlink(self, source):
+        if not (source.startswith("/") or source.startswith("C:")):
+            raise Exception("symlink requires full path")
+        if os.path.islink(f"{self.scripts_path}/venv"):
+            print("Found default venv link. Removing...")
             os.unlink(f"{self.scripts_path}/venv")
-        print(f"Symlinking {self.venv_path} -> {self.scripts_path}/venv")
-        os.symlink(self.venv_path, f"{self.scripts_path}/venv")
+        print(f"Symlinking {source} -> {self.scripts_path}/venv")
+        os.symlink(source, f"{self.scripts_path}/venv")
 
     def install_pkg(self, package: str):
         if os.name == 'nt':
-            command = f"pip3 install {package}"
+            command = f"{self.py} -m pip install {package}"
         else:
             command = f"pip3 install {package} >/tmp/pip3-stdout 2>/tmp/pip3-stderr"
         print(" ", end="", flush=True)
         res = call(command, shell=True)
         if res == 0:
-            print(f"✔{package}", end=" ", flush=True)
+            print(f"✔", end=" ", flush=True)
             self.packages_installed.append(package)
         else:
-            print(f"✘{package}", end=" ", flush=True)
+            print(f"✘", end=" ", flush=True)
             self.packages_failed.append(package)
 
     def install_packages(self):
@@ -197,7 +217,8 @@ class UpdateDependencies:
 
 
 def main():
-    version = sys.version[0:sys.version.index('.', 2)]
+    upgrader = UpdateDependencies(packages=pip_packages)
+    version = upgrader.py_version
 
     help_summary = "The lanforge-scripts/py-scripts and lanforge-scripts/py-json collection require "
     "a number of Pypi libraries. This script installs those libraries or creates "
@@ -231,17 +252,32 @@ def main():
                              "but will NOT create the default venv symlink.")
 
     parser.add_argument("--destroy_venv", "--remove_venv",
-                        type=str, required=False,
+                        type=str, required=False, const=upgrader.venv_path, nargs='?',
                         help="Remove the named python virtual environment. "
                              "May be used in conjunction with --create_venv to remove "
                              "the named virtual environment before creating a new one. "
                              "If $home/scripts/venv links to this directory, the symlink will be erased.")
+    parser.add_argument("--only_remove", "--remove_only",
+                        default=False, action="store_true",
+                        help="Stop after removing virtual environment. Use with --destroy_venv. "
+                             "Will not upgrade pip. Will remove default symlink if it matches.")
 
     parser.add_argument("--use_python", "--python",
                         type=str, required=False,
                         help="Specify the full path of the desired version of "
                              "python to create the virtual environment with. If not specified, "
                              "the value of `which python3` from the system path will be assumed.")
+
+    parser.add_argument("--symlink", "--link",
+                        default=False, action="store_true",
+                        help="Creates a symlink to the created virtual environment. Use with --create_venv. "
+                             "If no venv path or python version is explicitly listed, then this defaults to True. "
+                             "When a python path or named venv is provided, no symlink will be created by default. "
+                             "This option forces a symlink $home/scripts/venv to be created.")
+
+    parser.add_argument("--no_symlink", "--nosymlink", "--nolink",
+                        default=False, action="store_true",
+                        help="Do not create the $home/scripts/venv symlink.")
 
     parser.add_argument("--do_pip_upgrade", "--upgrade_pip",
                         required=False, default=False, action="store_true",
@@ -250,24 +286,23 @@ def main():
                              "This option will help if pip is installed but packages fail with "
                              "permission errors.")
 
-    venv_detected: bool = False
+
+    if upgrader.venv_detected():
+        print("Virtual environment detected.")
     sysconfig_dir = sysconfig.get_path("stdlib")
     external_marker = pathlib.Path(f"{sysconfig_dir}/EXTERNALLY-MANAGED")
     if external_marker.is_file():
         print("PEP 668 EXTERNALLY-MANAGED detected. Testing for virtual environment...")
-        if sys.prefix == sys.base_prefix:
+        if not upgrader.venv_detected():
             print("Cannot continue, pip3 commands are not in a virtual environment. "
                   "Please run this command with --create_venv parameter.")
             exit(1)
-        else:
-            print("Virtual environment detected, proceeding...")
-            venv_detected = True
     else:
         print("PEP 668 not detected.")
 
     args = parser.parse_args()
+
     py_path = None
-    upgrader = UpdateDependencies(packages=pip_packages)
     if args.use_python:
         py_path = upgrader.determine_py_path(args.use_python)
         if not py_path:
@@ -280,15 +315,24 @@ def main():
             print("* unable to determine python3 path, please use --use_python option")
             exit(1)
 
+    if args.only_remove and not args.destroy_venv:
+        print("* --only_remove requires --destroy_venv")
+        exit(1)
     if args.destroy_venv:
         venv_dirname = args.destroy_venv
         if not venv_dirname.startswith("/"):
-            venv_dirname = f"/home/lanforge/scripts/{venv_dirname}"
+            venv_dirname = f"{upgrader.scripts_path}/{venv_dirname}"
         if not os.path.isdir(venv_dirname):
             print(f"* directory not found: {venv_dirname}")
             exit(1)
         venv_dir = pathlib.Path(venv_dirname)
+        print(f"Will delete {venv_dirname}...")
         upgrader.remove_venv(venv_dir)
+        if args.only_remove:
+            print("Only removing virtual environment: done.")
+            exit(0)
+    else:
+        print("Not deleting venv.")
 
     if args.do_pip_upgrade:
         upgrader.upgrade_pip()
@@ -297,12 +341,35 @@ def main():
 
     # creating a virtual environment will require
     # shelling back in and doing the install_packages() step
-    if args.create_venv:
+    if args.venv_path:
+        if not (args.venv_path.startswith('/') or args.venv_path.startswith('C:')):
+            if os.name == "nt":
+                upgrader.venv_path = f"{upgrader.scripts_path}\\{args.venv_path}"
+            else:
+                upgrader.venv_path = f"{upgrader.scripts_path}/{args.venv_path}"
+        else:
+            upgrader.venv_path = args.venv_path
+        print(f"Set venv path to [{upgrader.venv_path}]")
+
+    print(f"Venv detected: {upgrader.venv_detected()}")
+    if args.create_venv and not upgrader.venv_detected():
         upgrader.create_venv()
+        print("...created venv")
+    elif upgrader.venv_detected():
+        print(f"Installing packages to venv {upgrader.venv_path}...")
+        upgrader.install_packages()
+        exit(0)
     else:
+        print(f"Installing packages to system scope...")
         upgrader.install_packages()
 
-    print("...done.")
+    if args.no_symlink or (not args.create_venv):
+        print("Not creating symlink.")
+        exit(0)
+
+    make_symlink = args.symlink or (args.create_venv and not args.venv_path)
+    if make_symlink:
+        upgrader.make_symlink(upgrader.venv_path)
 
 
 if __name__ == "__main__":
