@@ -48,6 +48,7 @@ class UpdateDependencies:
     def upgrade_pip(self):
         print("Upgrading pip...")
         try:
+            # this call (on fedora) very likely needs to be done thru sudo
             call('pip3 install --upgrade pip', shell=True)
         except Exception as e:
             print(e)
@@ -130,32 +131,29 @@ class UpdateDependencies:
             command = f"pip3 install {package}"
         else:
             command = f"pip3 install {package} >/tmp/pip3-stdout 2>/tmp/pip3-stderr"
+        print(" ", end="", flush=True)
         res = call(command, shell=True)
         if res == 0:
-            print(f"...{package}", end=" ")
+            print(f"✔{package}", end=" ", flush=True)
             self.packages_installed.append(package)
         else:
-            print(f"\nInstalling package {package}  failed.")
+            print(f"✘{package}", end=" ", flush=True)
             self.packages_failed.append(package)
 
     def install_packages(self):
         """Use subprocess.call  commands to pip3 install packages without a virtual environment
         """
-        print("would install packages here")
-
+        print("Upgrading packages:", end=" ", flush=True)
         for package in self.packages:
             self.install_pkg(package=package)
 
-        print("Install complete.")
-        print(f"""Packages Installed Success:
-                {self.packages_installed}
-                """)
+        print("\nInstall complete.")
+        print(f"Packages Installed Success: {self.packages_installed}\n")
         if not self.packages_failed:
             return
-        print(f"""Packages Failed (Some scripts may not need these packages):
-                {self.packages_failed}
-                To see errors try: pip3 install $package
-                """)
+        print(f"Failed to install: {self.packages_failed}\n"
+              + "(Some scripts may not need these packages) "
+              + "To see errors try: pip3 install $package", flush=True)
 
 
 def main():
