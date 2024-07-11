@@ -58,7 +58,7 @@ class UpdateDependencies:
         print("Upgrading pip...")
         try:
             # this call (on fedora) very likely needs to be done thru sudo
-            call('sudo pip3 install --upgrade pip', shell=True)
+            call('sudo -S pip3 install --upgrade pip', shell=True)
         except Exception as e:
             print(e)
 
@@ -235,8 +235,25 @@ def main():
                     "PURPOSE:  Installs python3 script package dependencies\n"
                     "OUTPUT: List of successful and unsuccessful installs\n"
                     "NOTES: Run this as lanforge user (not root)\n\n"
-                    f"{help_summary}"
+                    f"{help_summary}",
+        epilog="Examples:\n"
+               "* Install on Fedora:\n"
+               "    ./update_dependencies.py\n"
+               "* Install on Python 3.11+ Externally Managed system:\n"
+               "    ./update_dependencies.py --create_venv\n"
+               "    (This creates a symlink at /home/lanforge/scripts/venv)\n"
+               "* Install venv with a name:\n"
+               "    ./update_dependencies.py --create_venv --venv_path v311\n"
+               "* Install venv to a specific directory:\n"
+               "    ./update_dependencies.py --create_venv --venv_path /usr/local/venvs/lf548"
+               "* Remove a venv and stop:\n"
+               "    ./update_dependencies.py --destroy_venv v311 --only_remove\n"
+               "* Re-create the default virtual environment:\n"
+               "    ./update_dependencies.py --destroy_venv --create_venv"
+               "* Upgrade system pip3 (use when there are permission errors):\n"
+               "    ./update_dependencies.py --upgrade_pip\n"
     )
+
     parser.add_argument("--create_venv", "-c",
                         default=False, required=False, action='store_true',
                         help=f"Create a virtual environment named $home/scritps/venv-{version} "
@@ -257,6 +274,7 @@ def main():
                              "May be used in conjunction with --create_venv to remove "
                              "the named virtual environment before creating a new one. "
                              "If $home/scripts/venv links to this directory, the symlink will be erased.")
+
     parser.add_argument("--only_remove", "--remove_only",
                         default=False, action="store_true",
                         help="Stop after removing virtual environment. Use with --destroy_venv. "
@@ -281,10 +299,10 @@ def main():
 
     parser.add_argument("--do_pip_upgrade", "--upgrade_pip",
                         required=False, default=False, action="store_true",
-                        help="The command `sudo pip3 install --upgrade pip` will be run before the virtual"
-                             " environment is created. Requires a version of python3-pip to be installed. "
-                             "This option will help if pip is installed but packages fail with "
-                             "permission errors.")
+                        help="The command `sudo pip3 install --upgrade pip` will be run before the virtual "
+                             "environment is created. Requires a version of python3-pip to be installed. "
+                             "This option will help if pip is installed but packages fail with permission errors. " 
+                             "Do not use this option in PEP 668 externally managed environments.")
 
     args = parser.parse_args()
 
@@ -357,7 +375,8 @@ def main():
             print("PEP 668 EXTERNALLY-MANAGED detected. Testing for virtual environment...")
             if not upgrader.venv_detected():
                 print("Cannot continue, pip3 commands are not in a virtual environment. "
-                      "Please run this command with --create_venv parameter.")
+                      "Please run this command with --create_venv parameter.\n"
+                      f"Called as: {sys.argv}")
                 exit(1)
         else:
             print("PEP 668 not detected.")
