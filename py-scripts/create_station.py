@@ -94,7 +94,7 @@ EXAMPLE:
                 --key_mgmt          <TTLS|PEAP>
                 --pairwise_cipher   <cipher> \\
                 --groupwise_cipher  <cipher> \\
-                --eap_method        TLS \\
+                --eap_method        TTLS \\
                 --eap_identity      <username> \\
                 --eap_password      <password>
                 
