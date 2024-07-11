@@ -286,20 +286,6 @@ def main():
                              "This option will help if pip is installed but packages fail with "
                              "permission errors.")
 
-
-    if upgrader.venv_detected():
-        print("Virtual environment detected.")
-    sysconfig_dir = sysconfig.get_path("stdlib")
-    external_marker = pathlib.Path(f"{sysconfig_dir}/EXTERNALLY-MANAGED")
-    if external_marker.is_file():
-        print("PEP 668 EXTERNALLY-MANAGED detected. Testing for virtual environment...")
-        if not upgrader.venv_detected():
-            print("Cannot continue, pip3 commands are not in a virtual environment. "
-                  "Please run this command with --create_venv parameter.")
-            exit(1)
-    else:
-        print("PEP 668 not detected.")
-
     args = parser.parse_args()
 
     py_path = None
@@ -335,7 +321,10 @@ def main():
         print("Not deleting venv.")
 
     if args.do_pip_upgrade:
-        upgrader.upgrade_pip()
+        if upgrader.venv_detected():
+            print("* Cannot upgrade pip in a externally managed environment.")
+        else:
+            upgrader.upgrade_pip()
     else:
         print("Not upgrading pip")
 
@@ -351,7 +340,8 @@ def main():
             upgrader.venv_path = args.venv_path
         print(f"Set venv path to [{upgrader.venv_path}]")
 
-    print(f"Venv detected: {upgrader.venv_detected()}")
+    if upgrader.venv_detected():
+        print("Virtual environment detected.")
     if args.create_venv and not upgrader.venv_detected():
         upgrader.create_venv()
         print("...created venv")
@@ -361,7 +351,17 @@ def main():
         exit(0)
     else:
         print(f"Installing packages to system scope...")
-        upgrader.install_packages()
+        sysconfig_dir = sysconfig.get_path("stdlib")
+        external_marker = pathlib.Path(f"{sysconfig_dir}/EXTERNALLY-MANAGED")
+        if external_marker.is_file():
+            print("PEP 668 EXTERNALLY-MANAGED detected. Testing for virtual environment...")
+            if not upgrader.venv_detected():
+                print("Cannot continue, pip3 commands are not in a virtual environment. "
+                      "Please run this command with --create_venv parameter.")
+                exit(1)
+        else:
+            print("PEP 668 not detected.")
+            upgrader.install_packages()
 
     if args.no_symlink or (not args.create_venv):
         print("Not creating symlink.")
