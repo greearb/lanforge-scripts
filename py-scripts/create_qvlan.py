@@ -1,4 +1,47 @@
 #!/usr/bin/env python3
+"""
+NAME:       create_qvlan.py
+
+PURPOSE:    Create one ore more QVLAN port on the specified parent port.
+
+            This script will optionally set IPv4 configuration (static or dynamic), if specified.
+            The selected IPv4 configuration method will be applied to all created QVLAN ports
+            created by this script.
+
+EXAMPLE:
+            # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
+                ./create_qvlan.py \
+                    --parent        1.1.eth3 \
+                    --qvlan_ids     10
+
+            # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. DHCPv4 enabled.
+                ./create_qvlan.py \
+                    --parent        1.1.eth3 \
+                    --qvlan_ids     10 \
+                    --dhcpv4
+
+            # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. Static IPv4 configuration.
+                ./create_qvlan.py \
+                    --parent        1.1.eth3 \
+                    --qvlan_ids     10 \
+                    --ipv4_address  172.16.0.10 \
+                    --ipv4_netmask  255.255.255.0 \
+                    --ipv4_gateway  172.16.0.1
+
+            # Four QVLANs with QVLAN IDs 10, 20, 30, and 40 on parent port '1.1.eth3'. DHCPv4 enabled.
+                ./create_qvlan.py \
+                    --parent        1.1.eth3 \
+                    --qvlan_ids     10 20 30 40 \
+                    --dhcpv4
+
+            # Four QVLANs with QVLAN IDs 10 and 20 on parent port '1.1.eth3'. Static IPv4 configuration
+                ./create_qvlan.py \
+                    --parent        1.1.eth3 \
+                    --qvlan_ids     10 20 \
+                    --ipv4_address  172.16.0.10 172.10.0.20 \
+                    --ipv4_netmask  255.255.255.0 \
+                    --ipv4_gateway  172.16.0.1
+"""
 import sys
 import os
 import importlib
@@ -11,9 +54,7 @@ if sys.version_info[0] != 3:
     logger.critical("This script requires Python 3")
     exit(1)
 
-
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
-
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -25,174 +66,214 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class CreateQVlan(Realm):
     def __init__(self,
-                 host="localhost",
-                 port=8080,
-                 qvlan_parent=None,
-                 num_ports=1,
-                 dhcp=True,
-                 netmask=None,
-                 first_qvlan_ip=None,
-                 gateway=None,
-                 port_list=None,
-                 ip_list=None,
-                 exit_on_error=False,
-                 debug=False):
-        super().__init__(host, port)
-        if port_list is None:
-            port_list = []
-        if ip_list is None:
-            ip_list = []
+                 mgr: str,
+                 mgr_port: int,
+                 parent_port: str,
+                 qvlan_ids: list,
+                 dhcpv4: bool,
+                 ipv4_addresses: list,
+                 ipv4_netmasks: list,
+                 ipv4_gateways: list,
+                 exit_on_error: bool = False,
+                 debug: bool = False,
+                 **kwargs):
+        super().__init__(lfclient_host=mgr,
+                         lfclient_port=mgr_port)
 
-        self.host           = host
-        self.port           = port
-        self.qvlan_parent   = qvlan_parent
-        self.debug          = debug
-        self.port_list      = port_list
-        self.ip_list        = ip_list
-        self.exit_on_error  = exit_on_error
+        self.host = mgr
+        self.port = mgr_port
 
-        self.qvlan_profile                  = self.new_qvlan_profile()
-        self.qvlan_profile.num_qvlans       = int(num_ports)
-        self.qvlan_profile.desired_qvlans   = self.port_list
-        self.qvlan_profile.qvlan_parent     = self.qvlan_parent
-        self.qvlan_profile.dhcp             = dhcp
-        self.qvlan_profile.netmask          = netmask
-        self.qvlan_profile.first_ip_addr    = first_qvlan_ip
-        self.qvlan_profile.gateway          = gateway
+        self.qvlan_profiles = []
+        for ix, qvlan_id in enumerate(qvlan_ids):
+            # Defaults to one QVLAN port created per profile
+            # This script assumes the same parent port for all created QVLAN ports
+            qvlan_profile = self.new_qvlan_profile()
+            self.qvlan_profiles.append(qvlan_profile)
+
+            qvlan_profile.qvlan_parent = parent_port
+            qvlan_profile.desired_qvlans = [qvlan_id]  # Workaround for QVLAN profile quirk
+
+            if dhcpv4:
+                qvlan_profile.dhcp = True
+            elif ipv4_addresses:
+                qvlan_profile.dhcp = False
+                qvlan_profile.first_ip_addr = ipv4_addresses[ix]
+
+                # Either apply same subnet mask to all or one specified for each
+                if len(ipv4_netmasks) == 1:
+                    qvlan_profile.netmask = ipv4_netmasks[0]
+                else:
+                    qvlan_profile.netmask = ipv4_netmasks[ix]
+
+                # Either apply same gateway to all or on especified for each
+                if len(ipv4_gateways) == 1:
+                    qvlan_profile.gateway = ipv4_gateways[0]
+                else:
+                    qvlan_profile.gateway = ipv4_gateways[ix]
 
     def build(self):
-        logger.info("Creating QVLAN stations")
-        if self.qvlan_profile.create(debug=self.debug,
-                                     sleep_time=0):
-            self._pass("802.1q VLAN creation successful.")
-        else:
-            self._fail("802.1q VLAN creation failed.")
+        logger.info("Creating QVLAN port(s)")
+        for qvlan_profile in self.qvlan_profiles:
+            ret = qvlan_profile.create(debug=self.debug, sleep_time=0)
+
+            if not ret:
+                logger.error(
+                    f"Failed to create QVLAN port with QVLAN ID: {qvlan_profile.desired_qvlans}")
+                exit(1)
+
+        logger.info("Successfully created QVLAN port(s)")
+
 
 def parse_args():
     parser = LFCliBase.create_bare_argparse(
         prog='create_qvlan.py',
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''Creates Q-VLAN stations attached to the parent Ethernet port specified.''',
-        description='''\
-        create_qvlan.py:
-        ---------------------
-        Generic command ''')
-    parser.add_argument('--radio',
-                        help='radio EID, e.g: 1.wiphy2')
-    parser.add_argument('--qvlan_parent',
-                        help='specifies parent port for qvlan creation',
+        description="""
+NAME:       create_qvlan.py
+
+PURPOSE:    Create one ore more QVLAN port on the specified parent port.
+
+            This script will optionally set IPv4 configuration (static or dynamic), if specified.
+            The selected IPv4 configuration method will be applied to all created QVLAN ports
+            created by this script.
+
+EXAMPLE:
+            # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
+                ./create_qvlan.py \
+                    --parent        1.1.eth3 \
+                    --qvlan_ids     10
+
+            # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. DHCPv4 enabled.
+                ./create_qvlan.py \
+                    --parent        1.1.eth3 \
+                    --qvlan_ids     10 \
+                    --dhcpv4
+
+            # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. Static IPv4 configuration.
+                ./create_qvlan.py \
+                    --parent        1.1.eth3 \
+                    --qvlan_ids     10 \
+                    --ipv4_address  172.16.0.10 \
+                    --ipv4_netmask  255.255.255.0 \
+                    --ipv4_gateway  172.16.0.1
+
+            # Four QVLANs with QVLAN IDs 10, 20, 30, and 40 on parent port '1.1.eth3'. DHCPv4 enabled.
+                ./create_qvlan.py \
+                    --parent        1.1.eth3 \
+                    --qvlan_ids     10 20 30 40 \
+                    --dhcpv4
+
+            # Four QVLANs with QVLAN IDs 10 and 20 on parent port '1.1.eth3'. Static IPv4 configuration
+                ./create_qvlan.py \
+                    --parent        1.1.eth3 \
+                    --qvlan_ids     10 20 \
+                    --ipv4_address  172.16.0.10 172.10.0.20 \
+                    --ipv4_netmask  255.255.255.0 \
+                    --ipv4_gateway  172.16.0.1
+""")
+    # Required arguments
+    parser.add_argument('--parent', '--parent_port', '--qvlan_parent',
+                        dest='parent_port',
+                        help='Parent port used by created QVLAN port(s)',
                         default=None,
                         required=True)
-    parser.add_argument('--first_port',
-                        help='specifies name of first port to be used',
+    parser.add_argument('--qvlan_ids',
+                        dest='qvlan_ids',
+                        nargs='+',
+                        help='QVLAN ID(s) used in creation. '
+                             'One QVLAN port is created per ID. For static IP configuration, '
+                             'the number of IDs specified in this argument must match the number '
+                             'of static IP addresses specified in the \'--ipv4_addresses\'.',
+                        default=None,
+                        required=True)
+
+    # Optional IPv4 configuration
+    #
+    # Limit users to only one of static or DHCP IPv4 configuration.
+    # Allow users to specify no L3 configuration.
+    #
+    # If static IPv4 configuration, argument validation must check that
+    # number of static IPv4 addresses matches either number of ports or
+    # number of specified QVLAN IDs
+    ipv4_cfg = parser.add_mutually_exclusive_group(required=False)
+    ipv4_cfg.add_argument('--dhcp', '--dhcpv4', '--use_dhcp',
+                          dest='dhcpv4',
+                          help='Enable DHCPv4 on created QVLAN ports',
+                          action='store_true')
+    ipv4_cfg.add_argument('--ip', '--ips', '--ipv4_address', '--ipv4_addresses',
+                          dest='ipv4_addresses',
+                          type=str,
+                          nargs='+',
+                          help='List of static IPv4 addresses. The number of IPv4 addresses '
+                               'specified must match the number of QVLAN ports specified in '
+                               '\'--num_ports\'',
+                          default=None)
+
+    # Only checked when static configuration specified
+    parser.add_argument('--netmask', '--netmasks', '--ipv4_netmask', '--ipv4_netmasks',
+                        dest='ipv4_netmasks',
+                        type=str,
+                        nargs='+',
+                        help='IPv4 subnet mask to apply to all created QVLAN ports '
+                             'when static IPv4 configuration requested',
                         default=None)
-    parser.add_argument('--num_ports',
-                        type=int,
-                        help='number of ports to create',
-                        default=1)
-    parser.add_argument('--first_qvlan_ip',
-                        help='specifies first static ip address to be used or dhcp',
-                        default=None)
-    parser.add_argument('--netmask',
-                        help='specifies netmask to be used with static ip addresses',
-                        default=None)
-    parser.add_argument('--gateway',
-                        help='specifies default gateway to be used with static addressing',
-                        default=None)
-    parser.add_argument('--use_ports',
-                        help='list of comma separated ports to use with ips, \'=\' separates name and ip { port_name1=ip_addr1,port_name1=ip_addr2 }.  Ports without ips will be left alone',
+    parser.add_argument('--gateway', '--gateways', '--ipv4_gateway', '--ipv4_gateways',
+                        dest='ipv4_gateways',
+                        type=str,
+                        nargs='+',
+                        help='IPv4 gateway to apply to all created QVLAN ports '
+                             'when static IPv4 configuration requested',
                         default=None)
 
     return parser.parse_args()
 
+
+def validate_args(args):
+    # User either specifies DHCPv4, static IPv4 configuration, or no IPv4 configuration
+    if args.ipv4_addresses:
+        num_addresses = len(args.ipv4_addresses)
+
+        # If multiple static IPv4 addresses specified, then must match number
+        # of QVLAN IDs specified
+        if args.qvlan_ids and num_addresses != len(args.qvlan_ids):
+            logger.error("Number of static IPv4 addresses does not match \'--qvlan_ids\'")
+            exit(1)
+
+        # IPv4 subnet mask required if static IPv4 configuration specified
+        # If more than one subnet mask specified, must match number of IPv4 addresses
+        # If only one, then apply that to all created ports
+        if not args.ipv4_netmasks:
+            logger.error("No IPv4 subnet mask specified")
+            exit(1)
+        elif len(args.ipv4_netmasks) != 1 and num_addresses != len(args.ipv4_netmasks):
+            logger.error("Number of IPv4 subnet masks does not match number of IPv4 addresses.")
+            exit(1)
+
+        # IPv4 gateway required if static IPv4 configuration specified
+        # If more than one gateway specified, must match number of IPv4 addresses
+        # If only one, then apply that to all created ports
+        if not args.ipv4_gateways:
+            # TODO: Should we make this a warn and continue? Will need to fix
+            # QVLANProfile code if so
+            logger.error("No IPv4 gateway specified")
+            exit(1)
+        elif len(args.ipv4_gateways) != 1 and num_addresses != len(args.ipv4_gateways):
+            logger.error("Number of IPv4 gateways does not match number of IPv4 addresses.")
+            exit(1)
+
+
 def main():
     args = parse_args()
 
+    # Configure logging
     logger_config = lf_logger_config.lf_logger_config()
-    # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    if args.first_qvlan_ip in ["dhcp", "DHCP"]:
-        dhcp = True
-    else:
-        dhcp = False
-    port_list = []
-    ip_list = []
-    if args.first_port and args.use_ports:
-        if args.first_port.startswith("sta"):
-            if args.num_ports and args.num_ports > 0:
-                start_num = int(args.first_port[3:])
-                port_list = LFUtils.port_name_series(
-                    prefix="sta",
-                    start_id=start_num,
-                    end_id=start_num + args.num_ports - 1,
-                    padding_number=10000,
-                    radio=args.radio)
-                print(1)
-        else:
-            if args.num_ports and args.qvlan_parent and (args.num_ports > 0) and args.qvlan_parent in args.first_port:
-                start_num = int(
-                    args.first_port[args.first_port.index('#') + 1:])
-                port_list = LFUtils.port_name_series(
-                    prefix=str(
-                        args.qvlan_parent) + "#",
-                    start_id=start_num,
-                    end_id=start_num + args.num_ports - 1,
-                    padding_number=10000,
-                    radio=args.radio)
-                print(2)
-            else:
-                raise ValueError(
-                    "Invalid values for num_ports [%s], qvlan_parent [%s], and/or first_port [%s].\n"
-                    "first_port must contain parent port and num_ports must be greater than 0" %
-                    (args.num_ports, args.qvlan_parent, args.first_port))
-    else:
-        if not args.use_ports:
-            num_ports = int(args.num_ports)
-            prefix = str(args.qvlan_parent) + "#"
+    validate_args(args)
 
-            port_list = LFUtils.port_name_series(
-                prefix=prefix,
-                start_id=1,
-                end_id=num_ports,
-                padding_number=10000,
-                radio=args.radio)
-        else:
-            temp_list = args.use_ports.split(',')
-            for port in temp_list:
-                port_list.append(port.split('=')[0])
-                if '=' in port:
-                    ip_list.append(port.split('=')[1])
-                else:
-                    ip_list.append(0)
-
-            if len(port_list) != len(ip_list):
-                raise ValueError(
-                    temp_list, " ports must have matching ip addresses!")
-
-    print(port_list)
-    print(ip_list)
-    create_qvlan = CreateQVlan(args.mgr,
-                               args.mgr_port,
-                               qvlan_parent=args.qvlan_parent,
-                               num_ports=args.num_ports,
-                               dhcp=dhcp,
-                               netmask=args.netmask,
-                               first_qvlan_ip=args.first_qvlan_ip,
-                               gateway=args.gateway,
-                               port_list=port_list,
-                               ip_list=ip_list,
-                               debug=args.debug)
+    create_qvlan = CreateQVlan(**vars(args))
     create_qvlan.build()
-
-    # TODO:  Add code to clean up the stations built, unless --no_cleanup is specified.
-
-    if create_qvlan.passes():
-        logging.info('Created %s QVLAN stations' % args.num_ports)
-        create_qvlan.exit_success()
-    else:
-        create_vlan.exit_fail()
 
 
 if __name__ == "__main__":
