@@ -138,15 +138,15 @@ class QVLANProfile(LFCliBase):
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
 
         qv_parent_bare = self.local_realm.name_to_eid(self.qvlan_parent)[2];
-        for i in range(len(self.desired_qvlans)):
+        for vlan_id in self.desired_qvlans:
             data = {
                 "shelf": self.shelf,
                 "resource": self.resource,
                 "port": qv_parent_bare,
-                "vid": i + 1
+                "vid": vlan_id
             }
-            self.created_qvlans.append("%s.%s.%s.%d" % (self.shelf, self.resource,
-                                                        qv_parent_bare, i + 1))
+            self.created_qvlans.append("%s.%s.%s.%s" % (self.shelf, self.resource,
+                                                        qv_parent_bare, vlan_id))
             self.local_realm.json_post(req_url, data)
             time.sleep(sleep_time)
 
