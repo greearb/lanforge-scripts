@@ -48,7 +48,6 @@ class QVLANProfile(LFCliBase):
         if desired_list is None:
             raise ValueError("addNamedFlags wants a list of desired flag names")
         if len(desired_list) < 1:
-            print("addNamedFlags: empty desired list")
             return 0
         if (command_ref is None) or (len(command_ref) < 1):
             raise ValueError("addNamedFlags wants a maps of flag values")
@@ -116,7 +115,6 @@ class QVLANProfile(LFCliBase):
                 raise ValueError("Unknown param name: " + param_name)
 
     def create(self, debug=False, sleep_time=1):
-        print("Creating 802.1q Vlans...")
         req_url = "/cli-json/add_vlan"
 
         if not self.dhcp and self.first_ip_addr and self.netmask and self.gateway:
@@ -127,7 +125,6 @@ class QVLANProfile(LFCliBase):
                                                  num_ips=self.num_qvlans)
 
         if self.dhcp:
-            print("Using DHCP")
             self.desired_set_port_current_flags.append("use_dhcp")
             self.desired_set_port_interest_flags.append("dhcp")
 
@@ -153,8 +150,6 @@ class QVLANProfile(LFCliBase):
         if not LFUtils.wait_until_ports_appear(base_url=self.lfclient_url, port_list=self.created_qvlans, debug=debug):
             return False
 
-        print(self.created_qvlans)
-
         for i in range(len(self.created_qvlans)):
             eid = self.local_realm.name_to_eid(self.created_qvlans[i])
             name = eid[2]
@@ -170,7 +165,6 @@ class QVLANProfile(LFCliBase):
         return True
 
     def cleanup(self):
-        print("Cleaning up qvlans...")
         print(self.created_qvlans)
         for port_eid in self.created_qvlans:
             self.local_realm.rm_port(port_eid, check_exists=True)
