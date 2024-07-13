@@ -34,7 +34,7 @@ EXAMPLE:
                     --qvlan_ids     10 20 30 40 \
                     --dhcpv4
 
-            # Four QVLANs with QVLAN IDs 10 and 20 on parent port '1.1.eth3'. Static IPv4 configuration
+            # Two QVLANs with QVLAN IDs 10 and 20 on parent port '1.1.eth3'. Static IPv4 configuration
                 ./create_qvlan.py \
                     --parent        1.1.eth3 \
                     --qvlan_ids     10 20 \
@@ -163,7 +163,7 @@ EXAMPLE:
                     --qvlan_ids     10 20 30 40 \
                     --dhcpv4
 
-            # Four QVLANs with QVLAN IDs 10 and 20 on parent port '1.1.eth3'. Static IPv4 configuration
+            # Two QVLANs with QVLAN IDs 10 and 20 on parent port '1.1.eth3'. Static IPv4 configuration
                 ./create_qvlan.py \
                     --parent        1.1.eth3 \
                     --qvlan_ids     10 20 \
