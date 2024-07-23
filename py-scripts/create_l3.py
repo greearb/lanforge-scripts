@@ -233,15 +233,19 @@ LICENSE:
 
 INCLUDE_IN_README: False
 ''')
-    parser.add_argument('--min_rate_a',
-                        help='--min_rate_a bps rate minimum for side_a',
-                        default=56000)
-    parser.add_argument('--min_rate_b',
-                        help='--min_rate_b bps rate minimum for side_b',
-                        default=56000)
+    parser.add_argument('--no_cleanup',
+                        help='Do not cleanup before exit',
+                        action='store_true')
+    parser.add_argument("--no_pre_cleanup",
+                        help="do not remove connections at start",
+                        action="store_true")
+
+    # CX/endpoint naming
     parser.add_argument('--cx_prefix',
                         help='phrase to begin CX names with',
                         default="VT")
+
+    # Endpoint port selection/configuration
     parser.add_argument('--endp_a',
                         help='--endp_a station list',
                         default=[],
@@ -256,9 +260,25 @@ INCLUDE_IN_README: False
                         default=None,
                         required=False,
                         nargs='*')
+    parser.add_argument('--min_ip_port_a',
+                        help='min ip port range for endp-a',
+                        default=-1)
+    parser.add_argument('--min_ip_port_b',
+                        help='min ip port range for endp-b',
+                        default=-1)
+
+    # CX/endpoint basic configuration
     parser.add_argument('--cx_type',
                         help='specify the traffic type for cx eg : lf_udp | lf_tcp',
                         default="lf_udp")
+    parser.add_argument('--min_rate_a',
+                        help='--min_rate_a bps rate minimum for side_a',
+                        default=56000)
+    parser.add_argument('--min_rate_b',
+                        help='--min_rate_b bps rate minimum for side_b',
+                        default=56000)
+
+    # CX/endpoint advanced configuration
     parser.add_argument('--tos',
                         help='specify tos for endpoints eg : BK | BE | VI | VO | Voice | Video')
     parser.add_argument('--pkts_to_send',
@@ -271,12 +291,8 @@ INCLUDE_IN_README: False
                         default=0,
                         type=int,
                         help='modify multi connection endpoint-b for cx')
-    parser.add_argument('--min_ip_port_a',
-                        help='min ip port range for endp-a',
-                        default=-1)
-    parser.add_argument('--min_ip_port_b',
-                        help='min ip port range for endp-b',
-                        default=-1)
+
+    # Batch creation settings
     parser.add_argument('--batch_quantity',
                         help='No of cx endpoints to batch-create',
                         default=1)
@@ -292,12 +308,6 @@ INCLUDE_IN_README: False
     parser.add_argument('--ip_port_increment_b',
                         help='ip port increment for endp-b',
                         default=1)
-    parser.add_argument('--no_cleanup',
-                        help='Do not cleanup before exit',
-                        action='store_true')
-    parser.add_argument("--no_pre_cleanup",
-                        help="do not remove connections at start",
-                        action="store_true")
 
     return parser.parse_args()
 
