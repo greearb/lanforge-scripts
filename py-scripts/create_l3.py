@@ -170,14 +170,7 @@ class CreateL3(Realm):
             self._fail("Cross-connect build did not succeed.")
 
 
-def main():
-    help_summary = '''\
-    This script is made to set up/ crate a Layer-3 cross-connections. It allows running traffic from the upstream port 
-    (eth1/eth2) to the station and vice versa. Additionally, it supports running traffic directly between stations. 
-    The script also has a useful feature for batch modifying or batch creation functionality.
-    
-    The script will create CX only, will not run/start traffic and will not generate any report.
-        '''
+def parse_args():
     parser = argparse.ArgumentParser(
         prog='create_l3.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -277,7 +270,19 @@ INCLUDE_IN_README: False
     parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
                         action="store_true")
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+
+    help_summary = '''\
+    This script is made to set up/ crate a Layer-3 cross-connections. It allows running traffic from the upstream port 
+    (eth1/eth2) to the station and vice versa. Additionally, it supports running traffic directly between stations. 
+    The script also has a useful feature for batch modifying or batch creation functionality.
+    
+    The script will create CX only, will not run/start traffic and will not generate any report.
+        '''
 
     # help summary
     if args.help_summary:
