@@ -233,8 +233,11 @@ LICENSE:
 
 INCLUDE_IN_README: False
 ''')
+    parser.add_argument('--cleanup',
+                        help='Cleanup before exit',
+                        action='store_true')
     parser.add_argument('--no_cleanup',
-                        help='Do not cleanup before exit',
+                        help='Deprecated option. This script does not cleanup by default.',
                         action='store_true')
     parser.add_argument("--no_pre_cleanup",
                         help="do not remove connections at start",
@@ -362,7 +365,7 @@ def main():
     # TODO:  Delete the thing just created, unless --no_cleanup option was added.
     # Similar to how the create_bond.py does it.
 
-    if not args.no_cleanup:
+    if args.cleanup:
         ip_var_test.pre_cleanup()
 
     if ip_var_test.passes():
