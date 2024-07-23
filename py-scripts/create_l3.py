@@ -234,40 +234,88 @@ LICENSE:
 INCLUDE_IN_README: False
 ''')
 
-    parser.add_argument('--mgr', help='give the host ip')
-    parser.add_argument('--mgr_port', default=8080, help='port LANforge GUI HTTP service is running on')
-    parser.add_argument('--min_rate_a', help='--min_rate_a bps rate minimum for side_a', default=56000)
-    parser.add_argument('--min_rate_b', help='--min_rate_b bps rate minimum for side_b', default=56000)
-    parser.add_argument('--cx_prefix', help='phrase to begin CX names with', default="VT")
-    parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=False)
-    parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=False)
-    parser.add_argument("--ep_pairs", default=None, required=False, nargs='*',
-                        help="--ep_pairs is a list of ports in a,b format, like eth1#0,eth2#0 eth1#1,eth2#1")
-    parser.add_argument('--cx_type', help='specify the traffic type for cx eg : lf_udp | lf_tcp', default="lf_udp")
-    parser.add_argument('--tos', help='specify tos for endpoints eg : BK | BE | VI | VO | Voice | Video')
+    parser.add_argument('--mgr',
+                        help='give the host ip')
+    parser.add_argument('--mgr_port',
+                        help='port LANforge GUI HTTP service is running on',
+                        default=8080)
+    parser.add_argument('--min_rate_a',
+                        help='--min_rate_a bps rate minimum for side_a',
+                        default=56000)
+    parser.add_argument('--min_rate_b',
+                        help='--min_rate_b bps rate minimum for side_b',
+                        default=56000)
+    parser.add_argument('--cx_prefix',
+                        help='phrase to begin CX names with',
+                        default="VT")
+    parser.add_argument('--endp_a',
+                        help='--endp_a station list',
+                        default=[],
+                        action="append",
+                        required=False)
+    parser.add_argument('--endp_b',
+                        help='--upstream port',
+                        default="eth2",
+                        required=False)
+    parser.add_argument("--ep_pairs",
+                        help="--ep_pairs is a list of ports in a,b format, like eth1#0,eth2#0 eth1#1,eth2#1",
+                        default=None,
+                        required=False,
+                        nargs='*')
+    parser.add_argument('--cx_type',
+                        help='specify the traffic type for cx eg : lf_udp | lf_tcp',
+                        default="lf_udp")
+    parser.add_argument('--tos',
+                        help='specify tos for endpoints eg : BK | BE | VI | VO | Voice | Video')
     parser.add_argument('--pkts_to_send',
                         help='specify the pkts to send to the endpoints eg :One - 1 | Ten - 10 | (100) - 100 | (1000) - 1000')
-    parser.add_argument('--multi_conn_a', '--multi_con_a', default=0, type=int,
-                        help='modify multi connection endpoint-a for cx')
-    parser.add_argument('--multi_conn_b', '--multi_con_b', default=0, type=int,
+    parser.add_argument('--multi_conn_a', '--multi_con_a',
+                        help='modify multi connection endpoint-a for cx',
+                        default=0,
+                        type=int)
+    parser.add_argument('--multi_conn_b', '--multi_con_b',
+                        default=0,
+                        type=int,
                         help='modify multi connection endpoint-b for cx')
-    parser.add_argument('--min_ip_port_a', help='min ip port range for endp-a', default=-1)
-    parser.add_argument('--min_ip_port_b', help='min ip port range for endp-b', default=-1)
-    parser.add_argument('--batch_quantity', help='No of cx endpoints to batch-create', default=1)
-    parser.add_argument('--endp_a_increment', help='End point - A port increment', default=0)
-    parser.add_argument('--endp_b_increment', help='End point - B port increment', default=0)
-    parser.add_argument('--ip_port_increment_a', help='ip port increment for endp-a', default=1)
-    parser.add_argument('--ip_port_increment_b', help='ip port increment for endp-b', default=1)
-    parser.add_argument('--no_cleanup', help='Do not cleanup before exit', action='store_true')
-    parser.add_argument('--log_level', default=None,
-                        help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--min_ip_port_a',
+                        help='min ip port range for endp-a',
+                        default=-1)
+    parser.add_argument('--min_ip_port_b',
+                        help='min ip port range for endp-b',
+                        default=-1)
+    parser.add_argument('--batch_quantity',
+                        help='No of cx endpoints to batch-create',
+                        default=1)
+    parser.add_argument('--endp_a_increment',
+                        help='End point - A port increment',
+                        default=0)
+    parser.add_argument('--endp_b_increment',
+                        help='End point - B port increment',
+                        default=0)
+    parser.add_argument('--ip_port_increment_a',
+                        help='ip port increment for endp-a',
+                        default=1)
+    parser.add_argument('--ip_port_increment_b',
+                        help='ip port increment for endp-b',
+                        default=1)
+    parser.add_argument('--no_cleanup',
+                        help='Do not cleanup before exit',
+                        action='store_true')
+    parser.add_argument('--log_level',
+                        help='Set logging level: debug | info | warning | error | critical',
+                        default=None)
     parser.add_argument('--lf_logger_config_json',
                         help="--lf_logger_config_json <json file> , json configuration of logger")
-    parser.add_argument("--no_pre_cleanup", action="store_true",
-                        help="do not remove connections at start")
-    parser.add_argument('--debug', '-d', default=False, action="store_true", help='Enable debugging')
-
-    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
+    parser.add_argument("--no_pre_cleanup",
+                        help="do not remove connections at start",
+                        action="store_true")
+    parser.add_argument('--debug', '-d',
+                        help='Enable debugging',
+                        default=False,
+                        action="store_true")
+    parser.add_argument('--help_summary',
+                        help='Show summary of what this script does',
+                        default=None,
                         action="store_true")
 
     return parser.parse_args()
