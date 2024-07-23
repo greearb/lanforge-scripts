@@ -171,7 +171,7 @@ class CreateL3(Realm):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
+    parser = LFCliBase.create_bare_argparse(
         prog='create_l3.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -233,12 +233,6 @@ LICENSE:
 
 INCLUDE_IN_README: False
 ''')
-
-    parser.add_argument('--mgr',
-                        help='give the host ip')
-    parser.add_argument('--mgr_port',
-                        help='port LANforge GUI HTTP service is running on',
-                        default=8080)
     parser.add_argument('--min_rate_a',
                         help='--min_rate_a bps rate minimum for side_a',
                         default=56000)
@@ -301,21 +295,8 @@ INCLUDE_IN_README: False
     parser.add_argument('--no_cleanup',
                         help='Do not cleanup before exit',
                         action='store_true')
-    parser.add_argument('--log_level',
-                        help='Set logging level: debug | info | warning | error | critical',
-                        default=None)
-    parser.add_argument('--lf_logger_config_json',
-                        help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument("--no_pre_cleanup",
                         help="do not remove connections at start",
-                        action="store_true")
-    parser.add_argument('--debug', '-d',
-                        help='Enable debugging',
-                        default=False,
-                        action="store_true")
-    parser.add_argument('--help_summary',
-                        help='Show summary of what this script does',
-                        default=None,
                         action="store_true")
 
     return parser.parse_args()
