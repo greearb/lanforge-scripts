@@ -109,7 +109,7 @@ class HTTPProfile(LFCliBase):
 
     def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
                https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None,
-               https_ip=None, interop=None,timeout=10,proxy_auth_type=0x2200,windows_list=[], get_url_from_file=False):
+               https_ip=None, interop=None,media_source=None,media_quality=None,timeout=10,proxy_auth_type=0x2200,windows_list=[], get_url_from_file=False):
         if ports is None:
             ports = []
         cx_post_data = []
@@ -225,10 +225,21 @@ class HTTPProfile(LFCliBase):
                         "proxy_auth_type": 0x200,
                         "quiesce_after": self.quiesce_after
                     }
+                set_endp_data={
+                    "alias": cx_name + str(resource) + "_l4",
+                    "media_source":media_source,
+                    "media_quality":media_quality,
+                    # "media_playbacks":'0'
+                }
                 url = "cli-json/add_l4_endp"
                 self.local_realm.json_post(url, endp_data, debug_=debug_,
                                            suppress_related_commands_=suppress_related_commands_)
                 time.sleep(sleep_time)
+                # If media source and media quality is given then this code will set media source and media quality for CX
+                if media_source and media_quality:
+                    url1="cli-json/set_l4_endp"
+                    self.local_realm.json_post(url1, set_endp_data, debug_=debug_,
+                                            suppress_related_commands_=suppress_related_commands_)
 
                 endp_data = {
                     "alias": "CX_" + cx_name + "_l4",
@@ -271,10 +282,21 @@ class HTTPProfile(LFCliBase):
                         "proxy_auth_type": proxy_auth_type,
                         "quiesce_after": self.quiesce_after
                     }
+                set_endp_data={
+                    "alias": cx_name + str(resource) + "_l4",
+                    "media_source":media_source,
+                    "media_quality":media_quality,
+                    # "media_playbacks":'0'
+                }
                 url = "cli-json/add_l4_endp"
                 self.local_realm.json_post(url, endp_data, debug_=debug_,
                                            suppress_related_commands_=suppress_related_commands_)
                 time.sleep(sleep_time)
+                # If media source and media quality is given then this code will set media source and media quality for CX
+                if media_source and media_quality:
+                    url1="cli-json/set_l4_endp"
+                    self.local_realm.json_post(url1, set_endp_data, debug_=debug_,
+                                            suppress_related_commands_=suppress_related_commands_)
 
                 endp_data = {  # Added resource id to alias and End point name as all real clients have same name(wlan0)
                     "alias": "CX_" + cx_name + str(resource) + "_l4",
