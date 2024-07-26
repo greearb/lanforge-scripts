@@ -1227,7 +1227,7 @@ class RealDevice(Realm):
         return [selected_devices, report_labels, selected_macs]
     
     # getting data of all real devices already configured to an SSID
-    def get_devices(self):
+    def get_devices(self, only_androids = False):
         devices            = []
         devices_data       = {}
         resources          = []
@@ -1252,18 +1252,29 @@ class RealDevice(Realm):
             # TODO: iOS, Add OS version field to output (we keep track of that info already in the GUI)
             # Get OS version based on 'hw version' field
             hw_ver = resource_data_dict['hw version']
-            if 'Win/x86' in hw_ver:
-                os_type = 'windows'
-            elif 'Apple/x86' in hw_ver:
-                os_type = 'macos'
-            elif 'Linux/x86' in hw_ver:
-                os_type = 'linux'
-            else:
-                os_type = 'android'
+            phantom = resource_data_dict['phantom']
+            # It appends only non-phantom  androids into resources list 
+            if only_androids :
+                if not hw_ver.startswith(('Win', 'Linux', 'Apple')) and phantom == False:
+                    os_type = 'android'
+                    resources.append(resource_id)
+                    resources_os_types[resource_id] = os_type
+                    resources_data[resource_id]   = resource_data_dict
 
-            resources.append(resource_id)
-            resources_os_types[resource_id] = os_type
-            resources_data[resource_id]     = resource_data_dict
+            # It appends both androids and laptops into resources list when laptops and android arguments are not passed
+            else:
+                if 'Win/x86' in hw_ver:
+                    os_type = 'windows'
+                elif 'Apple/x86' in hw_ver:
+                    os_type = 'macos'
+                elif 'Linux/x86' in hw_ver:
+                    os_type = 'linux'
+                else:
+                    os_type = 'android'
+
+                resources.append(resource_id)
+                resources_os_types[resource_id] = os_type
+                resources_data[resource_id]     = resource_data_dict
 
 
         # Get ports
