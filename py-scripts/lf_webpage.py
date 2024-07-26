@@ -27,6 +27,11 @@ Command Line Interface to run download scenario on 6GHz band for Virtual clients
 python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.200.165 --sixg_ssid Cisco-6g --sixg_security wpa3 --sixg_passwd sharedsecret 
 --sixg_radio wiphy0 --upstream_port eth1 --duration 1h --bands 6G --client_type Virtual --file_size 2MB --num_stations 3
 
+EXAMPLE-5:
+Command Line Interface to run download scenario for Real clients with device list
+python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.214.219 --fiveg_ssid Cisco-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret  --upstream_port eth1 
+--duration 1m --bands 5G --client_type Real --file_size 2MB --device_list 1.12,1.22
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -43,8 +48,8 @@ Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.30
 STATUS : Functional
 
 VERIFIED_ON: 
-07-SEPTEMBER-2023,
-GUI Version:  5.4.6
+26-JULY-2024,
+GUI Version:  5.4.8
 Kernel Version: 6.2.16+
 
 LICENSE : 
@@ -63,6 +68,7 @@ import paramiko
 from datetime import datetime, timedelta
 import pandas as pd
 import logging
+import shutil
 import json
 from lf_graph import lf_bar_graph_horizontal
 
@@ -85,7 +91,7 @@ from lf_interop_qos import ThroughputQOS
 class HttpDownload(Realm):
     def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password,ap_name,
                  target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None,sixg_radio=None, _debug_on=False, _exit_on_error=False,
-                 _exit_on_fail=False,client_type="",port_list=[],devices_list=[],macid_list=[],lf_username="lanforge",lf_password="lanforge", result_dir="", dowebgui=False, web_ui_device_list=[], test_name=None,
+                 _exit_on_fail=False,client_type="",port_list=[],devices_list=[],macid_list=[],lf_username="lanforge",lf_password="lanforge", result_dir="", dowebgui=False, device_list=[], test_name=None,
                  get_url_from_file=None, file_path=None):
         self.ssid_list = []
         self.devices = []
@@ -110,7 +116,7 @@ class HttpDownload(Realm):
         self.result_dir = result_dir
         self.test_name = test_name
         self.dowebgui = dowebgui
-        self.web_ui_device_list = web_ui_device_list
+        self.device_list = device_list
         self.eid_list = []
         self.devices_list = devices_list
         self.macid_list = []
@@ -145,7 +151,7 @@ class HttpDownload(Realm):
                             password=self.password,
                             security=self.security,
                             tos="BK",
-                            device_list=self.web_ui_device_list
+                            device_list=self.device_list
                             )
         self.port_list,self.devices_list,self.macid_list=object.phantom_check()
         for port in self.port_list:
@@ -320,6 +326,12 @@ class HttpDownload(Realm):
 
     def stop(self):
         self.http_profile.stop_cx()
+        # To update status of devices and remaining_time in ftp_datavalues.csv file to stopped and 0 respectively. 
+        if self.client_type=='Real':
+            self.data["status"] = ["STOPPED"] * len(self.macid_list)
+            self.data["remaining_time"] = ["0"] * len(self.macid_list)
+            df1 = pd.DataFrame(self.data)
+            df1.to_csv("http_datavalues.csv",index=False)
 
     def monitor_for_runtime_csv(self, duration):
 
@@ -335,7 +347,7 @@ class HttpDownload(Realm):
         # self.data["url_data"] = []
         self.data_for_webui = {}
         self.data_for_webui["client"] = self.devices_list
-
+        self.get_device_port_details()
         while (current_time < endtime):
 
             # data in json format
@@ -345,16 +357,27 @@ class HttpDownload(Realm):
             # uc_min_data = self.json_get("layer4/list?fields=uc-min")
             # total_url_data = self.json_get("layer4/list?fields=total-urls")
             # bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
-
+            uc_avg_data = self.my_monitor('uc-avg')
+            uc_max_data = self.my_monitor('uc-max')
+            uc_min_data = self.my_monitor('uc-min')
             url_times = self.my_monitor('total-urls')
-
+            self.data["MAC"] = self.macid_list
+            self.data["SSID"] = self.ssid_list
+            self.data["Channel"] = self.channel_list
+            self.data["Mode"] = self.mode_list
             if len(url_times) == len(self.devices_list):
 
                 self.data["status"] = ["RUNNING"] * len(self.devices_list)
                 self.data["url_data"] = url_times
+                self.data["uc_min"] = uc_min_data
+                self.data["uc_max"] = uc_max_data
+                self.data["uc_avg"] = uc_avg_data
             else:
                 self.data["status"] = ["RUNNING"] * len(self.devices_list)
                 self.data["url_data"] = [0] * len(self.devices_list)
+                self.data["uc_avg"] = [0] * len(self.devices_list)
+                self.data["uc_max"] = [0] * len(self.devices_list)
+                self.data["uc_min"] = [0] * len(self.devices_list)
             time_difference = abs(end_time - datetime.now())
             total_hours = time_difference.total_seconds() / 3600
             remaining_minutes = (total_hours % 1) * 60
@@ -364,7 +387,10 @@ class HttpDownload(Realm):
                 int(remaining_minutes)) + " min" if int(total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][
                                                0]] * len(self.devices_list)
             df1 = pd.DataFrame(self.data)
-            df1.to_csv('{}/http_datavalues.csv'.format(self.result_dir), index=False)
+            if self.dowebgui:
+                df1.to_csv('{}/http_datavalues.csv'.format(self.result_dir), index=False)
+            elif self.client_type =='Real':
+                df1.to_csv("http_datavalues.csv",index=False)
             time.sleep(5)
             if self.dowebgui == "True":
                 with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
@@ -654,6 +680,17 @@ class HttpDownload(Realm):
                                             _label=bands)
         graph_png = graph_2.build_bar_graph_horizontal()
         return graph_png
+    # This function is called to get details of devices during runtime
+    def get_device_port_details(self):
+        self.response_port = self.local_realm.json_get("/port/all")
+        if self.client_type == "Real":
+            self.devices = self.devices_list
+            for interface in self.response_port['interfaces']:
+                for port,port_data in interface.items():
+                    if port in self.port_list:
+                        self.channel_list.append(str(port_data['channel']))
+                        self.mode_list.append(str(port_data['mode']))
+                        self.ssid_list.append(str(port_data['ssid']))
 
     def generate_report(self, date, num_stations, duration, test_setup_info, dataset, lis, bands, threshold_2g,
                         threshold_5g, threshold_both, dataset2,dataset1, #summary_table_value,
@@ -667,6 +704,9 @@ class HttpDownload(Realm):
             report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html",
                                          _output_pdf="Webpage.pdf", _path=report_path)
 
+        # To store http_datavalues.csv in report folder  
+        report_path_date_time = report.get_path_date_time()
+        shutil.move('http_datavalues.csv',report_path_date_time)
         if bands == "Both":
             num_stations = num_stations * 2
         report.set_title("HTTP DOWNLOAD TEST")
@@ -723,7 +763,9 @@ class HttpDownload(Realm):
         report.build_objective()
         self.response_port = self.local_realm.json_get("/port/all")
         #print(response_port)
-        print("port list",self.port_list)
+        # print("port list",self.port_list)
+        # To set channel_list,mode_list,port_list to append once again
+        self.channel_list,self.mode_list,self.ssid_list = [],[],[]
         if self.client_type == "Real":
             self.devices = self.devices_list
             for interface in self.response_port['interfaces']:
@@ -901,6 +943,11 @@ def main():
     Note: The file should contain the the URLs in following mentioned formate 
             formate : "dl https://google.com /dev/null"
       
+    EXAMPLE-6:
+    Command Line Interface to run download scenario for Real clients with device list
+    python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.214.219 --fiveg_ssid Cisco-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret  --upstream_port eth1 
+    --duration 1m --bands 5G --client_type Real --file_size 2MB --device_list 1.12,1.22
+
     Verified CLI:      
     python3 lf_webpage.py --ap_name "Netgear1234" --mgr 192.168.200.38 --fiveg_ssid NETGEAR_5G --fiveg_security wpa2 
     --fiveg_passwd Password@123 --fiveg_radio 1.1.wiphy1 --upstream_port 1.1.eth2 --duration 1m --bands 5G 
@@ -922,8 +969,8 @@ def main():
     STATUS : Functional
 
     VERIFIED_ON: 
-    07-SEPTEMBER-2023,
-    GUI Version:  5.4.6
+    26-JULY-2024,
+    GUI Version:  5.4.8
     Kernel Version: 6.2.16+
 
     LICENSE : 
@@ -984,8 +1031,8 @@ def main():
     optional.add_argument('--result_dir',
                           help='Specify the result dir to store the runtime logs <Do not use in CLI, --used by webui>',
                           default='')
-    optional.add_argument('--web_ui_device_list',
-                          help='Enter the devices on which the test should be run <Do not use in CLI,--used by webui>',
+    optional.add_argument('--web_ui_device_list','--device_list',
+                          help='Enter the devices on which the test should be run <Do not use in CLI,--used by webui>',dest='device_list',
                           default=[])
     optional.add_argument('--test_name',
                           help='Specify test name to store the runtime csv results <Do not use in CLI, --used by webui>',
@@ -1079,7 +1126,7 @@ def main():
                             lf_username=args.lf_username,lf_password=args.lf_password,
                             result_dir=args.result_dir,  # FOR WEBGUI
                             dowebgui=args.dowebgui,  # FOR WEBGUI
-                            web_ui_device_list=args.web_ui_device_list,  # FOR WEBGUI
+                            device_list=args.device_list,  
                             test_name=args.test_name,  # FOR WEBGUI
                             get_url_from_file=args.get_url_from_file,
                             file_path=args.file_path
@@ -1103,6 +1150,9 @@ def main():
         http.start()
         if args.dowebgui:
             # FOR WEBGUI, -This fumction is called to fetch the runtime data from layer-4
+            http.monitor_for_runtime_csv(args.duration)
+        elif args.client_type=='Real':
+            # To fetch runtime csv during runtime
             http.monitor_for_runtime_csv(args.duration)
         else:
             time.sleep(args.duration)
