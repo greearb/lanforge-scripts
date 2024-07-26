@@ -34,6 +34,11 @@ python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mg
 --security wpa2 --twog_radio wiphy1 --directions Upload --clients_type Virtual --ap_name Netgear --bands 2.4G --num_stations 2 
 --upstream_port eth1
 
+EXAMPLE-6:
+Command Line Interface to run download scenario for Real clients with device list
+python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.214.219 --traffic_duration 1m --security wpa2 
+--directions Download --clients_type Real --ap_name Netgear --bands 2.4G --upstream_port eth1 --device_list 1.12,1.22
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -49,8 +54,8 @@ Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.30
 STATUS : Functional
 
 VERIFIED_ON: 
-31-AUGUST-2023,
-GUI Version:  5.4.6
+26-JULY-2024,
+GUI Version:  5.4.8
 Kernel Version: 6.2.16+
 
 LICENSE : 
@@ -71,6 +76,7 @@ import json
 import matplotlib.patches as mpatches
 import pandas as pd
 import logging
+import shutil
 from lf_graph import lf_bar_graph_horizontal
 
 if sys.version_info[0] != 3:
@@ -580,6 +586,12 @@ class FtpTest(LFCliBase):
     def stop(self):
         self.cx_profile.stop_cx()
         self.station_profile.admin_down()
+        # To update status of devices and remaining_time in ftp_datavalues.csv file to stopped and 0 respectively. 
+        if self.clients_type=='Real':
+            self.data["status"] = ["STOPPED"] * len(self.mac_id_list)
+            self.data["remaining_time"] = ["0"] * len(self.mac_id_list)
+            df1 = pd.DataFrame(self.data)
+            df1.to_csv("ftp_datavalues.csv",index=False)
 
     def postcleanup(self):
         self.cx_profile.cleanup()
@@ -672,8 +684,17 @@ class FtpTest(LFCliBase):
             # uc_min_data = self.json_get("layer4/list?fields=uc-min")
             total_url_data = self.json_get("layer4/list?fields=total-urls")
             # bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
+            # Calling function to get devices data to append in ftp_datavalues.csv during runtime
+            self.get_device_details()
             self.data["client"] = self.cx_list
-
+            self.data["MAC"]=self.mac_id_list
+            self.data["Channel"]=self.channel_list
+            self.data["SSID"]=self.ssid_list
+            self.data["Mode"]=self.mode_list
+            self.data['UC-MIN']=self.uc_min
+            self.data['UC-AVG']=self.uc_avg
+            self.data['UC-MAX']=self.uc_max
+            
             if 'endpoint' in total_url_data.keys():
                 # list of layer 4 connections name
                 if type(total_url_data['endpoint']) is dict:
@@ -701,7 +722,10 @@ class FtpTest(LFCliBase):
                     int(remaining_minutes)) + " min" if int(total_hours) != 0 or int(
                     remaining_minutes) != 0 else '<1 min'][0]] * len(self.cx_list)
                 df1 = pd.DataFrame(self.data)
-                df1.to_csv('{}/ftp_datavalues.csv'.format(self.result_dir), index=False)
+                if self.dowebgui:
+                    df1.to_csv('{}/ftp_datavalues.csv'.format(self.result_dir), index=False)
+                if self.clients_type=='Real':
+                    df1.to_csv("ftp_datavalues.csv",index=False)
 
             else:
 
@@ -720,8 +744,70 @@ class FtpTest(LFCliBase):
 
             current_time = datetime.now().isoformat()[0:19]
 
+    # Created a function to get uc-avg,uc,min,uc-max,ssid and all other details of the devices
+    def get_device_details(self):
+        dataset = []
+        self.channel_list,self.mode_list,self.ssid_list,self.uc_avg,self.uc_max,self.url_data,self.uc_min,self.bytes_rd=[],[],[],[],[],[],[],[]
+        if self.clients_type == "Real":
+            response_port = self.json_get("/port/all")
+            for interface in response_port['interfaces']:
+                for port,port_data in interface.items():
+                    if port in self.input_devices_list:
+                        self.channel_list.append(str(port_data['channel']))
+                        self.mode_list.append(str(port_data['mode']))
+                        self.ssid_list.append(str(port_data['ssid']))
+
+        # data in json format
+        #data = self.json_get("layer4/list?fields=bytes-rd")
+        uc_avg_data = self.json_get("layer4/list?fields=uc-avg")
+        uc_max_data = self.json_get("layer4/list?fields=uc-max")
+        uc_min_data = self.json_get("layer4/list?fields=uc-min")
+        total_url_data = self.json_get("layer4/list?fields=total-urls")
+        bytes_rd = self.json_get("layer4/list?fields=bytes-rd") 
+
+
+        if 'endpoint' in uc_avg_data.keys():
+            # list of layer 4 connections name
+            if type(uc_avg_data['endpoint']) is dict:
+                self.uc_avg.append(uc_avg_data['endpoint']['uc-avg'])
+                self.uc_max.append(uc_max_data['endpoint']['uc-max'])
+                self.uc_min.append(uc_min_data['endpoint']['uc-min'])
+                #reading uc-avg data in json format
+                self.url_data.append(total_url_data['endpoint']['total-urls'])
+                dataset.append(bytes_rd['endpoint']['bytes-rd'])
+                self.bytes_rd=[float(f"{(i / 1000000): .4f}") for i in dataset]            
+            else:
+                for cx in uc_avg_data['endpoint']:
+                    for CX in cx:
+                        for created_cx in self.cx_list:
+                            if CX == created_cx:
+                                self.uc_avg.append(cx[CX]['uc-avg'])
+                for cx in uc_max_data['endpoint']:
+                    for CX in cx:
+                        for created_cx in self.cx_list:
+                            if CX == created_cx:
+                                self.uc_max.append(cx[CX]['uc-max'])
+                for cx in uc_min_data['endpoint']:
+                    for CX in cx:
+                        for created_cx in self.cx_list:
+                            if CX == created_cx:
+                                self.uc_min.append(cx[CX]['uc-min'])
+                for cx in total_url_data['endpoint']:
+                    for CX in cx:
+                        for created_cx in self.cx_list:
+                            if CX == created_cx:                
+                                self.url_data.append(cx[CX]['total-urls'])
+                for cx in bytes_rd['endpoint']:
+                    for CX in cx:
+                        for created_cx in self.cx_list:
+                            if CX == created_cx:    
+                                dataset.append(cx[CX]['bytes-rd'])
+                                self.bytes_rd=[float(f"{(i / 1000000): .4f}") for i in dataset]
+
+
     def my_monitor(self):
         dataset = []
+        self.channel_list,self.mode_list,self.ssid_list,self.uc_avg,self.uc_max,self.url_data,self.uc_min,self.bytes_rd=[],[],[],[],[],[],[],[]
         if self.clients_type == "Virtual":
             response_port = self.json_get("/port/all")
             for interface in response_port['interfaces']:
@@ -1257,6 +1343,11 @@ class FtpTest(LFCliBase):
         else:
             self.report = lf_report.lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html",
                                               _output_pdf="ftp_test.pdf", _path=report_path)
+
+        # To move ftp_datavalues.csv in report folder  
+        report_path_date_time = self.report.get_path_date_time()
+        shutil.move('ftp_datavalues.csv',report_path_date_time)
+
         self.report.set_title("FTP Test")
         self.report.set_date(date)
         self.report.build_banner()
@@ -1626,6 +1717,11 @@ python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mg
 --security wpa2 --twog_radio wiphy1 --directions Upload --clients_type Virtual --ap_name Netgear --bands 2.4G --num_stations 2 
 --upstream_port eth1
 
+EXAMPLE-6:
+Command Line Interface to run download scenario for Real clients with device list
+python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.214.219 --traffic_duration 1m --security wpa2 
+--directions Download --clients_type Real --ap_name Netgear --bands 2.4G --upstream_port eth1 --device_list 1.12,1.22
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -1641,8 +1737,8 @@ Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.30
 STATUS : Functional
 
 VERIFIED_ON: 
-31-AUGUST-2023,
-GUI Version:  5.4.6
+26-JULY-2024,
+GUI Version:  5.4.8
 Kernel Version: 6.2.16+
 
 LICENSE : 
@@ -1840,9 +1936,8 @@ INCLUDE_IN_README: False
                 time1 = datetime.now()
                 print("Traffic started running at ",time1)
                 obj.start(False, False)
-
-                # FOR WEB-UI // to fetch runtime values during the execution and fill the csv.
-                if args.dowebgui:
+                # to fetch runtime values during the execution and fill the csv.
+                if args.dowebgui or args.clients_type=="Real":
                     obj.monitor_for_runtime_csv()
                 else:
                     time.sleep(args.traffic_duration)
