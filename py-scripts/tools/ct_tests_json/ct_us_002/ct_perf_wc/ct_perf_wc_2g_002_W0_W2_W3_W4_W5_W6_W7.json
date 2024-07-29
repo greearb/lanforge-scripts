@@ -47,7 +47,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1,8,16,32,64 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_ATH10K_9984_2G_W0'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_ATH9K_2G_W2":{
@@ -88,7 +89,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1,8,16,32,64 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_ATH9K_2G_W2'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_ATH10K_998x_2G_W3":{
@@ -129,7 +131,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1,8,16,32,64 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_ATH10K_998x_2G_W3'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_AX200_2G_W4":{
@@ -170,7 +173,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_AX200_2G_W4'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_A210_2G_W5":{
@@ -211,7 +215,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_AX210_2G_W5'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "CC_DUT_MTK7922_2G_AC_W6":{
@@ -338,7 +343,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'WC_MTK7915_2G_W7'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
                 ]
             },
             "lf_qa":{
