@@ -48,8 +48,8 @@
     STATUS: BETA RELEASE
 
     VERIFIED_ON:
-    Working date - 01/07/2023
-    Build version - 5.4.6
+    Working date - 26/07/2023
+    Build version - 5.4.8
     kernel version - 6.2.16+
 
     License: Free to distribute and modify. LANforge systems must be licensed.
@@ -414,98 +414,155 @@ class ThroughputQOS(Realm):
          range(len(self.cx_profile.created_cx))]
         if self.dowebgui == "True":
             runtime_dir = self.result_dir
+        # added a dictionary to store real time data
+        self.real_time_data = {}
+        for endp in connections_download_realtime.keys():
+                self.real_time_data.update(
+                    {
+                        endp : {
+                            'BE': {
+                                'time': [],
+                                'bps rx a': [],
+                                'bps rx b': [],
+                                'rx drop % a': [],
+                                'rx drop % b': []
+                            },
+                            'BK': {
+                                'time': [],
+                                'bps rx a': [],
+                                'bps rx b': [],
+                                'rx drop % a': [],
+                                'rx drop % b': []
+                            },
+                            'VI': {
+                                'time': [],
+                                'bps rx a': [],
+                                'bps rx b': [],
+                                'rx drop % a': [],
+                                'rx drop % b': []
+                            },
+                            'VO': {
+                                'time': [],
+                                'bps rx a': [],
+                                'bps rx b': [],
+                                'rx drop % a': [],
+                                'rx drop % b': []                                
+                            }
+                        }
+                    }
+                )
         while datetime.now() < end_time:
             index += 1
-            response = list(
-                self.json_get('/cx/%s?fields=%s' % (
-                    ','.join(self.cx_profile.created_cx.keys()), ",".join(['bps rx a', 'bps rx b', 'rx drop %25 a', 'rx drop %25 b']))).values())[2:]
-            throughput[index] = list(
-                map(lambda i: [x for x in i.values()], response))
+            # removed the fields query from endp so that the cx names will be given in the reponse as keys instead of cx_ids
+            response = self.json_get('/cx/%s?' % (
+                    ','.join(self.cx_profile.created_cx.keys())))
+            del response['handler'], response['uri']
+            t_response = {}
+            for item in response.items():
+                cx_name, cx_data = item
+                t_response[cx_name] = []
+                for key in cx_data.keys():
+                    if key in ['bps rx a', 'bps rx b', 'rx drop % a', 'rx drop % b']:
+                        t_response[cx_name].append(cx_data[key])
+                    traffic_tos = cx_name.split('_')[-1].split('-')[0]
+                    self.real_time_data[cx_name][traffic_tos]['time'].append(datetime.now().strftime('%H:%M:%S'))
+                    self.real_time_data[cx_name][traffic_tos]['bps rx a'].append(cx_data['bps rx a']/1000000)
+                    self.real_time_data[cx_name][traffic_tos]['bps rx b'].append(cx_data['bps rx b']/1000000)
+                    self.real_time_data[cx_name][traffic_tos]['rx drop % a'].append(cx_data['rx drop % a'])
+                    self.real_time_data[cx_name][traffic_tos]['rx drop % b'].append(cx_data['rx drop % b'])
+            response = t_response
+            response_values = list(response.values())
+            for value_index in range(len(response.values())):
+                throughput[value_index] = response_values[value_index]
+            temp_upload = []
+            temp_download = []
+            temp_drop_a = []
+            temp_drop_b = []
+            for i in range(len(self.cx_profile.created_cx)):
+                temp_upload.append([])
+                temp_download.append([])
+                temp_drop_a.append([])
+                temp_drop_b.append([])
+            for i in range(len(throughput)):
+                temp_upload[i].append(throughput[i][1])
+                temp_download[i].append(throughput[i][0])
+                temp_drop_a[i].append(throughput[i][2])
+                temp_drop_b[i].append(throughput[i][3])
+            upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in temp_upload]
+            download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in temp_download]
+            drop_a_per = [float(round(sum(i) / len(i), 2)) for i in temp_drop_a]
+            drop_b_per = [float(round(sum(i) / len(i), 2)) for i in temp_drop_b]
+            keys = list(connections_upload_realtime.keys())
+            keys = list(connections_download_realtime.keys())
+            for i in range(len(download_throughput)):
+                connections_download_realtime.update({keys[i]: float(f"{(download_throughput[i]):.2f}")})
+            for i in range(len(upload_throughput)):
+                connections_upload_realtime.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
+            real_time_qos = self.evaluate_qos(connections_download_realtime, connections_upload_realtime,
+                                                drop_a_per, drop_b_per)
+            time_difference = abs(end_time - datetime.now())
+            total_hours = time_difference.total_seconds() / 3600
+            remaining_minutes = (total_hours % 1) * 60
+            for key1, key2 in zip(real_time_qos[0], real_time_qos[1]):
+                if self.direction == "Bi-direction":
+                    self.overall.append({
+                        "BE_dl": real_time_qos[0][key1]["beQOS"],
+                        "BE_ul": real_time_qos[1][key2]["beQOS"],
+                        "BK_dl": real_time_qos[0][key1]["bkQOS"],
+                        "BK_ul": real_time_qos[1][key2]["bkQOS"],
+                        "VI_dl": real_time_qos[0][key1]["videoQOS"],
+                        "VI_ul": real_time_qos[1][key2]["videoQOS"],
+                        "VO_dl": real_time_qos[0][key1]["voiceQOS"],
+                        "VO_ul": real_time_qos[1][key2]["voiceQOS"],
+                        "timestamp": datetime.now().strftime("%d/%m %I:%M:%S %p"),
+                        "start_time": start_time.strftime("%d/%m %I:%M:%S %p"),
+                        "end_time": end_time.strftime("%d/%m %I:%M:%S %p"),
+                        "remaining_time": [
+                            str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
+                                total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
+                        'status': 'Running'
+                    })
+                elif self.direction == "Upload":
+                    self.overall.append({
+                        "BE_dl": 0,
+                        "BE_ul": real_time_qos[1][key2]["beQOS"],
+                        "BK_dl": 0,
+                        "BK_ul": real_time_qos[1][key2]["bkQOS"],
+                        "VI_dl": 0,
+                        "VI_ul": real_time_qos[1][key2]["videoQOS"],
+                        "VO_dl": 0,
+                        "VO_ul": real_time_qos[1][key2]["voiceQOS"],
+                        "timestamp": datetime.now().strftime("%d/%m %I:%M:%S %p"),
+                        "start_time": start_time.strftime("%d/%m %I:%M:%S %p"),
+                        "end_time": end_time.strftime("%d/%m %I:%M:%S %p"),
+                        "remaining_time": [
+                            str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
+                                total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
+                        'status': 'Running'
+                    })
+                else:
+                    self.overall.append({
+                        "BE_dl": real_time_qos[0][key1]["beQOS"],
+                        "BE_ul": 0,
+                        "BK_dl": real_time_qos[0][key1]["bkQOS"],
+                        "BK_ul": 0,
+                        "VI_dl": real_time_qos[0][key1]["videoQOS"],
+                        "VI_ul": 0,
+                        "VO_dl": real_time_qos[0][key1]["voiceQOS"],
+                        "VO_ul": 0,
+                        "timestamp": datetime.now().strftime("%d/%m %I:%M:%S %p"),
+                        "start_time": start_time.strftime("%d/%m %I:%M:%S %p"),
+                        "end_time": end_time.strftime("%d/%m %I:%M:%S %p"),
+                        "remaining_time": [
+                            str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
+                                total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
+                        'status': 'Running'
+                    })
             if self.dowebgui == "True":
-                temp_upload, temp_download, temp_drop_a, temp_drop_b = [], [], [], []
-                [(temp_upload.append([]), temp_download.append([]), temp_drop_a.append([]), temp_drop_b.append([])) for
-                 i in range(len(self.cx_profile.created_cx))]
-                for i in range(len(throughput[index])):
-                    temp_upload[i].append(throughput[index][i][1])
-                    temp_download[i].append(throughput[index][i][0])
-                    temp_drop_a[i].append(throughput[index][i][2])
-                    temp_drop_b[i].append(throughput[index][i][3])
-                upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in temp_upload]
-                download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in temp_download]
-                drop_a_per = [float(round(sum(i) / len(i), 2)) for i in temp_drop_a]
-                drop_b_per = [float(round(sum(i) / len(i), 2)) for i in temp_drop_b]
-                keys = list(connections_upload_realtime.keys())
-                keys = list(connections_download_realtime.keys())
-                for i in range(len(download_throughput)):
-                    connections_download_realtime.update({keys[i]: float(f"{(download_throughput[i]):.2f}")})
-                for i in range(len(upload_throughput)):
-                    connections_upload_realtime.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
-
-                real_time_qos = self.evaluate_qos(connections_download_realtime, connections_upload_realtime,
-                                                  drop_a_per, drop_b_per)
-                time_difference = abs(end_time - datetime.now())
-                total_hours = time_difference.total_seconds() / 3600
-                remaining_minutes = (total_hours % 1) * 60
-                for key1, key2 in zip(real_time_qos[0], real_time_qos[1]):
-                    if self.direction == "Bi-direction":
-                        self.overall.append({
-                            "BE_dl": real_time_qos[0][key1]["beQOS"],
-                            "BE_ul": real_time_qos[1][key2]["beQOS"],
-                            "BK_dl": real_time_qos[0][key1]["bkQOS"],
-                            "BK_ul": real_time_qos[1][key2]["bkQOS"],
-                            "VI_dl": real_time_qos[0][key1]["videoQOS"],
-                            "VI_ul": real_time_qos[1][key2]["videoQOS"],
-                            "VO_dl": real_time_qos[0][key1]["voiceQOS"],
-                            "VO_ul": real_time_qos[1][key2]["voiceQOS"],
-                            "timestamp": datetime.now().strftime("%d/%m %I:%M:%S %p"),
-                            "start_time": start_time.strftime("%d/%m %I:%M:%S %p"),
-                            "end_time": end_time.strftime("%d/%m %I:%M:%S %p"),
-                            "remaining_time": [
-                                str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
-                                    total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
-                            'status': 'Running'
-                        })
-                    elif self.direction == "Upload":
-                        self.overall.append({
-                            "BE_dl": 0,
-                            "BE_ul": real_time_qos[1][key2]["beQOS"],
-                            "BK_dl": 0,
-                            "BK_ul": real_time_qos[1][key2]["bkQOS"],
-                            "VI_dl": 0,
-                            "VI_ul": real_time_qos[1][key2]["videoQOS"],
-                            "VO_dl": 0,
-                            "VO_ul": real_time_qos[1][key2]["voiceQOS"],
-                            "timestamp": datetime.now().strftime("%d/%m %I:%M:%S %p"),
-                            "start_time": start_time.strftime("%d/%m %I:%M:%S %p"),
-                            "end_time": end_time.strftime("%d/%m %I:%M:%S %p"),
-                            "remaining_time": [
-                                str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
-                                    total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
-                            'status': 'Running'
-                        })
-                    else:
-                        self.overall.append({
-                            "BE_dl": real_time_qos[0][key1]["beQOS"],
-                            "BE_ul": 0,
-                            "BK_dl": real_time_qos[0][key1]["bkQOS"],
-                            "BK_ul": 0,
-                            "VI_dl": real_time_qos[0][key1]["videoQOS"],
-                            "VI_ul": 0,
-                            "VO_dl": real_time_qos[0][key1]["voiceQOS"],
-                            "VO_ul": 0,
-                            "timestamp": datetime.now().strftime("%d/%m %I:%M:%S %p"),
-                            "start_time": start_time.strftime("%d/%m %I:%M:%S %p"),
-                            "end_time": end_time.strftime("%d/%m %I:%M:%S %p"),
-                            "remaining_time": [
-                                str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
-                                    total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
-                            'status': 'Running'
-                        })
                 df1 = pd.DataFrame(self.overall)
                 df1.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
 
-                with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
-                          'r') as file:
+                with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name), 'r') as file:
                     data = json.load(file)
                     if data["status"] != "Running":
                         logger.warning('Test is stopped by the user')
@@ -546,13 +603,10 @@ class ThroughputQOS(Realm):
                 time.sleep(1)
         # # rx_rate list is calculated
         for index, key in enumerate(throughput):
-            for i in range(len(throughput[key])):
-                upload[i].append(throughput[key][i][1])
-                download[i].append(throughput[key][i][0])
-                drop_a[i].append(throughput[key][i][2])
-                drop_b[i].append(throughput[key][i][3])
-        print("Upload values", upload)
-        print("Download Values", download)
+            upload[index].append(throughput[index][1])
+            download[index].append(throughput[index][0])
+            drop_a[index].append(throughput[index][2])
+            drop_b[index].append(throughput[index][3])
         upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
         drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
@@ -564,8 +618,6 @@ class ThroughputQOS(Realm):
             connections_download.update({keys[i]: float(f"{(download_throughput[i] ):.2f}")})
         for i in range(len(upload_throughput)):
             connections_upload.update({keys[i]: float(f"{(upload_throughput[i] ):.2f}")})
-        print("upload: ", upload_throughput)
-        print("download: ", download_throughput)
         logger.info("connections download {}".format(connections_download))
         logger.info("connections {}".format(connections_upload))
 
@@ -591,11 +643,12 @@ class ThroughputQOS(Realm):
         if int(self.cx_profile.side_a_min_bps) != 0:
             case_upload = str(int(self.cx_profile.side_a_min_bps) / 1000000)
         if len(self.cx_profile.created_cx.keys()) > 0:
-            endp_data = self.json_get('endp/all?fields=name,tx+pkts+ll,rx+pkts+ll,delay')
+            # added tos value in the fields query
+            endp_data = self.json_get('endp/all?fields=name,tx+pkts+ll,rx+pkts+ll,delay,tos')
             endp_data.pop("handler")
             endp_data.pop("uri")
             if('endpoint' not in endp_data.keys()):
-                logging.warning('Malformed response for /endp/all?fields=name,tx+pkts+ll,rx+pkts+ll,delay')
+                logging.warning('Malformed response for /endp/all?fields=name,tx+pkts+ll,rx+pkts+ll,delay,tos')
             else:
                 endps = endp_data['endpoint']
                 if int(self.cx_profile.side_b_min_bps) != 0:
@@ -611,60 +664,18 @@ class ThroughputQOS(Realm):
                     #         rx_endps_download.update(endps[i])
                     for sta in self.cx_profile.created_cx.keys():
                         temp = sta.rsplit('-', 1)
+                        current_tos = temp[0].split('_')[-1] # slicing TOS from CX name
                         temp = int(temp[1])
-                        if temp in range(0, len(self.input_devices_list)):
-                            if int(self.cx_profile.side_b_min_bps) != 0:
-                                tos_download[self.tos[0]].append(connections_download[sta])
-                                tos_drop_dict['rx_drop_a'][self.tos[0]].append(drop_a_per[temp])
-                                tx_b_download[self.tos[0]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_download[self.tos[0]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
-                            else:
-                                tos_download[self.tos[0]].append(float(0))
-                                tos_drop_dict['rx_drop_a'][self.tos[0]].append(float(0))
-                                tx_b_download[self.tos[0]].append(int(0))
-                                rx_a_download[self.tos[0]].append(int(0))
-                        elif temp in range(len(self.input_devices_list), 2 * len(self.input_devices_list)):
-                            if len(self.tos) < 2:
-                                break
-                            else:
-                                if int(self.cx_profile.side_b_min_bps) != 0:
-                                    tos_download[self.tos[1]].append(connections_download[sta])
-                                    tos_drop_dict['rx_drop_a'][self.tos[1]].append(drop_a_per[temp])
-                                    tx_b_download[self.tos[1]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                                    rx_a_download[self.tos[1]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
-                                else:
-                                    tos_download[self.tos[1]].append(float(0))
-                                    tos_drop_dict['rx_drop_a'][self.tos[1]].append(float(0))
-                                    tx_b_download[self.tos[1]].append(int(0))
-                                    rx_a_download[self.tos[1]].append(int(0))
-                        elif temp in range(2 * len(self.input_devices_list), 3 * len(self.input_devices_list)):
-                            if len(self.tos) < 3:
-                                break
-                            else:
-                                if int(self.cx_profile.side_b_min_bps) != 0:
-                                    tos_download[self.tos[2]].append(connections_download[sta])
-                                    tos_drop_dict['rx_drop_a'][self.tos[2]].append(drop_a_per[temp])
-                                    tx_b_download[self.tos[2]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                                    rx_a_download[self.tos[2]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
-                                else:
-                                    tos_download[self.tos[2]].append(float(0))
-                                    tos_drop_dict['rx_drop_a'][self.tos[2]].append(float(0))
-                                    tx_b_download[self.tos[2]].append(int(0))
-                                    rx_a_download[self.tos[2]].append(int(0))
-                        elif temp in range(3 * len(self.input_devices_list), 4 * len(self.input_devices_list)):
-                            if len(self.tos) < 4:
-                                break
-                            else:
-                                if int(self.cx_profile.side_b_min_bps) != 0:
-                                    tos_download[self.tos[3]].append(connections_download[sta])
-                                    tos_drop_dict['rx_drop_a'][self.tos[3]].append(drop_a_per[temp])
-                                    tx_b_download[self.tos[3]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                                    rx_a_download[self.tos[3]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
-                                else:
-                                    tos_download[self.tos[3]].append(float(0))
-                                    tos_drop_dict['rx_drop_a'][self.tos[3]].append(float(0))
-                                    tx_b_download[self.tos[3]].append(int(0))
-                                    rx_a_download[self.tos[3]].append(int(0))
+                        if int(self.cx_profile.side_b_min_bps) != 0:
+                                tos_download[current_tos].append(connections_download[sta])
+                                tos_drop_dict['rx_drop_a'][current_tos].append(drop_a_per[temp])
+                                tx_b_download[current_tos].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_download[current_tos].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                        else:
+                            tos_download[current_tos].append(float(0))
+                            tos_drop_dict['rx_drop_a'][current_tos].append(float(0))
+                            tx_b_download[current_tos].append(int(0))
+                            rx_a_download[current_tos].append(int(0))
                     tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
                     tos_download.update({"beQOS": float(f"{sum(tos_download['BE']):.2f}")})
                     tos_download.update({"videoQOS": float(f"{sum(tos_download['VI']):.2f}")})
@@ -684,61 +695,18 @@ class ThroughputQOS(Realm):
                     #         rx_endps_upload.update(endps[i])
                     for sta in self.cx_profile.created_cx.keys():
                         temp = sta.rsplit('-', 1)
+                        current_tos = temp[0].split('_')[-1]
                         temp = int(temp[1])
-                        if temp in range(0, len(self.input_devices_list)):
-                            if int(self.cx_profile.side_a_min_bps) != 0:
-                                tos_upload[self.tos[0]].append(connections_upload[sta])
-                                tos_drop_dict['rx_drop_b'][self.tos[0]].append(drop_b_per[temp])
-                                tx_b_upload[self.tos[0]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_upload[self.tos[0]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
-                            else:
-                                tos_upload[self.tos[0]].append(float(0))
-                                tos_drop_dict['rx_drop_b'][self.tos[0]].append(float(0))
-                                tx_b_upload[self.tos[0]].append(int(0))
-                                rx_a_upload[self.tos[0]].append(int(0))
-                        elif temp in range(len(self.input_devices_list), 2 * len(self.input_devices_list)):
-                            if len(self.tos) < 2:
-                                break
-                            else:
-                                if int(self.cx_profile.side_a_min_bps) != 0:
-                                    tos_upload[self.tos[1]].append(connections_upload[sta])
-                                    tos_drop_dict['rx_drop_b'][self.tos[1]].append(drop_b_per[temp])
-                                    tx_b_upload[self.tos[1]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                                    rx_a_upload[self.tos[1]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
-                                else:
-                                    tos_upload[self.tos[i+1]].append(float(0))
-                                    tos_drop_dict['rx_drop_b'][self.tos[1]].append(float(0))
-                                    tx_b_upload[self.tos[1]].append(int(0))
-                                    rx_a_upload[self.tos[1]].append(int(0))
-                        elif temp in range(2 * len(self.input_devices_list), 3 * len(self.input_devices_list)):
-                            if len(self.tos) < 3:
-                                break
-                            else:
-                                if int(self.cx_profile.side_a_min_bps) != 0:
-                                    tos_upload[self.tos[2]].append(connections_upload[sta])
-                                    tos_drop_dict['rx_drop_b'][self.tos[2]].append(drop_b_per[temp])
-                                    tx_b_upload[self.tos[2]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                                    rx_a_upload[self.tos[2]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
-                                else:
-                                    tos_upload[self.tos[2]].append(float(0))
-                                    tos_drop_dict['rx_drop_b'][self.tos[2]].append(float(0))
-                                    tx_b_upload[self.tos[2]].append(int(0))
-                                    rx_a_upload[self.tos[2]].append(int(0))
-                        elif temp in range(3 * len(self.input_devices_list), 4 * len(self.input_devices_list)):
-                            if len(self.tos) < 4:
-                                break
-                            else:
-                                if int(self.cx_profile.side_a_min_bps) != 0:
-                                    tos_upload[self.tos[3]].append(connections_upload[sta])
-                                    tos_drop_dict['rx_drop_b'][self.tos[3]].append(drop_b_per[temp])
-                                    tx_b_upload[self.tos[3]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                                    rx_a_upload[self.tos[3]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
-                                else:
-                                    tos_upload[self.tos[3]].append(float(0))
-                                    tos_drop_dict['rx_drop_b'][self.tos[3]].append(float(0))
-                                    tx_b_upload[self.tos[3]].append(int(0))
-                                    rx_a_upload[self.tos[3]].append(int(0))
-                    
+                        if int(self.cx_profile.side_a_min_bps) != 0:
+                                tos_upload[current_tos].append(connections_upload[sta])
+                                tos_drop_dict['rx_drop_b'][current_tos].append(drop_b_per[temp])
+                                tx_b_upload[current_tos].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_upload[current_tos].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                        else:
+                            tos_upload[current_tos].append(float(0))
+                            tos_drop_dict['rx_drop_b'][current_tos].append(float(0))
+                            tx_b_upload[current_tos].append(int(0))
+                            rx_a_upload[current_tos].append(int(0))
                     tos_upload.update({"bkQOS": float(f"{sum(tos_upload['BK']):.2f}")})
                     tos_upload.update({"beQOS": float(f"{sum(tos_upload['BE']):.2f}")})
                     tos_upload.update({"videoQOS": float(f"{sum(tos_upload['VI']):.2f}")})
@@ -1310,6 +1278,16 @@ class ThroughputQOS(Realm):
                 logger.info("Graph and table for VO tos are built")
         else:
             print("No individual graph to generate.")
+        # storing overall throughput CSV in the report directory
+        logger.info('Storing real time values in a CSV')
+        df1 = pd.DataFrame(self.overall)
+        df1.to_csv('{}/overall_throughput.csv'.format(report.path_date_time))
+        # storing real time data for CXs in seperate CSVs
+        for cx in self.real_time_data:
+            for tos in self.real_time_data[cx]:
+                if tos in self.tos and len(self.real_time_data[cx][tos]['time']) != 0:
+                    cx_df = pd.DataFrame(self.real_time_data[cx][tos])
+                    cx_df.to_csv('{}/{}_{}_realtime_data.csv'.format(report.path_date_time, cx, tos), index=False)
 
 def main():
     help_summary = '''\
@@ -1377,8 +1355,8 @@ def main():
         STATUS: BETA RELEASE
 
         VERIFIED_ON:
-        Working date - 01/07/2023
-        Build version - 5.4.6
+        Working date - 26/07/2023
+        Build version - 5.4.8
         kernel version - 6.2.16+
 
         License: Free to distribute and modify. LANforge systems must be licensed.
