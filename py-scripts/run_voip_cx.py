@@ -367,7 +367,7 @@ class VoipReport():
                 logger.error(pprint(['exception:', e, e_w_list]))
 
 
-    def __query_voip_cxs(self, cx_list: list[str], columns: list[str] = ["name"]):
+    def __query_voip_cxs(self, cx_list: list, columns: list = ["name"]):
         """Query and return all VoIP CXs."""
         e_w_list: list = []
         lf_query: LFJsonQuery = self.lfsession.get_query()
@@ -388,7 +388,7 @@ class VoipReport():
         return response
 
 
-    def __query_voip_endps(self, endp_list: list[str], columns: list[str] = ["name"]):
+    def __query_voip_endps(self, endp_list: list, columns: list = ["name"]):
         """Query and return all VoIP endpoints."""
         e_w_list: list = []
         lf_query: LFJsonQuery = self.lfsession.get_query()
