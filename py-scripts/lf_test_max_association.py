@@ -144,7 +144,7 @@ class WiphyInfo:
         self.max_vifs = max_vifs
 
 
-def query_radio_information(mgr: str = "localhost", mgr_port: int = 8080) -> dict[WiphyInfo]:
+def query_radio_information(mgr: str = "localhost", mgr_port: int = 8080) -> dict:
     """
     Queries specified LANforge manager for general information on all radios in testbed.
 
@@ -195,7 +195,7 @@ def query_radio_information(mgr: str = "localhost", mgr_port: int = 8080) -> dic
     return radio_info
 
 
-def build_wiphy_info_df(wiphy_info: dict[WiphyInfo]) -> pandas.DataFrame:
+def build_wiphy_info_df(wiphy_info: dict) -> pandas.DataFrame:
     """
     Convert dictionary of radio information to a DataFrame
 
