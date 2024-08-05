@@ -317,8 +317,8 @@ class CreateStation(Realm):
                  bssid=None,
                  security=None,
                  password=None,
-                 host=None,
-                 port=None,
+                 mgr=None,
+                 mgr_port=None,
                  mode=0,
                  eap_method=None,
                  eap_identity=None,
@@ -336,17 +336,17 @@ class CreateStation(Realm):
                  sta_flags=None,
                  number_template="00000",
                  radio="wiphy0",
-                 proxy_str=None,
-                 debug_on=False,
+                 proxy=None,
+                 debug=False,
                  up=True,
                  set_txo_date=None,
                  exit_on_error=False,
                  exit_on_fail=False,
                  custom_wifi_cmd=False):
-        super().__init__(host,
-                         port)
-        self.host           = host
-        self.port           = port
+        super().__init__(mgr,
+                         mgr_port)
+        self.host           = mgr
+        self.port           = mgr_port
         self.ssid           = ssid
         self.bssid          = bssid
         self.security       = security
@@ -394,7 +394,7 @@ class CreateStation(Realm):
         self.radio                  = radio
         self.timeout                = 120
         self.number_template        = number_template
-        self.debug                  = debug_on
+        self.debug                  = debug
         self.up                     = up
         self.set_txo_data           = set_txo_date
         self.custom_wifi_cmd        = custom_wifi_cmd
@@ -989,8 +989,8 @@ def main():
 
     logger.info("Stations to create: {}".format(station_list))
 
-    create_station = CreateStation(host=args.mgr,
-                                   port=args.mgr_port,
+    create_station = CreateStation(mgr=args.mgr,
+                                   mgr_port=args.mgr_port,
                                    bssid=args.bssid,
                                    ssid=args.ssid,
                                    password=args.passwd,
@@ -1013,9 +1013,9 @@ def main():
                                    radio=args.radio,
                                    up=(not args.create_admin_down),
                                    set_txo_date=None,
-                                   proxy_str=args.proxy,
+                                   proxy=args.proxy,
                                    custom_wifi_cmd=args.custom_wifi_cmd,
-                                   debug_on=args.debug)
+                                   debug=args.debug)
     
     if not args.no_pre_cleanup:
         create_station.cleanup()
