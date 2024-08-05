@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import argparse
 import importlib
 import sys
@@ -5,7 +6,7 @@ import os
 
 # Get LANforge scripts path from environment variable 'LF_PYSCRIPTS'
 if 'LF_SCRIPTS' not in os.environ:
-    print("ERROR: Environment variable \'LF_SCRIPTS\' not defined")
+    print("ERROR: Environment variable \'LF_SCRIPTS\' not defined. See README for more information.")
     exit(1)
 LF_SCRIPTS = os.environ['LF_SCRIPTS']
 
