@@ -313,91 +313,91 @@ class CreateStation(Realm):
 
 
     def __init__(self,
-                 _ssid=None,
-                 _bssid=None,
-                 _security=None,
-                 _password=None,
-                 _host=None,
-                 _port=None,
-                 _mode=0,
-                 _eap_method=None,
-                 _eap_identity=None,
-                 _eap_anonymous_identity="[BLANK]",
-                 _eap_password=None,
-                 _eap_phase1="[BLANK]",
-                 _eap_phase2="[BLANK]",
-                 _pk_passwd=None,
-                 _ca_cert=None,
-                 _private_key=None,
-                 _key_mgmt=None,
-                 _pairwise_cipher=None,
-                 _groupwise_cipher=None,
-                 _sta_list=None,
-                 _sta_flags=None,
-                 _number_template="00000",
-                 _radio="wiphy0",
-                 _proxy_str=None,
-                 _debug_on=False,
-                 _up=True,
-                 _set_txo_data=None,
-                 _exit_on_error=False,
-                 _exit_on_fail=False,
-                 _custom_wifi_cmd=False):
-        super().__init__(_host,
-                         _port)
-        self.host           = _host
-        self.port           = _port
-        self.ssid           = _ssid
-        self.bssid          = _bssid
-        self.security       = _security
-        self.password       = _password
-        self.mode           = _mode
-        if _mode:
-            if str.isalpha(_mode):
-                self.mode = add_sta.add_sta_modes[_mode];
+                 ssid=None,
+                 bssid=None,
+                 security=None,
+                 password=None,
+                 host=None,
+                 port=None,
+                 mode=0,
+                 eap_method=None,
+                 eap_identity=None,
+                 eap_anonymous_identity="[BLANK]",
+                 eap_password=None,
+                 eap_phase1="[BLANK]",
+                 eap_phase2="[BLANK]",
+                 pk_passwd=None,
+                 ca_cert=None,
+                 private_key=None,
+                 key_mgmt=None,
+                 pairwise_cipher=None,
+                 groupwise_cipher=None,
+                 sta_list=None,
+                 sta_flags=None,
+                 number_template="00000",
+                 radio="wiphy0",
+                 proxy_str=None,
+                 debug_on=False,
+                 up=True,
+                 set_txo_date=None,
+                 exit_on_error=False,
+                 exit_on_fail=False,
+                 custom_wifi_cmd=False):
+        super().__init__(host,
+                         port)
+        self.host           = host
+        self.port           = port
+        self.ssid           = ssid
+        self.bssid          = bssid
+        self.security       = security
+        self.password       = password
+        self.mode           = mode
+        if mode:
+            if str.isalpha(mode):
+                self.mode = add_sta.add_sta_modes[mode];
 
         # Translate from options displayed in the GUI to options
         # that the server actually understands
-        if _eap_method in self.EAP_METHOD_MAP:
-            self.eap_method = self.EAP_METHOD_MAP[_eap_method]
+        if eap_method in self.EAP_METHOD_MAP:
+            self.eap_method = self.EAP_METHOD_MAP[eap_method]
         else:
-            self.eap_method = _eap_method
+            self.eap_method = eap_method
 
-        self.eap_identity           = _eap_identity
-        self.eap_anonymous_identity = _eap_anonymous_identity
-        self.eap_password           = _eap_password
-        self.eap_phase1             = _eap_phase1
-        self.eap_phase2             = _eap_phase2
-        self.pk_passwd              = _pk_passwd
-        self.ca_cert                = _ca_cert
-        self.private_key            = _private_key
+        self.eap_identity           = eap_identity
+        self.eap_anonymous_identity = eap_anonymous_identity
+        self.eap_password           = eap_password
+        self.eap_phase1             = eap_phase1
+        self.eap_phase2             = eap_phase2
+        self.pk_passwd              = pk_passwd
+        self.ca_cert                = ca_cert
+        self.private_key            = private_key
 
         # Translate from options displayed in the GUI to options
         # that the server actually understands
-        if _key_mgmt in self.KEY_MGMT_MAP:
-            self.key_mgmt = self.KEY_MGMT_MAP[_key_mgmt]
+        if key_mgmt in self.KEY_MGMT_MAP:
+            self.key_mgmt = self.KEY_MGMT_MAP[key_mgmt]
         else:
-            self.key_mgmt = _key_mgmt
+            self.key_mgmt = key_mgmt
 
-        if _pairwise_cipher in self.PAIRWISE_CIPHER_MAP:
-            self.pairwise_cipher = self.PAIRWISE_CIPHER_MAP[_pairwise_cipher]
+        if pairwise_cipher in self.PAIRWISE_CIPHER_MAP:
+            self.pairwise_cipher = self.PAIRWISE_CIPHER_MAP[pairwise_cipher]
         else:
-            self.pairwise_cipher = _pairwise_cipher
+            self.pairwise_cipher = pairwise_cipher
 
-        if _groupwise_cipher in self.GROUPWISE_CIPHER_MAP:
-            self.groupwise_cipher = self.GROUPWISE_CIPHER_MAP[_groupwise_cipher]
+        if groupwise_cipher in self.GROUPWISE_CIPHER_MAP:
+            self.groupwise_cipher = self.GROUPWISE_CIPHER_MAP[groupwise_cipher]
         else:
-            self.groupwise_cipher = _groupwise_cipher
+            self.groupwise_cipher = groupwise_cipher
 
-        self.sta_list               = _sta_list
-        self.sta_flags              = _sta_flags
-        self.radio                  = _radio
+        self.sta_list               = sta_list
+        self.sta_flags              = sta_flags
+        self.radio                  = radio
         self.timeout                = 120
-        self.number_template        = _number_template
-        self.debug                  = _debug_on
-        self.up                     = _up
-        self.set_txo_data           = _set_txo_data
-        self.custom_wifi_cmd        = _custom_wifi_cmd
+        self.number_template        = number_template
+        self.debug                  = debug_on
+        self.up                     = up
+        self.set_txo_data           = set_txo_date
+        self.custom_wifi_cmd        = custom_wifi_cmd
 
         self.station_profile                    = self.new_station_profile()
         self.station_profile.lfclient_url       = self.lfclient_url
@@ -989,33 +989,33 @@ def main():
 
     logger.info("Stations to create: {}".format(station_list))
 
-    create_station = CreateStation(_host=args.mgr,
-                                   _port=args.mgr_port,
-                                   _bssid=args.bssid,
-                                   _ssid=args.ssid,
-                                   _password=args.passwd,
-                                   _security=args.security,
-                                   _eap_method=args.eap_method,
-                                   _eap_identity=args.eap_identity,
-                                   _eap_anonymous_identity=args.eap_anonymous_identity,
-                                   _eap_password=args.eap_password,
-                                   _eap_phase1=args.eap_phase1,
-                                   _eap_phase2=args.eap_phase2,
-                                   _pk_passwd=args.pk_passwd,
-                                   _ca_cert=args.ca_cert,
-                                   _private_key=args.private_key,
-                                   _key_mgmt=args.key_mgmt,
-                                   _pairwise_cipher=args.pairwise_cipher,
-                                   _groupwise_cipher=args.groupwise_cipher,
-                                   _sta_list=station_list,
-                                   _sta_flags=args.station_flag,
-                                   _mode=args.mode,
-                                   _radio=args.radio,
-                                   _up=(not args.create_admin_down),
-                                   _set_txo_data=None,
-                                   _proxy_str=args.proxy,
-                                   _custom_wifi_cmd=args.custom_wifi_cmd,
-                                   _debug_on=args.debug)
+    create_station = CreateStation(host=args.mgr,
+                                   port=args.mgr_port,
+                                   bssid=args.bssid,
+                                   ssid=args.ssid,
+                                   password=args.passwd,
+                                   security=args.security,
+                                   eap_method=args.eap_method,
+                                   eap_identity=args.eap_identity,
+                                   eap_anonymous_identity=args.eap_anonymous_identity,
+                                   eap_password=args.eap_password,
+                                   eap_phase1=args.eap_phase1,
+                                   eap_phase2=args.eap_phase2,
+                                   pk_passwd=args.pk_passwd,
+                                   ca_cert=args.ca_cert,
+                                   private_key=args.private_key,
+                                   key_mgmt=args.key_mgmt,
+                                   pairwise_cipher=args.pairwise_cipher,
+                                   groupwise_cipher=args.groupwise_cipher,
+                                   sta_list=station_list,
+                                   sta_flags=args.station_flag,
+                                   mode=args.mode,
+                                   radio=args.radio,
+                                   up=(not args.create_admin_down),
+                                   set_txo_date=None,
+                                   proxy_str=args.proxy,
+                                   custom_wifi_cmd=args.custom_wifi_cmd,
+                                   debug_on=args.debug)
     
     if not args.no_pre_cleanup:
         create_station.cleanup()
