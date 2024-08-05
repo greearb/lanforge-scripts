@@ -340,8 +340,6 @@ class CreateStation(Realm):
                  debug=False,
                  up=True,
                  set_txo_date=None,
-                 exit_on_error=False,
-                 exit_on_fail=False,
                  custom_wifi_cmd=False):
         super().__init__(mgr,
                          mgr_port)
