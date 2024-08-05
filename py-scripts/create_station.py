@@ -66,7 +66,7 @@ EXAMPLE:
                 --security      wpa2
                 --radio_antenna 2 \\
                 --radio_channel 6 \\
-                --station_flag "ht160_enable,disable_sgi" 
+                --station_flags "ht160_enable,disable_sgi"
 
          # Create a station using TLS-based enterprise authentication
          # Note that paths are paths on the LANforge system where the station will be created.
@@ -124,7 +124,7 @@ NOTES:
                 See the 'add_sta' command's mode option in the CLI documentation for
                 available mode settings. Link here: http://www.candelatech.com/lfcli_ug.php#add_sta
 
-            --station_flag  <station_flags>
+            --station_flags  <station_flags>
                 Comma-separated list of flags to configure the station with (e.g. 'ht160_enable,disable_sgi'
                 to enable 160MHz channel usage and disable 802.11ac short guard interval (SGI), respectively).
                 Note that other options like '--security' configure authentication-based station flags.
@@ -333,7 +333,7 @@ class CreateStation(Realm):
                  pairwise_cipher=None,
                  groupwise_cipher=None,
                  sta_list=None,
-                 sta_flags=None,
+                 station_flags=None,
                  number_template="00000",
                  radio="wiphy0",
                  proxy=None,
@@ -390,7 +390,7 @@ class CreateStation(Realm):
             self.groupwise_cipher = groupwise_cipher
 
         self.sta_list               = sta_list
-        self.sta_flags              = sta_flags
+        self.sta_flags              = station_flags
         self.radio                  = radio
         self.timeout                = 120
         self.number_template        = number_template
@@ -647,7 +647,7 @@ EXAMPLE:
                 --security      wpa2
                 --radio_antenna 2 \\
                 --radio_channel 6 \\
-                --station_flag "ht160_enable,disable_sgi" 
+                --station_flags "ht160_enable,disable_sgi"
 
          # Create a station using TLS-based enterprise authentication
          # Note that paths are paths on the LANforge system where the station will be created.
@@ -705,7 +705,7 @@ NOTES:
                 See the 'add_sta' command's mode option in the CLI documentation for
                 available mode settings. Link here: http://www.candelatech.com/lfcli_ug.php#add_sta
 
-            --station_flag  <station_flags>
+            --station_flags  <station_flags>
                 List of flags to configure the station with (e.g. 'ht160_enable' to enable 160MHz channel usage).
                 Note that other options like '--security' configure authentication-based station flags.
                 See the 'add_sta' command's 'flags' option in the CLI documentation for available options.
@@ -816,8 +816,10 @@ INCLUDE_IN_README: False
     optional.add_argument('--mode',
                           help='Mode for your station (as a number)',
                           default=0)
-    optional.add_argument('--station_flag',
-                          help='station flags to add. eg: --station_flag ht40_disable',
+    optional.add_argument('--station_flags',
+                          '--station_flag',
+                          dest='station_flags',
+                          help='station flags to add. eg: --station_flags ht40_disable',
                           required=False,
                           default=None)
     optional.add_argument("--radio_antenna",
@@ -1008,7 +1010,7 @@ def main():
                                    pairwise_cipher=args.pairwise_cipher,
                                    groupwise_cipher=args.groupwise_cipher,
                                    sta_list=station_list,
-                                   sta_flags=args.station_flag,
+                                   station_flags=args.station_flags,
                                    mode=args.mode,
                                    radio=args.radio,
                                    up=(not args.create_admin_down),
