@@ -986,33 +986,11 @@ def main():
 
     logger.info("Stations to create: {}".format(station_list))
 
-    create_station = CreateStation(mgr=args.mgr,
-                                   mgr_port=args.mgr_port,
-                                   bssid=args.bssid,
-                                   ssid=args.ssid,
-                                   password=args.passwd,
-                                   security=args.security,
-                                   eap_method=args.eap_method,
-                                   eap_identity=args.eap_identity,
-                                   eap_anonymous_identity=args.eap_anonymous_identity,
-                                   eap_password=args.eap_password,
-                                   eap_phase1=args.eap_phase1,
-                                   eap_phase2=args.eap_phase2,
-                                   pk_passwd=args.pk_passwd,
-                                   ca_cert=args.ca_cert,
-                                   private_key=args.private_key,
-                                   key_mgmt=args.key_mgmt,
-                                   pairwise_cipher=args.pairwise_cipher,
-                                   groupwise_cipher=args.groupwise_cipher,
+    create_station = CreateStation(**vars(args),
                                    sta_list=station_list,
-                                   station_flags=args.station_flags,
-                                   mode=args.mode,
-                                   radio=args.radio,
                                    up=(not args.create_admin_down),
-                                   set_txo_date=None,
-                                   proxy=args.proxy,
-                                   custom_wifi_cmd=args.custom_wifi_cmd,
-                                   debug=args.debug)
+                                   password=args.passwd,
+                                   set_txo_date=None)
     
     if not args.no_pre_cleanup:
         create_station.cleanup()
