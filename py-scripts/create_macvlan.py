@@ -125,12 +125,7 @@ class CreateMacVlan(Realm):
             self._fail("MACVLAN port build failed.")
 
 
-def main():
-    help_summary = '''\
-    This script will create a variable number of macvlans on a specified ethernet port(eth1/eth2). It's important to 
-    note that the script can only add MAC-VLANs to Ethernet, Bonding and 802.1Q VLAN devices. The script has the 
-    feasibility to create the macvlan interfaces based on user-specified numbers.
-            '''
+def parse_args():
     parser = LFCliBase.create_bare_argparse(
         prog='create_macvlan.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -217,9 +212,18 @@ INCLUDE_IN_README: False
         help='Cleaning Up the created MAC VLANs if we want to cleanup.',
         action='store_true')
 
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    # help summary
+
+def main():
+    help_summary = '''\
+    This script will create a variable number of macvlans on a specified ethernet port(eth1/eth2). It's important to 
+    note that the script can only add MAC-VLANs to Ethernet, Bonding and 802.1Q VLAN devices. The script has the 
+    feasibility to create the macvlan interfaces based on user-specified numbers.
+            '''
+
+    args = parse_args()
+
     if args.help_summary:
         print(help_summary)
         exit(0)
