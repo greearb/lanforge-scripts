@@ -78,10 +78,10 @@ class CreateMacVlan(Realm):
                  dhcp=True,
                  port_list=None,
                  ip_list=None,
-                 _debug_on=False,
+                 debug=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, debug_=_debug_on,
+        super().__init__(host, port, debug_=debug,
                          _exit_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail)
         self.port = port
@@ -295,7 +295,7 @@ def main():
                             args.mgr_port,
                             port_list=port_list,
                             ip_list=ip_list,
-                            _debug_on=args.debug,
+                            debug=args.debug,
                             macvlan_parent=args.macvlan_parent,
                             first_mvlan_ip=args.first_mvlan_ip,
                             netmask=args.netmask,
