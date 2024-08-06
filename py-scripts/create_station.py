@@ -338,7 +338,7 @@ class CreateStation(Realm):
                  key_mgmt,
                  pairwise_cipher,
                  groupwise_cipher,
-                 set_txo_date,
+                 set_txo_data,
                  custom_wifi_cmd,
                  **kwargs):
         super().__init__(mgr,
@@ -395,7 +395,7 @@ class CreateStation(Realm):
         else:
             self.groupwise_cipher = groupwise_cipher
 
-        self.set_txo_data           = set_txo_date
+        self.set_txo_data           = set_txo_data
         self.custom_wifi_cmd        = custom_wifi_cmd
 
         self.station_profile                    = self.new_station_profile()
@@ -992,7 +992,7 @@ def main():
                                    sta_list=station_list,
                                    up=(not args.create_admin_down),
                                    password=args.passwd,
-                                   set_txo_date=None)
+                                   set_txo_data=None)
     
     if not args.no_pre_cleanup:
         create_station.cleanup()
