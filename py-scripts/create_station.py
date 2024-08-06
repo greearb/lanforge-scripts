@@ -334,7 +334,6 @@ class CreateStation(Realm):
                  groupwise_cipher=None,
                  sta_list=None,
                  station_flags=None,
-                 number_template="00000",
                  radio="wiphy0",
                  proxy=None,
                  debug=False,
@@ -391,7 +390,6 @@ class CreateStation(Realm):
         self.sta_flags              = station_flags
         self.radio                  = radio
         self.timeout                = 120
-        self.number_template        = number_template
         self.debug                  = debug
         self.up                     = up
         self.set_txo_data           = set_txo_date
@@ -403,7 +401,6 @@ class CreateStation(Realm):
         self.station_profile.bssid              = self.bssid
         self.station_profile.ssid_pass          = self.password,
         self.station_profile.security           = self.security
-        self.station_profile.number_template_   = self.number_template
         self.station_profile.mode               = self.mode
 
         if self.sta_flags is not None:
@@ -427,7 +424,6 @@ class CreateStation(Realm):
         self.station_profile.use_security(security_type=self.security,
                                           ssid=self.ssid,
                                           passwd=self.password)
-        self.station_profile.set_number_template(self.number_template)
 
         logger.info("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
