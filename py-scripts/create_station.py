@@ -20,7 +20,7 @@ EXAMPLE:
                 --ssid          <ssid> \\
                 --passwd        <password> \\
                 --security      wpa2 \\
-                --num_stations  10 
+                --num_stations  10
 
          # Create a multiple stations with specific numbering scheme
          # In this example, create five stations with names of the format: "sta1000", "sta1001", "sta1002", etc.
@@ -43,12 +43,12 @@ EXAMPLE:
                 --security      wpa2 \\
                 --radio_antenna 2 \\
                 --radio_channel 6
-        
+
          # Create a station, configuring the station to be a specific WiFi mode
          # (e.g. configuring an 802.11ax-capable radio to create an 802.11ac station)
          # See the 'add_sta' command's mode option in the CLI documentation for
          # available mode settings. Link here: http://www.candelatech.com/lfcli_ug.php#add_sta
-            ./create_station.py 
+            ./create_station.py
                 --mgr       <lanforge ip> \\
                 --radio     1.1.wiphy1 \\
                 --ssid      <ssid> \\
@@ -97,7 +97,7 @@ EXAMPLE:
                 --eap_method        TTLS \\
                 --eap_identity      <username> \\
                 --eap_password      <password>
-                
+
         # Create station specifying a custom 'wpa_supplicant' config command
         # In this example, specify a background scanning 'wpa_supplicant' command, useful for roaming.
         # Here, the background scan is configured to a threshold of -65 dBm RSSI with a short and long interval of 50 and 300 seconds.
@@ -109,16 +109,16 @@ EXAMPLE:
                 --passwd            <password> \\
                 --security          wpa2 \\
                 --custom_wifi_cmd   'bgscan="simple:50:-65:300"'
-           
+
 
 SCRIPT_CLASSIFICATION:  Creation
 
-SCRIPT_CATEGORIES:   Functional 
+SCRIPT_CATEGORIES:   Functional
 
-NOTES: 
+NOTES:
         This script is intended to only create and configure stations.
         See other scripts like 'test_l3.py' to create and run tests.
-         
+
             --mode <mode_num>
                 Set the station WiFi mode (e.g. to configure a 802.11be radio as 802.11ax)
                 See the 'add_sta' command's mode option in the CLI documentation for
@@ -148,7 +148,7 @@ NOTES:
                 Belize          :   84      |       Hong Kong       :   344     |      Macedonia       :   807     |      Syria           :   760
                 Bolivia         :   68      |       Hungary         :   348     |      Malaysia        :   458     |      Taiwan          :   158
                 BiH             :   70      |       Iceland         :   352     |      Mexico          :   484     |      Thailand        :   764
-                Brazil          :   76      |       India           :   356     |      Monaco          :   492     |      Trinidad &Tobago:   780   
+                Brazil          :   76      |       India           :   356     |      Monaco          :   492     |      Trinidad &Tobago:   780
                 Brunei          :   96      |       Indonesia       :   360     |      Morocco         :   504     |      Tunisia         :   788
                 Bulgaria        :   100     |       Iran            :   364     |      Netherlands     :   528     |      Turkey          :   792
                 Canada          :   124     |       Ireland         :   372     |      Aruba           :   533     |      U.A.E.          :   784
@@ -173,7 +173,7 @@ NOTES:
                 Link here: http://www.candelatech.com/lfcli_ug.php#set_wifi_extra
 
             --key_mgmt <protocol>
-                Key management protocol used by the station in authentication. 
+                Key management protocol used by the station in authentication.
 
             --pairwise_cipher <cipher>
                 Pairwise cipher used by station in authentication.
@@ -239,6 +239,7 @@ Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
 add_sta = importlib.import_module("py-json.LANforge.add_sta")
+
 
 class CreateStation(Realm):
     # Map values displayed in GUI to values accepted by the server
@@ -311,7 +312,6 @@ class CreateStation(Realm):
         "All": "CCMP TKIP WEP104 WEP40 CCMP-256 GCMP-256",
     }
 
-
     def __init__(self,
                  mgr,
                  mgr_port,
@@ -353,7 +353,7 @@ class CreateStation(Realm):
         self.mode = mode
         if mode:
             if str.isalpha(mode):
-                self.mode = add_sta.add_sta_modes[mode];
+                self.mode = add_sta.add_sta_modes[mode]
 
         self.sta_list = sta_list
         self.sta_flags = station_flags
@@ -369,14 +369,14 @@ class CreateStation(Realm):
         else:
             self.eap_method = eap_method
 
-        self.eap_identity           = eap_identity
+        self.eap_identity = eap_identity
         self.eap_anonymous_identity = eap_anonymous_identity
-        self.eap_password           = eap_password
-        self.eap_phase1             = eap_phase1
-        self.eap_phase2             = eap_phase2
-        self.pk_passwd              = pk_passwd
-        self.ca_cert                = ca_cert
-        self.private_key            = private_key
+        self.eap_password = eap_password
+        self.eap_phase1 = eap_phase1
+        self.eap_phase2 = eap_phase2
+        self.pk_passwd = pk_passwd
+        self.ca_cert = ca_cert
+        self.private_key = private_key
 
         # Translate from options displayed in the GUI to options
         # that the server actually understands
@@ -395,16 +395,16 @@ class CreateStation(Realm):
         else:
             self.groupwise_cipher = groupwise_cipher
 
-        self.set_txo_data           = set_txo_data
-        self.custom_wifi_cmd        = custom_wifi_cmd
+        self.set_txo_data = set_txo_data
+        self.custom_wifi_cmd = custom_wifi_cmd
 
-        self.station_profile                    = self.new_station_profile()
-        self.station_profile.lfclient_url       = self.lfclient_url
-        self.station_profile.ssid               = self.ssid
-        self.station_profile.bssid              = self.bssid
-        self.station_profile.ssid_pass          = self.password,
-        self.station_profile.security           = self.security
-        self.station_profile.mode               = self.mode
+        self.station_profile = self.new_station_profile()
+        self.station_profile.lfclient_url = self.lfclient_url
+        self.station_profile.ssid = self.ssid
+        self.station_profile.bssid = self.bssid
+        self.station_profile.ssid_pass = self.password,
+        self.station_profile.security = self.security
+        self.station_profile.mode = self.mode
 
         if self.sta_flags is not None:
             _flags = self.sta_flags.split(',')
@@ -446,7 +446,7 @@ class CreateStation(Realm):
                 # would result in 'null' password when password is not specified
                 if not self.password:
                     self.password = "[BLANK]"
-                
+
                 # Have to set 'Advanced/802.1X' flag in order for 'psk' argument to take.
                 # This works around limitation in the GUI which does a check for 'Key/Phrase'
                 # length when WPA/WPA2/WPA3 enabled (but that field is sadly also cleared here)
@@ -469,7 +469,7 @@ class CreateStation(Realm):
                                                     pk_password=self.pk_passwd,
                                                     phase1=self.eap_phase1,
                                                     phase2=self.eap_phase2)
-            elif self.eap_method == 'TTLS' or self.eap_method == 'PEAP' :
+            elif self.eap_method == 'TTLS' or self.eap_method == 'PEAP':
                 self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
                                                     pairwise=self.pairwise_cipher,
                                                     group=self.groupwise_cipher,
@@ -545,7 +545,6 @@ class CreateStation(Realm):
                 self._fail("FAIL: Station build failed", print_=True)
                 logger.info("Please re-check the configuration applied")
 
-
     def modify_radio(self, mgr, radio, antenna, channel, tx_power, country_code):
         shelf, resource, radio, *nil = LFUtils.name_to_eid(radio)
 
@@ -557,7 +556,7 @@ class CreateStation(Realm):
                                     _channel=channel,
                                     _txpower=tx_power,
                                     _country_code=country_code)
-        
+
     def get_station_list(self):
         response = super().json_get("/port/list?fields=_links,alias,device,port+type")
 
@@ -568,6 +567,7 @@ class CreateStation(Realm):
 
         logger.debug(f"The following stations currently exist: ")
         return available_stations
+
 
 def parse_args():
     parser = LFCliBase.create_basic_argparse(  # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
@@ -598,7 +598,7 @@ EXAMPLE:
                 --ssid          <ssid> \\
                 --passwd        <password> \\
                 --security      wpa2 \\
-                --num_stations  10 
+                --num_stations  10
 
          # Create a multiple stations with specific numbering scheme
          # In this example, create five stations with names of the format: "sta1000", "sta1001", "sta1002", etc.
@@ -621,12 +621,12 @@ EXAMPLE:
                 --security      wpa2 \\
                 --radio_antenna 2 \\
                 --radio_channel 6
-        
+
          # Create a station, configuring the station to be a specific WiFi mode
          # (e.g. configuring an 802.11ax-capable radio to create an 802.11ac station)
          # See the 'add_sta' command's mode option in the CLI documentation for
          # available mode settings. Link here: http://www.candelatech.com/lfcli_ug.php#add_sta
-            ./create_station.py 
+            ./create_station.py
                 --mgr       <lanforge ip> \\
                 --radio     1.1.wiphy1 \\
                 --ssid      <ssid> \\
@@ -675,7 +675,7 @@ EXAMPLE:
                 --eap_method        TLS \\
                 --eap_identity      <username> \\
                 --eap_password      <password>
-                
+
         # Create station specifying a custom 'wpa_supplicant' config command
         # In this example, specify a background scanning 'wpa_supplicant' command, useful for roaming.
         # Here, the background scan is configured to a threshold of -65 dBm RSSI with a short and long interval of 50 and 300 seconds.
@@ -687,16 +687,16 @@ EXAMPLE:
                 --passwd            <password> \\
                 --security          wpa2 \\
                 --custom_wifi_cmd   'bgscan="simple:50:-65:300"'
-           
+
 
 SCRIPT_CLASSIFICATION:  Creation
 
-SCRIPT_CATEGORIES:   Functional 
+SCRIPT_CATEGORIES:   Functional
 
-NOTES: 
+NOTES:
         This script is intended to only create and configure stations.
         See other scripts like 'test_l3.py' to create and run tests.
-         
+
             --mode <mode_num>
                 Set the station WiFi mode (e.g. to configure a 802.11be radio as 802.11ax)
                 See the 'add_sta' command's mode option in the CLI documentation for
@@ -725,7 +725,7 @@ NOTES:
                 Belize          :   84      |       Hong Kong       :   344     |      Macedonia       :   807     |      Syria           :   760
                 Bolivia         :   68      |       Hungary         :   348     |      Malaysia        :   458     |      Taiwan          :   158
                 BiH             :   70      |       Iceland         :   352     |      Mexico          :   484     |      Thailand        :   764
-                Brazil          :   76      |       India           :   356     |      Monaco          :   492     |      Trinidad &Tobago:   780   
+                Brazil          :   76      |       India           :   356     |      Monaco          :   492     |      Trinidad &Tobago:   780
                 Brunei          :   96      |       Indonesia       :   360     |      Morocco         :   504     |      Tunisia         :   788
                 Bulgaria        :   100     |       Iran            :   364     |      Netherlands     :   528     |      Turkey          :   792
                 Canada          :   124     |       Ireland         :   372     |      Aruba           :   533     |      U.A.E.          :   784
@@ -750,7 +750,7 @@ NOTES:
                 Link here: http://www.candelatech.com/lfcli_ug.php#set_wifi_extra
 
             --key_mgmt <protocol>
-                Key management protocol used by the station in authentication. 
+                Key management protocol used by the station in authentication.
 
             --pairwise_cipher <cipher>
                 Pairwise cipher used by station in authentication.
@@ -795,7 +795,7 @@ INCLUDE_IN_README: False
 ''')
     required = parser.add_argument_group('required arguments')
     required.add_argument('--start_id',
-                          help='Specify the station starting id \n e.g: --start_id <value> default 0', 
+                          help='Specify the station starting id \n e.g: --start_id <value> default 0',
                           default=0)
 
     optional = parser.add_argument_group('Optional arguments')
@@ -809,7 +809,7 @@ INCLUDE_IN_README: False
     optional.add_argument("--bssid",
                           type=str,
                           help="AP BSSID. For example, \"00:00:00:00:00:00\".",
-                          default="DEFAULT") # TODO: Fix 'null' when not set issue (REST server-side issue)
+                          default="DEFAULT")  # TODO: Fix 'null' when not set issue (REST server-side issue)
     optional.add_argument('--mode',
                           help='Mode for your station (as a number)',
                           default=0)
@@ -821,23 +821,23 @@ INCLUDE_IN_README: False
                           default=None)
     optional.add_argument("--radio_antenna",
                           help='Number of spatial streams: \n'
-                              ' default = -1 \n'
-                              ' 0 Diversity (All) \n'
-                              ' 1 Fixed-A (1x1) \n'
-                              ' 4 AB (2x2) \n'
-                              ' 7 ABC (3x3) \n'
-                              ' 8 ABCD (4x4) \n'
-                              ' 9 (8x8) \n', 
+                          ' default = -1 \n'
+                          ' 0 Diversity (All) \n'
+                          ' 1 Fixed-A (1x1) \n'
+                          ' 4 AB (2x2) \n'
+                          ' 7 ABC (3x3) \n'
+                          ' 8 ABCD (4x4) \n'
+                          ' 9 (8x8) \n',
                           default='-1')
-    optional.add_argument("--radio_channel", 
+    optional.add_argument("--radio_channel",
                           help='Radio Channel: \n'
-                              ' default: AUTO \n'
-                              ' e.g:   --radio_channel 6 (2.4G) \n'
-                                      '\t--radio_channel 36 (5G) \n',
+                          ' default: AUTO \n'
+                          ' e.g:   --radio_channel 6 (2.4G) \n'
+                          '\t--radio_channel 36 (5G) \n',
                           default='AUTO')
-    optional.add_argument("--radio_tx_power", 
+    optional.add_argument("--radio_tx_power",
                           help='Radio tx-power \n'
-                              ' default: AUTO system defaults',
+                          ' default: AUTO system defaults',
                           default='AUTO')
     optional.add_argument("--country_code",
                           help='Radio Country Code:\n'
@@ -853,7 +853,7 @@ INCLUDE_IN_README: False
     optional.add_argument("--eap_anonymous_identity",
                           type=str,
                           help="",
-                          default="[BLANK]") # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
+                          default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
     optional.add_argument("--eap_password",
                           "--radius_passwd",
                           dest="eap_password",
@@ -864,12 +864,12 @@ INCLUDE_IN_README: False
                           help="EAP Phase 1 (outer authentication, i.e. TLS tunnel) parameters.\n"
                                "For example, \"peapver=0\" or \"peapver=1 peaplabel=1\".\n"
                                "Some WPA Enterprise setups may require \"auth=MSCHAPV2\"",
-                          default="[BLANK]") # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
+                          default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
     optional.add_argument("--eap_phase2",
                           type=str,
                           help="EAP Phase 2 (inner authentication) parameters.\n"
                                "For example, \"autheap=MSCHAPV2 autheap=MD5\" for EAP-TTLS.",
-                          default="[BLANK]") # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
+                          default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
     optional.add_argument("--pk_passwd",
                           type=str,
                           help='Enter the private key password')
@@ -918,11 +918,12 @@ INCLUDE_IN_README: False
 
     return parser.parse_args()
 
+
 def validate_args(args):
     if args.radio is None:
         logger.error("--radio required")
         exit(1)
-    
+
     # TODO: Revisit these requirements. May have made some incorrect assumptions
     if args.eap_method is not None:
         if args.eap_identity is None:
@@ -960,7 +961,7 @@ def validate_args(args):
             elif args.groupwise_cipher == '[BLANK]':
                 logger.error('--groupwise_cipher required')
                 exit(1)
-        
+
 
 def main():
     args = parse_args()
@@ -993,7 +994,7 @@ def main():
                                    up=(not args.create_admin_down),
                                    password=args.passwd,
                                    set_txo_data=None)
-    
+
     if not args.no_pre_cleanup:
         create_station.cleanup()
 
@@ -1006,7 +1007,6 @@ def main():
                     logger.error('Some stations are already existing in the LANforge from the given start id.')
                     logger.error('You can create stations from the start id {}'.format(max(used_indices) + 1))
                     exit(1)
-
 
     create_station.modify_radio(mgr=args.mgr,
                                 radio=args.radio,
