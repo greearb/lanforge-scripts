@@ -211,7 +211,6 @@ class VoipReport():
             self.csv_writer.writerow(self.ep_col_names)
             self.last_written_row = 0
         except Exception as e:
-            e.print_exc()
             traceback.print_exc()
             exit(1)
 
