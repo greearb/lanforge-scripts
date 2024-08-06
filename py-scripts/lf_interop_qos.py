@@ -845,8 +845,43 @@ class ThroughputQOS(Realm):
                                 " maintaining acceptable performance levels,ensuring that the network meets the required QoS"
                                 " standards and can adequately support the expected user demands.")
         report.build_objective()
+
+        # Initialize counts and lists for device types
+        android_devices,windows_devices,linux_devices,ios_devices=0,0,0,0
+        all_devices_names=[]
+        device_type=[]
+        total_devices=""
+        for i in self.real_client_list:
+            split_device_name=i.split(" ")
+            if 'android' in split_device_name:
+                all_devices_names.append(split_device_name[2] + ("(Android)") )
+                device_type.append("Android")
+                android_devices+=1
+            elif 'Win' in split_device_name:
+                all_devices_names.append(split_device_name[2] + ("(Windows)"))
+                device_type.append("Windows")
+                windows_devices+=1
+            elif 'Lin' in split_device_name:
+                all_devices_names.append(split_device_name[2] + ("(Linux)"))
+                device_type.append("Linux")
+                linux_devices+=1
+            elif 'Mac' in split_device_name:
+                all_devices_names.append(split_device_name[2] + ("(Mac)"))
+                device_type.append("Mac")
+                ios_devices+=1
+
+        # Build total_devices string based on counts
+        if android_devices>0:
+            total_devices+= f" Android({android_devices})" 
+        if windows_devices>0:
+            total_devices+= f" Windows({windows_devices})" 
+        if linux_devices>0:
+            total_devices+= f" Linux({linux_devices})" 
+        if ios_devices>0:
+            total_devices+= f" Mac({ios_devices})"
         
         test_setup_info = {
+        "Device List": ", ".join(all_devices_names),
         "Number of Stations" : self.num_stations,
         "AP Model": self.ap_name,
         "SSID": self.ssid,

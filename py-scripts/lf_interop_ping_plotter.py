@@ -1198,7 +1198,7 @@ connectivity problems.
         else:
             Devices.get_devices()
             ping.Devices = Devices
-            if(not do_webUI):
+            if not do_webUI and webUI_resources is None:
                 ping.select_real_devices(real_devices=Devices)
             else:
                 webUI_resources = webUI_resources.split(',')
