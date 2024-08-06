@@ -313,13 +313,19 @@ class CreateStation(Realm):
 
 
     def __init__(self,
-                 ssid,
-                 bssid,
-                 security,
-                 password,
                  mgr,
                  mgr_port,
+                 proxy,
+                 debug,
+                 up,
+                 radio,
+                 ssid,
+                 bssid,
                  mode,
+                 sta_list,
+                 station_flags,
+                 security,
+                 password,
                  eap_method,
                  eap_identity,
                  eap_anonymous_identity,
@@ -332,27 +338,29 @@ class CreateStation(Realm):
                  key_mgmt,
                  pairwise_cipher,
                  groupwise_cipher,
-                 sta_list,
-                 station_flags,
-                 radio,
-                 proxy,
-                 debug,
-                 up,
                  set_txo_date,
                  custom_wifi_cmd,
                  **kwargs):
         super().__init__(mgr,
                          mgr_port)
-        self.host           = mgr
-        self.port           = mgr_port
-        self.ssid           = ssid
-        self.bssid          = bssid
-        self.security       = security
-        self.password       = password
-        self.mode           = mode
+        self.host = mgr
+        self.port = mgr_port
+        self.debug = debug
+        self.up = up
+        self.ssid = ssid
+        self.bssid = bssid
+
+        self.mode = mode
         if mode:
             if str.isalpha(mode):
                 self.mode = add_sta.add_sta_modes[mode];
+
+        self.sta_list = sta_list
+        self.sta_flags = station_flags
+        self.radio = radio
+        self.timeout = 120
+        self.security = security
+        self.password = password
 
         # Translate from options displayed in the GUI to options
         # that the server actually understands
@@ -387,12 +395,6 @@ class CreateStation(Realm):
         else:
             self.groupwise_cipher = groupwise_cipher
 
-        self.sta_list               = sta_list
-        self.sta_flags              = station_flags
-        self.radio                  = radio
-        self.timeout                = 120
-        self.debug                  = debug
-        self.up                     = up
         self.set_txo_data           = set_txo_date
         self.custom_wifi_cmd        = custom_wifi_cmd
 
