@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 pip install websocket_client
 

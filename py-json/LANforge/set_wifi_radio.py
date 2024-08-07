@@ -1,3 +1,4 @@
+# flake8: noqa
 set_radio_mode = {
     "AUTO": 0,
     "802.11a": 1,  # 802.11a

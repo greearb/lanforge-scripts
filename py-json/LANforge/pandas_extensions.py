@@ -1,4 +1,5 @@
 #!/usr/bin/env pythonn3
+# flake8: noqa
 
 import pandas as pd
 

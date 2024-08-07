@@ -1,3 +1,4 @@
+# flake8: noqa
 add_vap_flags = {
 "enable_wpa"           : 0x10,            # Enable WPA
 "hostapd_config"       : 0x20,            # Use Custom hostapd config file.

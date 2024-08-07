@@ -1,4 +1,5 @@
 #!env /usr/bin/python
+# flake8: noqa
 import sys
 import os
 import importlib

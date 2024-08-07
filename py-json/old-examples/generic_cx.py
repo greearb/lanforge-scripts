@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 This script is out-dated, please see py-scripts/test_ipv4_variable_time.py
 """

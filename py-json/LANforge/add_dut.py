@@ -1,3 +1,4 @@
+# flake8: noqa
 # define list of DUT keys
 from enum import Enum
 from collections import namedtuple

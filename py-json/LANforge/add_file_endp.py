@@ -1,3 +1,4 @@
+# flake8: noqa
 from enum import Enum
 from collections import namedtuple
 
