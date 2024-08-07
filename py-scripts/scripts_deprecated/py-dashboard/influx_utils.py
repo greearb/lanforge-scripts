@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 # pip3 install influxdb
 import sys
 import os

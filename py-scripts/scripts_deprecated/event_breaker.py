@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 This file is intended to expose concurrency
 problems in the /events/ URL handler by querying events rapidly.

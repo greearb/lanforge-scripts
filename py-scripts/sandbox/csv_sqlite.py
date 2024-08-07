@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 '''
 File: will search sub diretories for kpi.csv and place the data into an sqlite database
 Usage: csv_sqlite.py --path <path to directories to traverse> --database <name of database>

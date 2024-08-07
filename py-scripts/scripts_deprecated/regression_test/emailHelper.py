@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 import smtplib
 from email.message import EmailMessage
 import sys

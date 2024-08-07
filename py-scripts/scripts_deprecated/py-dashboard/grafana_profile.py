@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 
 """
 The best way to use create_custom_dashboard by creating a graph_groups_file

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 
 """ Script for mapping module names to their docstrings, will print output in json format. Will look for all python
     files in the current directory and map filename:docstring

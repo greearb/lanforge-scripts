@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 from html.parser import HTMLParser
 import urllib.request
 from html.entities import name2codepoint

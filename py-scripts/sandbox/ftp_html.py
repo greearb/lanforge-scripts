@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 
 from matplotlib import pyplot as plt
 import numpy as np

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 This script loads and builds a Chamber View Scenario, runs WiFi Capacity Test, runs Dataplane Test,
 and posts the results to Influx.

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 import sys
 if sys.version_info[0] != 3:
     print("This script requires Python 3")

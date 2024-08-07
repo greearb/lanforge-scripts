@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 
 #########################################################################################################
 # Built to allow connection and test of clients using EAP-TTLS.

@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# flake8: noqa
 '''
 
 Create connections using stations with different a/b/g/n/AC/AX modes,

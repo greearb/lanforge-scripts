@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 this script creates 1 station on given arguments
 how to run - [lanforge@LF4-Node2 py-scripts]$ python3 station_banao.py -hst localhost -s TestAP22 -pwd [BLANK] -sec open -rad wiphy0

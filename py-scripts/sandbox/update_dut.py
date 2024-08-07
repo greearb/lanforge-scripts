@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 This script updates a Device Under Test (DUT) entry in the LANforge test scenario.
 A common reason to use this would be to update MAC addresses in a DUT when you switch

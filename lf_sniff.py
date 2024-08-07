@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# flake8: noqa
 '''
 
 Sniff stations on one set of radios using secondary radios.

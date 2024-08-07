@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 
 import base64
 import urllib.request

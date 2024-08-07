@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# flake8: noqa
 import sys
 import os
 import importlib

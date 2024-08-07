@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 
 
 # https://docs.python.org/3.8/library/telnetlib.html

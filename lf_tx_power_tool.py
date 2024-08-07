@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# flake8: noqa
 """
 NAME: lf_tx_power_dbm_tool.py
 
