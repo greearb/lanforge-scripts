@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 
 # script moved to sandbox 11/11/2021 - needs updates
 

@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# flake8: noqa
 
 import logging
 from random import choice

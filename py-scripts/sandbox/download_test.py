@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """download_test.py will do lf_report::add_kpi(tags, 'throughput-download-bps', $my_value);"""
 import sys
 import os

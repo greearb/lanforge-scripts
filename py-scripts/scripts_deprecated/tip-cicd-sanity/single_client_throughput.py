@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 
 ####################################################################################
 # Script is based off of LANForge sta_connect2.py

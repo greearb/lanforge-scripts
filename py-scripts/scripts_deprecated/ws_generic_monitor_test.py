@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 This example is to demonstrate ws_generic_monitor to monitor events triggered by scripts,
 This script when running, will monitor the events triggered by test_ipv4_connection.py

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Class holds default settings for json requests to Ghost     -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

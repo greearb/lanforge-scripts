@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 import pandas as pd
 import argparse
 import plotly.express as px

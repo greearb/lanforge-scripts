@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# flake8: noqa
 
 import threading
 from event_flood import EventFlood

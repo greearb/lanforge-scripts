@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 '''
 This module is meant to serve as a utility for converting command line arguments to VSCode launch.json formatted launch
 parameters. Importing the script offers functions command_to_json, which takes a command string and returns a dict structure, and 

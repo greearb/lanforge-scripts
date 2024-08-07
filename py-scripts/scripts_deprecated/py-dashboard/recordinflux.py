@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """recordinflux will record data from existing lanforge endpoints to record to an already existing influx database.
 
 This data can then be streamed in Grafana or any other graphing program the user chooses while this script runs.

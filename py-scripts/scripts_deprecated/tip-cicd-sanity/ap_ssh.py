@@ -1,3 +1,4 @@
+# flake8: noqa
 ##################################################################################
 # Module contains functions to get specific data from AP CLI using SSH
 #

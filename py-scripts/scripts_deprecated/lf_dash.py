@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 '''
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
 Usage: lf_dash.py --store --png --show --path <path to directories to traverse> --database <name of database> 

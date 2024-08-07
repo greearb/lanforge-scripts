@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 
 """
 throughput.py will create stations and layer-3 traffic to calculate the throughput of AP.

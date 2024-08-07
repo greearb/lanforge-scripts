@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# flake8: noqa
 
 ##AP Models Under Test
 ap_models = ["ec420","ea8300","ecw5211","ecw5410", "wf188n", "wf194c", "ex227", "ex447", "eap101", "eap102"]

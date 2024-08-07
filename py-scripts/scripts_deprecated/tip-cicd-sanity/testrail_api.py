@@ -1,3 +1,4 @@
+# flake8: noqa
 """TestRail API binding for Python 3.x.
 
 """

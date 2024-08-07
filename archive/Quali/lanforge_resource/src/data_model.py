@@ -1,3 +1,4 @@
+# flake8: noqa
 from cloudshell.shell.core.driver_context import ResourceCommandContext, AutoLoadDetails, AutoLoadAttribute, \
     AutoLoadResource
 from collections import defaultdict

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 NAME: ghost_profile.py
 PURPOSE: modify ghost database from the command line.

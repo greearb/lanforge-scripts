@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# flake8: noqa
 '''
 
 Create connections with different QoS, run them, and report the latency

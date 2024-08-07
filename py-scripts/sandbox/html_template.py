@@ -1,3 +1,4 @@
+# flake8: noqa
 """ This script is used for DFS Test Report generation 
     it has generic methods inside which can be used for other test report generation 
     date - 11- feb - 2021

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 This is an outdated example. Please see modern py-scripts/test_X example scripts.
 """

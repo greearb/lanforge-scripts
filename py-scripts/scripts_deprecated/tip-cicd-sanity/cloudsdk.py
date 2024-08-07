@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# flake8: noqa
 
 ##################################################################################
 # Module contains functions to interact with CloudSDK using APIs

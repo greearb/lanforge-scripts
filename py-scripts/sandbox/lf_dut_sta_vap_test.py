@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
   This Script has two classes :
           1. LoadScenario : It will load the existing saved scenario to the Lanforge (Here used for Loading Bridged VAP)
