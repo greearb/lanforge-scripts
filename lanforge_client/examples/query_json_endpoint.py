@@ -50,9 +50,6 @@ def main(mgr: str,
         lfclient_url=f"http://{mgr}:{mgr_port}",
     )
 
-    # Returns LFJsonQuery instance which is used to invoke GET requests
-    query = session.get_query()
-
     # Attempt to find the method which queries the JSON endpoint
     query_method = session.find_method(json_endpoint)
     if not query_method:
