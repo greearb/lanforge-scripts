@@ -2,7 +2,7 @@
 """
 NAME:       create_qvlan.py
 
-PURPOSE:    Create one ore more QVLAN port on the specified parent port.
+PURPOSE:    Create one or more QVLAN port on the specified parent port.
 
             This script will optionally set IPv4 configuration (static or dynamic), if specified.
             The selected IPv4 configuration method will be applied to all created QVLAN ports
@@ -131,7 +131,7 @@ def parse_args():
         description="""
 NAME:       create_qvlan.py
 
-PURPOSE:    Create one ore more QVLAN port on the specified parent port.
+PURPOSE:    Create one or more QVLAN port on the specified parent port.
 
             This script will optionally set IPv4 configuration (static or dynamic), if specified.
             The selected IPv4 configuration method will be applied to all created QVLAN ports
