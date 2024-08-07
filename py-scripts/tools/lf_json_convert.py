@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 '''
 File: read in .json and convert for cookbook
 Usage: lf_json_convert.py --file <file>
