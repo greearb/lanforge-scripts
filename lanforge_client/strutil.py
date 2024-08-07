@@ -1,3 +1,4 @@
+# flake8: noqa
 def iss(text: str) -> bool:
     """
 
