@@ -1,0 +1,12 @@
+[flake8]
+# Revisit this later
+max-line-length = 200
+
+# Ignore virtual environments w/ common names
+exclude =
+    .env
+    env
+    .venv
+    venv
+    .virtualenv
+    virtualenv
