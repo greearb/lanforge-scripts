@@ -1,3 +1,4 @@
+# flake8: noqa
 # Flags for the add_l4_endp command
 HTTP_auth_flags = {
     "BASIC"          : 0x1,     # Basic authentication

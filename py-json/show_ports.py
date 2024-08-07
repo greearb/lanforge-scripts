@@ -1,3 +1,4 @@
+# flake8: noqa
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # example of how to check a LANforge json url                                       -
 #                                                                                   -

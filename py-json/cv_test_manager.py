@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Note: This script is working as library for chamberview tests.
     It holds different commands to automate test.

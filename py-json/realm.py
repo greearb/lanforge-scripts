@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 # The Realm Class is inherited by most python tests.  Realm Class inherites from LFCliBase.
 # The Realm Class contains the configurable components for LANforge,
 # For example L3 / L4 cross connects, stations.  Also contains helper methods

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 # Class: FIOEndpProfile(LFCliBase)
 
 # Written by Candela Technologies Inc.

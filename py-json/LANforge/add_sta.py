@@ -1,3 +1,4 @@
+# flake8: noqa
 # Flags for the add_sta command
 add_sta_flags = {
     "wpa_enable"           : 0x10,         # Enable WPA

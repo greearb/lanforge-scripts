@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# flake8: noqa
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # example of how to create a LANforge station                                 -
 #                                                                             -

@@ -1,3 +1,4 @@
+# flake8: noqa
 # flags relating to adding a monitor
 flags = {
     "disable_ht40":       0x800,
