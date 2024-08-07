@@ -124,7 +124,7 @@ def main(mgr: str,
         # Need to make sure calculation wasn't negative. If it was, that means the queries
         # above took longer than a second for whatever reason
         if time_to_sleep_ms < 0:
-            logger.error(f"Sleep time is negative, continuing without sleeping.")
+            logger.error("Sleep time is negative, continuing without sleeping.")
         else:
             time.sleep(time_to_sleep_ms / 1_000)
 
@@ -203,7 +203,7 @@ def query_vap_metrics(session: LFSession,
     # to vAPs we care about
     query_results = query.get_stations(eid_list=["/all"])
     if not query_results:
-        logger.warning(f"No stations associated to vAP")
+        logger.warning("No stations associated to vAP")
         return 1
 
     # If one result is returned, it's returned as a dict. When more than
@@ -297,7 +297,7 @@ def query_cx_metrics(session: LFSession,
 
     query_results = query.get_cx(eid_list=["/all"])
     if not query_results:
-        logger.warning(f"No CXs exist")
+        logger.warning("No CXs exist")
         return 1
 
     # Iterate through stations returned, searching for stations

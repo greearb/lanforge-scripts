@@ -71,7 +71,7 @@ def main(mgr: str,
     query_results = query.get_stations(eid_list=["/list"],
                                        requested_col_names=column_names)
     if not query_results:
-        print(f"ERROR: No stations associated to vAP")
+        print("ERROR: No stations associated to vAP")
         exit(1)
 
     # If one result is returned, it's returned as a dict. When more than

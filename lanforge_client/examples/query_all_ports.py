@@ -52,7 +52,7 @@ def main(mgr: str,
     #
     query_results = query.get_port(eid_list=["/list"])
     if not query_results:
-        print(f"ERROR: Failed to query all ports")
+        print("ERROR: Failed to query all ports")
         exit(1)
 
     # Print table header
