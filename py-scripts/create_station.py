@@ -497,7 +497,7 @@ class CreateStation(Realm):
         # and that may cause headaches.
         #
         # Note that station flags are also set in CreateStation constructor.
-        if not self.sta_flags or (self.sta_flags and not "80211u_enable" in self.sta_flags):
+        if not self.sta_flags or (self.sta_flags and "80211u_enable" not in self.sta_flags):
             self.station_profile.set_command_flag(command_name="add_sta", param_name="80211u_enable", value=0)
 
         self.station_profile.set_command_param(
@@ -565,7 +565,6 @@ class CreateStation(Realm):
             if 'sta' in list(interface_name.keys())[0]:
                 available_stations.append(list(interface_name.keys())[0])
 
-        logger.debug(f"The following stations currently exist: ")
         return available_stations
 
 
