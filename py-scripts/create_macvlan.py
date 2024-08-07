@@ -1,34 +1,52 @@
 #!/usr/bin/env python3
 """
-NAME: create_macvlan.py
+NAME:       create_macvlan.py
 
-PURPOSE:  This script will create a variable number of macvlans on a specified ethernet port.
+PURPOSE:    Create one or more MACVLAN ports on the specified parent port.
+
+            This script will optionally set IPv4 configuration (static or dynamic), if specified.
+            The selected IPv4 configuration method will be applied to all created MACVLAN ports
+            created by this script.
 
 EXAMPLE:
-        # Sample CLI Formate:
+            # Single MACVLAN with MACVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
+                ./create_macvlan.py \
+                    --parent        1.1.eth3 \
+                    --macvlan_ids   10
 
-            ./create_macvlan.py --mgr localhost --macvlan_parent <port> --num_ports <num ports>
-            --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr> --cleanup
+            # Single MACVLAN with MACVLAN ID 10 on parent port '1.1.eth3'. DHCPv4 enabled.
+                ./create_macvlan.py \
+                    --parent        1.1.eth3 \
+                    --macvlan_ids   10 \
+                    --dhcpv4
 
-        # For creating the variable number of macvlan's
+            # Single MACVLAN with MACVLAN ID 10 on parent port '1.1.eth3'. Static IPv4 configuration.
+                ./create_macvlan.py \
+                    --parent        1.1.eth3 \
+                    --macvlan_ids   10 \
+                    --ipv4_address  172.16.0.10 \
+                    --ipv4_netmask  255.255.255.0 \
+                    --ipv4_gateway  172.16.0.1
 
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
-            --netmask 255.255.255.0 --gateway 192.168.92.1
+            # Four MACVLANs with MACVLAN IDs 10, 20, 30, and 40 on parent port '1.1.eth3'. DHCPv4 enabled.
+                ./create_macvlan.py \
+                    --parent        1.1.eth3 \
+                    --macvlan_ids   10 20 30 40 \
+                    --dhcpv4
 
-        # For creating the macvlan's with user-defined port names
-
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0,eth1#1,eth1#2
-
-        # For creating the macvlan's with first defiende port name
-
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_port eth1#143
+            # Two MACVLANs with MACVLAN IDs 10 and 20 on parent port '1.1.eth3'. Static IPv4 configuration
+                ./create_macvlan.py \
+                    --parent        1.1.eth3 \
+                    --macvlan_ids   10 20 \
+                    --ipv4_address  172.16.0.10 172.10.0.20 \
+                    --ipv4_netmask  255.255.255.0 \
+                    --ipv4_gateway  172.16.0.1
 
 SCRIPT_CLASSIFICATION:  Creation
 
 SCRIPT_CATEGORIES:  Functional 
 
-NOTES:
-        You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
+NOTES:      You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
 
 STATUS: Functional
 
@@ -69,60 +87,71 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class CreateMacVlan(Realm):
-    def __init__(self, host, port,
-                 num_ports=1,
-                 macvlan_parent=None,
-                 first_mvlan_ip=None,
-                 netmask=None,
-                 gateway=None,
-                 dhcp=True,
-                 port_list=None,
-                 ip_list=None,
-                 debug=False,
-                 _exit_on_error=False,
-                 _exit_on_fail=False):
-        super().__init__(host, port, debug_=debug,
-                         _exit_on_error=_exit_on_error,
-                         _exit_on_fail=_exit_on_fail)
-        self.port = port
-        self.port_list = []
-        self.ip_list = ip_list
-        self.netmask = netmask
-        self.gateway = gateway
-        self.dhcp = dhcp
-        if macvlan_parent is not None:
-            self.macvlan_parent = macvlan_parent
-            self.port_list = port_list
+    def __init__(self,
+                 mgr: str,
+                 mgr_port: int,
+                 parent_port: str,
+                 macvlan_ids: list,
+                 dhcpv4: bool,
+                 ipv4_addresses: list,
+                 ipv4_netmasks: list,
+                 ipv4_gateways: list,
+                 exit_on_error: bool = False,
+                 debug: bool = False,
+                 **kwargs):
+        super().__init__(mgr, mgr_port, debug_=debug, _exit_on_error=exit_on_error)
 
-        self.mvlan_profile = self.new_mvlan_profile()
+        self.host = mgr
+        self.port = mgr_port
 
-        self.mvlan_profile.num_macvlans = int(num_ports)
-        self.mvlan_profile.desired_macvlans = self.port_list
-        self.mvlan_profile.macvlan_parent = self.macvlan_parent[2]
-        self.mvlan_profile.shelf = self.macvlan_parent[0]
-        self.mvlan_profile.resource = self.macvlan_parent[1]
-        self.mvlan_profile.dhcp = dhcp
-        self.mvlan_profile.netmask = netmask
-        self.mvlan_profile.first_ip_addr = first_mvlan_ip
-        self.mvlan_profile.gateway = gateway
+        self.macvlan_profiles = []
+        for ix, macvlan_id in enumerate(macvlan_ids):
+            # Defaults to one MACVLAN port created per profile
+            # This script assumes the same parent port for all created MACVLAN ports
+            macvlan_profile = self.new_mvlan_profile()
+            self.macvlan_profiles.append(macvlan_profile)
 
-        self.created_ports = []
+            # Workaround for MACVLAN profile quirks
+            shelf, resource, parent, _ = self.name_to_eid(parent_port)
+            macvlan_profile.shelf = shelf
+            macvlan_profile.resource = resource
+            macvlan_profile.macvlan_parent = parent
+            macvlan_profile.desired_macvlans = ["#" + macvlan_id]
+
+            if dhcpv4:
+                macvlan_profile.dhcp = True
+            elif ipv4_addresses:
+                macvlan_profile.dhcp = False
+                macvlan_profile.first_ip_addr = ipv4_addresses[ix]
+
+                # Either apply same subnet mask to all or one specified for each
+                if len(ipv4_netmasks) == 1:
+                    macvlan_profile.netmask = ipv4_netmasks[0]
+                else:
+                    macvlan_profile.netmask = ipv4_netmasks[ix]
+
+                # Either apply same gateway to all or on especified for each
+                if len(ipv4_gateways) == 1:
+                    macvlan_profile.gateway = ipv4_gateways[0]
+                else:
+                    macvlan_profile.gateway = ipv4_gateways[ix]
 
     def cleanup(self):
-        print("Cleaning up")
-        self.mvlan_profile.cleanup()
+        logger.info("Cleaning up any created or conflicting MACVLAN ports")
+        for macvlan_profile in self.macvlan_profiles:
+            macvlan_profile.cleanup()
 
     def build(self):
-        # Build MACVLANs
-        logger.info("Creating MACVLANs")
-        if self.mvlan_profile.create(
-            admin_down=False,
-            sleep_time=0,
-            debug=self.debug):
-            self._pass("MACVLAN build finished")
-            self.created_ports += self.mvlan_profile.created_macvlans
-        else:
-            self._fail("MACVLAN port build failed.")
+        logger.info("Creating MACVLAN port(s)")
+        for macvlan_profile in self.macvlan_profiles:
+            ret = macvlan_profile.create(debug=self.debug, sleep_time=0)
+
+            if not ret:
+                logger.error(
+                    f"Failed to create MACVLAN port with MACVLAN ID: {macvlan_profile.desired_macvlans}")
+                exit(1)
+
+        logger.info("Successfully created MACVLAN port(s)")
 
 
 def parse_args():
@@ -134,35 +163,53 @@ def parse_args():
             Creates MACVLAN endpoints.''',
 
         description='''\
-NAME: create_macvlan.py
+NAME:       create_macvlan.py
 
-PURPOSE:  This script will create a variable number of macvlans on a specified ethernet port.
+PURPOSE:    Create one or more MACVLAN ports on the specified parent port.
+
+            This script will optionally set IPv4 configuration (static or dynamic), if specified.
+            The selected IPv4 configuration method will be applied to all created MACVLAN ports
+            created by this script.
 
 EXAMPLE:
-        # Sample CLI Formate:
+            # Single MACVLAN with MACVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
+                ./create_macvlan.py \
+                    --parent        1.1.eth3 \
+                    --macvlan_ids   10
 
-            ./create_macvlan.py --mgr localhost --macvlan_parent <port> --num_ports <num ports>
-            --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr> --cleanup
+            # Single MACVLAN with MACVLAN ID 10 on parent port '1.1.eth3'. DHCPv4 enabled.
+                ./create_macvlan.py \
+                    --parent        1.1.eth3 \
+                    --macvlan_ids   10 \
+                    --dhcpv4
 
-        # For creating the variable number of macvlan's
+            # Single MACVLAN with MACVLAN ID 10 on parent port '1.1.eth3'. Static IPv4 configuration.
+                ./create_macvlan.py \
+                    --parent        1.1.eth3 \
+                    --macvlan_ids   10 \
+                    --ipv4_address  172.16.0.10 \
+                    --ipv4_netmask  255.255.255.0 \
+                    --ipv4_gateway  172.16.0.1
 
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
-            --netmask 255.255.255.0 --gateway 192.168.92.1
+            # Four MACVLANs with MACVLAN IDs 10, 20, 30, and 40 on parent port '1.1.eth3'. DHCPv4 enabled.
+                ./create_macvlan.py \
+                    --parent        1.1.eth3 \
+                    --macvlan_ids   10 20 30 40 \
+                    --dhcpv4
 
-        # For creating the macvlan's with user-defined port names
-
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0,eth1#1,eth1#2
-
-        # For creating the macvlan's with first defined port name
-
-            ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_port eth1#143
+            # Two MACVLANs with MACVLAN IDs 10 and 20 on parent port '1.1.eth3'. Static IPv4 configuration
+                ./create_macvlan.py \
+                    --parent        1.1.eth3 \
+                    --macvlan_ids   10 20 \
+                    --ipv4_address  172.16.0.10 172.10.0.20 \
+                    --ipv4_netmask  255.255.255.0 \
+                    --ipv4_gateway  172.16.0.1
 
 SCRIPT_CLASSIFICATION:  Creation
 
 SCRIPT_CATEGORIES:  Functional 
 
-NOTES:
-        You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
+NOTES:      You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
 
 STATUS: Functional
 
@@ -177,42 +224,103 @@ LICENSE:
 INCLUDE_IN_README: False
 
 ''')
-    parser.add_argument(
-        '--macvlan_parent',
-        help='specifies parent port for macvlan creation',
-        required=False)
-    parser.add_argument(
-        '--first_port',
-        help='specifies name of first port to be used',
-        default=None)
-    parser.add_argument(
-        '--num_ports',
-        help='number of ports to create',
-        default=1)
-    parser.add_argument(
-        '--use_ports',
-        help='List of comma separated ports to use with ips, \'=\' separates name and ip'
-        '{ port_name1=ip_addr1, port_name1=ip_addr2 }. \n'
-        'Ports without ips will be left alone',
-        default=None)
-    parser.add_argument(
-        '--first_mvlan_ip',
-        help='specifies first static ip address to be used or dhcp',
-        default=None)
-    parser.add_argument(
-        '--netmask',
-        help='specifies netmask to be used with static ip addresses',
-        default=None)
-    parser.add_argument(
-        '--gateway',
-        help='specifies default gateway to be used with static addressing',
-        default=None)
-    parser.add_argument(
-        '--cleanup',
-        help='Cleaning Up the created MAC VLANs if we want to cleanup.',
-        action='store_true')
+    # Required arguments
+    parser.add_argument('--parent', '--parent_port', '--macvlan_parent',
+                        dest='parent_port',
+                        help='Parent port used by created MACVLAN port(s)',
+                        default=None,
+                        required=True)
+    parser.add_argument('--macvlan_ids',
+                        dest='macvlan_ids',
+                        nargs='+',
+                        help='MACVLAN ID(s) used in creation. '
+                             'One MACVLAN port is created per ID. For static IP configuration, '
+                             'the number of IDs specified in this argument must match the number '
+                             'of static IP addresses specified in the \'--ipv4_addresses\'.',
+                        default=None,
+                        required=True)
+
+    # Optional arguments
+    parser.add_argument('--cleanup',
+                        help='Clean up any created ports before exiting.',
+                        action='store_true')
+
+    # Optional IPv4 configuration
+    #
+    # Limit users to only one of static or DHCP IPv4 configuration.
+    # Allow users to specify no L3 configuration.
+    #
+    # If static IPv4 configuration, argument validation must check that
+    # number of static IPv4 addresses matches either number of ports or
+    # number of specified MACVLAN IDs
+    ipv4_cfg = parser.add_mutually_exclusive_group(required=False)
+    ipv4_cfg.add_argument('--dhcp', '--dhcpv4', '--use_dhcp',
+                          dest='dhcpv4',
+                          help='Enable DHCPv4 on created ports',
+                          action='store_true')
+    ipv4_cfg.add_argument('--ip', '--ips', '--ipv4_address', '--ipv4_addresses',
+                          dest='ipv4_addresses',
+                          type=str,
+                          nargs='+',
+                          help='List of static IPv4 addresses. The number of IPv4 addresses '
+                               'specified must match the number of ports specified in '
+                               '\'--num_ports\'',
+                          default=None)
+
+    # Only checked when static configuration specified
+    parser.add_argument('--netmask', '--netmasks', '--ipv4_netmask', '--ipv4_netmasks',
+                        dest='ipv4_netmasks',
+                        type=str,
+                        nargs='+',
+                        help='IPv4 subnet mask to apply to all created MACVLAN ports '
+                             'when static IPv4 configuration requested',
+                        default=None)
+    parser.add_argument('--gateway', '--gateways', '--ipv4_gateway', '--ipv4_gateways',
+                        dest='ipv4_gateways',
+                        type=str,
+                        nargs='+',
+                        help='IPv4 gateway to apply to all created MACVLAN ports '
+                             'when static IPv4 configuration requested',
+                        default=None)
 
     return parser.parse_args()
+
+
+def validate_args(args):
+    # User either specifies DHCPv4, static IPv4 configuration, or no IPv4 configuration
+    #
+    # If user specified static configuration, ensure that number of specified ports
+    # to create matches number of static IPv4 configurations specified
+    if args.ipv4_addresses:
+        num_addresses = len(args.ipv4_addresses)
+
+        # If multiple static IPv4 addresses specified, then must match number
+        # of MACVLAN IDs specified
+        if args.macvlan_ids and num_addresses != len(args.macvlan_ids):
+            logger.error("Number of static IPv4 addresses does not match \'--macvlan_ids\'")
+            exit(1)
+
+        # IPv4 subnet mask required if static IPv4 configuration specified
+        # If more than one subnet mask specified, must match number of IPv4 addresses
+        # If only one, then apply that to all created ports
+        if not args.ipv4_netmasks:
+            logger.error("No IPv4 subnet mask specified")
+            exit(1)
+        elif len(args.ipv4_netmasks) != 1 and num_addresses != len(args.ipv4_netmasks):
+            logger.error("Number of IPv4 subnet masks does not match number of IPv4 addresses.")
+            exit(1)
+
+        # IPv4 gateway required if static IPv4 configuration specified
+        # If more than one gateway specified, must match number of IPv4 addresses
+        # If only one, then apply that to all created ports
+        if not args.ipv4_gateways:
+            # TODO: Should we make this a warn and continue? Will need to fix
+            # MACVLANProfile code if so
+            logger.error("No IPv4 gateway specified")
+            exit(1)
+        elif len(args.ipv4_gateways) != 1 and num_addresses != len(args.ipv4_gateways):
+            logger.error("Number of IPv4 gateways does not match number of IPv4 addresses.")
+            exit(1)
 
 
 def main():
@@ -228,96 +336,19 @@ def main():
         print(help_summary)
         exit(0)
 
+    # Configure logging
     logger_config = lf_logger_config.lf_logger_config()
-    # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    args.macvlan_parent = LFUtils.name_to_eid(args.macvlan_parent)
-    port_list = []
-    ip_list = []
-    if args.first_port is not None:
-        if args.first_port.startswith("sta"):
-            if (args.num_ports is not None) and (int(args.num_ports) > 0):
-                start_num = int(args.first_port[3:])
-                num_ports = int(args.num_ports)
-                port_list = LFUtils.port_name_series(
-                    prefix="sta",
-                    start_id=start_num,
-                    end_id=start_num + num_ports - 1,
-                    padding_number=10000)
-        else:
-            if (args.num_ports is not None) and args.macvlan_parent is not None and (
-                    int(args.num_ports) > 0) and args.macvlan_parent[2] in args.first_port:
-                start_num = int(
-                    args.first_port[args.first_port.index('#') + 1:])
-                num_ports = int(args.num_ports)
-                port_list = LFUtils.port_name_series(
-                    prefix=args.macvlan_parent[2] + "#",
-                    start_id=start_num,
-                    end_id=start_num + num_ports - 1,
-                    padding_number=100000)
-            else:
-                raise ValueError(
-                    "Invalid values for num_ports [%s], macvlan_parent [%s], and/or first_port [%s].\n"
-                    "first_port must contain parent port and num_ports must be greater than 0" %
-                    (args.num_ports, args.macvlan_parent, args.first_port))
-    else:
-        if args.use_ports is None:
-            num_ports = int(args.num_ports)
-            port_list = LFUtils.port_name_series(
-                prefix=args.macvlan_parent[2] + "#",
-                start_id=0,
-                end_id=num_ports - 1,
-                padding_number=100000)
-        else:
-            temp_list = args.use_ports.split(',')
-            for port in temp_list:
-                port_list.append(port.split('=')[0])
-                if '=' in port:
-                    ip_list.append(port.split('=')[1])
-                else:
-                    ip_list.append(0)
+    validate_args(args)
 
-            if len(port_list) != len(ip_list):
-                raise ValueError(
-                    temp_list, " ports must have matching ip addresses!")
-
-    if args.first_mvlan_ip is not None:
-        if args.first_mvlan_ip.lower() == "dhcp":
-            dhcp = True
-        else:
-            dhcp = False
-    else:
-        dhcp = True
-
-    ip_test = CreateMacVlan(args.mgr,
-                            args.mgr_port,
-                            port_list=port_list,
-                            ip_list=ip_list,
-                            debug=args.debug,
-                            macvlan_parent=args.macvlan_parent,
-                            first_mvlan_ip=args.first_mvlan_ip,
-                            netmask=args.netmask,
-                            gateway=args.gateway,
-                            dhcp=dhcp,
-                            num_ports=args.num_ports,
-                            # want a mount options param
-                            )
-
+    ip_test = CreateMacVlan(**vars(args))
     ip_test.build()
 
     if args.cleanup:
         time.sleep(5)
         ip_test.cleanup()
-
-    # TODO:  Cleanup by default, add --no_cleanup option to not do cleanup.
-
-    if ip_test.passes():
-        logging.info('Created %s MacVlan connections' % args.num_ports)
-        ip_test.exit_success()
-    else:
-        ip_test.exit_fail()
 
 
 if __name__ == "__main__":
