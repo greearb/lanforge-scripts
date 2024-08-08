@@ -20,3 +20,28 @@ jobs:
         uses: py-actions/flake8@v2
         #with:
         #  plugins: "flake8-bugbear"
+
+  help-check:
+    # Tie runner to Ubuntu 22.04 LTS, as it still supports Python 3.7
+    # Minimum Python version on Ubuntu 24.04 LTS is Python 3.9.
+    runs-on: ubuntu-22.04
+    name: Help Check
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v4
+
+      # Cached for subsequent steps, see:
+      # https://github.com/actions/setup-python#caching-packages-dependencies
+      - name: Set up Python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.7"
+          cache: "pip"
+
+      - name: Install all py-scripts dependencies
+        run: python py-scripts/update_dependencies.py
+
+      - name: Run help check
+        run: |
+          cd py-scripts
+          bash lf_help_check.bash
