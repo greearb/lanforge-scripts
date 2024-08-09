@@ -95,7 +95,7 @@ def main():
         "--ss_dbm",
         "--ss_list_dbm",
         dest="ss_list_dbm",
-        help="pass in a spatial stream list --ss_dbm '-55 -53 -60 -22",
+        help="pass in a spatial stream list --ss_dbm '-55 -56 -57 -60'",
         type=str,
     )
 
