@@ -378,10 +378,12 @@ class Throughput(Realm):
 
             # If self.device_list is not provided, prompt user to select devices from user_list
             logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(self.user_list))
-            devices_list = input("Enter the desired resources to run the test:")
+            devices_list = input("Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices: ")
 
         # If no devices are selected or only comma is entered, log an error and return False
-        if(devices_list=="" or devices_list==","):
+        if devices_list =="all":
+            devices_list=""
+        if(devices_list==","):
             logger.error("Selected Devices are not available in the lanforge")
             return False,self.real_client_list
         
@@ -421,7 +423,7 @@ class Throughput(Realm):
 
         # Check if incremental_capacity is provided and ensure selected devices are sufficient
         if (len(self.incremental_capacity)>0 and int(self.incremental_capacity.split(',')[-1])>len(self.mac_id_list)):
-            logger.error("Devices selected is less than given incremental capacity")
+            logger.error("Devices available are less than given incremental capacity")
             return False,self.real_client_list
 
         else:
@@ -463,7 +465,7 @@ class Throughput(Realm):
                 mode_list.append('-')
         for sta in station_names:
             if sta in interfaces_dict:
-                link_speed_list.append(interfaces_dict[sta]['rx-rate'])
+                link_speed_list.append(interfaces_dict[sta]['tx-rate'])
             else:
                 link_speed_list.append('-')
         return signal_list,channel_list,mode_list,link_speed_list
@@ -646,6 +648,7 @@ class Throughput(Realm):
             index += 1
             
             signal_list,channel_list,mode_list,link_speed_list=self.get_signal_and_channel_data(self.input_devices_list)
+            signal_list = [int(i) if i != "" else 0 for i in signal_list]
 
             # Fetch required throughput data from Lanforge
             response = list(
@@ -818,6 +821,7 @@ class Throughput(Realm):
         drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
         drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
         signal_list,channel_list,mode_list,link_speed_list=self.get_signal_and_channel_data(self.input_devices_list)
+        signal_list = [int(i) if i != "" else 0 for i in signal_list]
 
         # Storing individual device throughput data(download, upload, Rx % drop A, Rx % drop B) to dataframe after test stopped
         for i in range(len(download_throughput)):
@@ -1078,7 +1082,7 @@ class Throughput(Realm):
             report.build_objective()
 
             # Initialize counts and lists for device types
-            android_devices,windows_devices,linux_devices,ios_devices=0,0,0,0
+            android_devices,windows_devices,linux_devices,mac_devices=0,0,0,0
             all_devices_names=[]
             device_type=[]
             packet_size_text=''
@@ -1109,7 +1113,7 @@ class Throughput(Realm):
                 elif 'Mac' in split_device_name:
                     all_devices_names.append(split_device_name[2] + ("(Mac)"))
                     device_type.append("Mac")
-                    ios_devices+=1
+                    mac_devices+=1
 
             # Build total_devices string based on counts
             if android_devices>0:
@@ -1118,12 +1122,15 @@ class Throughput(Realm):
                 total_devices+= f" Windows({windows_devices})" 
             if linux_devices>0:
                 total_devices+= f" Linux({linux_devices})" 
-            if ios_devices>0:
-                total_devices+= f" IOS({ios_devices})"
+            if mac_devices>0:
+                total_devices+= f" Mac({mac_devices})"
 
             # Determine incremental_capacity_data based on self.incremental_capacity
             if len(self.incremental_capacity)==1:
-                incremental_capacity_data=str(self.incremental_capacity[0])
+                if len(incremental_capacity_list)==1:
+                    incremental_capacity_data=str(self.incremental_capacity[0])
+                else:
+                    incremental_capacity_data=','.join(map(str, incremental_capacity_list))
             elif(len(self.incremental_capacity)>1):
                 self.incremental_capacity=self.incremental_capacity.split(',')
                 incremental_capacity_data=', '.join(self.incremental_capacity)
@@ -1298,24 +1305,24 @@ class Throughput(Realm):
                     devices_data_to_create_bar_graph.append(download_data)
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data=['Download','Upload']
-                    real_time_data=f"Real Time Throughput: Average achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))/len(download_data[0:int(incremental_capacity_list[i])])),2)} Mbps, Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])/len(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data=f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))),2)} Mbps, Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
                 
                 elif self.direction=='Download':
                     download_values_list=data['Overall Download'][data['Iteration']==i+1].values.tolist()
                     data_set_in_graph.append(download_values_list)
                     devices_data_to_create_bar_graph.append(download_data)
                     label_data=['Download']
-                    real_time_data=f"Real Time Throughput: Average achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))/len(download_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data=f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))),2)} Mbps"
                 
                 elif self.direction=='Upload':
                     upload_values_list=data['Overall Upload'][data['Iteration']==i+1].values.tolist()
                     data_set_in_graph.append(upload_values_list)
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data=['Upload']
-                    real_time_data=f"Real Time Throughput: Average achieved Throughput: Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])/len(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data=f"Real Time Throughput: Achieved Throughput: Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
                 
                 if len(incremental_capacity_list)>1:
-                    report.set_custom_html(f"<h2><u>Iteration-{i+1}: test running on devices : {', '.join(devices_on_running)}</u></h2>")
+                    report.set_custom_html(f"<h2><u>Iteration-{i+1}: Number of Devices Running : {len(devices_on_running)}</u></h2>")
                     report.build_custom()
                 logger
                 for _ in range(len(data_set_in_graph)):
@@ -1346,14 +1353,16 @@ class Throughput(Realm):
                             _obj_title="Per Client Avg-Throughput",
                             _obj=" ")
                 report.build_objective()
+                devices_on_running_trimmed = [n[:17] if len(n) > 17 else n for n in devices_on_running]
                 graph=lf_bar_graph_horizontal(_data_set=devices_data_to_create_bar_graph,
                                             _xaxis_name="Avg Throughput(Mbps)",
                                             _yaxis_name="Devices",
                                             _graph_image_name=f"image_name{i}",
                                             _label=label_data,
-                                            _yaxis_categories=devices_on_running,
+                                            _yaxis_categories= devices_on_running_trimmed,
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
                                             _figsize=(x_fig_size, y_fig_size)
                                                 )
                 
@@ -1372,9 +1381,10 @@ class Throughput(Realm):
                                             _yaxis_name="Devices",
                                             _graph_image_name=f"signal_image_name{i}",
                                             _label=['RSSI'],
-                                            _yaxis_categories=devices_on_running,
+                                            _yaxis_categories= devices_on_running_trimmed,
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
                                             _figsize=(x_fig_size, y_fig_size)
                                             #    _color=['lightcoral']
                                                 )
@@ -1389,12 +1399,12 @@ class Throughput(Realm):
                             _obj_title="Detailed Result Table ",
                             _obj="The below tables provides detailed information for the throughput test on each device.")
                 report.build_objective()
-            
+
                 bk_dataframe = {
                             " Device Type " : device_type[0:int(incremental_capacity_list[i])],
                             " Username": devices_on_running[0:int(incremental_capacity_list[i])],
                             " SSID " : self.ssid_list[0:int(incremental_capacity_list[i])],
-                            " MAC " : self.mac_id_list[0:int(incremental_capacity_list[i])],
+                            " MAC ": [mac.split(' ')[1] for mac in self.mac_id1_list[0:int(incremental_capacity_list[i])]],
                             " Channel ":self.channel_list[0:int(incremental_capacity_list[i])],
                             " Mode" : self.mode_list[0:int(incremental_capacity_list[i])],
                             " Direction":direction_in_table[0:int(incremental_capacity_list[i])],
@@ -1402,7 +1412,7 @@ class Throughput(Realm):
                             " Observed download rate(Mbps)" : [str(n)+" Mbps" for n in download_data[0:int(incremental_capacity_list[i])]],
                             " Offered upload rate(Mbps) " : upload_list[0:int(incremental_capacity_list[i])],
                             " Observed upload rate(Mbps) " : [str(n)+" Mbps" for n in upload_data[0:int(incremental_capacity_list[i])]],
-                            " RSSI ":  ['-'+str(n) + " dbm" for n in rssi_data[0:int(incremental_capacity_list[i])]],
+                            " RSSI ": ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[0:int(incremental_capacity_list[i])]],
                             " Link Speed ":self.link_speed_list[0:int(incremental_capacity_list[i])],
                             " Packet Size(Bytes) ":[str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]]
                         }
@@ -1426,7 +1436,7 @@ class Throughput(Realm):
             
             logger.info("path: {}".format(report_path))
             logger.info("path_date_time: {}".format(report_path_date_time))
-            report.set_title("Interopability Test")
+            report.set_title("Interoperability Test")
             report.build_banner()
             # objective title and description
             report.set_obj_html(_obj_title="Objective",
@@ -1442,7 +1452,7 @@ class Throughput(Realm):
             report.build_objective()
 
             # Initialize counts and lists for device types
-            android_devices,windows_devices,linux_devices,ios_devices=0,0,0,0
+            android_devices,windows_devices,linux_devices,mac_devices=0,0,0,0
             all_devices_names=[]
             device_type=[]
             total_devices=""
@@ -1464,7 +1474,7 @@ class Throughput(Realm):
                 elif 'Mac' in split_device_name:
                     all_devices_names.append(split_device_name[2] + ("(Mac)"))
                     device_type.append("Mac")
-                    ios_devices+=1
+                    mac_devices+=1
 
             # Build total_devices string based on counts
             if android_devices>0:
@@ -1473,8 +1483,8 @@ class Throughput(Realm):
                 total_devices+= f" Windows({windows_devices})" 
             if linux_devices>0:
                 total_devices+= f" Linux({linux_devices})" 
-            if ios_devices>0:
-                total_devices+= f" IOS({ios_devices})"
+            if mac_devices>0:
+                total_devices+= f" Mac({mac_devices})"
             
             # Construct test_setup_info dictionary for test setup table
             test_setup_info = {
@@ -1614,14 +1624,16 @@ class Throughput(Realm):
                             _obj_title="Per Client Avg-Throughput",
                             _obj=" ")
                 report.build_objective()
+                devices_on_running_trimmed = [n[:17] if len(n) > 17 else n for n in devices_on_running]
                 graph=lf_bar_graph_horizontal(_data_set=devices_data_to_create_bar_graph,
                                             _xaxis_name="Avg Throughput(Mbps)",
                                             _yaxis_name="Devices",
                                             _graph_image_name=f"image_name{i}",
                                             _label=label_data,
-                                            _yaxis_categories=devices_on_running,
+                                            _yaxis_categories=devices_on_running_trimmed,
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
                                             _figsize=(x_fig_size, y_fig_size)
                                                 )
                 
@@ -1640,9 +1652,10 @@ class Throughput(Realm):
                                             _yaxis_name="Devices",
                                             _graph_image_name=f"signal_image_name{i}",
                                             _label=['RSSI'],
-                                            _yaxis_categories=devices_on_running,
+                                            _yaxis_categories=devices_on_running_trimmed,
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
                                             _figsize=(x_fig_size, y_fig_size)
                                             #    _color=['lightcoral']
                                                 )
@@ -1657,12 +1670,11 @@ class Throughput(Realm):
                             _obj_title="Detailed Result Table ",
                             _obj="The below tables provides detailed information for the throughput test on each device.")
                 report.build_objective()
-
                 bk_dataframe = {
                             " Device Type " : device_type[int(incremental_capacity_list[i])-1],
                             " Username": devices_on_running[-1],
                             " SSID " : self.ssid_list[int(incremental_capacity_list[i])-1],
-                            " MAC " : self.mac_id_list[int(incremental_capacity_list[i])-1],
+                            " MAC " : str(self.mac_id1_list[int(incremental_capacity_list[i])-1]).split(' ')[-1],
                             " Channel ":self.channel_list[int(incremental_capacity_list[i])-1],
                             " Mode" : self.mode_list[int(incremental_capacity_list[i])-1],
                             " Direction":direction_in_table[-1],
@@ -1670,7 +1682,7 @@ class Throughput(Realm):
                             " Observed download rate(Mbps)" : [str(download_data[-1])+" Mbps"],
                             " Offered upload rate(Mbps) " : upload_list[-1],
                             " Observed upload rate(Mbps) " : [str(upload_data[-1])+" Mbps" ],
-                            " RSSI ":  ['-'+str(rssi_data[-1])+ " dbm" ],
+                            " RSSI ":  ['' if rssi_data[-1] == 0 else '-'+str(rssi_data[-1])+ " dbm"],
                             " Link Speed ":self.link_speed_list[int(incremental_capacity_list[i])-1],
                             # " Packet Size(Bytes) ":[str(n)+" Bytes" for n in packet_size_in_table[0:int(incremental_capacity_list[i])]]
                         }
@@ -1685,7 +1697,7 @@ class Throughput(Realm):
         # report.build_custom()
         report.build_footer()
         report.write_html()
-        report.write_pdf()
+        report.write_pdf(_orientation="Landscape")
 
     def trim_data(self,array_size,to_updated_array):
         if array_size < 6:

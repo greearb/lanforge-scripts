@@ -612,6 +612,7 @@ class HttpDownload(Realm):
         pass
 
     def generate_graph(self, dataset, lis, bands):
+        bands=['Download']
         if self.client_type == "Real":
             lis=self.devices_list
         elif self.client_type == "Virtual":
@@ -652,6 +653,7 @@ class HttpDownload(Realm):
         return graph_png
 
     def graph_2(self, dataset2, lis, bands):
+        bands=['Download']
         if self.client_type == "Real":
             lis = self.devices_list
         elif self.client_type == "Virtual":
@@ -717,7 +719,7 @@ class HttpDownload(Realm):
 
         report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
-        report.set_obj_html("Objective", "The Webpage Download Test is designed to verify that N clients connected on specified band can "
+        report.set_obj_html("Objective", "The HTTP Download Test is designed to verify that N clients connected on specified band can "
                                  "download some amount of file from HTTP server and measures the "
                                  "time taken by the client to Download the file.")
         report.build_objective()
@@ -834,6 +836,13 @@ class HttpDownload(Realm):
             i = str(round(i, 1))
             z2.append(i)
 
+        download_table_value_dup = {
+            # "Band": bands,
+            "Minimum": z,
+            "Maximum": z1,
+            "Average": z2
+        }
+
         download_table_value = {
             "Band": bands,
             "Minimum": z,
@@ -879,7 +888,7 @@ class HttpDownload(Realm):
             csv_outfile = report.file_add_path(csv_outfile)
             print("csv output file : {}".format(csv_outfile))
 
-        test_setup = pd.DataFrame(download_table_value)
+        test_setup = pd.DataFrame(download_table_value_dup)
         report.set_table_dataframe(test_setup)
         report.build_table()
         report.set_table_title("Overall Results")
@@ -1133,6 +1142,38 @@ def main():
                             )
         if args.client_type == "Real":
             port_list,device_list,macid_list = http.get_real_client_list()
+            android_devices,windows_devices,linux_devices,mac_devices=0,0,0,0
+            all_devices_names=[]
+            device_type=[]
+            total_devices=""
+            for i in device_list:
+                split_device_name=i.split(" ")
+                if 'android' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Android)") )
+                    device_type.append("Android")
+                    android_devices+=1
+                elif 'Win' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Windows)"))
+                    device_type.append("Windows")
+                    windows_devices+=1
+                elif 'Lin' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Linux)"))
+                    device_type.append("Linux")
+                    linux_devices+=1
+                elif 'Mac' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Mac)"))
+                    device_type.append("Mac")
+                    mac_devices+=1
+
+            # Build total_devices string based on counts
+            if android_devices>0:
+                total_devices+= f" Android({android_devices})" 
+            if windows_devices>0:
+                total_devices+= f" Windows({windows_devices})" 
+            if linux_devices>0:
+                total_devices+= f" Linux({linux_devices})" 
+            if mac_devices>0:
+                total_devices+= f" Mac({mac_devices})"
             args.num_stations = len(port_list)
         if not args.get_url_from_file:
             http.file_create(ssh_port=args.ssh_port)
@@ -1267,14 +1308,25 @@ def main():
         if int(duration == 3600) or (int(duration) > 3600):
             duration = str(duration/3600) + "h"
 
-    test_setup_info = {
-        "AP Name": args.ap_name,
-        "SSID": ssid,
-        "Security" : security,
-        "No of Devices" : args.num_stations,
-        "Traffic Direction" : "Download",
-        "Traffic Duration ": duration
-    }
+    if args.client_type == "Real":
+        test_setup_info = {
+            "AP Name": args.ap_name,
+            "SSID": ssid,
+            "Device List": ", ".join(all_devices_names),
+            "Security" : security,
+            "No of Devices" : "Total"+ f"({args.num_stations})" + total_devices,
+            "Traffic Direction" : "Download",
+            "Traffic Duration ": duration
+        }
+    else:
+        test_setup_info = {
+            "AP Name": args.ap_name,
+            "SSID": ssid,
+            "Security" : security,
+            "No of Devices" : args.num_stations,
+            "Traffic Direction" : "Download",
+            "Traffic Duration ": duration
+        }
     test_input_infor = {
         "LANforge ip": args.mgr,
         "Bands": args.bands,

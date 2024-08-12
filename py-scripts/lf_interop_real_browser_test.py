@@ -21,19 +21,19 @@ python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.
 
 Example-3:
 Command Line Interface to run url in the Browser with specified urls_per_tennm (specify the number of url you want to test in the given duration):
-python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --urls_per_tenm 10 --debug
+python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --debug
 
     CASE-1:
-    If not specified it takes the default urls_per_tenm value (default urls_per_tenm is 100)
+    If not specified it takes the default count value (default count is 100)
 
 Example-4:
 Command Line Interface to run the the Real Browser test with incremental Capacity by specifying the --incremental flag
-python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --urls_per_tenm 10 --incremental --debug
+python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --incremental --debug
 
 
 Example-5:
 Command Line Interface to run the the Real Browser test in webGUI by specifying the --dowebgui flag
-python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --urls_per_tenm 10 --dowebgui --debug
+python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --dowebgui --debug
 
 Example-6:
 Command Line Interface to run url in the Browser with precleanup:
@@ -42,6 +42,10 @@ python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.
 Example-7:
 Command Line Interface to run url in the Browser with postcleanup:
 python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --postcleanup --debug
+
+Example-8:
+Command Line Interface to run url in the Browser with incremental capacity:
+python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --incremental_capacity 1 --debug
 
 SCRIPT CLASSIFICATION: Test
 
@@ -103,6 +107,8 @@ base_RealDevice = base.RealDevice
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_report_pdf = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
+port_utils = importlib.import_module("py-json.port_utils")
+PortUtils = port_utils.PortUtils
 
 # Set up logging configuration for the script
 logger = logging.getLogger(__name__)
@@ -113,7 +119,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class RealBrowserTest(Realm):
     def __init__(self, host, ssid, passwd, encryp, suporrted_release=None, max_speed=None, url=None,
-                urls_per_tenm=None, duration=None, resource_ids = None, dowebgui = False,result_dir = "",test_name = None, incremental = None,postcleanup=False,precleanup=False):
+                count=None, duration=None, resource_ids = None, dowebgui = False,result_dir = "",test_name = None, incremental = None,postcleanup=False,precleanup=False):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         # Initialize attributes with provided parameters
         self.host = host 
@@ -123,7 +129,7 @@ class RealBrowserTest(Realm):
         self.supported_release = suporrted_release
         self.max_speed = max_speed  
         self.url = url  
-        self.urls_per_tenm = urls_per_tenm
+        self.count = count
         self.duration = duration  
         self.resource_ids = resource_ids
         self.dowebgui = dowebgui
@@ -132,6 +138,8 @@ class RealBrowserTest(Realm):
         self.incremental = incremental
         self.postCleanUp=postcleanup
         self.preCleanUp=precleanup
+        self.direction = "dl"
+        self.dest = "/dev/null"
         
         # Initialize additional attributes
         self.adb_device_list = None 
@@ -142,13 +150,17 @@ class RealBrowserTest(Realm):
         self.android_list = []   
         self.other_list = [] 
         self.real_sta_data_dict = {} 
+        self.ip_map={}
         self.health = None  
         self.phone_data = None      
+        self.max_speed = 0  # infinity
+        self.quiesce_after = 0  # infinity
 
         # Initialize RealDevice instance      
         self.devices = base_RealDevice(manager_ip = self.host, selected_bands = [])
         # Initialize local realm 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=8080)
+        self.port_util = PortUtils(self.local_realm)
         # Initialize HTTP profile for testing
         self.http_profile = self.local_realm.new_http_profile()
         # Initialize interoperability instance for WiFi testing
@@ -278,20 +290,287 @@ class RealBrowserTest(Realm):
         logging.info("Creating Layer-4 endpoints from the user inputs as test parameters")
         time.sleep(5)
         # Configure HTTP profile settings
-        self.http_profile.direction = 'dl'
-        self.http_profile.dest = '/dev/null'
-        self.http_profile.max_speed = self.max_speed
-        self.http_profile.requests_per_ten = self.urls_per_tenm
-        self.http_profile.created_cx=self.convert_to_dict(self.phone_data)
+        self.direction = 'dl'
+        self.dest = '/dev/null'
+        self.max_speed = self.max_speed
+        self.requests_per_ten = 100
+        self.created_cx=self.http_profile.created_cx=self.convert_to_dict(self.phone_data)
         if self.preCleanUp==True:
             self.precleanup()
         self.http_profile.created_cx.clear()
         # for i in self.phone_data:
         # self.phone_data = ['1.16.wlan0', '1.17.xlan0', '1.20.ylan0']
         # Create HTTP profile
-        self.http_profile.create(ports=self.phone_data, sleep_time=.5,
-                                 suppress_related_commands_=None, http=True,
-                                 http_ip=self.url, interop=True,timeout=1000)
+        upload_name=self.phone_data[-1].split('.')[-1]
+        if 'https' in self.url :
+            self.url = self.url.replace("http://", "").replace("https://", "")
+            self.create_real(ports=self.phone_data, sleep_time=.5,
+                                suppress_related_commands_=None, https=True,
+                                https_ip=self.url, interop=True,timeout=1000,media_source='1',media_quality='0',upload_name=upload_name)
+        elif 'http' in self.url :
+            self.url = self.url.replace("http://", "").replace("https://", "")
+            self.create_real(ports=self.phone_data, sleep_time=.5,
+                                suppress_related_commands_=None, http=True,
+                                http_ip=self.url, interop=True,timeout=1000,media_source='1',media_quality='0',upload_name=upload_name)
+        
+        else:
+            self.create_real(ports=self.phone_data, sleep_time=.5,
+                                suppress_related_commands_=None, real=True,
+                                http_ip=self.url, interop=True,timeout=1000,media_source='1',media_quality='0',upload_name=upload_name)
+
+
+        
+    def map_sta_ips_real(self, sta_list=None):
+        if sta_list is None:
+            sta_list = []
+        for sta_eid in sta_list:
+            eid = self.name_to_eid(sta_eid)
+            sta_list = self.json_get("/port/%s/%s/%s?fields=alias,ip" % (eid[0], eid[1], eid[2]))
+            # print("map_sta_ips - sta_list:{sta_list}".format(sta_list=sta_list))
+            '''
+            sta_list_tmp = self.json_get("/port/%s/%s/%s?fields=ip" % (eid[0], eid[1], eid[2]))
+            print("map_sta_ips - sta_list_tmp:{sta_list_tmp}".format(sta_list_tmp=sta_list_tmp))
+            '''
+            if sta_list['interface'] is not None:
+                # print("map_sta_ips - sta_list_2:{sta_list_2}".format(sta_list_2=sta_list['interface']))
+                # self.ip_map[sta_list['interface']['alias']] = sta_list['interface']['ip']
+                eid_key = "{eid0}.{eid1}.{eid2}".format(eid0=eid[0], eid1=eid[1], eid2=eid[2])
+                self.ip_map[eid_key] = sta_list['interface']['ip']
+
+    def create_real(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False, real=False,
+               https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None,
+               https_ip=None, interop=None,media_source=None,media_quality=None,timeout=10,proxy_auth_type=0x2200,windows_list=[], get_url_from_file=False):
+        if ports is None:
+            ports = []
+        cx_post_data = []
+        # print("http_profile - ports:{ports}".format(ports=ports))
+        self.map_sta_ips_real(ports)
+        logger.info("Create HTTP CXs..." + __name__)
+        # print("http_profile - self.ip_map:{ip_map}".format(ip_map=self.ip_map))
+
+        for i in range(len(list(self.ip_map))):
+            url = None
+            if i != len(list(self.ip_map)) - 1:
+                port_name = list(self.ip_map)[i]
+                ip_addr = self.ip_map[list(self.ip_map)[i + 1]]
+            else:
+                port_name = list(self.ip_map)[i]
+                ip_addr = self.ip_map[list(self.ip_map)[0]]
+
+            if (ip_addr is None) or (ip_addr == ""):
+                raise ValueError("HTTPProfile::create encountered blank ip/hostname")
+            if interop:
+                if list(self.ip_map)[i] in windows_list:
+                    self.dest = 'NUL'
+                if list(self.ip_map)[i] not in windows_list:
+                        self.dest = '/dev/null'
+
+            # print("http_profile - port_name:{port_name}".format(port_name=port_name))
+            rv = self.local_realm.name_to_eid(port_name)
+            # print("http_profile - rv:{rv}".format(rv=rv))
+            '''
+            shelf = self.local_realm.name_to_eid(port_name)[0]
+            resource = self.local_realm.name_to_eid(port_name)[1]
+            name = self.local_realm.name_to_eid(port_name)[2]
+            '''
+            shelf = rv[0]
+            resource = rv[1]
+            name = rv[2]
+            # eid_port = "{shelf}.{resource}.{name}".format(shelf=rv[0], resource=rv[1], name=rv[2])
+
+            if upload_name is not None:
+                name = upload_name
+
+            if http:
+                if http_ip is not None:
+                    if get_url_from_file:
+                        self.port_util.set_http(port_name=name, resource=resource, on=True)
+                        url = "%s %s %s" % ("", http_ip, "")
+                        logger.info("HTTP url:{}".format(url))
+                    else:
+                        self.port_util.set_http(port_name=name, resource=resource, on=True)
+                        url = "%s http://%s %s" % (self.direction, http_ip, self.dest)
+                        logger.info("HTTP url:{}".format(url))
+                else:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s http://%s/ %s" % (self.direction, ip_addr, self.dest)
+                    logger.info("HTTP url:{}".format(url))
+            if https:
+                if https_ip is not None:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s https://%s %s" % (self.direction, https_ip, self.dest)
+                else:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s https://%s/ %s" % (self.direction, ip_addr, self.dest)
+            
+            if real:
+                if http_ip is not None:
+                    if get_url_from_file:
+                        self.port_util.set_http(port_name=name, resource=resource, on=True)
+                        url = "%s %s %s" % ("", http_ip, "")
+                        logger.info("HTTP url:{}".format(url))
+                    else:
+                        self.port_util.set_http(port_name=name, resource=resource, on=True)
+                        url = "%s %s %s" % (self.direction, http_ip, self.dest)
+                        logger.info("HTTP url:{}".format(url))
+                else:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s %s/ %s" % (self.direction, ip_addr, self.dest)
+                    logger.info("HTTP url:{}".format(url))
+
+
+            if ftp:
+                # print("create() - eid_port:{eid_port}".format(eid_port=eid_port))
+                self.port_util.set_ftp(port_name=name, resource=resource, on=True)
+                if user is not None and passwd is not None and source is not None:
+                    if ftp_ip is not None:
+                        ip_addr = ftp_ip
+                    url = "%s ftp://%s:%s@%s%s %s" % (self.direction, user, passwd, ip_addr, source, self.dest)
+                    logger.info("###### url:{}".format(url))
+                else:
+                    raise ValueError("user: %s, passwd: %s, and source: %s must all be set" % (user, passwd, source))
+            if not http and not ftp and not https and not real:
+                raise ValueError("Please specify ftp and/or http")
+
+            if (url is None) or (url == ""):
+                raise ValueError("HTTPProfile::create: url unset")
+            if ftp:
+                cx_name = name + "_ftp"
+            else:
+                
+                cx_name = name + "_http"
+                
+                    
+            if interop is None:
+                if upload_name is None:
+                    endp_data = {
+                        "alias": cx_name + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        "port": name,
+                        "type": "l4_generic",
+                        "timeout": timeout,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "proxy_auth_type": 0x200,
+                        "quiesce_after": self.quiesce_after,
+                        "max_speed": self.max_speed
+                    }
+                else:
+                    endp_data = {
+                        "alias": cx_name + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        # "port": ports[0],
+                        "port": rv[2],
+                        "type": "l4_generic",
+                        "timeout": timeout,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "ssl_cert_fname": "ca-bundle.crt",
+                        "proxy_port": 0,
+                        "max_speed": self.max_speed,
+                        "proxy_auth_type": 0x200,
+                        "quiesce_after": self.quiesce_after
+                    }
+                set_endp_data={
+                    "alias": cx_name + str(resource) + "_l4",
+                    "media_source":media_source,
+                    "media_quality":media_quality,
+                    # "media_playbacks":'0'
+                }
+                url = "cli-json/add_l4_endp"
+                self.json_post(url, endp_data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands_)
+                time.sleep(sleep_time)
+                # If media source and media quality is given then this code will set media source and media quality for CX
+                if media_source and media_quality:
+                    url1="cli-json/set_l4_endp"
+                    self.json_post(url1, set_endp_data, debug_=debug_,
+                                            suppress_related_commands_=suppress_related_commands_)
+
+                endp_data = {
+                    "alias": "CX_" + cx_name + "_l4",
+                    "test_mgr": "default_tm",
+                    "tx_endp": cx_name + "_l4",
+                    "rx_endp": "NA"
+                }
+                # print("http_profile - endp_data:{endp_data}".format(endp_data=endp_data))
+                cx_post_data.append(endp_data)
+                self.created_cx[cx_name + "_l4"] = "CX_" + cx_name + "_l4"
+            else: # If Interop is enabled then this code will work
+                if upload_name is None:
+                    endp_data = {
+                        "alias": cx_name + str(resource) + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        "port": name,
+                        "type": "l4_generic",
+                        "timeout": timeout,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "proxy_auth_type": proxy_auth_type,
+                        "quiesce_after": self.quiesce_after,
+                        "max_speed": self.max_speed
+                    }
+                else:
+                    endp_data = {
+                        "alias": cx_name + str(resource) + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        # "port": ports[0],
+                        "port": rv[2],
+                        "type": "l4_generic",
+                        "timeout": timeout,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "ssl_cert_fname": "ca-bundle.crt",
+                        "proxy_port": 0,
+                        "max_speed": self.max_speed,
+                        "proxy_auth_type": proxy_auth_type,
+                        "quiesce_after": self.quiesce_after
+                    }
+                set_endp_data={
+                    "alias": cx_name + str(resource) + "_l4",
+                    "media_source":media_source,
+                    "media_quality":media_quality,
+                    # "media_playbacks":'0'
+                }
+                url = "cli-json/add_l4_endp"
+                self.json_post(url, endp_data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands_)
+                time.sleep(sleep_time)
+                # If media source and media quality is given then this code will set media source and media quality for CX
+                if media_source and media_quality:
+                    url1="cli-json/set_l4_endp"
+                    self.json_post(url1, set_endp_data, debug_=debug_,
+                                            suppress_related_commands_=suppress_related_commands_)
+
+                endp_data = {  # Added resource id to alias and End point name as all real clients have same name(wlan0)
+                    "alias": "CX_" + cx_name + str(resource) + "_l4",
+                    "test_mgr": "default_tm",
+                    "tx_endp": cx_name + str(resource) + "_l4",
+                    "rx_endp": "NA"
+                }
+                # print("http_profile - endp_data:{endp_data}".format(endp_data=endp_data))
+                cx_post_data.append(endp_data)
+                self.created_cx[cx_name + str(resource) + "_l4"] = "CX_" + cx_name + str(resource) + "_l4"
+        self.http_profile.created_cx=self.created_cx
+
+        for cx_data in cx_post_data:
+            url = "/cli-json/add_cx"
+            self.json_post(url, cx_data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands_)
+            time.sleep(sleep_time)
+
+        # enabling geturl from file for each endpoint
+        if get_url_from_file:
+            for cx in list(self.created_cx.keys()):
+                self.json_post("/cli-json/set_endp_flag", {"name": cx,
+                                                                       "flag": "GetUrlsFromFile",
+                                                                       "val": 1
+                                                                       }, suppress_related_commands_=True)
+
     
     def convert_to_dict(self,input_list):
         """
@@ -309,7 +588,7 @@ class RealBrowserTest(Realm):
         return output_dict
 
     def get_incremental_capacity_list(self):
-        keys=list(self.http_profile.created_cx.keys())
+        keys=list(self.created_cx.keys())
         incremental_temp = []
         created_incremental_values = []
         index = 0
@@ -349,7 +628,7 @@ class RealBrowserTest(Realm):
         self.http_profile.start_cx()
         try:
             # Loop through each CX endpoint and wait until it reaches the 'Run' state
-            for i in self.http_profile.created_cx.keys():
+            for i in self.created_cx.keys():
                 while self.local_realm.json_get("/cx/" + i).get(i).get('state') != 'Run':
                     continue
         except Exception as e:
@@ -378,7 +657,7 @@ class RealBrowserTest(Realm):
         logging.info("Setting Cx State to Runnning")
         try:
             # Loop through each CX endpoint and wait until it reaches the 'Run' state
-            for i in self.http_profile.created_cx.keys():
+            for i in self.created_cx.keys():
                 while self.local_realm.json_get("/cx/" + i).get(i).get('state') != 'Run':
                     continue
         except Exception as e:
@@ -532,17 +811,18 @@ class RealBrowserTest(Realm):
         # data in json format
         # Construct URL to retrieve monitoring data for all created CX endpoints
         data = self.local_realm.json_get("layer4/%s/list?fields=%s" %
-                                        (','.join(self.http_profile.created_cx.keys()), data_mon.replace(' ', '+')))
+                                        (','.join(self.created_cx.keys()), data_mon.replace(' ', '+')))
         data1 = []
         data = data['endpoint']
         # Check if only one CX endpoint is created
-        if len(self.http_profile.created_cx.keys()) == 1 :
-            for cx in self.http_profile.created_cx.keys():
+        # print(">>>>>>>>>>",self.created_cx.keys())
+        if len(self.created_cx.keys()) == 1 :
+            for cx in self.created_cx.keys():
                 if cx in data['name']:
                     data1.append(data[data_mon])
         else:
             # Iterate through each created CX endpoint
-            for cx in self.http_profile.created_cx.keys():
+            for cx in self.created_cx.keys():
                 for info in data:
                     if cx in info:
                         data1.append(info[cx][data_mon])
@@ -615,7 +895,7 @@ class RealBrowserTest(Realm):
                         phone_radio.append('2G/5G')
         return station_name
 
-    def monitor_for_runtime_csv(self,duration,file_path,resource_list_sorted = [],cx_list = [] ):
+    def monitor_for_runtime_csv(self,duration,file_path,iteration,resource_list_sorted = [],cx_list = [], ):
         """
             Monitors runtime data for a specified duration and saves it to a CSV file.
 
@@ -687,7 +967,7 @@ class RealBrowserTest(Realm):
  
         endtime_check = datetime.strptime(endtime, "%Y-%m-%dT%H:%M:%S")
         self.data['status'] = self.my_monitor('status')
-        self.data['required_count'] = [self.urls_per_tenm] * len(self.data['name'])
+        self.data['required_count'] = [self.count] * len(self.data['name'])
         self.data['duration'] = [duration] * len(self.data['name'])
         self.data['url'] = [self.url] * len(self.data['name'])
 
@@ -742,6 +1022,7 @@ class RealBrowserTest(Realm):
 
         iterator = []
         # Monitoring loop until current_time exceeds endtime
+        start_time_check=datetime.now()
         while current_time < endtime_check:
             # Update end_time_webGUI
             if self.data['end_time_webGUI'][0] < current_time.strftime('%Y-%m-%d %H:%M:%S'):
@@ -786,18 +1067,20 @@ class RealBrowserTest(Realm):
             for i in range(len(iterator)):
                 if self.all_cx_list[i] in cx_list: 
                     # Handle present value conditions
-                    if self.data['total_urls'][i] == self.urls_per_tenm or self.data['total_urls'][i] > self.urls_per_tenm:
-                        if temp[i] == 0:
-                            temp[i] = int(( datetime.now() - current_time ).total_seconds())
-                    else:
+                    if self.data['total_urls'][i] == self.count or self.data['total_urls'][i] > self.count:
                         if temp[i] == -1:
+                            temp[i] = int(abs(( datetime.now() - start_time_check ).total_seconds()))
+                    else:
+                        
+                        if temp[i] == 0:
                             temp[i] = 0
                 else:   
                     # Handle conditions based on total_urls_dict varibale
                     if self.total_urls_dict:
-                        if ((self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) == self.urls_per_tenm or (self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) > self.urls_per_tenm):
+                        if ((self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) == self.count or (self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) > self.count):
                             if temp[i] == -1:
-                                temp[i] = int((datetime.now() - current_time ).total_seconds())
+                                temp[i] = int(abs(( datetime.now() - start_time_check ).total_seconds()))
+
 
 
             # Check if the test is stopped by the user via web GUI
@@ -886,25 +1169,30 @@ class RealBrowserTest(Realm):
         # len_all_cx_list = len(self.all_cx_list)
 
         # Store time data in self.time_data and reset end_time if stopped
+      
         for i in range(len(iterator)):
             if self.all_cx_list[i] in cx_list: 
                 # present value
-                if self.data['total_urls'][i] == self.urls_per_tenm or self.data['total_urls'][i] > self.urls_per_tenm:
-                    if temp[i] == 0:
-                        temp[i] = int(( datetime.now() - current_time ).total_seconds())
-                else:
+                if self.data['total_urls'][i] == self.count or self.data['total_urls'][i] > self.count:
                     if temp[i] == -1:
+                        temp[i] = int(abs(( datetime.now() - start_time_check ).total_seconds()))
+                else:
+                    if temp[i] == 0:
                         temp[i] = 0
             else:   
                 if self.total_urls_dict:
-                    if (self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) == self.urls_per_tenm or (self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) > self.urls_per_tenm:
+                    if (self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) == self.count or (self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) > self.count:
                         if temp[i] == -1:
-                            temp[i] = int((datetime.now() - current_time ).total_seconds())
+                            temp[i] = int(abs(( datetime.now() - start_time_check ).total_seconds()))
         
         prev_cx_list = len(self.all_cx_list) - len(cx_list)
         for i in range(prev_cx_list):
             if temp[i] == -1:
                 temp[i] = 0
+        if -1 in temp:
+            for i in range(len(temp)):
+                if temp[i] == -1:
+                    temp[i] = 0
         self.time_data.append(temp) 
 
         # Storing the necessary data to generate the graph for multiple incremetnal values
@@ -991,13 +1279,14 @@ class RealBrowserTest(Realm):
             temp_uc_max_val = []
             temp_uc_avg_val = []
             temp_total_err = []
-            for k in range(len(status)):
-                if status[k] == 'Run':
-                    temp_total_urls.append(total_urls[k])
-                    temp_uc_min_val.append(uc_min_val[k])
-                    temp_uc_avg_val.append(uc_avg_val[k])
-                    temp_uc_max_val.append(uc_max_val[k])
-                    temp_total_err.append(total_err[k])
+            for k in range(len(status[0:iteration])):
+                # if status[k] == 'Run':
+                temp_total_urls.append(total_urls[k])
+                temp_uc_min_val.append(uc_min_val[k])
+                temp_uc_avg_val.append(uc_avg_val[k])
+                temp_uc_max_val.append(uc_max_val[k])
+                temp_total_err.append(total_err[k])
+                
 
             self.req_total_urls.append(temp_total_urls)
             self.req_uc_min_val.append(temp_uc_min_val)
@@ -1012,7 +1301,8 @@ class RealBrowserTest(Realm):
         else:
             df.to_csv(file_path, mode='w', index=False)     
 
-    def generate_graph(self, dataset, lis, bands, graph_image_name = "uc-avg"):
+    def generate_graph(self, dataset, lis, bands, graph_image_name = "Time_taken_to_reach_urls"):
+        bands=["Time (in sec)"]
         x_fig_size = 18
         y_fig_size = len(lis)*.5 + 4
         graph = lf_bar_graph_horizontal(_data_set=[dataset], _xaxis_name="Time (in seconds)",
@@ -1064,7 +1354,7 @@ class RealBrowserTest(Realm):
         graph_png = graph_2.build_bar_graph_horizontal()
         return graph_png
 
-    def generate_multiple_graphs(self, report, cx_order_list):
+    def generate_multiple_graphs(self, report, cx_order_list,gave_incremental):
         """
             Generates multiple graphs and reports based on monitored data.
 
@@ -1173,8 +1463,14 @@ class RealBrowserTest(Realm):
 
         # Iterate over labels to generate graphs and reports
         for i in range(len(labels)):
-            report.set_obj_html(f'Iteration {i+1} - Incremental {created_incremental_values[i]}',"")
-            report.build_objective()
+            if gave_incremental:
+                report.set_obj_html(f'Iteration {i+1}',"")
+                report.build_objective()
+                report.set_obj_html(f"RealTime URL per device- Number of Devices on running {created_incremental_values[i]}","")
+                report.build_objective()
+            else:
+                report.set_obj_html(f"RealTime URL per device- Number of Devices on running {created_incremental_values[i]}","")
+                report.build_objective()
             # Generate and set graph 2 (Total URLs vs Labels) using graph_2 method
             graph2 = self.graph_2(dataset2=final_dataset[i], lis=labels[i], bands=bands,graph_image_name =  f'Total-url-{i}.png' )
 
@@ -1184,19 +1480,28 @@ class RealBrowserTest(Realm):
             report.move_graph_image()
             report.build_graph()
             # Set objective HTML for time vs device completion and build objective
-            report.set_obj_html(f"Iteration {i+1} - Time taken Vs Device For Completing {self.urls_per_tenm} RealTime URLs","")
-            report.build_objective()
+            if gave_incremental:
+                report.set_obj_html(f"Iteration {i+1} - Time taken Vs Device For Completing {self.count} RealTime URLs","")
+                report.build_objective()
+            else:
+                report.set_obj_html(f"Time taken Vs Device For Completing {self.count} RealTime URLs","")
+                report.build_objective()
 
             # Generate and set graph (Time vs Device) using generate_graph method
-            graph = self.generate_graph(dataset=self.time_data[i], lis = labels[i], bands = bands,graph_image_name =  f'uc-avg-{i}.png')
+            graph = self.generate_graph(dataset=self.time_data[i], lis = labels[i], bands = bands,graph_image_name =  f'Time_taken_to_reach_url{i}.png')
             report.set_graph_image(graph)
             report.set_csv_filename(graph)
             report.move_csv_file()
             report.move_graph_image()
             report.build_graph()
-        
-            report.set_obj_html(f"Detailed Result Table - Iteration {i+1} ", f"The below tables provides detailed information for the incremental value {created_incremental_values[i]} of the web browsing test.")
-            report.build_objective()
+
+            if gave_incremental:
+                report.set_obj_html(f"Detailed Result Table - Iteration {i+1} ", f"The below tables provides detailed information for the incremental value {created_incremental_values[i]} of the web browsing test.")
+                report.build_objective()
+            else:
+                report.set_obj_html("Overall - Detailed Result Table", "The below tables provides detailed information for the web browsing test.")
+                report.build_objective()
+            
 
             # Prepare dataframe with detailed result information
             dataframe = {
@@ -1219,17 +1524,17 @@ class RealBrowserTest(Realm):
             report.set_table_dataframe(dataframe1)
             report.build_table()
 
-    def generate_report(self, date, file_path, test_setup_info, dataset2, dataset, lis, bands, total_urls, uc_min_value, report_path = '', cx_order_list = []):
+    def generate_report(self, date, file_path,test_setup_info, dataset2, dataset, lis, bands, total_urls, uc_min_value, report_path = '', cx_order_list = [],gave_incremental=True):
         logging.info("Creating Reports")
         if self.dowebgui == True and report_path == '':
-            report = lf_report.lf_report(_results_dir_name="RealBrowser_Test_report", _output_html="realbrowser.html",
-                                        _output_pdf="realbrowser.pdf", _path=self.result_dir)
+            report = lf_report.lf_report(_results_dir_name="Web_Browser_Test_report", _output_html="web_browser.html",
+                                        _output_pdf="Webbrowser.pdf", _path=self.result_dir)
         else:
-            report = lf_report.lf_report(_results_dir_name="RealBrowser_Test_report", _output_html="realbrowser.html",
-                                        _output_pdf="realbrowser.pdf", _path=report_path)
+            report = lf_report.lf_report(_results_dir_name="Web_Browser_Test_report", _output_html="web_browser.html",
+                                        _output_pdf="Webbrowser.pdf", _path=report_path)
         report_path_date_time = report.get_path_date_time()
-        shutil.move('realBrowser.csv',report_path_date_time)
-        report.set_title("Real Browser Test")
+        shutil.move('webBrowser.csv',report_path_date_time)
+        report.set_title("Web Browser Test")
         report.set_date(date)
         report.build_banner()
         report.set_obj_html("Objective", "The Candela Web browser test is designed to measure the Access Point performance and stability by browsing multiple websites in real clients like"
@@ -1244,12 +1549,12 @@ class RealBrowserTest(Realm):
         report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
         
-        report.set_obj_html("RealTime URL per device ","")
-        report.build_objective()
-
+        
+        
+       
         # Graph 1
         if cx_order_list:
-            self.generate_multiple_graphs(report, cx_order_list) 
+            self.generate_multiple_graphs(report, cx_order_list,gave_incremental) 
         else:
             graph2 = self.graph_2(dataset2 = dataset2, lis=lis, bands=bands)
             report.set_graph_image(graph2)
@@ -1259,7 +1564,7 @@ class RealBrowserTest(Realm):
             report.build_graph()
 
             # Graph 2
-            report.set_obj_html(f"Time taken Vs Device For Completing {self.urls_per_tenm} RealTime URLs","")
+            report.set_obj_html(f"Time taken Vs Device For Completing {self.count} RealTime URLs","")
             report.build_objective()
             graph = self.generate_graph(dataset=dataset, lis = lis, bands = bands)
             report.set_graph_image(graph)
@@ -1321,6 +1626,7 @@ class RealBrowserTest(Realm):
             " RSSI " : rssi,
             'Link Speed': tx_rate
         }
+
         dataframe1 = pd.DataFrame(dataframe)
         report.set_table_dataframe(dataframe1)
         report.build_table()
@@ -1383,18 +1689,18 @@ def main():
 
         Example-3:
         Command Line Interface to run url in the Browser with specified urls_per_tennm (specify the number of url you want to test in the given duration):
-        python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --urls_per_tenm 10 --debug
+        python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --debug
 
             CASE-1:
-            If not specified it takes the default urls_per_tenm value (default urls_per_tenm is 100)
+            If not specified it takes the default count value (default count is 100)
 
         Example-4:
         Command Line Interface to run the the Real Browser test with incremental Capacity by specifying the --incremental flag
-        python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --urls_per_tenm 10 --incremental --debug
+        python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --incremental --debug
 
         Example-5:
         Command Line Interface to run the the Real Browser test in webGUI by specifying the --dowebgui flag
-        python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --urls_per_tenm 10 --dowebgui --debug
+        python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --dowebgui --debug
 
         Example-6:
         Command Line Interface to run url in the Browser with precleanup:
@@ -1404,6 +1710,10 @@ def main():
         Command Line Interface to run url in the Browser with postcleanup:
         python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --postcleanup --debug
 
+        Example-8:
+        Command Line Interface to run url in the Browser with incremental capacity:
+        python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --incremental_capacity 1 --debug
+        
         SCRIPT CLASSIFICATION: Test
 
         SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
@@ -1439,8 +1749,8 @@ def main():
                                                         'running eg :open|psk|psk2|sae|psk2jsae')
     parser.add_argument("--url", default="www.google.com", help='specify the url you want to test on')
     parser.add_argument("--max_speed", type=int, default=0, help='specify the max speed you want in bytes')
-    parser.add_argument("--urls_per_tenm", type=int, default=100, help='specify the number of url you want to test on '
-                                                                    'per minute')
+    parser.add_argument("--count", type=int, default=1, help='specify the number of url you want to calculate time to reach'
+                                                                    )
     parser.add_argument('--duration', type=str, help='time to run traffic')
     optional.add_argument('--test_name',help='Specify test name to store the runtime csv results', default=None)
     parser.add_argument('--dowebgui',help="If true will execute script for webgui", default=False, type=bool)
@@ -1451,7 +1761,7 @@ def main():
     parser.add_argument("--debug", help="[log configuration] --debug store_true , used by lanforge client ", action='store_true')
 
     parser.add_argument('--device_list', type=str, help='provide resource_ids of android devices. for instance: "10,12,14"')
-    parser.add_argument('--webgui_incremental', help="Specify the incremental values <1,2,3..>", type=str)
+    parser.add_argument('--webgui_incremental','--incremental_capacity', help="Specify the incremental values <1,2,3..>",dest='webgui_incremental', type=str)
     parser.add_argument('--incremental', help="to add incremental capacity to run the test", action = 'store_true')
     optional.add_argument('--no_laptops', help="run the test without laptop devices", action = 'store_false')
     parser.add_argument('--postcleanup', help="Cleanup the cross connections after test is stopped", action = 'store_true')
@@ -1478,12 +1788,12 @@ def main():
 
 
     # Extract the URL from args and remove 'http://' or 'https://'
-    url = args.url.replace("http://", "").replace("https://", "")
+    # url = args.url.replace("http://", "").replace("https://", "")
 
     # Initialize an instance of RealBrowserTest with various parameters
     obj = RealBrowserTest(host=args.host, ssid=args.ssid, passwd=args.passwd, encryp=args.encryp,
                         suporrted_release=["7.0", "10", "11", "12"], max_speed=args.max_speed,
-                        url=url, urls_per_tenm=args.urls_per_tenm, duration=args.duration, 
+                        url=args.url, count=args.count, duration=args.duration, 
                         resource_ids = args.device_list, dowebgui = args.dowebgui,
                         result_dir = args.result_dir,test_name = args.test_name, incremental = args.incremental,postcleanup=args.postcleanup,
                         precleanup=args.precleanup)
@@ -1591,6 +1901,8 @@ def main():
                     for ele in obj.android_devices:
                         if ele.startswith(element):
                             obj.android_list.append(ele)
+                else:
+                    logger.info("{} device is not available".format(element))
             new_android = [int(item.split('.')[1]) for item in obj.android_list]
 
             resource_ids = sorted(new_android)
@@ -1662,21 +1974,23 @@ def main():
         # Validate the length and assign incremental values
         if (len(args.webgui_incremental) == 1 and incremental[0] != len(resource_list_sorted)) or (len(args.webgui_incremental) > 1):
             obj.incremental = incremental
+        elif len(args.webgui_incremental) == 1:
+            obj.incremental = incremental
 
     # if obj.incremental and (not obj.resource_ids):
     #     logging.info("incremental values are not needed as Android devices are not selected.")
     #     exit()
     
     # Validate incremental and resource IDs combination
-    if obj.incremental and obj.resource_ids:
+    if (obj.incremental and obj.resource_ids) or (args.webgui_incremental):
         resources_list1 = [str(x) for x in obj.resource_ids.split(',')]
         if resource_list_sorted:
             resources_list1 = resource_list_sorted
         # Check if the last incremental value is greater or less than resources provided
-        if obj.incremental[-1] > len(resources_list1):
+        if obj.incremental[-1] > len(available_resources):
             logging.info("Exiting the program as incremental values are greater than the resource ids provided")
             exit()
-        elif obj.incremental[-1] < len(resources_list1) and len(obj.incremental) > 1:
+        elif obj.incremental[-1] < len(available_resources) and len(obj.incremental) > 1:
             logging.info("Exiting the program as the last incremental value must be equal to selected devices")
             exit()
 
@@ -1686,7 +2000,7 @@ def main():
 
     logging.info("Initiating Test...")
     obj.build()
-    time.sleep(5)
+    time.sleep(10)
     #TODO : To create cx for laptop devices
     # Create end-points for devices other than Android if specified
     # if (not args.no_laptops) and obj.other_list:
@@ -1712,7 +2026,7 @@ def main():
     elif args.duration.endswith(''):
         args.duration = int(args.duration)
 
-    if args.incremental:
+    if args.incremental or args.webgui_incremental:
         incremental_capacity_list_values=obj.get_incremental_capacity_list()
         if incremental_capacity_list_values[-1]!=len(available_resources):
             logger.error("Incremental capacity doesnt match available devices")
@@ -1723,7 +2037,7 @@ def main():
     # Process resource IDs and incremental values if specified
     if obj.resource_ids:
         if obj.incremental:
-            test_setup_info_incremental_values =  ','.join(map(str, obj.incremental))
+            test_setup_info_incremental_values =  ','.join(map(str, incremental_capacity_list_values))
             if len(obj.incremental) == len(available_resources):
                 test_setup_info_total_duration = args.duration
             elif len(obj.incremental) == 1 and len(available_resources) > 1:
@@ -1739,14 +2053,21 @@ def main():
             else:
                 test_setup_info_total_duration = args.duration * len(incremental_capacity_list_values)
             # test_setup_info_duration_per_iteration= args.duration 
+        elif args.webgui_incremental:
+            test_setup_info_incremental_values = ','.join(map(str, incremental_capacity_list_values))
+            test_setup_info_total_duration = args.duration * len(incremental_capacity_list_values)
         else:
             test_setup_info_incremental_values = "No Incremental Value provided"
             test_setup_info_total_duration = args.duration
         obj.total_duration = test_setup_info_total_duration
 
     # Calculate and manage cx_order_list ( list of cross connections to run ) based on incremental values
+    gave_incremental,iteration_number=True,0
     if obj.resource_ids:
-        if obj.incremental:
+        if not obj.incremental:
+            obj.incremental=[len(keys)]
+            gave_incremental=False
+        if obj.incremental or not gave_incremental:
             if len(obj.incremental) == 1 and obj.incremental[0] == len(keys):
                 cx_order_list.append(keys[index:])
             elif len(obj.incremental) == 1 and len(keys) > 1:
@@ -1792,13 +2113,15 @@ def main():
 
 
                 obj.start_specific(cx_order_list[i])
+                
+                iteration_number+=len(cx_order_list[i])
                 if cx_order_list[i]:
                     logging.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
                 else:
                     logging.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
                 
                 # duration = 60 * args.duration
-                file_path = "realBrowser.csv"
+                file_path = "webBrowser.csv"
 
                 start_time = time.time()
                 df = pd.DataFrame(obj.data)
@@ -1816,38 +2139,39 @@ def main():
                             data = json.load(file)
                             if data["status"] != "Running":
                                 break 
-                    obj.monitor_for_runtime_csv(args.duration,file_path,resource_list_sorted,cx_order_list[i])
+
+                    obj.monitor_for_runtime_csv(args.duration,file_path,iteration_number,resource_list_sorted,cx_order_list[i])
                 else:
-                    obj.monitor_for_runtime_csv(args.duration,file_path,resource_list_sorted,cx_order_list[i])
+                    obj.monitor_for_runtime_csv(args.duration,file_path,iteration_number,resource_list_sorted,cx_order_list[i])
                     # time.sleep(duration)
             
-        else:
-            cx_order_list.append(keys[index:])
-            obj.start()
-            if obj.resource_ids:
-                logging.info("Test started on Devices with resource Ids : {selected}".format(selected = obj.resource_ids))
-            else:
-                logging.info("Test started on Devices with resource Ids : {selected}".format(selected = args.device_list))
+        # else:
+        #     cx_order_list.append(keys[index:])
+        #     obj.start()
+        #     if obj.resource_ids:
+        #         logging.info("Test started on Devices with resource Ids : {selected}".format(selected = available_resources))
+        #     else:
+        #         logging.info("Test started on Devices with resource Ids : {selected}".format(selected = available_resources))
             
-            # Set duration and file path for monitoring
-            duration = 60 * args.duration
-            file_path = "realBrowser.csv"
+        #     # Set duration and file path for monitoring
+        #     duration = 60 * args.duration
+        #     file_path = "webBrowser.csv"
             
             
 
-            start_time = time.time()
+        #     start_time = time.time()
             
-            obj.data["name"] = obj.my_monitor('name')
+        #     obj.data["name"] = obj.my_monitor('name')
 
-            obj.data["start_time_webGUI"] = [datetime.now().strftime('%Y-%m-%d %H:%M:%S')] * len(keys)
-            obj.data['end_time_webGUI'] = [(datetime.now() + timedelta(minutes = args.duration)).strftime('%Y-%m-%d %H:%M:%S')] * len(keys)
+        #     obj.data["start_time_webGUI"] = [datetime.now().strftime('%Y-%m-%d %H:%M:%S')] * len(keys)
+        #     obj.data['end_time_webGUI'] = [(datetime.now() + timedelta(minutes = args.duration)).strftime('%Y-%m-%d %H:%M:%S')] * len(keys)
 
-            # Monitor runtime and save results
-            if args.dowebgui == True:
-                # FOR WEBGUI, -This fumction is called to fetch the runtime data from layer-4
-                obj.monitor_for_runtime_csv(args.duration,file_path,resource_list_sorted,cx_order_list)
-            else:
-                obj.monitor_for_runtime_csv(args.duration,file_path,resource_list_sorted,cx_order_list)
+        #     # Monitor runtime and save results
+        #     if args.dowebgui == True:
+        #         # FOR WEBGUI, -This fumction is called to fetch the runtime data from layer-4
+        #         obj.monitor_for_runtime_csv(args.duration,file_path,resource_list_sorted,cx_order_list)
+        #     else:
+        #         obj.monitor_for_runtime_csv(args.duration,file_path,resource_list_sorted,cx_order_list)
         # as test not running on laptop devices --- no waiting for time to complete
             # time.sleep(duration)
 
@@ -1896,9 +2220,9 @@ def main():
         test_setup_info = {
             "Testname" : args.test_name,
             "Device List" : device_list_str ,
-            "No of Devices" : "Total" + "( " + str(len(phone_list)) + " )",
+            "No of Devices" : "Total" + "( " + str(len(phone_list)) + " ): Android(" +  str(len(phone_list)) +")" ,
             "Incremental Values" : "",
-            "Required URL Count" : args.urls_per_tenm,
+            "Required URL Count" : args.count,
             "URL" : args.url 
         }
         # if obj.incremental:
@@ -1950,9 +2274,9 @@ def main():
             else:
                 df1.to_csv(file_path, mode='w', index=False)     
         # Generate report for the test
-        obj.generate_report(date,"realBrowser.csv", test_setup_info = test_setup_info, dataset2 = dataset2, dataset = dataset, lis = lis, bands = bands, total_urls = total_urls, uc_min_value = uc_min_value , cx_order_list = cx_order_list) 
-    elif obj.resource_ids:
-        obj.generate_report(date,"realBrowser.csv", test_setup_info = test_setup_info, dataset2 = dataset2, dataset = dataset, lis = lis, bands = bands, total_urls = total_urls, uc_min_value = uc_min_value ) 
+        obj.generate_report(date,"webBrowser.csv",test_setup_info = test_setup_info, dataset2 = dataset2, dataset = dataset, lis = lis, bands = bands, total_urls = total_urls, uc_min_value = uc_min_value , cx_order_list = cx_order_list,gave_incremental=gave_incremental) 
+    # elif obj.resource_ids:
+    #     obj.generate_report(date,"webBrowser.csv", test_setup_info = test_setup_info, dataset2 = dataset2, dataset = dataset, lis = lis, bands = bands, total_urls = total_urls, uc_min_value = uc_min_value) 
 
     # Perform post-cleanup operations
     if args.postcleanup:

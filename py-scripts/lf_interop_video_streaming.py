@@ -36,6 +36,12 @@
     Command Line Interface to run Video Streaming test with postcleanup:
     python3 lf_interop_video_streaming.py --mgr 192.168.214.219 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls --media_quality 1080P --duration 1m --device_list 1.10,1.11 --postcleanup --debug --test_name video_streaming_test
 
+    Example-7:
+    Command Line Interface to run the Video Streaming test with incremental Capacity    
+    python3 lf_interop_video_streaming.py --mgr 192.168.214.219 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls --media_quality 1080P --duration 1m --device_list 1.10,1.11 --incremental_capacity 1,2 --debug --test_name video_streaming_test
+
+
+
     SCRIPT CLASSIFICATION: Test
 
     SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
@@ -90,6 +96,8 @@ lf_report_pdf = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+port_utils = importlib.import_module("py-json.port_utils")
+PortUtils = port_utils.PortUtils
 
 
 
@@ -113,6 +121,9 @@ class VideoStreamingTest(Realm):
         self.android_list = []
         self.other_list = []
         self.real_sta_data_dict = {}
+        self.ip_map={}
+        self.max_speed = 0  # infinity
+        self.quiesce_after = 0  # infinity
         self.health = None
         self.phone_data = None
         self.max_speed = max_speed
@@ -128,6 +139,7 @@ class VideoStreamingTest(Realm):
         self.preCleanUp=precleanup
         self.devices = base_RealDevice(manager_ip = self.host, selected_bands = [])
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=8080)
+        self.port_util = PortUtils(self.local_realm)
         self.http_profile = self.local_realm.new_http_profile()
         self.interop = base.BaseInteropWifi(manager_ip=self.host,
                                             port=8080,
@@ -238,21 +250,37 @@ class VideoStreamingTest(Realm):
         self.formatted_endtime_str = ""
         self.phone_data = self.get_resource_data()
         
-        self.http_profile.direction = 'dl'
-        self.http_profile.dest = '/dev/null'
-        self.http_profile.max_speed = self.max_speed
-        self.http_profile.requests_per_ten = self.urls_per_tenm
+        self.direction = 'dl'
+        self.dest = '/dev/null'
+        self.max_speed = self.max_speed
+        self.requests_per_ten = self.urls_per_tenm
         upload_name=self.phone_data[-1].split('.')[-1]
         if self.preCleanUp:
-            self.http_profile.created_cx=self.convert_to_dict(self.phone_data)
+            self.created_cx=self.http_profile.created_cx=self.convert_to_dict(self.phone_data)
             self.precleanup()
         logging.info("Creating Layer-4 endpoints from the user inputs as test parameters")
         time.sleep(5)
         self.http_profile.created_cx.clear()
-        self.http_profile.create(ports=self.phone_data, sleep_time=.5,upload_name=upload_name,
+        # self.create(ports=self.phone_data, sleep_time=.5,upload_name=upload_name,
+        #                          suppress_related_commands_=None, http=True,
+        #                          http_ip=self.url, interop=True, proxy_auth_type=74240,media_source=self.media_source,media_quality=self.media_quality,timeout=1000)
+        
+        if 'https' in self.url :
+            self.url = self.url.replace("http://", "").replace("https://", "")
+            self.create_real(ports=self.phone_data, sleep_time=.5,upload_name=upload_name,
+                                 suppress_related_commands_=None, https=True,
+                                 https_ip=self.url, interop=True, proxy_auth_type=74240,media_source=self.media_source,media_quality=self.media_quality,timeout=1000)
+        elif 'http' in self.url :
+            self.url = self.url.replace("http://", "").replace("https://", "")
+            self.create_real(ports=self.phone_data, sleep_time=.5,upload_name=upload_name,
                                  suppress_related_commands_=None, http=True,
                                  http_ip=self.url, interop=True, proxy_auth_type=74240,media_source=self.media_source,media_quality=self.media_quality,timeout=1000)
         
+        else:
+            self.create_real(ports=self.phone_data, sleep_time=.5,upload_name=upload_name,
+                                 suppress_related_commands_=None, http=True,
+                                 http_ip=self.url, interop=True, proxy_auth_type=74240,media_source=self.media_source,media_quality=self.media_quality,timeout=1000)
+        time.sleep(5)
     def start(self):
         # Starts the layer 4-7 traffic for created CX end points
         # print("Test Started")
@@ -283,7 +311,7 @@ class VideoStreamingTest(Realm):
                     continue
         except Exception as e:
             pass
-
+        logging.info("Test started at : {0} ".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     # def create_generic_endp(self,query_resources,os_types_dict):
     #     ports_list = []
     #     eid = ""
@@ -343,6 +371,260 @@ class VideoStreamingTest(Realm):
     #     for endpoint in self.generic_endps_profile.created_endp:
     #         self.generic_endps_profile.set_report_timer(endp_name=endpoint, timer=250)
 
+
+    def map_sta_ips_real(self, sta_list=None):
+        if sta_list is None:
+            sta_list = []
+        for sta_eid in sta_list:
+            eid = self.name_to_eid(sta_eid)
+            sta_list = self.json_get("/port/%s/%s/%s?fields=alias,ip" % (eid[0], eid[1], eid[2]))
+            # print("map_sta_ips - sta_list:{sta_list}".format(sta_list=sta_list))
+            '''
+            sta_list_tmp = self.json_get("/port/%s/%s/%s?fields=ip" % (eid[0], eid[1], eid[2]))
+            print("map_sta_ips - sta_list_tmp:{sta_list_tmp}".format(sta_list_tmp=sta_list_tmp))
+            '''
+            if sta_list['interface'] is not None:
+                # print("map_sta_ips - sta_list_2:{sta_list_2}".format(sta_list_2=sta_list['interface']))
+                # self.ip_map[sta_list['interface']['alias']] = sta_list['interface']['ip']
+                eid_key = "{eid0}.{eid1}.{eid2}".format(eid0=eid[0], eid1=eid[1], eid2=eid[2])
+                self.ip_map[eid_key] = sta_list['interface']['ip']
+
+    def create_real(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False, real=False,
+               https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None,
+               https_ip=None, interop=None,media_source=None,media_quality=None,timeout=10,proxy_auth_type=0x2200,windows_list=[], get_url_from_file=False):
+        if ports is None:
+            ports = []
+        cx_post_data = []
+        # print("http_profile - ports:{ports}".format(ports=ports))
+        self.map_sta_ips_real(ports)
+        logger.info("Create HTTP CXs..." + __name__)
+        # print("http_profile - self.ip_map:{ip_map}".format(ip_map=self.ip_map))
+
+        for i in range(len(list(self.ip_map))):
+            url = None
+            if i != len(list(self.ip_map)) - 1:
+                port_name = list(self.ip_map)[i]
+                ip_addr = self.ip_map[list(self.ip_map)[i + 1]]
+            else:
+                port_name = list(self.ip_map)[i]
+                ip_addr = self.ip_map[list(self.ip_map)[0]]
+
+            if (ip_addr is None) or (ip_addr == ""):
+                raise ValueError("HTTPProfile::create encountered blank ip/hostname")
+            if interop:
+                if list(self.ip_map)[i] in windows_list:
+                    self.dest = 'NUL'
+                if list(self.ip_map)[i] not in windows_list:
+                        self.dest = '/dev/null'
+
+            # print("http_profile - port_name:{port_name}".format(port_name=port_name))
+            rv = self.local_realm.name_to_eid(port_name)
+            # print("http_profile - rv:{rv}".format(rv=rv))
+            '''
+            shelf = self.local_realm.name_to_eid(port_name)[0]
+            resource = self.local_realm.name_to_eid(port_name)[1]
+            name = self.local_realm.name_to_eid(port_name)[2]
+            '''
+            shelf = rv[0]
+            resource = rv[1]
+            name = rv[2]
+            # eid_port = "{shelf}.{resource}.{name}".format(shelf=rv[0], resource=rv[1], name=rv[2])
+
+            if upload_name is not None:
+                name = upload_name
+
+            if http:
+                if http_ip is not None:
+                    if get_url_from_file:
+                        self.port_util.set_http(port_name=name, resource=resource, on=True)
+                        url = "%s %s %s" % ("", http_ip, "")
+                        logger.info("HTTP url:{}".format(url))
+                    else:
+                        self.port_util.set_http(port_name=name, resource=resource, on=True)
+                        url = "%s http://%s %s" % (self.direction, http_ip, self.dest)
+                        logger.info("HTTP url:{}".format(url))
+                else:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s http://%s/ %s" % (self.direction, ip_addr, self.dest)
+                    logger.info("HTTP url:{}".format(url))
+            if https:
+                if https_ip is not None:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s https://%s %s" % (self.direction, https_ip, self.dest)
+                else:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s https://%s/ %s" % (self.direction, ip_addr, self.dest)
+            
+            if real:
+                if http_ip is not None:
+                    if get_url_from_file:
+                        self.port_util.set_http(port_name=name, resource=resource, on=True)
+                        url = "%s %s %s" % ("", http_ip, "")
+                        logger.info("HTTP url:{}".format(url))
+                    else:
+                        self.port_util.set_http(port_name=name, resource=resource, on=True)
+                        url = "%s %s %s" % (self.direction, http_ip, self.dest)
+                        logger.info("HTTP url:{}".format(url))
+                else:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s %s/ %s" % (self.direction, ip_addr, self.dest)
+                    logger.info("HTTP url:{}".format(url))
+
+
+            if ftp:
+                # print("create() - eid_port:{eid_port}".format(eid_port=eid_port))
+                self.port_util.set_ftp(port_name=name, resource=resource, on=True)
+                if user is not None and passwd is not None and source is not None:
+                    if ftp_ip is not None:
+                        ip_addr = ftp_ip
+                    url = "%s ftp://%s:%s@%s%s %s" % (self.direction, user, passwd, ip_addr, source, self.dest)
+                    logger.info("###### url:{}".format(url))
+                else:
+                    raise ValueError("user: %s, passwd: %s, and source: %s must all be set" % (user, passwd, source))
+            if not http and not ftp and not https and not real:
+                raise ValueError("Please specify ftp and/or http")
+
+            if (url is None) or (url == ""):
+                raise ValueError("HTTPProfile::create: url unset")
+            if ftp:
+                cx_name = name + "_ftp"
+            else:
+                
+                cx_name = name + "_http"
+                
+                    
+            if interop is None:
+                if upload_name is None:
+                    endp_data = {
+                        "alias": cx_name + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        "port": name,
+                        "type": "l4_generic",
+                        "timeout": timeout,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "proxy_auth_type": 0x200,
+                        "quiesce_after": self.quiesce_after,
+                        "max_speed": self.max_speed
+                    }
+                else:
+                    endp_data = {
+                        "alias": cx_name + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        # "port": ports[0],
+                        "port": rv[2],
+                        "type": "l4_generic",
+                        "timeout": timeout,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "ssl_cert_fname": "ca-bundle.crt",
+                        "proxy_port": 0,
+                        "max_speed": self.max_speed,
+                        "proxy_auth_type": 0x200,
+                        "quiesce_after": self.quiesce_after
+                    }
+                set_endp_data={
+                    "alias": cx_name + str(resource) + "_l4",
+                    "media_source":media_source,
+                    "media_quality":media_quality,
+                    # "media_playbacks":'0'
+                }
+                url = "cli-json/add_l4_endp"
+                self.json_post(url, endp_data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands_)
+                time.sleep(sleep_time)
+                # If media source and media quality is given then this code will set media source and media quality for CX
+                if media_source and media_quality:
+                    url1="cli-json/set_l4_endp"
+                    self.json_post(url1, set_endp_data, debug_=debug_,
+                                            suppress_related_commands_=suppress_related_commands_)
+
+                endp_data = {
+                    "alias": "CX_" + cx_name + "_l4",
+                    "test_mgr": "default_tm",
+                    "tx_endp": cx_name + "_l4",
+                    "rx_endp": "NA"
+                }
+                # print("http_profile - endp_data:{endp_data}".format(endp_data=endp_data))
+                cx_post_data.append(endp_data)
+                self.created_cx[cx_name + "_l4"] = "CX_" + cx_name + "_l4"
+            else: # If Interop is enabled then this code will work
+                if upload_name is None:
+                    endp_data = {
+                        "alias": cx_name + str(resource) + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        "port": name,
+                        "type": "l4_generic",
+                        "timeout": timeout,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "proxy_auth_type": proxy_auth_type,
+                        "quiesce_after": self.quiesce_after,
+                        "max_speed": self.max_speed
+                    }
+                else:
+                    endp_data = {
+                        "alias": cx_name + str(resource) + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        # "port": ports[0],
+                        "port": rv[2],
+                        "type": "l4_generic",
+                        "timeout": timeout,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "ssl_cert_fname": "ca-bundle.crt",
+                        "proxy_port": 0,
+                        "max_speed": self.max_speed,
+                        "proxy_auth_type": proxy_auth_type,
+                        "quiesce_after": self.quiesce_after
+                    }
+                set_endp_data={
+                    "alias": cx_name + str(resource) + "_l4",
+                    "media_source":media_source,
+                    "media_quality":media_quality,
+                    # "media_playbacks":'0'
+                }
+                url = "cli-json/add_l4_endp"
+                self.json_post(url, endp_data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands_)
+                time.sleep(sleep_time)
+                # If media source and media quality is given then this code will set media source and media quality for CX
+                if media_source and media_quality:
+                    url1="cli-json/set_l4_endp"
+                    self.json_post(url1, set_endp_data, debug_=debug_,
+                                            suppress_related_commands_=suppress_related_commands_)
+
+                endp_data = {  # Added resource id to alias and End point name as all real clients have same name(wlan0)
+                    "alias": "CX_" + cx_name + str(resource) + "_l4",
+                    "test_mgr": "default_tm",
+                    "tx_endp": cx_name + str(resource) + "_l4",
+                    "rx_endp": "NA"
+                }
+                # print("http_profile - endp_data:{endp_data}".format(endp_data=endp_data))
+                cx_post_data.append(endp_data)
+                self.created_cx[cx_name + str(resource) + "_l4"] = "CX_" + cx_name + str(resource) + "_l4"
+        self.http_profile.created_cx=self.created_cx
+
+        for cx_data in cx_post_data:
+            url = "/cli-json/add_cx"
+            self.json_post(url, cx_data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands_)
+            time.sleep(sleep_time)
+
+        # enabling geturl from file for each endpoint
+        if get_url_from_file:
+            for cx in list(self.created_cx.keys()):
+                self.json_post("/cli-json/set_endp_flag", {"name": cx,
+                                                                       "flag": "GetUrlsFromFile",
+                                                                       "val": 1
+                                                                       }, suppress_related_commands_=True)
+
+
+
     def stop(self):
         # Stops the layer 4-7 traffic for created CX end points
         if self.resource_ids:
@@ -375,7 +657,12 @@ class VideoStreamingTest(Realm):
         data = self.local_realm.json_get("layer4/%s/list?fields=%s" %
                                          (','.join(self.http_profile.created_cx.keys()), data_mon.replace(' ', '+')))
         data1 = []
+        
+        if "endpoint" not in data.keys():
+            logger.error("Error: 'endpoint' key not found in port data")
+            exit(1)
         data = data['endpoint']
+        
         if len(self.http_profile.created_cx.keys()) == 1 :
             for cx in self.http_profile.created_cx.keys():
                 if cx in data['name']:
@@ -400,7 +687,7 @@ class VideoStreamingTest(Realm):
         station_name = []
         ssid = []
 
-        eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal")
+        eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal,phantom")
         if "interfaces" not in eid_data.keys():
             logger.error("Error: 'interfaces' key not found in port data")
             exit(1)
@@ -409,7 +696,7 @@ class VideoStreamingTest(Realm):
             resource_ids = list(map(int, self.resource_ids.split(',')))
         for alias in eid_data["interfaces"]:
             for i in alias:
-                if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
+                if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0' and not alias[i]["phantom"]:
                     resource_id_list.append(i.split(".")[1])
                     resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
                     hw_version = resource_hw_data['resource']['hw version']
@@ -461,12 +748,17 @@ class VideoStreamingTest(Realm):
                     resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
                     hw_version = resource_hw_data['resource']['hw version']
                     if not hw_version.startswith(('Win', 'Linux', 'Apple')) and int(resource_hw_data['resource']['eid'].split('.')[1]) in resource_ids :
+
+                        if "dBm" in alias[i]['signal']:
+                            rssi.append(alias[i]['signal'].split(" ")[0])
+                        else:
+                            rssi.append(alias[i]['signal'])
                         
-                        rssi.append(alias[i]['signal'])
+                        
                         tx_rate.append(alias[i]['tx-rate'])
                         rx_rate.append(alias[i]['rx-rate'])
         
-        rssi=[int(i) for i in rssi]
+        rssi = [0 if i.strip() == "" else int(i) for i in rssi]
         return rssi,tx_rate
 
     def monitor_for_runtime_csv(self,duration,file_path,individual_df,iteration,actual_start_time,resource_list_sorted = [],cx_list = [] ):        
@@ -572,7 +864,7 @@ class VideoStreamingTest(Realm):
             for i in range(len(self.my_monitor("total-wait-time"))):
                 
                 # If the status is 'Stopped', append 0 to the video rate dictionary and overall video rate
-                if self.data['status'][i]=='Stopped':
+                if self.data['status'][i] !='Run':
 
                     video_rate_dict[i].append(0)
                     overall_video_rate.append(0)
@@ -615,7 +907,7 @@ class VideoStreamingTest(Realm):
 
         # Collecting data when test is stopped
         for i in range(len(self.my_monitor("total-wait-time"))):
-            if self.data['status'][i]=='Stopped':
+            if self.data['status'][i]!='Run':
                 video_rate_dict[i].append(0)
                 overall_video_rate.append(0)
                 individual_df_data.extend([0,0,0,rssi_data[i],link_speed_data[i],total_buffer[i],total_err[i],min(video_rate_dict[i]),max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
@@ -707,11 +999,10 @@ class VideoStreamingTest(Realm):
         report.set_title("Video Streaming Test")
         report.set_date(date)
         report.build_banner()
-        report.set_obj_html("Objective", "The Candela Web browser test is designed to measure the Access Point performance and stability by browsing multiple websites in real clients like"
-        "Android, Linux, windows, and IOS which are connected to the access point. This test allows the user to choose the options like website link, the"
-        "number of times the page has to browse, and the Time taken to browse the page. Along with the performance other measurements made are client"
-        "connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the AP to be able to handle several stations"
-        "(within the limitations of the AP specs) and make sure all clients can browse the page.")
+        report.set_obj_html("Objective", " The Candela Video streaming test is designed to measure the access point performance and stability by streaming the videos from the local browser or from over the Internet in real clients like android which are connected to the access point," 
+        "this test allows the user to choose the options like video link, type of media source, media quality, number of playbacks."
+        "Along with the performance other measurements like No of Buffers, Wait-Time, per client Video Bitrate, Video Quality, and more. "
+        "The expected behavior is for the DUT to be able to handle several stations (within the limitations of the AP specs) and make sure all capable clients can browse the video. ")
         report.build_objective()
         report.set_table_title("Input Parameters")
         report.build_table_title()
@@ -819,11 +1110,11 @@ class VideoStreamingTest(Realm):
 
             # If there are multiple incremental values, add custom HTML content to the report for the current iteration
             if len(created_incremental_values)>1:
-                report.set_custom_html(f"<h2><u>Iteration-{iter+1}: test running on devices : {', '.join(device_names_on_running)}</u></h2>")
+                report.set_custom_html(f"<h2><u>Iteration-{iter+1}</u></h2>")
                 report.build_custom()
 
             report.set_obj_html(
-                            _obj_title="Realtime Video Rate",
+                            _obj_title=f"Realtime Video Rate: Number of devices running: {len(device_names_on_running)}",
                             _obj="")
             report.build_objective()
 
@@ -859,6 +1150,7 @@ class VideoStreamingTest(Realm):
                                             _yaxis_categories=device_names_on_running,
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
                                             _figsize=(x_fig_size, y_fig_size)
                                             #    _color=['lightcoral']
                                                 )
@@ -883,6 +1175,7 @@ class VideoStreamingTest(Realm):
                                             _yaxis_categories=device_names_on_running,
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
                                             _figsize=(x_fig_size, y_fig_size)
                                             #    _color=['lightcoral']
                                                 )
@@ -907,6 +1200,7 @@ class VideoStreamingTest(Realm):
                                             _yaxis_categories=device_names_on_running,
                                             _legend_loc="best",
                                             _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
                                             _figsize=(x_fig_size, y_fig_size)
                                             #    _color=['lightcoral']
                                                 )
@@ -941,7 +1235,7 @@ class VideoStreamingTest(Realm):
                 " Max Video Rate(Mbps) " : max_video_rate[:created_incremental_values[iter]],
                 " Total URLs " : total_urls[:created_incremental_values[iter]],
                 " Total Errors " : total_err[:created_incremental_values[iter]],
-                " RSSI (dbm)" : ['-'+ str(n) for n in rssi_data[:created_incremental_values[iter]]],
+                " RSSI (dbm)" : ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[:created_incremental_values[iter]]],
                 " Link Speed ": tx_rate[:created_incremental_values[iter]]
             }
             dataframe1 = pd.DataFrame(dataframe)
@@ -975,12 +1269,10 @@ class VideoStreamingTest(Realm):
 
 def main():
     help_summary = '''\
-    The Candela Web browser test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like android, Linux,
-    windows, and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for
-    this test, we aim to assess the capacity of network to handle high volumes of traffic while
-    each trial. Along with throughput other measurements made are client connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the
-    AP to be able to handle several stations (within the limitations of the AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that
-    scales well will not show a significant overall throughput decrease as more Real clients are added.
+    The Candela Video streaming test is designed to measure the access point performance and stability by streaming the videos from the local browser or from over the Internet in real clients like android which are connected to the access point, 
+    this test allows the user to choose the options like video link, type of media source, media quality, number of playbacks.
+    Along with the performance other measurements like No of Buffers, Wait-Time, per client Video Bitrate, Video Quality, and more. 
+    The expected behavior is for the DUT to be able to handle several stations (within the limitations of the AP specs) and make sure all capable clients can browse the video. 
     '''
 
     parser = argparse.ArgumentParser(
@@ -1022,6 +1314,10 @@ def main():
         Example-6:
         Command Line Interface to run Video Streaming test with postcleanup:
         python3 lf_interop_video_streaming.py --mgr 192.168.214.219 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls --media_quality 1080P --duration 1m --device_list 1.10,1.12 --postcleanup --debug --test_name video_streaming_test
+
+        Example-7:
+        Command Line Interface to run the Video Streaming test with incremental Capacity    
+        python3 lf_interop_video_streaming.py --mgr 192.168.214.219 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls --media_quality 1080P --duration 1m --device_list 1.10,1.11 --incremental_capacity 1,2 --debug --test_name video_streaming_test
 
         SCRIPT CLASSIFICATION: Test
 
@@ -1070,7 +1366,7 @@ def main():
     parser.add_argument("--media_quality",type=str,default='0')
    
     parser.add_argument('--device_list', type=str, help='provide resource_ids of android devices. for instance: "10,12,14"')
-    parser.add_argument('--webgui_incremental', help="Specify the incremental values <1,2,3..>", type=str)
+    parser.add_argument('--webgui_incremental','--incremental_capacity', help="Specify the incremental values <1,2,3..>", type=str,dest="webgui_incremental")
     parser.add_argument('--incremental', help="--incremental to add incremental values", action = 'store_true')
     parser.add_argument('--no_laptops', help="--to not use laptops", action = 'store_false')
     parser.add_argument('--postcleanup', help="Cleanup the cross connections after test is stopped", action = 'store_true')
@@ -1121,11 +1417,11 @@ def main():
     
     logger = logging.getLogger(__name__)
 
-    url = args.url.replace("http://", "").replace("https://", "")
+    # url = args.url.replace("http://", "").replace("https://", "")
 
     obj = VideoStreamingTest(host=args.host, ssid=args.ssid, passwd=args.passwd, encryp=args.encryp,
                         suporrted_release=["7.0", "10", "11", "12"], max_speed=args.max_speed,
-                        url=url, urls_per_tenm=args.urls_per_tenm, duration=args.duration, 
+                        url=args.url, urls_per_tenm=args.urls_per_tenm, duration=args.duration, 
                         resource_ids = args.device_list, dowebgui = args.dowebgui,media_quality=args.media_quality,media_source=args.media_source,
                         result_dir = args.result_dir,test_name = args.test_name, incremental = args.incremental,postcleanup=args.postcleanup,
                         precleanup=args.precleanup)
@@ -1178,6 +1474,7 @@ def main():
         if args.device_list:
             # Extract second part of resource IDs and sort them
             obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list.split(","))
+            print("sssss",obj.resource_ids)
             resource_ids_sm = obj.resource_ids
             resource_list = resource_ids_sm.split(',')            
             resource_set = set(resource_list)
@@ -1234,15 +1531,18 @@ def main():
                     for ele in obj.android_devices:
                         if ele.startswith(element):
                             obj.android_list.append(ele)
+                else:
+                    logger.info("{} device is not available".format(element))
             new_android = [int(item.split('.')[1]) for item in obj.android_list]
 
             resource_ids = sorted(new_android)
-            available_resources=list(resource_ids)
+            available_resources=list(set(resource_ids))
 
         else:
             # Query user to select devices if no resource IDs are provided
             selected_devices,report_labels,selected_macs = obj.devices.query_user()
             # Handle cases where no devices are selected
+            
             if not selected_devices:
                 logging.info("devices donot exist..!!")
                 return 
@@ -1294,6 +1594,7 @@ def main():
         exit(1)
     if args.incremental and not args.webgui_incremental :
         if obj.resource_ids:
+            logging.info("The total available devices are {}".format(len(available_resources)))
             obj.incremental = input('Specify incremental values as 1,2,3 : ')
             obj.incremental = [int(x) for x in obj.incremental.split(',')]
         else:
@@ -1315,10 +1616,10 @@ def main():
         resources_list1 = [str(x) for x in obj.resource_ids.split(',')]
         if resource_list_sorted:
             resources_list1 = resource_list_sorted
-        if obj.incremental[-1] > len(resources_list1):
+        if obj.incremental[-1] > len(available_resources):
             logging.info("Exiting the program as incremental values are greater than the resource ids provided")
             exit()
-        elif obj.incremental[-1] < len(resources_list1) and len(obj.incremental) > 1:
+        elif obj.incremental[-1] < len(available_resources) and len(obj.incremental) > 1:
             logging.info("Exiting the program as the last incremental value must be equal to selected devices")
             exit()
     
@@ -1374,7 +1675,7 @@ def main():
     # Process resource IDs and incremental values if specified
     if obj.resource_ids:
         if obj.incremental:
-            test_setup_info_incremental_values =  ','.join(map(str, obj.incremental))
+            test_setup_info_incremental_values =  ','.join([str(n) for n in incremental_capacity_list_values])
             if len(obj.incremental) == len(available_resources):
                 test_setup_info_total_duration = args.duration
             elif len(obj.incremental) == 1 and len(available_resources) > 1:
@@ -1393,7 +1694,10 @@ def main():
             #     test_setup_info_duration_per_iteration= args.duration 
         else:
             test_setup_info_total_duration = args.duration
-        if gave_incremental:
+            
+        if args.webgui_incremental:
+            test_setup_info_incremental_values =  ','.join([str(n) for n in incremental_capacity_list_values])
+        elif gave_incremental:
             test_setup_info_incremental_values = "No Incremental Value provided"
         obj.total_duration = test_setup_info_total_duration
 
@@ -1502,7 +1806,7 @@ def main():
         test_setup_info = {
             "Testname" : args.test_name,
             "Device List" : device_list_str ,
-            "No of Devices" : "Total" + "( " + str(len(phone_list)) + " )",
+            "No of Devices" : "Total" + "( " + str(len(keys)) + " ): Android(" +  str(len(keys)) +")",
             "Incremental Values" : "",
             "URL" : args.url,
             "Media Source":media_source.upper(),
