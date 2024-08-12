@@ -255,8 +255,9 @@ class VideoStreamingTest(Realm):
         self.max_speed = self.max_speed
         self.requests_per_ten = self.urls_per_tenm
         upload_name=self.phone_data[-1].split('.')[-1]
+        self.created_cx=self.http_profile.created_cx=self.convert_to_dict(self.phone_data)
         if self.preCleanUp:
-            self.created_cx=self.http_profile.created_cx=self.convert_to_dict(self.phone_data)
+            # self.created_cx=self.http_profile.created_cx=self.convert_to_dict(self.phone_data)
             self.precleanup()
         logging.info("Creating Layer-4 endpoints from the user inputs as test parameters")
         time.sleep(5)
