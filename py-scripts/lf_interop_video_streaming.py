@@ -1475,7 +1475,6 @@ def main():
         if args.device_list:
             # Extract second part of resource IDs and sort them
             obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list.split(","))
-            print("sssss",obj.resource_ids)
             resource_ids_sm = obj.resource_ids
             resource_list = resource_ids_sm.split(',')            
             resource_set = set(resource_list)
