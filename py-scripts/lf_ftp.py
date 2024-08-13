@@ -1333,6 +1333,38 @@ class FtpTest(LFCliBase):
         client_list=[]
         if self.clients_type == "Real":
             client_list = self.real_client_list1
+            android_devices,windows_devices,linux_devices,mac_devices=0,0,0,0
+            all_devices_names=[]
+            device_type=[]
+            total_devices=""
+            for i in self.real_client_list:
+                split_device_name=i.split(" ")
+                if 'android' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Android)") )
+                    device_type.append("Android")
+                    android_devices+=1
+                elif 'Win' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Windows)"))
+                    device_type.append("Windows")
+                    windows_devices+=1
+                elif 'Lin' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Linux)"))
+                    device_type.append("Linux")
+                    linux_devices+=1
+                elif 'Mac' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Mac)"))
+                    device_type.append("Mac")
+                    mac_devices+=1
+
+            # Build total_devices string based on counts
+            if android_devices>0:
+                total_devices+= f" Android({android_devices})" 
+            if windows_devices>0:
+                total_devices+= f" Windows({windows_devices})" 
+            if linux_devices>0:
+                total_devices+= f" Linux({linux_devices})" 
+            if mac_devices>0:
+                total_devices+= f" Mac({mac_devices})"
         else:
             if self.clients_type == "Virtual":
                 client_list = self.station_list
@@ -1359,22 +1391,35 @@ class FtpTest(LFCliBase):
         else :
             no_of_stations = str(len(self.input_devices_list))
 
-        test_setup_info = {
-        "AP Name": self.ap_name,
-        "SSID": self.ssid,
-        "Security" : self.security,
-        "No of Devices" : no_of_stations,
-        "File size" : self.file_size,
-        "File location" : "/home/lanforge",
-        "Traffic Direction" : self.direction,
-        "Traffic Duration ": duration
-    }
+        if(self.clients_type=="Real"):
+            test_setup_info = {
+            "AP Name": self.ap_name,
+            "SSID": self.ssid,
+            "Security" : self.security,
+            "Device List": ", ".join(all_devices_names),
+            "No of Devices" : "Total"+ f"({no_of_stations})" + total_devices,
+            "File size" : self.file_size,
+            "File location" : "/home/lanforge",
+            "Traffic Direction" : self.direction,
+            "Traffic Duration ": duration
+        }
+        else:
+            test_setup_info = {
+            "AP Name": self.ap_name,
+            "SSID": self.ssid,
+            "Security" : self.security,
+            "No of Devices" : no_of_stations,
+            "File size" : self.file_size,
+            "File location" : "/home/lanforge",
+            "Traffic Direction" : self.direction,
+            "Traffic Duration ": duration
+        }
         self.report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
         self.report.set_obj_html("Objective",
                                  "This FTP Test is used to Verify that N clients connected on Specified band and can "
-                                 "simultaneously download/upload some amount of file from FTP server and measuring the "
-                                 "time taken by client to Download/Upload the file.")
+                                 "simultaneously download some amount of file from FTP server and measuring the "
+                                 "time taken by client to Download the file.")
         self.report.build_objective()
         # self.report.set_obj_html("PASS/FAIL Results",
         #                          "This Table will give Pass/Fail results.")
@@ -1455,11 +1500,10 @@ class FtpTest(LFCliBase):
         self.report.set_csv_filename(graph_png)
         self.report.move_csv_file()
         self.report.build_graph()
-        self.report.set_obj_html("File Download/Upload Time (sec)", "The below table will provide information of "
-                             "minimum, maximum and the average time taken by clients to download/upload a file in seconds")
+        self.report.set_obj_html("File Download Time (sec)", "The below table will provide information of "
+                             "minimum, maximum and the average time taken by clients to download a file in seconds")
         self.report.build_objective()
         dataframe2 ={
-               "Band" : self.band,
                "Minimum" : [str(round(min(self.uc_min)/1000,1))],
                "Maximum" : [str(round(max(self.uc_max)/1000,1))],
                "Average" : [str(round((sum(self.uc_avg)/len(client_list))/1000,1))]
