@@ -11,8 +11,28 @@ EXAMPLE-2:
 Command Line Interface for Wi-Fi Connectivity on all kinds of real devices
 python3 lf_base_interop_profile.py --host 192.168.200.63 --ssid RDT_wpa2 --crypt psk2 --passwd OpenWifi --server_ip 192.168.1.61 --config_wifi
 
-NOTES:
+EXAMPLE-3:
+python3 lf_base_interop_profile.py --host 192.168.242.2 --ssid_5g Test_Tool_Eval --passwd_5g Meraki@1234 --encryption_5g wpa2
+ --device_list new-MacBook-Air-153.local,DESKTOP-52PGI2B,DESKTOP-3KOIAJR,DESKTOP-OSIV9QN,HP,LAPTOP-1FNKSTC9,CT_LAP_010 --config_wifi --server_ip 192.168.247.95
+EXAMPLE-4:
+CLI for configuring device enterprise SSID
+python3 lf_base_interop_profile.py --host 192.168.242.2 --server_ip 192.168.1.95 --ssid_5g test_wpa2_radius --passwd_5g testpasswd --ieee80211_5g
+ --encryption_5g wpa2_enterprise --device_list R9ZN60VXQHR --config_wifi --eap_method_5g EAP-TTLS --eap_identity_5g testuser 
+EXAMPLE-5:
+CLI for configuring android and linux with enterprise SSID
+NOTES:For configuring any set of devices with android included user should add --ieee80211_5g
+python3 lf_base_interop_profile.py --host 192.168.242.2 --server_ip 192.168.1.95 --ssid_5g test_wpa2_radius --passwd_5g testpasswd --ieee80211_5g --encryption_5g wpa2_enterprise --device_list R9ZN60VXQHR,laptop10-Latitude-E5450 --config_wifi --key_management_5g WPA-EAP --eap_method_5g EAP-TTLS --eap_identity_5g testuser --ieee80211w_5g 1
+OR 
+With enterprise configuration --all device option
+Notes: This only includes linux and androids as per support
+python3 lf_base_interop_profile.py --host 192.168.242.2 --server_ip 192.168.1.95 --ssid_5g test_wpa2_radius --passwd_5g testpasswd --ieee80211_5g --encryption_5g wpa2_enterprise --config_wifi --key_management_5g WPA-EAP --eap_method_5g EAP-TTLS --eap_identity_5g testuser --ieee80211w_5g 1 --device_list all
 
+EXAMPLE-6
+For only all laptops
+python3 lf_base_interop_profile.py --host 192.168.242.2 --server_ip 192.168.1.95 --ssid_5g test_wpa2 --passwd_5g lanforge --encryption_5g wpa2 --config_wifi --server_ip 192.168.1.95 --device_list all --all_laptop
+OR
+For only all androids
+python3 lf_base_interop_profile.py --host 192.168.242.2 --server_ip 192.168.1.95 --ssid_5g test_wpa2 --passwd_5g lanforge --encryption_5g wpa2 --config_wifi --server_ip 192.168.1.95 --device_list all --all_android
 #@TODO more functionality need to be added
 
 
@@ -43,7 +63,7 @@ import time
 import logging
 import pandas as pd
 import asyncio
-
+from datetime import datetime
 if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
@@ -630,25 +650,78 @@ class RealDevice(Realm):
                  encryption_2g=None,
                  eap_method_2g=None,
                  eap_identity_2g=None,
+                 ieee80211_2g=None,
+                 ieee80211u_2g=None,
+                 ieee80211w_2g=None,
+                 enable_pkc_2g=None,
+                 bss_transition_2g=None,
+                 power_save_2g=None,
+                 disable_ofdma_2g=None,
+                 roam_ft_ds_2g=None,
+                 key_management_2g=None,
+                 pairwise_2g=None,
+                 private_key_2g=None,
+                 ca_cert_2g=None,
+                 client_cert_2g=None,
+                 pk_passwd_2g=None,
+                 pac_file_2g=None,
                  ssid_5g=None,
                  passwd_5g=None,
                  encryption_5g=None,
                  eap_method_5g=None,
                  eap_identity_5g=None,
+                 ieee80211_5g=None,
+                 ieee80211u_5g=None,
+                 ieee80211w_5g=None,
+                 enable_pkc_5g=None,
+                 bss_transition_5g=None,
+                 power_save_5g=None,
+                 disable_ofdma_5g=None,
+                 roam_ft_ds_5g=None,
+                 key_management_5g=None,
+                 pairwise_5g=None,
+                 private_key_5g=None,
+                 ca_cert_5g=None,
+                 client_cert_5g=None,
+                 pk_passwd_5g=None,
+                 pac_file_5g=None,
                  ssid_6g=None,
                  passwd_6g=None,
                  encryption_6g=None,
                  eap_method_6g=None,
                  eap_identity_6g=None,
+                 ieee80211_6g=None,
+                 ieee80211u_6g=None,
+                 ieee80211w_6g=None,
+                 enable_pkc_6g=None,
+                 bss_transition_6g=None,
+                 power_save_6g=None,
+                 disable_ofdma_6g=None,
+                 roam_ft_ds_6g=None,
+                 key_management_6g=None,
+                 pairwise_6g=None,
+                 private_key_6g=None,
+                 ca_cert_6g=None,
+                 client_cert_6g=None,
+                 pk_passwd_6g=None,
+                 pac_file_6g=None,
+                 enable_wifi=None,
+                 disable_wifi=None,
                  selected_bands=['5g'],
                  groups=False,
                  _debug_on=False,
-                 _exit_on_error=False):
+                 _exit_on_error=False,
+                 all_android=None,
+                 all_laptops=None):
         super().__init__(lfclient_host=manager_ip,
                          debug_=_debug_on)
         self.manager_ip = manager_ip
         self.manager_port = port
         self.server_ip = server_ip
+        self.enable_wifi = enable_wifi
+        self.disable_wifi = disable_wifi
+        self.all_android = all_android
+        self.all_laptops = all_laptops
 
         self.ssid_2g = ssid_2g
         self.passwd_2g = passwd_2g
@@ -665,12 +738,57 @@ class RealDevice(Realm):
         # for enterprise authentication
         self.eap_method_2g = eap_method_2g
         self.eap_identity_2g = eap_identity_2g
+        self.ieee80211_2g = ieee80211_2g
+        self.ieee80211u_2g= ieee80211u_2g
+        self.ieee80211w_2g = ieee80211w_2g
+        self.enable_pkc_2g= enable_pkc_2g
+        self.bss_transition_2g= bss_transition_2g
+        self.power_save_2g= power_save_2g
+        self.disable_ofdma_2g= disable_ofdma_2g
+        self.roam_ft_ds_2g= roam_ft_ds_2g
+        self.key_management_2g = key_management_2g
+        self.pairwise_2g = pairwise_2g
+        self.private_key_2g = private_key_2g
+        self.ca_cert_2g = ca_cert_2g
+        self.client_cert_2g = client_cert_2g
+        self.pk_passwd_2g = pk_passwd_2g
+        self.pac_file_2g = pac_file_2g
 
         self.eap_method_5g = eap_method_5g
         self.eap_identity_5g = eap_identity_5g
+        self.ieee80211_5g = ieee80211_5g
+        self.ieee80211u_5g= ieee80211u_5g
+        self.ieee80211w_5g= ieee80211w_5g
+        self.enable_pkc_5g= enable_pkc_5g
+        self.bss_transition_5g= bss_transition_5g
+        self.power_save_5g= power_save_5g
+        self.disable_ofdma_5g= disable_ofdma_5g
+        self.roam_ft_ds_5g= roam_ft_ds_5g
+        self.key_management_5g = key_management_5g
+        self.pairwise_5g = pairwise_5g
+        self.private_key_5g = private_key_5g
+        self.ca_cert_5g = ca_cert_5g
+        self.client_cert_5g = client_cert_5g
+        self.pk_passwd_5g = pk_passwd_5g
+        self.pac_file_5g = pac_file_5g
 
         self.eap_method_6g = eap_method_6g
         self.eap_identity_6g = eap_identity_6g
+        self.ieee80211_6g = ieee80211_6g
+        self.ieee80211u_6g= ieee80211u_6g
+        self.ieee80211w_6g= ieee80211w_6g
+        self.enable_pkc_6g= enable_pkc_6g
+        self.bss_transition_6g= bss_transition_6g
+        self.power_save_6g= power_save_6g
+        self.disable_ofdma_6g= disable_ofdma_6g
+        self.roam_ft_ds_6g= roam_ft_ds_6g
+        self.key_management_6g = key_management_6g
+        self.pairwise_6g = pairwise_6g
+        self.private_key_6g = private_key_6g
+        self.ca_cert_6g = ca_cert_6g
+        self.client_cert_6g = client_cert_6g
+        self.pk_passwd_6g = pk_passwd_6g
+        self.pac_file_6g = pac_file_6g
 
         self.selected_bands = selected_bands
 
@@ -683,12 +801,14 @@ class RealDevice(Realm):
         self.windows_list = []
         self.linux_list = []
         self.mac_list = []
+        self.ios_list = []
         self.android_list = []
         self.station_list = []
         self.android = 0
         self.linux = 0
         self.windows = 0
         self.mac = 0
+        self.ios = 0
         self.groups=groups
 
         if self.groups is False:
@@ -715,62 +835,165 @@ class RealDevice(Realm):
         index = 1 # serial number for selection of devices
         
         # fetch all androids
+        
         self.androids_obj = interop_connectivity.Android(
             lanforge_ip=self.manager_ip,
             port=self.manager_port,
             server_ip=self.server_ip,
+            enable_wifi=self.enable_wifi,
+            disable_wifi=self.disable_wifi,
             ssid_2g=self.ssid_2g,
             passwd_2g=self.passwd_2g,
             encryption_2g=self.encryption_2g,
             eap_method_2g=self.eap_method_2g,
             eap_identity_2g=self.eap_identity_2g,
+            ieee80211_2g = self.ieee80211_2g,
+            # ieee80211u_2g= self.ieee80211u_2g,
+            # enable_pkc_2g= self.enable_pkc_2g,
+            # bss_transition_2g= self.bss_transition_2g,
+            # power_save_2g= self.power_save_2g,
+            # disable_ofdma_2g= self.disable_ofdma_2g,
+            # roam_ft_ds_2g= self.roam_ft_ds_2g,
+            key_management_2g = self.key_management_2g,
+            pairwise_2g = self.pairwise_2g,
+            private_key_2g = self.private_key_2g,
+            ca_cert_2g = self.ca_cert_2g,
+            client_cert_2g = self.client_cert_2g,
+            pk_passwd_2g = self.pk_passwd_2g,
+            pac_file_2g = self.pac_file_2g,
+
             ssid_5g=self.ssid_5g,
             passwd_5g=self.passwd_5g,
             encryption_5g=self.encryption_5g,
             eap_method_5g=self.eap_method_5g,
             eap_identity_5g=self.eap_identity_5g,
+            ieee80211_5g = self.ieee80211_5g,
+            # ieee80211u_5g= self.ieee80211u_5g,
+            # enable_pkc_5g= self.enable_pkc_5g,
+            # bss_transition_5g= self.bss_transition_5g,
+            # power_save_5g= self.power_save_5g,
+            # disable_ofdma_5g= self.disable_ofdma_5g,
+            # roam_ft_ds_5g= self.roam_ft_ds_5g,
+            key_management_5g = self.key_management_5g,
+            pairwise_5g = self.pairwise_5g,
+            private_key_5g = self.private_key_5g,
+            ca_cert_5g = self.ca_cert_5g,
+            client_cert_5g = self.client_cert_5g,
+            pk_passwd_5g = self.pk_passwd_5g,
+            pac_file_5g = self.pac_file_5g,
+
             ssid_6g=self.ssid_6g,
             passwd_6g=self.passwd_6g,
             encryption_6g=self.encryption_6g,
             eap_method_6g=self.eap_method_6g,
-            eap_identity_6g=self.eap_identity_6g)
-        self.androids = self.androids_obj.get_devices()
-        for android in self.androids:
-            shelf, resource, serial = android
-            self.all_devices[index] = {
-                'port': '{}.{}'.format(shelf, resource),
-                'username': serial,
-                'os': 'Android'
-            }
-            index += 1
+            eap_identity_6g=self.eap_identity_6g,
+            ieee80211_6g = self.ieee80211_6g,
+            # ieee80211u_6g= self.ieee80211u_6g,
+            # enable_pkc_6g= self.enable_pkc_6g,
+            # bss_transition_6g= self.bss_transition_6g,
+            # power_save_6g= self.power_save_6g,
+            # disable_ofdma_6g= self.disable_ofdma_6g,
+            # roam_ft_ds_6g= self.roam_ft_ds_6g,
+            key_management_6g = self.key_management_6g,
+            pairwise_6g = self.pairwise_6g,
+            private_key_6g = self.private_key_6g,
+            ca_cert_6g = self.ca_cert_6g,
+            client_cert_6g = self.client_cert_6g,
+            pk_passwd_6g = self.pk_passwd_6g,
+            pac_file_6g = self.pac_file_6g,)
+        if self.all_laptops!=True:
+            self.androids = self.androids_obj.get_devices()
+            for android in self.androids:
+                shelf, resource, serial = android
+                self.all_devices[index] = {
+                    'port': '{}.{}'.format(shelf, resource),
+                    'username': serial,
+                    'os': 'Android'
+                }
+                index += 1
 
         # fetch all laptops
         self.laptops_obj = interop_connectivity.Laptop(lanforge_ip=self.manager_ip,
                                                        port=self.manager_port,
                                                        server_ip=self.server_ip,
+                                                       enable_wifi=self.enable_wifi,
+                                                       disable_wifi=self.disable_wifi,
                                                        ssid_2g=self.ssid_2g,
                                                        passwd_2g=self.passwd_2g,
                                                        encryption_2g=self.encryption_2g,
                                                        eap_method_2g=self.eap_method_2g,
                                                        eap_identity_2g=self.eap_identity_2g,
+                                                       ieee80211_2g= self.ieee80211_2g,
+                                                       ieee80211u_2g= self.ieee80211u_2g,
+                                                       ieee80211w_2g= self.ieee80211w_2g,                   
+                                                       enable_pkc_2g= self.enable_pkc_2g,
+                                                       bss_transition_2g= self.bss_transition_2g,
+                                                       power_save_2g= self.power_save_2g,
+                                                       disable_ofdma_2g= self.disable_ofdma_2g,
+                                                       roam_ft_ds_2g= self.roam_ft_ds_2g,
+                                                       key_management_2g=self.key_management_2g,
+                                                       pairwise_2g=self.pairwise_2g,
+                                                       private_key_2g=self.private_key_2g,
+                                                       ca_cert_2g=self.ca_cert_2g,
+                                                       client_cert_2g=self.client_cert_2g,
+                                                       pk_passwd_2g=self.pk_passwd_2g,
+                                                       pac_file_2g=self.pac_file_2g,
                                                        ssid_5g=self.ssid_5g,
                                                        passwd_5g=self.passwd_5g,
                                                        encryption_5g=self.encryption_5g,
                                                        eap_method_5g=self.eap_method_5g,
                                                        eap_identity_5g=self.eap_identity_5g,
+                                                       ieee80211_5g= self.ieee80211_5g,
+                                                       ieee80211u_5g= self.ieee80211u_5g,
+                                                       ieee80211w_5g= self.ieee80211w_5g,
+                                                       enable_pkc_5g= self.enable_pkc_5g,
+                                                       bss_transition_5g= self.bss_transition_5g,
+                                                       power_save_5g= self.power_save_5g,
+                                                       disable_ofdma_5g= self.disable_ofdma_5g,
+                                                       roam_ft_ds_5g= self.roam_ft_ds_5g,
+                                                       key_management_5g=self.key_management_5g,
+                                                       pairwise_5g=self.pairwise_5g,
+                                                       private_key_5g=self.private_key_5g,
+                                                       ca_cert_5g=self.ca_cert_5g,
+                                                       client_cert_5g=self.client_cert_5g,
+                                                       pk_passwd_5g=self.pk_passwd_5g,
+                                                       pac_file_5g=self.pac_file_5g,
                                                        ssid_6g=self.ssid_6g,
                                                        passwd_6g=self.passwd_6g,
                                                        encryption_6g=self.encryption_6g,
                                                        eap_method_6g=self.eap_method_6g,
-                                                       eap_identity_6g=self.eap_identity_6g)
-        self.laptops = self.laptops_obj.get_resources_data()
-        for laptop in self.laptops:
-            self.all_devices[index] = {
-                'port': '{}.{}'.format(laptop['shelf'], laptop['resource']),
-                'username': laptop['hostname'],
-                'os': laptop['os']
-            }
-            index += 1
+                                                       eap_identity_6g=self.eap_identity_6g,
+                                                       ieee80211_6g= self.ieee80211_6g,
+                                                       ieee80211u_6g= self.ieee80211u_6g,
+                                                       ieee80211w_6g= self.ieee80211w_6g,
+                                                       enable_pkc_6g= self.enable_pkc_6g,
+                                                       bss_transition_6g= self.bss_transition_6g,
+                                                       power_save_6g= self.power_save_6g,
+                                                       disable_ofdma_6g= self.disable_ofdma_6g,
+                                                       roam_ft_ds_6g= self.roam_ft_ds_6g,
+                                                       key_management_6g=self.key_management_6g,
+                                                       pairwise_6g=self.pairwise_6g,
+                                                       private_key_6g=self.private_key_6g,
+                                                       ca_cert_6g=self.ca_cert_6g,
+                                                       client_cert_6g=self.client_cert_6g,
+                                                       pk_passwd_6g=self.pk_passwd_6g,
+                                                       pac_file_6g=self.pac_file_6g)
+        if self.all_android!=True:
+            self.laptops = self.laptops_obj.get_resources_data()
+            if self.ieee80211_2g==True or self.ieee80211_5g==True or self.ieee80211_6g==True:
+                    i=0
+                    while i < len(self.laptops):
+                        if self.laptops[i]['os'] == 'Win' or self.laptops[i]['os'] == 'Apple':
+                            del self.laptops[i]
+                        else:
+                            i += 1
+            for laptop in self.laptops:
+                self.all_devices[index] = {
+                    'port': '{}.{}'.format(laptop['shelf'], laptop['resource']),
+                    'username': laptop['hostname'],
+                    'os': laptop['os']
+                }
+                index += 1
 
         pd.set_option('display.max_rows', None)
         df = pd.DataFrame(data=self.all_devices).transpose()
@@ -786,7 +1009,10 @@ class RealDevice(Realm):
                     if self.all_devices[idx]['username'] == device:
                         device_serials.append(str(idx))
                         break
-            select_serials = selected + (",").join(device_serials)
+            if device_list[0]=='all':
+                select_serials = selected +'all'
+            else:
+                select_serials = selected + (",").join(device_serials)
         for band in select_serials.split(':'):
             if ('2g' in band) and ('2g' in self.selected_bands or '2G' in self.selected_bands or '2.4G' in self.selected_bands):
                 if ('all' in band):
@@ -851,32 +1077,142 @@ class RealDevice(Realm):
                         if (selected_serial in self.selected_2g_serials):
                             if '2g' not in laptop:
                                 laptop['band'] = '2g'
+                                i=self.ieee80211_2g
+                                if i==True:
+                                    laptop['eap_method_2g']=self.eap_method_2g
+                                    laptop['eap_identity_2g']=self.eap_identity_2g
+                                    laptop['ieee80211_2g']=self.ieee80211_2g
+                                    laptop['ieee80211u_2g']=self.ieee80211u_2g
+                                    laptop['ieee80211w_2g']=self.ieee80211w_2g
+                                    laptop['enable_pkc_2g']=self.enable_pkc_2g
+                                    laptop['bss_transition_2g']=self.bss_transition_2g
+                                    laptop['power_save_2g']=self.power_save_2g
+                                    laptop['disable_ofdma_2g']=self.disable_ofdma_2g
+                                    laptop['roam_ft_ds_2g']=self.roam_ft_ds_2g
+                                    laptop['key_management_2g']=self.key_management_2g
+                                    laptop['private_key']=self.private_key_2g
+                                    laptop['ca_cert']=self.ca_cert_2g
+                                    laptop['client_cert']=self.client_cert_2g
+                                    laptop['pk_passwd']=self.pk_passwd_2g
+                                    laptop['pac_file']=self.pac_file_2g
                         elif (selected_serial in self.selected_5g_serials):
                             if '5g' not in laptop:
                                 laptop['band'] = '5g'
+                                i=self.ieee80211_5g
+                                if i==True:
+                                    laptop['eap_method_5g']=self.eap_method_5g
+                                    laptop['eap_identity_5g']=self.eap_identity_5g
+                                    laptop['ieee80211_5g']=self.ieee80211_5g
+                                    laptop['ieee80211u_5g']=self.ieee80211u_5g
+                                    laptop['ieee80211w_5g']=self.ieee80211w_5g
+                                    laptop['enable_pkc_5g']=self.enable_pkc_5g
+                                    laptop['bss_transition_5g']=self.bss_transition_5g
+                                    laptop['power_save_5g']=self.power_save_5g
+                                    laptop['disable_ofdma_5g']=self.disable_ofdma_5g
+                                    laptop['roam_ft_ds_5g']=self.roam_ft_ds_5g
+                                    laptop['key_management_5g']=self.key_management_5g
+                                    laptop['private_key']=self.private_key_5g
+                                    laptop['ca_cert']=self.ca_cert_5g
+                                    laptop['client_cert']=self.client_cert_5g
+                                    laptop['pk_passwd']=self.pk_passwd_5g
+                                    laptop['pac_file']=self.pac_file_5g
                         elif (selected_serial in self.selected_6g_serials):
                             if '6g' not in laptop:
                                 laptop['band'] = '6g'
+                                i=self.ieee80211_6g
+                                if i==True:
+                                    laptop['eap_method_6g']=self.eap_method_6g
+                                    laptop['eap_identity_6g']=self.eap_identity_6g
+                                    laptop['ieee80211_6g']=self.ieee80211_6g
+                                    laptop['ieee80211u_6g']=self.ieee80211u_6g
+                                    laptop['ieee80211w_6g']=self.ieee80211w_6g
+                                    laptop['enable_pkc_6g']=self.enable_pkc_6g
+                                    laptop['bss_transition_6g']=self.bss_transition_6g
+                                    laptop['power_save_6g']=self.power_save_6g
+                                    laptop['disable_ofdma_6g']=self.disable_ofdma_6g
+                                    laptop['roam_ft_ds_6g']=self.roam_ft_ds_6g
+                                    laptop['key_management_6g']=self.key_management_6g
+                                    laptop['private_key']=self.private_key_6g
+                                    laptop['ca_cert']=self.ca_cert_6g
+                                    laptop['client_cert']=self.client_cert_6g
+                                    laptop['pk_passwd']=self.pk_passwd_6g
+                                    laptop['pac_file']=self.pac_file_6g
+                        print(laptop)
                         selected_laptops.append(laptop)
                         break
 
         if(selected_androids != []):
             await self.androids_obj.stop_app(port_list=selected_androids)
+            # await self.androids_obj.forget_all_networks(port_list=selected_androids)
             await self.androids_obj.configure_wifi(port_list=selected_androids)
-
+            
+            if(selected_laptops == []):  
+                print("WAITING FOR 120 seconds")
+                time.sleep(120)
         if(selected_laptops != []):
+            # if laptop['eap_method']!="" or laptop['eap_method']!= None or laptop['eap_method']!="NA":
             await self.laptops_obj.rm_station(port_list=selected_laptops)
+            time.sleep(10)
+            #trial for making port up before configuration
+            await self.laptops_obj.set_port_1(port_list=selected_laptops)
+            time.sleep(10)
             await self.laptops_obj.add_station(port_list=selected_laptops)
+            time.sleep(30)
+            #check for enterprise for enterprise configuration
+            if i==True:
+                await self.laptops_obj.set_wifi_extra(port_list=selected_laptops)
+                time.sleep(10)
             await self.laptops_obj.set_port(port_list=selected_laptops)
+            # await self.laptops_obj.set_port(port_list=selected_laptops)
+            # time.sleep(60)
+            # logging.info('Applying the new Wi-Fi configuration. Waiting for 2 minutes for the new configuration to apply.')
+            print("WAITING TOTAL 120 SECONDS FOR CONFIGURATION TO APPLY")
+            time.sleep(70)
+            exclude_laptops_con=[]
+            for laptop in selected_laptops:
+                current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+                current_laptop_port_data = current_laptop_port_data['interface']
+                if (current_laptop_port_data['down'] == True):
+                    exclude_laptops_con.append(laptop)
+                    continue
+            if exclude_laptops_con!=[]:
+                print(exclude_laptops_con)
+                print("WAITING FOR EXTRA 30 SECONDS")
+                time.sleep(30)
 
-        logging.info('Applying the new Wi-Fi configuration. Waiting for 2 minutes for the new configuration to apply.')
-        time.sleep(120)
-
-        # selecting devices only those connected to given SSID and contains IP
+            exclude_laptops_1=[]
+            for laptop in selected_laptops:
+                current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+                current_laptop_port_data = current_laptop_port_data['interface']
+                if (current_laptop_port_data['down'] == True):
+                    exclude_laptops_1.append(laptop)
+                    continue
+            if (exclude_laptops_1!=[]):
+                print("RETRY FOR: ",exclude_laptops_1)
+                await self.laptops_obj.set_port_1(port_list=exclude_laptops_1)
+                time.sleep(10)
+                await self.laptops_obj.add_station(port_list=exclude_laptops_1)
+                time.sleep(30)
+                await self.laptops_obj.set_port(port_list=exclude_laptops_1)
+                time.sleep(60)
+            exclude_laptops_2=[]
+            
+            for laptop in selected_laptops:
+                current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+                current_laptop_port_data = current_laptop_port_data['interface']
+                if (current_laptop_port_data['down'] == True):
+                    exclude_laptops_2.append(laptop)
+                    continue
+            if (exclude_laptops_2!=[]):
+                print("RETRY-2 FOR: ",exclude_laptops_2)
+                await self.laptops_obj.add_station(port_list=exclude_laptops_2)
+                await self.laptops_obj.set_port(port_list=exclude_laptops_2)
+                # await self.laptops_obj.set_port_1(port_list=exclude_laptops_2)
+                time.sleep(60)
+        
         # for androids
         exclude_androids = []
-        for android in selected_androids:    
-
+        for android in selected_androids:
             if (android[3] == '2g'):
                 curr_ssid = self.ssid_2g
             elif (android[3] == '5g'):
@@ -908,9 +1244,7 @@ class RealDevice(Realm):
             current_android_port_data = \
             self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
 
-
             current_android_port_data.update(current_android_resource_data)
-            
             # checking if the android is connected to the desired ssid
             if (current_android_port_data['ssid'] != curr_ssid):
                 logging.warning(
@@ -943,7 +1277,9 @@ class RealDevice(Realm):
 
             selected_t_devices[resource_id] = {
                 'hw version': 'Android',
-                'MAC': current_android_port_data['mac']
+                'MAC': current_android_port_data['mac'],
+                'IP': current_android_port_data['ip'],
+                'SSID': current_android_port_data['ssid']
             }
             
             
@@ -953,7 +1289,6 @@ class RealDevice(Realm):
         # for laptops
         exclude_laptops = []
         for laptop in selected_laptops:
-
             if (laptop['band'] == '2g'):
                 curr_ssid = self.ssid_2g
             elif (laptop['band'] == '5g'):
@@ -980,14 +1315,30 @@ class RealDevice(Realm):
                     'The laptop with port {}.{}.{} is not conneted to the given SSID {}. Excluding it from testing'.format(
                         laptop['shelf'], laptop['resource'], laptop['sta_name'], curr_ssid))
                 exclude_laptops.append(laptop)
+                
+                continue
+            if (current_laptop_port_data['down'] == True):
+                logging.warning(
+                    'The laptop with port {}.{}.{} is in down state {}.Please check the wifi. Excluding it from testing'.format(
+                        laptop['shelf'], laptop['resource'], laptop['sta_name'], curr_ssid))
+                exclude_laptops.append(laptop)
                 continue
 
             # checking if the laptop is active or down
             if(current_laptop_port_data['ip'] == '0.0.0.0'):
                 logging.warning(
-                    'The laptop with port {}.{}.{} is down. Excluding it from testing'.format(laptop['shelf'],
+                    'The laptop with port {}.{}.{} is 0.0.0.0. IP. Excluding it from testing'.format(laptop['shelf'],
                                                                                               laptop['resource'],
                                                                                               laptop['sta_name']))
+                exclude_laptops.append(laptop)
+                continue
+            #checking for windows gateway ip in-order to get ip confirmation
+            if(current_laptop_port_data["gateway ip"] == "0.0.0.0") and (laptop['os'] != 'Lin'):
+                logging.warning(
+                    'The laptop with port {}.{}.{} is 0.0.0.0. gateway IP. Excluding it from testing'.format(laptop['shelf'],
+                                                                                              laptop['resource'],
+                                                                                              laptop['sta_name']))
+                
                 exclude_laptops.append(laptop)
                 continue
 
@@ -1004,7 +1355,9 @@ class RealDevice(Realm):
             self.report_labels.append('{} {} {}'.format(current_resource_id, laptop['os'], hostname)[:25])
 
             selected_t_devices[current_resource_id] = {
-                'MAC': current_laptop_port_data['mac']
+                'MAC': current_laptop_port_data['mac'],
+                'IP': current_laptop_port_data['ip'],
+                'SSID': current_laptop_port_data['ssid']
             }
             if(laptop['os'] == 'Win'):
                 self.windows += 1
@@ -1034,7 +1387,7 @@ class RealDevice(Realm):
         print(df)
         return [self.selected_devices, self.report_labels, self.selected_macs]
 
-    async def configure_wifi_groups(self,select_serials,serials_input,ssid_input,passwd_input,enc_input,eap_method_input,eap_identity_input):
+    async def configure_wifi_groups(self,select_serials,serials_input,ssid_input,passwd_input,enc_input,eap_method_input,eap_identity_input,ieee80211,key_management,private_key,ca_cert,client_cert,pk_passwd,pac_file):
         self.station_list = []
         selected_androids = []
         selected_androids_temp = [] 
@@ -1067,15 +1420,31 @@ class RealDevice(Realm):
                         laptop['enc'] = enc_input[idx]
                         laptop['eap_method'] = eap_method_input[idx]
                         laptop['eap_identity'] = eap_identity_input[idx]
+                        laptop['ieee80211'] = ieee80211[idx]
+                        laptop['ieee80211u']=self.ieee80211u[idx]
+                        laptop['ieee80211w']=self.ieee80211w[idx]
+                        laptop['enable_pkc']=self.enable_pkc[idx]
+                        laptop['bss_transition']=self.bss_transition[idx]
+                        laptop['power_save']=self.power_save[idx]
+                        laptop['disable_ofdma']=self.disable_ofdma[idx]
+                        laptop['roam_ft_ds']=self.roam_ft_ds[idx]
+                        laptop['key_management'] = key_management[idx]
+                        laptop['private_key'] = private_key[idx]
+                        laptop['ca_cert'] = ca_cert[idx]
+                        laptop['client_cert'] = client_cert[idx]
+                        laptop['pk_passwd'] = pk_passwd[idx]
+                        laptop['pac_file'] = pac_file[idx]
                         laptop['band'] = '5g'
                         selected_laptops.append(laptop)
                         break
         if(selected_androids != []):
             await self.androids_obj.stop_app(port_list=selected_androids_temp)
+            # await self.androids_obj.forget_all_networks(port_list=selected_androids_temp)
             await self.androids_obj.configure_wifi(port_list=selected_androids)
-
+        
         if(selected_laptops != []):
             await self.laptops_obj.rm_station(port_list=selected_laptops)
+            await self.laptops_obj.set_port(port_list=selected_laptops)
             await self.laptops_obj.add_station(port_list=selected_laptops)
             await self.laptops_obj.set_port(port_list=selected_laptops)
 
@@ -1086,11 +1455,25 @@ class RealDevice(Realm):
         return [selected_androids, selected_laptops]
     
     def monitor_connection(self,selected_androids,selected_laptops):
+        
+        
+        def get_device_data(port_key,resource_key,port_data,resource_data):
+            curr_device_data = {}
+            for port_obj in port_data:
+                if port_key in port_obj:
+                    curr_device_data = port_obj[port_key]
+                    for res_obj in resource_data:
+                        if resource_key in res_obj:
+                            curr_device_data.update(res_obj[resource_key])
+                            return curr_device_data
         station_list = []
         selected_t_devices = {}
         selected_devices = []
         selected_macs = []
         report_labels= []
+        selected_rssi = []
+        selected_channel = []
+        selected_usernames = []
         androids = 0
         android_list = []
         linuxs = 0
@@ -1098,54 +1481,67 @@ class RealDevice(Realm):
         macs = 0
         mac_list = []
         
-        # selecting devices only those connected to given SSID and contains IP
-        # for androids
+        adb_resources = self.json_get('/adb/')
+        all_resources = self.json_get('/resource/all')["resources"]
+        all_ports = self.json_get('/ports/all')["interfaces"]
+        
         exclude_androids = []
-        for android in selected_androids:    
-
+        for android in selected_androids:
+            res_empty=False
+            device_id = android[2]
+            resource_id = ""
+            for device in adb_resources['devices']:
+                device_key = list(device.values())[0]["_links"]
+                resource_id = list(device.values())[0]["resource-id"]
+                if "/adb/"+device_id == device_key:
+                    if resource_id == "":
+                        exclude_androids.append(android)
+                        res_empty = True
+                    break
+            if res_empty:
+                continue        
+        
             curr_ssid = android[3]
 
 
-            # get resource id for the android device from interop tab
-            resource_id = self.json_get('/adb/1/1/{}'.format(android[2]))['devices']['resource-id']
+           # fetching port data for the android device
+            current_android_port_data = get_device_data(port_data=all_ports,port_key=resource_id+".wlan0",resource_data=all_resources,resource_key=resource_id)
+            
 
-            # if there is no resource id in interop tab
-            if(resource_id == ''):
+
+
+            if (current_android_port_data is None):
                 exclude_androids.append(android)
                 continue
-
-            # fetching port data for the android device
-            current_android_port_data = \
-            self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
-
-            # fetching resource data for android device
-            current_android_resource_data = \
-            self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
-
-            current_android_port_data.update(current_android_resource_data)
-            
             # checking if the android is connected to the desired ssid
             if (current_android_port_data['ssid'] != curr_ssid):
+                logging.warning(
+                    'The android with serial {} is not conneted to the given SSID {}. Excluding it from testing'.format(
+                        android[2], curr_ssid))
                 exclude_androids.append(android)
                 continue
-
+            if (current_android_port_data['down'] or current_android_port_data['phantom']):
+                exclude_androids.append(android)
+                continue
             # checking if the android is active or down
             if(current_android_port_data['ip'] == '0.0.0.0'):
+                logging.warning('The android with serial {} is down. Excluding it from testing'.format(android[2]))
                 exclude_androids.append(android)
                 continue
 
-            username = \
-            self.json_get('resource/{}/{}?fields=user'.format(resource_id.split('.')[0], resource_id.split('.')[1]))[
-                'resource']['user']
+            username = current_android_port_data["user"]
 
             selected_devices.append(resource_id)
             selected_macs.append(current_android_port_data['mac'])
             report_labels.append('{} android {}'.format(resource_id, username))
+            selected_channel.append(current_android_port_data["channel"])
+            selected_rssi.append(current_android_port_data["signal"])
+            selected_usernames.append(username)
             androids += 1
             android_list.append(resource_id)
             
             current_sta_name = resource_id + '.wlan0'
-            station_list.append(current_sta_name)
+            self.station_list.append(current_sta_name)
 
             self.devices_data[current_sta_name] = current_android_port_data
             self.devices_data[current_sta_name]['ostype'] = 'android'
@@ -1165,36 +1561,51 @@ class RealDevice(Realm):
             curr_ssid = laptop["ssid"]
 
             # check SSID and IP values from port manager
-            current_laptop_port_data = self.json_get(
-                '/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+            current_laptop_port_data = get_device_data(port_data=all_ports,port_key=f"{laptop['shelf']}.{laptop['resource']}.{laptop['sta_name']}",resource_data=all_resources,resource_key=f"{laptop['shelf']}.{laptop['resource']}")
+            
             if(current_laptop_port_data is None):
+                logging.warning(
+                    'The laptop with port {}.{}.{} not found. Excluding it from testing'.format(laptop['shelf'],
+                                                                                                laptop['resource'],
+                                                                                                laptop['sta_name']))
                 exclude_laptops.append(laptop)
                 continue
 
-            current_laptop_port_data = current_laptop_port_data['interface']
-
             # checking if the laptop is connected to the desired ssid
             if (current_laptop_port_data['ssid'] != curr_ssid):
+                logging.warning(
+                    'The laptop with port {}.{}.{} is not conneted to the given SSID {}. Excluding it from testing'.format(
+                        laptop['shelf'], laptop['resource'], laptop['sta_name'], curr_ssid))
                 exclude_laptops.append(laptop)
                 continue
 
             # checking if the laptop is active or down
             if(current_laptop_port_data['ip'] == '0.0.0.0'):
+                logging.warning(
+                    'The laptop with port {}.{}.{} is down. Excluding it from testing'.format(laptop['shelf'],
+                                                                                              laptop['resource'],
+                                                                                              laptop['sta_name']))
                 exclude_laptops.append(laptop)
                 continue
+            
+            if (current_laptop_port_data['down'] or current_laptop_port_data['phantom']):
+                exclude_laptops.append(laptop)
+                continue
+            if(laptop['os'] == 'Win') and current_laptop_port_data["gateway ip"] == "0.0.0.0":
+                exclude_laptops.append(laptop)
+                
+            hostname = current_laptop_port_data['hostname']
 
-            current_laptop_resource_data = self.json_get('resource/{}/{}'.format(laptop['shelf'], laptop['resource']))[
-                'resource']
-            hostname = current_laptop_resource_data['hostname']
-
-            current_laptop_port_data.update(current_laptop_resource_data)
 
             # adding port id to selected_device_eids
             current_resource_id = '{}.{}.{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name'])
             selected_devices.append(current_resource_id)
             selected_macs.append(current_laptop_port_data['mac'])
             report_labels.append('{} {} {}'.format(current_resource_id, laptop['os'], hostname))
-
+            selected_channel.append(current_laptop_port_data["channel"])
+            selected_rssi.append(current_laptop_port_data["signal"])
+            selected_usernames.append(hostname)
+            
             selected_t_devices[current_resource_id] = {
                 'MAC': current_laptop_port_data['mac']
             }
@@ -1204,18 +1615,18 @@ class RealDevice(Realm):
                 selected_t_devices[current_resource_id]['hw version'] = 'Win'
                 current_laptop_port_data['ostype'] = 'windows'
             elif(laptop['os'] == 'Lin'):
-                linuxs += 1
-                linux_list.append(current_resource_id)
+                self.linux += 1
+                self.linux_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Lin'
                 current_laptop_port_data['ostype'] = 'linux'
             elif(laptop['os'] == 'Apple'):
-                macs += 1
-                mac_list.append(current_resource_id)
+                self.mac += 1
+                self.mac_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Mac'
                 current_laptop_port_data['ostype'] = 'macos'
             
             current_sta_name = current_resource_id
-            station_list.append(current_sta_name)
+            self.station_list.append(current_sta_name)
 
             self.devices_data[current_sta_name] = current_laptop_port_data
 
@@ -1224,7 +1635,7 @@ class RealDevice(Realm):
 
         df = pd.DataFrame(data=selected_t_devices).transpose()
         print(df)
-        return [selected_devices, report_labels, selected_macs]
+        return [selected_devices, report_labels, selected_macs, selected_usernames , selected_rssi, selected_channel]
     
     # getting data of all real devices already configured to an SSID
     def get_devices(self, only_androids = False):
@@ -1319,7 +1730,6 @@ class RealDevice(Realm):
 
         self.devices          = devices
         self.devices_data     = devices_data
-
         return self.devices
     
     # querying the user the required mobiles to test
@@ -1328,15 +1738,21 @@ class RealDevice(Realm):
         # print('Port\t\thw version\t\t\tMAC')
         t_devices = {}
         all_devices_list = []
+        print(self.devices_data,"IIIIIIIIIIIIIIIIII")
+            
         for device, device_details in self.devices_data.items():
             # 'eid' and 'hw version' originally comes from resource data. Snuck into port data to make life easier
+            if('p2p0' in device):
+                continue
+            if device_details['kernel']=='' and 'Apple' in device_details['hw version']:
+                continue
             t_devices[device_details['eid']] = {
                 'Port Name': device,
                 'hw version': device_details['hw version'],
                 'MAC': device_details['mac']
             }
             all_devices_list.append(device_details['eid'])
-            # print('{}\t{}\t\t\t{}'.format(device, device_details['hw version'], device_details['mac']))
+            # print('{}\t{}\t\t\t{}'.ormat(device, device_details['hw version'], device_details['mac']))
         pd.set_option('display.max_rows', None)
         df = pd.DataFrame(data=t_devices).transpose()
         print(df)
@@ -1346,7 +1762,7 @@ class RealDevice(Realm):
         else:
             self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
 
-        # if all is seleceted making the list as empty string so that it would consider all devices
+        # if all is selected making the list as empty string so that it would consider all devices
         if(self.selected_device_eids == ['all']):
             self.selected_device_eids = all_devices_list
         print('You have selected the below devices for testing')
@@ -1358,6 +1774,7 @@ class RealDevice(Realm):
                     # filtering interfaces other than wlan0 for android
                     if('Apple' not in self.devices_data[device]['hw version'] and 'Linux' not in self.devices_data[device]['hw version'] and 'Win' not in self.devices_data[device]['hw version']):
                         if('wlan0' not in device):
+                            print(device)
                             continue
                     selected_t_devices[device] = {
                         'Eid': selected_device,
@@ -1385,6 +1802,9 @@ class RealDevice(Realm):
                     elif('Apple' in self.devices_data[device]['hw version']):
                         self.mac += 1
                         self.mac_list.append(device)
+                    elif('Apple' in self.devices_data[device]['hw version']) and (self.devices_data[device]['kernel']==''):
+                        self.ios +=1
+                        self.ios_list.append(device)
                     else:
                         self.android += 1
                         self.android_list.append(device)
@@ -1485,6 +1905,63 @@ This script is a standard library which support different functionality of inter
 
     parser.add_argument('--help_summary', default=None, action="store_true",
                         help='Show summary of what this script does')
+    parser.add_argument('--device_list', default=None,
+                        help='Show summary of what this script does')
+    parser.add_argument("--eap_method_2g", type=str,default='DEFAULT')
+    parser.add_argument("--eap_identity_2g", type=str,default='')
+    parser.add_argument("--ieee80211_2g",action="store_true")
+    parser.add_argument("--ieee80211u_2g",action="store_true")
+    parser.add_argument("--ieee80211w_2g",type=int,default=1)
+    parser.add_argument("--enable_pkc_2g",action="store_true")
+    parser.add_argument("--bss_transition_2g",action="store_true")
+    parser.add_argument("--power_save_2g",action="store_true")
+    parser.add_argument("--disable_ofdma_2g",action="store_true")
+    parser.add_argument("--roam_ft_ds_2g",action="store_true")
+    parser.add_argument("--key_management_2g", type=str,default='DEFAULT')
+    parser.add_argument("--pairwise_2g", type=str,default='NA')
+    parser.add_argument("--private_key_2g", type=str,default='NA')
+    parser.add_argument("--ca_cert_2g", type=str,default='NA')
+    parser.add_argument("--client_cert_2g", type=str,default='NA')
+    parser.add_argument("--pk_passwd_2g", type=str,default='NA')
+    parser.add_argument("--pac_file_2g", type=str,default='NA')
+    parser.add_argument("--eap_method_5g", type=str,default='DEFAULT')
+    parser.add_argument("--eap_identity_5g", type=str,default='')
+    parser.add_argument("--ieee80211_5g",action="store_true")
+    parser.add_argument("--ieee80211u_5g",action="store_true")
+    parser.add_argument("--ieee80211w_5g",type=int,default=1)
+    parser.add_argument("--enable_pkc_5g",action="store_true")
+    parser.add_argument("--bss_transition_5g",action="store_true")
+    parser.add_argument("--power_save_5g",action="store_true")
+    parser.add_argument("--disable_ofdma_5g",action="store_true")
+    parser.add_argument("--roam_ft_ds_5g",action="store_true")
+    parser.add_argument("--key_management_5g", type=str,default='DEFAULT')
+    parser.add_argument("--pairwise_5g", type=str,default='NA')
+    parser.add_argument("--private_key_5g", type=str,default='NA')
+    parser.add_argument("--ca_cert_5g", type=str,default='NA')
+    parser.add_argument("--client_cert_5g", type=str,default='NA')
+    parser.add_argument("--pk_passwd_5g", type=str,default='NA')
+    parser.add_argument("--pac_file_5g", type=str,default='NA')
+    parser.add_argument("--eap_method_6g", type=str,default='DEFAULT')
+    parser.add_argument("--eap_identity_6g", type=str,default='')
+    parser.add_argument("--ieee80211_6g",action="store_true")
+    parser.add_argument("--ieee80211u_6g",action="store_true")
+    parser.add_argument("--ieee80211w_6g",type=int,default=1)
+    parser.add_argument("--enable_pkc_6g",action="store_true")
+    parser.add_argument("--bss_transition_6g",action="store_true")
+    parser.add_argument("--power_save_6g",action="store_true")
+    parser.add_argument("--disable_ofdma_6g",action="store_true")
+    parser.add_argument("--roam_ft_ds_6g",action="store_true")
+    parser.add_argument("--key_management_6g", type=str,default='DEFAULT')
+    parser.add_argument("--pairwise_6g", type=str,default='NA')
+    parser.add_argument("--private_key_6g", type=str,default='NA')
+    parser.add_argument("--ca_cert_6g", type=str,default='NA')
+    parser.add_argument("--client_cert_6g", type=str,default='NA')
+    parser.add_argument("--pk_passwd_6g", type=str,default='NA')
+    parser.add_argument("--pac_file_6g", type=str,default='NA')
+    parser.add_argument("--enable_wifi", action="store_true")
+    parser.add_argument("--disable_wifi", action="store_true")
+    parser.add_argument("--all_android",action="store_true")
+    parser.add_argument("--all_laptops",action="store_true")
 
     args = parser.parse_args()
 
@@ -1493,18 +1970,84 @@ This script is a standard library which support different functionality of inter
         exit(0)
 
     if(args.config_wifi):
+        # ieee80211u_2g
+        # enable_pkc_2g
+        # bss_transition_2g
+        # power_save_2g
+        # disable_ofdma_2g
+        # roam_ft_ds_2g
         real_devices = RealDevice(manager_ip=args.host,
                                   server_ip=args.server_ip,
+                                  enable_wifi=args.enable_wifi,
+                                  disable_wifi=args.disable_wifi,
                                   ssid_2g=args.ssid_2g,
                                   passwd_2g=args.passwd_2g,
                                   encryption_2g=args.encryption_2g,
+                                  eap_method_2g=args.eap_method_2g,
+                                  eap_identity_2g=args.eap_identity_2g,
+                                  ieee80211_2g=args.ieee80211_2g,
+                                  ieee80211u_2g=args.ieee80211u_2g,
+                                  ieee80211w_2g=args.ieee80211w_2g,
+                                  enable_pkc_2g=args.enable_pkc_2g,
+                                  bss_transition_2g=args.bss_transition_2g,
+                                  power_save_2g=args.power_save_2g,
+                                  disable_ofdma_2g=args.disable_ofdma_2g,
+                                  roam_ft_ds_2g=args.roam_ft_ds_2g,
+                                  key_management_2g=args.key_management_2g,
+                                  pairwise_2g=args.pairwise_2g,
+                                  private_key_2g=args.private_key_2g,
+                                  ca_cert_2g=args.ca_cert_2g,
+                                  client_cert_2g=args.client_cert_2g,
+                                  pk_passwd_2g=args.pk_passwd_2g,
+                                  pac_file_2g=args.pac_file_2g,
                                   ssid_5g=args.ssid_5g,
                                   passwd_5g=args.passwd_5g,
                                   encryption_5g=args.encryption_5g,
+                                  eap_method_5g=args.eap_method_5g,
+                                  eap_identity_5g=args.eap_identity_5g,
+                                  ieee80211_5g=args.ieee80211_5g,
+                                  ieee80211u_5g=args.ieee80211u_5g,
+                                  ieee80211w_5g=args.ieee80211w_5g,
+                                  enable_pkc_5g=args.enable_pkc_5g,
+                                  bss_transition_5g=args.bss_transition_5g,
+                                  power_save_5g=args.power_save_5g,
+                                  disable_ofdma_5g=args.disable_ofdma_5g,
+                                  roam_ft_ds_5g=args.roam_ft_ds_5g,
+                                  key_management_5g=args.key_management_5g,
+                                  pairwise_5g=args.pairwise_5g,
+                                  private_key_5g=args.private_key_5g,
+                                  ca_cert_5g=args.ca_cert_5g,
+                                  client_cert_5g=args.client_cert_5g,
+                                  pk_passwd_5g=args.pk_passwd_5g,
+                                  pac_file_5g=args.pac_file_5g,
                                   ssid_6g=args.ssid_6g,
                                   passwd_6g=args.passwd_6g,
-                                  encryption_6g=args.encryption_6g)
-        asyncio.run(real_devices.query_all_devices_to_configure_wifi())
+                                  encryption_6g=args.encryption_6g,
+                                  eap_method_6g=args.eap_method_6g,
+                                  eap_identity_6g=args.eap_identity_6g,
+                                  ieee80211_6g=args.ieee80211_6g,
+                                  ieee80211u_6g=args.ieee80211u_6g,
+                                  ieee80211w_6g=args.ieee80211w_6g,
+                                  enable_pkc_6g=args.enable_pkc_6g,
+                                  bss_transition_6g=args.bss_transition_6g,
+                                  power_save_6g=args.power_save_6g,
+                                  disable_ofdma_6g=args.disable_ofdma_6g,
+                                  roam_ft_ds_6g=args.roam_ft_ds_6g,
+                                  key_management_6g=args.key_management_6g,
+                                  pairwise_6g=args.pairwise_6g,
+                                  private_key_6g=args.private_key_6g,
+                                  ca_cert_6g=args.ca_cert_6g,
+                                  client_cert_6g=args.client_cert_6g,
+                                  pk_passwd_6g=args.pk_passwd_6g,
+                                  pac_file_6g=args.pac_file_6g,
+                                  all_android=args.all_android,
+                                  all_laptops=args.all_laptops)
+        if args.device_list is None:
+            d=real_devices.query_all_devices_to_configure_wifi()
+            asyncio.run(real_devices.configure_wifi())
+        else:
+            d=real_devices.query_all_devices_to_configure_wifi(device_list=args.device_list.split(","))
+            asyncio.run(real_devices.configure_wifi(d[0]+d[1]+d[2]))
     else:
         obj = BaseInteropWifi(manager_ip=args.host,
                             port=8080,
