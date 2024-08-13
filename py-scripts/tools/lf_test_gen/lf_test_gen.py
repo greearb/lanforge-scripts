@@ -800,25 +800,25 @@ lf_inspect will compare performance between two individual runs for Chamber View
         row += 1
         self.lf_dp_rvr_pkt_size_label = tkinter.Label(self.lf_dp_rvr_frame, text="Packet Size")
         self.lf_dp_rvr_pkt_size_label.grid(row=row, column=0)
-        self.lf_dp_rvr_pkt_size_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["Custom", "60", "142", "256", "512", "1024", "MTU", "4000"])
+        self.lf_dp_rvr_pkt_size_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["Custom", "64", "172", "256", "512", "1024", "MTU", "4000"])
         self.lf_dp_rvr_pkt_size_combobox.current(6)
         self.lf_dp_rvr_pkt_size_combobox.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_pkt_size_combobox, '''Enter Data Plane or RvR pkt size separated by semi colons
-When using Custom Packet Sizes need to append: ;Custom''')
+When using Custom Packet Sizes need to append: ;Custom  , min UDP size 64, min TCP size 172''')
 
         self.lf_dp_rvr_pkt_size_custom_label = tkinter.Label(self.lf_dp_rvr_frame, text="Custom Pkt Size")
         self.lf_dp_rvr_pkt_size_custom_label.grid(row=row, column=2)
-        self.lf_dp_rvr_pkt_size_custom_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["", "<custom>", "256,512,768,1024,MTU", "768,1024,MTU"])
+        self.lf_dp_rvr_pkt_size_custom_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["", "<custom>", "172;256;512;768;1024;MTU", "64;172;256;512;768;1024;MTU"])
         self.lf_dp_rvr_pkt_size_custom_combobox.current(0)
         self.lf_dp_rvr_pkt_size_custom_combobox.grid(row=row, column=3)
         self.window_tooltip.bind(self.lf_dp_rvr_pkt_size_custom_combobox, '''Enter Data Plane or RvR Custom Packet Sized pkt size
-The Packet Size needs end in Custom for example   60:Custom''')
+The Packet Size needs end in Custom for example   64:Custom''')
 
         # Row 3
         row += 1
         self.lf_dp_rvr_download_speed_label = tkinter.Label(self.lf_dp_rvr_frame, text="Download Speed")
         self.lf_dp_rvr_download_speed_label.grid(row=row, column=0)
-        self.lf_dp_rvr_download_speed_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>", "85%", "75%", "65%", "50%", "25%", "10%", "5%", "1%", "0"])
+        self.lf_dp_rvr_download_speed_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>", "100%", "85%", "75%", "65%", "50%", "25%", "10%", "5%", "1%", "0"])
         self.lf_dp_rvr_download_speed_combobox.current(1)
         self.lf_dp_rvr_download_speed_combobox.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_download_speed_combobox, '''Download speed is assoicated with DUT Transmit
@@ -826,7 +826,7 @@ if on DUT Receive is choosen the Download speed is set to 0''')
 
         self.lf_dp_rvr_upload_speed_label = tkinter.Label(self.lf_dp_rvr_frame, text="Upload Speed")
         self.lf_dp_rvr_upload_speed_label.grid(row=row, column=2)
-        self.lf_dp_rvr_upload_speed_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>", "85%", "75%", "65%", "50%", "25%", "10%", "5%", "1%", "0"])
+        self.lf_dp_rvr_upload_speed_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>", "100%", "85%", "75%", "65%", "50%", "25%", "10%", "5%", "1%", "0"])
         self.lf_dp_rvr_upload_speed_combobox.current(1)
         self.lf_dp_rvr_upload_speed_combobox.grid(row=row, column=3)
         self.window_tooltip.bind(self.lf_dp_rvr_upload_speed_combobox, '''Upload speed is associated with with DUT Receive
@@ -904,7 +904,7 @@ May also enter custom Example 0..+100..700''')
 
         # row 8
         row += 1
-        self.lf_dp_rvr_5g_file = tkinter.Label(self.lf_dp_rvr_frame, text='5g json dir')
+        self.lf_dp_rvr_5g_file = tkinter.Label(self.lf_dp_rvr_frame, text='5g json file')
         self.lf_dp_rvr_5g_file.grid(row=row, column=0)
         self.lf_dp_rvr_5g_file_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_5g_file_entry_var.set("")
@@ -913,7 +913,7 @@ May also enter custom Example 0..+100..700''')
         self.window_tooltip.bind(self.lf_dp_rvr_5g_file_entry, '''Auto Generated json file name to be used by lf_check.py would be:
 ./lf_check.py  --json_test <QA generated name>.json:<Qa generated name>''')
 
-        self.lf_dp_rvr_5g_dir = tkinter.Label(self.lf_dp_rvr_frame, text='5g json file')
+        self.lf_dp_rvr_5g_dir = tkinter.Label(self.lf_dp_rvr_frame, text='5g json dir')
         self.lf_dp_rvr_5g_dir.grid(row=row, column=3)
         self.lf_dp_rvr_5g_dir_entry_var = tkinter.StringVar()
         self.lf_dp_rvr_5g_dir_entry_var.set("")
@@ -944,7 +944,7 @@ May also enter custom Example 0..+100..700''')
         row += 1
         self.lf_dp_rvr_duration = tkinter.Label(self.lf_dp_rvr_frame, text='test duration')
         self.lf_dp_rvr_duration.grid(row=row, column=0)
-        self.lf_dp_rvr_duration_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<Custom>", "5000 (5 sec)", "10000 (10 sec)", "15000 (15 sec)", "20000 (20 sec)", "30000 (30 sec)", "60000 (1 min)", "300000 (5min)"])
+        self.lf_dp_rvr_duration_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<Custom>", "5000 (5 sec)", "10000 (10 sec)", "15000 (15 sec)", "20000 (20 sec)", "30000 (30 sec)", "60000 (1 min)", "180000 (3 min)","300000 (5min)"])
         self.lf_dp_rvr_duration_combobox.current(3)
         self.lf_dp_rvr_duration_combobox.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_duration_combobox, '''Enter the test duration , for custom it is in ms
