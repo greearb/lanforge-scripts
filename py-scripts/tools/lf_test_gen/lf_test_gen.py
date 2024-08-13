@@ -1768,7 +1768,7 @@ LICENSE:
 
 INCLUDE_IN_README: False
 ''')
-    parser.add_argument('--radio_count', help='Number of radios to display on GUI', default='8')
+    parser.add_argument('--radio_count', help='Number of radios to display on GUI', default='16')
 
     args = parser.parse_args()
     _radio_count = args.radio_count
