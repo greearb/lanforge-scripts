@@ -801,12 +801,14 @@ class RealDevice(Realm):
         self.windows_list = []
         self.linux_list = []
         self.mac_list = []
+        self.ios_list = []
         self.android_list = []
         self.station_list = []
         self.android = 0
         self.linux = 0
         self.windows = 0
         self.mac = 0
+        self.ios = 0
         self.groups=groups
 
         if self.groups is False:
@@ -1736,15 +1738,21 @@ class RealDevice(Realm):
         # print('Port\t\thw version\t\t\tMAC')
         t_devices = {}
         all_devices_list = []
+        print(self.devices_data,"IIIIIIIIIIIIIIIIII")
+            
         for device, device_details in self.devices_data.items():
             # 'eid' and 'hw version' originally comes from resource data. Snuck into port data to make life easier
+            if('p2p0' in device):
+                continue
+            if device_details['kernel']=='' and 'Apple' in device_details['hw version']:
+                continue
             t_devices[device_details['eid']] = {
                 'Port Name': device,
                 'hw version': device_details['hw version'],
                 'MAC': device_details['mac']
             }
             all_devices_list.append(device_details['eid'])
-            # print('{}\t{}\t\t\t{}'.format(device, device_details['hw version'], device_details['mac']))
+            # print('{}\t{}\t\t\t{}'.ormat(device, device_details['hw version'], device_details['mac']))
         pd.set_option('display.max_rows', None)
         df = pd.DataFrame(data=t_devices).transpose()
         print(df)
@@ -1766,6 +1774,7 @@ class RealDevice(Realm):
                     # filtering interfaces other than wlan0 for android
                     if('Apple' not in self.devices_data[device]['hw version'] and 'Linux' not in self.devices_data[device]['hw version'] and 'Win' not in self.devices_data[device]['hw version']):
                         if('wlan0' not in device):
+                            print(device)
                             continue
                     selected_t_devices[device] = {
                         'Eid': selected_device,
@@ -1793,6 +1802,9 @@ class RealDevice(Realm):
                     elif('Apple' in self.devices_data[device]['hw version']):
                         self.mac += 1
                         self.mac_list.append(device)
+                    elif('Apple' in self.devices_data[device]['hw version']) and (self.devices_data[device]['kernel']==''):
+                        self.ios +=1
+                        self.ios_list.append(device)
                     else:
                         self.android += 1
                         self.android_list.append(device)
