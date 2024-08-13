@@ -1141,7 +1141,7 @@ class RealDevice(Realm):
 
         if(selected_androids != []):
             await self.androids_obj.stop_app(port_list=selected_androids)
-            await self.androids_obj.forget_all_networks(port_list=selected_androids)
+            # await self.androids_obj.forget_all_networks(port_list=selected_androids)
             await self.androids_obj.configure_wifi(port_list=selected_androids)
             
             if(selected_laptops == []):  
@@ -1437,7 +1437,7 @@ class RealDevice(Realm):
                         break
         if(selected_androids != []):
             await self.androids_obj.stop_app(port_list=selected_androids_temp)
-            await self.androids_obj.forget_all_networks(port_list=selected_androids_temp)
+            # await self.androids_obj.forget_all_networks(port_list=selected_androids_temp)
             await self.androids_obj.configure_wifi(port_list=selected_androids)
         
         if(selected_laptops != []):
