@@ -1738,7 +1738,7 @@ class RealDevice(Realm):
         # print('Port\t\thw version\t\t\tMAC')
         t_devices = {}
         all_devices_list = []
-        print(self.devices_data,"IIIIIIIIIIIIIIIIII")
+        print(self.devices_data)
             
         for device, device_details in self.devices_data.items():
             # 'eid' and 'hw version' originally comes from resource data. Snuck into port data to make life easier
