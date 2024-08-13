@@ -1620,6 +1620,13 @@ lf_inspect will compare performance between two individual runs for Chamber View
         logger.debug("radio request.test: {text}".format(text=self.lanforge_radio_text))
 
         radio = 0
+        self.lanforge_radio_json.pop("handler")
+        self.lanforge_radio_json.pop("uri")
+        self.lanforge_radio_json.pop("warnings")
+        self.sorted_lanforge_radio_json = {}
+        for key in sorted(self.lanforge_radio_json, key= lambda key: (key.split('y')[0],int(key.split('y')[1]))):
+            self.sorted_lanforge_radio_json[key] = self.lanforge_radio_json[key]
+        self.lanforge_radio_json = self.sorted_lanforge_radio_json
         for key in self.lanforge_radio_json:
             if 'wiphy' in key:
                 self.radio_dict[radio].set(self.lanforge_radio_json[key]['entity id'])
