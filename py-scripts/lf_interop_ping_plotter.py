@@ -29,6 +29,10 @@
     Command Line Interface to run ping plotter test with a different target
     python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --target 192.168.1.61
     
+    EXAMPLE-6:
+    Command Line Interface to run ping plotter with existing real stations instead of giving input after starting the test
+    python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --target 192.168.1.61 --resources 1.10.wlan0,1.11.wlan0
+    
     SCRIPT_CLASSIFICATION : Test
 
     SCRIPT_CATEGORIES: Performance, Functional, Report Generation
@@ -644,7 +648,10 @@ class Ping(Realm):
                 self.packet_loss_percent.append(0)
                 # self.client_unrechability_percent.append(0)
             else:
-                self.packet_loss_percent.append(float(device_data['ping_stats']['dropped'][-1]) / float(device_data['ping_stats']['sent'][-1]) * 100)
+                if device_data['ping_stats']['sent'] == [] or float(device_data['ping_stats']['sent'][-1]) == 0:
+                    self.packet_loss_percent.append(0)
+                else:
+                    self.packet_loss_percent.append(float(device_data['ping_stats']['dropped'][-1]) / float(device_data['ping_stats']['sent'][-1]) * 100)
                 # self.client_unrechability_percent.append(float(device_data['dropped']) / (float(self.duration) * 60) * 100)
             t_rtt_values = sorted(list(device_data['rtts'].values()))
             if(t_rtt_values != []):
@@ -935,6 +942,10 @@ connectivity problems.
         EXAMPLE-5:
         Command Line Interface to run ping plotter test with a different target
         python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --target 192.168.1.61
+
+        EXAMPLE-6:
+        Command Line Interface to run ping plotter with existing real stations instead of giving input after starting the test
+        python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --target 192.168.1.61 --resources 1.10.wlan0,1.11.wlan0
         
         SCRIPT_CLASSIFICATION : Test
 
