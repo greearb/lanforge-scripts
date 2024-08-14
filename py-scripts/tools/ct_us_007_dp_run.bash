@@ -18,6 +18,8 @@ echo "Running RVR tests"
 ./ct_tests_json/ct_us_007/ct_perf_dp/ct_perf_dp_2g_W6_W10_TCP_rx.json:ct_perf_dp_2g_W6_W10_TCP_rx,\
 ./ct_tests_json/ct_us_007/ct_perf_dp/ct_perf_dp_5g_W6_W10_TCP_rx.json:ct_perf_dp_5g_W6_W10_TCP_rx,\
 ./ct_tests_json/ct_us_007/ct_perf_dp/ct_perf_dp_6g_W6_W10_TCP_rx.json:ct_perf_dp_6g_W6_W10_TCP_rx \
---path /home/lanforge/html-reports/ct_us_007 --log_level debug
+--path /home/lanforge/html-reports/ct_us_007 \
+--log_level debug \
+--production
 
 

@@ -18,7 +18,8 @@ echo "Running Wifi Capacity Tests"
 ./ct_tests_json/ct_us_002/ct_perf_wc/ct_perf_wc_6g_002_W5_W6.json:wc_perf_6g_W5_W6 \
 --path /home/lanforge/html-reports/ct_us_002 \
 --log_level debug \
---new_test_run
+--new_test_run \
+--production
 
 echo "Running Dataplane Tests"
 ./lf_check.py \
@@ -33,5 +34,6 @@ echo "Running Dataplane Tests"
 ./ct_tests_json/ct_us_002/ct_perf_dp/ct_perf_dp_6g_002_W5_W6_rx.json:dp_perf_6g_W5_W6_rx,\
 ./ct_tests_json/ct_us_002/ct_perf_dp/ct_perf_dp_6g_002_W5_W6_tx.json:dp_perf_6g_W5_W6_tx \
 --path /home/lanforge/html-reports/ct_us_002 \
---log_level debug
+--log_level debug \
+--production
 
