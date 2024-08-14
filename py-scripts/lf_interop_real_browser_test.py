@@ -792,7 +792,7 @@ class RealBrowserTest(Realm):
         # self.generic_endps_profile.created_endp = []
         logging.info('Cleanup Successful')
     
-    def my_monitor(self, data_mon):
+    def my_monitor_runtime(self):
         """
             Retrieves monitoring data for the created CX endpoints based on specified data metrics.
 
@@ -810,25 +810,132 @@ class RealBrowserTest(Realm):
         """
         # data in json format
         # Construct URL to retrieve monitoring data for all created CX endpoints
-        data = self.local_realm.json_get("layer4/%s/list?fields=%s" %
-                                        (','.join(self.created_cx.keys()), data_mon.replace(' ', '+')))
+        data = self.local_realm.json_get("layer4/%s/list?fields=name,status,total-urls,urls/s,uc-min,uc-avg,uc-max,total-err,bad-proto,bad-url,rslv-p,rslv-h,!conn,timeout" %
+                                        (','.join(self.created_cx.keys())))
+       
+        
+        # print("dataaa",data)
         data1 = []
-        data = data['endpoint']
+        
+        names = []
+        statuses = []
+        total_urls = []
+        urls_per_sec = []
+        uc_min = []
+        uc_avg = []
+        uc_max = []
+        total_err = []
+        bad_proto = []
+        bad_url = []
+        rslv_p = []
+        rslv_h = []
+        conn = []
+        timeouts = []
         # Check if only one CX endpoint is created
-        # print(">>>>>>>>>>",self.created_cx.keys())
-        if len(self.created_cx.keys()) == 1 :
-            for cx in self.created_cx.keys():
+        if len(self.created_cx.keys()) >1:
+            data = data['endpoint']
+            for endpoint in data:
+                for key, value in endpoint.items():
+                    names.append(value['name'])
+                    statuses.append(value['status'])
+                    total_urls.append(value['total-urls'])
+                    urls_per_sec.append(value['urls/s'])
+                    uc_min.append(value['uc-min'])
+                    uc_avg.append(value['uc-avg'])
+                    uc_max.append(value['uc-max'])
+                    total_err.append(value['total-err'])
+                    bad_proto.append(value['bad-proto'])
+                    bad_url.append(value['bad-url'])
+                    rslv_p.append(value['rslv-p'])
+                    rslv_h.append(value['rslv-h'])
+                    conn.append(value['!conn'])
+                    timeouts.append(value['timeout'])
+        elif len(self.created_cx.keys()) == 1:
+            endpoint = data.get('endpoint', {})
+            names = [endpoint.get('name', '')]
+            statuses = [endpoint.get('status', '')]
+            total_urls = [endpoint.get('total-urls', 0)]
+            urls_per_sec = [endpoint.get('urls/s', 0.0)]
+            uc_min = [endpoint.get('uc-min', 0)]
+            uc_avg = [endpoint.get('uc-avg', 0.0)]
+            uc_max = [endpoint.get('uc-max', 0)]
+            total_err = [endpoint.get('total-err', 0)]
+            bad_proto = [endpoint.get('bad-proto', 0)]
+            bad_url = [endpoint.get('bad-url', 0)]
+            rslv_p = [endpoint.get('rslv-p', 0)]
+            rslv_h = [endpoint.get('rslv-h', 0)]
+            conn = [endpoint.get('!conn', 0)]
+            timeouts = [endpoint.get('timeout', 0)]
+
+
+
+        # Print the results
+        # print("Names:", names)
+        # print("Statuses:", statuses)
+        # print("Total URLs:", total_urls)
+        # print("URLs/s:", urls_per_sec)
+        # print("UC Min:", uc_min)
+        # print("UC Avg:", uc_avg)
+        # print("UC Max:", uc_max)
+        # print("Total Errors:", total_err)
+        # print("Bad Proto:", bad_proto)
+        # print("Bad URL:", bad_url)
+        # print("RSLV P:", rslv_p)
+        # print("RSLV H:", rslv_h)
+        # print("!Conn:", conn)
+        # print("Timeouts:", timeouts)
+        # print("data",data)
+
+        self.data['status'] = statuses
+        self.data["total_urls"] = total_urls
+        self.data["urls_per_sec"] = urls_per_sec
+        self.data["uc_min"] = uc_min
+        self.data["uc_avg"] = uc_avg
+        self.data["uc_max"] = uc_max
+        self.data["name"] = names
+        self.data["total_err"] = total_err
+        self.data["bad_proto"] = bad_proto
+        self.data["bad_url"] =  bad_url
+        self.data["rslv_p"] = rslv_p
+        self.data["rslv_h"] = rslv_h
+        self.data["!conn"] = conn
+        self.data["timeout"] = timeouts
+        # if len(self.created_cx.keys()) == 1 :
+        #     for cx in self.created_cx.keys():
+        #         if cx in data['name']:
+        #             data1.append(data[data_mon])
+        # else:
+        #     # Iterate through each created CX endpoint
+        #     for cx in self.created_cx.keys():
+        #         for info in data:
+        #             if cx in info:
+        #                 data1.append(info[cx][data_mon])
+        # return data1
+
+    def my_monitor(self, data_mon):
+        # data in json format
+        data = self.local_realm.json_get("layer4/%s/list?fields=%s" %
+                                         (','.join(self.http_profile.created_cx.keys()), data_mon.replace(' ', '+')))
+        data1 = []
+        
+        if "endpoint" not in data.keys():
+            logger.error("Error: 'endpoint' key not found in port data")
+            exit(1)
+        data = data['endpoint']
+    
+        if len(self.http_profile.created_cx.keys()) == 1 :
+            for cx in self.http_profile.created_cx.keys():
                 if cx in data['name']:
                     data1.append(data[data_mon])
         else:
-            # Iterate through each created CX endpoint
-            for cx in self.created_cx.keys():
+            for cx in self.http_profile.created_cx.keys():
                 for info in data:
                     if cx in info:
                         data1.append(info[cx][data_mon])
         return data1
-
-
+    
+    def set_available_resources_ids(self,available_list):
+        self.resource_ids=available_list
     def get_resource_data(self):
         """
             Retrieves data for Real devices connected to LANforge.
@@ -845,6 +952,7 @@ class RealBrowserTest(Realm):
             5. Returns 'station_name', a list containing station names of Real devices connected to LANforge.
         """
         # Gets the list of Real devices connected to LANforge
+        # print("ssss",self.resource_ids)
         resource_id_list = []
         phone_name_list = []
         mac_address = []
@@ -856,7 +964,7 @@ class RealBrowserTest(Realm):
         ssid = []
 
         # Retrieve data from LANforge port Manager tab including alias, MAC address, mode, parent device, RX rate, TX rate, SSID, and signal strength
-        eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal")
+        eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal,phantom")
         resource_ids = []
         if self.resource_ids:
             # Convert self.resource_ids to a list of integers if provided
@@ -864,7 +972,7 @@ class RealBrowserTest(Realm):
         # Iterate through each row in eid_data["interfaces"]
         for alias in eid_data["interfaces"]:
             for i in alias:
-                if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
+                if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0' and not alias[i]["phantom"]:
                     resource_id_list.append(i.split(".")[1])
                     resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
                     hw_version = resource_hw_data['resource']['hw version']
@@ -1040,20 +1148,21 @@ class RealBrowserTest(Realm):
 
             c = 0
             # Update status and other metrics using my_monitor method
-            self.data['status'] = self.my_monitor('status')
-            self.data["total_urls"] = self.my_monitor('total-urls')
-            self.data["urls_per_sec"] = self.my_monitor('urls/s')
-            self.data["uc_min"] = self.my_monitor('uc-min')
-            self.data["uc_avg"] = self.my_monitor('uc-avg')
-            self.data["uc_max"] = self.my_monitor('uc-max')
-            self.data["name"] = self.my_monitor('name')
-            self.data["total_err"] = self.my_monitor('total-err')
-            self.data["bad_proto"] = self.my_monitor('bad-proto')
-            self.data["bad_url"] = self.my_monitor('bad-url')
-            self.data["rslv_p"] = self.my_monitor('rslv-p')
-            self.data["rslv_h"] = self.my_monitor('rslv-h')
-            self.data["!conn"] = self.my_monitor('!conn')
-            self.data["timeout"] = self.my_monitor('timeout')
+            # self.data['status'] = self.my_monitor('status')
+            # self.data["total_urls"] = self.my_monitor('total-urls')
+            # self.data["urls_per_sec"] = self.my_monitor('urls/s')
+            # self.data["uc_min"] = self.my_monitor('uc-min')
+            # self.data["uc_avg"] = self.my_monitor('uc-avg')
+            # self.data["uc_max"] = self.my_monitor('uc-max')
+            # self.data["name"] = self.my_monitor('name')
+            # self.data["total_err"] = self.my_monitor('total-err')
+            # self.data["bad_proto"] = self.my_monitor('bad-proto')
+            # self.data["bad_url"] = self.my_monitor('bad-url')
+            # self.data["rslv_p"] = self.my_monitor('rslv-p')
+            # self.data["rslv_h"] = self.my_monitor('rslv-h')
+            # self.data["!conn"] = self.my_monitor('!conn')
+            # self.data["timeout"] = self.my_monitor('timeout')
+            self.my_monitor_runtime()
 
 
             # Store metrics specific to this iteration
@@ -1065,7 +1174,9 @@ class RealBrowserTest(Realm):
             # len_cx_list = len(cx_list)
             # len_all_cx_list = len(self.all_cx_list)
             for i in range(len(iterator)):
-                if self.all_cx_list[i] in cx_list: 
+                
+                if self.all_cx_list[i] in cx_list:
+                   
                     # Handle present value conditions
                     if self.data['total_urls'][i] == self.count or self.data['total_urls'][i] > self.count:
                         if temp[i] == -1:
@@ -1076,9 +1187,12 @@ class RealBrowserTest(Realm):
                             temp[i] = 0
                 else:   
                     # Handle conditions based on total_urls_dict varibale
+                    # print(self.total_urls_dict)
                     if self.total_urls_dict:
                         if ((self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) == self.count or (self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) > self.count):
+                            
                             if temp[i] == -1:
+                                print("trueee",self.data['total_urls'][i])
                                 temp[i] = int(abs(( datetime.now() - start_time_check ).total_seconds()))
 
 
@@ -1101,7 +1215,14 @@ class RealBrowserTest(Realm):
                         break
 
             # Update DataFrame with current data
-            df1 = pd.DataFrame(self.data)
+            # print(self.data)
+            try:
+                df1 = pd.DataFrame(self.data)
+            except Exception as e:
+                print(self.data)
+                logger.exception("Exception occured while monitoring real time data")
+                exit(1)
+            
 
             # Save data to CSV file based on dowebgui condition
             if self.dowebgui == True:
@@ -1125,26 +1246,13 @@ class RealBrowserTest(Realm):
         else:
             self.data['remaining_time_webGUI'] = [str(datetime.strptime(self.data['end_time_webGUI'][0], "%Y-%m-%d %H:%M:%S") - datetime.strptime(curr_time, "%Y-%m-%d %H:%M:%S"))] * len(self.data['status']) 
 
-        # Update final metrics after monitoring loop completes
-        self.data["total_urls"] = self.my_monitor('total-urls')
-        self.data["urls_per_sec"] = self.my_monitor('urls/s')
-        self.data["uc_min"] = self.my_monitor('uc-min')
-        self.data["uc_avg"] = self.my_monitor('uc-avg')
-        self.data["uc_max"] = self.my_monitor('uc-max')
-        self.data["name"] = self.my_monitor('name')
-        self.data["total_err"] = self.my_monitor('total-err')
-        self.data["bad_proto"] = self.my_monitor('bad-proto')
-        self.data["bad_url"] = self.my_monitor('bad-url')
-        self.data["rslv_p"] = self.my_monitor('rslv-p')
-        self.data["rslv_h"] = self.my_monitor('rslv-h')
-        self.data["!conn"] = self.my_monitor('!conn')
-        self.data["timeout"] = self.my_monitor('timeout')
-        self.data["status"] = self.my_monitor('status') 
+        
+        # self.my_monitor_runtime()
 
 
         if cx_list:
-            name = self.my_monitor('name')
-            total_urls = self.my_monitor('total-urls')
+            name = self.data['name']
+            total_urls = self.data['total_urls']
             def add_to_dict(index):
                 for num in index:
                     key = name[num]
@@ -1201,8 +1309,13 @@ class RealBrowserTest(Realm):
         keys = list(total_urls_dict_copy.keys())
 
         usernames_csv = {}
-        df = pd.DataFrame(self.data)
         
+        try:
+            df = pd.DataFrame(self.data)
+        except Exception as e:
+            print(self.data)
+            logger.exception("Exception occured while monitoring real time data")
+            exit(1)
         df.apply(
             lambda row: (
                 usernames_csv.update({row['name']: row['username']})
@@ -1293,8 +1406,13 @@ class RealBrowserTest(Realm):
             self.req_uc_avg_val.append(temp_uc_avg_val)
             self.req_uc_max_val.append(temp_uc_max_val)
             self.req_total_err.append(temp_total_err)
+        try:
+            df = pd.DataFrame(self.data)
+        except Exception as e:
+            print(self.data)
+            logger.exception("Exception occured while monitoring real time data")
+            exit(1)
 
-        df = pd.DataFrame(self.data)
         # Store final data in CSV file based on dowebgui condition
         if self.dowebgui == True:   
             df.to_csv('{}/rb_datavalues.csv'.format(self.result_dir), index=False)
@@ -1365,9 +1483,15 @@ class RealBrowserTest(Realm):
             Returns: None
         """
         bands = ['URLs']
-        total_urls = self.my_monitor('total-urls')
+        # total_urls = self.my_monitor('total-urls')
         usernames_csv = {}
-        df = pd.DataFrame(self.data)
+        # df = pd.DataFrame(self.data)
+        try:
+            df = pd.DataFrame(self.data)
+        except Exception as e:
+            print(self.data)
+            logger.exception("Exception occured while monitoring real time data")
+            exit(1)
         # Update usernames_csv with names and usernames in the dataframe df, if name is in all_cx_list
         df.apply(
             lambda row: (
@@ -1499,7 +1623,7 @@ class RealBrowserTest(Realm):
                 report.set_obj_html(f"Detailed Result Table - Iteration {i+1} ", f"The below tables provides detailed information for the incremental value {created_incremental_values[i]} of the web browsing test.")
                 report.build_objective()
             else:
-                report.set_obj_html("Overall - Detailed Result Table", "The below tables provides detailed information for the web browsing test.")
+                report.set_obj_html(" Detailed Result Table", "The below tables provides detailed information for the web browsing test.")
                 report.build_objective()
             
 
@@ -1512,17 +1636,24 @@ class RealBrowserTest(Realm):
                 " Channel " : self.channel[i],
                 " Mode " : self.mode[i],
                 " UC-MIN (ms) " : self.req_uc_min_val[i],
-                " UC-MIN (ms) " : self.req_uc_max_val[i],
-                " UC-MIN (ms) " : self.req_uc_avg_val[i],
+                " UC-MAX (ms) " : self.req_uc_max_val[i],
+                " UC-AVG (ms) " : self.req_uc_avg_val[i],
                 " Total URLs " : self.req_total_urls[i],
                 " Total Errors " : self.req_total_err[i],
                 " RSSI " : self.rssi[i],
                 'Link Speed': self.tx_rate[i]
             }
 
-            dataframe1 = pd.DataFrame(dataframe)
-            report.set_table_dataframe(dataframe1)
-            report.build_table()
+            
+            try:
+                dataframe1 = pd.DataFrame(dataframe)
+                report.set_table_dataframe(dataframe1)
+                report.build_table()
+            except Exception as e:
+                print(dataframe)
+                logger.exception("Exception occured while monitoring real time data")
+                exit(1)
+            
 
     def generate_report(self, date, file_path,test_setup_info, dataset2, dataset, lis, bands, total_urls, uc_min_value, report_path = '', cx_order_list = [],gave_incremental=True):
         logging.info("Creating Reports")
@@ -1574,7 +1705,7 @@ class RealBrowserTest(Realm):
             report.build_graph()
 
         # Table 1
-        report.set_obj_html("Overall - Detailed Result Table", "The below tables provides detailed information for the web browsing test.")
+        report.set_obj_html("Detailed Total Errors Table", "The below tables provides detailed information of total errors for the web browsing test.")
         report.build_objective()
 
         device_type = []
@@ -1605,39 +1736,40 @@ class RealBrowserTest(Realm):
                         rssi.append(alias[i]['signal'])
                         channel.append(alias[i]['channel'])
                         tx_rate.append(alias[i]['tx-rate']) 
-        total_urls = self.my_monitor('total-urls')
-        urls_per_sec = self.my_monitor('urls/s')
-        uc_min_val = self.my_monitor('uc-min')
-        uc_avg_val = self.my_monitor('uc-avg')
-        uc_max_val = self.my_monitor('uc-max')
-        total_err = self.my_monitor('total-err') 
-        dataframe = {
-            " DEVICE TYPE " : device_type,
-            " Username " : username,
-            " SSID " : ssid ,
-            " MAC " : mac,
-            " Channel " : channel,
-            " Mode " : mode,
-            " UC-MIN (ms) " : uc_min_val,
-            " UC-MAX (ms) " : uc_max_val,
-            " UC-AVG (ms) " : uc_avg_val,
-            " Total URLs " : total_urls,
-            " Total Errors " : total_err,
-            " RSSI " : rssi,
-            'Link Speed': tx_rate
-        }
+        total_urls = self.data["total_urls"]
+        urls_per_sec = self.data["urls_per_sec"]
+        uc_min_val = self.data['uc_min']
+        uc_avg_val = self.data['uc_avg']
+        uc_max_val = self.data['uc_max']
+        total_err = self.data['total_err'] 
+        # dataframe = {
+        #     " DEVICE TYPE " : device_type,
+        #     " Username " : username,
+        #     " SSID " : ssid ,
+        #     " MAC " : mac,
+        #     " Channel " : channel,
+        #     " Mode " : mode,
+        #     " UC-MIN (ms) " : uc_min_val,
+        #     " UC-MAX (ms) " : uc_max_val,
+        #     " UC-AVG (ms) " : uc_avg_val,
+        #     " Total URLs " : total_urls,
+        #     " Total Errors " : total_err,
+        #     " RSSI " : rssi,
+        #     'Link Speed': tx_rate
+        # }
 
-        dataframe1 = pd.DataFrame(dataframe)
-        report.set_table_dataframe(dataframe1)
-        report.build_table()
+        # dataframe1 = pd.DataFrame(dataframe)
+        # report.set_table_dataframe(dataframe1)
+        # report.build_table()
 
-        # Table 2
-        report.set_table_title("Overall Results")
-        report.build_table_title()
+        # # Table 2
+        # report.set_table_title("Overall Results")
+        # report.build_table_title()
         dataframe2 = {
                         " DEVICE" : username,
                         " TOTAL ERRORS " : total_err,
                     }
+
         dataframe3 = pd.DataFrame(dataframe2)
         report.set_table_dataframe(dataframe3)
         report.build_table()
@@ -1999,6 +2131,11 @@ def main():
     test_time = test_time.strftime("%b %d %H:%M:%S")
 
     logging.info("Initiating Test...")
+    available_resources= [int(n) for n in available_resources]
+    available_resources.sort()
+    available_resources_string=",".join([str(n) for n in available_resources])
+    obj.set_available_resources_ids(available_resources_string)
+    # obj.set_available_resources_ids([int(n) for n in available_resources].sort())
     obj.build()
     time.sleep(10)
     #TODO : To create cx for laptop devices
@@ -2185,10 +2322,10 @@ def main():
 
     # Additional setup for generating reports and post-cleanup
     if obj.resource_ids:
-        uc_avg_val = obj.my_monitor('uc-avg')
+        # uc_avg_val = obj.my_monitor('uc-avg')
         total_urls = obj.my_monitor('total-urls')
-        rx_bytes_val = obj.my_monitor('bytes-rd')
-        rx_rate_val = obj.my_monitor('rx rate')
+        # rx_bytes_val = obj.my_monitor('bytes-rd')
+        # rx_rate_val = obj.my_monitor('rx rate')
 
         if args.dowebgui == True:
             obj.data_for_webui["total_urls"] = total_urls  # storing the layer-4 url data at the end of test
@@ -2231,7 +2368,7 @@ def main():
         test_setup_info['Total Duration (min)'] = str(test_setup_info_total_duration) + " (min)"
 
         # Retrieve additional monitoring data
-        total_urls = obj.my_monitor('total-urls')
+        # total_urls = obj.my_monitor('total-urls')
         uc_min_val = obj.my_monitor('uc-min')
         timeout = obj.my_monitor('timeout')
         uc_min_value = uc_min_val
