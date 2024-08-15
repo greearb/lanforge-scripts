@@ -159,16 +159,29 @@ class VoipReport():
         logger.info(f"Test CSV output file is \'{csv_file_name}\'")
 
         self.ep_col_names: list = (
+            # VOIP Endp Column name order as per GUI after epoch_time
             "epoch_time",
             "name",
-            "state",
+            "device type",
+            "phone #",
+            "mobile bt mac",
+            "channel",
             "reg state",
+            "state",
             "mos-lqo#",
             "mos-lqo",
-            "attenuation (agc)",
+            "attenuation",
             "avg delay",
             "snr ref",
             "snr deg",
+            "pingpong",
+            "audio band",
+            "tx file",
+            "calls attempted",
+            "calls answered",
+            "calls completed",
+            "calls failed",
+            "elapsed",
             "scoring bklg",
             "tx pkts",
             "rx pkts",
@@ -185,21 +198,15 @@ class VoipReport():
             "rtp rtt",
             "jitter",
             "vad pkts",
-            "calls attempted",
-            "calls completed",
-            "calls failed",
             "cf 404",
             "cf 408",
             "cf busy",
             "cf canceled",
-            "calls answered",
             "destination addr",
-            "source addr",
-            "elapsed",
             "rst",
             "run",
             "mng",
-            "eid",
+            "eid"
             # "entity id"
         )
         self.csv_data: list = []
@@ -490,7 +497,7 @@ class VoipReport():
                     if "Stopped" != record['state']:
                         wait_flag_A = False
 
-                if "-A" in name: # endp B
+                if "-B" in name: # endp B
                     if "Stopped" != record['state']:
                         wait_flag_B = False
 
@@ -536,21 +543,7 @@ class VoipReport():
                             self.append_to_csv(ep_name=name, ep_record=record)
                             old_mos_value_B = int(record['mos-lqo#'])
 
-                    # print("Debug: int(record['calls completed']) " + str(record['calls completed']))
-                    # print("Debug: int(record['calls failed']) " + str(record['calls failed']))
-                    # print("Debug: int(record['mos-lqo#']) " + str(record['mos-lqo#']))
-                    # print("Debug: record['state'] " + str(record['state']))
-                    # print()
-
-                    # exit if endp is scoring polqa/pesq and test is stopped.
-                    # wait until last call data is fetched
-                    # both endp needs to stop separately as we are in a for loop.
-                    if int(record['calls completed']) + int(record['calls failed']) == int(record['mos-lqo#']) + 1:
-                        if "Stopped" == record['state']:
-                            num_running_ep -= 1
-
-                    # exit if other endp is not scoring polqa/pesq and test is stopped.
-                    if int(record['mos-lqo#']) == 0:
+                    if int(record['calls completed']) + int(record['calls failed']) == int(record['mos-lqo#']):
                         if "Stopped" == record['state']:
                             num_running_ep -= 1
 
