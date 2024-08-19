@@ -61,12 +61,12 @@ def main(mgr: str,
     vaps_to_query = vap_eids
     ports_to_query = list(set(vap_eids + port_eids))  # Removes duplicates, if specified
 
-    if not no_clear_port_counters:
+    if not no_clear_port_counters and len(port_eids) != 0:
         ret = clear_port_counters(session=session, port_eids=ports_to_query)
         if ret != 0:
             return ret
 
-    if not no_clear_cx_counters:
+    if not no_clear_cx_counters and len(cx_names) != 0:
         ret = clear_cx_counters(session=session, cx_names=cx_names)
         if ret != 0:
             return ret
@@ -77,8 +77,8 @@ def main(mgr: str,
     port_metrics = []
     cx_metrics = []
 
-    logger.info(f"Beginning to query metrics for ports {ports_to_query}, "
-                f"stations associated to vAPs {vaps_to_query}, and "
+    logger.info(f"Beginning to query metrics for port(s) {ports_to_query}, "
+                f"stations associated to vAP(s) {vaps_to_query}, and "
                 f"CX(s) {cx_names}")
     for _ in range(duration):
         start_time_ms = time.time() * 1_000
@@ -135,11 +135,17 @@ def main(mgr: str,
     port_metrics_df = pd.DataFrame(port_metrics)
     cx_metrics_df = pd.DataFrame(cx_metrics)
 
-    logger.info(
-        f"Writing output to CSV files {vap_metrics_csv}, {port_metrics_csv}, and {cx_metrics_csv}")
-    vap_metrics_df.to_csv(vap_metrics_csv, index=False)
-    port_metrics_df.to_csv(port_metrics_csv, index=False)
-    cx_metrics_df.to_csv(cx_metrics_csv, index=False)
+    if len(port_eids) != 0:
+        logger.info(f"Writing port metrics to \'{port_metrics_csv}\'")
+        port_metrics_df.to_csv(port_metrics_csv, index=False)
+
+    if len(cx_names) != 0:
+        logger.info(f"Writing CX metrics to \'{cx_metrics_csv}\'")
+        cx_metrics_df.to_csv(cx_metrics_csv, index=False)
+
+    if len(vap_eids) != 0:
+        logger.info(f"Writing vAP metrics to \'{vap_metrics_csv}\'")
+        vap_metrics_df.to_csv(vap_metrics_csv, index=False)
 
 
 def clear_port_counters(session: LFSession, port_eids: list[str]) -> int:
