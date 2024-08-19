@@ -40,12 +40,21 @@ def main(mgr: str,
          vap_eids: list[str],
          port_eids: list[str],
          cx_names: list[str],
+         port_fields: str,
+         cx_fields: str,
+         vap_fields: str,
          vap_metrics_csv: str,
          port_metrics_csv: str,
          cx_metrics_csv: str,
          no_clear_port_counters: bool,
          no_clear_cx_counters: bool,
          **kwargs):
+    # If specified, parse out user-provided fields to query into
+    # format expected by LANforge API
+    port_fields: list[str] = parse_port_fields(args.port_fields)
+    cx_fields: list[str] = parse_cx_fields(args.cx_fields)
+    vap_fields: list[str] = parse_vap_fields(args.vap_fields)
+
     # Instantiate a LANforge API session with the specified LANforge system.
     #
     # The JSON API port is almost always 8080. The LANforge server port,
@@ -99,18 +108,21 @@ def main(mgr: str,
             query_vap_metrics(session=session,
                               timestamp=timestamp,
                               vap_list=vaps_to_query,
+                              vap_fields=vap_fields,
                               vap_metrics=vap_metrics)
 
         if len(ports_to_query) > 0:
             query_port_metrics(session=session,
                                timestamp=timestamp,
                                eid_list=ports_to_query,
+                               port_fields=port_fields,
                                port_metrics=port_metrics)
 
         if len(cx_names) > 0:
             query_cx_metrics(session=session,
                              timestamp=timestamp,
                              cx_names=cx_names,
+                             cx_fields=cx_fields,
                              cx_metrics=cx_metrics)
 
         # Calculated time to start next loop earlier
@@ -146,6 +158,55 @@ def main(mgr: str,
     if len(vap_eids) != 0:
         logger.info(f"Writing vAP metrics to \'{vap_metrics_csv}\'")
         vap_metrics_df.to_csv(vap_metrics_csv, index=False)
+
+
+def parse_port_fields(port_fields: str) -> list[str]:
+    """
+    Parse out field names into list, if any specified.
+    Otherwise, return None
+    """
+    if port_fields:
+        port_fields = port_fields.split(",")
+
+        # Always query for these fields, as it will be useful regardless
+        # The 'alias' and 'port' fields are mandatory for filtering data
+        # later on in this script
+        port_fields.extend(["alias", "port", "down", "phantom", "ip",])
+        port_fields = list(set(port_fields))
+
+    return port_fields
+
+
+def parse_cx_fields(cx_fields: str) -> list[str]:
+    """
+    Parse out field names into list, if any specified.
+    Otherwise, return None
+    """
+    if cx_fields:
+        cx_fields = cx_fields.split(",")
+
+        # Always query for these fields, as they will be useful regardless.
+        cx_fields.extend(["name", "type", "state", "bps+rx+a", "bps+rx+b"])
+        cx_fields = list(set(cx_fields))
+
+    return cx_fields
+
+
+def parse_vap_fields(vap_fields: str) -> list[str]:
+    """
+    Parse out field names into list, if any specified.
+    Otherwise, return None
+    """
+    if vap_fields:
+        vap_fields = vap_fields.split(",")
+
+        # Always query for these fields, as they will be useful regardless.
+        # The 'station bssid' and 'ap' fields are mandatory for filtering data
+        # later on in this script
+        vap_fields.extend(["ap", "station+bssid", "station+ssid"])
+        vap_fields = list(set(vap_fields))
+
+    return vap_fields
 
 
 def clear_port_counters(session: LFSession, port_eids: list[str]) -> int:
@@ -199,6 +260,7 @@ def clear_cx_counters(session: LFSession, cx_names: list[str]) -> int:
 def query_vap_metrics(session: LFSession,
                       timestamp: int,
                       vap_list: list[str],
+                      vap_fields: list[str],
                       vap_metrics: list) -> None:
     logger.debug(f"Querying vAP metrics for vAPs {vap_list}")
     query = session.get_query()
@@ -207,7 +269,8 @@ def query_vap_metrics(session: LFSession,
     # the station is associated to, we have to query for all associated stations
     # (using a bit of a workaround) and filter out stations that are associated
     # to vAPs we care about
-    query_results = query.get_stations(eid_list=["/all"])
+    query_results = query.get_stations(eid_list=["/all"],
+                                       requested_col_names=vap_fields)
     if not query_results:
         logger.warning("No stations associated to vAP")
         return 1
@@ -246,12 +309,14 @@ def query_vap_metrics(session: LFSession,
 def query_port_metrics(session: LFSession,
                        timestamp: int,
                        eid_list: list[str],
+                       port_fields: list[str],
                        port_metrics: list) -> None:
     logger.debug(f"Querying port metrics for ports {eid_list}")
     query = session.get_query()
 
     # Query LANforge for port data
-    query_results = query.get_port(eid_list=eid_list)
+    query_results = query.get_port(eid_list=eid_list,
+                                   requested_col_names=port_fields)
     if not query_results:
         logger.warning("No port data returned")
         return 1
@@ -297,24 +362,24 @@ def query_port_metrics(session: LFSession,
 def query_cx_metrics(session: LFSession,
                      timestamp: int,
                      cx_names: list[str],
+                     cx_fields: list[str],
                      cx_metrics: list) -> None:
     logger.debug(f"Querying CX metrics for CX(s) {cx_names}")
     query = session.get_query()
 
-    query_results = query.get_cx(eid_list=["/all"])
+    query_results = query.get_cx(eid_list=["/all"],
+                                 requested_col_names=cx_fields)
     if not query_results:
         logger.warning("No CXs exist")
         return 1
 
-    # Iterate through stations returned, searching for stations
-    # which are associated to vAPs we care about
+    # Iterate through CXs returned, searching for CXs specified by user
     for cx_name, queried_cx_metrics in query_results.items():
         if cx_name not in cx_names:
             logger.warning(f"Unexpected CX {cx_name} found in queried CX data")
             continue
 
-        # This is a station associated to a vAP we care about.
-        # Track it for post processing at the end of the script
+        # Desired CX match. Track it for post processing at the end of the script
         queried_cx_metrics["timestamp"] = timestamp
         cx_metrics.append(queried_cx_metrics)
 
@@ -428,6 +493,26 @@ def parse_args():
                         action="append",
                         default=[],
                         help="Entity ID(s) of the desired LANforge vAP(s) to query.")
+
+    parser.add_argument("--port_fields", "--port_columns",
+                        dest="port_fields",
+                        default=None,
+                        help="Comma separated list of port data to query (columns in 'Port Mgr' table). "
+                             "The value strings are parsed directly into the URL, so whitespace should "
+                             "be URL encoded. For example, \'port type\' and \'parent dev\' would be "
+                             "specified by passing \'--column_names \"port+type\",\"parent+dev\"\'")
+    parser.add_argument("--cx_fields", "--cx_columns",
+                        dest="cx_fields",
+                        default=None,
+                        help="Comma separated list of CX data to query (columns in 'Layer-3' table). "
+                             "The value strings are parsed directly into the URL, so whitespace should "
+                             "be URL encoded. See \'--port_fields\' for more info.")
+    parser.add_argument("--vap_fields", "--vap_columns",
+                        dest="vap_fields",
+                        default=None,
+                        help="Comma separated list of vAP data to query (columns in 'vAP Stations' table). "
+                             "The value strings are parsed directly into the URL, so whitespace should "
+                             "be URL encoded. See \'--port_fields\' for more info.")
 
     parser.add_argument("--port_metrics_csv",
                         type=str,
