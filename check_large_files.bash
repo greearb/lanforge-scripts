@@ -272,11 +272,12 @@ kernel_to_relnum() {
     #set -euxv
     local hunks=()
     # 1>&2 echo "KERNEL RELNUM:[$1]"
-    local my1="${1/*[^0-9]-/}" # Dang, this is not intuitive to a PCRE user
+    local my1="${1/-at-ct/}"
+    my1="${my1/*[^0-9]-/}" # Dang, this is not intuitive to a PCRE user
     #1>&2 echo "KERNEL [$1] REGEX:[$my1]"
     my1="${my1//\+/}"
     if [[ $my1 =~ ^[^0-9] ]]; then
-        1>&2 echo "BAD SERIES: [$1]"
+        1>&2 echo "Kernel version regex failed!: [$1]"
         exit 1
     fi
     IFS="." read -ra hunks <<< "$my1"
