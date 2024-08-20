@@ -42,10 +42,12 @@ def main(mgr: str,
          cx_names: list[str],
          port_fields: str,
          cx_fields: str,
+         endp_fields: str,
          vap_fields: str,
          vap_metrics_csv: str,
          port_metrics_csv: str,
          cx_metrics_csv: str,
+         endp_metrics_csv: str,
          no_clear_port_counters: bool,
          no_clear_cx_counters: bool,
          **kwargs):
@@ -53,6 +55,7 @@ def main(mgr: str,
     # format expected by LANforge API
     port_fields: list[str] = parse_port_fields(args.port_fields)
     cx_fields: list[str] = parse_cx_fields(args.cx_fields)
+    endp_fields: list[str] = parse_endp_fields(args.endp_fields)
     vap_fields: list[str] = parse_vap_fields(args.vap_fields)
 
     # Instantiate a LANforge API session with the specified LANforge system.
@@ -70,6 +73,13 @@ def main(mgr: str,
     vaps_to_query = vap_eids
     ports_to_query = list(set(vap_eids + port_eids))  # Removes duplicates, if specified
 
+    # Get endpoint names for specified CXs
+    endp_names: list[str] = []
+    if len(cx_names) > 0:
+        ret, endp_names = get_endp_names(session=session, cx_names=cx_names)
+        if ret != 0:
+            return ret
+
     if not no_clear_port_counters and len(port_eids) != 0:
         ret = clear_port_counters(session=session, port_eids=ports_to_query)
         if ret != 0:
@@ -85,6 +95,7 @@ def main(mgr: str,
     vap_metrics = []
     port_metrics = []
     cx_metrics = []
+    endp_metrics = []
 
     logger.info(f"Beginning to query metrics for port(s) {ports_to_query}, "
                 f"stations associated to vAP(s) {vaps_to_query}, and "
@@ -124,6 +135,11 @@ def main(mgr: str,
                              cx_names=cx_names,
                              cx_fields=cx_fields,
                              cx_metrics=cx_metrics)
+            query_endp_metrics(session=session,
+                               timestamp=timestamp,
+                               endp_names=endp_names,
+                               endp_fields=endp_fields,
+                               endp_metrics=endp_metrics)
 
         # Calculated time to start next loop earlier
         # Sleep difference between current time after querying and start of
@@ -146,6 +162,7 @@ def main(mgr: str,
     vap_metrics_df = pd.DataFrame(vap_metrics)
     port_metrics_df = pd.DataFrame(port_metrics)
     cx_metrics_df = pd.DataFrame(cx_metrics)
+    endp_metrics_df = pd.DataFrame(endp_metrics)
 
     if len(port_eids) != 0:
         logger.info(f"Writing port metrics to \'{port_metrics_csv}\'")
@@ -154,6 +171,10 @@ def main(mgr: str,
     if len(cx_names) != 0:
         logger.info(f"Writing CX metrics to \'{cx_metrics_csv}\'")
         cx_metrics_df.to_csv(cx_metrics_csv, index=False)
+
+    if len(endp_names) != 0:
+        logger.info(f"Writing endpoint metrics to \'{endp_metrics_csv}\'")
+        endp_metrics_df.to_csv(endp_metrics_csv, index=False)
 
     if len(vap_eids) != 0:
         logger.info(f"Writing vAP metrics to \'{vap_metrics_csv}\'")
@@ -192,6 +213,22 @@ def parse_cx_fields(cx_fields: str) -> list[str]:
     return cx_fields
 
 
+def parse_endp_fields(endp_fields: str) -> list[str]:
+    """
+    Parse out field names into list, if any specified.
+    Otherwise, return None
+    """
+    if endp_fields:
+        endp_fields = endp_fields.split(",")
+
+        # Always query for these fields, as they will be useful regardless.
+        # The 'name' field is mandatory for filtering data later on in this script
+        endp_fields.extend(["name", "run", "tx+rate", "rx+rate"])
+        endp_fields = list(set(endp_fields))
+
+    return endp_fields
+
+
 def parse_vap_fields(vap_fields: str) -> list[str]:
     """
     Parse out field names into list, if any specified.
@@ -208,6 +245,30 @@ def parse_vap_fields(vap_fields: str) -> list[str]:
 
     return vap_fields
 
+
+def get_endp_names(session: LFSession, cx_names: list[str]) -> list[int, list[str]]:
+    all_endp_names = []
+
+    query = session.get_query()
+    query_results = query.get_cx(eid_list=["/all"],
+                                 requested_col_names=["name", "endpoints"])
+    if not query_results:
+        logger.warning("No CXs exist")
+        return 1, None
+
+    # Iterate through CXs returned, searching for CXs specified by user
+    for cx_name, cx_data in query_results.items():
+        if cx_name not in cx_names:
+            continue
+
+        endp_names = cx_data.get("endpoints")
+        if not endp_names:
+            logger.error("No endpoint names returned from query")
+            return 1, None
+
+        all_endp_names.extend(endp_names)
+
+    return 0, all_endp_names
 
 def clear_port_counters(session: LFSession, port_eids: list[str]) -> int:
     logger.info(f"Clearing port counters for port(s): {port_eids}")
@@ -386,6 +447,37 @@ def query_cx_metrics(session: LFSession,
     return 0
 
 
+def query_endp_metrics(session: LFSession,
+                       timestamp: int,
+                       endp_names: list[str],
+                       endp_fields: list[str],
+                       endp_metrics: list) -> None:
+    logger.debug(f"Querying CX endpoint metrics for endpoints {endp_names}")
+    query = session.get_query()
+
+    query_results = query.get_endp(eid_list=["/all"],
+                                   requested_col_names=endp_fields)
+    if not query_results:
+        logger.warning("No endpoints exist")
+        return 1
+
+    # Iterate through endpoints returned, searching for endpoints
+    # matching CXs specified by user
+    for query_result in query_results:
+        endp_name = list(query_result.keys())[0]
+
+        if endp_name not in endp_names:
+            continue
+
+        # This is an endpoint we care about.
+        # Track it for post processing at the end of the script
+        queried_endp_metrics = query_result[endp_name]
+        queried_endp_metrics["timestamp"] = timestamp
+        endp_metrics.append(queried_endp_metrics)
+
+    return 0
+
+
 def parse_eid(port_eid: str) -> tuple[int, tuple[str, str, str]]:
     """
     Parse a port EID of the format 'shelf.resource.port'
@@ -487,7 +579,8 @@ def parse_args():
                         dest="cx_names",
                         action="append",
                         default=[],
-                        help="Name(s) of the desired LANforge CX(s) to query")
+                        help="Name(s) of the desired LANforge CX(s) and corresponding "
+                             "endpoints to query")
     parser.add_argument("--vap_eid",
                         dest="vap_eids",
                         action="append",
@@ -507,6 +600,12 @@ def parse_args():
                         help="Comma separated list of CX data to query (columns in 'Layer-3' table). "
                              "The value strings are parsed directly into the URL, so whitespace should "
                              "be URL encoded. See \'--port_fields\' for more info.")
+    parser.add_argument("--endp_fields", "--endp_columns",
+                        dest="endp_fields",
+                        default=None,
+                        help="Comma separated list of endpoint data to query (columns in 'L3 Endps' table). "
+                             "The value strings are parsed directly into the URL, so whitespace should "
+                             "be URL encoded. See \'--port_fields\' for more info.")
     parser.add_argument("--vap_fields", "--vap_columns",
                         dest="vap_fields",
                         default=None,
@@ -522,6 +621,10 @@ def parse_args():
                         type=str,
                         default="cx_metrics.csv",
                         help="Path to file where Layer-3 CX metrics will be written to as CSV.")
+    parser.add_argument("--endp_metrics_csv",
+                        type=str,
+                        default="endp_metrics.csv",
+                        help="Path to file where Layer-3 endpoint metrics will be written to as CSV.")
     parser.add_argument("--vap_metrics_csv",
                         type=str,
                         default="vap_metrics.csv",
