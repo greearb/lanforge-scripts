@@ -44,10 +44,10 @@ def main(mgr: str,
          cx_fields: str,
          endp_fields: str,
          vap_fields: str,
-         vap_metrics_csv: str,
          port_metrics_csv: str,
          cx_metrics_csv: str,
          endp_metrics_csv: str,
+         vap_metrics_csv: str,
          no_clear_port_counters: bool,
          no_clear_cx_counters: bool,
          **kwargs):
@@ -92,10 +92,10 @@ def main(mgr: str,
 
     # Track data in dicts of key value pairs, where the key is the EID or name
     # and the value is a list of queried data
-    vap_metrics = []
     port_metrics = []
     cx_metrics = []
     endp_metrics = []
+    vap_metrics = []
 
     logger.info(f"Beginning to query metrics for port(s) {ports_to_query}, "
                 f"stations associated to vAP(s) {vaps_to_query}, and "
@@ -115,13 +115,6 @@ def main(mgr: str,
         # NOTE: These functions return a value indicating success (0) or error (not 0).
         #       Ignore these for now to let the test continue running.
         #
-        if len(vaps_to_query) > 0:
-            query_vap_metrics(session=session,
-                              timestamp=timestamp,
-                              vap_list=vaps_to_query,
-                              vap_fields=vap_fields,
-                              vap_metrics=vap_metrics)
-
         if len(ports_to_query) > 0:
             query_port_metrics(session=session,
                                timestamp=timestamp,
@@ -141,6 +134,13 @@ def main(mgr: str,
                                endp_fields=endp_fields,
                                endp_metrics=endp_metrics)
 
+        if len(vaps_to_query) > 0:
+            query_vap_metrics(session=session,
+                              timestamp=timestamp,
+                              vap_list=vaps_to_query,
+                              vap_fields=vap_fields,
+                              vap_metrics=vap_metrics)
+
         # Calculated time to start next loop earlier
         # Sleep difference between current time after querying and start of
         # next loop time to ensure data is queries as close to every second as possible
@@ -159,25 +159,24 @@ def main(mgr: str,
     # Convert metrics to Pandas DataFrame for convenience
     # then save to CSV output files specified
     logger.info("Completed querying metrics")
-    vap_metrics_df = pd.DataFrame(vap_metrics)
-    port_metrics_df = pd.DataFrame(port_metrics)
-    cx_metrics_df = pd.DataFrame(cx_metrics)
-    endp_metrics_df = pd.DataFrame(endp_metrics)
-
     if len(port_eids) != 0:
         logger.info(f"Writing port metrics to \'{port_metrics_csv}\'")
+        port_metrics_df = pd.DataFrame(port_metrics)
         port_metrics_df.to_csv(port_metrics_csv, index=False)
 
     if len(cx_names) != 0:
         logger.info(f"Writing CX metrics to \'{cx_metrics_csv}\'")
+        cx_metrics_df = pd.DataFrame(cx_metrics)
         cx_metrics_df.to_csv(cx_metrics_csv, index=False)
 
     if len(endp_names) != 0:
         logger.info(f"Writing endpoint metrics to \'{endp_metrics_csv}\'")
+        endp_metrics_df = pd.DataFrame(endp_metrics)
         endp_metrics_df.to_csv(endp_metrics_csv, index=False)
 
     if len(vap_eids) != 0:
         logger.info(f"Writing vAP metrics to \'{vap_metrics_csv}\'")
+        vap_metrics_df = pd.DataFrame(vap_metrics)
         vap_metrics_df.to_csv(vap_metrics_csv, index=False)
 
 
