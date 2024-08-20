@@ -62,7 +62,8 @@ def main(mgr: str,
     #
     # The JSON API port is almost always 8080. The LANforge server port,
     # which isn't relevant here, are in the 4001+ range
-    logger.info(f"Initiating LANforge API session with LANforge {mgr}:{mgr_port}")
+    logger.info(
+        f"Initiating LANforge API session with LANforge {mgr}:{mgr_port}")
     session = LFSession(
         lfclient_url=f"http://{mgr}:{mgr_port}",
     )
@@ -71,7 +72,8 @@ def main(mgr: str,
     # but query port information for both the provided Port EIDs
     # as well as the vAP EIDs.
     vaps_to_query = vap_eids
-    ports_to_query = list(set(vap_eids + port_eids))  # Removes duplicates, if specified
+    # Removes duplicates, if specified
+    ports_to_query = list(set(vap_eids + port_eids))
 
     # Get endpoint names for specified CXs
     endp_names: list[str] = []
@@ -143,16 +145,19 @@ def main(mgr: str,
 
         # Calculated time to start next loop earlier
         # Sleep difference between current time after querying and start of
-        # next loop time to ensure data is queries as close to every second as possible
+        # next loop time to ensure data is queries as close to every second as
+        # possible
         cur_time_ms = (time.time() * 1_000)
         time_to_sleep_ms = end_time_ms - cur_time_ms
         logger.debug(f"Sleeping for {time_to_sleep_ms} ms")
-        logger.debug(f"Start time: {start_time_ms}, End time: {end_time_ms}, Current time:  {cur_time_ms}")
+        logger.debug(
+            f"Start time: {start_time_ms}, End time: {end_time_ms}, Current time:  {cur_time_ms}")
 
         # Need to make sure calculation wasn't negative. If it was, that means the queries
         # above took longer than a second for whatever reason
         if time_to_sleep_ms < 0:
-            logger.error("Sleep time is negative, continuing without sleeping.")
+            logger.error(
+                "Sleep time is negative, continuing without sleeping.")
         else:
             time.sleep(time_to_sleep_ms / 1_000)
 
@@ -191,7 +196,7 @@ def parse_port_fields(port_fields: str) -> list[str]:
         # Always query for these fields, as it will be useful regardless
         # The 'alias' and 'port' fields are mandatory for filtering data
         # later on in this script
-        port_fields.extend(["alias", "port", "down", "phantom", "ip",])
+        port_fields.extend(["alias", "port", "down", "phantom", "ip", ])
         port_fields = list(set(port_fields))
 
     return port_fields
@@ -221,7 +226,8 @@ def parse_endp_fields(endp_fields: str) -> list[str]:
         endp_fields = endp_fields.split(",")
 
         # Always query for these fields, as they will be useful regardless.
-        # The 'name' field is mandatory for filtering data later on in this script
+        # The 'name' field is mandatory for filtering data later on in this
+        # script
         endp_fields.extend(["name", "run", "tx+rate", "rx+rate"])
         endp_fields = list(set(endp_fields))
 
@@ -245,7 +251,8 @@ def parse_vap_fields(vap_fields: str) -> list[str]:
     return vap_fields
 
 
-def get_endp_names(session: LFSession, cx_names: list[str]) -> list[int, list[str]]:
+def get_endp_names(session: LFSession,
+                   cx_names: list[str]) -> list[int, list[str]]:
     all_endp_names = []
 
     query = session.get_query()
@@ -269,6 +276,7 @@ def get_endp_names(session: LFSession, cx_names: list[str]) -> list[int, list[st
 
     return 0, all_endp_names
 
+
 def clear_port_counters(session: LFSession, port_eids: list[str]) -> int:
     logger.info(f"Clearing port counters for port(s): {port_eids}")
 
@@ -286,7 +294,8 @@ def clear_port_counters(session: LFSession, port_eids: list[str]) -> int:
                              f"returned status code {response.status}")
                 return -1
             elif not response:
-                logger.error(f"Failed to clear port counters for port \'{port_eid}\', timed out")
+                logger.error(
+                    f"Failed to clear port counters for port \'{port_eid}\', timed out")
                 return -1
         except BaseException:
             logger.error(
@@ -308,10 +317,12 @@ def clear_cx_counters(session: LFSession, cx_names: list[str]) -> int:
                              f"returned status code {response.status}")
                 return -1
             elif not response:
-                logger.error(f"Failed to clear CX counters for CX \'{cx_name}\', timed out")
+                logger.error(
+                    f"Failed to clear CX counters for CX \'{cx_name}\', timed out")
                 return -1
         except BaseException:
-            logger.error(f"Failed to clear CX counters for CX \'{cx_name}\', exception encountered")
+            logger.error(
+                f"Failed to clear CX counters for CX \'{cx_name}\', exception encountered")
             return -1
 
     return 0
@@ -355,7 +366,8 @@ def query_vap_metrics(session: LFSession,
         vap_eid = associated_sta_data["ap"]
         if vap_eid not in vap_list:
             # This is possible since we can't easily filter '/stations' endpoint data
-            # for a specific vAP. The EIDs for it are only meaningful internally
+            # for a specific vAP. The EIDs for it are only meaningful
+            # internally
             continue
 
         # This is a station associated to a vAP we care about.
@@ -395,7 +407,8 @@ def query_port_metrics(session: LFSession,
             logger.error("\'alias\' key not found in queried results")
             return 1
 
-        ret, named_port_eid = numeric_to_named_eid(numeric_eid=numeric_eid, alias=alias)
+        ret, named_port_eid = numeric_to_named_eid(numeric_eid=numeric_eid,
+                                                   alias=alias)
         if ret != 0:
             return ret
 
@@ -406,7 +419,8 @@ def query_port_metrics(session: LFSession,
         port_eid = list(query_result.keys())[0]
 
         if port_eid not in eid_list:
-            logger.warning(f"Unexpected port {port_eid} found in queried port data")
+            logger.warning(
+                f"Unexpected port {port_eid} found in queried port data")
             continue
 
         # This is a port we care about.
@@ -439,7 +453,8 @@ def query_cx_metrics(session: LFSession,
             logger.warning(f"Unexpected CX {cx_name} found in queried CX data")
             continue
 
-        # Desired CX match. Track it for post processing at the end of the script
+        # Desired CX match. Track it for post processing at
+        # the end of the script
         queried_cx_metrics["timestamp"] = timestamp
         cx_metrics.append(queried_cx_metrics)
 
@@ -643,7 +658,9 @@ if __name__ == "__main__":
     args = parse_args()
     configure_logging(debug=args.debug)
 
-    if len(args.port_eids) == 0 and len(args.vap_eids) == 0 and len(args.cx_names) == 0:
+    if len(args.port_eids) == 0 \
+            and len(args.vap_eids) == 0 \
+            and len(args.cx_names) == 0:
         logger.error("No ports, vAPs, or CXs specified to query")
         exit(1)
 
