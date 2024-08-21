@@ -7,8 +7,8 @@ import importlib
 lf_rig_json = importlib.import_module("lf_create_dut_json")
 
 class lf_create_dut_tab():
-   def __init__(self, tab, window_tooltip, current_working_directory):
-      self.dut_tab = tab
+   def __init__(self, dut_tab, window_tooltip, current_working_directory):
+      self.dut_tab = dut_tab
       self.window_tooltip = window_tooltip
       self.current_working_directory = current_working_directory
 
