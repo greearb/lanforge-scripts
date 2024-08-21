@@ -8,8 +8,8 @@ lf_rig_json = importlib.import_module("lf_create_rig_json")
 
 class lf_create_rig_tab():
 
-   def __init__(self, tab, window_tooltip, current_working_directory):
-      self.rig_tab = tab
+   def __init__(self, rig_tab, window_tooltip, current_working_directory):
+      self.rig_tab = rig_tab
       self.window_tooltip = window_tooltip
       self.current_working_directory = current_working_directory
 
