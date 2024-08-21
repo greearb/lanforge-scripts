@@ -256,7 +256,7 @@ class json_gen_gui():
         #
         # ------------------------------------------------------------------------------------
 
-        lf_dut_tab.lf_create_dut_tab(self.dut_tab, self.window_tooltip, self.current_working_directory) 
+        self.lf_dut_tab = lf_dut_tab.lf_create_dut_tab(self.dut_tab, self.window_tooltip, self.current_working_directory) 
 
         #self.lf_dut_tab_frame = tkinter.Frame(self.dut_tab)
         #self.lf_dut_tab_frame.pack()
@@ -629,7 +629,7 @@ or deselect to remove from the test json''')
         #  Create Wifi Capacity
         #
         # ------------------------------------------------------------------------------------
-        lf_wc_tab.lf_create_wc_tab(self.wc_tab, self.window_tooltip, self.current_working_directory) 
+        lf_wc_tab.lf_create_wc_tab(self.wc_tab, self.lf_dut_tab, self.window_tooltip, self.current_working_directory) 
 
         #self.lf_wc_tab_frame = tkinter.Frame(self.wc_tab)
         #self.lf_wc_tab_frame.pack()
