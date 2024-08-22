@@ -5,11 +5,12 @@ import time
 import requests
 from lf_base_interop_profile import RealDevice
 from lf_ftp import FtpTest
-http_test = importlib.import_module("py-scripts.lf_webpage")
+from lf_webpage import HttpDownload
 
 
 class Candela:
-    """_summary_
+    """
+    Candela Class file to invoke different scripts from py-scripts.
     """
 
     def __init__(self, ip='localhost', port=8080):
@@ -33,13 +34,13 @@ class Candela:
         Returns:
             response: response code for the request
             data: data returned in the response
-        """        
+        """
         if endp[0] != '/':
             endp = '/' + endp
-        response = requests.get(url= self.api_url + endp)
+        response = requests.get(url=self.api_url + endp)
         data = response.json()
         return response, data
-    
+
     def api_post(self, endp: str, payload: dict):
         """
         Sends POST request
@@ -51,7 +52,7 @@ class Candela:
         Returns:
             response: response code for the request
                       None if endpoint is invalid
-        """        
+        """
         if endp == '' or endp is None:
             print('Invalid endpoint specified.')
             return False
@@ -59,7 +60,7 @@ class Candela:
             endp = '/' + endp
         response = requests.post(url=self.api_url + endp, json=payload)
         return response
-    
+
     def get_device_info(self):
         """
         Fetches all the real devices clustered to the LANforge
@@ -71,31 +72,37 @@ class Candela:
             macbooks: Mac Book hostnames. Defaults to [].
             windows: Windows hostnames. Defaults to [].
             iOS: iOS serials. Defaults to [].
-        """        
+        """
         androids, linux, macbooks, windows, iOS = [], [], [], [], []
 
         # querying interop tab for fetching android and iOS data
         interop_tab_response, interop_tab_data = self.api_get(endp='/adb')
         if interop_tab_response.status_code != 200:
-            print('Error fetching the data with the {}. Returned {}'.format('/adb', interop_tab_response))
+            print('Error fetching the data with the {}. Returned {}'.format(
+                '/adb', interop_tab_response))
             return interop_tab_response
         for mobile in interop_tab_data['devices']:
-            mobile_serial, mobile_data = list(mobile.keys())[0], list(mobile.values())[0]
+            mobile_serial, mobile_data = list(
+                mobile.keys())[0], list(mobile.values())[0]
             if mobile_data['phantom']:
                 continue
             if mobile_data['device-type'] == 'Android':
                 androids.append(mobile_data)
             elif mobile_data['device-type'] == 'iOS':
                 iOS.append(mobile_data)
-        
+
         # querying resource manager tab for fetching laptops data
-        resource_manager_tab_response, resource_manager_data = self.api_get(endp='/resource/all')
+        resource_manager_tab_response, resource_manager_data = self.api_get(
+            endp='/resource/all')
         if resource_manager_tab_response.status_code != 200:
-            print('Error fetching the data with the {}. Returned {}'.format('/resources/all', interop_tab_response))
+            print('Error fetching the data with the {}. Returned {}'.format(
+                '/resources/all', interop_tab_response))
             return interop_tab_response
-        resources_list = [resource_manager_data['resource'] if 'resource' in resource_manager_data else resource_manager_data['resources']][0]
+        resources_list = [resource_manager_data['resource']
+                          if 'resource' in resource_manager_data else resource_manager_data['resources']][0]
         for resource in resources_list:
-            resource_port, resource_data = list(resource.keys())[0], list(resource.values())[0]
+            resource_port, resource_data = list(resource.keys())[
+                0], list(resource.values())[0]
             if resource_data['phantom']:
                 continue
             if resource_data['app-id'] == '0' and resource_data['ct-kernel'] is False:
@@ -107,7 +114,7 @@ class Candela:
                     linux.append(resource_data)
 
         return androids, linux, macbooks, windows, iOS
-    
+
     def start_connectivity(self,
                            manager_ip=None,
                            port=8080,
@@ -172,8 +179,6 @@ class Candela:
                            client_cert_6g=None,
                            pk_passwd_6g=None,
                            pac_file_6g=None,
-                           enable_wifi=None,
-                           disable_wifi=None,
                            selected_bands=['5g'],
                            groups=False,
                            _debug_on=False,
@@ -181,6 +186,87 @@ class Candela:
                            all_android=None,
                            all_laptops=None,
                            device_list=None):
+        """
+        Method to attempt devices to connect to the given SSID.
+
+        Args:
+            manager_ip (str, optional): LANforge IP. Defaults to None.
+            port (int, optional): LANforge port. Defaults to 8080.
+            server_ip (str, optional): Upstream IP for LANforge Interop App in androids. Defaults to None.
+            ssid_2g (str, optional): 2G SSID. Defaults to None.
+            passwd_2g (str, optional): Password for 2G SSID. Use [BLANK] incase of Open security. Defaults to None.
+            encryption_2g (str, optional): Security for 2G SSID. Defaults to None.
+            eap_method_2g (str, optional): Defaults to None.
+            eap_identity_2g (str, optional): Defaults to None.
+            ieee80211_2g (str, optional): Defaults to None.
+            ieee80211u_2g (str, optional): Defaults to None.
+            ieee80211w_2g (str, optional): Defaults to None.
+            enable_pkc_2g (str, optional): Defaults to None.
+            bss_transition_2g (str, optional): Defaults to None.
+            power_save_2g (str, optional): Defaults to None.
+            disable_ofdma_2g (str, optional): Defaults to None.
+            roam_ft_ds_2g (str, optional): Defaults to None.
+            key_management_2g (str, optional): Defaults to None.
+            pairwise_2g (str, optional): Defaults to None.
+            private_key_2g (str, optional): Defaults to None.
+            ca_cert_2g (str, optional): Defaults to None.
+            client_cert_2g (str, optional): Defaults to None.
+            pk_passwd_2g (str, optional): Defaults to None.
+            pac_file_2g (str, optional): Defaults to None.
+            ssid_5g (str, optional): 5G SSID. Defaults to None.
+            passwd_5g (str, optional): Password for 5G SSID. Use [BLANK] incase of Open Security. Defaults to None.
+            encryption_5g (str, optional): Encryption for 5G SSID. Defaults to None.
+            eap_method_5g (str, optional): Defaults to None.
+            eap_identity_5g (str, optional): Defaults to None.
+            ieee80211_5g (str, optional): Defaults to None.
+            ieee80211u_5g (str, optional): Defaults to None.
+            ieee80211w_5g (str, optional): Defaults to None.
+            enable_pkc_5g (str, optional): Defaults to None.
+            bss_transition_5g (str, optional): Defaults to None.
+            power_save_5g (str, optional): Defaults to None.
+            disable_ofdma_5g (str, optional): Defaults to None.
+            roam_ft_ds_5g (str, optional): Defaults to None.
+            key_management_5g (str, optional): Defaults to None.
+            pairwise_5g (str, optional): Defaults to None.
+            private_key_5g (str, optional): Defaults to None.
+            ca_cert_5g (str, optional): Defaults to None.
+            client_cert_5g (str, optional): Defaults to None.
+            pk_passwd_5g (str, optional): Defaults to None.
+            pac_file_5g (str, optional): Defaults to None.
+            ssid_6g (str, optional): 6G SSID. Defaults to None.
+            passwd_6g (str, optional): Password for 6G SSID. Use [BLANK] incase of Open Security. Defaults to None.
+            encryption_6g (str, optional): Encryption for 6G SSID. Defaults to None.
+            eap_method_6g (str, optional): Defaults to None.
+            eap_identity_6g (str, optional): Defaults to None.
+            ieee80211_6g (str, optional): Defaults to None.
+            ieee80211u_6g (str, optional): Defaults to None.
+            ieee80211w_6g (str, optional): Defaults to None.
+            enable_pkc_6g (str, optional): Defaults to None.
+            bss_transition_6g (str, optional): Defaults to None.
+            power_save_6g (str, optional): Defaults to None.
+            disable_ofdma_6g (str, optional): Defaults to None.
+            roam_ft_ds_6g (str, optional): Defaults to None.
+            key_management_6g (str, optional): Defaults to None.
+            pairwise_6g (str, optional): Defaults to None.
+            private_key_6g (str, optional): Defaults to None.
+            ca_cert_6g (str, optional): Defaults to None.
+            client_cert_6g (str, optional): Defaults to None.
+            pk_passwd_6g (str, optional): Defaults to None.
+            pac_file_6g (str, optional): Defaults to None.
+            selected_bands (list, optional): Specify '2g', '5g', '6g' in a list to connect devices on multiple SSIDS. Defaults to ['5g'].
+            groups (bool, optional): Defaults to False.
+            _debug_on (bool, optional): Defaults to False.
+            _exit_on_error (bool, optional): Defaults to False.
+            all_android (_type_, optional): Defaults to None.
+            all_laptops (_type_, optional): Defaults to None.
+            device_list (list, optional): List of serial numbers for Mobiles, and port numbers for Laptops. Defaults to None.
+
+        Returns:
+            (device_list, report_labels, device_macs) (tuple):    *device_list* (list): Port numbers of all the devices that are successfully connected to the given SSID.\n
+            *report_labels* (list): Report Labels of all the devices that are successfully connected to the given SSID.\n
+            Format: "Port_number OS-type hostname" trimmed to 25 characters.\n
+            *device_macs* (list): MAC IDs of all the devices that are successfully connected to the given SSID.
+        """
         self.real_device_class = RealDevice(manager_ip=manager_ip,
                                             port=port,
                                             server_ip=server_ip,
@@ -244,8 +330,6 @@ class Candela:
                                             client_cert_6g=client_cert_6g,
                                             pk_passwd_6g=pk_passwd_6g,
                                             pac_file_6g=pac_file_6g,
-                                            enable_wifi=enable_wifi,
-                                            disable_wifi=disable_wifi,
                                             selected_bands=['5g'],
                                             groups=groups,
                                             _debug_on=_debug_on,
@@ -254,7 +338,9 @@ class Candela:
                                             all_laptops=all_laptops)
         d = self.real_device_class.query_all_devices_to_configure_wifi(
             device_list=device_list)
-        return asyncio.run(self.real_device_class.configure_wifi())
+        device_list, report_labels, device_macs = asyncio.run(
+            self.real_device_class.configure_wifi())
+        return device_list, report_labels, device_macs
 
     def start_ftp_test(self,
                        ssid,
@@ -272,28 +358,53 @@ class Candela:
                        clients_type='Real',
                        device_list=[],
                        background=False):
+        """
+        Method to start FTP test on the given device list
+
+        Args:
+            ssid (str): SSID of the DUT
+            password (str): Password for the SSID. [BLANK] if encryption is open.
+            security (str): Encryption for the SSID.
+            ap_name (str, optional): Name of the AP. Defaults to ''.
+            band (str, optional): 2g, 5g or 6g. Defaults to '5g'.
+            direction (str, optional): Download or Upload. Defaults to 'Download'.
+            file_size (str, optional): File Size. Defaults to '12MB'.
+            traffic_duration (int, optional): Duration of the test in seconds. Defaults to 60.
+            upstream (str, optional): Upstream port. Defaults to 'eth1'.
+            lf_username (str, optional): Username of LANforge. Defaults to 'lanforge'.
+            lf_password (str, optional): Password of LANforge. Defaults to 'lanforge'.
+            ssh_port (int, optional): SSH port. Defaults to 22.
+            clients_type (str, optional): Clients type. Defaults to 'Real'.
+            device_list (list, optional): List of port numbers of the devices in shelf.resource format. Defaults to [].
+            background (bool, optional): Enable this to just start the test. Disabling background makes the test to run for the given duration and then stop. Defaults to False.
+
+        Returns:
+            (test_start_time, ftp_object) (tuple): Test start time and ftp test object if background argument is set to True.\n
+
+            *(test_start_time, test_end_time) (tuple)*: Test start time and end time if background is set to False.
+        """
         # for band in bands:
         #     for direction in directions:
         #         for file_size in file_sizes:
         # Start Test
         obj = FtpTest(lfclient_host=self.lanforge_ip,
-                        lfclient_port=self.port,
-                        upstream=upstream,
-                        dut_ssid=ssid,
-                        dut_passwd=password,
-                        dut_security=security,
-                        band=band,
-                        ap_name=ap_name,
-                        file_size=file_size,
-                        direction=direction,
-                        lf_username=lf_username,
-                        lf_password=lf_password,
-                        # duration=pass_fail_duration(band, file_size),
-                        traffic_duration=traffic_duration,
-                        ssh_port=ssh_port,
-                        clients_type=clients_type,
-                        device_list=device_list
-                        )
+                      lfclient_port=self.port,
+                      upstream=upstream,
+                      dut_ssid=ssid,
+                      dut_passwd=password,
+                      dut_security=security,
+                      band=band,
+                      ap_name=ap_name,
+                      file_size=file_size,
+                      direction=direction,
+                      lf_username=lf_username,
+                      lf_password=lf_password,
+                      # duration=pass_fail_duration(band, file_size),
+                      traffic_duration=traffic_duration,
+                      ssh_port=ssh_port,
+                      clients_type=clients_type,
+                      device_list=device_list
+                      )
 
         obj.data = {}
         obj.file_create()
@@ -311,7 +422,7 @@ class Candela:
         test_start_time = datetime.datetime.now()
         print("Traffic started running at ", test_start_time)
         obj.start(False, False)
-        if(background):
+        if (background):
             return test_start_time, obj
         time.sleep(traffic_duration)
         obj.stop()
@@ -323,6 +434,15 @@ class Candela:
         return test_start_time, test_end_time
 
     def stop_ftp_test(self, ftp_object):
+        """
+        Method to stop the ftp test.
+
+        Args:
+            ftp_object (object): FTP test object returned from *start_ftp_test* method.
+
+        Returns:
+            test_end_time (datetime_object): FTP test end time.
+        """
         ftp_object.stop()
         print("Traffic stopped running")
         ftp_object.my_monitor()
@@ -330,6 +450,12 @@ class Candela:
         test_end_time = datetime.datetime.now()
         print("FTP test ended at", test_end_time)
         return test_end_time
+    
+    def start_http_test(self):
+        pass
+
+    def stop_http_test(self):
+        pass
 
 
 candela_apis = Candela(ip='192.168.214.61', port=8080)
@@ -337,5 +463,5 @@ device_list, report_labels, device_macs = candela_apis.start_connectivity(
     manager_ip='192.168.214.61', port=8080, server_ip='192.168.1.61', ssid_5g='Walkin_open', encryption_5g='open', passwd_5g='[BLANK]', device_list=['RZ8N10FFTKE', 'RZ8NB1KWXLB'])
 print(device_list, report_labels, device_macs)
 # device_list, report_labels, device_macs = candela_apis.start_connectivity(manager_ip='192.168.214.61', port=8080, server_ip='192.168.1.61', ssid_5g='Walkin_open', encryption_5g='open', passwd_5g='[BLANK]')
-# candela_apis.start_ftp_test(ssid='Walkin_open', password='[BLANK]', security='open', bands=[
-#                             '5G'], directions=['Download'], file_sizes=['10MB'], device_list=','.join(device_list))
+candela_apis.start_ftp_test(ssid='Walkin_open', password='[BLANK]', security='open', bands=[
+                            '5G'], directions=['Download'], file_sizes=['10MB'], device_list=','.join(device_list))
