@@ -316,13 +316,11 @@ NOTES:
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   23-MAY-2023,
-             Build Version:  5.4.6
-             Kernel Version: 6.2.14+
+VERIFIED_ON:
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
+          Copyright 2024 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 ''')
