@@ -1587,6 +1587,7 @@ def main():
         selected_devices,report_labels,selected_macs = obj.devices.query_user(dowebgui = args.dowebgui, device_list = resource_ids_generated)
         # Modify obj.resource_ids to include only the second part of each ID (after '.')
         obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list.split(","))
+        available_resources= [obj.resource_ids]
     else :
         # Case where args.no_laptops flag is set
         # if args.no_laptops:

@@ -1192,7 +1192,6 @@ class RealBrowserTest(Realm):
                         if ((self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) == self.count or (self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) > self.count):
                             
                             if temp[i] == -1:
-                                print("trueee",self.data['total_urls'][i])
                                 temp[i] = int(abs(( datetime.now() - start_time_check ).total_seconds()))
 
 
