@@ -4,7 +4,7 @@ from tkinter import ttk
 from tkinter import StringVar
 import importlib
 
-lf_rig_json = importlib.import_module("lf_create_dut_json")
+lf_dut_json = importlib.import_module("lf_create_dut_json")
 
 class lf_create_dut_tab():
    def __init__(self, dut_tab, window_tooltip, current_working_directory):
