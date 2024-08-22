@@ -1,20 +1,18 @@
 import asyncio
 import importlib
 import datetime
+from datetime import datetime
 import time
 import requests
 import logging
 import pandas as pd
 from lf_base_interop_profile import RealDevice
 from lf_ftp import FtpTest
-from lf_webpage import HttpDownload
-from lf_base_interop_profile import RealDevice
-from lf_ftp import FtpTest
+from lf_webpage import http_test
 from lf_interop_throughput import Throughput
 from lf_interop_video_streaming import VideoStreamingTest
 from lf_interop_real_browser_test import RealBrowserTest
 from datetime import datetime, timedelta
-http_test = importlib.import_module("py-scripts.lf_webpage")
 througput_test=importlib.import_module("py-scripts.lf_interop_throughput")
 video_streaming_test=importlib.import_module("py-scripts.lf_interop_video_streaming")
 web_browser_test=importlib.import_module("py-scripts.lf_interop_real_browser_test")
@@ -37,6 +35,7 @@ class Candela:
         self.lanforge_ip = ip
         self.port = port
         self.api_url = 'http://{}:{}'.format(self.lanforge_ip, self.port)
+        self.cleanup = lf_cleanup.lf_clean(host=self.lanforge_ip, port=self.port, resource='all')
 
     def api_get(self, endp: str):
         """
