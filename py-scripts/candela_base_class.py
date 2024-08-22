@@ -2,8 +2,12 @@ import asyncio
 import importlib
 import datetime
 import time
+import requests
+import logging
 import pandas as pd
-import shutil
+from lf_base_interop_profile import RealDevice
+from lf_ftp import FtpTest
+from lf_webpage import HttpDownload
 from lf_base_interop_profile import RealDevice
 from lf_ftp import FtpTest
 from lf_interop_throughput import Throughput
@@ -14,10 +18,13 @@ http_test = importlib.import_module("py-scripts.lf_webpage")
 througput_test=importlib.import_module("py-scripts.lf_interop_throughput")
 video_streaming_test=importlib.import_module("py-scripts.lf_interop_video_streaming")
 web_browser_test=importlib.import_module("py-scripts.lf_interop_real_browser_test")
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+logger = logging.getLogger(__name__)
 
 
 class Candela:
-    """_summary_
+    """
+    Candela Class file to invoke different scripts from py-scripts.
     """
 
     def __init__(self, ip='localhost', port=8080):
@@ -30,6 +37,97 @@ class Candela:
         self.lanforge_ip = ip
         self.port = port
         self.api_url = 'http://{}:{}'.format(self.lanforge_ip, self.port)
+
+    def api_get(self, endp: str):
+        """
+        Sends a GET request to fetch data
+
+        Args:
+            endp (str): API endpoint
+
+        Returns:
+            response: response code for the request
+            data: data returned in the response
+        """
+        if endp[0] != '/':
+            endp = '/' + endp
+        response = requests.get(url=self.api_url + endp)
+        data = response.json()
+        return response, data
+
+    def api_post(self, endp: str, payload: dict):
+        """
+        Sends POST request
+
+        Args:
+            endp (str): API endpoint
+            payload (dict): Endpoint data in JSON format
+
+        Returns:
+            response: response code for the request
+                      None if endpoint is invalid
+        """
+        if endp == '' or endp is None:
+            logger.info('Invalid endpoint specified.')
+            return False
+        if endp[0] != '/':
+            endp = '/' + endp
+        response = requests.post(url=self.api_url + endp, json=payload)
+        return response
+
+    def get_device_info(self):
+        """
+        Fetches all the real devices clustered to the LANforge
+
+        Returns:
+            interop_tab_response: if invalid response code. Response code other than 200.
+            androids: Android serials. Defaults to [].
+            linux: Linux device hostnames. Defaults to [].
+            macbooks: Mac Book hostnames. Defaults to [].
+            windows: Windows hostnames. Defaults to [].
+            iOS: iOS serials. Defaults to [].
+        """
+        androids, linux, macbooks, windows, iOS = [], [], [], [], []
+
+        # querying interop tab for fetching android and iOS data
+        interop_tab_response, interop_tab_data = self.api_get(endp='/adb')
+        if interop_tab_response.status_code != 200:
+            logger.info('Error fetching the data with the {}. Returned {}'.format(
+                '/adb', interop_tab_response))
+            return interop_tab_response
+        for mobile in interop_tab_data['devices']:
+            mobile_serial, mobile_data = list(
+                mobile.keys())[0], list(mobile.values())[0]
+            if mobile_data['phantom']:
+                continue
+            if mobile_data['device-type'] == 'Android':
+                androids.append(mobile_data)
+            elif mobile_data['device-type'] == 'iOS':
+                iOS.append(mobile_data)
+
+        # querying resource manager tab for fetching laptops data
+        resource_manager_tab_response, resource_manager_data = self.api_get(
+            endp='/resource/all')
+        if resource_manager_tab_response.status_code != 200:
+            logger.info('Error fetching the data with the {}. Returned {}'.format(
+                '/resources/all', interop_tab_response))
+            return interop_tab_response
+        resources_list = [resource_manager_data['resource']
+                          if 'resource' in resource_manager_data else resource_manager_data['resources']][0]
+        for resource in resources_list:
+            resource_port, resource_data = list(resource.keys())[
+                0], list(resource.values())[0]
+            if resource_data['phantom']:
+                continue
+            if resource_data['app-id'] == '0' and resource_data['ct-kernel'] is False:
+                if 'Win' in resource_data['hw version']:
+                    windows.append(resource_data)
+                elif 'Apple' in resource_data['hw version']:
+                    macbooks.append(resource_data)
+                elif 'Linux' in resource_data['hw version']:
+                    linux.append(resource_data)
+
+        return androids, linux, macbooks, windows, iOS
 
     def start_connectivity(self,
                            manager_ip=None,
@@ -95,8 +193,6 @@ class Candela:
                            client_cert_6g=None,
                            pk_passwd_6g=None,
                            pac_file_6g=None,
-                           enable_wifi=None,
-                           disable_wifi=None,
                            selected_bands=['5g'],
                            groups=False,
                            _debug_on=False,
@@ -104,6 +200,87 @@ class Candela:
                            all_android=None,
                            all_laptops=None,
                            device_list=None):
+        """
+        Method to attempt devices to connect to the given SSID.
+
+        Args:
+            manager_ip (str, optional): LANforge IP. Defaults to None.
+            port (int, optional): LANforge port. Defaults to 8080.
+            server_ip (str, optional): Upstream IP for LANforge Interop App in androids. Defaults to None.
+            ssid_2g (str, optional): 2G SSID. Defaults to None.
+            passwd_2g (str, optional): Password for 2G SSID. Use [BLANK] incase of Open security. Defaults to None.
+            encryption_2g (str, optional): Security for 2G SSID. Defaults to None.
+            eap_method_2g (str, optional): Defaults to None.
+            eap_identity_2g (str, optional): Defaults to None.
+            ieee80211_2g (str, optional): Defaults to None.
+            ieee80211u_2g (str, optional): Defaults to None.
+            ieee80211w_2g (str, optional): Defaults to None.
+            enable_pkc_2g (str, optional): Defaults to None.
+            bss_transition_2g (str, optional): Defaults to None.
+            power_save_2g (str, optional): Defaults to None.
+            disable_ofdma_2g (str, optional): Defaults to None.
+            roam_ft_ds_2g (str, optional): Defaults to None.
+            key_management_2g (str, optional): Defaults to None.
+            pairwise_2g (str, optional): Defaults to None.
+            private_key_2g (str, optional): Defaults to None.
+            ca_cert_2g (str, optional): Defaults to None.
+            client_cert_2g (str, optional): Defaults to None.
+            pk_passwd_2g (str, optional): Defaults to None.
+            pac_file_2g (str, optional): Defaults to None.
+            ssid_5g (str, optional): 5G SSID. Defaults to None.
+            passwd_5g (str, optional): Password for 5G SSID. Use [BLANK] incase of Open Security. Defaults to None.
+            encryption_5g (str, optional): Encryption for 5G SSID. Defaults to None.
+            eap_method_5g (str, optional): Defaults to None.
+            eap_identity_5g (str, optional): Defaults to None.
+            ieee80211_5g (str, optional): Defaults to None.
+            ieee80211u_5g (str, optional): Defaults to None.
+            ieee80211w_5g (str, optional): Defaults to None.
+            enable_pkc_5g (str, optional): Defaults to None.
+            bss_transition_5g (str, optional): Defaults to None.
+            power_save_5g (str, optional): Defaults to None.
+            disable_ofdma_5g (str, optional): Defaults to None.
+            roam_ft_ds_5g (str, optional): Defaults to None.
+            key_management_5g (str, optional): Defaults to None.
+            pairwise_5g (str, optional): Defaults to None.
+            private_key_5g (str, optional): Defaults to None.
+            ca_cert_5g (str, optional): Defaults to None.
+            client_cert_5g (str, optional): Defaults to None.
+            pk_passwd_5g (str, optional): Defaults to None.
+            pac_file_5g (str, optional): Defaults to None.
+            ssid_6g (str, optional): 6G SSID. Defaults to None.
+            passwd_6g (str, optional): Password for 6G SSID. Use [BLANK] incase of Open Security. Defaults to None.
+            encryption_6g (str, optional): Encryption for 6G SSID. Defaults to None.
+            eap_method_6g (str, optional): Defaults to None.
+            eap_identity_6g (str, optional): Defaults to None.
+            ieee80211_6g (str, optional): Defaults to None.
+            ieee80211u_6g (str, optional): Defaults to None.
+            ieee80211w_6g (str, optional): Defaults to None.
+            enable_pkc_6g (str, optional): Defaults to None.
+            bss_transition_6g (str, optional): Defaults to None.
+            power_save_6g (str, optional): Defaults to None.
+            disable_ofdma_6g (str, optional): Defaults to None.
+            roam_ft_ds_6g (str, optional): Defaults to None.
+            key_management_6g (str, optional): Defaults to None.
+            pairwise_6g (str, optional): Defaults to None.
+            private_key_6g (str, optional): Defaults to None.
+            ca_cert_6g (str, optional): Defaults to None.
+            client_cert_6g (str, optional): Defaults to None.
+            pk_passwd_6g (str, optional): Defaults to None.
+            pac_file_6g (str, optional): Defaults to None.
+            selected_bands (list, optional): Specify '2g', '5g', '6g' in a list to connect devices on multiple SSIDS. Defaults to ['5g'].
+            groups (bool, optional): Defaults to False.
+            _debug_on (bool, optional): Defaults to False.
+            _exit_on_error (bool, optional): Defaults to False.
+            all_android (_type_, optional): Defaults to None.
+            all_laptops (_type_, optional): Defaults to None.
+            device_list (list, optional): List of serial numbers for Mobiles, and port numbers for Laptops. Defaults to None.
+
+        Returns:
+            (device_list, report_labels, device_macs) (tuple):    *device_list* (list): Port numbers of all the devices that are successfully connected to the given SSID.\n
+            *report_labels* (list): Report Labels of all the devices that are successfully connected to the given SSID.\n
+            Format: "Port_number OS-type hostname" trimmed to 25 characters.\n
+            *device_macs* (list): MAC IDs of all the devices that are successfully connected to the given SSID.
+        """
         self.real_device_class = RealDevice(manager_ip=manager_ip,
                                             port=port,
                                             server_ip=server_ip,
@@ -167,8 +344,6 @@ class Candela:
                                             client_cert_6g=client_cert_6g,
                                             pk_passwd_6g=pk_passwd_6g,
                                             pac_file_6g=pac_file_6g,
-                                            enable_wifi=enable_wifi,
-                                            disable_wifi=disable_wifi,
                                             selected_bands=['5g'],
                                             groups=groups,
                                             _debug_on=_debug_on,
@@ -177,7 +352,9 @@ class Candela:
                                             all_laptops=all_laptops)
         d = self.real_device_class.query_all_devices_to_configure_wifi(
             device_list=device_list)
-        return asyncio.run(self.real_device_class.configure_wifi())
+        device_list, report_labels, device_macs = asyncio.run(
+            self.real_device_class.configure_wifi())
+        return device_list, report_labels, device_macs
 
     def start_ftp_test(self,
                        ssid,
@@ -195,28 +372,53 @@ class Candela:
                        clients_type='Real',
                        device_list=[],
                        background=False):
+        """
+        Method to start FTP test on the given device list
+
+        Args:
+            ssid (str): SSID of the DUT
+            password (str): Password for the SSID. [BLANK] if encryption is open.
+            security (str): Encryption for the SSID.
+            ap_name (str, optional): Name of the AP. Defaults to ''.
+            band (str, optional): 2g, 5g or 6g. Defaults to '5g'.
+            direction (str, optional): Download or Upload. Defaults to 'Download'.
+            file_size (str, optional): File Size. Defaults to '12MB'.
+            traffic_duration (int, optional): Duration of the test in seconds. Defaults to 60.
+            upstream (str, optional): Upstream port. Defaults to 'eth1'.
+            lf_username (str, optional): Username of LANforge. Defaults to 'lanforge'.
+            lf_password (str, optional): Password of LANforge. Defaults to 'lanforge'.
+            ssh_port (int, optional): SSH port. Defaults to 22.
+            clients_type (str, optional): Clients type. Defaults to 'Real'.
+            device_list (list, optional): List of port numbers of the devices in shelf.resource format. Defaults to [].
+            background (bool, optional): Enable this to just start the test. Disabling background makes the test to run for the given duration and then stop. Defaults to False.
+
+        Returns:
+            (test_start_time, ftp_object) (tuple): Test start time and ftp test object if background argument is set to True.\n
+
+            *(test_start_time, test_end_time) (tuple)*: Test start time and end time if background is set to False.
+        """
         # for band in bands:
         #     for direction in directions:
         #         for file_size in file_sizes:
         # Start Test
         obj = FtpTest(lfclient_host=self.lanforge_ip,
-                        lfclient_port=self.port,
-                        upstream=upstream,
-                        dut_ssid=ssid,
-                        dut_passwd=password,
-                        dut_security=security,
-                        band=band,
-                        ap_name=ap_name,
-                        file_size=file_size,
-                        direction=direction,
-                        lf_username=lf_username,
-                        lf_password=lf_password,
-                        # duration=pass_fail_duration(band, file_size),
-                        traffic_duration=traffic_duration,
-                        ssh_port=ssh_port,
-                        clients_type=clients_type,
-                        device_list=device_list
-                        )
+                      lfclient_port=self.port,
+                      upstream=upstream,
+                      dut_ssid=ssid,
+                      dut_passwd=password,
+                      dut_security=security,
+                      band=band,
+                      ap_name=ap_name,
+                      file_size=file_size,
+                      direction=direction,
+                      lf_username=lf_username,
+                      lf_password=lf_password,
+                      # duration=pass_fail_duration(band, file_size),
+                      traffic_duration=traffic_duration,
+                      ssh_port=ssh_port,
+                      clients_type=clients_type,
+                      device_list=device_list
+                      )
 
         obj.data = {}
         obj.file_create()
@@ -227,34 +429,48 @@ class Candela:
         # obj.precleanup()
         obj.build()
         if not obj.passes():
-            print(obj.get_fail_message())
+            logger.info(obj.get_fail_message())
             exit(1)
 
         # First time stamp
         test_start_time = datetime.datetime.now()
-        print("Traffic started running at ", test_start_time)
+        logger.info("Traffic started running at ", test_start_time)
         obj.start(False, False)
-        if(background):
+        if (background):
             return test_start_time, obj
         time.sleep(traffic_duration)
         obj.stop()
-        print("Traffic stopped running")
+        logger.info("Traffic stopped running")
         obj.my_monitor()
         obj.postcleanup()
         test_end_time = datetime.datetime.now()
-        print("Test ended at", test_end_time)
+        logger.info("Test ended at", test_end_time)
         return test_start_time, test_end_time
 
     def stop_ftp_test(self, ftp_object):
+        """
+        Method to stop the ftp test.
+
+        Args:
+            ftp_object (object): FTP test object returned from *start_ftp_test* method.
+
+        Returns:
+            test_end_time (datetime_object): FTP test end time.
+        """
         ftp_object.stop()
-        print("Traffic stopped running")
+        logger.info("Traffic stopped running")
         ftp_object.my_monitor()
         ftp_object.postcleanup()
         test_end_time = datetime.datetime.now()
-        print("FTP test ended at", test_end_time)
+        logger.info("FTP test ended at", test_end_time)
         return test_end_time
     
+    def start_http_test(self):
+        pass
 
+    def stop_http_test(self):
+        pass
+    
     def start_throughput_test(self,
                             upstream_port= 'eth0',
                             traffic_type="lf_tcp",
@@ -265,13 +481,49 @@ class Candela:
                             packet_size="-1",
                             incremental_capacity=[],
                             tos="Best_Efforts",
-                            report_timer=5,
+                            report_timer="5s",
                             load_type="wc_per_client_load",
                             do_interopability=False,
                             incremental=[],
                             precleanup=False,
                             postcleanup=False,
                               ):
+        """
+        Initiates a throughput test with various configurable parameters.
+
+        Args:
+            upstream_port (str): Specifies the port that generates traffic. 
+                                Format should be <resource>.<port>, e.g., '1.eth1'.
+                                Default is 'eth0'.
+            traffic_type (str): Select the traffic type, e.g., 'lf_tcp' or 'lf_udp'.
+                                Default is 'lf_tcp'.
+            device_list (list): Enter the devices on which the test should be run.
+                                Default is an empty list [].
+            test_duration (str): Duration of the test, e.g., '60s'.
+                                Default is '60s'.
+            upload_min_rate_bps (int): Minimum upload rate per connection in bits per second.
+                                    Default is 2560.
+            download_min_rate_bps (int): Minimum download rate per connection in bits per second.
+                                        Default is 2560.
+            packet_size (str): Size of the packet in bytes. Should be greater than 16B and 
+                            less than 64KB (65507). Default is '-1'.
+            incremental_capacity (list): Incremental values for network load testing as a 
+                                        comma-separated list, e.g., [10, 20, 30]. 
+                                        Default is an empty list [].
+            report_timer (int): Duration to collect data in seconds. Default is 5 seconds.
+            load_type (str): Type of load, e.g., 'wc_intended_load' or 'wc_per_client_load'.
+                            Default is 'wc_per_client_load'.
+            do_interopability (bool): If true, will execute script for interoperability testing.
+                                    Default is False.
+            incremental (list): Allows user to enter incremental values for specific testing scenarios.
+                                Default is an empty list [].
+            precleanup (bool): If true, cleans up the cross-connections before starting the test.
+                            Default is False.
+            postcleanup (bool): If true, cleans up the cross-connections after stopping the test.
+                                Default is False.
+        Returns:
+            returns individual_df: A DataFrame containing the test results.
+        """
         if do_interopability:
             incremental_capacity='1'
         if test_duration.endswith('s') or test_duration.endswith('S'):
@@ -301,7 +553,7 @@ class Candela:
 
         
         if (int(packet_size)<16 or int(packet_size)>65507) and int(packet_size)!=-1:
-            print("Packet size should be greater than 16 bytes and less than 65507 bytes incorrect")
+            logger.info("Packet size should be greater than 16 bytes and less than 65507 bytes incorrect")
             return
         obj=Throughput(host=self.lanforge_ip,
                        ip=self.lanforge_ip,
@@ -330,10 +582,10 @@ class Candela:
             return
         check_increment_condition=obj.check_incremental_list()
         if check_increment_condition==False:
-            print("Incremental values given for selected devices are incorrect")
+            logger.info("Incremental values given for selected devices are incorrect")
             return
         elif(len(incremental_capacity)>0 and check_increment_condition==False):
-            print("Incremental values given for selected devices are incorrect")
+            logger.info("Incremental values given for selected devices are incorrect")
             return
         created_cxs = obj.build()
         time.sleep(10)
@@ -377,7 +629,7 @@ class Candela:
         obj.stop()
         if postcleanup:
             obj.cleanup()
-
+        return individual_df
 
     def start_video_streaming_test(self, ssid="ssid_wpa_2g", passwd="something", encryp="psk",
                         suporrted_release=["7.0", "10", "11", "12"], max_speed=0,
@@ -385,6 +637,43 @@ class Candela:
                         device_list=[], media_quality='0',media_source='1',
                         incremental = False,postcleanup=False,
                         precleanup=False,incremental_capacity=None):
+        """
+        Initiates a video streaming test with various configurable parameters.
+
+        Args:
+            ssid (str): Specify the SSID on which the test will be running.
+                        Default is 'ssid_wpa_2g'.
+            passwd (str): Specify the encryption password on which the test will be running.
+                        Default is 'something'.
+            encryp (str): Specify the encryption type for the network, e.g., 'open', 'psk', 'psk2', 'sae', 'psk2jsae'.
+                        Default is 'psk'.
+            suporrted_release (list): List of supported Android releases for the test. 
+                                    Default is ["7.0", "10", "11", "12"].
+            max_speed (int): Specify the maximum speed in bytes. 
+                            Default is 0 (unlimited).
+            url (str): Specify the URL to test the video streaming on.
+                    Default is 'www.google.com'.
+            urls_per_tenm (int): Number of URLs to test per ten minutes. 
+                                Default is 100.
+            duration (str): Duration to run the video streaming test. 
+                            Default is '60'.
+            device_list (list): Provide resource IDs of Android devices to run the test on, e.g., ["10", "12", "14"].
+                                Default is an empty list [].
+            media_quality (str): Specify the quality of the media for the test, e.g., '0' (low), '1' (medium), '2' (high).
+                                Default is '0'.
+            media_source (str): Specify the media source for the test, e.g., '1' (local), '2' (remote).
+                                Default is '1'.
+            incremental (bool): Enables incremental testing with specified values. 
+                                Default is False.
+            postcleanup (bool): If true, cleans up the connections after the test is stopped.
+                                Default is False.
+            precleanup (bool): If true, cleans up the connections before the test is started.
+                            Default is False.
+            incremental_capacity (str): Specify the incremental values for load testing, e.g., "1,2,3".
+                                        Default is None.
+        Returns:
+            returns individual_df: A DataFrame containing the test results.
+        """
         media_source_dict={
                        'dash':'1',
                        'smooth_streaming':'2',
@@ -459,7 +748,7 @@ class Candela:
                         if ele.startswith(element):
                             obj.android_list.append(ele)
                 else:
-                    print("{} device is not available".format(element))
+                    logger.info("{} device is not available".format(element))
             new_android = [int(item.split('.')[1]) for item in obj.android_list]
 
             resource_ids = sorted(new_android)
@@ -471,7 +760,7 @@ class Candela:
             # Handle cases where no devices are selected
             
             if not selected_devices:
-                print("devices donot exist..!!")
+                logger.info("devices donot exist..!!")
                 return 
                 
             obj.android_list = selected_devices
@@ -490,7 +779,7 @@ class Candela:
                 resource_ids1 = list(map(int, sorted_string.split(',')))
                 modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
                 if not all(x in modified_list for x in resource_ids1):
-                    print("Verify Resource ids, as few are invalid...!!")
+                    logger.info("Verify Resource ids, as few are invalid...!!")
                     exit()
                 resource_ids_sm = obj.resource_ids
                 resource_list = resource_ids_sm.split(',')            
@@ -500,19 +789,19 @@ class Candela:
                 available_resources=list(resource_set)
     
         if len(available_resources)==0:
-            print("No devices which are selected are available in the lanforge")
+            logger.info("No devices which are selected are available in the lanforge")
             exit()
         gave_incremental=False
         if len(resource_list_sorted)==0:
-            print("Selected Devices are not available in the lanforge")
+            logger.info("Selected Devices are not available in the lanforge")
             exit(1)
         if incremental and not webgui_incremental :
             if obj.resource_ids:
-                print("The total available devices are {}".format(len(available_resources)))
+                logger.info("The total available devices are {}".format(len(available_resources)))
                 obj.incremental = input('Specify incremental values as 1,2,3 : ')
                 obj.incremental = [int(x) for x in obj.incremental.split(',')]
             else:
-                print("incremental Values are not needed as Android devices are not selected..")
+                logger.info("incremental Values are not needed as Android devices are not selected..")
         elif incremental==False:
             gave_incremental=True
             obj.incremental=[len(available_resources)]
@@ -527,10 +816,10 @@ class Candela:
             if resource_list_sorted:
                 resources_list1 = resource_list_sorted
             if obj.incremental[-1] > len(available_resources):
-                print("Exiting the program as incremental values are greater than the resource ids provided")
+                logger.info("Exiting the program as incremental values are greater than the resource ids provided")
                 exit()
             elif obj.incremental[-1] < len(available_resources) and len(obj.incremental) > 1:
-                print("Exiting the program as the last incremental value must be equal to selected devices")
+                logger.info("Exiting the program as the last incremental value must be equal to selected devices")
                 exit()
         
         # To create cx for selected devices
@@ -543,7 +832,7 @@ class Candela:
         test_time = datetime.now()
         test_time = test_time.strftime("%b %d %H:%M:%S")
 
-        print("Initiating Test...")
+        logger.info("Initiating Test...")
 
         individual_dataframe_columns=[]
 
@@ -578,7 +867,7 @@ class Candela:
 
         incremental_capacity_list_values=obj.get_incremental_capacity_list()
         if incremental_capacity_list_values[-1]!=len(available_resources):
-            print("Incremental capacity doesnt match available devices")
+            logger.info("Incremental capacity doesnt match available devices")
             if postcleanup==True:
                 obj.postcleanup()
             exit(1)
@@ -659,9 +948,9 @@ class Candela:
                     # Start specific devices based on incremental capacity
                     obj.start_specific(cx_order_list[i])
                     if cx_order_list[i]:
-                        print("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
+                        logger.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
                     else:
-                        print("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
+                        logger.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
                     
                     file_path = "video_streaming_realtime_data.csv"
 
@@ -685,7 +974,7 @@ class Candela:
             try:
                 eid_data = obj.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal")
             except KeyError:
-                print("Error: 'interfaces' key not found in port data")
+                logger.info("Error: 'interfaces' key not found in port data")
                 exit(1)
 
             resource_ids = list(map(int, obj.resource_ids.split(',')))
@@ -697,16 +986,51 @@ class Candela:
                         if not hw_version.startswith(('Win', 'Linux', 'Apple')) and int(resource_hw_data['resource']['eid'].split('.')[1]) in resource_ids:
                             username.append(resource_hw_data['resource']['user'] )
 
-            print("Test Stopped")
+            logger.info("Test Stopped")
             if postcleanup==True:
                 obj.postcleanup()
 
+        return individual_df
+
     def start_web_browser_test(self,ssid="ssid_wpa_2g", passwd="something", encryp="psk",
-                        suporrted_release=["7.0", "10", "11", "12"], max_speed=0,
-                        url="www.google.com", count=1, duration="60s", 
-                        device_list="", 
-                        incremental = False,incremental_capacity=None,postcleanup=False,
-                        precleanup=False):
+                    suporrted_release=["7.0", "10", "11", "12"], max_speed=0,
+                    url="www.google.com", count=1, duration="60s", 
+                    device_list="", 
+                    incremental = False,incremental_capacity=None,postcleanup=False,
+                    precleanup=False):
+        """
+        Initiates a web browser test with various configurable parameters.
+
+        Args:
+            ssid (str): Specify the SSID on which the test will be running.
+                        Default is 'ssid_wpa_2g'.
+            passwd (str): Specify the encryption password on which the test will be running.
+                        Default is 'something'.
+            encryp (str): Specify the encryption type for the network, e.g., 'open', 'psk', 'psk2', 'sae', 'psk2jsae'.
+                        Default is 'psk'.
+            suporrted_release (list): List of supported Android releases for the test.
+                                    Default is ["7.0", "10", "11", "12"].
+            max_speed (int): Specify the maximum speed in bytes. 
+                            Default is 0 (unlimited).
+            url (str): Specify the URL to test the web browser on.
+                    Default is 'www.google.com'.
+            count (int): Specify the number of URLs to calculate the time taken to reach them.
+                        Default is 1.
+            duration (str): Duration to run the web browser test.
+                            Default is '60s'.
+            device_list (str): Provide resource IDs of Android devices to run the test on, e.g., "10,12,14".
+                            Default is an empty string "".
+            incremental (bool): Enables incremental testing with specified values.
+                                Default is False.
+            incremental_capacity (str): Specify the incremental values for load testing, e.g., "1,2,3".
+                                        Default is None.
+            postcleanup (bool): If true, cleans up the connections after the test is stopped.
+                                Default is False.
+            precleanup (bool): If true, cleans up the connections before the test is started.
+                            Default is False.
+        Returns:
+            returns obj.data: A DataFrame containing the test results.
+        """
         webgui_incremental=incremental_capacity
         obj = RealBrowserTest(host=self.lanforge_ip, ssid=ssid, passwd=passwd, encryp=encryp,
                         suporrted_release=["7.0", "10", "11", "12"], max_speed=max_speed,
@@ -760,7 +1084,7 @@ class Candela:
                         if ele.startswith(element):
                             obj.android_list.append(ele)
                 else:
-                    print("{} device is not available".format(element))
+                    logger.info("{} device is not available".format(element))
             new_android = [int(item.split('.')[1]) for item in obj.android_list]
 
             resource_ids = sorted(new_android)
@@ -771,7 +1095,7 @@ class Candela:
             selected_devices,report_labels,selected_macs = obj.devices.query_user()
             # Handle cases where no devices are selected
             if not selected_devices:
-                print("devices donot exist..!!")
+                logger.info("devices donot exist..!!")
                 return 
             
             obj.android_list = selected_devices
@@ -796,7 +1120,7 @@ class Candela:
 
                 # Check for invalid resource IDs
                 if not all(x in modified_list for x in resource_ids1):
-                    print("Verify Resource ids, as few are invalid...!!")
+                    logger.info("Verify Resource ids, as few are invalid...!!")
                     exit()
                 resource_ids_sm = obj.resource_ids
                 resource_list = resource_ids_sm.split(',')            
@@ -805,9 +1129,9 @@ class Candela:
                 resource_ids_generated = ','.join(resource_list_sorted)
                 available_resources=list(resource_set)
 
-        print("Devices available: {}".format(available_resources))
+        logger.info("Devices available: {}".format(available_resources))
         if len(available_resources)==0:
-            print("There no devices available which are selected")
+            logger.info("There no devices available which are selected")
             exit()
         # Handle incremental values input if resource IDs are specified and in not specified case.
         if incremental and not webgui_incremental :
@@ -815,7 +1139,7 @@ class Candela:
                 obj.incremental = input('Specify incremental values as 1,2,3 : ')
                 obj.incremental = [int(x) for x in obj.incremental.split(',')]
             else:
-                print("incremental Values are not needed as Android devices are not selected..")
+                logger.info("incremental Values are not needed as Android devices are not selected..")
         
         # Handle webgui_incremental argument
         if webgui_incremental:
@@ -827,7 +1151,7 @@ class Candela:
                 obj.incremental = incremental
 
         # if obj.incremental and (not obj.resource_ids):
-        #     print("incremental values are not needed as Android devices are not selected.")
+        #     logger.info("incremental values are not needed as Android devices are not selected.")
         #     exit()
         
         # Validate incremental and resource IDs combination
@@ -837,17 +1161,17 @@ class Candela:
                 resources_list1 = resource_list_sorted
             # Check if the last incremental value is greater or less than resources provided
             if obj.incremental[-1] > len(available_resources):
-                print("Exiting the program as incremental values are greater than the resource ids provided")
+                logger.info("Exiting the program as incremental values are greater than the resource ids provided")
                 exit()
             elif obj.incremental[-1] < len(available_resources) and len(obj.incremental) > 1:
-                print("Exiting the program as the last incremental value must be equal to selected devices")
+                logger.info("Exiting the program as the last incremental value must be equal to selected devices")
                 exit()
 
         # obj.run
         test_time = datetime.now()
         test_time = test_time.strftime("%b %d %H:%M:%S")
 
-        print("Initiating Test...")
+        logger.info("Initiating Test...")
         available_resources= [int(n) for n in available_resources]
         available_resources.sort()
         available_resources_string=",".join([str(n) for n in available_resources])
@@ -862,7 +1186,7 @@ class Candela:
 
         keys = list(obj.http_profile.created_cx.keys())
         if len(keys)==0:
-            print("Selected Devices are not available in the lanforge")
+            logger.info("Selected Devices are not available in the lanforge")
             exit(1)
         cx_order_list = []
         index = 0
@@ -883,7 +1207,7 @@ class Candela:
         if incremental or webgui_incremental:
             incremental_capacity_list_values=obj.get_incremental_capacity_list()
             if incremental_capacity_list_values[-1]!=len(available_resources):
-                print("Incremental capacity doesnt match available devices")
+                logger.info("Incremental capacity doesnt match available devices")
                 if postcleanup==True:
                     obj.postcleanup()
                 exit(1)
@@ -970,9 +1294,9 @@ class Candela:
                     
                     iteration_number+=len(cx_order_list[i])
                     if cx_order_list[i]:
-                        print("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
+                        logger.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
                     else:
-                        print("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
+                        logger.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
                     
                     # duration = 60 * duration
                     file_path = "webBrowser.csv"
@@ -1035,7 +1359,7 @@ class Candela:
             obj.data['total_urls'] = total_urls
             obj.data['uc_min_val'] = uc_min_val 
             obj.data['timeout'] = timeout
-        print("Test Completed")
+        logger.info("Test Completed")
 
         # Handle incremental values and generate reports accordingly
         prev_inc_value = 0
@@ -1066,66 +1390,63 @@ class Candela:
                 df1.to_csv(file_path, mode='w', index=False)     
         if postcleanup:
             obj.postcleanup()
-        print("Test Stopped")
+        logger.info("Test Stopped")
 
 
+        return obj.data
 
 
-
-       
- 
-
-
-
+logger_config = lf_logger_config.lf_logger_config()
 
 candela_apis = Candela(ip='192.168.214.61', port=8080)
 # device_list, report_labels, device_macs = candela_apis.start_connectivity(
 #     manager_ip='192.168.214.61', port=8080, server_ip='192.168.1.61', ssid_5g='Walkin_open', encryption_5g='open', passwd_5g='[BLANK]', device_list=['RZ8N10FFTKE', 'RZ8NB1KWXLB'])
-# print(device_list, report_labels, device_macs)
-# device_list, report_labels, device_macs = candela_apis.start_connectivity(manager_ip='192.168.214.61', port=8080, server_ip='192.168.1.61', ssid_5g='Walkin_open', encryption_5g='open', passwd_5g='[BLANK]')
+# logger.info(device_list, report_labels, device_macs)
+# # device_list, report_labels, device_macs = candela_apis.start_connectivity(manager_ip='192.168.214.61', port=8080, server_ip='192.168.1.61', ssid_5g='Walkin_open', encryption_5g='open', passwd_5g='[BLANK]')
 # candela_apis.start_ftp_test(ssid='Walkin_open', password='[BLANK]', security='open', bands=[
 #                             '5G'], directions=['Download'], file_sizes=['10MB'], device_list=','.join(device_list))
 
-
-candela_apis.start_throughput_test(traffic_type="lf_udp",
-                                   device_list="1.10,1.13",
-                                   upload_min_rate_bps=1000000,
-                                    download_min_rate_bps=100000,
-                                    upstream_port="eth1",
-                                    # packet_size="-1",
-                                    # incremental_capacity=[],
-                                    report_timer="5s",
-                                    load_type="wc_intended_load",
-                                    incremental_capacity="1",
-                                    test_duration="30s",
-                                    precleanup=True,
-                                    postcleanup=True
-                                   )
+# print(candela_apis.start_throughput_test(traffic_type="lf_udp",
+#                                    device_list='1.13,1.18,1.19,1.20,1.21',
+#                                     upload_min_rate_bps=1000000,
+#                                     download_min_rate_bps=100000,
+#                                     upstream_port="eth1",
+#                                     # packet_size="-1",
+#                                     # incremental_capacity=[],
+#                                     report_timer="5s",
+#                                     load_type="wc_intended_load",
+#                                     # incremental_capacity="1",
+#                                     test_duration="30s",
+#                                     precleanup=True,
+#                                     postcleanup=True,
+#                                     packet_size=18
+#                                    ))
 
 # candela_apis.start_throughput_test(traffic_type="lf_udp",
-#                                    device_list="1.10,1.11",
+#                                    device_list="1.13,1.18",
 #                                    upload_min_rate_bps=1000000,
-#                                 download_min_rate_bps=100000,
-#                                 upstream_port="eth1",
-#                                 # packet_size="-1",
-#                                 # incremental_capacity=[],
-#                                 report_timer=5,
-#                                 # load_type="wc_per_client_load",
-#                                 test_duration=60,
-#                                 do_interopability=True,
-#                                 precleanup=True,
-#                                 postcleanup=True
+#                                     download_min_rate_bps=100000,
+#                                     upstream_port="eth1",
+#                                     # packet_size="-1",
+#                                     report_timer="5s",
+#                                     test_duration="30s",
+#                                     do_interopability=True,
+#                                     precleanup=True,
+#                                     postcleanup=True
 #                                    )
 
-# candela_apis.start_video_streaming_test(url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+# print(candela_apis.start_video_streaming_test(url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
 #                                         media_source="hls",
 #                                         media_quality="4k",
 #                                         duration="1m",
 #                                         device_list='1.13,1.18,1.19,1.20,1.21',
 #                                         precleanup=True,
 #                                         postcleanup=True,
-#                                         incremental_capacity="3"
-#                                         )
+#                                         # incremental_capacity="1"
+#                                         ))
 
-# candela_apis.start_web_browser_test(device_list="1.13,1.18,1.22,1.23,1.24,1.25,1.26,1.27", incremental_capacity="5"
-# )
+# print(candela_apis.start_web_browser_test(device_list="1.13,1.18,1.22,1.23,1.24,1.25,1.26,1.27", 
+#                                           incremental_capacity="5",
+#                                           duration="30s",
+#                                           url="http://www.google.com",
+#                                             count=6))
