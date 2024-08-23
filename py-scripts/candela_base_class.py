@@ -14,10 +14,13 @@ import lf_interop_ping as ping_test
 from lf_interop_throughput import Throughput
 from lf_interop_video_streaming import VideoStreamingTest
 from lf_interop_real_browser_test import RealBrowserTest
+from test_l3 import L3VariableTime
+from lf_kpi_csv import lf_kpi_csv
 import lf_cleanup
 througput_test=importlib.import_module("py-scripts.lf_interop_throughput")
 video_streaming_test=importlib.import_module("py-scripts.lf_interop_video_streaming")
 web_browser_test=importlib.import_module("py-scripts.lf_interop_real_browser_test")
+lf_report_pdf = importlib.import_module("py-scripts.lf_report")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 logger = logging.getLogger(__name__)
 
@@ -392,7 +395,7 @@ class Candela:
             device_list (list, optional): List of port numbers of the devices in shelf.resource format. Defaults to [].
 
         Returns:
-            *(test_start_time, test_end_time) (tuple)*: Test start time and end time if background is set to False.
+            data (dict): Test results.
         """
         # for band in bands:
         #     for direction in directions:
@@ -423,6 +426,7 @@ class Candela:
             obj.query_realclients()
         obj.set_values()
         obj.count = 0
+        obj.radio = '1.1.wiphy0'
         # obj.precleanup()
         obj.build()
         if not obj.passes():
@@ -431,21 +435,48 @@ class Candela:
 
         # First time stamp
         test_start_time = datetime.now()
-        print("Traffic started running at ", test_start_time)
+        logger.info("Traffic started running at {}".format(test_start_time))
         obj.start(False, False)
         time.sleep(traffic_duration)
         obj.stop()
-        print("Traffic stopped running")
+        logger.info("Traffic stopped running")
         obj.my_monitor()
         obj.postcleanup()
         test_end_time = datetime.now()
-        print("Test ended at", test_end_time)
-        return test_start_time, test_end_time
+        logger.info("Test ended at {}".format(test_end_time))
+        return obj.data
 
     def start_http_test(self, ssid, password, security, http_file_size, device_list, report_labels, device_macs,
                   target_per_ten, upstream='eth1', ap_name='', http_test=http_test, all_bands=False, windows_ports=[],
                   band='5G', lf_username='lanforge', lf_password='lanforge', 
                   test_duration=60):
+        """
+        Method to start HTTP test on the given device list
+
+        Args:
+            ssid (str): SSID
+            password (str): Password for the SSID. [BLANK] in case of open encryption.
+            security (str): Security for the SSID.
+            http_file_size (str): HTTP file size.
+            device_list (list): List of the ports on which the test should be initiated.
+            report_labels (list): Report labels of the device list. Naming convention for the reporting.
+            device_macs (list): MAC IDs for the given device list.
+            target_per_ten (int): 
+            upstream (str, optional): Upstream port. Defaults to 'eth1'.
+            ap_name (str, optional): AP name. Defaults to ''.
+            http_test (http_test_class, optional): Defaults to http_test.
+            all_bands (bool, optional): Defaults to False.
+            windows_ports (list, optional): Windows port list if Windows devices are included in the test. Defaults to [].
+            band (str, optional): Defaults to '5G'.
+            lf_username (str, optional): Defaults to 'lanforge'.
+            lf_password (str, optional): Defaults to 'lanforge'.
+            test_duration (int, optional): Duration to run the test in seconds. Defaults to 60.
+        Raises:
+            ValueError: If band argument does not contain 2.4G, 5G or 6G.
+
+        Returns:
+            result_data (dict): Result data of the test.
+        """        
         http_test_duration = test_duration
         # Error checking to prevent case issues
         Bands = [band]
@@ -537,7 +568,7 @@ class Candela:
             list5G_bytes.extend(rx_bytes_val)
             list5G_speed.extend(rx_rate_val)
             list5G_urltimes.extend(url_times)
-            print(list5G, list5G_bytes, list5G_speed, list5G_urltimes)
+            logger.info('{} {} {} {}'.format(list5G, list5G_bytes, list5G_speed, list5G_urltimes))
             final_dict['5G']['dl_time'] = list5G
             min5.append(min(list5G))
             final_dict['5G']['min'] = min5
@@ -623,10 +654,34 @@ class Candela:
         return result_data
 
     def start_qos_test(self, ssid, password, security,
-                 ap_name, upstream, tos, traffic_type='lf_udp',
+                 ap_name, tos, upstream='eth1', traffic_type='lf_udp',
                  side_a_min=6200000, side_b_min=6200000, side_a_max=0, side_b_max=0, 
-                 test_duration=5, qos_serial_run=True, device_list=[],
+                 test_duration=60, qos_serial_run=True, device_list=[],
                  report_labels=[], device_macs=[]):
+        """
+        Method to start QoS test on the given device list
+
+        Args:
+            ssid (str): SSID
+            password (str): Password for the SSID. [BLANK] in case of open security.
+            security (str): Encryption for the given SSID.
+            ap_name (str): AP Name
+            tos (list): List of all the TOS to initiate the test.
+            upstream (str, optional): Upstream port. Defaults to 'eth1'.
+            traffic_type (str, optional): lf_tcp incase of TCP traffic, lf_udp incase of UDP. Defaults to 'lf_udp'.
+            side_a_min (int, optional): Min upload rate. Defaults to 6200000.
+            side_b_min (int, optional): Min download rate. Defaults to 6200000.
+            side_a_max (int, optional): Max upload rate. Use 0 if needs the same value as Min upload rate. Defaults to 0.
+            side_b_max (int, optional): Max download rate. Use 0 if needs the same value as Min download rate. Defaults to 0.
+            test_duration (int, optional): Duration of the test in seconds. Defaults to 60.
+            qos_serial_run (bool, optional): Disable this if wanted to run on parallel. Defaults to True.
+            device_list (list, optional): List containing the port names of the selected devices. Defaults to [].
+            report_labels (list, optional): Report labels for the selected devices. Defaults to [].
+            device_macs (list, optional): MAC IDs for the selected devices. Defaults to [].
+
+        Returns:
+            data (dict): Result data
+        """                   
         if test_duration:
             qos_test_duration = test_duration
         test_results = {'test_results': []}
@@ -664,7 +719,7 @@ class Candela:
             try:
                 connections_download, connections_upload, drop_a_per, drop_b_per = qos_test_obj.monitor()
             except Exception as e:
-                print(f"Failed at Monitoring the CX... {e}")
+                logger.info(f"Failed at Monitoring the CX... {e}")
             qos_test_obj.stop()
             time.sleep(5)
             test_results['test_results'].append(
@@ -686,32 +741,49 @@ class Candela:
                     result_dicts.append(result_dict)
 
                 if len(result_dicts) == 1:
-                    print("yes - 1")
+                    logger.info("yes - 1")
                     result1 = result_dicts[0]
                     data1 = result1
                 if len(result_dicts) == 2:
-                    print("yes - 2")
+                    logger.info("yes - 2")
                     result1, result2 = result_dicts[0], result_dicts[1]
                     data1 = result2
                 if len(result_dicts) == 3:
-                    print("yes - 3")
+                    logger.info("yes - 3")
                     result1, result2, result3 = result_dicts[0], result_dicts[1], result_dicts[2]
                     data1 = result3
                 if len(result_dicts) == 4:
-                    print("yes - 4")
+                    logger.info("yes - 4")
                     result1, result2, result3, result4 = result_dicts[0], result_dicts[1], result_dicts[2], result_dicts[3]
                     data1 = result4
                 data = data1
             data_set, load, res = qos_test_obj.generate_graph_data_set(data)
+            return data
         if qos_serial_run:
             for qos_tos in tos:
-                print(qos_tos)
-                qos_test_overall_real(qos_tos)
+                logger.info(qos_tos)
+                data.update({qos_tos: qos_test_overall_real(qos_tos)})
         else:
-            qos_test_overall_real()
+            data = qos_test_overall_real()
+        return data
 
     def start_ping_test(self, ssid, password, encryption, target,
                         interval=1, ping_test_duration=60, device_list=[]):
+        """
+        Method to start and run the ping test on the selected devices.
+
+        Args:
+            ssid (str): SSID
+            password (str): Password for the given SSID. [BLANK] if encryption is open.
+            encryption (str): Encryption for the given SSID.
+            target (str): IP or Domain name of the target.
+            interval (int, optional): Time interval between two packets in seconds. Defaults to 1.
+            ping_test_duration (int, optional): Time duration to run the test in seconds. Defaults to 60.
+            device_list (list, optional): List of port names of all the selected devices. Defaults to [].
+
+        Returns:
+            result_json (dict): Result for the ping test.
+        """        
         target = target
         interval = interval
         # starting part of the ping test
@@ -720,7 +792,7 @@ class Candela:
                                             interval=interval, sta_list=[], duration=ping_test_duration)
         ping_test_obj.enable_real = True
         if not ping_test_obj.check_tab_exists():
-            print('Generic Tab is not available for Ping Test.\nAborting the test.')
+            logger.info('Generic Tab is not available for Ping Test.\nAborting the test.')
             exit(0)
         base_interop_profile = RealDevice(manager_ip=self.lanforge_ip,
                                         ssid_5g=ssid,
@@ -735,8 +807,8 @@ class Candela:
         ping_test_obj.sta_list = device_list
         # creating generic endpoints
         ping_test_obj.create_generic_endp()
-        print("Generic Cross-Connection List: {}".format(ping_test_obj.generic_endps_profile.created_cx))
-        print('Starting Running the Ping Test for {} seconds'.format(ping_test_duration))
+        logger.info("Generic Cross-Connection List: {}".format(ping_test_obj.generic_endps_profile.created_cx))
+        logger.info('Starting Running the Ping Test for {} seconds'.format(ping_test_duration))
         # start generate endpoint
         ping_test_obj.start_generic()
         ports_data_dict = ping_test_obj.json_get('/ports/all/')['interfaces']
@@ -745,7 +817,7 @@ class Candela:
             port, port_data = list(ports.keys())[0], list(ports.values())[0]
             ports_data[port] = port_data
         time.sleep(ping_test_duration)
-        print('Stopping the PING Test...')
+        logger.info('Stopping the PING Test...')
         ping_test_obj.stop_generic()
         # getting result dict
         result_data = ping_test_obj.get_results()
@@ -794,7 +866,7 @@ class Candela:
                             'remarks': [],
                             'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]}
                         result_json[station]['remarks'] = ping_test_obj.generate_remarks(result_json[station])
-        print("Final Result Json For Ping Test: {}".format(result_json))
+        logger.info("Final Result Json For Ping Test: {}".format(result_json))
         return result_json
         
     def start_throughput_test(self,
@@ -1721,33 +1793,149 @@ class Candela:
 
         return obj.data
 
+    def start_multicast_test(self,
+                            endp_types=None,
+                            mc_tos=None, 
+                            side_a_min=0, 
+                            side_b_min=0, 
+                            side_a_pdu=0, 
+                            side_b_pdu=0,
+                            upstream_port=None,
+                            test_duration=60,
+                            device_list=[],
+                            ssid="",
+                            passwd="",
+                            encryption="",
+                            report_path=""
+                            ):
+            # use for creating multicast dictionary
+                
+            test_duration = test_duration
+            endp_types = endp_types
+            mc_tos = mc_tos
+
+               
+            
+            report = lf_report_pdf.lf_report(_path=report_path, _results_dir_name=f"Multicast_Test",
+                                            _output_html=f"multicast_test.html",
+                                            _output_pdf=f"multicast_test.pdf")
+            
+            test_rig = "CT-ID-004"
+            test_tag = "test_l3"
+            dut_hw_version = "AXE11000"
+            dut_sw_version = "3.0.0.4.386_44266"
+            dut_model_num = "1.0"
+            dut_serial_num = "123456"
+            test_id = "test l3"
+            
+            kpi_path = report_path
+            logger.info("Report and kpi_path :{kpi_path}".format(kpi_path=kpi_path))
+            kpi_csv = lf_kpi_csv(_kpi_path=kpi_path,
+                                            _kpi_test_rig=test_rig,
+                                            _kpi_test_tag=test_tag,
+                                            _kpi_dut_hw_version=dut_hw_version,
+                                            _kpi_dut_sw_version=dut_sw_version,
+                                            _kpi_dut_model_num=dut_model_num,
+                                            _kpi_dut_serial_num=dut_serial_num,
+                                            _kpi_test_id=test_id)
+            # TODO: Add try/except if fails
+            multicast_test_obj = L3VariableTime(endp_types=endp_types,
+                                                args="",
+                                                tos=mc_tos,
+                                                side_b=upstream_port,
+                                                ssid_list=ssid,
+                                                ssid_password_list=passwd,
+                                                ssid_security_list=encryption,
+                                                name_prefix="LT-",                                            
+                                                side_a_min_rate=[side_a_min],
+                                                side_b_min_rate=[side_b_min],
+                                                side_a_min_pdu=[side_a_pdu],
+                                                side_b_min_pdu=[side_b_pdu],
+                                                rates_are_totals=True,
+                                                mconn=1,
+                                                test_duration=str(test_duration) + "s",
+                                                polling_interval="5s",
+                                                lfclient_host=self.lanforge_ip,
+                                                lfclient_port=self.port,
+                                                debug=True,
+                                                use_existing_station_lists=True,
+                                                existing_station_lists=device_list,                                                                                                                                            
+                                                interopt_mode=True,
+                                                side_a=None,
+                                                radio_name_list=[],
+                                                number_of_stations_per_radio_list=[],
+                                                wifi_mode_list=[],
+                                                enable_flags_list=[],
+                                                station_lists=[],
+                                                outfile="",
+                                                attenuators=[],
+                                                atten_vals=[-1],
+                                                kpi_csv=kpi_csv,
+                                                reset_port_enable_list=[],
+                                                reset_port_time_min_list=[],
+                                                reset_port_time_max_list=[],
+                                                )
+
+            logger.info("precleanup is goin")   
+            multicast_test_obj.pre_cleanup()
+            
+            logger.info("buiilding is going on")
+            # building the endpoints
+            multicast_test_obj.build()
+            if not multicast_test_obj.passes():
+                logger.info("build step failed.")
+                logger.info(multicast_test_obj.get_fail_message())
+                exit(1)
+            logger.info("Start the test and run for a duration {} seconds".format(test_duration))
+            # TODO: Check return value of start()
+            multicast_test_obj.start()
+            csv_results_file = multicast_test_obj.get_results_csv()
+            report.set_title("Multicast Test")
+            report.build_banner_cover()
+            report.start_content_div2()
+            # set dut information for reporting
+            multicast_test_obj.set_dut_info()
+            multicast_test_obj.set_report_obj(report=report)
+            # generate report
+            multicast_test_obj.generate_report()
+            # generate html and pdf
+            report.write_report_location()
+            report.write_html_with_timestamp()
+            report.write_index_html()
+            
+            report.write_pdf_with_timestamp(_page_size='A3', _orientation='Landscape')
+
 
 logger_config = lf_logger_config.lf_logger_config()
 candela_apis = Candela(ip='192.168.214.61', port=8080)
 
+# TO RUN CONNECTIVITY TEST
 # device_list, report_labels, device_macs = candela_apis.start_connectivity(
-#     manager_ip='192.168.214.61', port=8080, server_ip='192.168.1.61', ssid_5g='Walkin_open', encryption_5g='open', passwd_5g='[BLANK]', device_list=['RZ8N10FFTKE', 'RZ8NB1KWXLB'])
-# logger.info(device_list, report_labels, device_macs)
-# 
-# device_list, report_labels, device_macs = candela_apis.start_connectivity(manager_ip='192.168.214.61', port=8080, server_ip='192.168.1.61', ssid_5g='Walkin_open', encryption_5g='open', passwd_5g='[BLANK]')
-# 
-# candela_apis.start_ftp_test(ssid='Walkin_open', password='[BLANK]', security='open', bands=[
-#                             '5G'], directions=['Download'], file_sizes=['10MB'], device_list=','.join(device_list))
+#     manager_ip='192.168.214.61', port=8080, server_ip='192.168.1.61', ssid_5g='Walkin_open', encryption_5g='open', passwd_5g='[BLANK]', device_list=['test41'])
+# logger.info('{} {} {}'.format(device_list, report_labels, device_macs))
+ 
+# TO RUN FTP TEST
+# candela_apis.start_ftp_test(ssid='Walkin_open', password='[BLANK]', security='open',
+#                                 device_list=','.join(['1.26', '1.22']))
 
+# TO RUN HTTP TEST
 # candela_apis.start_http_test(ssid='Walkin_open', password='[BLANK]',
 #                              security='open', http_file_size='10MB',
 #                              device_list=['1.342.wlan0'], report_labels=['1.342 linux test41'],
 #                              device_macs=['48:e7:da:fe:0d:ed'], target_per_ten=1000,
 #                              band='5G', ap_name='Netgear')
+
+# TO RUN QOS TEST
 # candela_apis.start_qos_test(ssid='Walkin_open', password='[BLANK]', security='open',
-#                             ap_name='Netgear', upstream='eth1', tos=['VI', 'VO', 'BE', 'BK'],
-#                             traffic_type='lf_tcp', device_list=['1.342.wlan0'], report_labels=['1.342 linux test41'],
-#                             device_macs=['48:e7:da:fe:0d:ed'], qos_serial_run=False)
+                            # ap_name='Netgear', upstream='eth1', tos=['VI', 'VO', 'BE', 'BK'],
+                            # traffic_type='lf_tcp', device_list=['1.342.wlan0'], report_labels=['1.342 linux test41'],
+                            # device_macs=['48:e7:da:fe:0d:ed'], qos_serial_run=False)
+
+# TO RUN PING TEST
 # candela_apis.start_ping_test(ssid='Walkin_open', password='[BLANK]', encryption='open',
-#                              target='192.168.1.61', device_list=['1.342.wlan0'])
+                            #  target='192.168.1.61', device_list=['1.342.wlan0'])
 
-# TO RUN THROUGHPUT TEST:
-
+# TO RUN THROUGHPUT TEST
 # candela_apis.start_throughput_test(traffic_type="lf_udp",
 #                                     device_list='1.13,1.18,1.22,1.23,1.24,1.25,1.26,1.27',
 #                                     upload=1000000,
@@ -1764,10 +1952,9 @@ candela_apis = Candela(ip='192.168.214.61', port=8080)
 #                                     packet_size=18
 #                                    )
 
-# TO RUN INTEROPERABILITY TEST:
-
+# TO RUN INTEROPERABILITY TEST
 # candela_apis.start_throughput_test(traffic_type="lf_udp",
-#                                    device_list='1.13,1.18,1.22,1.23,1.24,1.25,1.26,1.27',
+#                                    device_list='1.13,1.18',
 #                                    upload=1000000,
 #                                    download=100000,
 #                                    upstream_port="eth1",
@@ -1778,8 +1965,7 @@ candela_apis = Candela(ip='192.168.214.61', port=8080)
 #                                    postcleanup=True
 #                                    )
 
-# TO RUN VIDEO STREAMING TEST:
-
+# TO RUN VIDEO STREAMING TEST
 # candela_apis.start_video_streaming_test(url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
 #                                         media_source="hls",
 #                                         media_quality="4k",
@@ -1790,10 +1976,12 @@ candela_apis = Candela(ip='192.168.214.61', port=8080)
 #                                         # incremental_capacity="1"
 #                                         )
 
-# TO RUN WEB BROWSER TEST:
-
+# TO RUN WEB BROWSER TEST
 # candela_apis.start_web_browser_test(device_list="1.13,1.18,1.22,1.23,1.24,1.25,1.26,1.27", 
-#                                     #   incremental_capacity="5",
-#                                         duration="30s",
-#                                         url="http://www.google.com",
-#                                         count=6)
+#                                    #   incremental_capacity="5",
+                                        # duration="30s",
+                                        # url="http://www.google.com")
+
+# TO RUN MULTICAST TEST
+# candela_apis.start_multicast_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
+#                                   side_b_min=100000000, upstream_port='eth3', test_duration=30, device_list=['1.12.wlan0','1.18.wlan0'])
