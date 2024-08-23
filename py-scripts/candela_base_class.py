@@ -2004,5 +2004,5 @@ candela_apis = Candela(ip='192.168.214.61', port=8080)
                                         # url="http://www.google.com")
 
 # TO RUN MULTICAST TEST
-candela_apis.start_multicast_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
-                                  side_b_min=100000000, upstream_port='eth1', test_duration=30, device_list=['1.22.wlan0'])
+# candela_apis.start_multicast_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
+#                                   side_b_min=100000000, upstream_port='eth1', test_duration=30, device_list=['1.22.wlan0'])
