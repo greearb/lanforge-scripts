@@ -473,7 +473,8 @@ class lf_check():
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=self.lf_mgr_ip, port=self.lf_mgr_ssh_port, username=self.lf_mgr_user, password=self.lf_mgr_pass,
                     allow_agent=False, look_for_keys=False, banner_timeout=600)
-        stdin, stdout, stderr = ssh.exec_command('uname -r')
+        # stdin, stdout, stderr = ssh.exec_command('uname -r')
+        stdin, stdout, stderr = ssh.exec_command('uname -a')
         self.lanforge_kernel_version = stdout.readlines()
         self.lanforge_kernel_version = [line.replace(
             '\n', '') for line in self.lanforge_kernel_version]
@@ -2789,6 +2790,8 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
                 # print later so shows up last
                 logger.info("junit.xml: allure serve {}".format(junit_xml))
                 logger.info("junit.xml path: allure serve {}".format(junit_path_only))
+                logger.info("junit.xml: allure serve allure-results --clean")
+
 
                 if args.update_latest:
                     report_path = os.path.dirname(html_report)
