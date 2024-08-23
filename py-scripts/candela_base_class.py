@@ -1794,13 +1794,13 @@ class Candela:
         return obj.data
 
     def start_multicast_test(self,
-                            endp_types=None,
-                            mc_tos=None, 
+                            endp_types="mc_udp",
+                            mc_tos="VO", 
                             side_a_min=0, 
                             side_b_min=0, 
                             side_a_pdu=0, 
                             side_b_pdu=0,
-                            upstream_port=None,
+                            upstream_port='eth1',
                             test_duration=60,
                             device_list=[],
                             ssid="",
@@ -1809,7 +1809,30 @@ class Candela:
                             report_path=""
                             ):
             # use for creating multicast dictionary
-                
+            """
+        Initiates a Multicast test with various configurable parameters.
+
+        Args:
+            
+            duration (str): Duration to run the multicast test.
+                            Default is '60' seconds.
+            device_list (str): Provide port IDs of  devices to run the test on, e.g., "1.10.wlan0,1.12.wlan0.
+                            Default is an empty list [].
+            endp_types (str): Endpoint type to run multicast.
+                            Default is 'mc_udp'
+            mc_tos (str): Tos values of the endpoints to be created.
+                            Default is "VO"
+
+            "side_a_min (int)" Value in bits to be pased on the endpoint side 'A'.
+                            Default is 0
+            
+            "side_b_min (int)" Value in bits to be pased on the endpoint side 'B'.
+                            Default is 0
+
+            "upstream_port (str)": Upstrem port name.
+                            Default is 'eth1'
+
+        """    
             test_duration = test_duration
             endp_types = endp_types
             mc_tos = mc_tos
@@ -1875,11 +1898,8 @@ class Candela:
                                                 reset_port_time_min_list=[],
                                                 reset_port_time_max_list=[],
                                                 )
-
-            logger.info("precleanup is goin")   
-            multicast_test_obj.pre_cleanup()
             
-            logger.info("buiilding is going on")
+            logger.info("building is going on")
             # building the endpoints
             multicast_test_obj.build()
             if not multicast_test_obj.passes():
@@ -1889,6 +1909,7 @@ class Candela:
             logger.info("Start the test and run for a duration {} seconds".format(test_duration))
             # TODO: Check return value of start()
             multicast_test_obj.start()
+            multicast_test_obj.stop()
             csv_results_file = multicast_test_obj.get_results_csv()
             report.set_title("Multicast Test")
             report.build_banner_cover()
@@ -1983,5 +2004,5 @@ candela_apis = Candela(ip='192.168.214.61', port=8080)
                                         # url="http://www.google.com")
 
 # TO RUN MULTICAST TEST
-# candela_apis.start_multicast_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
-#                                   side_b_min=100000000, upstream_port='eth3', test_duration=30, device_list=['1.12.wlan0','1.18.wlan0'])
+candela_apis.start_multicast_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
+                                  side_b_min=100000000, upstream_port='eth1', test_duration=30, device_list=['1.22.wlan0'])
