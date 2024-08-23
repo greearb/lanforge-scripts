@@ -8,14 +8,10 @@ import logging
 import pandas as pd
 from lf_base_interop_profile import RealDevice
 from lf_ftp import FtpTest
-from lf_webpage import http_test
-from lf_interop_throughput import Throughput
-from lf_interop_video_streaming import VideoStreamingTest
-from lf_interop_real_browser_test import RealBrowserTest
-from datetime import datetime, timedelta
-througput_test=importlib.import_module("py-scripts.lf_interop_throughput")
-video_streaming_test=importlib.import_module("py-scripts.lf_interop_video_streaming")
-web_browser_test=importlib.import_module("py-scripts.lf_interop_real_browser_test")
+import lf_webpage as http_test
+import lf_interop_qos as qos_test
+import lf_interop_ping as ping_test
+import lf_cleanup
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 logger = logging.getLogger(__name__)
 
@@ -369,8 +365,7 @@ class Candela:
                        lf_password='lanforge',
                        ssh_port=22,
                        clients_type='Real',
-                       device_list=[],
-                       background=False):
+                       device_list=[]):
         """
         Method to start FTP test on the given device list
 
@@ -389,11 +384,8 @@ class Candela:
             ssh_port (int, optional): SSH port. Defaults to 22.
             clients_type (str, optional): Clients type. Defaults to 'Real'.
             device_list (list, optional): List of port numbers of the devices in shelf.resource format. Defaults to [].
-            background (bool, optional): Enable this to just start the test. Disabling background makes the test to run for the given duration and then stop. Defaults to False.
 
         Returns:
-            (test_start_time, ftp_object) (tuple): Test start time and ftp test object if background argument is set to True.\n
-
             *(test_start_time, test_end_time) (tuple)*: Test start time and end time if background is set to False.
         """
         # for band in bands:
@@ -432,1020 +424,394 @@ class Candela:
             exit(1)
 
         # First time stamp
-        test_start_time = datetime.datetime.now()
-        logger.info("Traffic started running at ", test_start_time)
+        test_start_time = datetime.now()
+        print("Traffic started running at ", test_start_time)
         obj.start(False, False)
-        if (background):
-            return test_start_time, obj
         time.sleep(traffic_duration)
         obj.stop()
-        logger.info("Traffic stopped running")
+        print("Traffic stopped running")
         obj.my_monitor()
         obj.postcleanup()
-        test_end_time = datetime.datetime.now()
-        logger.info("Test ended at", test_end_time)
+        test_end_time = datetime.now()
+        print("Test ended at", test_end_time)
         return test_start_time, test_end_time
 
-    def stop_ftp_test(self, ftp_object):
-        """
-        Method to stop the ftp test.
+    def start_http_test(self, ssid, password, security, http_file_size, device_list, report_labels, device_macs,
+                  target_per_ten, upstream='eth1', ap_name='', http_test=http_test, all_bands=False, windows_ports=[],
+                  band='5G', lf_username='lanforge', lf_password='lanforge', 
+                  test_duration=60):
+        http_test_duration = test_duration
+        # Error checking to prevent case issues
+        Bands = [band]
+        for bands in range(len(Bands)):
+            Bands[bands] = Bands[bands].upper()
+            if Bands[bands] == "BOTH":
+                Bands[bands] = "Both"
 
-        Args:
-            ftp_object (object): FTP test object returned from *start_ftp_test* method.
+        # Error checking for non-existent bands
+        valid_bands = ['2.4G', '5G', '6G', 'Both']
+        for bands in Bands:
+            if bands not in valid_bands:
+                raise ValueError(
+                    "Invalid band '%s' used in bands argument!" % bands)
 
-        Returns:
-            test_end_time (datetime_object): FTP test end time.
-        """
-        ftp_object.stop()
-        logger.info("Traffic stopped running")
-        ftp_object.my_monitor()
-        ftp_object.postcleanup()
-        test_end_time = datetime.datetime.now()
-        logger.info("FTP test ended at", test_end_time)
-        return test_end_time
-    
-    def start_http_test(self):
-        pass
+        # Check for Both being used independently
+        if len(Bands) > 1 and "Both" in Bands:
+            raise ValueError("'Both' test type must be used independently!")
 
-    def stop_http_test(self):
-        pass
-    
-    def start_throughput_test(self,
-                            upstream_port= 'eth0',
-                            traffic_type="lf_tcp",
-                            device_list=[],
-                            test_duration="60s",
-                            upload_min_rate_bps=2560,
-                            download_min_rate_bps=2560,
-                            packet_size="-1",
-                            incremental_capacity=[],
-                            tos="Best_Efforts",
-                            report_timer="5s",
-                            load_type="wc_per_client_load",
-                            do_interopability=False,
-                            incremental=[],
-                            precleanup=False,
-                            postcleanup=False,
-                              ):
-        """
-        Initiates a throughput test with various configurable parameters.
+        lis = []
+        list2G, list2G_bytes, list2G_speed, list2G_urltimes = [], [], [], []
+        list5G, list5G_bytes, list5G_speed, list5G_urltimes = [], [], [], []
+        list6G, list6G_bytes, list6G_speed, list6G_urltimes = [], [], [], []
+        Both, Both_bytes, Both_speed, Both_urltimes = [], [], [], []
+        dict_keys = []
+        dict_keys.extend(Bands)
+        final_dict = dict.fromkeys(dict_keys)
+        dict1_keys = ['dl_time', 'min', 'max',
+                      'avg', 'bytes_rd', 'speed', 'url_times']
+        for i in final_dict:
+            final_dict[i] = dict.fromkeys(dict1_keys)
+        min2, min5, min6 = [], [], []
+        min_both = []
+        max2, max5, max6 = [], [], []
+        max_both = []
+        avg2, avg5, avg6 = [], [], []
+        avg_both = []
+        test_time = ""
+        client_type = ""
+        http_sta_list = []
+        num_stations = 0
+        client_type = "Real"
+        http_sta_list = device_list
+        num_stations = len(device_list)
+        http_obj = http_test.HttpDownload(lfclient_host=self.lanforge_ip, lfclient_port=self.port,
+                                               upstream=upstream,
+                                               num_sta=num_stations,
+                                               ap_name=ap_name, ssid=ssid, password=password, security=security,
+                                               target_per_ten=target_per_ten, file_size=http_file_size, bands=band,
+                                               client_type=client_type, lf_username=lf_username,
+                                               lf_password=lf_password)
+        http_obj.data = {}
+        http_obj.port_list = device_list
+        http_obj.devices_list = report_labels
+        http_obj.macid_list = device_macs
+        http_obj.user_query = [device_list, report_labels, device_macs]
+        http_obj.windows_ports = windows_ports
+        http_obj.file_create(ssh_port=22)
+        http_obj.set_values()
+        http_obj.precleanup()
+        http_obj.build()
+        test_time = datetime.now().strftime("%b %d %H:%M:%S")
+        logger.info("HTTP Test started at {}".format(test_time))
+        http_obj.start()
+        time.sleep(http_test_duration)
+        http_obj.stop()
+        uc_avg_val = http_obj.my_monitor('uc-avg')
+        url_times = http_obj.my_monitor('total-urls')
+        rx_bytes_val = http_obj.my_monitor('bytes-rd')
+        rx_rate_val = http_obj.my_monitor('rx rate')
 
-        Args:
-            upstream_port (str): Specifies the port that generates traffic. 
-                                Format should be <resource>.<port>, e.g., '1.eth1'.
-                                Default is 'eth0'.
-            traffic_type (str): Select the traffic type, e.g., 'lf_tcp' or 'lf_udp'.
-                                Default is 'lf_tcp'.
-            device_list (list): Enter the devices on which the test should be run.
-                                Default is an empty list [].
-            test_duration (str): Duration of the test, e.g., '60s'.
-                                Default is '60s'.
-            upload_min_rate_bps (int): Minimum upload rate per connection in bits per second.
-                                    Default is 2560.
-            download_min_rate_bps (int): Minimum download rate per connection in bits per second.
-                                        Default is 2560.
-            packet_size (str): Size of the packet in bytes. Should be greater than 16B and 
-                            less than 64KB (65507). Default is '-1'.
-            incremental_capacity (list): Incremental values for network load testing as a 
-                                        comma-separated list, e.g., [10, 20, 30]. 
-                                        Default is an empty list [].
-            report_timer (int): Duration to collect data in seconds. Default is 5 seconds.
-            load_type (str): Type of load, e.g., 'wc_intended_load' or 'wc_per_client_load'.
-                            Default is 'wc_per_client_load'.
-            do_interopability (bool): If true, will execute script for interoperability testing.
-                                    Default is False.
-            incremental (list): Allows user to enter incremental values for specific testing scenarios.
-                                Default is an empty list [].
-            precleanup (bool): If true, cleans up the cross-connections before starting the test.
-                            Default is False.
-            postcleanup (bool): If true, cleans up the cross-connections after stopping the test.
-                                Default is False.
-        Returns:
-            returns individual_df: A DataFrame containing the test results.
-        """
-        if do_interopability:
-            incremental_capacity='1'
-        if test_duration.endswith('s') or test_duration.endswith('S'):
-            test_duration = int(test_duration[0:-1])
-    
-        elif test_duration.endswith('m') or test_duration.endswith('M'):
-            test_duration = int(test_duration[0:-1]) * 60 
-    
-        elif test_duration.endswith('h') or test_duration.endswith('H'):
-            test_duration = int(test_duration[0:-1]) * 60 * 60 
-        
-        elif test_duration.endswith(''):
-            test_duration = int(test_duration)
+        if bands == "2.4G":
+            list2G.extend(uc_avg_val)
+            list2G_bytes.extend(rx_bytes_val)
+            list2G_speed.extend(rx_rate_val)
+            list2G_urltimes.extend(url_times)
+            final_dict['2.4G']['dl_time'] = list2G
+            min2.append(min(list2G))
+            final_dict['2.4G']['min'] = min2
+            max2.append(max(list2G))
+            final_dict['2.4G']['max'] = max2
+            avg2.append((sum(list2G) / num_stations))
+            final_dict['2.4G']['avg'] = avg2
+            final_dict['2.4G']['bytes_rd'] = list2G_bytes
+            final_dict['2.4G']['speed'] = list2G_speed
+            final_dict['2.4G']['url_times'] = list2G_urltimes
+        elif bands == "5G":
+            list5G.extend(uc_avg_val)
+            list5G_bytes.extend(rx_bytes_val)
+            list5G_speed.extend(rx_rate_val)
+            list5G_urltimes.extend(url_times)
+            print(list5G, list5G_bytes, list5G_speed, list5G_urltimes)
+            final_dict['5G']['dl_time'] = list5G
+            min5.append(min(list5G))
+            final_dict['5G']['min'] = min5
+            max5.append(max(list5G))
+            final_dict['5G']['max'] = max5
+            avg5.append((sum(list5G) / num_stations))
+            final_dict['5G']['avg'] = avg5
+            final_dict['5G']['bytes_rd'] = list5G_bytes
+            final_dict['5G']['speed'] = list5G_speed
+            final_dict['5G']['url_times'] = list5G_urltimes
+        elif bands == "6G":
+            list6G.extend(uc_avg_val)
+            list6G_bytes.extend(rx_bytes_val)
+            list6G_speed.extend(rx_rate_val)
+            list6G_urltimes.extend(url_times)
+            final_dict['6G']['dl_time'] = list6G
+            min6.append(min(list6G))
+            final_dict['6G']['min'] = min6
+            max6.append(max(list6G))
+            final_dict['6G']['max'] = max6
+            avg6.append((sum(list6G) / num_stations))
+            final_dict['6G']['avg'] = avg6
+            final_dict['6G']['bytes_rd'] = list6G_bytes
+            final_dict['6G']['speed'] = list6G_speed
+            final_dict['6G']['url_times'] = list6G_urltimes
+        elif bands == "Both":
+            Both.extend(uc_avg_val)
+            Both_bytes.extend(rx_bytes_val)
+            Both_speed.extend(rx_rate_val)
+            Both_urltimes.extend(url_times)
+            final_dict['Both']['dl_time'] = Both
+            min_both.append(min(Both))
+            final_dict['Both']['min'] = min_both
+            max_both.append(max(Both))
+            final_dict['Both']['max'] = max_both
+            avg_both.append((sum(Both) / num_stations))
+            final_dict['Both']['avg'] = avg_both
+            final_dict['Both']['bytes_rd'] = Both_bytes
+            final_dict['Both']['speed'] = Both_speed
+            final_dict['Both']['url_times'] = Both_urltimes
 
-        # Parsing report_timer
-        if report_timer.endswith('s') or report_timer.endswith('S') :
-            report_timer=int(report_timer[0:-1]) 
+        result_data = final_dict
+        logger.info("HTTP Test Result {}".format(result_data))
+        test_end = datetime.now().strftime("%b %d %H:%M:%S")
+        logger.info("HTTP Test Finished at {}".format(test_end))
+        s1 = test_time
+        s2 = test_end  # for example
+        FMT = '%b %d %H:%M:%S'
+        test_duration = datetime.strptime(
+            s2, FMT) - datetime.strptime(s1, FMT)
+        logger.info("Total HTTP test duration: {}".format(test_duration))
+        date = str(datetime.now()).split(
+            ",")[0].replace(" ", "-").split(".")[0]
 
-        elif report_timer.endswith('m') or report_timer.endswith('M')   :
-            report_timer=int(report_timer[0:-1]) * 60
+        test_setup_info = {
+            "AP Name": ap_name,
+            "SSID": ssid,
+            "Security": security,
+            "No of Devices": len(http_sta_list),
+            "File size": http_file_size,
+            "File location": "/usr/local/lanforge/nginx/html",
+            "Traffic Direction": "Download",
+            "Traffic Duration ": http_test_duration
+        }
 
-        elif report_timer.endswith('h') or report_timer.endswith('H')  :
-            report_timer=int(report_timer[0:-1]) * 60 * 60
-
-        elif test_duration.endswith(''):        
-            report_timer=int(report_timer)
-
-        
-        if (int(packet_size)<16 or int(packet_size)>65507) and int(packet_size)!=-1:
-            logger.info("Packet size should be greater than 16 bytes and less than 65507 bytes incorrect")
-            return
-        obj=Throughput(host=self.lanforge_ip,
-                       ip=self.lanforge_ip,
-                       port=self.port,
-                       test_duration=test_duration,
-                       upstream=upstream_port,
-                       side_a_min_rate=upload_min_rate_bps,
-                       side_b_min_rate=download_min_rate_bps,
-                       side_a_min_pdu=int(packet_size),
-                       side_b_min_pdu=int(packet_size),
-                       traffic_type=traffic_type,
-                       incremental_capacity=incremental_capacity,
-                       tos=tos,
-                       device_list=device_list,
-                       report_timer=report_timer,
-                       load_type=load_type,
-                       do_interopability=do_interopability,
-                       incremental=incremental,
-                       precleanup=precleanup,
-                       )
-        
-        obj.os_type()
-        iterations_before_test_stopped_by_user=[]
-        check_condition,clients_to_run=obj.phantom_check()
-        if check_condition==False:
-            return
-        check_increment_condition=obj.check_incremental_list()
-        if check_increment_condition==False:
-            logger.info("Incremental values given for selected devices are incorrect")
-            return
-        elif(len(incremental_capacity)>0 and check_increment_condition==False):
-            logger.info("Incremental values given for selected devices are incorrect")
-            return
-        created_cxs = obj.build()
-        time.sleep(10)
-        created_cxs=list(created_cxs.keys())
-        individual_dataframe_column=[]
-        to_run_cxs,to_run_cxs_len,created_cx_lists_keys,incremental_capacity_list = obj.get_incremental_capacity_list()
-        for i in range(len(clients_to_run)):
-            # Extend individual_dataframe_column with dynamically generated column names
-            individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop A {clients_to_run[i]}', f'Rx % Drop B{clients_to_run[i]}',f'RSSI {clients_to_run[i]} ',f'Link Speed {clients_to_run[i]} '])
-        individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop A', 'Overall Rx % Drop B','Iteration','TIMESTAMP','Start_time','End_time','Remaining_Time','Incremental_list','status'])
-        individual_df=pd.DataFrame(columns=individual_dataframe_column)
-        overall_start_time=datetime.now()
-        overall_end_time=overall_start_time + timedelta(seconds=int(test_duration)*len(incremental_capacity_list))
-        for i in range(len(to_run_cxs)):
-            # Check the load type specified by the user
-            if load_type == "wc_intended_load":
-                # Perform intended load for the current iteration
-                obj.perform_intended_load(i,incremental_capacity_list)
-                if i!=0:
-                    # Stop throughput testing if not the first iteration
-                    obj.stop()
-                # Start specific connections for the current iteration
-                obj.start_specific(created_cx_lists_keys[:incremental_capacity_list[i]])
-            else:
-                if (do_interopability and i!=0):
-                    obj.stop_specific(to_run_cxs[i-1])
-                    time.sleep(5)
-                obj.start_specific(to_run_cxs[i])
-            # Determine device names based on the current iteration
-            device_names=created_cx_lists_keys[:to_run_cxs_len[i][-1]]
-            # Monitor throughput and capture all dataframes and test stop status
-            all_dataframes,test_stopped_by_user = obj.monitor(i,individual_df,device_names,incremental_capacity_list,overall_start_time,overall_end_time)
-            # Check if the test was stopped by the user
-            if test_stopped_by_user==False:
-                # Append current iteration index to iterations_before_test_stopped_by_user
-                iterations_before_test_stopped_by_user.append(i)
-            else:
-                # Append current iteration index to iterations_before_test_stopped_by_user 
-                iterations_before_test_stopped_by_user.append(i)
-                break
-        obj.stop()
-        if postcleanup:
-            obj.cleanup()
-        return individual_df
-
-    def start_video_streaming_test(self, ssid="ssid_wpa_2g", passwd="something", encryp="psk",
-                        suporrted_release=["7.0", "10", "11", "12"], max_speed=0,
-                        url="www.google.com", urls_per_tenm=100, duration="60", 
-                        device_list=[], media_quality='0',media_source='1',
-                        incremental = False,postcleanup=False,
-                        precleanup=False,incremental_capacity=None):
-        """
-        Initiates a video streaming test with various configurable parameters.
-
-        Args:
-            ssid (str): Specify the SSID on which the test will be running.
-                        Default is 'ssid_wpa_2g'.
-            passwd (str): Specify the encryption password on which the test will be running.
-                        Default is 'something'.
-            encryp (str): Specify the encryption type for the network, e.g., 'open', 'psk', 'psk2', 'sae', 'psk2jsae'.
-                        Default is 'psk'.
-            suporrted_release (list): List of supported Android releases for the test. 
-                                    Default is ["7.0", "10", "11", "12"].
-            max_speed (int): Specify the maximum speed in bytes. 
-                            Default is 0 (unlimited).
-            url (str): Specify the URL to test the video streaming on.
-                    Default is 'www.google.com'.
-            urls_per_tenm (int): Number of URLs to test per ten minutes. 
-                                Default is 100.
-            duration (str): Duration to run the video streaming test. 
-                            Default is '60'.
-            device_list (list): Provide resource IDs of Android devices to run the test on, e.g., ["10", "12", "14"].
-                                Default is an empty list [].
-            media_quality (str): Specify the quality of the media for the test, e.g., '0' (low), '1' (medium), '2' (high).
-                                Default is '0'.
-            media_source (str): Specify the media source for the test, e.g., '1' (local), '2' (remote).
-                                Default is '1'.
-            incremental (bool): Enables incremental testing with specified values. 
-                                Default is False.
-            postcleanup (bool): If true, cleans up the connections after the test is stopped.
-                                Default is False.
-            precleanup (bool): If true, cleans up the connections before the test is started.
-                            Default is False.
-            incremental_capacity (str): Specify the incremental values for load testing, e.g., "1,2,3".
-                                        Default is None.
-        Returns:
-            returns individual_df: A DataFrame containing the test results.
-        """
-        media_source_dict={
-                       'dash':'1',
-                       'smooth_streaming':'2',
-                       'hls':'3',
-                       'progressive':'4',
-                       'rtsp':'5'
-                       }
-        media_quality_dict={
-                            '4k':'0',
-                            '8k':'1',
-                            '1080p':'2',
-                            '720p':'3',
-                            '360p':'4'
-                            }
-        webgui_incremental=incremental_capacity
-
-        media_source,media_quality=media_source.capitalize(),media_quality
-        media_source=media_source.lower()
-        media_quality=media_quality.lower()
-
-        if any(char.isalpha() for char in media_source):
-            media_source=media_source_dict[media_source]
-
-        if any(char.isalpha() for char in media_quality):
-            media_quality=media_quality_dict[media_quality]
-
-
-        obj = VideoStreamingTest(host=self.lanforge_ip, ssid=ssid, passwd=passwd, encryp=encryp,
-                        suporrted_release=["7.0", "10", "11", "12"], max_speed=max_speed,
-                        url=url, urls_per_tenm=urls_per_tenm, duration=duration, 
-                        resource_ids = device_list, media_quality=media_quality,media_source=media_source,
-                        incremental = incremental,postcleanup=postcleanup,
-                        precleanup=precleanup)
-        resource_ids_sm = []
-        resource_set = set()
-        resource_list = []
-        resource_ids_generated = ""
-
-        obj.android_devices = obj.devices.get_devices(only_androids=True)
-
-        if device_list:
-            # Extract second part of resource IDs and sort them
-            obj.resource_ids = ",".join(id.split(".")[1] for id in device_list.split(","))
-            resource_ids_sm = obj.resource_ids
-            resource_list = resource_ids_sm.split(',')            
-            resource_set = set(resource_list)
-            resource_list_sorted = sorted(resource_set)
-            resource_ids_generated = ','.join(resource_list_sorted)
-
-            # Convert resource IDs into a list of integers
-            num_list = list(map(int, obj.resource_ids.split(',')))
-
-            # Sort the list
-            num_list.sort()
-
-            # Join the sorted list back into a string
-            sorted_string = ','.join(map(str, num_list))
-            obj.resource_ids = sorted_string
-
-            # Extract the second part of each Android device ID and convert to integers
-            modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
-            # modified_other_os_list = list(map(lambda item: int(item.split('.')[1]), obj.other_os_list))
-            
-            # Verify if all resource IDs are valid for Android devices
-            resource_ids = [int(x) for x in sorted_string.split(',')]
-            new_list_android = [item.split('.')[0] + '.' + item.split('.')[1] for item in obj.android_devices]
-
-            resources_list = device_list.split(",")
-            for element in resources_list:
-                if element in new_list_android:
-                    for ele in obj.android_devices:
-                        if ele.startswith(element):
-                            obj.android_list.append(ele)
-                else:
-                    logger.info("{} device is not available".format(element))
-            new_android = [int(item.split('.')[1]) for item in obj.android_list]
-
-            resource_ids = sorted(new_android)
-            available_resources=list(set(resource_ids))
-
+        for i in result_data:
+            dataset = result_data[i]['dl_time']
+            dataset2 = result_data[i]['url_times']
+            bytes_rd = result_data[i]['bytes_rd']
+        dataset1 = [float(f"{(i / 1000000): .4f}") for i in bytes_rd]
+        logger.info("data sets {} {}".format(dataset, dataset2))
+        if band == "Both":
+            for i in range(1, len(http_sta_list) * 2 + 1):
+                lis.append(i)
         else:
-            # Query user to select devices if no resource IDs are provided
-            selected_devices,report_labels,selected_macs = obj.devices.query_user()
-            # Handle cases where no devices are selected
-            
-            if not selected_devices:
-                logger.info("devices donot exist..!!")
-                return 
-                
-            obj.android_list = selected_devices
-            if obj.android_list:
-                resource_ids = ",".join([item.split(".")[1] for item in obj.android_list])
+            for i in range(1, len(http_sta_list) + 1):
+                lis.append(i)
+        if all_bands:
+            band = ''
+        else:
+            band = '_' + band
+        self.cleanup.layer4_endp_clean()
+        return result_data
 
-                num_list = list(map(int, resource_ids.split(',')))
+    def start_qos_test(self, ssid, password, security,
+                 ap_name, upstream, tos, traffic_type='lf_udp',
+                 side_a_min=6200000, side_b_min=6200000, side_a_max=0, side_b_max=0, 
+                 test_duration=5, qos_serial_run=True, device_list=[],
+                 report_labels=[], device_macs=[]):
+        if test_duration:
+            qos_test_duration = test_duration
+        test_results = {'test_results': []}
+        data = {}
+        # qos test for real clients
+        def qos_test_overall_real(qos_tos_real=None):
+            qos_test_obj = qos_test.ThroughputQOS(host=self.lanforge_ip,
+                                                    port=self.port,
+                                                    number_template="0000",
+                                                    ap_name=ap_name,
+                                                    name_prefix="TOS-",
+                                                    tos=qos_tos_real if qos_serial_run else ','.join(tos),
+                                                    ssid=ssid,
+                                                    password=password,
+                                                    security=security,
+                                                    upstream=upstream,
+                                                    test_duration=qos_test_duration,
+                                                    use_ht160=False,
+                                                    side_a_min_rate=int(side_a_min),
+                                                    side_b_min_rate=int(side_b_min),
+                                                    side_a_max_rate=int(side_a_max),
+                                                    side_b_max_rate=int(side_b_max),
+                                                    traffic_type=traffic_type,
+                                                    ip=self.lanforge_ip,
+                                                    _debug_on=False)
 
-                # Sort the list
-                num_list.sort()
-
-                # Join the sorted list back into a string
-                sorted_string = ','.join(map(str, num_list))
-
-                obj.resource_ids = sorted_string
-                resource_ids1 = list(map(int, sorted_string.split(',')))
-                modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
-                if not all(x in modified_list for x in resource_ids1):
-                    logger.info("Verify Resource ids, as few are invalid...!!")
-                    exit()
-                resource_ids_sm = obj.resource_ids
-                resource_list = resource_ids_sm.split(',')            
-                resource_set = set(resource_list)
-                resource_list_sorted = sorted(resource_set)
-                resource_ids_generated = ','.join(resource_list_sorted)
-                available_resources=list(resource_set)
-    
-        if len(available_resources)==0:
-            logger.info("No devices which are selected are available in the lanforge")
-            exit()
-        gave_incremental=False
-        if len(resource_list_sorted)==0:
-            logger.info("Selected Devices are not available in the lanforge")
-            exit(1)
-        if incremental and not webgui_incremental :
-            if obj.resource_ids:
-                logger.info("The total available devices are {}".format(len(available_resources)))
-                obj.incremental = input('Specify incremental values as 1,2,3 : ')
-                obj.incremental = [int(x) for x in obj.incremental.split(',')]
-            else:
-                logger.info("incremental Values are not needed as Android devices are not selected..")
-        elif incremental==False:
-            gave_incremental=True
-            obj.incremental=[len(available_resources)]
-        
-        if webgui_incremental:
-            incremental = [int(x) for x in webgui_incremental.split(',')]
-            if (len(webgui_incremental) == 1 and incremental[0] != len(resource_list_sorted)) or (len(webgui_incremental) > 1):
-                obj.incremental = incremental
-        
-        if obj.incremental and obj.resource_ids:
-            resources_list1 = [str(x) for x in obj.resource_ids.split(',')]
-            if resource_list_sorted:
-                resources_list1 = resource_list_sorted
-            if obj.incremental[-1] > len(available_resources):
-                logger.info("Exiting the program as incremental values are greater than the resource ids provided")
-                exit()
-            elif obj.incremental[-1] < len(available_resources) and len(obj.incremental) > 1:
-                logger.info("Exiting the program as the last incremental value must be equal to selected devices")
-                exit()
-        
-        # To create cx for selected devices
-        obj.build()
-
-        # To set media source and media quality 
-        time.sleep(10)
-
-        # obj.run
-        test_time = datetime.now()
-        test_time = test_time.strftime("%b %d %H:%M:%S")
-
-        logger.info("Initiating Test...")
-
-        individual_dataframe_columns=[]
-
-        keys = list(obj.http_profile.created_cx.keys())
-    
-        #TODO : To create cx for laptop devices
-        # if (not no_laptops) and obj.other_list:
-        #     obj.create_generic_endp(obj.other_list,os_types_dict)
-
-        # Extend individual_dataframe_column with dynamically generated column names
-        for i in range(len(keys)):
-            individual_dataframe_columns.extend([f'video_format_bitrate{keys[i]}', f'total_wait_time{keys[i]}',f'total_urls{keys[i]}',f'RSSI{keys[i]}',f'Link Speed{keys[i]}',f'Total Buffer {keys[i]}',f'Total Errors {keys[i]}',f'Min_Video_Rate{keys[i]}',f'Max_Video_Rate{keys[i]}',f'Avg_Video_Rate{keys[i]}'])
-        individual_dataframe_columns.extend(['overall_video_format_bitrate','timestamp','iteration','start_time','end_time','remaining_Time','status'])
-        individual_df=pd.DataFrame(columns=individual_dataframe_columns)
-        
-        cx_order_list = []
-        index = 0
-        file_path = ""
-
-        # Parsing test_duration
-        if duration.endswith('s') or duration.endswith('S'):
-            duration = round(int(duration[0:-1])/60,2)
-        
-        elif duration.endswith('m') or duration.endswith('M'):
-            duration = int(duration[0:-1]) 
-    
-        elif duration.endswith('h') or duration.endswith('H'):
-            duration = int(duration[0:-1]) * 60  
-        
-        elif duration.endswith(''):
-            duration = int(duration)
-
-        incremental_capacity_list_values=obj.get_incremental_capacity_list()
-        if incremental_capacity_list_values[-1]!=len(available_resources):
-            logger.info("Incremental capacity doesnt match available devices")
-            if postcleanup==True:
-                obj.postcleanup()
-            exit(1)
-        # Process resource IDs and incremental values if specified
-        if obj.resource_ids:
-            if obj.incremental:
-                test_setup_info_incremental_values =  ','.join([str(n) for n in incremental_capacity_list_values])
-                if len(obj.incremental) == len(available_resources):
-                    test_setup_info_total_duration = duration
-                elif len(obj.incremental) == 1 and len(available_resources) > 1:
-                    if obj.incremental[0] == len(available_resources):
-                        test_setup_info_total_duration = duration
-                    else:
-                        div = len(available_resources)//obj.incremental[0] 
-                        mod = len(available_resources)%obj.incremental[0] 
-                        if mod == 0:
-                            test_setup_info_total_duration = duration * (div )
-                        else:
-                            test_setup_info_total_duration = duration * (div + 1)
-                else:
-                    test_setup_info_total_duration = duration * len(incremental_capacity_list_values)
-                # if incremental_capacity_list_values[-1] != len(available_resources):
-                #     test_setup_info_duration_per_iteration= duration 
-            else:
-                test_setup_info_total_duration = duration
-                
-            if webgui_incremental:
-                test_setup_info_incremental_values =  ','.join([str(n) for n in incremental_capacity_list_values])
-            elif gave_incremental:
-                test_setup_info_incremental_values = "No Incremental Value provided"
-            obj.total_duration = test_setup_info_total_duration
-
-        actual_start_time=datetime.now()
-
-        # Calculate and manage cx_order_list ( list of cross connections to run ) based on incremental values
-        if obj.resource_ids:
-            # Check if incremental  is specified
-            if obj.incremental:
-
-                # Case 1: Incremental list has only one value and it equals the length of keys
-                if len(obj.incremental) == 1 and obj.incremental[0] == len(keys):
-                    cx_order_list.append(keys[index:])
-
-                # Case 2: Incremental list has only one value but length of keys is greater than 1
-                elif len(obj.incremental) == 1 and len(keys) > 1:
-                    incremental_value = obj.incremental[0]
-                    max_index = len(keys)
-                    index = 0
-
-                    while index < max_index:
-                        next_index = min(index + incremental_value, max_index)
-                        cx_order_list.append(keys[index:next_index])
-                        index = next_index
-
-                # Case 3: Incremental list has multiple values and length of keys is greater than 1
-                elif len(obj.incremental) != 1 and len(keys) > 1:
-                    
-                    index = 0
-                    for num in obj.incremental:
-                        
-                        cx_order_list.append(keys[index: num])
-                        index = num
-
-                    if index < len(keys):
-                        cx_order_list.append(keys[index:])
-                        start_time_webGUI = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-                # Iterate over cx_order_list to start tests incrementally
-                for i in range(len(cx_order_list)):
-                    if i == 0:
-                        obj.data["start_time_webGUI"] = [datetime.now().strftime('%Y-%m-%d %H:%M:%S')] 
-                        end_time_webGUI = (datetime.now() + timedelta(minutes = obj.total_duration)).strftime('%Y-%m-%d %H:%M:%S')
-                        obj.data['end_time_webGUI'] = [end_time_webGUI] 
-
-
-                    # time.sleep(10)
-
-                    # Start specific devices based on incremental capacity
-                    obj.start_specific(cx_order_list[i])
-                    if cx_order_list[i]:
-                        logger.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
-                    else:
-                        logger.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
-                    
-                    file_path = "video_streaming_realtime_data.csv"
-
-                    if end_time_webGUI < datetime.now().strftime('%Y-%m-%d %H:%M:%S'):
-                        obj.data['remaining_time_webGUI'] = ['0:00'] 
-                    else:
-                        date_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        obj.data['remaining_time_webGUI'] =  [datetime.strptime(end_time_webGUI,"%Y-%m-%d %H:%M:%S") - datetime.strptime(date_time,"%Y-%m-%d %H:%M:%S")] 
-                    
-                    obj.monitor_for_runtime_csv(duration,file_path,individual_df,i,actual_start_time,resource_list_sorted,cx_order_list[i])
-        obj.stop()
-
-        if obj.resource_ids:
-            
-            # date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
-
-            # phone_list = obj.get_resource_data() 
-
-            username = []
-            
+            data = {}
+            qos_test_obj.input_devices_list = device_list
+            qos_test_obj.real_client_list = report_labels
+            qos_test_obj.real_client_list1 = report_labels
+            qos_test_obj.mac_id_list = device_macs
+            qos_test_obj.build()
+            qos_test_obj.start()
+            time.sleep(10)
             try:
-                eid_data = obj.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal")
-            except KeyError:
-                logger.info("Error: 'interfaces' key not found in port data")
-                exit(1)
+                connections_download, connections_upload, drop_a_per, drop_b_per = qos_test_obj.monitor()
+            except Exception as e:
+                print(f"Failed at Monitoring the CX... {e}")
+            qos_test_obj.stop()
+            time.sleep(5)
+            test_results['test_results'].append(
+                qos_test_obj.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
+            data.update(test_results)
+            test_end_time = datetime.now().strftime("%b %d %H:%M:%S")
+            logger.info("QOS Test ended at: {}".format(test_end_time))
 
-            resource_ids = list(map(int, obj.resource_ids.split(',')))
-            for alias in eid_data["interfaces"]:
-                for i in alias:
-                    if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
-                        resource_hw_data = obj.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
-                        hw_version = resource_hw_data['resource']['hw version']
-                        if not hw_version.startswith(('Win', 'Linux', 'Apple')) and int(resource_hw_data['resource']['eid'].split('.')[1]) in resource_ids:
-                            username.append(resource_hw_data['resource']['user'] )
 
-            logger.info("Test Stopped")
-            if postcleanup==True:
-                obj.postcleanup()
+            qos_test_obj.cleanup()
+            logging.debug('data:{}'.format(data))
 
-        return individual_df
+            if qos_serial_run:
+                result1, result2, result3, result4 = {}, {}, {}, {}
+                # separating dictionaries for each value in the list
+                result_dicts = []
+                for item in data['test_results']:
+                    result_dict = {'test_results': [item]}
+                    result_dicts.append(result_dict)
 
-    def start_web_browser_test(self,ssid="ssid_wpa_2g", passwd="something", encryp="psk",
-                    suporrted_release=["7.0", "10", "11", "12"], max_speed=0,
-                    url="www.google.com", count=1, duration="60s", 
-                    device_list="", 
-                    incremental = False,incremental_capacity=None,postcleanup=False,
-                    precleanup=False):
-        """
-        Initiates a web browser test with various configurable parameters.
-
-        Args:
-            ssid (str): Specify the SSID on which the test will be running.
-                        Default is 'ssid_wpa_2g'.
-            passwd (str): Specify the encryption password on which the test will be running.
-                        Default is 'something'.
-            encryp (str): Specify the encryption type for the network, e.g., 'open', 'psk', 'psk2', 'sae', 'psk2jsae'.
-                        Default is 'psk'.
-            suporrted_release (list): List of supported Android releases for the test.
-                                    Default is ["7.0", "10", "11", "12"].
-            max_speed (int): Specify the maximum speed in bytes. 
-                            Default is 0 (unlimited).
-            url (str): Specify the URL to test the web browser on.
-                    Default is 'www.google.com'.
-            count (int): Specify the number of URLs to calculate the time taken to reach them.
-                        Default is 1.
-            duration (str): Duration to run the web browser test.
-                            Default is '60s'.
-            device_list (str): Provide resource IDs of Android devices to run the test on, e.g., "10,12,14".
-                            Default is an empty string "".
-            incremental (bool): Enables incremental testing with specified values.
-                                Default is False.
-            incremental_capacity (str): Specify the incremental values for load testing, e.g., "1,2,3".
-                                        Default is None.
-            postcleanup (bool): If true, cleans up the connections after the test is stopped.
-                                Default is False.
-            precleanup (bool): If true, cleans up the connections before the test is started.
-                            Default is False.
-        Returns:
-            returns obj.data: A DataFrame containing the test results.
-        """
-        webgui_incremental=incremental_capacity
-        obj = RealBrowserTest(host=self.lanforge_ip, ssid=ssid, passwd=passwd, encryp=encryp,
-                        suporrted_release=["7.0", "10", "11", "12"], max_speed=max_speed,
-                        url=url, count=count, duration=duration, 
-                        resource_ids = device_list,
-                        incremental = incremental,postcleanup=postcleanup,
-                        precleanup=precleanup)
-        resource_ids_sm = []
-        resource_set = set()
-        resource_list = []
-        os_types_dict = {}
-
-        resource_ids_generated = ""
-        #  Process resource IDs when web GUI is enabled
-
-        obj.android_devices = obj.devices.get_devices(only_androids=True)
-
-        
-        # Process resource IDs if provided
-        if device_list:
-            # Extract second part of resource IDs and sort them
-            obj.resource_ids = ",".join(id.split(".")[1] for id in device_list.split(","))
-            resource_ids_sm = obj.resource_ids
-            resource_list = resource_ids_sm.split(',')            
-            resource_set = set(resource_list)
-            resource_list_sorted = sorted(resource_set)
-            resource_ids_generated = ','.join(resource_list_sorted)
-
-            # Convert resource IDs into a list of integers
-            num_list = list(map(int, obj.resource_ids.split(',')))
-
-            # Sort the list
-            num_list.sort()
-
-            # Join the sorted list back into a string
-            sorted_string = ','.join(map(str, num_list))
-            obj.resource_ids = sorted_string
-
-            # Extract the second part of each Android device ID and convert to integers
-            modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
-            modified_other_os_list = list(map(lambda item: int(item.split('.')[1]), obj.other_os_list))
-            
-            # Verify if all resource IDs are valid for Android devices
-            resource_ids = [int(x) for x in sorted_string.split(',')]
-            new_list_android = [item.split('.')[0] + '.' + item.split('.')[1] for item in obj.android_devices]
-
-            resources_list = device_list.split(",")
-            for element in resources_list:
-                if element in new_list_android:
-                    for ele in obj.android_devices:
-                        if ele.startswith(element):
-                            obj.android_list.append(ele)
-                else:
-                    logger.info("{} device is not available".format(element))
-            new_android = [int(item.split('.')[1]) for item in obj.android_list]
-
-            resource_ids = sorted(new_android)
-            available_resources=list(set(resource_ids))
-            
+                if len(result_dicts) == 1:
+                    print("yes - 1")
+                    result1 = result_dicts[0]
+                    data1 = result1
+                if len(result_dicts) == 2:
+                    print("yes - 2")
+                    result1, result2 = result_dicts[0], result_dicts[1]
+                    data1 = result2
+                if len(result_dicts) == 3:
+                    print("yes - 3")
+                    result1, result2, result3 = result_dicts[0], result_dicts[1], result_dicts[2]
+                    data1 = result3
+                if len(result_dicts) == 4:
+                    print("yes - 4")
+                    result1, result2, result3, result4 = result_dicts[0], result_dicts[1], result_dicts[2], result_dicts[3]
+                    data1 = result4
+                data = data1
+            data_set, load, res = qos_test_obj.generate_graph_data_set(data)
+        if qos_serial_run:
+            for qos_tos in tos:
+                print(qos_tos)
+                qos_test_overall_real(qos_tos)
         else:
-            # Query user to select devices if no resource IDs are provided
-            selected_devices,report_labels,selected_macs = obj.devices.query_user()
-            # Handle cases where no devices are selected
-            if not selected_devices:
-                logger.info("devices donot exist..!!")
-                return 
-            
-            obj.android_list = selected_devices
-            
+            qos_test_overall_real()
 
-            
-            # Verify if all resource IDs are valid for Android devices
-            if obj.android_list:
-                resource_ids = ",".join([item.split(".")[1] for item in obj.android_list])
-
-                num_list = list(map(int, resource_ids.split(',')))
-
-                # Sort the list
-                num_list.sort()
-
-                # Join the sorted list back into a string
-                sorted_string = ','.join(map(str, num_list))
-
-                obj.resource_ids = sorted_string
-                resource_ids1 = list(map(int, sorted_string.split(',')))
-                modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
-
-                # Check for invalid resource IDs
-                if not all(x in modified_list for x in resource_ids1):
-                    logger.info("Verify Resource ids, as few are invalid...!!")
-                    exit()
-                resource_ids_sm = obj.resource_ids
-                resource_list = resource_ids_sm.split(',')            
-                resource_set = set(resource_list)
-                resource_list_sorted = sorted(resource_set)
-                resource_ids_generated = ','.join(resource_list_sorted)
-                available_resources=list(resource_set)
-
-        logger.info("Devices available: {}".format(available_resources))
-        if len(available_resources)==0:
-            logger.info("There no devices available which are selected")
-            exit()
-        # Handle incremental values input if resource IDs are specified and in not specified case.
-        if incremental and not webgui_incremental :
-            if obj.resource_ids:
-                obj.incremental = input('Specify incremental values as 1,2,3 : ')
-                obj.incremental = [int(x) for x in obj.incremental.split(',')]
-            else:
-                logger.info("incremental Values are not needed as Android devices are not selected..")
-        
-        # Handle webgui_incremental argument
-        if webgui_incremental:
-            incremental = [int(x) for x in webgui_incremental.split(',')]
-            # Validate the length and assign incremental values
-            if (len(webgui_incremental) == 1 and incremental[0] != len(resource_list_sorted)) or (len(webgui_incremental) > 1):
-                obj.incremental = incremental
-            elif len(webgui_incremental) == 1:
-                obj.incremental = incremental
-
-        # if obj.incremental and (not obj.resource_ids):
-        #     logger.info("incremental values are not needed as Android devices are not selected.")
-        #     exit()
-        
-        # Validate incremental and resource IDs combination
-        if (obj.incremental and obj.resource_ids) or (webgui_incremental):
-            resources_list1 = [str(x) for x in obj.resource_ids.split(',')]
-            if resource_list_sorted:
-                resources_list1 = resource_list_sorted
-            # Check if the last incremental value is greater or less than resources provided
-            if obj.incremental[-1] > len(available_resources):
-                logger.info("Exiting the program as incremental values are greater than the resource ids provided")
-                exit()
-            elif obj.incremental[-1] < len(available_resources) and len(obj.incremental) > 1:
-                logger.info("Exiting the program as the last incremental value must be equal to selected devices")
-                exit()
-
-        # obj.run
-        test_time = datetime.now()
-        test_time = test_time.strftime("%b %d %H:%M:%S")
-
-        logger.info("Initiating Test...")
-        available_resources= [int(n) for n in available_resources]
-        available_resources.sort()
-        available_resources_string=",".join([str(n) for n in available_resources])
-        obj.set_available_resources_ids(available_resources_string)
-        # obj.set_available_resources_ids([int(n) for n in available_resources].sort())
-        obj.build()
-        time.sleep(10)
-        #TODO : To create cx for laptop devices
-        # Create end-points for devices other than Android if specified
-        # if (not no_laptops) and obj.other_list:
-        #     obj.create_generic_endp(obj.other_list,os_types_dict)
-
-        keys = list(obj.http_profile.created_cx.keys())
-        if len(keys)==0:
-            logger.info("Selected Devices are not available in the lanforge")
-            exit(1)
-        cx_order_list = []
-        index = 0
-        file_path = ""
-
-        if duration.endswith('s') or duration.endswith('S'):
-            duration = round(int(duration[0:-1])/60,2)
-        
-        elif duration.endswith('m') or duration.endswith('M'):
-            duration = int(duration[0:-1]) 
-    
-        elif duration.endswith('h') or duration.endswith('H'):
-            duration = int(duration[0:-1]) * 60  
-        
-        elif duration.endswith(''):
-            duration = int(duration)
-
-        if incremental or webgui_incremental:
-            incremental_capacity_list_values=obj.get_incremental_capacity_list()
-            if incremental_capacity_list_values[-1]!=len(available_resources):
-                logger.info("Incremental capacity doesnt match available devices")
-                if postcleanup==True:
-                    obj.postcleanup()
-                exit(1)
-
-        # Process resource IDs and incremental values if specified
-        if obj.resource_ids:
-            if obj.incremental:
-                test_setup_info_incremental_values =  ','.join(map(str, incremental_capacity_list_values))
-                if len(obj.incremental) == len(available_resources):
-                    test_setup_info_total_duration = duration
-                elif len(obj.incremental) == 1 and len(available_resources) > 1:
-                    if obj.incremental[0] == len(available_resources):
-                        test_setup_info_total_duration = duration
-                    else:
-                        div = len(available_resources)//obj.incremental[0] 
-                        mod = len(available_resources)%obj.incremental[0] 
-                        if mod == 0:
-                            test_setup_info_total_duration = duration * (div )
-                        else:
-                            test_setup_info_total_duration = duration * (div + 1)
-                else:
-                    test_setup_info_total_duration = duration * len(incremental_capacity_list_values)
-                # test_setup_info_duration_per_iteration= duration 
-            elif webgui_incremental:
-                test_setup_info_incremental_values = ','.join(map(str, incremental_capacity_list_values))
-                test_setup_info_total_duration = duration * len(incremental_capacity_list_values)
-            else:
-                test_setup_info_incremental_values = "No Incremental Value provided"
-                test_setup_info_total_duration = duration
-            obj.total_duration = test_setup_info_total_duration
-
-        # Calculate and manage cx_order_list ( list of cross connections to run ) based on incremental values
-        gave_incremental,iteration_number=True,0
-        if obj.resource_ids:
-            if not obj.incremental:
-                obj.incremental=[len(keys)]
-                gave_incremental=False
-            if obj.incremental or not gave_incremental:
-                if len(obj.incremental) == 1 and obj.incremental[0] == len(keys):
-                    cx_order_list.append(keys[index:])
-                elif len(obj.incremental) == 1 and len(keys) > 1:
-                    incremental_value = obj.incremental[0]
-                    max_index = len(keys)
-                    index = 0
-
-                    while index < max_index:
-                        next_index = min(index + incremental_value, max_index)
-                        cx_order_list.append(keys[index:next_index])
-                        index = next_index
-                elif len(obj.incremental) != 1 and len(keys) > 1:
-                    
-                    index = 0
-                    for num in obj.incremental:
-                        
-                        cx_order_list.append(keys[index: num])
-                        index = num
-
-                    if index < len(keys):
-                        cx_order_list.append(keys[index:])
-                        start_time_webGUI = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-                # Update start and end times for webGUI
-                for i in range(len(cx_order_list)):
-                    if i == 0:
-                        obj.data["start_time_webGUI"] = [datetime.now().strftime('%Y-%m-%d %H:%M:%S')] * len(keys)
-                        # if len(obj.incremental) == 1 and obj.incremental[0] == len(keys):
-                        #     end_time_webGUI = (datetime.now() + timedelta(minutes = duration)).strftime('%Y-%m-%d %H:%M:%S')
-                        # elif len(obj.incremental) == 1 and len(keys) > 1:
-                        #     end_time_webGUI = (datetime.now() + timedelta(minutes = duration * len(cx_order_list))).strftime('%Y-%m-%d %H:%M:%S')
-                        # elif len(obj.incremental) != 1 and len(keys) > 1:
-                        #     end_time_webGUI = (datetime.now() + timedelta(minutes = duration * len(cx_order_list))).strftime('%Y-%m-%d %H:%M:%S')
-                        # if len(obj.incremental) == 1 and obj.incremental[0] == len(keys):
-                        #     end_time_webGUI = (datetime.now() + timedelta(minutes = obj.total_duration)).strftime('%Y-%m-%d %H:%M:%S')
-                        # elif len(obj.incremental) == 1 and len(keys) > 1:
-                        #     end_time_webGUI = (datetime.now() + timedelta(minutes = obj.total_duration)).strftime('%Y-%m-%d %H:%M:%S')
-                        # elif len(obj.incremental) != 1 and len(keys) > 1:
-                        #     end_time_webGUI = (datetime.now() + timedelta(minutes = obj.total_duration)).strftime('%Y-%m-%d %H:%M:%S')
-
-                        end_time_webGUI = (datetime.now() + timedelta(minutes = obj.total_duration)).strftime('%Y-%m-%d %H:%M:%S')
-                        obj.data['end_time_webGUI'] = [end_time_webGUI] * len(keys)
+    def start_ping_test(self, ssid, password, encryption, target,
+                        interval=1, ping_test_duration=60, device_list=[]):
+        target = target
+        interval = interval
+        # starting part of the ping test
+        ping_test_obj = ping_test.Ping(host=self.lanforge_ip, port=self.port, ssid=ssid, security=encryption,
+                                            password=password, lanforge_password="lanforge", target=target,
+                                            interval=interval, sta_list=[], duration=ping_test_duration)
+        ping_test_obj.enable_real = True
+        if not ping_test_obj.check_tab_exists():
+            print('Generic Tab is not available for Ping Test.\nAborting the test.')
+            exit(0)
+        base_interop_profile = RealDevice(manager_ip=self.lanforge_ip,
+                                        ssid_5g=ssid,
+                                        passwd_5g=password,
+                                        encryption_5g=encryption)
+        base_interop_profile.get_devices()
+        ping_test_obj.select_real_devices(real_devices=base_interop_profile,
+                                            real_sta_list=device_list,
+                                            base_interop_obj=base_interop_profile)
+        # removing the existing generic endpoints & cxs
+        ping_test_obj.cleanup()
+        ping_test_obj.sta_list = device_list
+        # creating generic endpoints
+        ping_test_obj.create_generic_endp()
+        print("Generic Cross-Connection List: {}".format(ping_test_obj.generic_endps_profile.created_cx))
+        print('Starting Running the Ping Test for {} seconds'.format(ping_test_duration))
+        # start generate endpoint
+        ping_test_obj.start_generic()
+        ports_data_dict = ping_test_obj.json_get('/ports/all/')['interfaces']
+        ports_data = {}
+        for ports in ports_data_dict:
+            port, port_data = list(ports.keys())[0], list(ports.values())[0]
+            ports_data[port] = port_data
+        time.sleep(ping_test_duration)
+        print('Stopping the PING Test...')
+        ping_test_obj.stop_generic()
+        # getting result dict
+        result_data = ping_test_obj.get_results()
+        result_json = {}
+        if type(result_data) == dict:
+            for station in ping_test_obj.sta_list:
+                current_device_data = base_interop_profile.devices_data[station]
+                if station in result_data['name']:
+                    result_json[station] = {
+                        'command': result_data['command'],
+                        'sent': result_data['tx pkts'],
+                        'recv': result_data['rx pkts'],
+                        'dropped': result_data['dropped'],
+                        'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
+                        'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
+                        'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
+                        'mac': current_device_data['mac'],
+                        'channel': current_device_data['channel'],
+                        'ssid': current_device_data['ssid'],
+                        'mode': current_device_data['mode'],
+                        'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
+                        'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
+                        'remarks': [],
+                        'last_result': [result_data['last results'].split('\n')[-2] if len(result_data['last results']) != 0 else ""][0]}
+                    result_json[station]['remarks'] = ping_test_obj.generate_remarks(result_json[station])
+        else:
+            for station in ping_test_obj.sta_list:
+                current_device_data = base_interop_profile.devices_data[station]
+                for ping_device in result_data:
+                    ping_endp, ping_data = list(ping_device.keys())[0], list(ping_device.values())[0]
+                    if station in ping_endp:
+                        result_json[station] = {
+                            'command': ping_data['command'],
+                            'sent': ping_data['tx pkts'],
+                            'recv': ping_data['rx pkts'],
+                            'dropped': ping_data['dropped'],
+                            'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
+                            'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
+                            'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
+                            'mac': current_device_data['mac'],
+                            'channel': current_device_data['channel'],
+                            'ssid': current_device_data['ssid'],
+                            'mode': current_device_data['mode'],
+                            'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
+                            'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
+                            'remarks': [],
+                            'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]}
+                        result_json[station]['remarks'] = ping_test_obj.generate_remarks(result_json[station])
+        print("Final Result Json For Ping Test: {}".format(result_json))
+        return result_json
 
 
-                    obj.start_specific(cx_order_list[i])
-                    
-                    iteration_number+=len(cx_order_list[i])
-                    if cx_order_list[i]:
-                        logger.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
-                    else:
-                        logger.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
-                    
-                    # duration = 60 * duration
-                    file_path = "webBrowser.csv"
-
-                    start_time = time.time()
-                    df = pd.DataFrame(obj.data)
-
-                    if end_time_webGUI < datetime.now().strftime('%Y-%m-%d %H:%M:%S'):
-                        obj.data['remaining_time_webGUI'] = ['0:00'] * len(keys)
-                    else:
-                        date_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        obj.data['remaining_time_webGUI'] =  [datetime.strptime(end_time_webGUI,"%Y-%m-%d %H:%M:%S") - datetime.strptime(date_time,"%Y-%m-%d %H:%M:%S")] * len(keys)
-                    # Monitor runtime and save results
-                    
-                    obj.monitor_for_runtime_csv(duration,file_path,iteration_number,resource_list_sorted,cx_order_list[i])
-                        # time.sleep(duration)
-                
-        obj.stop()
-
-        
-
-        # Additional setup for generating reports and post-cleanup
-        if obj.resource_ids:
-            # uc_avg_val = obj.my_monitor('uc-avg')
-            total_urls = obj.my_monitor('total-urls')
-
-            date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
-
-            # Retrieve resource data for Android devices
-            phone_list = obj.get_resource_data() 
-
-            # Initialize and retrieve username data
-            username = []
-            eid_data = obj.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal")
-
-            resource_ids = list(map(int, obj.resource_ids.split(',')))
-            # Extract username information from resource data
-            for alias in eid_data["interfaces"]:
-                for i in alias:
-                    if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
-                        resource_hw_data = obj.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
-                        hw_version = resource_hw_data['resource']['hw version']
-                        if not hw_version.startswith(('Win', 'Linux', 'Apple')) and int(resource_hw_data['resource']['eid'].split('.')[1]) in resource_ids:
-                            username.append(resource_hw_data['resource']['user'] )
-
-            # Construct device list string for report
-            device_list_str = ','.join([f"{name} ( Android )" for name in username])
-
-
-
-            # Retrieve additional monitoring data
-            # total_urls = obj.my_monitor('total-urls')
-            uc_min_val = obj.my_monitor('uc-min')
-            timeout = obj.my_monitor('timeout')
-            uc_min_value = uc_min_val
-            dataset2 = total_urls
-            dataset = timeout
-            lis = username
-            bands = ['URLs']
-            obj.data['total_urls'] = total_urls
-            obj.data['uc_min_val'] = uc_min_val 
-            obj.data['timeout'] = timeout
-        logger.info("Test Completed")
-
-        # Handle incremental values and generate reports accordingly
-        prev_inc_value = 0
-        if obj.resource_ids and obj.incremental :
-            for i in range(len(cx_order_list)):
-                df = pd.DataFrame(obj.data)
-                names_to_increment = cx_order_list[i] 
-
-                if 'inc_value' not in df.columns:
-                    df['inc_value'] = 0
-                if i == 0:
-                    prev_inc_value = len(cx_order_list[i])
-                else:
-                    prev_inc_value = prev_inc_value + len(cx_order_list[i])
-                    
-                obj.data['inc_value'] = df.apply(
-                    lambda row: (
-                        prev_inc_value  # Accumulate inc_value
-                        if row['inc_value'] == 0 and row['name'] in names_to_increment 
-                        else row['inc_value']  # Keep existing inc_value
-                    ), 
-                    axis=1
-                )
-
-                df1 = pd.DataFrame(obj.data)
-
-                
-                df1.to_csv(file_path, mode='w', index=False)     
-        if postcleanup:
-            obj.postcleanup()
-        logger.info("Test Stopped")
-
-
-        return obj.data
-
-
-logger_config = lf_logger_config.lf_logger_config()
 
 candela_apis = Candela(ip='192.168.214.61', port=8080)
+
 # device_list, report_labels, device_macs = candela_apis.start_connectivity(
 #     manager_ip='192.168.214.61', port=8080, server_ip='192.168.1.61', ssid_5g='Walkin_open', encryption_5g='open', passwd_5g='[BLANK]', device_list=['RZ8N10FFTKE', 'RZ8NB1KWXLB'])
 # logger.info(device_list, report_labels, device_macs)
-# # device_list, report_labels, device_macs = candela_apis.start_connectivity(manager_ip='192.168.214.61', port=8080, server_ip='192.168.1.61', ssid_5g='Walkin_open', encryption_5g='open', passwd_5g='[BLANK]')
+# 
+# device_list, report_labels, device_macs = candela_apis.start_connectivity(manager_ip='192.168.214.61', port=8080, server_ip='192.168.1.61', ssid_5g='Walkin_open', encryption_5g='open', passwd_5g='[BLANK]')
+# 
 # candela_apis.start_ftp_test(ssid='Walkin_open', password='[BLANK]', security='open', bands=[
 #                             '5G'], directions=['Download'], file_sizes=['10MB'], device_list=','.join(device_list))
 
-# print(candela_apis.start_throughput_test(traffic_type="lf_udp",
-#                                    device_list='1.13,1.18,1.19,1.20,1.21',
-#                                     upload_min_rate_bps=1000000,
-#                                     download_min_rate_bps=100000,
-#                                     upstream_port="eth1",
-#                                     # packet_size="-1",
-#                                     # incremental_capacity=[],
-#                                     report_timer="5s",
-#                                     load_type="wc_intended_load",
-#                                     # incremental_capacity="1",
-#                                     test_duration="30s",
-#                                     precleanup=True,
-#                                     postcleanup=True,
-#                                     packet_size=18
-#                                    ))
-
-# candela_apis.start_throughput_test(traffic_type="lf_udp",
-#                                    device_list="1.13,1.18",
-#                                    upload_min_rate_bps=1000000,
-#                                     download_min_rate_bps=100000,
-#                                     upstream_port="eth1",
-#                                     # packet_size="-1",
-#                                     report_timer="5s",
-#                                     test_duration="30s",
-#                                     do_interopability=True,
-#                                     precleanup=True,
-#                                     postcleanup=True
-#                                    )
-
-# print(candela_apis.start_video_streaming_test(url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-#                                         media_source="hls",
-#                                         media_quality="4k",
-#                                         duration="1m",
-#                                         device_list='1.13,1.18,1.19,1.20,1.21',
-#                                         precleanup=True,
-#                                         postcleanup=True,
-#                                         # incremental_capacity="1"
-#                                         ))
-
-# print(candela_apis.start_web_browser_test(device_list="1.13,1.18,1.22,1.23,1.24,1.25,1.26,1.27", 
-#                                           incremental_capacity="5",
-#                                           duration="30s",
-#                                           url="http://www.google.com",
-#                                             count=6))
+# candela_apis.start_http_test(ssid='Walkin_open', password='[BLANK]',
+#                              security='open', http_file_size='10MB',
+#                              device_list=['1.342.wlan0'], report_labels=['1.342 linux test41'],
+#                              device_macs=['48:e7:da:fe:0d:ed'], target_per_ten=1000,
+#                              band='5G', ap_name='Netgear')
+# candela_apis.start_qos_test(ssid='Walkin_open', password='[BLANK]', security='open',
+#                             ap_name='Netgear', upstream='eth1', tos=['VI', 'VO', 'BE', 'BK'],
+#                             traffic_type='lf_tcp', device_list=['1.342.wlan0'], report_labels=['1.342 linux test41'],
+#                             device_macs=['48:e7:da:fe:0d:ed'], qos_serial_run=False)
+# candela_apis.start_ping_test(ssid='Walkin_open', password='[BLANK]', encryption='open',
+#                              target='192.168.1.61', device_list=['1.342.wlan0'])
