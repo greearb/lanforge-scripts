@@ -1013,8 +1013,9 @@ junit.xml path: allure serve {junit_path}
             if "TEST_SERVER" in self.json_rig["test_rig_parameters"]:
                 self.test_server = self.json_rig["test_rig_parameters"]["TEST_SERVER"]
             else:
-                self.logger.info(
-                    "TEST_SERVER not in test_rig_parameters json")
+                self.test_server = "localhost"
+
+                self.logger.info("TEST_SERVER not in test_rig_parameters json")
         else:
             self.test_server = self.server_override
 
