@@ -190,6 +190,7 @@ class lf_check():
         self.report_path = ""
         self.lf_check_report = ""
         self.lf_check_outfile = ""
+        self.allure_epoch = str(int(time.time()))
 
         if _report_path is not None:
             self.report_path = _report_path
@@ -604,6 +605,7 @@ class lf_check():
             inspect_url = inspect_url[1:]
 
         allure_report_latest = os.path.join(os.path.dirname(os.path.dirname(report_url)),'allure-report-latest')            
+        allure_report_epoch = os.path.join(os.path.dirname(os.path.dirname(report_url)),self.allure_epoch)            
 
         # following recommendation
         # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
@@ -636,10 +638,14 @@ Dut SN: {dut_sn}
 allure-report-latest:
 http://{host}/{allure}
 
+allure-report-test_run
+http://{host}/{current_allure}
+
 lf_check Test Suite Report:
 http://{hostname}/{report}
 """.format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip,
-                suite=self.test_suite, db=self.database_sqlite, host=self.server_ip, allure=allure_report_latest, 
+                suite=self.test_suite, db=self.database_sqlite, host=self.server_ip, allure=allure_report_latest,
+                current_allure=allure_report_epoch,
                 hostname=self.server_ip, report=report_url,
                 dut_model=self.use_dut_name, dut_hw=self.dut_hw, dut_sw=self.dut_sw, dut_sn=self.dut_serial)
 
@@ -655,10 +661,13 @@ Dut SN: {dut_sn}
 allure-report-latest:
 http://{host}/{allure}
 
+allure-report-test_run
+http://{host}/{current_allure}
 
 lf_check Test Suite Report:
 http://{hostname}/{report}
 """.format(hostname=self.server_ip, suite=self.test_suite, db=self.database_sqlite, report=report_url,host=self.server_ip, allure=allure_report_latest,
+                current_allure=allure_report_epoch,
                 dut_model=self.use_dut_name, dut_hw=self.dut_hw, dut_sw=self.dut_sw, dut_sn=self.dut_serial)
 
         # For Multiple Suites save the link for multiple lf_check results  lf_qa and lf_inspect alread keep the aggragate
@@ -2766,9 +2775,9 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
                 allure_report_path_latest = str(report.get_path()) + "/allure-report-latest"
 
                 # Allure report history
-                # TODO move to generation being at the end of all suites
-                # report.update_allure_results_history(allure_results=allure_results_path)
-                # report.generate_allure_report()
+                # TODO move to generation being at the end of all suites generate after each suite
+                report.update_allure_results_history(allure_results_path=allure_results_path)
+                report.generate_allure_report()
 
 
                 # Send email
@@ -2914,7 +2923,7 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
     # Copy the allure report to latest and mv report to time stamp
     # maybe report should contain this funtionality
     allure_epoch = str(int(time.time()))
-    allure_epoch_dir = os.path.join(report.path,allure_epoch)
+    allure_epoch_dir = os.path.join(report.path,check.allure_epoch)
     
 
     # check to see if the directory is present
