@@ -198,7 +198,7 @@ class lf_create_dp_rvr_json():
         if "Receive" in lf_dp_rvr_dut_traffic_direction:
             traffic_direction += "_rx"
         if "UDP" in lf_dp_rvr_traffic_type:
-            traffic_type = '_UCP'
+            traffic_type = '_UDP'
         if "TCP" in lf_dp_rvr_traffic_type:
             traffic_type = '_TCP'
         if ("TCP" in lf_dp_rvr_traffic_type) and ("UDP" in lf_dp_rvr_traffic_type):
