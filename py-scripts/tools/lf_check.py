@@ -190,7 +190,7 @@ class lf_check():
         self.report_path = ""
         self.lf_check_report = ""
         self.lf_check_outfile = ""
-        self.allure_epoch = str(int(time.time()))
+        self.allure_epoch = ""# str(int(time.time()))
 
         if _report_path is not None:
             self.report_path = _report_path
@@ -603,7 +603,7 @@ class lf_check():
         inspect_url = self.inspect_report_html.replace('/home/lanforge', '')
         if inspect_url.startswith('/'):
             inspect_url = inspect_url[1:]
-
+        
         allure_report_latest = os.path.join(os.path.dirname(os.path.dirname(report_url)),'allure-report-latest')            
         allure_report_epoch = os.path.join(os.path.dirname(os.path.dirname(report_url)),self.allure_epoch)            
 
@@ -2779,6 +2779,142 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
                 report.update_allure_results_history(allure_results_path=allure_results_path)
                 report.generate_allure_report()
 
+                # allure report list needs to be adjusted
+                lf_check_test_suite_list.append(check.lf_check_link) # 8/24/2024
+
+
+                ########################################################################
+                #
+                # UPDATE Allure for Each Test Run Begin
+                #
+                ########################################################################
+
+                # This next bit of code will do the following
+                #   Record the GUI build information and Kernel information
+                #   Update the allure history 
+                #   Build an allure report
+                #   Copy the allure report into allure_report_latest
+                #   Move allure report to a directory based on a time stamp
+                #   Create the allure executor.json file base off the time stamp
+                #   Copy the executor.json into the allure-results 
+
+
+                # save the environment _properties
+                allure_latest = "latest_allure={}/allure-report-latest/\n".format(os.path.dirname(os.path.dirname(lf_check_test_suite_list[0])))
+                kernel_version = "kernel={}\n".format(lanforge_kernel_version)
+                gui_version = "gui_version={}\n".format(lanforge_gui_version)
+                gui_build_date = "gui_build_date={}\n".format(lanforge_gui_build_date)
+                lanforge_ip = "lanforge_ip={}\n".format(lanforge_system_ip)
+                lanforge = "lanforge={}\n".format(lanforge_system_node_version)
+                #suites = "suites={}\n".format(lf_check_test_suite_list)
+
+                allure_environment_properties = "{allure_latest} {kernel_version} {gui_version} {gui_build_date} {lanforge_ip} {lanforge}".format(
+                    allure_latest=allure_latest,kernel_version=kernel_version,gui_version=gui_version,gui_build_date=gui_build_date,lanforge_ip=lanforge_ip,lanforge=lanforge
+                )
+
+                if lf_check_test_suite_list:
+                    suite_parent = "URL={}\n".format(os.path.dirname(os.path.dirname(lf_check_test_suite_list[0])))
+                    allure_environment_properties += suite_parent 
+
+                count = 0
+                allure_suite_strings = ""
+                for suite in lf_check_test_suite_list:
+                    suite_string = "{}\n".format(suite)
+                    allure_suite_strings += suite_string
+                    count += 1
+
+                # write URL's to a file
+                allure_env_links_file = str(report.get_path()) + "/allure_env_links.txt"
+
+                # This is to allow past lf_check results as a URL
+                if args.new_test_run:
+                    if os.path.exists(allure_env_links_file):
+                        os.remove(allure_env_links_file)
+
+                # check for new test run
+                allure_env_links_fd = open(allure_env_links_file, 'a+')
+                allure_env_links_fd.write(allure_suite_strings)
+                allure_env_links_fd.close()
+
+                allure_env_links_fd = open(allure_env_links_file, 'r+')
+
+                count = 0
+                for suite in allure_env_links_fd:
+                    suite_string = " URL_{}={}\n".format(count,suite)
+                    allure_environment_properties += suite_string
+                    count += 1
+
+
+                report.set_allure_environment_properties(allure_environment_properties=allure_environment_properties)
+                report.write_allure_environment_properties(allure_results_path=allure_results_path)
+
+
+                # Copy the allure report to latest and mv report to time stamp
+                # maybe report should contain this funtionality
+                allure_epoch = str(int(time.time()))
+                allure_epoch_dir = os.path.join(report.path,allure_epoch)
+                
+
+                # check to see if the directory is present
+                if not os.path.exists(report.allure_report_dir):
+                    os.makedirs(report.allure_report_dir)
+
+                # directory with time stamp
+                new_allure_epoch_dir = shutil.copytree(report.allure_report_dir,allure_epoch_dir)
+                logger.debug("allure report directory with timestamp {allure_report}".format(allure_report=new_allure_epoch_dir))
+
+                # Update the executor json after copying the data 
+                # save executor.json
+                allure_executor_dictionary = {
+                    "reportName": "{report_name}".format(report_name="lf_check"),
+                    "buildName": "{build_name}#{time1}".format(build_name=lanforge_gui_version,time1=allure_epoch),
+                    "buildOrder": "{time2}".format(time2=allure_epoch),
+                    "name": "{name}".format(name="Lanforge Check"),
+                    "reportUrl": "../{time3}/index.html".format(time3=allure_epoch),
+                    "buildUrl": "../{time4}".format(time4=allure_epoch),
+                    "type": "lf_check"
+                }
+
+                allure_executor_json = json.dumps(allure_executor_dictionary, indent=4)
+                report.set_allure_executor(allure_executor_json)
+                report.write_allure_executor(allure_results_path=allure_results_path)                  
+
+
+                # Update allure one time
+                report.update_allure_results_history(allure_results_path=allure_results_path)
+                report.generate_allure_report()
+
+
+                # copy allure report to latest
+                allure_latest_dir = os.path.join(report.path,"allure-report-latest")
+                    
+                # check to see if the directory is present
+                if not os.path.exists(allure_latest_dir):
+                    os.makedirs(allure_latest_dir)
+
+                try:
+                    new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir, dirs_exist_ok=True)
+                except:
+                    # fedora 27 does no except the directory being present
+                    shutil.rmtree(allure_latest_dir, ignore_errors=True)
+                    new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir)
+                logger.debug("allure report directory copied to {latest}".format(latest=new_allure_latest_dir))
+
+                # copy the allure-report-latest into the epoch time stamp
+                # check to see if the directory is present
+                if not os.path.exists(new_allure_epoch_dir):
+                    os.makedirs(new_allure_epoch_dir)
+
+                try:
+                    new_allure_epoch_latest_dir = shutil.copytree(report.allure_report_dir,new_allure_epoch_dir, dirs_exist_ok=True)
+                except:
+                    # fedora 27 does no except the directory being present
+                    shutil.rmtree(new_allure_epoch_dir, ignore_errors=True)
+                    new_allure_epoch_latest_dir = shutil.copytree(report.allure_report_dir,new_allure_epoch_dir)
+
+                logger.debug("allure report directory copied to {latest}".format(latest=new_allure_epoch_latest_dir))
+                            
+
 
                 # Send email
                 if args.no_send_email:
@@ -2791,10 +2927,11 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
                 else:
                     check.total_iterations = total_iterations
                     check.iteration = iteration
+                    check.allure_epoch = allure_epoch
                     check.send_results_email(report_file=html_report)
 
                 # allure report list needs to be adjusted
-                lf_check_test_suite_list.append(check.lf_check_link)
+                # 8/24/2024 lf_check_test_suite_list.append(check.lf_check_link)
 
                 # print later so shows up last
                 logger.info("junit.xml: allure serve {}".format(junit_xml))
@@ -2856,6 +2993,13 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
 
                     # print out locations of results
                     logger.info("html_report_latest: {latest}".format(latest=html_report_latest))
+
+                ########################################################################
+                #
+                # UPDATE Allure for Each Test Run END
+                #
+                ########################################################################
+
 
 
 
@@ -2930,60 +3074,60 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
     if not os.path.exists(report.allure_report_dir):
         os.makedirs(report.allure_report_dir)
 
-    # directory with time stamp
-    new_allure_epoch_dir = shutil.copytree(report.allure_report_dir,allure_epoch_dir)
-    logger.debug("allure report directory with timestamp {allure_report}".format(allure_report=new_allure_epoch_dir))
-
-    # Update the executor json after copying the data 
-    # save executor.json
-    allure_executor_dictionary = {
-        "reportName": "{report_name}".format(report_name="lf_check"),
-        "buildName": "{build_name}#{time1}".format(build_name=lanforge_gui_version,time1=allure_epoch),
-        "buildOrder": "{time2}".format(time2=allure_epoch),
-        "name": "{name}".format(name="Lanforge Check"),
-        "reportUrl": "../{time3}/index.html".format(time3=allure_epoch),
-        "buildUrl": "../{time4}".format(time4=allure_epoch),
-        "type": "lf_check"
-    }
-
-    allure_executor_json = json.dumps(allure_executor_dictionary, indent=4)
-    report.set_allure_executor(allure_executor_json)
-    report.write_allure_executor(allure_results_path=allure_results_path)                  
-
-
-    # Update allure one time
-    report.update_allure_results_history(allure_results_path=allure_results_path)
-    report.generate_allure_report()
-
-
-    # copy allure report to latest
-    allure_latest_dir = os.path.join(report.path,"allure-report-latest")
-        
-    # check to see if the directory is present
-    if not os.path.exists(allure_latest_dir):
-        os.makedirs(allure_latest_dir)
-
-    try:
-        new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir, dirs_exist_ok=True)
-    except:
-        # fedora 27 does no except the directory being present
-        shutil.rmtree(allure_latest_dir, ignore_errors=True)
-        new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir)
-    logger.debug("allure report directory copied to {latest}".format(latest=new_allure_latest_dir))
-
-    # copy the allure-report-latest into the epoch time stamp
-    # check to see if the directory is present
-    if not os.path.exists(new_allure_epoch_dir):
-        os.makedirs(new_allure_epoch_dir)
-
-    try:
-        new_allure_epoch_latest_dir = shutil.copytree(report.allure_report_dir,new_allure_epoch_dir, dirs_exist_ok=True)
-    except:
-        # fedora 27 does no except the directory being present
-        shutil.rmtree(new_allure_epoch_dir, ignore_errors=True)
-        new_allure_epoch_latest_dir = shutil.copytree(report.allure_report_dir,new_allure_epoch_dir)
-
-    logger.debug("allure report directory copied to {latest}".format(latest=new_allure_epoch_latest_dir))
+#     # directory with time stamp
+#     new_allure_epoch_dir = shutil.copytree(report.allure_report_dir,allure_epoch_dir)
+#     logger.debug("allure report directory with timestamp {allure_report}".format(allure_report=new_allure_epoch_dir))
+# 
+#     # Update the executor json after copying the data 
+#     # save executor.json
+#     allure_executor_dictionary = {
+#         "reportName": "{report_name}".format(report_name="lf_check"),
+#         "buildName": "{build_name}#{time1}".format(build_name=lanforge_gui_version,time1=allure_epoch),
+#         "buildOrder": "{time2}".format(time2=allure_epoch),
+#         "name": "{name}".format(name="Lanforge Check"),
+#         "reportUrl": "../{time3}/index.html".format(time3=allure_epoch),
+#         "buildUrl": "../{time4}".format(time4=allure_epoch),
+#         "type": "lf_check"
+#     }
+# 
+#     allure_executor_json = json.dumps(allure_executor_dictionary, indent=4)
+#     report.set_allure_executor(allure_executor_json)
+#     report.write_allure_executor(allure_results_path=allure_results_path)                  
+# 
+# 
+#     # Update allure one time
+#     report.update_allure_results_history(allure_results_path=allure_results_path)
+#     report.generate_allure_report()
+# 
+# 
+#     # copy allure report to latest
+#     allure_latest_dir = os.path.join(report.path,"allure-report-latest")
+#         
+#     # check to see if the directory is present
+#     if not os.path.exists(allure_latest_dir):
+#         os.makedirs(allure_latest_dir)
+# 
+#     try:
+#         new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir, dirs_exist_ok=True)
+#     except:
+#         # fedora 27 does no except the directory being present
+#         shutil.rmtree(allure_latest_dir, ignore_errors=True)
+#         new_allure_latest_dir = shutil.copytree(report.allure_report_dir,allure_latest_dir)
+#     logger.debug("allure report directory copied to {latest}".format(latest=new_allure_latest_dir))
+# 
+#     # copy the allure-report-latest into the epoch time stamp
+#     # check to see if the directory is present
+#     if not os.path.exists(new_allure_epoch_dir):
+#         os.makedirs(new_allure_epoch_dir)
+# 
+#     try:
+#         new_allure_epoch_latest_dir = shutil.copytree(report.allure_report_dir,new_allure_epoch_dir, dirs_exist_ok=True)
+#     except:
+#         # fedora 27 does no except the directory being present
+#         shutil.rmtree(new_allure_epoch_dir, ignore_errors=True)
+#         new_allure_epoch_latest_dir = shutil.copytree(report.allure_report_dir,new_allure_epoch_dir)
+# 
+#     logger.debug("allure report directory copied to {latest}".format(latest=new_allure_epoch_latest_dir))
 
 if __name__ == '__main__':
     main()
