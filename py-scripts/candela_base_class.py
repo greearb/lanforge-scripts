@@ -85,37 +85,18 @@ class Candela:
 
         Returns:
             interop_tab_response: if invalid response code. Response code other than 200.
-            androids: Android serials. Defaults to [].
-            linux: Linux device hostnames. Defaults to [].
-            macbooks: Mac Book hostnames. Defaults to [].
-            windows: Windows hostnames. Defaults to [].
-            iOS: iOS serials. Defaults to [].
+            all_devices (dict): returns both the port data and resource mgr data with shelf.resource as the key
         """
         androids, linux, macbooks, windows, iOS = [], [], [], [], []
-
-        # querying interop tab for fetching android and iOS data
-        interop_tab_response, interop_tab_data = self.api_get(endp='/adb')
-        if interop_tab_response.status_code != 200:
-            logger.info('Error fetching the data with the {}. Returned {}'.format(
-                '/adb', interop_tab_response))
-            return interop_tab_response
-        for mobile in interop_tab_data['devices']:
-            mobile_serial, mobile_data = list(
-                mobile.keys())[0], list(mobile.values())[0]
-            if mobile_data['phantom']:
-                continue
-            if mobile_data['device-type'] == 'Android':
-                androids.append(mobile_data)
-            elif mobile_data['device-type'] == 'iOS':
-                iOS.append(mobile_data)
+        all_devices = {}
 
         # querying resource manager tab for fetching laptops data
         resource_manager_tab_response, resource_manager_data = self.api_get(
             endp='/resource/all')
         if resource_manager_tab_response.status_code != 200:
             logger.info('Error fetching the data with the {}. Returned {}'.format(
-                '/resources/all', interop_tab_response))
-            return interop_tab_response
+                '/resources/all', resource_manager_tab_response))
+            return resource_manager_tab_response
         resources_list = [resource_manager_data['resource']
                           if 'resource' in resource_manager_data else resource_manager_data['resources']][0]
         for resource in resources_list:
@@ -123,15 +104,47 @@ class Candela:
                 0], list(resource.values())[0]
             if resource_data['phantom']:
                 continue
-            if resource_data['app-id'] == '0' and resource_data['ct-kernel'] is False:
-                if 'Win' in resource_data['hw version']:
-                    windows.append(resource_data)
-                elif 'Apple' in resource_data['hw version']:
-                    macbooks.append(resource_data)
-                elif 'Linux' in resource_data['hw version']:
-                    linux.append(resource_data)
+            if resource_data['ct-kernel'] is False:
+                if resource_data['app-id'] == '0':
+                    if 'Win' in resource_data['hw version']:
+                        windows.append(resource_data)
+                    elif 'Apple' in resource_data['hw version']:
+                        macbooks.append(resource_data)
+                    elif 'Linux' in resource_data['hw version']:
+                        linux.append(resource_data)
+                else:
+                    if 'Apple' in resource_data['hw version']:
+                        iOS.append(resource_data)
+                    else:
+                        androids.append(resource_data)
+                all_devices[resource_port] = resource_data
+                shelf, resource = resource_port.split('.')
+                _, port_data = self.api_get(endp='/port/{}/{}'.format(shelf, resource))
+                for port_id in port_data['interfaces']:
+                    port_id_values = list(port_id.values())[0]
+                    _, all_columns = self.api_get(endp=port_id_values['_links'])
+                    all_columns = all_columns['interface']
+                    if all_columns['parent dev'] == 'wiphy0':
+                        all_devices[resource_port].update(all_columns)
+        return all_devices
 
-        return androids, linux, macbooks, windows, iOS
+    def get_client_connection_details(self, device_list: list):
+        """
+        Method to return SSID, BSSID and Signal Strength details of the ports mentioned in the device list argument.
+
+        Args:
+            device_list (list): List of all the ports. E.g., ['1.10.wlan0', '1.11.wlan0']
+
+        Returns:
+            connection_details (dict): Dictionary containing port number as the key and SSID, BSSID, Signal as the values for each device in the device_list.
+        """        
+        connection_details = {}
+        for device in device_list:
+            shelf, resource, port_name = device.split('.')
+            _, device_data = self.api_get('/port/{}/{}/{}?fields=ssid,ap,signal,mac'.format(shelf, resource, port_name))
+            device_data = device_data['interface']
+            connection_details[device] = device_data
+        return connection_details
 
     def start_connectivity(self,
                            manager_ip=None,
@@ -1929,6 +1942,9 @@ class Candela:
 
 logger_config = lf_logger_config.lf_logger_config()
 candela_apis = Candela(ip='192.168.214.61', port=8080)
+
+
+# candela_apis.get_client_connection_details(['1.208.wlan0', '1.19.wlan0'])
 
 # TO RUN CONNECTIVITY TEST
 # device_list, report_labels, device_macs = candela_apis.start_connectivity(
