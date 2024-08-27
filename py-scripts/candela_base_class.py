@@ -898,6 +898,7 @@ class Candela:
                             incremental=[],
                             precleanup=False,
                             postcleanup=False,
+                            test_name=None
                               ):
         """
         Initiates a throughput test with various configurable parameters.
@@ -984,6 +985,7 @@ class Candela:
                        do_interopability=do_interopability,
                        incremental=incremental,
                        precleanup=precleanup,
+                       test_name=test_name
                        )
         
         obj.os_type()
@@ -1040,6 +1042,7 @@ class Candela:
         obj.stop()
         if postcleanup:
             obj.cleanup()
+        obj.generate_report(list(set(iterations_before_test_stopped_by_user)),incremental_capacity_list,data=all_dataframes,data1=to_run_cxs_len)
         return individual_df
 
     def start_video_streaming_test(self, ssid="ssid_wpa_2g", passwd="something", encryp="psk",
@@ -1047,7 +1050,7 @@ class Candela:
                         url="www.google.com", urls_per_tenm=100, duration="60", 
                         device_list=[], media_quality='0',media_source='1',
                         incremental = False,postcleanup=False,
-                        precleanup=False,incremental_capacity=None):
+                        precleanup=False,incremental_capacity=None,test_name=None):
         """
         Initiates a video streaming test with various configurable parameters.
 
@@ -1102,8 +1105,9 @@ class Candela:
         webgui_incremental=incremental_capacity
 
         media_source,media_quality=media_source.capitalize(),media_quality
-        media_source=media_source.lower()
-        media_quality=media_quality.lower()
+        media_source_name=media_source=media_source.lower()
+        media_quality_name=media_quality=media_quality.lower()
+
 
         if any(char.isalpha() for char in media_source):
             media_source=media_source_dict[media_source]
@@ -1376,7 +1380,7 @@ class Candela:
 
         if obj.resource_ids:
             
-            # date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
+            date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
 
             # phone_list = obj.get_resource_data() 
 
@@ -1396,8 +1400,29 @@ class Candela:
                         hw_version = resource_hw_data['resource']['hw version']
                         if not hw_version.startswith(('Win', 'Linux', 'Apple')) and int(resource_hw_data['resource']['eid'].split('.')[1]) in resource_ids:
                             username.append(resource_hw_data['resource']['user'] )
+            device_list_str = ','.join([f"{name} ( Android )" for name in username])
+
+            test_setup_info = {
+                "Testname" : test_name,
+                "Device List" : device_list_str ,
+                "No of Devices" : "Total" + "( " + str(len(keys)) + " ): Android(" +  str(len(keys)) +")",
+                "Incremental Values" : "",
+                "URL" : url,
+                "Media Source":media_source_name.upper(),
+                "Media Quality":media_quality_name
+            }
+            # if obj.incremental:
+            #     if len(incremental_capacity_list_values) != len(available_resources):
+            #         test_setup_info['Duration per Iteration (min)']= str(test_setup_info_duration_per_iteration)
+            test_setup_info['Incremental Values'] = test_setup_info_incremental_values
+            test_setup_info['Total Duration (min)'] = str(test_setup_info_total_duration) 
+                
 
             logger.info("Test Stopped")
+            if obj.resource_ids and obj.incremental :  
+                obj.generate_report(date, test_setup_info = test_setup_info,realtime_dataset=individual_df, cx_order_list = cx_order_list) 
+            elif obj.resource_ids:
+                obj.generate_report(date, test_setup_info = test_setup_info,realtime_dataset=individual_df) 
             if postcleanup==True:
                 obj.postcleanup()
 
@@ -1408,7 +1433,7 @@ class Candela:
                     url="www.google.com", count=1, duration="60s", 
                     device_list="", 
                     incremental = False,incremental_capacity=None,postcleanup=False,
-                    precleanup=False):
+                    precleanup=False,test_name=None):
         """
         Initiates a web browser test with various configurable parameters.
 
@@ -1755,7 +1780,18 @@ class Candela:
 
             # Construct device list string for report
             device_list_str = ','.join([f"{name} ( Android )" for name in username])
-
+            test_setup_info = {
+            "Testname" : test_name,
+            "Device List" : device_list_str ,
+            "No of Devices" : "Total" + "( " + str(len(phone_list)) + " ): Android(" +  str(len(phone_list)) +")" ,
+            "Incremental Values" : "",
+            "Required URL Count" : count,
+            "URL" : url 
+            }
+            # if obj.incremental:
+            #     test_setup_info['Duration per Iteration (min)']= str(test_setup_info_duration_per_iteration)+ " (min)"
+            test_setup_info['Incremental Values'] = test_setup_info_incremental_values
+            test_setup_info['Total Duration (min)'] = str(test_setup_info_total_duration) + " (min)"
 
 
             # Retrieve additional monitoring data
@@ -1798,7 +1834,8 @@ class Candela:
                 df1 = pd.DataFrame(obj.data)
 
                 
-                df1.to_csv(file_path, mode='w', index=False)     
+                df1.to_csv(file_path, mode='w', index=False)
+        obj.generate_report(date,"webBrowser.csv",test_setup_info = test_setup_info, dataset2 = dataset2, dataset = dataset, lis = lis, bands = bands, total_urls = total_urls, uc_min_value = uc_min_value , cx_order_list = cx_order_list,gave_incremental=gave_incremental)      
         if postcleanup:
             obj.postcleanup()
         logger.info("Test Stopped")
@@ -1941,7 +1978,7 @@ class Candela:
 
 
 logger_config = lf_logger_config.lf_logger_config()
-candela_apis = Candela(ip='192.168.214.61', port=8080)
+candela_apis = Candela(ip='192.168.242.2', port=8080)
 
 
 # candela_apis.get_client_connection_details(['1.208.wlan0', '1.19.wlan0'])
@@ -1979,14 +2016,14 @@ candela_apis = Candela(ip='192.168.214.61', port=8080)
 #                                     download=100000,
 #                                     upstream_port="eth1",
 #                                     # packet_size="-1",
-#                                     # incremental_capacity=[],
 #                                     report_timer="5s",
 #                                     load_type="wc_intended_load",
-#                                     # incremental_capacity="1",
+#                                     incremental_capacity="1",
 #                                     test_duration="30s",
 #                                     precleanup=True,
 #                                     postcleanup=True,
-#                                     packet_size=18
+#                                     packet_size=18,
+#                                     test_name="Throughput_test"
 #                                    )
 
 # TO RUN INTEROPERABILITY TEST
@@ -1995,29 +2032,29 @@ candela_apis = Candela(ip='192.168.214.61', port=8080)
 #                                    upload=1000000,
 #                                    download=100000,
 #                                    upstream_port="eth1",
-#                                    # packet_size="-1",
 #                                    test_duration="30s",
 #                                    do_interopability=True,
 #                                    precleanup=True,
-#                                    postcleanup=True
+#                                    postcleanup=True,
+#                                    test_name="Interoperabaility_test"
 #                                    )
 
 # TO RUN VIDEO STREAMING TEST
-# candela_apis.start_video_streaming_test(url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-#                                         media_source="hls",
-#                                         media_quality="4k",
-#                                         duration="1m",
-#                                         device_list='1.13,1.18,1.22,1.23,1.24,1.25,1.26,1.27',
-#                                         precleanup=True,
-#                                         postcleanup=True,
-#                                         # incremental_capacity="1"
-#                                         )
+candela_apis.start_video_streaming_test(url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+                                        media_source="hls",
+                                        media_quality="4k",
+                                        duration="1m",
+                                        device_list='1.13,1.18,1.22,1.23,1.24,1.25,1.26,1.27',
+                                        precleanup=True,
+                                        postcleanup=True,
+                                        incremental_capacity="5"
+                                        )
 
 # TO RUN WEB BROWSER TEST
 # candela_apis.start_web_browser_test(device_list="1.13,1.18,1.22,1.23,1.24,1.25,1.26,1.27", 
-#                                    #   incremental_capacity="5",
-                                        # duration="30s",
-                                        # url="http://www.google.com")
+#                                     #   incremental_capacity="5",
+#                                         duration="30s",
+#                                         url="http://www.google.com")
 
 # TO RUN MULTICAST TEST
 # candela_apis.start_multicast_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
