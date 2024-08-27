@@ -2220,7 +2220,7 @@ class L3VariableTime(Realm):
                     # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
                     # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
                     all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                                    'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
+                                                                                                    'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll','Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
                     all_dl_ports_stations_sum_file_name = self.outfile[:-4]
                     all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + \
                         "-dl-all-eids-sum-per-interval.csv"
@@ -2238,8 +2238,7 @@ class L3VariableTime(Realm):
                         all_dl_ports_stations_sum_df['Rx-Bps-Diff'] = all_dl_ports_stations_sum_df['Rx-Bps'].diff()
                         all_dl_ports_stations_sum_df['Tx-Bps-Diff'] = all_dl_ports_stations_sum_df['Tx-Bps'].diff()
                         all_dl_ports_stations_sum_df['Rx-Latency-Diff'] = all_dl_ports_stations_sum_df['Rx-Latency'].diff()
-                        all_dl_ports_stations_sum_df['Rx-Jitter-Diff'] = all_dl_ports_stations_sum_df['Rx-Jitter'].diff(
-                        )
+                        all_dl_ports_stations_sum_df['Rx-Jitter-Diff'] = all_dl_ports_stations_sum_df['Rx-Jitter'].diff()
                         all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff()
                         all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff()
                         all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff()
@@ -2292,7 +2291,7 @@ class L3VariableTime(Realm):
                         # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
                         # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
                         all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                                        'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
+                                                                                                        'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll','Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
                         all_ul_ports_stations_sum_file_name = self.outfile[:-4]
                         all_ul_port_stations_sum_file_name = all_ul_ports_stations_sum_file_name + \
                             "-ul-all-eids-sum-per-interval.csv"
@@ -5045,11 +5044,11 @@ class L3VariableTime(Realm):
             'Ul-Rx-Goodput-bps',
             'Ul-Rx-Rate-ll',
             'Ul-Rx-Pkts-ll',
-            'UL-Rx-Drop-Percent',
+            'Ul-Rx-Drop_Percent',
             'Dl-Rx-Goodput-bps',
             'Dl-Rx-Rate-ll',
             'Dl-Rx-Pkts-ll',
-            'Dl-Rx-Drop_Percent']
+            'DL-Rx-Drop-Percent']
 
         # Add in columns we are going to query from the AP
         if self.ap_read:
@@ -5090,11 +5089,11 @@ class L3VariableTime(Realm):
             'Ul-Rx-Goodput-bps',
             'Ul-Rx-Rate-ll',
             'Ul-Rx-Pkts-ll',
-            'UL-Rx-Drop-Percent',
+            'Ul-Rx-Drop_Percent',
             'Dl-Rx-Goodput-bps',
             'Dl-Rx-Rate-ll',
             'Dl-Rx-Pkts-ll',
-            'Dl-Rx-Drop_Percent']
+            'Dl-Rx-Drop-Percent']
         # Add in columns we are going to query from the AP
         if self.ap_read:
             self.ap_stats_ul_col_titles = self.ap.get_ul_col_titles()
