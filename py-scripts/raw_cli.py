@@ -2,21 +2,26 @@
 """
 NAME: raw_cli.py
 
-PURPOSE: Assemble and execute CLI commands using the JSON API using lanforge_api.py.
-        This includes raw single line commands
-        and commands assembled with named parameters.
+PURPOSE: Assemble a single CLI command and execute it over the REST API.
+        This includes a raw single line command or a command assembled with named parameters.
+        If you are chaining multiple raw_cli.py commands together then you should probably
+        be updating an existing script.
+        Requires lanforge_api.py.
 
 EXAMPLES:
 =========
     Creating a Layer 3 TCP connection:
     ----------------------------------
 $ ./raw_cli.py --mgr ct521a-manx.bitratchet.net --cmd rm_endp --arg "endp_name tcp-A"
+
 $ ./raw_cli.py --mgr ct521a-manx.bitratchet.net --cmd add_endp --arg "alias tcp-A" \
     --arg "shelf 1" --arg "resource 1" --arg "port eth1" --arg "p_type lf_tcp" --arg "ip_port ANY" \
     --arg "min_rate 36000" --arg "max_rate 0" --arg "multi_conn 10"
+
 $ ./raw_cli.py --mgr ct521a-manx.bitratchet.net --cmd add_endp --arg "alias tcp-B" \
     --arg "shelf 1" --arg "resource 1" --arg "port eth2" --arg "p_type lf_tcp" --arg "ip_port ANY" \
     --arg "min_rate 36000" --arg "max_rate 0" --arg "multi_conn 10"
+
 $ ./raw_cli.py --mgr ct521a-manx.bitratchet.net --cmd add_cx --arg "alias tcp" \
     --arg "test_mgr default_tm" --arg "tx_endp tcp-B" --arg "rx_endp tcp-A"
 
@@ -32,17 +37,17 @@ STATUS: Functional
 
 NOTES:
 ======
-This method of executing CLI commands does NOT report errors presently.
-
+This method of executing CLI commands presently reports errors caught by pre_exec hooks set in the
+Http CliCmd handler.
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
+          Copyright 2024 Candela Technologies Inc
 
 INCLUDE_IN_README: True
 
 TO DO NOTES:
-
+    * Add parameter to suppress pre_exec error checking (suppress_related_commands)
 """
 import logging
 import os
