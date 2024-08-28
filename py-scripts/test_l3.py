@@ -1893,6 +1893,7 @@ class L3VariableTime(Realm):
                     (ul, dl, self.cx_count, self.rates_are_totals))
 
                 # Set rate and pdu size config
+                self.cx_profile.side_a_min_bps = ul
                 self.cx_profile.side_a_max_bps = ul
                 self.cx_profile.side_b_min_bps = dl
                 self.cx_profile.side_b_max_bps = dl
@@ -2072,7 +2073,7 @@ class L3VariableTime(Realm):
                                             mac=mac, ap_row_tx_dl=ap_row_tx_dl))
                                     # Find latency, jitter for connections
                                     # using this port.
-                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                    latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
 
                                     ap_row_tx_dl.append(ap_row_chanim)
@@ -2103,7 +2104,7 @@ class L3VariableTime(Realm):
                                 if rx_ul_mac_found:
                                     # Find latency, jitter for connections
                                     # using this port.
-                                    # latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_tx_drop_percent = self.get_endp_stats_for_port(
+                                    # latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_tx_drop_percent = self.get_endp_stats_for_port(
                                     #    port_data["port"], endps)
                                     self.write_ul_port_csv(
                                         len(temp_stations_list),
@@ -2151,7 +2152,7 @@ class L3VariableTime(Realm):
                                     logger.debug(pformat(response))
                                 else:
                                     port_data = response['interface']
-                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                    latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
                                     self.write_dl_port_csv(
                                         len(temp_stations_list),
