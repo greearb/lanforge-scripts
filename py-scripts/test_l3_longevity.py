@@ -1518,7 +1518,7 @@ class L3VariableTime(Realm):
 
                                         # Find latency, jitter for connections
                                         # using this port.
-                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
+                                        latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll = self.get_endp_stats_for_port(
                                             port_data["port"], endps)
 
                                         logger.info("6g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
@@ -1621,7 +1621,7 @@ class L3VariableTime(Realm):
 
                                         # Find latency, jitter for connections
                                         # using this port.
-                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(port_data["port"], endps)
+                                        latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll = self.get_endp_stats_for_port(port_data["port"], endps)
 
                                         # now report the ap_chanim_stats along
                                         # side of the ap_stats_5g
@@ -1728,7 +1728,7 @@ class L3VariableTime(Realm):
 
                                         # Find latency, jitter for connections
                                         # using this port.
-                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
+                                        latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll = self.get_endp_stats_for_port(
                                             port_data["port"], endps)
 
                                         logger.info("5g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
@@ -1825,7 +1825,7 @@ class L3VariableTime(Realm):
 
                                         # Find latency, jitter for connections
                                         # using this port.
-                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
+                                        latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll = self.get_endp_stats_for_port(
                                             port_data["port"], endps)
 
                                         # now report the ap_chanim_stats along
@@ -1932,7 +1932,7 @@ class L3VariableTime(Realm):
 
                                         # Find latency, jitter for connections
                                         # using this port.
-                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
+                                        latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll = self.get_endp_stats_for_port(
                                             port_data["port"], endps)
 
                                         logger.info("2g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
@@ -1970,7 +1970,7 @@ class L3VariableTime(Realm):
                                     logger.info(pformat(response))
                                 else:
                                     port_data = response['interface']
-                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
+                                    latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
 
                                     self.write_port_csv(
