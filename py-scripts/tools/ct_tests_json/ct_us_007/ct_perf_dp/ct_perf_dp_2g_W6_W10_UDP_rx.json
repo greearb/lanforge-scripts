@@ -10,9 +10,9 @@
     },
     "test_suites":{
     
-        "ct_perf_dp_5g_W6_W10_UCP_rx":{
+        "ct_perf_dp_2g_W6_W10_UDP_rx":{
     
-            "CC_DUT_mt7925e_5G_W6_UDP_rx":{
+            "CC_DUT_mt7925e_2G_W6_UDP_rx":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
@@ -26,19 +26,19 @@
                     " --dut_flag DHCPD-LAN"
                 ]
                 },
-            "CC_mt7925e_5G_W6_UDP_rx":{
+            "CC_mt7925e_2G_W6_UDP_rx":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario mt7925e_5G_W6_UDP_rx ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy6,AUTO -1 NA\" ",
+                    " --create_scenario mt7925e_2G_W6_UDP_rx ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-1' NA wiphy6,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "DP_mt7925e_5G_W6_UDP_rx":{
+            "DP_mt7925e_2G_W6_UDP_rx":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "iterations":"1",
@@ -46,15 +46,16 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name mt7925e_5G_W6_UDP_rx",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name mt7925e_2G_W6_UDP_rx",
                     " --config_name test_con --upstream UPSTREAM_PORT  --dut USE_DUT_NAME --duration 180000 --station 1.1.wlan6",
                     " --download_speed 100% --upload_speed 100% --raw_line 'pkts: Custom' ",
                     " --raw_line 'cust_pkt_sz: 64;172;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Receive' ",
                     " --raw_line 'traffic_types: UDP' ",
                     " --raw_line 'bandw_options: AUTO' ",
-                    " --raw_line 'spatial_streams: AUTO' ",                    
-                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7925e_5G_W6_UDP_rx'",
+                    " --raw_line 'spatial_streams: AUTO' ",
+                    " --raw_line 'mconn: 10' ",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7925e_2G_W6_UDP_rx'",
                     " ",
                     " ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
@@ -64,7 +65,7 @@
                 ]
             }
             ,
-            "CC_DUT_BE200_5G_W10_UDP_rx":{
+            "CC_DUT_BE200_2G_W10_UDP_rx":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
@@ -78,19 +79,19 @@
                     " --dut_flag DHCPD-LAN"
                 ]
                 },
-            "CC_BE200_5G_W10_UDP_rx":{
+            "CC_BE200_2G_W10_UDP_rx":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario BE200_5G_W10_UDP_rx ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy10,AUTO -1 NA\" ",
+                    " --create_scenario BE200_2G_W10_UDP_rx ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-1' NA wiphy10,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "DP_BE200_5G_W10_UDP_rx":{
+            "DP_BE200_2G_W10_UDP_rx":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "iterations":"1",
@@ -98,7 +99,7 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name BE200_5G_W10_UDP_rx",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name BE200_2G_W10_UDP_rx",
                     " --config_name test_con --upstream UPSTREAM_PORT  --dut USE_DUT_NAME --duration 180000 --station 1.1.wlan10",
                     " --download_speed 100% --upload_speed 100% --raw_line 'pkts: Custom' ",
                     " --raw_line 'cust_pkt_sz: 64;172;256;512;768;1024;MTU' ",
@@ -107,7 +108,7 @@
                     " --raw_line 'bandw_options: AUTO' ",
                     " --raw_line 'spatial_streams: AUTO' ",
                     " --raw_line 'mconn: 10' ",
-                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'BE200_5G_W10_UDP_rx'",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'BE200_2G_W10_UDP_rx'",
                     " ",
                     " ",
                     " --raw_line 'attenuator_mod: 0xf'  ",

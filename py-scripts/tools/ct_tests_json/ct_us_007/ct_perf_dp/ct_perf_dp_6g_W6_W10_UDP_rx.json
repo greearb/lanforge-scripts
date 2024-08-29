@@ -10,7 +10,7 @@
     },
     "test_suites":{
     
-        "ct_perf_dp_6g_W6_W10_UCP_rx":{
+        "ct_perf_dp_6g_W6_W10_UDP_rx":{
     
             "CC_DUT_mt7925e_6G_W6_UDP_rx":{
                 "enabled":"TRUE",
