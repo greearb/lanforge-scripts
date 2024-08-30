@@ -637,7 +637,7 @@ class L3VariableTime(Realm):
                  dowebgui=False,
                  test_name="",
                  ip="",
-                 #for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
+                 # for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
                  result_dir="",
                  # wifi extra configuration
                  key_mgmt_list=[],
@@ -1394,13 +1394,15 @@ class L3VariableTime(Realm):
             # child class of port-eid , and look up the port the eid is using.
             if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
                 if((endp['delay'] is str and not endp['delay'].isnumeric()) or endp['delay'] is None):
-                    logging.debug('Expected integer response for delay, received non-numeric string instead. Replacing with 0')
+                    logging.debug(
+                        'Expected integer response for delay, received non-numeric string instead. Replacing with 0')
                     lat += 0
                 else:
                     lat += int(endp['delay'])
-                
+
                 if((endp['jitter'] is str and not endp['jitter'].isnumeric()) or endp['jitter'] is None):
-                    logging.debug('Expected integer response for jitter, received non-numeric string instead. Replacing with 0')
+                    logging.debug(
+                        'Expected integer response for jitter, received non-numeric string instead. Replacing with 0')
                     jit += 0
                 else:
                     jit += int(endp["jitter"])
@@ -1433,52 +1435,68 @@ class L3VariableTime(Realm):
                 if name.endswith("-A"):
                     logger.info("name has -A")
 
-                    if (type(endp['rx rate']) == str and not endp['rx rate'].isnumeric()) or endp['rx rate'] is None:
-                        logging.debug('Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
+                    if (isinstance(endp['rx rate'], str)
+                            and not endp['rx rate'].isnumeric()) or endp['rx rate'] is None:
+                        logging.debug(
+                            'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
                         total_dl_rate += 0
                     else:
                         total_dl_rate += int(endp["rx rate"])
 
-                    if (type(endp['rx rate ll']) == str and not endp['rx rate ll'].isnumeric()) or endp['rx rate ll'] is None:
-                        logging.debug('Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
+                    if (isinstance(endp['rx rate ll'], str)
+                            and not endp['rx rate ll'].isnumeric()) or endp['rx rate ll'] is None:
+                        logging.debug(
+                            'Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
                         total_dl_rate_ll += 0
                     else:
                         total_dl_rate_ll += int(endp["rx rate ll"])
 
-                    if (type(endp['rx pkts ll']) == str and not endp['rx pkts ll'].isnumeric()) or endp['rx pkts ll'] is None:
-                        logging.debug('Expected integer response for rx pkts ll, received non-numeric string instead. Replacing with 0')
+                    if (isinstance(endp['rx pkts ll'], str)
+                            and not endp['rx pkts ll'].isnumeric()) or endp['rx pkts ll'] is None:
+                        logging.debug(
+                            'Expected integer response for rx pkts ll, received non-numeric string instead. Replacing with 0')
                         total_dl_pkts_ll += 0
                     else:
                         total_dl_pkts_ll += int(endp["rx pkts ll"])
 
-                    if (type(endp['rx drop %']) == str and not endp['rx drop %'].isnumeric()) or endp['rx drop %'] is None:
-                        logging.debug('Expected integer response for rx drop %, received non-numeric string instead. Replacing with 0')
+                    if (isinstance(endp['rx drop %'], str)
+                            and not endp['rx drop %'].isnumeric()) or endp['rx drop %'] is None:
+                        logging.debug(
+                            'Expected integer response for rx drop %, received non-numeric string instead. Replacing with 0')
                         dl_tx_drop_percent = 0
                     else:
                         dl_tx_drop_percent = round(endp["rx drop %"], 2)
 
                 # -B upload side
                 else:
-                    if (type(endp['rx rate']) == str and not endp['rx rate'].isnumeric()) or endp['rx rate'] is None:
-                        logging.debug('Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
+                    if (isinstance(endp['rx rate'], str)
+                            and not endp['rx rate'].isnumeric()) or endp['rx rate'] is None:
+                        logging.debug(
+                            'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
                         total_ul_rate += 0
                     else:
                         total_ul_rate += int(endp["rx rate"])
 
-                    if (type(endp['rx rate ll']) == str and not endp['rx rate ll'].isnumeric()) or endp['rx rate ll'] is None:
-                        logging.debug('Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
+                    if (isinstance(endp['rx rate ll'], str)
+                            and not endp['rx rate ll'].isnumeric()) or endp['rx rate ll'] is None:
+                        logging.debug(
+                            'Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
                         total_ul_rate_ll += 0
                     else:
                         total_ul_rate_ll += int(endp["rx rate ll"])
 
-                    if (type(endp['rx pkts ll']) == str and not endp['rx pkts ll'].isnumeric()) or endp['rx pkts ll'] is None:
-                        logging.debug('Expected integer response for rx pkts ll, received non-numeric string instead. Replacing with 0')
+                    if (isinstance(endp['rx pkts ll'], str)
+                            and not endp['rx pkts ll'].isnumeric()) or endp['rx pkts ll'] is None:
+                        logging.debug(
+                            'Expected integer response for rx pkts ll, received non-numeric string instead. Replacing with 0')
                         total_ul_pkts_ll += 0
                     else:
                         total_ul_pkts_ll += int(endp["rx pkts ll"])
 
-                    if (type(endp['rx drop %']) == str and not endp['rx drop %'].isnumeric()) or endp['rx drop %'] is None:
-                        logging.debug('Expected integer response for rx drop %, received non-numeric string instead. Replacing with 0')
+                    if (isinstance(endp['rx drop %'], str)
+                            and not endp['rx drop %'].isnumeric()) or endp['rx drop %'] is None:
+                        logging.debug(
+                            'Expected integer response for rx drop %, received non-numeric string instead. Replacing with 0')
                         ul_rx_drop_percent = 0
                     else:
                         ul_rx_drop_percent = round(endp["rx drop %"], 2)
@@ -1528,8 +1546,9 @@ class L3VariableTime(Realm):
                             "multicast endpoint: {item} value:\n".format(item=item))
                         logger.debug(endp_value)
                         for value_name, value in endp_value.items():
-                            if type(value) == str and not value.isnumeric():
-                                logging.debug('Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
+                            if isinstance(value, str) and not value.isnumeric():
+                                logging.debug(
+                                    'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
                                 value = 0
                             if value_name == 'rx rate':
                                 # This hack breaks for mcast or if someone names endpoints weirdly.
@@ -1572,8 +1591,9 @@ class L3VariableTime(Realm):
                             if value_name == 'rx drop %':
                                 endp_rx_drop_map[item] = value
                             if value_name == 'rx rate':
-                                if type(value) == str and not value.isnumeric():
-                                    logging.debug('Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
+                                if isinstance(value, str) and not value.isnumeric():
+                                    logging.debug(
+                                        'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
                                     value = 0
                                 # This hack breaks for mcast or if someone names endpoints weirdly.
                                 # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
@@ -1582,8 +1602,9 @@ class L3VariableTime(Realm):
                                 elif item.endswith("-B"):
                                     total_ul += int(value)
                             if value_name == 'rx rate ll':
-                                if type(value) == str and not value.isnumeric():
-                                    logging.debug('Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
+                                if isinstance(value, str) and not value.isnumeric():
+                                    logging.debug(
+                                        'Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
                                     value = 0
                                 # This hack breaks for mcast or if someone
                                 # names endpoints weirdly.
@@ -1643,6 +1664,7 @@ class L3VariableTime(Realm):
         return time.strftime('%m_%d_%Y_%H_%M_%S',
                              time.localtime(self.epoch_time))
     # Time Constrains use for webGUI compatibility
+
     def get_time_stamp_local(self):
         return time.strftime('%Y-%m-%d-%H-%M-%S',
                              time.localtime(self.epoch_time))
@@ -1984,7 +2006,7 @@ class L3VariableTime(Realm):
 
                         log_msg = "main loop, total-dl: {total_dl_bps} total-ul: {total_ul_bps} total-dl-ll: {total_dl_ll_bps}".format(
                             total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
-                        #Added logic creating a csv file for webGUI to get runtime data
+                        # Added logic creating a csv file for webGUI to get runtime data
                         if self.dowebgui == True:
                             time_difference = abs(end_time - datetime.datetime.now())
                             total_hours = time_difference.total_seconds() / 3600
@@ -1992,8 +2014,8 @@ class L3VariableTime(Realm):
                             remaining_time = [
                                 str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
                                     total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0]
-                            total= 0
-                            for k,v in endp_rx_map.items():
+                            total = 0
+                            for k, v in endp_rx_map.items():
                                 if 'MLT-' in k:
                                     total += v
                             self.overall.append(
@@ -2013,7 +2035,6 @@ class L3VariableTime(Realm):
                                     break
                         if self.dowebgui != True:
                             logger.debug(log_msg)
-
 
                         # AP OUTPUT
                         # call to AP to return values
@@ -2130,7 +2151,6 @@ class L3VariableTime(Realm):
                                     logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(
                                         ap_row_rx_ul=ap_row_rx_ul))
 
-
                         ####################################
                         else:
                             # NOT Reading the AP
@@ -2221,7 +2241,7 @@ class L3VariableTime(Realm):
                     # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
                     # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
                     all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                                    'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll','Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
+                                                                                                    'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
                     all_dl_ports_stations_sum_file_name = self.outfile[:-4]
                     all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + \
                         "-dl-all-eids-sum-per-interval.csv"
@@ -2292,7 +2312,7 @@ class L3VariableTime(Realm):
                         # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
                         # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
                         all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                                        'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll','Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
+                                                                                                        'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
                         all_ul_ports_stations_sum_file_name = self.outfile[:-4]
                         all_ul_port_stations_sum_file_name = all_ul_ports_stations_sum_file_name + \
                             "-ul-all-eids-sum-per-interval.csv"
@@ -2622,11 +2642,15 @@ class L3VariableTime(Realm):
     def evaluate_qos(self):
         # for port:
         # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/port/all | json_pp
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.103:8080/port/all?fields=alias,mac,channel,bps+rx,rx-rate,bps+tx,tx-rate | json_pp
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
+        # http://192.168.0.103:8080/port/all?fields=alias,mac,channel,bps+rx,rx-rate,bps+tx,tx-rate
+        # | json_pp
 
         # for endp
         # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/endp/all | json_pp
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos | json_pp
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
+        # http://192.168.0.104:8080/endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos
+        # | json_pp
 
         # gather port data
         # TODO
@@ -2637,7 +2661,6 @@ class L3VariableTime(Realm):
         self.port_data.pop("warnings")
         logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
 
- 
         self.resource_data = self.json_get('resource/all?fields=eid,hostname,hw+version')
         # self.resource_data = self.json_get('resource/all')
         self.resource_data.pop("handler")
@@ -2647,23 +2670,25 @@ class L3VariableTime(Realm):
             logger.info("self.resource_data type: {dtype}".format(dtype=type(self.port_data)))
         # logger.info("self.resource_data : {data}".format(data=self.port_data))
 
-        # This is to handle the case where there is only one resourse 
+        # This is to handle the case where there is only one resourse
         if "resource" in self.resource_data.keys():
-            self.resource_data["resources"] = [{'1.1':self.resource_data['resource']}]
+            self.resource_data["resources"] = [{'1.1': self.resource_data['resource']}]
             self.resource_data.pop("resource")
-
 
         # Note will type will only work for 5.4.7
         # gather endp data
         endp_type_present = False
 
         # TODO check for 400 bad request instead of try except
-        self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid,type,rx Drop %25')
+        self.endp_data = self.json_get(
+            'endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid,type,rx Drop %25')
         if self.endp_data is not None:
             endp_type_present = True
         else:
-            logger.info("Consider upgrading to 5.4.7 + endp field type not supported in LANforge GUI version results for Multicast reversed in graphs and tables")
-            self.endp_data = self.json_get('endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,eid,rx Drop %25')
+            logger.info(
+                "Consider upgrading to 5.4.7 + endp field type not supported in LANforge GUI version results for Multicast reversed in graphs and tables")
+            self.endp_data = self.json_get(
+                'endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,eid,rx Drop %25')
             endp_type_present = False
         self.endp_data.pop("handler")
         self.endp_data.pop("uri")
@@ -2696,7 +2721,8 @@ class L3VariableTime(Realm):
                 # note for multicast there is no a side traffic
                 if endp_data[endp_data_key]['type'] == 'Mcast':
                     if endp_data[endp_data_key]['tos'] == 'BK':
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.bk_clients_A.append(endp_data[endp_data_key]['name'])
                             self.bk_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
@@ -2706,7 +2732,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -2716,7 +2743,10 @@ class L3VariableTime(Realm):
                                     self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_alias_A.append(client_alias)
                                     break
 
@@ -2754,7 +2784,8 @@ class L3VariableTime(Realm):
                                 self.bk_port_offered_tx_rate_A.append("NA")
                                 self.bk_port_channel_A.append("NA")
 
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.bk_clients_B.append(endp_data[endp_data_key]['name'])
                             self.bk_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
@@ -2764,7 +2795,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -2774,7 +2806,10 @@ class L3VariableTime(Realm):
                                     self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_alias_B.append(client_alias)
 
                                     break
@@ -2798,7 +2833,8 @@ class L3VariableTime(Realm):
                                     self.bk_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.bk_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
-                                    self.bk_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
+                                    # (self.cx_profile.side_a_min_bps) # a side tx
+                                    self.bk_port_offered_rx_rate_B.append('0')
                                     self.bk_port_offered_tx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
                                     self.bk_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
@@ -2814,7 +2850,8 @@ class L3VariableTime(Realm):
                                 self.bk_port_channel_B.append("NA")
 
                     elif endp_data[endp_data_key]['tos'] == 'BE':
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.be_clients_A.append(endp_data[endp_data_key]['name'])
                             self.be_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
@@ -2824,7 +2861,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -2834,7 +2872,10 @@ class L3VariableTime(Realm):
                                     self.be_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.be_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.be_resource_alias_A.append(client_alias)
 
                                     break
@@ -2873,7 +2914,8 @@ class L3VariableTime(Realm):
                                 self.be_port_offered_tx_rate_A.append("NA")
                                 self.be_port_channel_A.append("NA")
 
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.be_clients_B.append(endp_data[endp_data_key]['name'])
                             self.be_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
@@ -2883,7 +2925,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -2893,7 +2936,10 @@ class L3VariableTime(Realm):
                                     self.be_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.be_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.be_resource_alias_B.append(client_alias)
 
                                     break
@@ -2917,7 +2963,8 @@ class L3VariableTime(Realm):
                                     self.be_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.be_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.be_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
-                                    self.be_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
+                                    # (self.cx_profile.side_a_min_bps) # a side tx
+                                    self.be_port_offered_rx_rate_B.append('0')
                                     self.be_port_offered_tx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
                                     self.be_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
@@ -2933,7 +2980,8 @@ class L3VariableTime(Realm):
                                 self.be_port_channel_B.append("NA")
 
                     elif endp_data[endp_data_key]['tos'] == 'VI':
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.vi_clients_A.append(endp_data[endp_data_key]['name'])
                             self.vi_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
@@ -2943,7 +2991,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -2953,7 +3002,10 @@ class L3VariableTime(Realm):
                                     self.vi_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_alias_A.append(client_alias)
 
                                     break
@@ -2992,7 +3044,8 @@ class L3VariableTime(Realm):
                                 self.vi_port_offered_tx_rate_A.append("NA")
                                 self.vi_port_channel_A.append("NA")
 
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.vi_clients_B.append(endp_data[endp_data_key]['name'])
                             self.vi_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
@@ -3002,7 +3055,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -3012,7 +3066,10 @@ class L3VariableTime(Realm):
                                     self.vi_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_alias_B.append(client_alias)
 
                                     break
@@ -3037,7 +3094,8 @@ class L3VariableTime(Realm):
                                     self.vi_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
                                     self.vi_port_offered_rx_rate_B.append(self.cx_profile.side_a_min_bps)  # a side tx
-                                    self.vi_port_offered_tx_rate_B.append('0')  # (self.cx_profile.side_b_min_bps) # b side tx
+                                    # (self.cx_profile.side_b_min_bps) # b side tx
+                                    self.vi_port_offered_tx_rate_B.append('0')
                                     self.vi_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
                                     break
@@ -3052,7 +3110,8 @@ class L3VariableTime(Realm):
                                 self.vi_port_channel_B.append("NA")
 
                     elif endp_data[endp_data_key]['tos'] == 'VO':
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.vo_clients_A.append(endp_data[endp_data_key]['name'])
                             self.vo_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
@@ -3062,7 +3121,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -3072,7 +3132,10 @@ class L3VariableTime(Realm):
                                     self.vo_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_alias_A.append(client_alias)
 
                                     break
@@ -3111,7 +3174,8 @@ class L3VariableTime(Realm):
                                 self.vo_port_offered_tx_rate_A.append("NA")
                                 self.vo_port_channel_A.append("NA")
 
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.vo_clients_B.append(endp_data[endp_data_key]['name'])
                             self.vo_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
@@ -3121,7 +3185,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -3131,7 +3196,10 @@ class L3VariableTime(Realm):
                                     self.vo_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_alias_B.append(client_alias)
 
                                     break
@@ -3155,7 +3223,8 @@ class L3VariableTime(Realm):
                                     self.vo_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.vo_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vo_port_traffic_type_B.append(endp_data[endp_data_key]['tos'])
-                                    self.vo_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
+                                    # (self.cx_profile.side_a_min_bps) # a side tx
+                                    self.vo_port_offered_rx_rate_B.append('0')
                                     self.vo_port_offered_tx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
                                     self.vo_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
@@ -3184,8 +3253,10 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            # look up the resource may need to have try except to handle cases where
+                            # there is an issue getting data
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
                                 resource_data_key = list(resource_data.keys())[0]
@@ -3194,7 +3265,10 @@ class L3VariableTime(Realm):
                                     self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_alias_A.append(client_alias)
 
                             if resource_found is False:
@@ -3242,8 +3316,10 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            # look up the resource may need to have try except to handle cases where
+                            # there is an issue getting data
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
                                 resource_data_key = list(resource_data.keys())[0]
@@ -3252,7 +3328,10 @@ class L3VariableTime(Realm):
                                     self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_alias_B.append(client_alias)
 
                                     break
@@ -3304,8 +3383,10 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            # look up the resource may need to have try except to handle cases where
+                            # there is an issue getting data
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
                                 resource_data_key = list(resource_data.keys())[0]
@@ -3314,7 +3395,10 @@ class L3VariableTime(Realm):
                                     self.be_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.be_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.be_resource_alias_A.append(client_alias)
 
                                     break
@@ -3363,8 +3447,10 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            # look up the resource may need to have try except to handle cases where
+                            # there is an issue getting data
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
                                 resource_data_key = list(resource_data.keys())[0]
@@ -3373,7 +3459,10 @@ class L3VariableTime(Realm):
                                     self.be_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.be_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.be_resource_alias_B.append(client_alias)
 
                                     break
@@ -3424,8 +3513,10 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            # look up the resource may need to have try except to handle cases where
+                            # there is an issue getting data
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
                                 resource_data_key = list(resource_data.keys())[0]
@@ -3434,7 +3525,10 @@ class L3VariableTime(Realm):
                                     self.vi_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_alias_A.append(client_alias)
 
                                     break
@@ -3483,8 +3577,10 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            # look up the resource may need to have try except to handle cases where
+                            # there is an issue getting data
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
                                 resource_data_key = list(resource_data.keys())[0]
@@ -3493,7 +3589,10 @@ class L3VariableTime(Realm):
                                     self.vi_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_alias_B.append(client_alias)
                                     break
 
@@ -3543,8 +3642,10 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            # look up the resource may need to have try except to handle cases where
+                            # there is an issue getting data
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
                                 resource_data_key = list(resource_data.keys())[0]
@@ -3553,7 +3654,10 @@ class L3VariableTime(Realm):
                                     self.vo_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_alias_A.append(client_alias)
                                     break
 
@@ -3601,8 +3705,10 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
-                            # look up the resource may need to have try except to handle cases where there is an issue getting data
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            # look up the resource may need to have try except to handle cases where
+                            # there is an issue getting data
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
                                 resource_data_key = list(resource_data.keys())[0]
@@ -3611,7 +3717,10 @@ class L3VariableTime(Realm):
                                     self.vo_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_alias_B.append(client_alias)
 
                                     break
@@ -3655,7 +3764,8 @@ class L3VariableTime(Realm):
             else:
                 if 'MLT' in endp_data[endp_data_key]['name']:    # type
                     if 'BK' in endp_data[endp_data_key]['name']:  # tos
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.bk_clients_A.append(endp_data[endp_data_key]['name'])
                             self.bk_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
@@ -3665,7 +3775,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -3675,7 +3786,10 @@ class L3VariableTime(Realm):
                                     self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_alias_A.append(client_alias)
 
                                     break
@@ -3700,7 +3814,8 @@ class L3VariableTime(Realm):
                                     self.bk_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.bk_port_traffic_type_A.append('BK')
                                     self.bk_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
-                                    self.bk_port_offered_tx_rate_A.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
+                                    # (self.cx_profile.side_a_min_bps) # a side tx
+                                    self.bk_port_offered_tx_rate_A.append('0')
                                     self.bk_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
                                     break
@@ -3714,7 +3829,8 @@ class L3VariableTime(Realm):
                                 self.bk_port_offered_tx_rate_A.append("NA")
                                 self.bk_port_channel_A.append("NA")
 
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.bk_clients_B.append(endp_data[endp_data_key]['name'])
                             self.bk_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
@@ -3724,7 +3840,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -3734,7 +3851,10 @@ class L3VariableTime(Realm):
                                     self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_alias_B.append(client_alias)
                                     break
 
@@ -3773,7 +3893,8 @@ class L3VariableTime(Realm):
                                 self.bk_port_channel_B.append("NA")
 
                     elif 'BE' in endp_data[endp_data_key]['name']:  # tos
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.be_clients_A.append(endp_data[endp_data_key]['name'])
                             self.be_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
@@ -3783,7 +3904,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -3793,7 +3915,10 @@ class L3VariableTime(Realm):
                                     self.be_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.be_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.be_resource_alias_A.append(client_alias)
                                     break
 
@@ -3831,7 +3956,8 @@ class L3VariableTime(Realm):
                                 self.be_port_offered_tx_rate_A.append("NA")
                                 self.be_port_channel_A.append("NA")
 
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.be_clients_B.append(endp_data[endp_data_key]['name'])
                             self.be_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
@@ -3841,7 +3967,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -3851,7 +3978,10 @@ class L3VariableTime(Realm):
                                     self.be_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.be_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.be_resource_alias_B.append(client_alias)
 
                                     break
@@ -3875,7 +4005,8 @@ class L3VariableTime(Realm):
                                     self.be_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.be_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.be_port_traffic_type_B.append('BE')
-                                    self.be_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
+                                    # (self.cx_profile.side_a_min_bps) # a side tx
+                                    self.be_port_offered_rx_rate_B.append('0')
                                     self.be_port_offered_tx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
                                     self.be_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
@@ -3891,7 +4022,8 @@ class L3VariableTime(Realm):
                                 self.be_port_channel_B.append("NA")
 
                     elif 'VI' in endp_data[endp_data_key]['name']:  # tos
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.vi_clients_A.append(endp_data[endp_data_key]['name'])
                             self.vi_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
@@ -3901,7 +4033,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -3911,7 +4044,10 @@ class L3VariableTime(Realm):
                                     self.vi_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_alias_A.append(client_alias)
 
                                     break
@@ -3936,7 +4072,8 @@ class L3VariableTime(Realm):
                                     self.vi_port_mode_A.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_A.append('VI')
                                     self.vi_port_offered_rx_rate_A.append(self.cx_profile.side_b_min_bps)  # b side tx
-                                    self.vi_port_offered_tx_rate_A.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
+                                    # (self.cx_profile.side_a_min_bps) # a side tx
+                                    self.vi_port_offered_tx_rate_A.append('0')
                                     self.vi_port_channel_A.append(port_data[port_data_key]["channel"])
                                     port_found = True
                                     break
@@ -3950,7 +4087,8 @@ class L3VariableTime(Realm):
                                 self.vi_port_offered_tx_rate_A.append("NA")
                                 self.vi_port_channel_A.append("NA")
 
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.vi_clients_B.append(endp_data[endp_data_key]['name'])
                             self.vi_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
@@ -3960,7 +4098,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -3970,7 +4109,10 @@ class L3VariableTime(Realm):
                                     self.vi_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_alias_B.append(client_alias)
 
                                     break
@@ -3994,7 +4136,8 @@ class L3VariableTime(Realm):
                                     self.vi_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.vi_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vi_port_traffic_type_B.append('VI')
-                                    self.vi_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
+                                    # (self.cx_profile.side_a_min_bps) # a side tx
+                                    self.vi_port_offered_rx_rate_B.append('0')
                                     self.vi_port_offered_tx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
                                     self.vi_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
@@ -4010,7 +4153,8 @@ class L3VariableTime(Realm):
                                 self.vi_port_channel_B.append("NA")
 
                     elif 'VO' in endp_data[endp_data_key]['name']:
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.vo_clients_A.append(endp_data[endp_data_key]['name'])
                             self.vo_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
@@ -4020,7 +4164,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -4030,7 +4175,10 @@ class L3VariableTime(Realm):
                                     self.vo_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_alias_A.append(client_alias)
                                     break
 
@@ -4068,7 +4216,8 @@ class L3VariableTime(Realm):
                                 self.vo_port_offered_tx_rate_A.append("NA")
                                 self.vo_port_channel_A.append("NA")
 
-                        # for multicast the logic is reversed. A is upstream for multicast, B is downstream for multicast
+                        # for multicast the logic is reversed. A is upstream for multicast, B is
+                        # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.vo_clients_B.append(endp_data[endp_data_key]['name'])
                             self.vo_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
@@ -4078,7 +4227,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -4088,7 +4238,10 @@ class L3VariableTime(Realm):
                                     self.vo_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_alias_B.append(client_alias)
 
                                     break
@@ -4112,7 +4265,8 @@ class L3VariableTime(Realm):
                                     self.vo_port_ssid_B.append(port_data[port_data_key]['ssid'])
                                     self.vo_port_mode_B.append(port_data[port_data_key]['mode'])
                                     self.vo_port_traffic_type_B.append('VO')
-                                    self.vo_port_offered_rx_rate_B.append('0')  # (self.cx_profile.side_a_min_bps) # a side tx
+                                    # (self.cx_profile.side_a_min_bps) # a side tx
+                                    self.vo_port_offered_rx_rate_B.append('0')
                                     self.vo_port_offered_tx_rate_B.append(self.cx_profile.side_b_min_bps)  # b side tx
                                     self.vo_port_channel_B.append(port_data[port_data_key]["channel"])
                                     port_found = True
@@ -4140,7 +4294,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -4150,7 +4305,10 @@ class L3VariableTime(Realm):
                                     self.bk_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_alias_A.append(client_alias)
 
                                     break
@@ -4199,7 +4357,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -4209,7 +4368,10 @@ class L3VariableTime(Realm):
                                     self.bk_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.bk_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.bk_resource_alias_B.append(client_alias)
                                     break
 
@@ -4260,7 +4422,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -4270,7 +4433,10 @@ class L3VariableTime(Realm):
                                     self.be_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.be_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.be_resource_alias_A.append(client_alias)
                                     break
 
@@ -4318,7 +4484,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -4328,7 +4495,10 @@ class L3VariableTime(Realm):
                                     self.be_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.be_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.be_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.be_resource_alias_B.append(client_alias)
 
                                     break
@@ -4378,7 +4548,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -4388,7 +4559,10 @@ class L3VariableTime(Realm):
                                     self.vi_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_alias_A.append(client_alias)
 
                                     break
@@ -4437,7 +4611,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -4447,7 +4622,10 @@ class L3VariableTime(Realm):
                                     self.vi_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vi_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vi_resource_alias_B.append(client_alias)
 
                                     break
@@ -4497,7 +4675,8 @@ class L3VariableTime(Realm):
 
                             # Report Table information
                             # use the eid to get the hostname and channel
-                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
+                            eid_tmp_resource = str(self.name_to_eid(endp_data[endp_data_key]['eid'])[
+                                                   0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
                             for resource_data in self.resource_data['resources']:
@@ -4507,7 +4686,10 @@ class L3VariableTime(Realm):
                                     self.vo_resource_host_A.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_A.append(resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_eid_A.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_alias_A.append(client_alias)
                                     break
 
@@ -4562,7 +4744,10 @@ class L3VariableTime(Realm):
                                     self.vo_resource_host_B.append(resource_data[resource_data_key]['hostname'])
                                     self.vo_resource_hw_ver_B.append(resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_eid_B.append(resource_data[resource_data_key]['eid'])
-                                    client_alias = self.create_resource_alias(eid=resource_data[resource_data_key]['eid'], host=resource_data[resource_data_key]['hostname'], hw_version=resource_data[resource_data_key]['hw version'])
+                                    client_alias = self.create_resource_alias(
+                                        eid=resource_data[resource_data_key]['eid'],
+                                        host=resource_data[resource_data_key]['hostname'],
+                                        hw_version=resource_data[resource_data_key]['hw version'])
                                     self.vo_resource_alias_B.append(client_alias)
 
                                     break
@@ -4620,7 +4805,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.bk_resource_eid_A,
                 "port_A": self.bk_port_eid_A,
                 "mac_A": self.bk_port_mac_A,
-                "ssid_A" : self.bk_port_ssid_A,
+                "ssid_A": self.bk_port_ssid_A,
                 "channel_A": self.bk_port_channel_A,
                 "mode_A": self.bk_port_mode_A,
                 "traffic_type_A": self.bk_port_traffic_type_A,
@@ -4639,7 +4824,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.bk_resource_eid_B,
                 "port_B": self.bk_port_eid_B,
                 "mac_B": self.bk_port_mac_B,
-                "ssid_B" : self.bk_port_ssid_B,
+                "ssid_B": self.bk_port_ssid_B,
                 "channel_B": self.bk_port_channel_B,
                 "mode_B": self.bk_port_mode_B,
                 "traffic_type_B": self.bk_port_traffic_type_B,
@@ -4663,7 +4848,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.be_resource_eid_A,
                 "port_A": self.be_port_eid_A,
                 "mac_A": self.be_port_mac_A,
-                "ssid_A" : self.be_port_ssid_A,
+                "ssid_A": self.be_port_ssid_A,
                 "channel_A": self.be_port_channel_A,
                 "mode_A": self.be_port_mode_A,
                 "traffic_type_A": self.be_port_traffic_type_A,
@@ -4725,7 +4910,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.vi_resource_eid_B,
                 "port_B": self.vi_port_eid_B,
                 "mac_B": self.vi_port_mac_B,
-                "ssid_B" : self.vi_port_ssid_B,
+                "ssid_B": self.vi_port_ssid_B,
                 "channel_B": self.vi_port_channel_B,
                 "mode_B": self.vi_port_mode_B,
                 "traffic_type_B": self.vi_port_traffic_type_B,
@@ -4749,7 +4934,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.vo_resource_eid_A,
                 "port_A": self.vo_port_eid_A,
                 "mac_A": self.vo_port_mac_A,
-                "ssid_A" : self.vo_port_ssid_A,
+                "ssid_A": self.vo_port_ssid_A,
                 "channel_A": self.vo_port_channel_A,
                 "mode_A": self.vo_port_mode_A,
                 "traffic_type_A": self.vo_port_traffic_type_A,
@@ -4768,7 +4953,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.vo_resource_eid_B,
                 "port_B": self.vo_port_eid_B,
                 "mac_B": self.vo_port_mac_B,
-                "ssid_B" : self.vo_port_ssid_B,
+                "ssid_B": self.vo_port_ssid_B,
                 "channel_B": self.vo_port_channel_B,
                 "mode_B": self.vo_port_mode_B,
                 "traffic_type_B": self.vo_port_traffic_type_B,
@@ -4799,7 +4984,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.bk_resource_eid_A,
                 "port_A": self.bk_port_eid_A,
                 "mac_A": self.bk_port_mac_A,
-                "ssid_A" : self.bk_port_ssid_A,
+                "ssid_A": self.bk_port_ssid_A,
                 "channel_A": self.bk_port_channel_A,
                 "mode_A": self.bk_port_mode_A,
                 "traffic_type_A": self.bk_port_traffic_type_A,
@@ -4818,7 +5003,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.bk_resource_eid_B,
                 "port_B": self.bk_port_eid_B,
                 "mac_B": self.bk_port_mac_B,
-                "ssid_B" : self.bk_port_ssid_B,
+                "ssid_B": self.bk_port_ssid_B,
                 "channel_B": self.bk_port_channel_B,
                 "mode_B": self.bk_port_mode_B,
                 "traffic_type_B": self.bk_port_traffic_type_B,
@@ -4842,7 +5027,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.be_resource_eid_A,
                 "port_A": self.be_port_eid_A,
                 "mac_A": self.be_port_mac_A,
-                "ssid_A" : self.be_port_ssid_A,
+                "ssid_A": self.be_port_ssid_A,
                 "channel_A": self.be_port_channel_A,
                 "mode_A": self.be_port_mode_A,
                 "traffic_type_A": self.be_port_traffic_type_A,
@@ -4904,7 +5089,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.vi_resource_eid_B,
                 "port_B": self.vi_port_eid_B,
                 "mac_B": self.vi_port_mac_B,
-                "ssid_B" : self.vi_port_ssid_B,
+                "ssid_B": self.vi_port_ssid_B,
                 "channel_B": self.vi_port_channel_B,
                 "mode_B": self.vi_port_mode_B,
                 "traffic_type_B": self.vi_port_traffic_type_B,
@@ -4928,7 +5113,7 @@ class L3VariableTime(Realm):
                 "resource_eid_A": self.vo_resource_eid_A,
                 "port_A": self.vo_port_eid_A,
                 "mac_A": self.vo_port_mac_A,
-                "ssid_A" : self.vo_port_ssid_A,
+                "ssid_A": self.vo_port_ssid_A,
                 "channel_A": self.vo_port_channel_A,
                 "mode_A": self.vo_port_mode_A,
                 "traffic_type_A": self.vo_port_traffic_type_A,
@@ -4947,7 +5132,7 @@ class L3VariableTime(Realm):
                 "resource_eid_B": self.vo_resource_eid_B,
                 "port_B": self.vo_port_eid_B,
                 "mac_B": self.vo_port_mac_B,
-                "ssid_B" : self.vo_port_ssid_B,
+                "ssid_B": self.vo_port_ssid_B,
                 "channel_B": self.vo_port_channel_B,
                 "mode_B": self.vo_port_mode_B,
                 "traffic_type_B": self.vo_port_traffic_type_B,
@@ -5178,7 +5363,8 @@ class L3VariableTime(Realm):
     def set_report_obj(self, report):
         self.report = report
 
-    def set_dut_info(self, dut_model_num='Not Set', dut_hw_version='Not Set', dut_sw_version='Not Set', dut_serial_num='Not Set'):
+    def set_dut_info(self, dut_model_num='Not Set', dut_hw_version='Not Set',
+                     dut_sw_version='Not Set', dut_serial_num='Not Set'):
         self.dut_model_num = dut_model_num
         self.dut_hw_version = dut_hw_version
         self.dut_sw_version = dut_sw_version
@@ -5320,7 +5506,8 @@ class L3VariableTime(Realm):
                                                          _label=self.client_dict_A[tos]['labels'],
                                                          _color_name=self.client_dict_A[tos]['colors'],
                                                          _color_edge=['black'],
-                                                         _graph_title=f"Individual {tos} client side traffic measurement - side a (downstream)",  # traditional station side -A
+                                                         # traditional station side -A
+                                                         _graph_title=f"Individual {tos} client side traffic measurement - side a (downstream)",
                                                          _title_size=10,
                                                          _figsize=(x_fig_size, y_fig_size),
                                                          _show_bar_value=True,
@@ -5490,7 +5677,7 @@ def main():
     lfjson_port = 8080
     endp_types = "lf_udp"
 
-    help_summary='''\
+    help_summary = '''\
 The Layer 3 Traffic Generation Test is designed to test the performance of the
 Access Point by running layer 3 TCP and/or UDP Traffic.  Layer-3 Cross-Connects represent a stream
 of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints,
@@ -5499,7 +5686,6 @@ each of which is associated with a particular Port (physical or virtual interfac
 The test will create stations, create CX traffic between upstream port and stations, run traffic
 and generate a report.
 '''
-
 
     parser = argparse.ArgumentParser(
         prog='test_l3.py',
@@ -6342,7 +6528,7 @@ INCLUDE_IN_README: False
         '--ap_file', help="--ap_file 'ap_file.txt'", default=None)
     test_l3_parser.add_argument(
         '--ap_band_list', help="--ap_band_list '2g,5g,6g' supported bands", default='2g,5g,6g')
-    #WebGUI argumemnts
+    # WebGUI argumemnts
     test_l3_parser.add_argument(
         '--dowebgui',
         help='--dowebgui True  if running through webgui',
@@ -6355,7 +6541,6 @@ INCLUDE_IN_README: False
                         default=None,
                         action="store_true",
                         help='Show summary of what this script does')
-
 
     args = parser.parse_args()
 
@@ -6397,7 +6582,8 @@ INCLUDE_IN_README: False
         logger.error("Existing stations specified, but argument \'--use_existing_station_list\' not specified")
         exit(1)
     elif args.use_existing_station_list and not args.existing_station_list:
-        logger.error("Argument \'--use_existing_station_list\' specified, but no existing stations provided. See \'--existing_station_list\'")
+        logger.error(
+            "Argument \'--use_existing_station_list\' specified, but no existing stations provided. See \'--existing_station_list\'")
         exit(1)
 
     # Gather data for test reporting
@@ -7035,7 +7221,7 @@ INCLUDE_IN_README: False
         test_name=test_name,
         dowebgui=dowebgui,
         ip=ip,
-        #for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
+        # for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
         result_dir=local_lf_report_dir,
 
         # wifi extra configuration
@@ -7110,7 +7296,11 @@ INCLUDE_IN_README: False
     report.start_content_div2()
 
     # set dut information for reporting
-    ip_var_test.set_dut_info(dut_model_num=args.dut_model_num, dut_hw_version=args.dut_hw_version, dut_sw_version=args.dut_sw_version, dut_serial_num=args.dut_serial_num)
+    ip_var_test.set_dut_info(
+        dut_model_num=args.dut_model_num,
+        dut_hw_version=args.dut_hw_version,
+        dut_sw_version=args.dut_sw_version,
+        dut_serial_num=args.dut_serial_num)
     ip_var_test.set_report_obj(report=report)
 
     # generate report
