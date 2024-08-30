@@ -213,7 +213,7 @@ class lf_create_dp_rvr_json():
             elif self.test_suite_band == '5g':
                 self.suite_radios_5g = "ct_perf_dp_5g" + self.suite_radios_5g + traffic_type + traffic_direction
             elif self.test_suite_band == '6g':
-                self.suite_radios_6g = "ct_perf_dp_6g" + self.suite_radios_6g + traffic_type +traffic_direction
+                self.suite_radios_6g = "ct_perf_dp_6g" + self.suite_radios_6g + traffic_type + traffic_direction
 
         elif self.suite_type == "rvr":
             command = "lf_rvr_test.py"
@@ -279,7 +279,7 @@ class lf_create_dp_rvr_json():
         # configuration
         lf_dp_rvr_duration = self.lf_dp_rvr_duration_combobox.get().split(' ', 1)[0]
         lf_dp_rvr_traffic_type = self.lf_dp_rvr_traffic_type_combobox.get()
-        lf_dp_rvr_traffic_type_name = lf_dp_rvr_traffic_type.replace(";","_")
+        lf_dp_rvr_traffic_type_name = lf_dp_rvr_traffic_type.replace(";", "_")
         lf_dp_rvr_dut_traffic_direction = self.lf_dp_rvr_dut_traffic_direction_combobox.get()
         lf_dp_rvr_pkt_size = self.lf_dp_rvr_pkt_size_combobox.get()
         lf_dp_rvr_pkt_custom_size = self.lf_dp_rvr_pkt_custom_size_combobox.get()
@@ -327,7 +327,7 @@ class lf_create_dp_rvr_json():
 
             for radio in range(0, self.radio_dict_size):
                 if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
-                    dp_rvr_test_name = str(self.suite_test_name_band_dict[radio].get()) + f"_{band}_W{radio}" +f"_{lf_dp_rvr_traffic_type_name}" + f"{traffic_direction}"
+                    dp_rvr_test_name = str(self.suite_test_name_band_dict[radio].get()) + f"_{band}_W{radio}" + f"_{lf_dp_rvr_traffic_type_name}" + f"{traffic_direction}"
                     dp_rvr_batch_size = str(self.radio_batch_dict[radio].get())
                     dp_rvr_sta_max = dp_rvr_batch_size.rsplit(',', 1)
                     if len(dp_rvr_sta_max) == 1:

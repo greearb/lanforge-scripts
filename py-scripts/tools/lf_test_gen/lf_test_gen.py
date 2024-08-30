@@ -93,27 +93,27 @@ class json_gen_gui():
         # -----------------------------------------------------------------------------------
         #  Create Rig Json
         # ------------------------------------------------------------------------------------
-        self.lf_rig_frame = lf_rig_tab.lf_create_rig_tab(self.rig_tab, self.window_tooltip, self.current_working_directory) 
+        self.lf_rig_frame = lf_rig_tab.lf_create_rig_tab(self.rig_tab, self.window_tooltip, self.current_working_directory)
 
         # -----------------------------------------------------------------------------------
         #  Create DUT json
         # ------------------------------------------------------------------------------------
-        self.lf_dut_tab = lf_dut_tab.lf_create_dut_tab(self.dut_tab, self.window_tooltip, self.current_working_directory) 
+        self.lf_dut_tab = lf_dut_tab.lf_create_dut_tab(self.dut_tab, self.window_tooltip, self.current_working_directory)
 
         # -----------------------------------------------------------------------------------
         #  Create Radios
         # ------------------------------------------------------------------------------------
-        self.lf_radio_frame = lf_radio_frame.lf_create_radio_frame(self.rig_tab, self.lf_rig_frame, self.max_radios, self.window_tooltip, self.current_working_directory) 
+        self.lf_radio_frame = lf_radio_frame.lf_create_radio_frame(self.rig_tab, self.lf_rig_frame, self.max_radios, self.window_tooltip, self.current_working_directory)
 
         # -----------------------------------------------------------------------------------
         #  Create Wifi Capacity
         # ------------------------------------------------------------------------------------
-        lf_wc_tab.lf_create_wc_tab(self.wc_tab, self.lf_dut_tab, self.lf_radio_frame, self.window_tooltip, self.current_working_directory) 
+        lf_wc_tab.lf_create_wc_tab(self.wc_tab, self.lf_dut_tab, self.lf_radio_frame, self.window_tooltip, self.current_working_directory)
 
         # -----------------------------------------------------------------------------------
         #  Create Data Plane or RvR
         # ------------------------------------------------------------------------------------
-        lf_dp_rvr_tab.lf_create_dp_rvr_tab(self.dp_rvr_tab, self.lf_dut_tab, self.lf_radio_frame, self.window_tooltip, self.current_working_directory) 
+        lf_dp_rvr_tab.lf_create_dp_rvr_tab(self.dp_rvr_tab, self.lf_dut_tab, self.lf_radio_frame, self.window_tooltip, self.current_working_directory)
 
         # -----------------------------------------------------------------------------------
         #
