@@ -1961,7 +1961,7 @@ class L3VariableTime(Realm):
                     self.overall = []
 
                     # Monitor loop
-                    while cur_time < end_time:
+                    while cur_time < end_time or getattr(self,"background_run",None):
                         # interval_time = cur_time + datetime.timedelta(seconds=5)
                         interval_time = cur_time + \
                             datetime.timedelta(
