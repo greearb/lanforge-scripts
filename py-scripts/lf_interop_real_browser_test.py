@@ -152,7 +152,8 @@ class RealBrowserTest(Realm):
         self.real_sta_data_dict = {} 
         self.ip_map={}
         self.health = None  
-        self.phone_data = None      
+        self.phone_data = None  
+        self.background_run = None    
         self.max_speed = 0  # infinity
         self.quiesce_after = 0  # infinity
 
@@ -1131,7 +1132,7 @@ class RealBrowserTest(Realm):
         iterator = []
         # Monitoring loop until current_time exceeds endtime
         start_time_check=datetime.now()
-        while current_time < endtime_check:
+        while current_time < endtime_check or self.background_run:
             # Update end_time_webGUI
             if self.data['end_time_webGUI'][0] < current_time.strftime('%Y-%m-%d %H:%M:%S'):
                 self.data['end_time_webGUI'] = [current_time.strftime('%Y-%m-%d %H:%M:%S')] * len(self.data['name'])
@@ -1233,6 +1234,9 @@ class RealBrowserTest(Realm):
             time.sleep(1)
             
             current_time = datetime.now()
+
+            if not self.background_run and self.background_run is not None:
+                break
         
         # Finalize end_time_webGUI
         if self.data['end_time_webGUI'][0] < current_time.strftime('%Y-%m-%d %H:%M:%S'):

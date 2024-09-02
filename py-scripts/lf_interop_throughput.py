@@ -171,6 +171,7 @@ class Throughput(Realm):
         self.channel_list=[]
         self.mode_list=[]
         self.link_speed_list=[]
+        self.background_run = None
         self.upstream = upstream
         self.host = host
         self.port = port
@@ -644,7 +645,8 @@ class Throughput(Realm):
             runtime_dir = self.result_dir
         
         # Continuously collect data until end time is reached
-        while datetime.now() < end_time:
+        while datetime.now() < end_time or self.background_run:
+            
             index += 1
             
             signal_list,channel_list,mode_list,link_speed_list=self.get_signal_and_channel_data(self.input_devices_list)
@@ -799,6 +801,8 @@ class Throughput(Realm):
                 individual_df_data.extend([round(sum(download_throughput),2),round(sum(upload_throughput),2),sum(drop_a_per),sum(drop_a_per),iteration+1,timestamp,overall_start_time.strftime("%d/%m %I:%M:%S %p"),overall_end_time.strftime("%d/%m %I:%M:%S %p"),remaining_minutes_instrf,', '.join(str(n) for n in incremental_capacity_list),'Running'])
                 individual_df.loc[len(individual_df)]=individual_df_data
                 individual_df.to_csv('throughput_data.csv', index=False)
+            if not self.background_run and self.background_run is not None:
+                break
         
         for index, key in enumerate(throughput):
             for i in range(len(throughput[key])):
@@ -814,7 +818,7 @@ class Throughput(Realm):
                     drop_a[i].append(throughput[key][i][2])
                     drop_b[i].append(throughput[key][i][3])
               
-                
+             
         individual_df_data=[]
         upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]

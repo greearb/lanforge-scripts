@@ -154,6 +154,7 @@ class VideoStreamingTest(Realm):
         self.generic_endps_profile = self.new_generic_endp_profile()
         self.generic_endps_profile.type = 'youtube'
         self.generic_endps_profile.name_prefix = "yt"
+        self.background_run=None
 
     @property
     def run(self):
@@ -952,7 +953,7 @@ class VideoStreamingTest(Realm):
         video_rate_dict= {i: [] for i in range(len(device_type))}
 
         # Loop until the current time is less than the end time
-        while current_time < endtime_check:
+        while current_time < endtime_check or self.background_run:
             
             # Get signal data for RSSI and link speed
             rssi_data,link_speed_data=self.get_signal_data()
@@ -1037,7 +1038,8 @@ class VideoStreamingTest(Realm):
             time.sleep(1)
             
             current_time = datetime.now()
-
+            if not self.background_run and self.background_run is not None:
+                break
         present_time=datetime.now().strftime("%H:%M:%S")
         individual_df_data=[]
         overall_video_rate=[]
