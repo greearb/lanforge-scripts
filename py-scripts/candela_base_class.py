@@ -902,7 +902,7 @@ class Candela:
         data_set, load, res = self.qos_test.generate_graph_data_set(data)
 
     def start_ping_test(self, ssid, password, encryption, target,
-                        interval=1, ping_test_duration=60, device_list=[]):
+                        interval=1, ping_test_duration=60, device_list=[], background=False):
         """
         Method to start and run the ping test on the selected devices.
 
@@ -932,13 +932,14 @@ class Candela:
                                         ssid_5g=ssid,
                                         passwd_5g=password,
                                         encryption_5g=encryption)
+        self.base_interop_profile = base_interop_profile
         base_interop_profile.get_devices()
         ping_test_obj.select_real_devices(real_devices=base_interop_profile,
                                             real_sta_list=device_list,
                                             base_interop_obj=base_interop_profile)
         # removing the existing generic endpoints & cxs
         ping_test_obj.cleanup()
-        ping_test_obj.sta_list = device_list
+        # ping_test_obj.sta_list = device_list
         # creating generic endpoints
         ping_test_obj.create_generic_endp()
         logger.info("Generic Cross-Connection List: {}".format(ping_test_obj.generic_endps_profile.created_cx))
@@ -950,12 +951,16 @@ class Candela:
         for ports in ports_data_dict:
             port, port_data = list(ports.keys())[0], list(ports.values())[0]
             ports_data[port] = port_data
+        if background:
+            self.ping_test_obj = ping_test_obj
+            return True
         time.sleep(ping_test_duration)
         logger.info('Stopping the PING Test...')
         ping_test_obj.stop_generic()
         # getting result dict
         result_data = ping_test_obj.get_results()
         result_json = {}
+        ping_test_obj.sta_list = ping_test_obj.real_sta_list
         if type(result_data) == dict:
             for station in ping_test_obj.sta_list:
                 current_device_data = base_interop_profile.devices_data[station]
@@ -1005,6 +1010,61 @@ class Candela:
                                         report_path="")
         return result_json
  
+    def stop_ping_test(self):
+        self.ping_test_obj.stop_generic()
+        # getting result dict
+        result_data = self.ping_test_obj.get_results()
+        result_json = {}
+        self.ping_test_obj.sta_list = self.ping_test_obj.real_sta_list
+        if type(result_data) == dict:
+            for station in self.ping_test_obj.sta_list:
+                current_device_data = self.base_interop_profile.devices_data[station]
+                if station in result_data['name']:
+                    result_json[station] = {
+                        'command': result_data['command'],
+                        'sent': result_data['tx pkts'],
+                        'recv': result_data['rx pkts'],
+                        'dropped': result_data['dropped'],
+                        'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
+                        'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
+                        'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
+                        'mac': current_device_data['mac'],
+                        'channel': current_device_data['channel'],
+                        'ssid': current_device_data['ssid'],
+                        'mode': current_device_data['mode'],
+                        'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
+                        'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
+                        'remarks': [],
+                        'last_result': [result_data['last results'].split('\n')[-2] if len(result_data['last results']) != 0 else ""][0]}
+                    result_json[station]['remarks'] = self.ping_test_obj.generate_remarks(result_json[station])
+        else:
+            for station in self.ping_test_obj.sta_list:
+                current_device_data = self.base_interop_profile.devices_data[station]
+                for ping_device in result_data:
+                    ping_endp, ping_data = list(ping_device.keys())[0], list(ping_device.values())[0]
+                    if station in ping_endp:
+                        result_json[station] = {
+                            'command': ping_data['command'],
+                            'sent': ping_data['tx pkts'],
+                            'recv': ping_data['rx pkts'],
+                            'dropped': ping_data['dropped'],
+                            'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
+                            'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
+                            'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
+                            'mac': current_device_data['mac'],
+                            'channel': current_device_data['channel'],
+                            'ssid': current_device_data['ssid'],
+                            'mode': current_device_data['mode'],
+                            'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
+                            'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
+                            'remarks': [],
+                            'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]}
+                        result_json[station]['remarks'] = self.ping_test_obj.generate_remarks(result_json[station])
+        logger.info("Final Result Json For Ping Test: {}".format(result_json))
+        self.ping_test_obj.generate_report(result_json=result_json, result_dir=f'Ping_Test_Report',
+                                        report_path="")
+        return result_json
+
     def start_th_test(self,**kwargs):
         background_run = kwargs.get("background_run",False)
         if background_run:
@@ -2194,7 +2254,7 @@ class Candela:
 
 
 logger_config = lf_logger_config.lf_logger_config()
-candela_apis = Candela(ip='192.168.246.138', port=8080)
+candela_apis = Candela(ip='192.168.242.2', port=8080)
 # candela_apis.start_ftp_test(ssid='Walkin_open', password='[BLANK]', security='open',
 #                                 device_list=','.join(['1.12', '1.13', '1.16']),traffic_duration=10)
 
@@ -2248,7 +2308,7 @@ candela_apis = Candela(ip='192.168.246.138', port=8080)
 
 # TO RUN PING TEST
 # candela_apis.start_ping_test(ssid='Walkin_open', password='[BLANK]', encryption='open',
-#                              target='192.168.1.95', device_list=['1.16.wlan0', '1.19.wlan0'])
+#                              target='192.168.1.95', device_list=['1.36.wlan0'], background=True)
 
 # TO RUN THROUGHPUT TEST
 # candela_apis.start_th_test(traffic_type="lf_udp",
