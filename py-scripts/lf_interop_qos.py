@@ -451,7 +451,7 @@ class ThroughputQOS(Realm):
                         }
                     }
                 )
-        while datetime.now() < end_time:
+        while datetime.now() < end_time or getattr(self,"background_run",None):
             index += 1
             # removed the fields query from endp so that the cx names will be given in the reponse as keys instead of cx_ids
             response = self.json_get('/cx/%s?' % (
@@ -621,6 +621,7 @@ class ThroughputQOS(Realm):
         logger.info("connections download {}".format(connections_download))
         logger.info("connections {}".format(connections_upload))
 
+        self.connections_download,self.connections_upload,self.drop_a_per, self.drop_b_per = connections_download,connections_upload, drop_a_per, drop_b_per
         return connections_download,connections_upload, drop_a_per, drop_b_per
 
     def evaluate_qos(self, connections_download, connections_upload, drop_a_per, drop_b_per):
