@@ -669,6 +669,11 @@ effectively over the network and pinpoint potential issues affecting connectivit
     optional.add_argument('--debug',
                           action="store_true",
                           help='Enable debugging')
+
+    # local report directory used by lf_report
+    parser.add_argument('--local_lf_report_dir',
+                                help='--local_lf_report_dir override the report path (lanforge/html-reports), primary used when making another directory lanforge/html-report/<test_rig>',
+                                default="")
     
     # logging configuration:
     parser.add_argument('--log_level', default=None,
@@ -1021,7 +1026,10 @@ effectively over the network and pinpoint potential issues affecting connectivit
     # station post cleanup
     # ping.cleanup()
 
-    ping.generate_report()
+    if args.local_lf_report_dir == "":
+        ping.generate_report()
+    else:
+        ping.generate_report(report_path=args.local_lf_report_dir)
 
 if __name__ == "__main__":
     main()
