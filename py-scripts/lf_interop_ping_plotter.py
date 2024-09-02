@@ -1051,6 +1051,12 @@ connectivity problems.
 
     webUI_args.add_argument('--ui_report_dir',
                             help='Specify the results directory to store the reports for webUI')
+
+    # local report directory used by lf_report
+    parser.add_argument('--local_lf_report_dir',
+                                help='--local_lf_report_dir override the report path (lanforge/html-reports), primary used when making another directory lanforge/html-report/<test_rig>',
+                                default="")
+
     
     # logging configuration:
     parser.add_argument('--log_level', default=None,
@@ -1606,7 +1612,10 @@ connectivity problems.
     if(not args.no_cleanup):
         ping.cleanup()
 
-    ping.generate_report()
+    if args.local_lf_report_dir == "":
+        ping.generate_report()
+    else:
+        ping.generate_report(report_path=args.local_lf_report_dir)
 
 if __name__ == "__main__":
     main()
