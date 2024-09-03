@@ -10,10 +10,12 @@
 #   RuntimeMaxFiles=5
 #   RuntimeMaxFileSize=256M
 #
-# Follow these message through journalctl using this technique:
 #
-#   sudo ./loadmon.pl | logger -t loadmon
-# ...new terminal...
+# Engage the monitoring process using systemd-cat, as below.
+# (Systemd-cat is preferred over logger):
+#   sudo systemd-cat -t loadmon ./loadmon.pl --interval 20
+#
+# Follow these message through journalctl using this technique:
 #   watch -n15 'journalctl --since "20 sec ago" -t loadmon | ./parse_loadmon.pl'
 #
 
@@ -138,7 +140,7 @@ sub report {
     print $fh qq("num_pids":$num_pids,);
     print $fh qq("total_mem_KB":$self->{total_mem},);
     print $fh qq("total_fh":$self->{total_fh},);
-    print $fh qq("total_threads":$self->{total_threads}${RC});
+    print $fh qq("total_threads":$self->{total_threads}${RC},);
 }
 1;
 ## - - - End loadmon - - - ##
@@ -188,7 +190,7 @@ sub mainloop {
             # print "$name ";
             $lmonitor->monitor();
             $lmonitor->report(*$out_fh);
-            # print ",";
+            # print $out_fh ",";
         }
         print_totals(*$out_fh);
         print $out_fh "]\n";
@@ -207,9 +209,12 @@ my $usage = qq{$0 # utility to record system load
   --interval <seconds>      # default 30 sec
   --syslog                  # report results to syslog/journalctl
   --background              # place self into background
-  Pipe this to syslog using "| logger -t loadmon" or better yet:
-  "| systemd-cat -t loadmon" or use --syslog.
-  Format this data using journalctl:
+                            # do not use the background option in the systemd.unit file
+
+  Record this data to syslog using systemd-cat:
+    systemd-cat -t loadmon ./loadmon.pl --background --interval 60
+
+  Retrieve this data using journalctl:
     journalctl -t loadmon | tail -1 | ./parse_loadmon.pl
 };
 
