@@ -1044,7 +1044,6 @@ class VideoStreamingTest(Realm):
             current_time = datetime.now()
             if self.stop_test :
                 test_stopped_by_user=True
-                print("enteredddddddddd")
                 break
             if not self.background_run and self.background_run is not None:
                 break

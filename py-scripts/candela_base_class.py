@@ -1258,7 +1258,7 @@ class Candela:
             print("setting the flag to false")
             self.throughput_test.stop_test=True
         print("setting throughput test to stop")
-        self.th_monitoring_thread.join()
+        self.monitoring_thread.join()
         self.throughput_test.stop() 
     def generate_report_throughput_test(self):
         self.throughput_test.generate_report(list(set(self.iterations_before_test_stopped_by_user)),self.incremental_capacity_list,data=self.all_dataframes,data1=self.to_run_cxs_len)
@@ -1674,7 +1674,7 @@ class Candela:
             # self.video_streaming_test.background_run = False
             self.video_streaming_test.stop_test=True
         print("setting video streaming test to stop")
-        self.vs_monitoring_thread.join()
+        self.monitoring_thread.join()
         self.video_streaming_test.stop() 
     def generate_report_video_streaming_test(self):
         if self.video_streaming_test.resource_ids and self.video_streaming_test.incremental :  
@@ -2112,7 +2112,6 @@ class Candela:
             if postcleanup:
                 self.web_browser_test.postcleanup()
     def stop_web_browser_test(self):
-        print("sssssssssssss",self.web_browser_test.background_run)
         if getattr(self.web_browser_test,"background_run",None):
             print("setting the flag to false")
             self.web_browser_test.background_run = False
@@ -2121,7 +2120,7 @@ class Candela:
             # self.web_browser_test.background_run = False
             self.web_browser_test.stop_test=True
         print("setting web browser test to stop")
-        self.wb_monitoring_thread.join()
+        self.monitoring_thread.join()
         self.web_browser_test.stop()
 
     def generate_report_web_browser_test(self):
@@ -2303,13 +2302,13 @@ candela_apis = Candela(ip='192.168.242.2', port=8080)
 # candela_apis.stop_http_test()
 # candela_apis.generate_report_http_test()
 
-candela_apis.start_mc_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
-                                  side_b_min=100000000, upstream_port='eth2', test_duration=30, device_list=['1.22.wlan0'], background_run=True)
-print("waiting started")
-time.sleep(60)
-print("waiting finished")
-candela_apis.stop_multicast_test()
-candela_apis.generate_report_multicast_test()
+# candela_apis.start_mc_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
+#                                   side_b_min=100000000, upstream_port='eth2', test_duration=30, device_list=['1.22.wlan0'], background_run=True)
+# print("waiting started")
+# time.sleep(60)
+# print("waiting finished")
+# candela_apis.stop_multicast_test()
+# candela_apis.generate_report_multicast_test()
 # time.sleep(300)
 # candela_apis.stop_multicast_test()
 # candela_apis.generate_report_multicast_test()
@@ -2350,13 +2349,13 @@ candela_apis.generate_report_multicast_test()
 #                             upstream_port="eth1",
 #                             report_timer="5s",
 #                             load_type="wc_intended_load",
-#                             incremental_capacity="1",
-#                             test_duration="5m",
+#                             # incremental_capacity="2",
+#                             # test_duration="5m",
 #                             # precleanup=True,
 #                             # postcleanup=True,
 #                             packet_size=18,
 #                             test_name="Throughput_test",
-#                             # background_run=True
+#                             background_run=True
 #                             )
 # print("waiting started")
 # time.sleep(60)
@@ -2364,13 +2363,15 @@ candela_apis.generate_report_multicast_test()
 # candela_apis.stop_throughput_test()
 # candela_apis.generate_report_throughput_test()
 
+
+
 # TO RUN INTEROPERABILITY TEST
 # candela_apis.start_th_test(traffic_type="lf_udp",
 #                                    device_list='1.13,1.18,1.11,1.12',
 #                                    upload=1000000,
 #                                    download=100000,
 #                                    upstream_port="eth1",
-#                                    test_duration="30s",
+#                                    test_duration="20s",
 #                                    do_interopability=True,
 #                                    precleanup=True,
 #                                    postcleanup=True,
@@ -2386,11 +2387,11 @@ candela_apis.generate_report_multicast_test()
 # candela_apis.start_vs_test(url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
 #                                         media_source="hls",
 #                                         media_quality="4k",
-#                                         # duration="1m",
+#                                         duration="1m",
 #                                         device_list='1.11,1.14,1.15,1.17,1.21',
 #                                         precleanup=True,
 #                                         postcleanup=True,
-#                                         # incremental_capacity="1",
+#                                         # incremental_capacity="3",
 #                                         background_run=True
 #                                         )
 # print("waiting started")
@@ -2399,20 +2400,20 @@ candela_apis.generate_report_multicast_test()
 # candela_apis.stop_video_streaming_test()
 # candela_apis.generate_report_video_streaming_test()
 
+
+
+
 # TO RUN WEB BROWSER TEST
 # candela_apis.start_wb_test(device_list='1.11,1.14,1.15,1.17,1.21', 
-#                                         # duration="50s",
+#                                         duration="2m",
 #                                         url="http://www.google.com",
 #                                         background_run=True,
-#                                         count=1,
-#                                         # incremental_capacity='3'
+#                                         count=3,
+#                                         incremental_capacity='1'
 #                                         )
 # print("waiting started")
 # time.sleep(60)
 # print("waiting finished")
 # candela_apis.stop_web_browser_test()
 # candela_apis.generate_report_web_browser_test()
-# TO RUN MULTICAST TEST
-# candela_apis.start_multicast_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
-#                                   side_b_min=100000000, upstream_port='eth1', test_duration=30, device_list=['1.22.wlan0'])
 
