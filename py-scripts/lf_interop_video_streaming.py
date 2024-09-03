@@ -155,6 +155,8 @@ class VideoStreamingTest(Realm):
         self.generic_endps_profile.type = 'youtube'
         self.generic_endps_profile.name_prefix = "yt"
         self.background_run=None
+        self.stop_test=False
+
 
     @property
     def run(self):
@@ -900,6 +902,7 @@ class VideoStreamingTest(Realm):
 
     def monitor_for_runtime_csv(self,duration,file_path,individual_df,iteration,actual_start_time,resource_list_sorted = [],cx_list = [] ):        
         self.all_cx_list.extend(cx_list) 
+        test_stopped_by_user=False
         resource_ids = list(map(int, self.resource_ids.split(',')))
         self.data_for_webui['resources'] = resource_ids
         starttime = datetime.now()
@@ -1026,6 +1029,7 @@ class VideoStreamingTest(Realm):
                     data = json.load(file)
                     if data["status"] != "Running":
                         logging.info('Test is stopped by the user')
+                        test_stopped_by_user=True
                         break
 
             # df1 = pd.DataFrame(self.data)
@@ -1038,6 +1042,10 @@ class VideoStreamingTest(Realm):
             time.sleep(1)
             
             current_time = datetime.now()
+            if self.stop_test :
+                test_stopped_by_user=True
+                print("enteredddddddddd")
+                break
             if not self.background_run and self.background_run is not None:
                 break
         present_time=datetime.now().strftime("%H:%M:%S")
@@ -1060,7 +1068,11 @@ class VideoStreamingTest(Realm):
         else:
             individual_df_data.extend([sum(overall_video_rate),present_time,iteration+1,actual_start_time.strftime('%Y-%m-%d %H:%M:%S'),self.data['end_time_webGUI'][0],self.data['remaining_time_webGUI'][0],"Stopped"])
         individual_df.loc[len(individual_df)]=individual_df_data
-        individual_df.to_csv('video_streaming_realtime_data.csv', index=False)
+        
+        if self.dowebgui == True:
+            individual_df.to_csv('{}/video_streaming_realtime_data.csv'.format(self.result_dir), index=False)
+        else:
+            individual_df.to_csv('video_streaming_realtime_data.csv', index=False)
 
         if self.data['end_time_webGUI'][0] < current_time.strftime('%Y-%m-%d %H:%M:%S'):
             self.data['end_time_webGUI'] = [current_time.strftime('%Y-%m-%d %H:%M:%S') ] 
@@ -1078,6 +1090,8 @@ class VideoStreamingTest(Realm):
         else:
             self.data['remaining_time_webGUI'] = [str(datetime.strptime(self.data['end_time_webGUI'][0], "%Y-%m-%d %H:%M:%S") - datetime.strptime(curr_time, "%Y-%m-%d %H:%M:%S"))] 
 
+        return test_stopped_by_user
+    
     def get_incremental_capacity_list(self):
         keys=list(self.http_profile.created_cx.keys())
         incremental_temp = []
@@ -1115,7 +1129,7 @@ class VideoStreamingTest(Realm):
             updated_array=[to_updated_array[index] for index in new_array]
         return updated_array
 
-    def generate_report(self, date, test_setup_info, realtime_dataset, report_path = '', cx_order_list = []):
+    def generate_report(self,date, iterations_before_test_stopped_by_user,test_setup_info, realtime_dataset, report_path = '', cx_order_list = []):
         logging.info("Creating Reports")
          # Initialize the report object  
         if self.dowebgui == True and report_path == '':
@@ -1123,7 +1137,7 @@ class VideoStreamingTest(Realm):
             report = lf_report.lf_report(_results_dir_name="VideoStreaming_test", _output_html="VideoStreaming_test.html",
                                         _output_pdf="VideoStreaming_test.pdf", _path=self.result_dir)
         else:
-            report = lf_report.lf_report(_results_dir_name="VideoStreaming_test_test", _output_html="VideoStreaming_test.html",
+            report = lf_report.lf_report(_results_dir_name="VideoStreaming_test", _output_html="VideoStreaming_test.html",
                                         _output_pdf="VideoStreaming_test.pdf", _path=report_path)
 
         # To store throughput_data.csv in report folder    
@@ -1193,7 +1207,7 @@ class VideoStreamingTest(Realm):
         total_buffer = self.data["total_buffer"]
         
         # Iterate through the length of cx_order_list
-        for iter in range(len(cx_order_list)):
+        for iter in range(len(iterations_before_test_stopped_by_user)):
             data_set_in_graph,wait_time_data,devices_on_running_state,device_names_on_running=[],[],[],[]
             devices_data_to_create_wait_time_bar_graph=[]
             max_video_rate,min_video_rate,avg_video_rate=[],[],[]
@@ -1589,7 +1603,9 @@ def main():
         selected_devices,report_labels,selected_macs = obj.devices.query_user(dowebgui = args.dowebgui, device_list = resource_ids_generated)
         # Modify obj.resource_ids to include only the second part of each ID (after '.')
         obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list.split(","))
-        available_resources= [obj.resource_ids]
+        # print("args.device_list",selected_devices,obj.resource_ids)
+
+        available_resources= [int(num) for num in obj.resource_ids.split(',')]
     else :
         # Case where args.no_laptops flag is set
         # if args.no_laptops:
@@ -1842,6 +1858,8 @@ def main():
 
     actual_start_time=datetime.now()
 
+    iterations_before_test_stopped_by_user=[]
+
     # Calculate and manage cx_order_list ( list of cross connections to run ) based on incremental values
     if obj.resource_ids:
         # Check if incremental  is specified
@@ -1911,10 +1929,17 @@ def main():
                             data = json.load(file)
                             if data["status"] != "Running":
                                 break 
-                    obj.monitor_for_runtime_csv(args.duration,file_path,individual_df,i,actual_start_time,resource_list_sorted,cx_order_list[i])
+                    test_stopped_by_user= obj.monitor_for_runtime_csv(args.duration,file_path,individual_df,i,actual_start_time,resource_list_sorted,cx_order_list[i])
                 else:
-                    obj.monitor_for_runtime_csv(args.duration,file_path,individual_df,i,actual_start_time,resource_list_sorted,cx_order_list[i])
-                    # time.sleep(duration)        
+                    test_stopped_by_user=obj.monitor_for_runtime_csv(args.duration,file_path,individual_df,i,actual_start_time,resource_list_sorted,cx_order_list[i])
+                    # time.sleep(duration)   
+                if test_stopped_by_user==False:
+                    # Append current iteration index to iterations_before_test_stopped_by_user
+                    iterations_before_test_stopped_by_user.append(i)
+                else:
+                    # Append current iteration index to iterations_before_test_stopped_by_user 
+                    iterations_before_test_stopped_by_user.append(i)
+                    break     
     obj.stop()
 
     if obj.resource_ids:
@@ -1963,9 +1988,9 @@ def main():
 
     # prev_inc_value = 0
     if obj.resource_ids and obj.incremental :  
-        obj.generate_report(date, test_setup_info = test_setup_info,realtime_dataset=individual_df, cx_order_list = cx_order_list) 
+        obj.generate_report(date, list(set(iterations_before_test_stopped_by_user)),test_setup_info = test_setup_info,realtime_dataset=individual_df, cx_order_list = cx_order_list) 
     elif obj.resource_ids:
-        obj.generate_report(date, test_setup_info = test_setup_info,realtime_dataset=individual_df) 
+        obj.generate_report(date, list(set(iterations_before_test_stopped_by_user)),test_setup_info = test_setup_info,realtime_dataset=individual_df) 
 
 
     # Perform post-cleanup operations

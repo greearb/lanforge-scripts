@@ -153,7 +153,9 @@ class RealBrowserTest(Realm):
         self.ip_map={}
         self.health = None  
         self.phone_data = None  
-        self.background_run = None    
+        self.background_run = None  
+        self.test_stopped_by_user=False
+        self.stop_test=False  
         self.max_speed = 0  # infinity
         self.quiesce_after = 0  # infinity
 
@@ -1213,6 +1215,20 @@ class RealBrowserTest(Realm):
                             k+=1
                         self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.data["end_time"])
                         break
+
+            elif self.stop_test:
+                logging.info('Test is stopped by the user')
+                k = 0
+                # Reset time_data if test is stopped
+                for num in self.time_data:                                
+                    for j in range(len(num)):
+                        if self.time_data[k][j] == -1:
+                            self.time_data[k][j] = 0 
+                    k+=1
+                # self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.data["end_time"])
+                self.test_stopped_by_user=True
+                break
+
 
             # Update DataFrame with current data
             # print(self.data)

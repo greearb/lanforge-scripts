@@ -172,6 +172,7 @@ class Throughput(Realm):
         self.mode_list=[]
         self.link_speed_list=[]
         self.background_run = None
+        self.stop_test=False
         self.upstream = upstream
         self.host = host
         self.port = port
@@ -801,6 +802,11 @@ class Throughput(Realm):
                 individual_df_data.extend([round(sum(download_throughput),2),round(sum(upload_throughput),2),sum(drop_a_per),sum(drop_a_per),iteration+1,timestamp,overall_start_time.strftime("%d/%m %I:%M:%S %p"),overall_end_time.strftime("%d/%m %I:%M:%S %p"),remaining_minutes_instrf,', '.join(str(n) for n in incremental_capacity_list),'Running'])
                 individual_df.loc[len(individual_df)]=individual_df_data
                 individual_df.to_csv('throughput_data.csv', index=False)
+
+            if self.stop_test :
+                test_stopped_by_user=True
+                print("enteredddddddddd")
+                break
             if not self.background_run and self.background_run is not None:
                 break
         
@@ -865,7 +871,6 @@ class Throughput(Realm):
 
         logger.info("connections download {}".format(connections_download))
         logger.info("connections upload {}".format(connections_upload))
-
 
         return individual_df,test_stopped_by_user
 
