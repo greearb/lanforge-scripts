@@ -736,11 +736,9 @@ class Candela:
         self.cleanup.layer4_endp_clean()
         return result_data
 
-    def start_qos_test(self, ssid, password, security,
-                 ap_name, tos, upstream='eth1', traffic_type='lf_udp',
-                 side_a_min=6200000, side_b_min=6200000, side_a_max=0, side_b_max=0, 
-                 test_duration=60, qos_serial_run=True, device_list=[],
-                 report_labels=[], device_macs=[]):
+
+    def start_qos_test(self,**kwargs):
+
         """
         Method to start QoS test on the given device list
 
@@ -749,7 +747,7 @@ class Candela:
             password (str): Password for the SSID. [BLANK] in case of open security.
             security (str): Encryption for the given SSID.
             ap_name (str): AP Name
-            tos (list): List of all the TOS to initiate the test.
+           tos (list): List of all the TOS to initiate the test.
             upstream (str, optional): Upstream port. Defaults to 'eth1'.
             traffic_type (str, optional): lf_tcp incase of TCP traffic, lf_udp incase of UDP. Defaults to 'lf_udp'.
             side_a_min (int, optional): Min upload rate. Defaults to 6200000.
@@ -761,17 +759,35 @@ class Candela:
             device_list (list, optional): List containing the port names of the selected devices. Defaults to [].
             report_labels (list, optional): Report labels for the selected devices. Defaults to [].
             device_macs (list, optional): MAC IDs for the selected devices. Defaults to [].
-
+            background_run(boolean, optional): To make the test run indefinetley. Default False 
         Returns:
             data (dict): Result data
-        """                   
-        if test_duration:
+        """
+
+
+        background_run = kwargs.get("background_run",False)
+        if background_run:
+            self.qos_monitoring_thread=threading.Thread(target=self.start_qos,kwargs=kwargs)
+            self.qos_monitoring_thread.start()
+        else:
+            self.start_qos(**kwargs)
+    
+    def start_qos(self, ssid, password, security,
+                 ap_name, tos, upstream='eth1', traffic_type='lf_udp',
+                 side_a_min=6200000, side_b_min=6200000, side_a_max=0, side_b_max=0, 
+                 test_duration=60, qos_serial_run=False, device_list=[],
+                 report_labels=[], device_macs=[],background_run = False):
+        if not background_run:
             qos_test_duration = test_duration
+        else:
+            qos_serial_run=False
+            qos_test_duration = 2
+
         test_results = {'test_results': []}
         data = {}
         # qos test for real clients
         def qos_test_overall_real(qos_tos_real=None):
-            qos_test_obj = qos_test.ThroughputQOS(host=self.lanforge_ip,
+            self.qos_test = qos_test.ThroughputQOS(host=self.lanforge_ip,
                                                     port=self.port,
                                                     number_template="0000",
                                                     ap_name=ap_name,
@@ -792,61 +808,64 @@ class Candela:
                                                     _debug_on=False)
 
             data = {}
-            qos_test_obj.input_devices_list = device_list
-            qos_test_obj.real_client_list = report_labels
-            qos_test_obj.real_client_list1 = report_labels
-            qos_test_obj.mac_id_list = device_macs
-            qos_test_obj.build()
-            qos_test_obj.start()
+            self.qos_test.background_run = background_run
+            self.qos_test.input_devices_list = device_list
+            self.qos_test.real_client_list = report_labels
+            self.qos_test.real_client_list1 = report_labels
+            self.qos_test.mac_id_list = device_macs
+            self.qos_test.build()
+            self.qos_test.start()
             time.sleep(10)
             try:
-                connections_download, connections_upload, drop_a_per, drop_b_per = qos_test_obj.monitor()
+                connections_download, connections_upload, drop_a_per, drop_b_per = self.qos_test.monitor()
             except Exception as e:
-                logger.info(f"Failed at Monitoring the CX... {e}")
-            qos_test_obj.stop()
-            time.sleep(5)
-            test_results['test_results'].append(
-                qos_test_obj.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
-            data.update(test_results)
-            test_end_time = datetime.now().strftime("%b %d %H:%M:%S")
-            logger.info("QOS Test ended at: {}".format(test_end_time))
+                logger.info(f"Failed at Monitoring the CX... {e}")    
+            if not background_run:
+                self.qos_test.stop()
+                time.sleep(5)
+                test_results['test_results'].append(
+                    self.qos_test.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
+                data.update(test_results)
+                test_end_time = datetime.now().strftime("%b %d %H:%M:%S")
+                logger.info("QOS Test ended at: {}".format(test_end_time))
 
 
-            qos_test_obj.cleanup()
-            logging.debug('data:{}'.format(data))
+                self.qos_test.cleanup()
+                logging.debug('data:{}'.format(data))
 
-            if qos_serial_run:
-                result1, result2, result3, result4 = {}, {}, {}, {}
-                # separating dictionaries for each value in the list
-                result_dicts = []
-                for item in data['test_results']:
-                    result_dict = {'test_results': [item]}
-                    result_dicts.append(result_dict)
+                if qos_serial_run:
+                    result1, result2, result3, result4 = {}, {}, {}, {}
+                    # separating dictionaries for each value in the list
+                    result_dicts = []
+                    for item in data['test_results']:
+                        result_dict = {'test_results': [item]}
+                        result_dicts.append(result_dict)
 
-                if len(result_dicts) == 1:
-                    logger.info("yes - 1")
-                    result1 = result_dicts[0]
-                    data1 = result1
-                if len(result_dicts) == 2:
-                    logger.info("yes - 2")
-                    result1, result2 = result_dicts[0], result_dicts[1]
-                    data1 = result2
-                if len(result_dicts) == 3:
-                    logger.info("yes - 3")
-                    result1, result2, result3 = result_dicts[0], result_dicts[1], result_dicts[2]
-                    data1 = result3
-                if len(result_dicts) == 4:
-                    logger.info("yes - 4")
-                    result1, result2, result3, result4 = result_dicts[0], result_dicts[1], result_dicts[2], result_dicts[3]
-                    data1 = result4
-                data = data1
-
-            qos_test_obj.generate_report(data=data,
-                                            input_setup_info={"contact": "support@candelatech.com"},
-                                            report_path="",
-                                            result_dir_name=f"Qos_Test_Report")
-            data_set, load, res = qos_test_obj.generate_graph_data_set(data)
-            return data
+                    if len(result_dicts) == 1:
+                        logger.info("yes - 1")
+                        result1 = result_dicts[0]
+                        data1 = result1
+                    if len(result_dicts) == 2:
+                        logger.info("yes - 2")
+                        result1, result2 = result_dicts[0], result_dicts[1]
+                        data1 = result2
+                    if len(result_dicts) == 3:
+                        logger.info("yes - 3")
+                        result1, result2, result3 = result_dicts[0], result_dicts[1], result_dicts[2]
+                        data1 = result3
+                    if len(result_dicts) == 4:
+                        logger.info("yes - 4")
+                        result1, result2, result3, result4 = result_dicts[0], result_dicts[1], result_dicts[2], result_dicts[3]
+                        data1 = result4
+                    data = data1
+                self.qos_test.generate_report(data=data,
+                                                input_setup_info={"contact": "support@candelatech.com"},
+                                                report_path="",
+                                                result_dir_name=f"Qos_Test_Report")
+                data_set, load, res = self.qos_test.generate_graph_data_set(data)
+                return data
+                
+        
         if qos_serial_run:
             for qos_tos in tos:
                 logger.info(qos_tos)
@@ -854,6 +873,33 @@ class Candela:
         else:
             data = qos_test_overall_real()
         return data
+    def stop_qos_test(self):
+        if getattr(self.qos_test,"background_run",None):
+            print("setting the flag to false")
+            self.qos_test.background_run = False
+        print("setting throughput test to stop")
+        self.qos_monitoring_thread.join()
+        self.qos_test.stop()
+
+    def generate_qos_report(self):
+        data = {}
+        test_results = {'test_results': []}
+        time.sleep(5)
+        test_results['test_results'].append(
+            self.qos_test.evaluate_qos(self.qos_test.connections_download, self.qos_test.connections_upload, self.qos_test.drop_a_per, self.qos_test.drop_b_per))
+        data.update(test_results)
+        test_end_time = datetime.now().strftime("%b %d %H:%M:%S")
+        logger.info("QOS Test ended at: {}".format(test_end_time))
+
+
+        self.qos_test.cleanup()
+        logging.debug('data:{}'.format(data))
+
+        self.qos_test.generate_report(data=data,
+                                        input_setup_info={"contact": "support@candelatech.com"},
+                                        report_path="",
+                                        result_dir_name=f"Qos_Test_Report")
+        data_set, load, res = self.qos_test.generate_graph_data_set(data)
 
     def start_ping_test(self, ssid, password, encryption, target,
                         interval=1, ping_test_duration=60, device_list=[], background=False):
@@ -893,7 +939,7 @@ class Candela:
                                             base_interop_obj=base_interop_profile)
         # removing the existing generic endpoints & cxs
         ping_test_obj.cleanup()
-        ping_test_obj.sta_list = device_list
+        # ping_test_obj.sta_list = device_list
         # creating generic endpoints
         ping_test_obj.create_generic_endp()
         logger.info("Generic Cross-Connection List: {}".format(ping_test_obj.generic_endps_profile.created_cx))
@@ -914,6 +960,7 @@ class Candela:
         # getting result dict
         result_data = ping_test_obj.get_results()
         result_json = {}
+        ping_test_obj.sta_list = ping_test_obj.real_sta_list
         if type(result_data) == dict:
             for station in ping_test_obj.sta_list:
                 current_device_data = base_interop_profile.devices_data[station]
@@ -968,6 +1015,7 @@ class Candela:
         # getting result dict
         result_data = self.ping_test_obj.get_results()
         result_json = {}
+        self.ping_test_obj.sta_list = self.ping_test_obj.real_sta_list
         if type(result_data) == dict:
             for station in self.ping_test_obj.sta_list:
                 current_device_data = self.base_interop_profile.devices_data[station]
@@ -1210,7 +1258,7 @@ class Candela:
             print("setting the flag to false")
             self.throughput_test.stop_test=True
         print("setting throughput test to stop")
-        self.monitoring_thread.join()
+        self.th_monitoring_thread.join()
         self.throughput_test.stop() 
     def generate_report_throughput_test(self):
         self.throughput_test.generate_report(list(set(self.iterations_before_test_stopped_by_user)),self.incremental_capacity_list,data=self.all_dataframes,data1=self.to_run_cxs_len)
@@ -1626,7 +1674,7 @@ class Candela:
             # self.video_streaming_test.background_run = False
             self.video_streaming_test.stop_test=True
         print("setting video streaming test to stop")
-        self.monitoring_thread.join()
+        self.vs_monitoring_thread.join()
         self.video_streaming_test.stop() 
     def generate_report_video_streaming_test(self):
         if self.video_streaming_test.resource_ids and self.video_streaming_test.incremental :  
@@ -2073,7 +2121,7 @@ class Candela:
             # self.web_browser_test.background_run = False
             self.web_browser_test.stop_test=True
         print("setting web browser test to stop")
-        self.monitoring_thread.join()
+        self.wb_monitoring_thread.join()
         self.web_browser_test.stop()
 
     def generate_report_web_browser_test(self):
@@ -2217,7 +2265,7 @@ class Candela:
             print("setting the flag to false")
             self.multicast_test.background_run = False
         print("setting multicast test to stop")
-        self.monitoring_thread.join()
+        self.mc_monitoring_thread.join()
         self.multicast_test.stop()
 
     def generate_report_multicast_test(self):
@@ -2286,14 +2334,13 @@ candela_apis.generate_report_multicast_test()
 
 # TO RUN QOS TEST
 # candela_apis.start_qos_test(ssid='Walkin_open', password='[BLANK]', security='open',
-#                             ap_name='Netgear', upstream='eth3', tos=['VI', 'VO', 'BE', 'BK'],
-#                             traffic_type='lf_tcp', device_list=['1.16.wlan0', '1.19.wlan0'], report_labels=['1.16 android test41', '1.19 android test46'],
-#                             device_macs=['48:e7:da:fe:0d:ed', '48:e7:da:fe:0d:91'], qos_serial_run=False)
+#                             ap_name='Netgear', upstream='eth1', tos=['VI', 'BK'],
+#                             traffic_type='lf_tcp', device_list=['1.12.sta0', '1.19.wlan0'], report_labels=['1.12 Lin test41', '1.19 android test46'],
+#                             device_macs=['48:e7:da:fe:0d:ed', '48:e7:da:fe:0d:91'], qos_serial_run=False,background_run=False)
 
 # TO RUN PING TEST
 # candela_apis.start_ping_test(ssid='Walkin_open', password='[BLANK]', encryption='open',
-#                              target='192.168.1.95', device_list='all')
-# candela_apis.stop_ping_test()
+#                              target='192.168.1.95', device_list=['1.36.wlan0'], background=True)
 
 # TO RUN THROUGHPUT TEST
 # candela_apis.start_th_test(traffic_type="lf_udp",
