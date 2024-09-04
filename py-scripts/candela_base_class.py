@@ -478,6 +478,9 @@ class Candela:
         
 
     def stop_ftp_test(self):
+        """
+        Method to stop FTP test.
+        """
         self.ftp_test.stop()
         logger.info("Traffic stopped running")
         self.ftp_test.my_monitor()
@@ -487,6 +490,9 @@ class Candela:
         self.ftp_test.end_time = test_end_time
 
     def generate_report_ftp_test(self):
+        """
+        Method to generate report for FTP test.
+        """
 
         date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
         input_setup_info = {
@@ -593,11 +599,16 @@ class Candela:
             self.generate_report_http_test()
 
     def stop_http_test(self):
+        """
+        Method to stop HTTP test.
+        """
         self.http_test.stop()
         self.http_test.end_time = datetime.now()
 
     def generate_report_http_test(self):
-
+        """
+        Method to generate report for HTTP test.
+        """
         http_sta_list = self.http_test.port_list
         num_stations = len(http_sta_list)
         Bands = self.http_test.Bands
@@ -777,6 +788,7 @@ class Candela:
                  side_a_min=6200000, side_b_min=6200000, side_a_max=0, side_b_max=0, 
                  test_duration=60, qos_serial_run=False, device_list=[],
                  report_labels=[], device_macs=[],background_run = False):
+        
         if not background_run:
             qos_test_duration = test_duration
         else:
@@ -874,6 +886,9 @@ class Candela:
             data = qos_test_overall_real()
         return data
     def stop_qos_test(self):
+        """
+        Method to stop QOS test.
+        """
         if getattr(self.qos_test,"background_run",None):
             print("setting the flag to false")
             self.qos_test.background_run = False
@@ -882,6 +897,9 @@ class Candela:
         self.qos_test.stop()
 
     def generate_qos_report(self):
+        """
+        Method to generate report for QOS test.
+        """
         data = {}
         test_results = {'test_results': []}
         time.sleep(5)
@@ -1011,6 +1029,9 @@ class Candela:
         return result_json
  
     def stop_ping_test(self):
+        """
+        Method to stop Ping test.
+        """
         self.ping_test_obj.stop_generic()
         # getting result dict
         result_data = self.ping_test_obj.get_results()
@@ -1066,33 +1087,6 @@ class Candela:
         return result_json
 
     def start_th_test(self,**kwargs):
-        background_run = kwargs.get("background_run",False)
-        incremental_capacity=kwargs.get("incremental_capacity",None)
-        do_interopability=kwargs.get("do_interopability",None)
-        if background_run or incremental_capacity or do_interopability:
-            self.monitoring_thread=threading.Thread(target=self.start_throughput_test,kwargs=kwargs)
-            self.monitoring_thread.start()
-        else:
-            self.start_throughput_test(**kwargs)
-    def start_throughput_test(self,
-                            upstream_port= 'eth0',
-                            traffic_type="lf_tcp",
-                            device_list=[],
-                            test_duration="60s",
-                            upload=2560,
-                            download=2560,
-                            packet_size="-1",
-                            incremental_capacity=[],
-                            tos="Best_Efforts",
-                            report_timer="5s",
-                            load_type="wc_per_client_load",
-                            do_interopability=False,
-                            incremental=[],
-                            precleanup=False,
-                            postcleanup=False,
-                            test_name=None,
-                            background_run = False
-                              ):
         """
         Initiates a throughput test with various configurable parameters.
 
@@ -1126,9 +1120,38 @@ class Candela:
                             Default is False.
             postcleanup (bool): If true, cleans up the cross-connections after stopping the test.
                                 Default is False.
-        Returns:
-            returns individual_df: A DataFrame containing the test results.
+            background_run (bool): If true, it runs the test without considering test duration.
+
+        # NOTE: Please don't pass incremental_capacity argument when background_run is True.
         """
+        background_run = kwargs.get("background_run",False)
+        incremental_capacity=kwargs.get("incremental_capacity",None)
+        do_interopability=kwargs.get("do_interopability",None)
+        if background_run or incremental_capacity or do_interopability:
+            self.monitoring_thread=threading.Thread(target=self.start_throughput_test,kwargs=kwargs)
+            self.monitoring_thread.start()
+        else:
+            self.start_throughput_test(**kwargs)
+    def start_throughput_test(self,
+                            upstream_port= 'eth0',
+                            traffic_type="lf_tcp",
+                            device_list=[],
+                            test_duration="60s",
+                            upload=2560,
+                            download=2560,
+                            packet_size="-1",
+                            incremental_capacity=[],
+                            tos="Best_Efforts",
+                            report_timer="5s",
+                            load_type="wc_per_client_load",
+                            do_interopability=False,
+                            incremental=[],
+                            precleanup=False,
+                            postcleanup=False,
+                            test_name=None,
+                            background_run = False
+                              ):
+
         if do_interopability:
             incremental_capacity='1'
         if test_duration.endswith('s') or test_duration.endswith('S'):
@@ -1238,14 +1261,16 @@ class Candela:
                 break
         self.incremental_capacity_list,self.iterations_before_test_stopped_by_user=incremental_capacity_list,iterations_before_test_stopped_by_user
         self.all_dataframes,self.to_run_cxs_len=all_dataframes,to_run_cxs_len
-        # if not background_run and self.throughput_test.incremental_capacity is None and  not self.throughput_test.stop_test:
         if not background_run and self.throughput_test.stop_test != True:
             self.throughput_test.stop()
             if postcleanup:
                 self.throughput_test.cleanup()
             self.throughput_test.generate_report(list(set(iterations_before_test_stopped_by_user)),incremental_capacity_list,data=all_dataframes,data1=to_run_cxs_len)
-            # return individual_df
     def stop_throughput_test(self):
+        """
+        Method to stop Throughput test.
+        """
+        
         if getattr(self.throughput_test,"background_run",None):
             print("setting the flag to false")
             self.throughput_test.background_run = False
@@ -1261,23 +1286,13 @@ class Candela:
         self.monitoring_thread.join()
         self.throughput_test.stop() 
     def generate_report_throughput_test(self):
+        """
+        Method to generate report for Throughput test.
+        """
         self.throughput_test.generate_report(list(set(self.iterations_before_test_stopped_by_user)),self.incremental_capacity_list,data=self.all_dataframes,data1=self.to_run_cxs_len)
 
 
     def start_vs_test(self,**kwargs):
-        background_run = kwargs.get("background_run",False)
-        incremental_capacity=kwargs.get("incremental_capacity",None)
-        if background_run or incremental_capacity:
-            self.monitoring_thread=threading.Thread(target=self.start_video_streaming_test,kwargs=kwargs)
-            self.monitoring_thread.start()
-        else:
-            self.start_video_streaming_test(**kwargs)
-    def start_video_streaming_test(self, ssid="ssid_wpa_2g", passwd="something", encryp="psk",
-                        suporrted_release=["7.0", "10", "11", "12"], max_speed=0,
-                        url="www.google.com", urls_per_tenm=100, duration="1m", 
-                        device_list=[], media_quality='0',media_source='1',
-                        incremental = False,postcleanup=False,
-                        precleanup=False,incremental_capacity=None,test_name=None,background_run = False):
         """
         Initiates a video streaming test with various configurable parameters.
 
@@ -1312,9 +1327,24 @@ class Candela:
                             Default is False.
             incremental_capacity (str): Specify the incremental values for load testing, e.g., "1,2,3".
                                         Default is None.
-        Returns:
-            returns individual_df: A DataFrame containing the test results.
+            background_run(bool): If true, it runs the test without considering test duration.
+                  
+        # NOTE: Please don't pass incremental_capacity argument when background_run is True.
         """
+        background_run = kwargs.get("background_run",False)
+        incremental_capacity=kwargs.get("incremental_capacity",None)
+        if background_run or incremental_capacity:
+            self.monitoring_thread=threading.Thread(target=self.start_video_streaming_test,kwargs=kwargs)
+            self.monitoring_thread.start()
+        else:
+            self.start_video_streaming_test(**kwargs)
+    def start_video_streaming_test(self, ssid="ssid_wpa_2g", passwd="something", encryp="psk",
+                        suporrted_release=["7.0", "10", "11", "12"], max_speed=0,
+                        url="www.google.com", urls_per_tenm=100, duration="1m", 
+                        device_list=[], media_quality='0',media_source='1',
+                        incremental = False,postcleanup=False,
+                        precleanup=False,incremental_capacity=None,test_name=None,background_run = False):
+
         media_source_dict={
                        'dash':'1',
                        'smooth_streaming':'2',
@@ -1666,6 +1696,9 @@ class Candela:
                 if postcleanup==True:
                     self.video_streaming_test.postcleanup()
     def stop_video_streaming_test(self):
+        """
+        Method to stop Video Streaming test.
+        """
         if getattr(self.video_streaming_test,"background_run",None):
             print("setting the flag to false")
             self.video_streaming_test.background_run = False
@@ -1677,6 +1710,9 @@ class Candela:
         self.monitoring_thread.join()
         self.video_streaming_test.stop() 
     def generate_report_video_streaming_test(self):
+        """
+        Method to generate report for Video Streaming test.
+        """
         if self.video_streaming_test.resource_ids and self.video_streaming_test.incremental :  
             self.video_streaming_test.generate_report(self.date, self.iterations_before_test_stopped_by_user,test_setup_info = self.test_setup_info,realtime_dataset=self.individual_df, cx_order_list = self.cx_order_list) 
         elif self.video_streaming_test.resource_ids:
@@ -1685,20 +1721,6 @@ class Candela:
         #     self.video_streaming_test.postcleanup()
 
     def start_wb_test(self,**kwargs):
-        background_run = kwargs.get("background_run",False)
-        incremental_capacity=kwargs.get("incremental_capacity",None)
-        if background_run or incremental_capacity:
-            self.monitoring_thread=threading.Thread(target=self.start_web_browser_test,kwargs=kwargs)
-            self.monitoring_thread.start()
-        else:
-            self.start_web_browser_test(**kwargs)
-
-    def start_web_browser_test(self,ssid="ssid_wpa_2g", passwd="something", encryp="psk",
-                    suporrted_release=["7.0", "10", "11", "12"], max_speed=0,
-                    url="www.google.com", count=1, duration="60s", 
-                    device_list="", 
-                    incremental = False,incremental_capacity=None,postcleanup=False,
-                    precleanup=False,test_name=None,background_run=False):
         """
         Initiates a web browser test with various configurable parameters.
 
@@ -1729,9 +1751,25 @@ class Candela:
                                 Default is False.
             precleanup (bool): If true, cleans up the connections before the test is started.
                             Default is False.
-        Returns:
-            returns obj.data: A DataFrame containing the test results.
+            background_run (bool): If true, it runs the test without considering test duration.
+                  
+        # NOTE: Please don't pass incremental_capacity argument when background_run is True.
         """
+        background_run = kwargs.get("background_run",False)
+        incremental_capacity=kwargs.get("incremental_capacity",None)
+        if background_run or incremental_capacity:
+            self.monitoring_thread=threading.Thread(target=self.start_web_browser_test,kwargs=kwargs)
+            self.monitoring_thread.start()
+        else:
+            self.start_web_browser_test(**kwargs)
+
+    def start_web_browser_test(self,ssid="ssid_wpa_2g", passwd="something", encryp="psk",
+                    suporrted_release=["7.0", "10", "11", "12"], max_speed=0,
+                    url="www.google.com", count=1, duration="60s", 
+                    device_list="", 
+                    incremental = False,incremental_capacity=None,postcleanup=False,
+                    precleanup=False,test_name=None,background_run=False):
+        
         webgui_incremental=incremental_capacity
         self.web_browser_test = RealBrowserTest(host=self.lanforge_ip, ssid=ssid, passwd=passwd, encryp=encryp,
                         suporrted_release=["7.0", "10", "11", "12"], max_speed=max_speed,
@@ -2112,6 +2150,9 @@ class Candela:
             if postcleanup:
                 self.web_browser_test.postcleanup()
     def stop_web_browser_test(self):
+        """
+        Method to stop for Web Browser test.
+        """
         if getattr(self.web_browser_test,"background_run",None):
             print("setting the flag to false")
             self.web_browser_test.background_run = False
@@ -2124,9 +2165,38 @@ class Candela:
         self.web_browser_test.stop()
 
     def generate_report_web_browser_test(self):
+        """
+        Method to generate report for Web Browser test.
+        """
         self.web_browser_test.generate_report(self.date,"webBrowser.csv",test_setup_info = self.test_setup_info, dataset2 = self.dataset2, dataset = self.dataset, lis = self.lis, bands = self.bands, total_urls = self.total_urls, uc_min_value = self.uc_min_value , cx_order_list = self.cx_order_list,gave_incremental=self.gave_incremental)      
 
     def start_mc_test(self,**kwargs):
+        """
+        Initiates a Multicast test with various configurable parameters.
+
+        Args:
+            
+            duration (str): Duration to run the multicast test.
+                            Default is '60' seconds.
+            device_list (str): Provide port IDs of  devices to run the test on, e.g., "1.10.wlan0,1.12.wlan0.
+                            Default is an empty list [].
+            endp_types (str): Endpoint type to run multicast.
+                            Default is 'mc_udp'
+            mc_tos (str): Tos values of the endpoints to be created.
+                            Default is "VO"
+
+            "side_a_min (int)" Value in bits to be pased on the endpoint side 'A'.
+                            Default is 0
+            
+            "side_b_min (int)" Value in bits to be pased on the endpoint side 'B'.
+                            Default is 0
+
+            "upstream_port (str)": Upstrem port name.
+                            Default is 'eth1'
+            
+            "background_run (bool)": Test will run without considering test duration.
+
+        """ 
         background_run = kwargs.get("background_run",False)
         if background_run:
             self.mc_monitoring_thread=threading.Thread(target=self.start_multicast_test,kwargs=kwargs)
@@ -2150,30 +2220,7 @@ class Candela:
                             background_run = False
                             ):
             # use for creating multicast dictionary
-            """
-        Initiates a Multicast test with various configurable parameters.
-
-        Args:
-            
-            duration (str): Duration to run the multicast test.
-                            Default is '60' seconds.
-            device_list (str): Provide port IDs of  devices to run the test on, e.g., "1.10.wlan0,1.12.wlan0.
-                            Default is an empty list [].
-            endp_types (str): Endpoint type to run multicast.
-                            Default is 'mc_udp'
-            mc_tos (str): Tos values of the endpoints to be created.
-                            Default is "VO"
-
-            "side_a_min (int)" Value in bits to be pased on the endpoint side 'A'.
-                            Default is 0
-            
-            "side_b_min (int)" Value in bits to be pased on the endpoint side 'B'.
-                            Default is 0
-
-            "upstream_port (str)": Upstrem port name.
-                            Default is 'eth1'
-
-        """    
+   
             test_duration = test_duration
             endp_types = endp_types
             mc_tos = mc_tos
@@ -2260,6 +2307,9 @@ class Candela:
                 self.generate_report_multicast_test()
             
     def stop_multicast_test(self):
+        """
+        Method to stop for Multicast test.
+        """
         if getattr(self.multicast_test,"background_run",None):
             print("setting the flag to false")
             self.multicast_test.background_run = False
@@ -2268,6 +2318,9 @@ class Candela:
         self.multicast_test.stop()
 
     def generate_report_multicast_test(self):
+        """
+        Method to generate report for Multicast test.
+        """
         csv_results_file = self.multicast_test.get_results_csv()
         self.multicast_test.report.set_title("Multicast Test")
         self.multicast_test.report.build_banner_cover()
@@ -2404,8 +2457,8 @@ candela_apis = Candela(ip='192.168.242.2', port=8080)
 
 
 # To RUN MULTICAST TEST
-candela_apis.start_mc_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
-                                  side_b_min=100000000, upstream_port='eth3', test_duration=30, device_list=['1.22.wlan0'], background_run=False)
+# candela_apis.start_mc_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
+#                                   side_b_min=100000000, upstream_port='eth3', test_duration=30, device_list=['1.22.wlan0'], background_run=False)
 # time.sleep(60)
 # candela_apis.stop_multicast_test()
 # candela_apis.generate_report_multicast_test()
