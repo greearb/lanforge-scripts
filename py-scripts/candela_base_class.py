@@ -153,6 +153,8 @@ class Candela:
                 all_devices[resource_port] = resource_data
                 shelf, resource = resource_port.split('.')
                 _, port_data = self.api_get(endp='/port/{}/{}'.format(shelf, resource))
+                if 'interface' in port_data.keys():
+                    port_data['interfaces'] = [port_data['interface']]
                 for port_id in port_data['interfaces']:
                     port_id_values = list(port_id.values())[0]
                     _, all_columns = self.api_get(endp=port_id_values['_links'])
@@ -178,6 +180,29 @@ class Candela:
             device_data = device_data['interface']
             connection_details[device] = device_data
         return connection_details
+
+    def filter_iOS_devices(self, device_list):
+        modified_device_list = device_list
+        if type(device_list) is str:
+            modified_device_list = device_list.split(',')
+        filtered_list = []
+        for device in modified_device_list:
+            if device.count('.') == 1:
+                shelf, resource = device.split('.')
+            elif device.count('.') == 2:
+                shelf, resource, port = device.split('.')
+            elif device.count('.') == 0:
+                shelf, resource = 1, device
+            response_code, device_data = self.api_get('/resource/{}/{}'.format(shelf, resource))
+            device_data = device_data['resource']
+            print(device_data)
+            if 'Apple' in device_data['hw version'] and (device_data['app-id'] != '' or device_data['app-id'] != '0' or device_data['kernel'] == ''):
+                print('{} is an iOS device. Currently we do not support iOS devices.'.format(device))
+            else:
+                filtered_list.append(device)
+        if type(device_list) is str:
+            filtered_list = ','.join(filtered_list)
+        return filtered_list
 
     def start_connectivity(self,
                            manager_ip=None,
@@ -418,13 +443,14 @@ class Candela:
                        band='5g',
                        direction='Download',
                        file_size='12MB',
-                       traffic_duration=None,
+                       traffic_duration=60,
                        upstream='eth1',
                        lf_username='lanforge',
                        lf_password='lanforge',
                        ssh_port=22,
                        clients_type='Real',
-                       device_list=[]):
+                       device_list=[],
+                       background=False):
         """
         Method to start FTP test on the given device list
 
@@ -469,6 +495,7 @@ class Candela:
                       clients_type=clients_type,
                       device_list=device_list
                       )
+        device_list = self.filter_iOS_devices(device_list)
 
         self.ftp_test.data = {}
         self.ftp_test.file_create()
@@ -488,7 +515,7 @@ class Candela:
         logger.info("Traffic started running at {}".format(test_start_time))
         self.ftp_test.start_time = test_start_time
         self.ftp_test.start(False, False)
-        if self.ftp_test.traffic_duration:
+        if background:
             time.sleep(int(self.ftp_test.traffic_duration))
             self.stop_ftp_test()
             self.generate_report_ftp_test()
@@ -565,6 +592,7 @@ class Candela:
             result_data (dict): Result data of the test.
         """        
         http_test_duration = test_duration
+        device_list = self.filter_iOS_devices(device_list)
         # Error checking to prevent case issues
         Bands = [band]
         for bands in range(len(Bands)):
@@ -806,6 +834,7 @@ class Candela:
                  test_duration=60, qos_serial_run=False, device_list=[],
                  report_labels=[], device_macs=[],background_run = False):
         
+        device_list = self.filter_iOS_devices(device_list)
         if not background_run:
             qos_test_duration = test_duration
         else:
@@ -953,6 +982,7 @@ class Candela:
         Returns:
             result_json (dict): Result for the ping test.
         """        
+        device_list = self.filter_iOS_devices(device_list)
         target = target
         interval = interval
         # starting part of the ping test
@@ -1141,6 +1171,7 @@ class Candela:
 
         # NOTE: Please don't pass incremental_capacity argument when background_run is True.
         """
+        device_list = self.filter_iOS_devices(device_list)
         background_run = kwargs.get("background_run",False)
         incremental_capacity=kwargs.get("incremental_capacity",None)
         do_interopability=kwargs.get("do_interopability",None)
@@ -1348,6 +1379,7 @@ class Candela:
                   
         # NOTE: Please don't pass incremental_capacity argument when background_run is True.
         """
+        device_list = self.filter_iOS_devices(device_list)
         background_run = kwargs.get("background_run",False)
         incremental_capacity=kwargs.get("incremental_capacity",None)
         if background_run or incremental_capacity:
@@ -1772,6 +1804,7 @@ class Candela:
                   
         # NOTE: Please don't pass incremental_capacity argument when background_run is True.
         """
+        device_list = self.filter_iOS_devices(device_list)
         background_run = kwargs.get("background_run",False)
         incremental_capacity=kwargs.get("incremental_capacity",None)
         if background_run or incremental_capacity:
@@ -2238,6 +2271,7 @@ class Candela:
                             ):
             # use for creating multicast dictionary
    
+            device_list = self.filter_iOS_devices(device_list)
             test_duration = test_duration
             endp_types = endp_types
             mc_tos = mc_tos
@@ -2372,7 +2406,7 @@ candela_apis = Candela(ip='192.168.242.2', port=8080)
  
 # TO RUN FTP TEST
 # candela_apis.start_ftp_test(ssid='Walkin_open', password='[BLANK]', security='open',
-#                                 device_list=','.join(['1.12', '1.13', '1.16']),traffic_duration=10)
+#                                 device_list=','.join(['1.12', '1.13', '1.16']),background=True)
 
 # time.sleep(600)
 # candela_apis.stop_ftp_test()
