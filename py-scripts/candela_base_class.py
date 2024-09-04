@@ -99,6 +99,19 @@ class Candela:
         response = requests.post(url=self.api_url + endp, json=payload)
         return response
 
+    def misc_clean_up(self,layer3=False,layer4=False):
+        """
+        Use for the cleanup of cross connections
+        arguments:
+        layer3: (Boolean : optional) Default : False To Delete all layer3 connections
+        layer4: (Boolean : optional) Default : False To Delete all layer4 connections
+        """
+        if layer3:
+            self.cleanup.cxs_clean()
+            self.cleanup.layer3_endp_clean()
+        if layer4:
+            self.cleanup.layer4_endp_clean()
+
     def get_device_info(self):
         """
         Fetches all the real devices clustered to the LANforge
