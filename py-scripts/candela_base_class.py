@@ -469,6 +469,7 @@ class Candela:
             ssh_port (int, optional): SSH port. Defaults to 22.
             clients_type (str, optional): Clients type. Defaults to 'Real'.
             device_list (list, optional): List of port numbers of the devices in shelf.resource format. Defaults to [].
+            background_run(bool): If true, it runs the test without considering test duration.
 
         Returns:
             data (dict): Test results.
@@ -515,7 +516,7 @@ class Candela:
         logger.info("Traffic started running at {}".format(test_start_time))
         self.ftp_test.start_time = test_start_time
         self.ftp_test.start(False, False)
-        if background:
+        if not background:
             time.sleep(int(self.ftp_test.traffic_duration))
             self.stop_ftp_test()
             self.generate_report_ftp_test()
@@ -563,7 +564,7 @@ class Candela:
     def start_http_test(self, ssid, password, security, http_file_size, device_list, report_labels, device_macs,
                   target_per_ten, upstream='eth1', ap_name='', http_test=http_test, all_bands=False, windows_ports=[],
                   band='5G', lf_username='lanforge', lf_password='lanforge', 
-                  test_duration=None):
+                  test_duration=60, background = False):
         """
         Method to start HTTP test on the given device list
 
@@ -585,6 +586,7 @@ class Candela:
             lf_username (str, optional): Defaults to 'lanforge'.
             lf_password (str, optional): Defaults to 'lanforge'.
             test_duration (int, optional): Duration to run the test in seconds. Defaults to 60.
+            background (boolean,optional): TO make the test run indefinetley. Defaults to False.
         Raises:
             ValueError: If band argument does not contain 2.4G, 5G or 6G.
 
@@ -638,7 +640,7 @@ class Candela:
         logger.info("HTTP Test started at {}".format(test_time))
         self.http_test.start()
         self.http_test.start_time = test_time
-        if test_duration:
+        if not background:
             time.sleep(self.http_test.http_test_duration)
             self.stop_http_test()
             self.generate_report_http_test()
