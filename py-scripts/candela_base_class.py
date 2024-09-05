@@ -176,8 +176,10 @@ class Candela:
         connection_details = {}
         for device in device_list:
             shelf, resource, port_name = device.split('.')
-            _, device_data = self.api_get('/port/{}/{}/{}?fields=ssid,ap,signal,mac'.format(shelf, resource, port_name))
+            _, device_data = self.api_get('/port/{}/{}/{}?fields=phantom,down,ssid,ap,signal,mac'.format(shelf, resource, port_name))
             device_data = device_data['interface']
+            if device_data['phantom'] or device_data['down']:
+                print('{} is in phantom state or down state, data may not be accurate.'.format(device))
             connection_details[device] = device_data
         return connection_details
 
@@ -194,6 +196,9 @@ class Candela:
             elif device.count('.') == 0:
                 shelf, resource = 1, device
             response_code, device_data = self.api_get('/resource/{}/{}'.format(shelf, resource))
+            if 'status' in device_data and device_data['status'] == 'NOT_FOUND':
+                print('Device {} is not found.'.format(device))
+                continue
             device_data = device_data['resource']
             # print(device_data)
             if 'Apple' in device_data['hw version'] and (device_data['app-id'] != '' or device_data['app-id'] != '0' or device_data['kernel'] == ''):
@@ -828,7 +833,7 @@ class Candela:
             data (dict): Result data
         """
         device_list = kwargs.get("device_list",[])
-        device_list = self.filter_iOS_devices(device_list)
+        # device_list = self.filter_iOS_devices(device_list)
         if len(device_list) == 0:
             print('No devices specified.')
             exit(1)
@@ -2278,6 +2283,7 @@ class Candela:
             exit(1)
         kwargs['device_list'] = device_list
         background_run = kwargs.get("background_run",False)
+        self.misc_clean_up(layer3=True)
         if background_run:
             self.mc_monitoring_thread=threading.Thread(target=self.start_multicast_test,kwargs=kwargs)
             self.mc_monitoring_thread.start()
@@ -2443,11 +2449,11 @@ candela_apis = Candela(ip='192.168.214.61', port=8080)
 #                                device_list=','.join(['1.16', '1.19']))
 
 # TO RUN HTTP TEST
-candela_apis.start_http_test(ssid='Walkin_open', password='[BLANK]',
-                             security='open', http_file_size='10MB',
-                             device_list=['1.80.en0', '1.81.en0', '1.11.wlan0'], report_labels=['1.16 android test41', '1.19 android test46', '1.16 android test41'],
-                             device_macs=['48:e7:da:fe:0d:ed', '48:e7:da:fe:0d:91', '48:e7:da:fe:0d:ed'], target_per_ten=1000, upstream='eth',
-                             band='5G', ap_name='Netgear', background=True)
+# candela_apis.start_http_test(ssid='Walkin_open', password='[BLANK]',
+#                              security='open', http_file_size='10MB',
+#                              device_list=['1.80.en0', '1.81.en0', '1.11.wlan0'], report_labels=['1.16 android test41', '1.19 android test46', '1.16 android test41'],
+#                              device_macs=['48:e7:da:fe:0d:ed', '48:e7:da:fe:0d:91', '48:e7:da:fe:0d:ed'], target_per_ten=1000, upstream='eth1',
+#                              band='5G', ap_name='Netgear', background=True)
 # time.sleep(120)
 # candela_apis.stop_http_test()
 # candela_apis.generate_report_http_test()
@@ -2456,14 +2462,14 @@ candela_apis.start_http_test(ssid='Walkin_open', password='[BLANK]',
 # candela_apis.start_qos_test(ssid='Walkin_open', password='[BLANK]', security='open',
 #                             ap_name='Netgear', upstream='eth1', tos=['VI', 'BK'],
 #                             traffic_type='lf_tcp', device_list=['1.80.en0', '1.11.wlan0'], report_labels=['1.80 Lin test41', '1.11 android test46'],
-#                             device_macs=['48:e7:da:fe:0d:ed', '48:e7:da:fe:0d:91'], qos_serial_run=False,background_run=False)
+#                             device_macs=['48:e7:da:fe:0d:ed', '48:e7:da:fe:0d:91'], qos_serial_run=False,background_run=True)
 # time.sleep(60)
 # candela_apis.stop_qos_test()
 # candela_apis.generate_qos_report()
 
 # TO RUN PING TEST
 # candela_apis.start_ping_test(ssid='Walkin_open', password='[BLANK]', encryption='open',
-#                              target='192.168.1.95', device_list=['1.36.wlan0'], background=True)
+#                              target='192.168.1.95', device_list=['1.11.wlan0', '1.36.wlan0'], background=True)
 
 # TO RUN THROUGHPUT TEST
 # candela_apis.start_th_test(traffic_type="lf_udp",
@@ -2544,7 +2550,7 @@ candela_apis.start_http_test(ssid='Walkin_open', password='[BLANK]',
 
 # To RUN MULTICAST TEST
 # candela_apis.start_mc_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
-#                                   side_b_min=100000000, upstream_port='eth3', test_duration=30, device_list=['1.80.wlan0', '1.11.wlan0'], background_run=False)
+#                                   side_b_min=100000000, upstream_port='eth1', test_duration=30, device_list=['1.80.wlan0', '1.11.wlan0'], background_run=True)
 # time.sleep(60)
 # candela_apis.stop_multicast_test()
 # candela_apis.generate_report_multicast_test()
