@@ -20,6 +20,8 @@ class Android():
                  port=8080,
                  server_ip=None,
                  enable_wifi=None,
+                 disconnect_devices=None,
+                 reboot=None,
                  disable_wifi=None,
                  ssid_2g=None,
                  passwd_2g=None,
@@ -65,6 +67,8 @@ class Android():
         self.port = port
         self.server_ip = server_ip  # upstream IP
         self.enable_wifi = enable_wifi
+        self.disconnect_devices=disconnect_devices
+        self.reboot=reboot
         self.disable_wifi = disable_wifi
 
         self.ssid_2g = ssid_2g
@@ -194,6 +198,36 @@ class Android():
                         
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, self.post_url, data) for data in data_list]
+
+    async def reboot_android(self, port_list=[], state='enable'):
+        if (port_list == []):
+            logger.info('Port list is empty')
+            return
+
+        # state = state.lower()
+        # if (state != 'enable' and state != 'disable'):
+        #     logger.warning('State argument should be either enable or disable')
+        #     return
+
+        # command = 'shell svc wifi {}'.format(state)
+
+        data_list = []
+        for port_data in port_list:
+            shelf, resource, serial, *extra  = port_data
+
+    
+            data = {
+                'shelf': 1,
+                'resource': 1,
+                'adb_id': serial,
+                'key':8,
+                'adb_cmd': "reboot"
+            }
+            data_list.append(data)
+                        
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(None, self.post_data, self.post_url, data) for data in data_list]
+        results = await asyncio.gather(*tasks)
 
     async def forget_all_networks(self, port_list=[]):
         print("FORGET ALL NETWORKS ANDROID")
@@ -422,6 +456,8 @@ class Laptop():
                  port=8080,
                  server_ip=None,
                  enable_wifi=None,
+                 disconnect_devices=None,
+                 reboot=None,
                  disable_wifi=None,
                  ssid_2g=None,
                  passwd_2g=None,
@@ -488,6 +524,8 @@ class Laptop():
         self.port = port
         self.server_ip = server_ip  # upstream IP
         self.enable_wifi = enable_wifi
+        self.disconnect_devices = disconnect_devices
+        self.reboot = reboot
         self.disable_wifi = disable_wifi
 
         self.ssid_2g = ssid_2g
@@ -903,6 +941,81 @@ class Laptop():
             data_list.append(data)
 
         url = 'http://{}:{}/cli-json/set_port'.format(self.lanforge_ip, self.port)
+        print("DATA LIST: ",data_list)
+        print("URL: ",url)
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
+
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
+
+    async def disconnect_wifi(self, port_list=[]):
+        print("SET PORT LAPTOP")
+        if (port_list == []):
+            logger.info('Port list is empty')
+            return
+
+        data_list = []
+        for port_data in port_list:
+            shelf = port_data['shelf']
+            resource = port_data['resource']
+            port = port_data['sta_name']
+            interest = port_data['interest']
+            # report_timer = port_data['report_timer']
+            current_flags = port_data['current_flags']
+            os = port_data['os']
+            if (os == 'Lin'):
+                data = {
+                    'shelf': shelf,
+                    'resource': resource,
+                    'port': port,
+                    'current_flags': 1,
+                    'interest': 8388610,
+                    'mac': self.mac
+                }
+            else:
+                data = {
+                    'shelf': shelf,
+                    'resource': resource,
+                    'port': port,
+                    "report_timer": 1,
+                    'current_flags': 1,
+                    'interest': 8388608,
+                }
+            data_list.append(data)
+
+        url = 'http://{}:{}/cli-json/set_port'.format(self.lanforge_ip, self.port)
+        print("DATA LIST: ",data_list)
+        print("URL: ",url)
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
+
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
+
+    async def reboot_laptop(self, port_list=[]):
+        print("REBOOT LAPTOP")
+        if (port_list == []):
+            logger.info('Port list is empty')
+            return
+
+        data_list = []
+        for port_data in port_list:
+            shelf = port_data['shelf']
+            resource = port_data['resource']
+            port = port_data['sta_name']
+            interest = port_data['interest']
+            # report_timer = port_data['report_timer']
+            current_flags = port_data['current_flags']
+            os = port_data['os']
+            
+            data = {
+                    'shelf': shelf,
+                    'resource': resource
+                }
+            data_list.append(data)
+
+        url = 'http://{}:{}/cli-json/reboot_os'.format(self.lanforge_ip, self.port)
         print("DATA LIST: ",data_list)
         print("URL: ",url)
         loop = asyncio.get_event_loop()
