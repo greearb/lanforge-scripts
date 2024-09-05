@@ -195,7 +195,7 @@ class Candela:
                 shelf, resource = 1, device
             response_code, device_data = self.api_get('/resource/{}/{}'.format(shelf, resource))
             device_data = device_data['resource']
-            print(device_data)
+            # print(device_data)
             if 'Apple' in device_data['hw version'] and (device_data['app-id'] != '' or device_data['app-id'] != '0' or device_data['kernel'] == ''):
                 print('{} is an iOS device. Currently we do not support iOS devices.'.format(device))
             else:
@@ -478,6 +478,10 @@ class Candela:
         #     for direction in directions:
         #         for file_size in file_sizes:
         # Start Test
+        device_list = self.filter_iOS_devices(device_list)
+        if len(device_list) == 0:
+            print('No devices specified.')
+            exit(1)
         self.ftp_test = FtpTest(lfclient_host=self.lanforge_ip,
                       lfclient_port=self.port,
                       upstream=upstream,
@@ -496,7 +500,6 @@ class Candela:
                       clients_type=clients_type,
                       device_list=device_list
                       )
-        device_list = self.filter_iOS_devices(device_list)
 
         self.ftp_test.data = {}
         self.ftp_test.file_create()
@@ -595,6 +598,9 @@ class Candela:
         """        
         http_test_duration = test_duration
         device_list = self.filter_iOS_devices(device_list)
+        if len(device_list) == 0:
+            print('No devices specified.')
+            exit(1)
         # Error checking to prevent case issues
         Bands = [band]
         for bands in range(len(Bands)):
@@ -821,8 +827,12 @@ class Candela:
         Returns:
             data (dict): Result data
         """
-
-
+        device_list = kwargs.get("device_list",[])
+        device_list = self.filter_iOS_devices(device_list)
+        if len(device_list) == 0:
+            print('No devices specified.')
+            exit(1)
+        kwargs['device_list'] = device_list
         background_run = kwargs.get("background_run",False)
         if background_run:
             self.qos_monitoring_thread=threading.Thread(target=self.start_qos,kwargs=kwargs)
@@ -836,7 +846,6 @@ class Candela:
                  test_duration=60, qos_serial_run=False, device_list=[],
                  report_labels=[], device_macs=[],background_run = False):
         
-        device_list = self.filter_iOS_devices(device_list)
         if not background_run:
             qos_test_duration = test_duration
         else:
@@ -1173,7 +1182,10 @@ class Candela:
 
         # NOTE: Please don't pass incremental_capacity argument when background_run is True.
         """
-        device_list = self.filter_iOS_devices(device_list)
+        device_list = kwargs.get("device_list",[])
+        kwargs['device_list'] = self.filter_iOS_devices(device_list)
+        if len(device_list) == 0:
+            exit(1)
         background_run = kwargs.get("background_run",False)
         incremental_capacity=kwargs.get("incremental_capacity",None)
         do_interopability=kwargs.get("do_interopability",None)
@@ -1381,7 +1393,12 @@ class Candela:
                   
         # NOTE: Please don't pass incremental_capacity argument when background_run is True.
         """
+        device_list = kwargs.get("device_list",[])
         device_list = self.filter_iOS_devices(device_list)
+        if len(device_list) == 0:
+            print('No devices specified.')
+            exit(1)
+        kwargs['device_list'] = device_list
         background_run = kwargs.get("background_run",False)
         incremental_capacity=kwargs.get("incremental_capacity",None)
         if background_run or incremental_capacity:
@@ -1806,7 +1823,12 @@ class Candela:
                   
         # NOTE: Please don't pass incremental_capacity argument when background_run is True.
         """
+        device_list = kwargs.get("device_list",[])
         device_list = self.filter_iOS_devices(device_list)
+        if len(device_list) == 0:
+            print('No devices specified.')
+            exit(1)
+        kwargs['device_list'] = device_list
         background_run = kwargs.get("background_run",False)
         incremental_capacity=kwargs.get("incremental_capacity",None)
         if background_run or incremental_capacity:
@@ -2249,6 +2271,12 @@ class Candela:
             "background_run (bool)": Test will run without considering test duration.
 
         """ 
+        device_list = kwargs.get("device_list",[])
+        device_list = self.filter_iOS_devices(device_list)
+        if len(device_list) == 0:
+            print('No devices specified.')
+            exit(1)
+        kwargs['device_list'] = device_list
         background_run = kwargs.get("background_run",False)
         if background_run:
             self.mc_monitoring_thread=threading.Thread(target=self.start_multicast_test,kwargs=kwargs)
@@ -2273,7 +2301,6 @@ class Candela:
                             ):
             # use for creating multicast dictionary
    
-            device_list = self.filter_iOS_devices(device_list)
             test_duration = test_duration
             endp_types = endp_types
             mc_tos = mc_tos
@@ -2391,7 +2418,7 @@ class Candela:
 
 
 logger_config = lf_logger_config.lf_logger_config()
-candela_apis = Candela(ip='192.168.242.2', port=8080)
+candela_apis = Candela(ip='192.168.214.61', port=8080)
 
 # candela_apis.get_client_connection_details(['1.208.wlan0', '1.19.wlan0'])
 
@@ -2408,7 +2435,7 @@ candela_apis = Candela(ip='192.168.242.2', port=8080)
  
 # TO RUN FTP TEST
 # candela_apis.start_ftp_test(ssid='Walkin_open', password='[BLANK]', security='open',
-#                                 device_list=','.join(['1.12', '1.13', '1.16']),background=True)
+#                                 device_list=','.join(['1.80', '1.11', '1.81']),background=True)
 
 # time.sleep(600)
 # candela_apis.stop_ftp_test()
@@ -2416,20 +2443,20 @@ candela_apis = Candela(ip='192.168.242.2', port=8080)
 #                                device_list=','.join(['1.16', '1.19']))
 
 # TO RUN HTTP TEST
-# candela_apis.start_http_test(ssid='Walkin_open', password='[BLANK]',
-#                              security='open', http_file_size='10MB',
-#                              device_list=['1.20.wlan0', '1.19.wlan0'], report_labels=['1.16 android test41', '1.19 android test46'],
-#                              device_macs=['48:e7:da:fe:0d:ed', '48:e7:da:fe:0d:91'], target_per_ten=1000, upstream='eth3',
-#                              band='5G', ap_name='Netgear')
+candela_apis.start_http_test(ssid='Walkin_open', password='[BLANK]',
+                             security='open', http_file_size='10MB',
+                             device_list=['1.80.en0', '1.81.en0', '1.11.wlan0'], report_labels=['1.16 android test41', '1.19 android test46', '1.16 android test41'],
+                             device_macs=['48:e7:da:fe:0d:ed', '48:e7:da:fe:0d:91', '48:e7:da:fe:0d:ed'], target_per_ten=1000, upstream='eth',
+                             band='5G', ap_name='Netgear', background=True)
 # time.sleep(120)
 # candela_apis.stop_http_test()
 # candela_apis.generate_report_http_test()
 
 # TO RUN QOS TEST
 # candela_apis.start_qos_test(ssid='Walkin_open', password='[BLANK]', security='open',
-#                             ap_name='Netgear', upstream='eth3', tos=['VI', 'BK'],
-#                             traffic_type='lf_tcp', device_list=['1.12.sta0', '1.19.wlan0'], report_labels=['1.12 Lin test41', '1.19 android test46'],
-#                             device_macs=['48:e7:da:fe:0d:ed', '48:e7:da:fe:0d:91'], qos_serial_run=False,background_run=True)
+#                             ap_name='Netgear', upstream='eth1', tos=['VI', 'BK'],
+#                             traffic_type='lf_tcp', device_list=['1.80.en0', '1.11.wlan0'], report_labels=['1.80 Lin test41', '1.11 android test46'],
+#                             device_macs=['48:e7:da:fe:0d:ed', '48:e7:da:fe:0d:91'], qos_serial_run=False,background_run=False)
 # time.sleep(60)
 # candela_apis.stop_qos_test()
 # candela_apis.generate_qos_report()
@@ -2440,7 +2467,7 @@ candela_apis = Candela(ip='192.168.242.2', port=8080)
 
 # TO RUN THROUGHPUT TEST
 # candela_apis.start_th_test(traffic_type="lf_udp",
-#                             device_list='1.13,1.18,1.11,1.12,1.14',
+#                             device_list='1.80,1.81,1.11',
 #                             upload=1000000,
 #                             download=100000,
 #                             upstream_port="eth1",
@@ -2485,7 +2512,7 @@ candela_apis = Candela(ip='192.168.242.2', port=8080)
 #                                         media_source="hls",
 #                                         media_quality="4k",
 #                                         duration="1m",
-#                                         device_list='1.11,1.14,1.15,1.17,1.21',
+#                                         device_list='1.11,1.80,1.81',
 #                                         precleanup=True,
 #                                         postcleanup=True,
 #                                         # incremental_capacity="3",
@@ -2501,7 +2528,7 @@ candela_apis = Candela(ip='192.168.242.2', port=8080)
 
 
 # TO RUN WEB BROWSER TEST
-# candela_apis.start_wb_test(device_list='1.11,1.14,1.15,1.17,1.21', 
+# candela_apis.start_wb_test(device_list='1.11,1.80,1.81', 
 #                                         duration="2m",
 #                                         url="http://www.google.com",
 #                                         background_run=True,
@@ -2517,7 +2544,7 @@ candela_apis = Candela(ip='192.168.242.2', port=8080)
 
 # To RUN MULTICAST TEST
 # candela_apis.start_mc_test(mc_tos="VO", endp_types="mc_udp", side_a_min=10000000,
-#                                   side_b_min=100000000, upstream_port='eth3', test_duration=30, device_list=['1.22.wlan0'], background_run=False)
+#                                   side_b_min=100000000, upstream_port='eth3', test_duration=30, device_list=['1.80.wlan0', '1.11.wlan0'], background_run=False)
 # time.sleep(60)
 # candela_apis.stop_multicast_test()
 # candela_apis.generate_report_multicast_test()
