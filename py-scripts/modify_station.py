@@ -107,8 +107,11 @@ class ModifyStation(Realm):
 
         # Must set both flags and flags mask, regardless of what is provided by user
         # If not, can result in buggy behavior due to assumptions made in StationProfile
-        self.station_profile.desired_add_sta_flags = self.enable_flags
-        self.station_profile.desired_add_sta_flags_mask = self.enable_flags + self.disable_flags
+        # flags could be zero, which is different than None
+        if self.enable_flags is not None:
+            self.station_profile.desired_add_sta_flags = self.enable_flags
+        if self.enable_flags is not None and self.disable_flags is not None:
+            self.station_profile.desired_add_sta_flags_mask = self.enable_flags + self.disable_flags
 
     def list_ports(self):
         response = super().json_get("/port/list?fields=port,alias,down")
