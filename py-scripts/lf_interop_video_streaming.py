@@ -157,7 +157,6 @@ class VideoStreamingTest(Realm):
         self.background_run=None
         self.stop_test=False
 
-
     @property
     def run(self):
         # Checks various configuration things on Interop tab, Uses lf_base_interop_profile.py library
