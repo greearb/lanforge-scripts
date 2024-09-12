@@ -73,7 +73,7 @@ The Packet Size needs end in Custom for example   64:Custom''')
         row += 1
         self.lf_dp_rvr_download_speed_label = tkinter.Label(self.lf_dp_rvr_frame, text="Download Speed")
         self.lf_dp_rvr_download_speed_label.grid(row=row, column=0)
-        self.lf_dp_rvr_download_speed_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>", "100%", "85%", "75%", "65%", "50%", "25%", "10%", "5%", "1%", "0"])
+        self.lf_dp_rvr_download_speed_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>", "100%", "85%", "75%", "65%", "50%", "25%", "10%", "5%", "1%", "0%"])
         self.lf_dp_rvr_download_speed_combobox.current(1)
         self.lf_dp_rvr_download_speed_combobox.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_download_speed_combobox, '''Download speed is assoicated with DUT Transmit
@@ -81,8 +81,8 @@ if on DUT Receive is choosen the Download speed is set to 0''')
 
         self.lf_dp_rvr_upload_speed_label = tkinter.Label(self.lf_dp_rvr_frame, text="Upload Speed")
         self.lf_dp_rvr_upload_speed_label.grid(row=row, column=2)
-        self.lf_dp_rvr_upload_speed_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>", "100%", "85%", "75%", "65%", "50%", "25%", "10%", "5%", "1%", "0"])
-        self.lf_dp_rvr_upload_speed_combobox.current(1)
+        self.lf_dp_rvr_upload_speed_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<custom>", "100%", "85%", "75%", "65%", "50%", "25%", "10%", "5%", "1%", "0%"])
+        self.lf_dp_rvr_upload_speed_combobox.current(10)
         self.lf_dp_rvr_upload_speed_combobox.grid(row=row, column=3)
         self.window_tooltip.bind(self.lf_dp_rvr_upload_speed_combobox, '''Upload speed is associated with with DUT Receive
 if only DUT Transmit is choosen the upload speed is set to 0''')
