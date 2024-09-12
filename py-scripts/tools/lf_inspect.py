@@ -1313,7 +1313,7 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_inspect.log")
     parser.add_argument('--flat_dir', help="--flat_dir , will place the results in the top directory", action='store_true')
     parser.add_argument('--test_suite', help="--test_suite , the test suite is to help identify the tests run for the lf_inspect comparison", default="lf_inspect_compare")
-    parser.add_argument('--test_window_days', help="--test_window,  days to look back for test results , used to elimnate older tests being reported default 7 days", default="7")
+    parser.add_argument('--test_window_days', help="--test_window,  days to look back for test results , used to elimnate older tests being reported default 3 days", default="3")
 
 
     # logging configuration:
