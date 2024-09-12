@@ -110,7 +110,7 @@ if only DUT Transmit is choosen the upload speed is set to 0''')
         self.lf_dp_rvr_attenuator_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["", "ATTENUATOR_1", "ATTENUATOR_2", "ATTENUATOR_3"])
         self.lf_dp_rvr_attenuator_combobox.current(0)
         self.lf_dp_rvr_attenuator_combobox.grid(row=row, column=1)
-        self.window_tooltip.bind(self.lf_dp_rvr_upload_speed_combobox, "The ATTENUATOR is definded in the test_rig.json file")
+        self.window_tooltip.bind(self.lf_dp_rvr_attenuator_combobox, "The ATTENUATOR is definded in the test_rig.json file")
 
         # Row 6
         row += 1
