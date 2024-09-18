@@ -1188,7 +1188,7 @@ class Candela:
         # NOTE: Please don't pass incremental_capacity argument when background_run is True.
         """
         device_list = kwargs.get("device_list",[])
-        kwargs['device_list'] = self.filter_iOS_devices(device_list)
+        # kwargs['device_list'] = self.filter_iOS_devices(device_list)
         if len(device_list) == 0:
             exit(1)
         background_run = kwargs.get("background_run",False)
@@ -2277,7 +2277,7 @@ class Candela:
 
         """ 
         device_list = kwargs.get("device_list",[])
-        device_list = self.filter_iOS_devices(device_list)
+        # device_list = self.filter_iOS_devices(device_list)
         if len(device_list) == 0:
             print('No devices specified.')
             exit(1)
