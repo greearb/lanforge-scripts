@@ -73,8 +73,8 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 if 'py-scripts' not in sys.path:
-    sys.path.append('/home/agent11/Desktop/lanforge-scripts/py-scripts')
-    # sys.path.append('/home/lanforge/lanforge-scripts/py-scripts')
+    # sys.path.append('/home/agent11/Desktop/lanforge-scripts/py-scripts')
+    sys.path.append('/home/lanforge/lanforge-scripts/py-scripts')
 
 from lf_base_interop_profile import RealDevice
 from datetime import datetime, timedelta
@@ -149,6 +149,8 @@ class Ping(Realm):
         self.stop_time = ""
         self.do_webUI = do_webUI
         self.ui_report_dir = ui_report_dir
+        self.api_url = 'http://{}:{}'.format(self.host, self.port)
+
 
     def change_target_to_ip(self):
 
@@ -166,6 +168,50 @@ class Ping(Realm):
         else:
             logging.info(self.target)
         return self.target
+    
+    def api_get(self, endp: str):
+        """
+        Sends a GET request to fetch data
+
+        Args:
+            endp (str): API endpoint
+
+        Returns:
+            response: response code for the request
+            data: data returned in the response
+        """
+        if endp[0] != '/':
+            endp = '/' + endp
+        response = requests.get(url=self.api_url + endp)
+        data = response.json()
+        return response, data
+    
+    def filter_iOS_devices(self, device_list):
+        modified_device_list = device_list
+        if type(device_list) is str:
+            modified_device_list = device_list.split(',')
+        filtered_list = []
+        for device in modified_device_list:
+            if device.count('.') == 1:
+                shelf, resource = device.split('.')
+            elif device.count('.') == 2:
+                shelf, resource, port = device.split('.')
+            elif device.count('.') == 0:
+                shelf, resource = 1, device
+            response_code, device_data = self.api_get('/resource/{}/{}'.format(shelf, resource))
+            if 'status' in device_data and device_data['status'] == 'NOT_FOUND':
+                print('Device {} is not found.'.format(device))
+                continue
+            device_data = device_data['resource']
+            # print(device_data)
+            if 'Apple' in device_data['hw version'] and (device_data['app-id'] != '' or device_data['app-id'] != '0' or device_data['kernel'] == ''):
+                print('{} is an iOS device. Currently we do not support iOS devices.'.format(device))
+            else:
+                filtered_list.append(device)
+        if type(device_list) is str:
+            filtered_list = ','.join(filtered_list)
+        self.device_list=filtered_list
+        return filtered_list
 
     def cleanup(self):
 
@@ -1210,6 +1256,11 @@ connectivity problems.
         else:
             Devices.get_devices()
             ping.Devices = Devices
+            if webUI_resources is not None:
+                webUI_resources = ping.filter_iOS_devices(webUI_resources)
+                if len(webUI_resources) == 0:
+                    logger.info("There are no devices available")
+                    exit(1)
             if not do_webUI and webUI_resources is None:
                 ping.select_real_devices(real_devices=Devices)
             else:
@@ -1218,7 +1269,6 @@ connectivity problems.
 
     # station precleanup
     ping.cleanup()
-
     # building station if virtual
     if (args.virtual):
         ping.buildstation()
