@@ -68,6 +68,7 @@ import paramiko
 from datetime import datetime, timedelta
 import pandas as pd
 import logging
+import requests
 import shutil
 import json
 from lf_graph import lf_bar_graph_horizontal
@@ -138,6 +139,7 @@ class HttpDownload(Realm):
         self.radio = []
         self.get_url_from_file = get_url_from_file
         self.file_path = file_path
+        self.api_url = 'http://{}:{}'.format(self.host, self.port)
 
     #Todo- Make use of lf_base_interop_profile.py : Real device class to fetch available devices data
     def get_real_client_list(self):
@@ -153,7 +155,7 @@ class HttpDownload(Realm):
                             tos="BK",
                             device_list=self.device_list
                             )
-        self.port_list,self.devices_list,self.macid_list=object.phantom_check()
+        self.port_list,self.devices_list,self.macid_list=object.phantom_check(ftp_test=True)
         for port in self.port_list:
             eid=self.name_to_eid(port)
             self.eid_list.append(str(eid[0])+'.'+str(eid[1]))
@@ -178,6 +180,51 @@ class HttpDownload(Realm):
                 df1.to_csv('{}/http_datavalues.csv'.format(self.result_dir), index=False)
                 raise ValueError("Aborting the test....")
         return self.port_list, self.devices_list, self.macid_list
+    
+    def api_get(self, endp: str):
+        """
+        Sends a GET request to fetch data
+
+        Args:
+            endp (str): API endpoint
+
+        Returns:
+            response: response code for the request
+            data: data returned in the response
+        """
+        if endp[0] != '/':
+            endp = '/' + endp
+        response = requests.get(url=self.api_url + endp)
+        data = response.json()
+        return response, data
+    
+    def filter_iOS_devices(self, device_list):
+        modified_device_list = device_list
+        if type(device_list) is str:
+            modified_device_list = device_list.split(',')
+        filtered_list = []
+        for device in modified_device_list:
+            if device.count('.') == 1:
+                shelf, resource = device.split('.')
+            elif device.count('.') == 2:
+                shelf, resource, port = device.split('.')
+            elif device.count('.') == 0:
+                shelf, resource = 1, device
+            response_code, device_data = self.api_get('/resource/{}/{}'.format(shelf, resource))
+            if 'status' in device_data and device_data['status'] == 'NOT_FOUND':
+                print('Device {} is not found.'.format(device))
+                continue
+            device_data = device_data['resource']
+            # print(device_data)
+            if 'Apple' in device_data['hw version'] and (device_data['app-id'] != '' or device_data['app-id'] != '0' or device_data['kernel'] == ''):
+                print('{} is an iOS device. Currently we do not support iOS devices.'.format(device))
+            else:
+                filtered_list.append(device)
+        if type(device_list) is str:
+            filtered_list = ','.join(filtered_list)
+        self.device_list=filtered_list
+        return filtered_list
+
 
     def set_values(self):
         # This method will set values according user input
@@ -1141,6 +1188,11 @@ def main():
                             file_path=args.file_path
                             )
         if args.client_type == "Real":
+            if type(args.device_list) != list:
+                http.device_list=http.filter_iOS_devices(args.device_list)
+                if len(http.device_list) == 0:
+                    print("There are no devices available")
+                    exit(1)
             port_list,device_list,macid_list = http.get_real_client_list()
             android_devices,windows_devices,linux_devices,mac_devices=0,0,0,0
             all_devices_names=[]

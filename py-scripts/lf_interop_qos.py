@@ -208,7 +208,7 @@ class ThroughputQOS(Realm):
         #print("laptop_list :",self.laptop_list)
         #print("android_list :",self.android_list)
 
-    def phantom_check(self):
+    def phantom_check(self,ftp_test=False):
         port_eid_list, same_eid_list,original_port_list=[],[],[]
         response = self.json_get("/resource/all")
         for key,value in response.items():
@@ -230,7 +230,9 @@ class ThroughputQOS(Realm):
                                         #self.hostname_list.append(b['eid']+ " " +b['hostname'])
                                         self.devices_available.append(b['eid'] +" " +'Lin'+" "+ b['hostname'])
                             elif "Apple" in b['hw version']:
-                                if b['kernel']=='':
+                                if b['kernel']=='' and ftp_test:
+                                    continue
+                                elif b['kernel']=='':
                                     self.eid_list.append(b['eid'])
                                     self.mac_list.append(b['hw version'])
                                     self.devices_available.append(b['eid'] +" " +'iOS'+" "+ b['hostname'])
@@ -1486,16 +1488,18 @@ def main():
 
     if args.download and args.upload:
         loads = {'upload': str(args.upload).split(","), 'download': str(args.download).split(",")}
-
+        loads_data=loads["download"]
     elif args.download:
         loads = {'upload': [], 'download': str(args.download).split(",")}
         for i in range(len(args.download)):
             loads['upload'].append(0)
+        loads_data=loads["download"]
     else:
         if args.upload:
             loads = {'upload': str(args.upload).split(","), 'download': []}
             for i in range(len(args.upload)):
                 loads['download'].append(0)
+            loads_data=loads["upload"]
     print(loads)
     if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
         args.test_duration = int(args.test_duration[0:-1])
@@ -1506,7 +1510,7 @@ def main():
     elif args.test_duration.endswith(''):
         args.test_duration = int(args.test_duration)
 
-    for index in range(len(loads["download"])):
+    for index in range(len(loads_data)):
         throughput_qos = ThroughputQOS(host=args.mgr,
                                         ip=args.mgr,
                                         port=args.mgr_port,

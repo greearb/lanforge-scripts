@@ -72,6 +72,7 @@ import argparse
 from datetime import datetime, timedelta
 import time
 import os
+import requests
 import json
 import matplotlib.patches as mpatches
 import pandas as pd
@@ -169,6 +170,7 @@ class FtpTest(LFCliBase):
         self.channel_list = []
         self.mode_list = []
         self.cx_list = []
+        self.api_url = 'http://{}:{}'.format(self.host, self.port)
 
         logger.info("Test is Initialized")
 
@@ -210,6 +212,8 @@ class FtpTest(LFCliBase):
                                         self.linux_list.append(b['hw version'])
                                         #self.hostname_list.append(b['eid']+ " " +b['hostname'])
                                         self.devices_available.append(b['eid'] +" " +'Lin'+" "+ b['hostname'])
+                            elif 'Apple' in b['hw version'] and (b['app-id'] != '' or b['app-id'] != '0' or b['kernel'] == ''):
+                                continue
                             elif "Apple" in b['hw version']:
                                 self.eid_list.append(b['eid'])
                                 self.mac_list.append(b['hw version'])
@@ -577,6 +581,23 @@ class FtpTest(LFCliBase):
         self.cx_list = list(self.cx_profile.created_cx.keys())
         logger.info("Test Build done")
 
+    def api_get(self, endp: str):
+        """
+        Sends a GET request to fetch data
+
+        Args:
+            endp (str): API endpoint
+
+        Returns:
+            response: response code for the request
+            data: data returned in the response
+        """
+        if endp[0] != '/':
+            endp = '/' + endp
+        response = requests.get(url=self.api_url + endp)
+        data = response.json()
+        return response, data
+
     def start(self, print_pass=False, print_fail=False):
         for rad in self.radio:
             self.cx_profile.start_cx()
@@ -599,6 +620,33 @@ class FtpTest(LFCliBase):
         self.station_profile.cleanup(self.station_profile.station_names, delay=1.5, debug_=self.debug)
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
                                            debug=self.debug)
+        
+    def filter_iOS_devices(self, device_list):
+        modified_device_list = device_list
+        if type(device_list) is str:
+            modified_device_list = device_list.split(',')
+        filtered_list = []
+        for device in modified_device_list:
+            if device.count('.') == 1:
+                shelf, resource = device.split('.')
+            elif device.count('.') == 2:
+                shelf, resource, port = device.split('.')
+            elif device.count('.') == 0:
+                shelf, resource = 1, device
+            response_code, device_data = self.api_get('/resource/{}/{}'.format(shelf, resource))
+            if 'status' in device_data and device_data['status'] == 'NOT_FOUND':
+                print('Device {} is not found.'.format(device))
+                continue
+            device_data = device_data['resource']
+            # print(device_data)
+            if 'Apple' in device_data['hw version'] and (device_data['app-id'] != '' or device_data['app-id'] != '0' or device_data['kernel'] == ''):
+                print('{} is an iOS device. Currently we do not support iOS devices.'.format(device))
+            else:
+                filtered_list.append(device)
+        if type(device_list) is str:
+            filtered_list = ','.join(filtered_list)
+        self.device_list=filtered_list
+        return filtered_list
 
     def file_create(self):
         '''This method will Create file for given file size'''
@@ -1968,6 +2016,11 @@ INCLUDE_IN_README: False
                 interation_num = interation_num + 1
                 obj.file_create()
                 if args.clients_type == "Real":
+                    if type(args.device_list) != list:
+                        obj.device_list=obj.filter_iOS_devices(args.device_list)
+                        if len(obj.device_list) == 0:
+                            logger.info("There are no devices available")
+                            exit(1)
                     obj.query_realclients()
                 obj.set_values()
                 obj.precleanup()
