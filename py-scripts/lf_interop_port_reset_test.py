@@ -77,7 +77,9 @@ class InteropPortReset(Realm):
                  mgr_ip=None,
                  time_int=None,
                  wait_time=None,
-                 suporrted_release=None
+                 device_list=None,
+                 suporrted_release=None,
+                 forget_network=True
                  ):
         super().__init__(lfclient_host=host,
                          lfclient_port=8080)
@@ -108,6 +110,8 @@ class InteropPortReset(Realm):
         self.mgr_ip = mgr_ip
         self.reset = reset
         self.time_int = time_int
+        self.device_list = device_list
+        self.forget_network = forget_network
         # self.wait_time = wait_time
         self.supported_release = suporrted_release
         self.device_name = []
@@ -116,16 +120,21 @@ class InteropPortReset(Realm):
                                                  _output_pdf="port_reset_test.pdf")
         self.report_path = self.lf_report.get_report_path()
 
-        self.base_interop_profile = base.RealDevice(manager_ip=self.host, server_ip=self.mgr_ip, ssid=self.ssid,
-                                                    encryption=self.encryp, passwd=self.passwd)
+        self.base_interop_profile = base.RealDevice(manager_ip=self.host, server_ip=self.mgr_ip, ssid_5g=self.ssid,
+                                                    encryption_5g=self.encryp, passwd_5g=self.passwd, disconnect_devices=self.forget_network, reboot=False)
 
         self.utility = base.UtilityInteropWifi(host_ip=self.host)
         # logging.basicConfig(filename='port_reset.log', filemode='w', format='%(asctime)s - %(message)s',
         #                     level=logging.INFO, force=True)
 
     def selecting_devices_from_available(self):
-        asyncio.run(self.base_interop_profile.query_all_devices_to_configure_wifi())
+        if self.device_list is None:
+            devices = self.base_interop_profile.query_all_devices_to_configure_wifi()
+        else:
+            devices = self.base_interop_profile.query_all_devices_to_configure_wifi(device_list=self.device_list.split(','))
+        asyncio.run(self.base_interop_profile.configure_wifi(devices[0] + devices[1] + devices[2]))
         self.real_sta_list = self.base_interop_profile.station_list
+        print(self.real_sta_list)
         real_device_data = self.base_interop_profile.devices_data
         if len(self.real_sta_list) == 0:
             logging.error('There are no real devices in this testbed. Aborting the test.')
@@ -321,6 +330,16 @@ class InteropPortReset(Realm):
             if adb_association_attempt > adb_connected_count:
                 adb_association_rejection = adb_association_attempt - adb_connected_count
             local_dict[str(phn_name)]["Association Rejection"] = adb_association_rejection
+            if adb_connected_count > 0:
+                _, _, serial = phn_name.split('.')
+                resource_id = self.json_get('/adb/1/1/{}?fields=resource-id'.format(serial))
+                resource_id = resource_id['devices']['resource-id']
+
+                port_ssid_query = self.json_get('port/1/{}/wlan0?fields=cx time (us)'.format(resource_id.split('.')[1]))
+                uptime = port_ssid_query['interface']['cx time (us)']
+                local_dict[str(phn_name)]['cx time (us)'] = uptime
+            else:
+                local_dict[str(phn_name)]['cx time (us)'] = 'NA'
         else:
             if phn_name in self.windows_list:  # for windows
                 win_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
@@ -344,11 +363,12 @@ class InteropPortReset(Realm):
                 logging.info("Final Association Rejection Count for %s: %s" % (phn_name, win_association_rejection))
                 local_dict[str(phn_name)]["Association Rejection"] = win_association_rejection
                 win_connected_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                     filter="connected")
+                                                     filter=" connected")
                 # assoc-rejection based logic
                 if win_association_rejection:
                     # Updating the connects
                     actual_connects = win_association_attempt - win_association_rejection
+                    print('win association attempts {}, win rejection attempts {}'.format(win_association_attempt, win_association_rejection))
                     if actual_connects == win_connected_count:
                         win_connected_count = win_connected_count
                     else:
@@ -356,15 +376,15 @@ class InteropPortReset(Realm):
                 else:
                     if win_association_attempt == win_connected_count:
                         win_connected_count = win_connected_count
-                    else:
-                        # Double-checking
-                        if win_connected_count > 1 or win_connected_count == 0:
-                            port_name = phn_name.split(".")
-                            port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
-                            if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
-                                win_connected_count = 1
-                            else:
-                                win_connected_count = 0
+                    # else:
+                    # Double-checking
+                    if win_connected_count > 1 or win_connected_count == 0:
+                        port_name = phn_name.split(".")
+                        port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
+                        if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
+                            win_connected_count = 1
+                        else:
+                            win_connected_count = 0
                 logging.info("Final Connected Count for %s: %s" % (phn_name, win_connected_count))
                 local_dict[str(phn_name)]["Connected"] = win_connected_count
                 # Updating the association-rejections
@@ -378,6 +398,13 @@ class InteropPortReset(Realm):
                 elif win_disconnect_count >= 1 and win_connected_count == 0:
                     remarks = "The Disconnections are seen but Client did not connected to user given SSID."
                 local_dict[str(phn_name)]["Remarks"] = remarks
+                if win_connected_count > 0:
+                    port_name = phn_name.split(".")
+                    port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
+                    uptime = port_ssid_query['interface']['cx time (us)']
+                    local_dict[str(phn_name)]['cx time (us)'] = uptime
+                else:
+                    local_dict[str(phn_name)]['cx time (us)'] = 'NA'
             else:  # other means (for linux, mac)
                 other_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
                                                         filter="disconnected")
@@ -435,6 +462,13 @@ class InteropPortReset(Realm):
                 elif other_disconnect_count >= 1 and other_connected_count == 0:
                     remarks = "The Disconnections are seen but Client did not connected to user given SSID."
                 local_dict[str(phn_name)]["Remarks"] = remarks
+                if other_connected_count > 0:
+                    port_name = phn_name.split(".")
+                    port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
+                    uptime = port_ssid_query['interface']['cx time (us)']
+                    local_dict[str(phn_name)]['cx time (us)'] = uptime
+                else:
+                    local_dict[str(phn_name)]['cx time (us)'] = 'NA'
         logging.info("local_dict " + str(local_dict))
 
         return local_dict
@@ -464,8 +498,10 @@ class InteropPortReset(Realm):
             logging.info(
                 f"The total number of available active Mac devices are: {len(self.base_interop_profile.mac_list)}")
 
-            if len(self.adb_device_list) == 0:
-                logging.info("There is no active adb (Android) devices please check system")
+            if len(self.adb_device_list) == 0 and len(self.base_interop_profile.windows_list) == 0 and len(self.base_interop_profile.linux_list) == 0 and len(self.base_interop_profile.mac_list) == 0:
+                logging.info("There is no active devices please check system.")
+                logging.info('Aborting the test.')
+                exit(1)
             else:
                 for i in range(len(self.adb_device_list)):
                     self.phn_name.append(self.adb_device_list[i].split(".")[2])
@@ -517,7 +553,7 @@ class InteropPortReset(Realm):
 
                 logging.info(f"Health Status for the Laptop Devices: {health_for_laptops}")
 
-                # Resting Starts from here
+                # Reset starts from here
                 reset_list = []
                 for i in range(self.reset):
                     reset_list.append(i)
@@ -551,6 +587,7 @@ class InteropPortReset(Realm):
 
                     # note last log time
                     timee = self.get_last_wifi_msg()
+                    logging.info('{}'.format(timee))
 
                     for i in self.adb_device_list:
                         self.interop.stop(device=i)
@@ -582,6 +619,7 @@ class InteropPortReset(Realm):
                         get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee,
                                                                  file_name=f"reset_{r}_log.json")
                         reset_dict[r] = get_dicct
+                    logging.info('{}'.format(reset_dict))
                 logging.info(f"Final Reset Count Dictionary for all clients: {reset_dict}")
                 logging.info("reset dict " + str(reset_dict))
                 test_end = datetime.now()
@@ -755,6 +793,11 @@ class InteropPortReset(Realm):
             fontsize=_legend_fontsize)
         plt.suptitle(graph_title, fontsize=graph_title_size)
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
+        # generate csv
+        print(data)
+        df = pd.DataFrame(data=data, index=[1])
+        print(df)
+        df.to_csv('{}/{}.csv'.format(self.report_path, name))
         return "%s.png" % self.graph_image_name
 
     def generate_overall_graph_table(self, reset_dict, device_list):
@@ -823,7 +866,7 @@ class InteropPortReset(Realm):
             reset_count = []
             for i in reset_count_:
                 reset_count.append(int(i) + 1)
-            asso_attempts, disconnected, scanning, connected, assorej, remarks = [], [], [], [], [], []
+            asso_attempts, disconnected, scanning, connected, assorej, remarks, cx_times = [], [], [], [], [], [], []
 
             for i in reset_dict:
                 asso_attempts.append(reset_dict[i][y]["ConnectAttempt"])
@@ -832,6 +875,7 @@ class InteropPortReset(Realm):
                 connected.append(reset_dict[i][y]["Connected"])
                 assorej.append(reset_dict[i][y]["Association Rejection"])
                 remarks.append(reset_dict[i][y]["Remarks"])
+                cx_times.append(reset_dict[i][y]["cx time (us)"])
 
             # graph calculation
             dict_ = ['Port Resets', 'Disconnects', 'Scans', 'Association Attempts', "Association Rejections",
@@ -899,11 +943,13 @@ class InteropPortReset(Realm):
                 "Association attempts": asso_attempts,
                 "Association Rejection": assorej,
                 "Connected": connected,
+                "Connection Time (us)": cx_times,
                 "Remarks": remarks
             }
             test_setup = pd.DataFrame(table_1)
             self.lf_report.set_table_dataframe(test_setup)
             self.lf_report.build_table()
+            self.lf_report.save_csv('overall_report.csv', test_setup)
 
     def generate_report(self, reset_dict=None, test_dur=None):
         try:
@@ -994,7 +1040,7 @@ class InteropPortReset(Realm):
                         dev_type = "Linux"
                     elif "Win" in hw_version:
                         dev_type = "Windows"
-                    elif "Mac" in hw_version:
+                    elif "Apple" in hw_version:
                         dev_type = "Apple"
                     else:
                         dev_type = ""
@@ -1114,6 +1160,12 @@ INCLUDE_IN_README: False
     parser.add_argument("--time_int", type=int, default=5,
                         help='Specify the time interval in seconds after which reset should happen.')
 
+    parser.add_argument('--device_list', help='Enter the devices on which the test should be run', default=None)
+
+    parser.add_argument('--no_forget_networks',
+                        help='Currently enterprise authentication does not support forget all networks.'
+                        'So, mention this argument when enterprise securities are selected.', default=None,
+                        action="store_true")
     # parser.add_argument("--wait_time", type=int, default=20,
     #                     help='Specify the wait time in seconds for WIFI Supplicant Logs.')
 
@@ -1159,7 +1211,9 @@ INCLUDE_IN_README: False
                            time_int=args.time_int,
                            # wait_time=args.wait_time,
                            suporrted_release=args.release,
-                           mgr_ip=args.mgr_ip
+                           mgr_ip=args.mgr_ip,
+                           device_list=args.device_list,
+                           forget_network=not args.no_forget_networks
                            )
     obj.selecting_devices_from_available()
     reset_dict, duration = obj.run()
