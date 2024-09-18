@@ -35,7 +35,7 @@ execute_and_cleanup() {
         
     elif [[ "$(uname)" == "Darwin" ]]; then
         # macOS: Terminate Chrome processes using pkill -9 chrome
-        pkill -f chrome for testing
+        pkill -f "chrome for testing"
         pkill -f chrome
         pkill -f chromedriver
     else
