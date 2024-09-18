@@ -714,14 +714,14 @@ class Realm(LFCliBase):
         return response['attenuators']
 
     # EID is shelf.resource.atten-serno.atten-idx
-    def set_atten(self, eid, atten_ddb):
+    def set_atten(self, eid, atten_ddb, atten_idx='all'):
         eid_toks = self.name_to_eid(eid, non_port=True)
         req_url = "cli-json/set_attenuator"
         data = {
             "shelf": eid_toks[0],
             "resource": eid_toks[1],
             "serno": eid_toks[2],
-            "atten_idx": eid_toks[3],
+            "atten_idx": atten_idx,
             "val": atten_ddb,
         }
         self.json_post(req_url, data)
