@@ -125,6 +125,11 @@ def parse_args():
                              'Note that all bridged ports and bridge port itself must exist on '
                              'the same resource.')
 
+    # Optional arguments
+    parser.add_argument('--cleanup',
+                        help='Clean up any created ports before exiting.',
+                        action='store_true')
+
     return parser.parse_args()
 
 
@@ -180,7 +185,7 @@ def main():
     create_bridge = CreateBridge(**vars(args))
     create_bridge.build()
 
-    if not args.no_cleanup:
+    if args.cleanup:
         sleep(5)
         create_bridge.cleanup()
 
