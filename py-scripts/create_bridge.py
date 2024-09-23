@@ -128,6 +128,38 @@ def parse_args():
     return parser.parse_args()
 
 
+def validate_args(args):
+    # Ensure the bridge resource ID is specified,
+    # either in the '--bridge_name' argument itself or in the
+    # specified ports to bridge ('--bridge_ports' argument)
+    #
+    # If specified in bridge name, then assume same resource ID
+    # for all bridged ports. If not specified in bridge name,
+    # resource ID must be specified in bridged ports
+    #
+    # First check for resource ID in bridge name
+    bridge_eid = LFUtils.name_to_eid(args.bridge_eid)
+    resource_id = bridge_eid[1]
+
+    # Hack to check if user did not specify full bridge EID
+    # in the '--bridge_name' argument
+    #
+    # If don't check this, then when only name specified,
+    # resource ID 1 is always assumed
+    if len(args.bridge_eid.split(".")) < 2:
+        resource_id = None
+
+    # Check for/validate resource ID in bridged ports
+    for bridge_port in args.bridge_ports.split(","):
+        port_eid = LFUtils.name_to_eid(bridge_port)
+
+        if resource_id is None:
+            resource_id = port_eid[1]
+        elif resource_id != port_eid[1]:
+            logger.error("Cannot specify bridge ports on separate resources")
+            exit(1)
+
+
 def main():
     help_summary = "This script will create a single LANforge bridge port "\
                    "using the specified bridge port interfaces."
@@ -142,6 +174,8 @@ def main():
     logger_config = lf_logger_config.lf_logger_config()
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
+
+    validate_args(args)
 
     create_bridge = CreateBridge(**vars(args))
     create_bridge.build()
