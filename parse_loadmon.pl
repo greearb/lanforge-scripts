@@ -47,7 +47,7 @@ while (my $line=<STDIN>) {
     my $loadmon_line = substr($line, $lc_pos);
     print "LOADMON_LINE: $loadmon_line\n";
     # detect bug where "tt_threads:X}{" and add comma
-    $loadmon_line =~ s/}{/},{/mg;
+    $loadmon_line =~ s/\}\{/},{/mg;
     my $ra_loadmon = parse_json($loadmon_line);
     #print Dumper$ra_loadmon);
 
