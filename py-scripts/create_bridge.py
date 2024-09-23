@@ -1,25 +1,7 @@
 #!/usr/bin/env python3
-
 """
-NAME: create_bridge.py
-
-PURPOSE:
-    This script will create a variable number of bridges.
-
-EXAMPLE:
-    Use './create_bridge.py --help' to see command line usage and options
-
-    ./create_bridge.py --lfmgr <lanforge ip> --port <lanforge port 8080> --bridge_name br0 --target_device eth1,eth2 --no_cleanup --debug
-
-NOTES:
-
-    Tested on 03/23/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
-
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
-
 """
 import sys
 import os
@@ -117,29 +99,20 @@ def parse_args():
          Create bridges
             ''',
 
-        description='''\
---------------------
-NAME: create_bridge.py
+        description='''''')
 
-PURPOSE:
-    This script will create a variable number of bridges.
-
-EXAMPLE:
-    Use './create_bridge.py --help' to see command line usage and options
-
-    ./create_bridge.py --lfmgr <lanforge ip> --port <lanforge port 8080> --bridge_name br0 --target_device eth1,eth2 --no_cleanup --debug
-
-NOTES:
-
-    Tested on 03/23/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
-
-            ''')
-    required = parser.add_argument_group('required arguments')
-
-    required.add_argument('--bridge_name', help='Name of the bridge to create')
-    required.add_argument('--target_device', help='The interfaces the bridge should contain')
+    parser.add_argument('--bridge_name',
+                        required=True,
+                        help='Name of the bridge port to create. This can be either the name only '
+                             'or the full EID. If not the full EID, the desired resource will be '
+                             'inferred from specified child ports')
+    parser.add_argument('--bridge_ports', '--target_device',
+                        dest='bridge_ports',
+                        required=True,
+                        help='Ports to bridge together. If not specified, in the \'--bridge_name\' '
+                             'argument, the resource ID will be inferred from the bridged ports. '
+                             'Note that all bridged ports and bridge port itself must exist on '
+                             'the same resource.')
 
     return parser.parse_args()
 
@@ -170,7 +143,7 @@ def main():
                                  _port=args.mgr_port,
                                  _bridge_list=bridge_list,
                                  _debug_on=args.debug,
-                                 target_device=args.target_device)
+                                 target_device=args.bridge_ports)
 
     create_bridge.build()
     logger.info('Created bridge: %s' % bridge_list[0])
