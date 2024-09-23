@@ -50,20 +50,14 @@ class CreateBridge(Realm):
         """Create bridge port as specified."""
         logger.info(f"Creating bridge port \'{self.bridge_eid}\'")
 
-        nd = False
-        for td in self.bridge_ports.split(","):
-            eid = self.name_to_eid(td)
-            if not nd:
-                nd = eid[2]
-            else:
-                nd += ","
-                nd += eid[2]
+        # TODO: Clear IP configuration for bridged ports
+        bridge_port_names = [LFUtils.name_to_eid(port)[2] for port in self.bridge_ports]
 
         data = {
             "shelf": self.shelf,
             "resource": self.resource,
             "port": self.bridge_name,
-            "network_devs": nd # eth1,eth2
+            "network_devs": ",".join(bridge_port_names)
         }
         self.json_post("cli-json/add_br", data)
 
@@ -119,7 +113,7 @@ def parse_args():
                              'inferred from specified child ports')
     parser.add_argument('--bridge_ports', '--target_device',
                         dest='bridge_ports',
-                        required=True,
+                        nargs="+",
                         help='Ports to bridge together. If not specified, in the \'--bridge_name\' '
                              'argument, the resource ID will be inferred from the bridged ports. '
                              'Note that all bridged ports and bridge port itself must exist on '
@@ -155,7 +149,7 @@ def validate_args(args):
         resource_id = None
 
     # Check for/validate resource ID in bridged ports
-    for bridge_port in args.bridge_ports.split(","):
+    for bridge_port in args.bridge_ports:
         port_eid = LFUtils.name_to_eid(bridge_port)
 
         if resource_id is None:
