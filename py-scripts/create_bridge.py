@@ -49,6 +49,8 @@ class CreateBridge(Realm):
 
     def build(self):
         """Create bridge port as specified."""
+        logger.info(f"Creating bridge port \'{self.bridge_eid}\'")
+
         nd = False
         for td in self.bridge_ports.split(","):
             eid = self.name_to_eid(td)
@@ -76,16 +78,20 @@ class CreateBridge(Realm):
         }
         self.json_post("cli-json/set_port", bridge_set_port)
 
+        # Verify bridge port created
+        ret = LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
+                                                port_list=[self.bridge_eid],
+                                                debug_=self.debug)
+        if not ret:
+            logger.error(f"Failed to create bridge port \'{self.bridge_eid}\'")
+            exit(1)
 
-        if LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
-                                             port_list=[self.bridge_eid],
-                                             debug_=self.debug):
-            self._pass("Bond interface went admin up.")
-        else:
-            self._fail("Bond interface did NOT go admin up.")
+        logger.info(f"Successfully created bridge port \'{self.bridge_eid}\'")
 
     def cleanup(self):
         """Remove specified bridge port."""
+        logger.info("Removing any created or conflicting bridge port(s)")
+
         self.rm_port(self.bridge_eid, check_exists=False, debug_=self.debug)
 
         if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
@@ -149,7 +155,6 @@ def main():
                                  debug=args.debug)
 
     create_bridge.build()
-    logger.info('Created bridge: %s' % args.bridge_eid)
 
     if not args.no_cleanup:
         sleep(5)
