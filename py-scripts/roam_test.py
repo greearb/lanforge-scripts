@@ -11,6 +11,7 @@ import datetime
 import importlib
 import paramiko
 import traceback
+import pandas as pd
 # from itertools import combinations # to generate pair combinations for attenuators
 
 
@@ -556,6 +557,7 @@ class Roam(Realm):
             return False
 
     def soft_roam_test(self):
+        self.connect()
         for station in self.station_list:
             self.station_based_roam_count[station] = 0
         for bssid in self.bssids:
@@ -568,13 +570,12 @@ class Roam(Realm):
                 logging.info(
                     'Initiating iteration {}'.format(current_iteration))
 
-                before_iteration_bssid_data = self.get_bssids()
-                current_iteration_roam_data = {}
-                for atten_set in self.attenuator_combinations:
-                    self.start_sniff(pcap_name='/home/lanforge/Desktop/iteration_{}_roam_{}.pcap'.format(current_iteration, self.attenuator_combinations.index(atten_set)))
-                    self.roam_data[atten_set] = {
+                self.roam_data[current_iteration] = {
 
-                    }
+                }
+                for atten_set in self.attenuator_combinations:
+                    current_iteration_roam_data = {}
+                    self.start_sniff(pcap_name='/home/lanforge/Desktop/iteration_{}_roam_{}.pcap'.format(current_iteration, self.attenuator_combinations.index(atten_set)))
                     
                     # for displaying purpose
                     print('========================================================================')
@@ -583,6 +584,8 @@ class Roam(Realm):
 
                     atten1, atten2 = atten_set
                     self.set_attenuators(atten1=atten1, atten2=atten2)
+                    time.sleep(self.wait_time)
+                    before_iteration_bssid_data = self.get_bssids()
 
                     # logging.info(
                     #     'Starting sniffer with roam_test_{}.pcap'.format(current_iteration))
@@ -607,33 +610,25 @@ class Roam(Realm):
 
                         logging.info('Monitoring the stations')
                         current_step_bssid_data = self.get_bssids()
+                        logging.info('{} {}'.format(before_iteration_bssid_data, current_step_bssid_data))
                         for bssid_index in range(len(current_step_bssid_data)):
-                            if self.station_list[bssid_index] not in current_iteration_roam_data:
+                            if (self.station_list[bssid_index] in current_iteration_roam_data and not current_iteration_roam_data[self.station_list[bssid_index]]['Status']) or (self.station_list[bssid_index] not in current_iteration_roam_data):
                                 current_iteration_roam_data[self.station_list[bssid_index]] = {
-                                    'BSSID before iteration':   before_iteration_bssid_data[bssid_index],
-                                    'BSSID after iteration':   current_step_bssid_data[bssid_index],
+                                    'BSSID before roaming':   before_iteration_bssid_data[bssid_index],
+                                    'BSSID after roaming':   current_step_bssid_data[bssid_index],
                                     'Signal Strength':   self.get_port_data(self.station_list[bssid_index], 'signal'),
-                                    'Status': False
+                                    'Status': before_iteration_bssid_data[bssid_index] != current_step_bssid_data[bssid_index]
                                 }
-                                if current_step_bssid_data[bssid_index] not in [None, 'NA', ''] and current_step_bssid_data[bssid_index] != before_iteration_bssid_data[bssid_index]:
-                                    current_iteration_roam_data[self.station_list[bssid_index]]['Status'] = True
-                            else:
-                                if current_step_bssid_data[bssid_index] not in [None, 'NA', ''] and before_iteration_bssid_data[bssid_index] != current_step_bssid_data[bssid_index]:
-                                    current_iteration_roam_data[self.station_list[bssid_index]] = {
-                                        'BSSID before iteration':   before_iteration_bssid_data[bssid_index],
-                                        'BSSID after iteration':   current_step_bssid_data[bssid_index],
-                                        'Signal Strength':   self.get_port_data(self.station_list[bssid_index], 'signal'),
-                                        'Status':   True
-                                    }
-                        print(current_iteration_roam_data)
-                    print(current_iteration_roam_data)
+                        # print(current_iteration_roam_data)
+                    # print(current_iteration_roam_data)
+                    self.roam_data[current_iteration][atten_set] = current_iteration_roam_data
                     logging.info('Stopping sniffer')
                     self.stop_sniff()
                     self.active_attenuator, self.passive_attenuator = self.passive_attenuator, self.active_attenuator
                 logging.info('Iteration {} complete'.format(current_iteration))
-                self.roam_data[atten_set].update({
-                    current_iteration: current_iteration_roam_data
-                })
+                # self.roam_data[atten_set].update({
+                #     current_iteration: current_iteration_roam_data
+                # })
                 print(self.roam_data)
                 # self.roam_data[current_iteration] = current_iteration_roam_data
 
@@ -642,9 +637,10 @@ class Roam(Realm):
         else:
             logging.info(
                 'Duration based roaming test is still under development.')
-        logging.info('Stopping sniffer')
+        # logging.info('Stopping sniffer')
         # self.stop_sniff()
         logging.info(self.roam_data)
+        return self.roam_data
 
     def generate_report(self, result_json=None, result_dir='Roam_Test_Report', report_path=''):
         if result_json is not None:
@@ -654,14 +650,22 @@ class Roam(Realm):
         # total_successful_roams = sum([len(station)
         #                              for station in self.roam_data.values()])
         total_successful_roams = 0
-        for atten_set in self.attenuator_combinations:
-            for iteration_values in self.roam_data[atten_set].values():
-                for station_data in iteration_values.values():
-                    if 'Status' in station_data.keys() and station_data['Status']:
+        for iteration in self.roam_data.keys():
+            for atten_set in self.roam_data[iteration].keys():
+                for station in self.roam_data[iteration][atten_set].keys():
+                    if self.roam_data[iteration][atten_set][station]['Status']:
                         total_successful_roams += 1
-                        print(list(iteration_values.keys())[0], station_data)
-                        self.bssid_based_totals[station_data['BSSID after iteration']] += 1
-                        self.station_based_roam_count[list(iteration_values.keys())[0]] += 1
+                        roamed_to_bssid = self.roam_data[iteration][atten_set][station]['BSSID after roaming']
+                        self.bssid_based_totals[roamed_to_bssid] += 1
+                        self.station_based_roam_count[station] += 1
+        # for atten_set in self.attenuator_combinations:
+        #     for iteration_values in self.roam_data[atten_set].values():
+        #         for station_data in iteration_values.values():
+        #             if 'Status' in station_data.keys() and station_data['Status']:
+        #                 total_successful_roams += 1
+        #                 print(list(iteration_values.keys())[0], station_data)
+        #                 self.bssid_based_totals[station_data['BSSID after roaming']] += 1
+        #                 self.station_based_roam_count[list(iteration_values.keys())[0]] += 1
         total_failed_roams = total_attempted_roams - total_successful_roams
 
         logging.info('{}'.format(self.bssid_based_totals))
@@ -711,6 +715,8 @@ class Roam(Realm):
         report.set_table_title(
             'Total Roams attempted vs Successful vs Failed')
         report.build_table_title()
+        x_fig_size = 25
+        y_fig_size = 3 * .5 + 4
 
         # graph for above
         total_roams_graph = lf_bar_graph_horizontal(_data_set=[[total_attempted_roams], [total_successful_roams], [total_failed_roams]],
@@ -729,10 +735,11 @@ class Roam(Realm):
                                                 'darkgreen', 'red'],
                                         _color_edge=['black'],
                                         _bar_height=0.15,
+                                        _figsize=(x_fig_size, y_fig_size),
                                         _legend_loc="best",
                                         _legend_box=(1.0, 1.0),
                                         _dpi=96,
-                                        _show_bar_value=False,
+                                        _show_bar_value=True,
                                         _enable_csv=True,
                                         _color_name=['orange', 'darkgreen', 'red'])
 
@@ -745,10 +752,21 @@ class Roam(Realm):
         report.move_csv_file()
         report.build_graph()
 
+        overall_data_table = pd.DataFrame({
+            'Total Attempted Roams': [total_attempted_roams],
+            'Total Successful Roams': [total_successful_roams],
+            'Total Failed Roams': [total_failed_roams]
+        })
+        # print(overall_data_table)
+        report.set_table_dataframe(overall_data_table)
+        report.build_table()
+
         # bssid based roam count
         report.set_table_title(
             'BSSID based Successful vs Failed')
         report.build_table_title()
+        x_fig_size = 25
+        y_fig_size = len(self.bssids) * .5 + 4
 
         # graph for above
         bssid_based_total_attempted_roams = [total_attempted_roams // 2] * len(list(self.bssid_based_totals.values()))
@@ -767,10 +785,11 @@ class Roam(Realm):
                                         _color=['darkgreen', 'darkgreen', 'red'],
                                         _color_edge=['black'],
                                         _bar_height=0.15,
+                                        _figsize=(x_fig_size, y_fig_size),
                                         _legend_loc="best",
                                         _legend_box=(1.0, 1.0),
                                         _dpi=96,
-                                        _show_bar_value=False,
+                                        _show_bar_value=True,
                                         _enable_csv=True,
                                         _color_name=['darkgreen', 'darkgreen', 'red'])
 
@@ -783,11 +802,21 @@ class Roam(Realm):
         report.move_csv_file()
         report.build_graph()
 
+        bssid_based_roam_data = pd.DataFrame({
+            'BSSID': list(self.bssid_based_totals.keys()),
+            'Successful Roams': list(self.bssid_based_totals.values())
+        })
+        print(bssid_based_roam_data)
+        report.set_table_dataframe(bssid_based_roam_data)
+        report.build_table()
+
 
         # station based roam count
         report.set_table_title(
             'Station based Successful vs Failed')
         report.build_table_title()
+        x_fig_size = 25
+        y_fig_size = len(self.station_based_roam_count.keys()) * .5 + 4
 
         # graph for above
         station_based_total_attempted_roams = [total_attempted_roams // len(self.station_list)] * len(self.station_list)
@@ -810,10 +839,11 @@ class Roam(Realm):
                                         _color=['orange', 'darkgreen', 'red'],
                                         _color_edge=['black'],
                                         _bar_height=0.15,
+                                        _figsize=(x_fig_size, y_fig_size),
                                         _legend_loc="best",
                                         _legend_box=(1.0, 1.0),
                                         _dpi=96,
-                                        _show_bar_value=False,
+                                        _show_bar_value=True,
                                         _enable_csv=True,
                                         _color_name=['orange', 'darkgreen', 'red'])
 
@@ -825,6 +855,16 @@ class Roam(Realm):
         report.set_csv_filename(station_based_graph_png)
         report.move_csv_file()
         report.build_graph()
+
+        station_based_roam_data = pd.DataFrame({
+            'Station': list(self.station_based_roam_count.keys()),
+            'Attempted Roams': station_based_total_attempted_roams,
+            'Successful Roams': list(self.station_based_roam_count.values()),
+            'Failed Roams': station_based_failed_roams
+        })
+        print(station_based_roam_data)
+        report.set_table_dataframe(station_based_roam_data)
+        report.build_table()
 
         # closing
         report.build_custom()
@@ -1085,7 +1125,6 @@ def main():
         # roam_test.create_cx()
         # roam_test.start_cx()
 
-    roam_test.connect()
     if (roam_test.soft_roam):
         logging.info('Initiating soft roam test')
 
