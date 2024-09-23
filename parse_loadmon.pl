@@ -36,17 +36,20 @@ sub mb {
 
 while (my $line=<STDIN>) {
     chomp $line;
-    # print "line[$line]\n";
+    print "line[$line]\n";
     my $lc_pos = index($line, '[{');
-    # print "lc at $lc_pos\n";
+    print "lc at $lc_pos\n";
     next if ($lc_pos < 0);
     # more informative not to have the current date but the date of the record
     # print `date`;
     my ($date_str) = $line =~ /^(\w+ \d+ \d+:\d+:\d+) /;
-    print "$date_str \n";
+    print "Date: $date_str \n";
     my $loadmon_line = substr($line, $lc_pos);
+    print "LOADMON_LINE: $loadmon_line\n";
+    # detect bug where "tt_threads:X}{" and add comma
+    $loadmon_line =~ s/}{/},{/mg;
     my $ra_loadmon = parse_json($loadmon_line);
-    #print Dumper($ra_loadmon);
+    #print Dumper$ra_loadmon);
 
     for my $rh_item ( @$ra_loadmon) {
         next if ($rh_item == 0);

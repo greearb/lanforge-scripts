@@ -185,6 +185,7 @@ sub mainloop {
 
     while (1) {
         print $out_fh '[';
+        my $counter = 0;
         for my $name (@main::prog_names) {
             my $lmonitor = $monitor_map{$name};
             # print "$name ";
@@ -192,6 +193,8 @@ sub mainloop {
             $lmonitor->report(*$out_fh);
             # print $out_fh ",";
         }
+        print $out_fh "," if ($counter > 0);
+        $counter += 1;
         print_totals(*$out_fh);
         print $out_fh "]\n";
         sleep($_interv);
