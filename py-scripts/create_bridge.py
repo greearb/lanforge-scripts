@@ -6,7 +6,6 @@ License: Free to distribute and modify. LANforge systems must be licensed.
 import sys
 import os
 import importlib
-import pprint
 import argparse
 import logging
 from time import sleep
