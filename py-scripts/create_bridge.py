@@ -26,29 +26,31 @@ Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class CreateBridge(Realm):
-    def __init__(self, target_device,
-                 _host=None,
-                 _port=None,
-                 _bridge_list=None,
-                 _debug_on=False):
-        super().__init__(_host,
-                         _port)
-        self.host = _host
-        self.port = _port
-        self.bridge_list = _bridge_list
-        self.debug = _debug_on
-        self.target_device = target_device
+    def __init__(self,
+                 mgr: str,
+                 mgr_port: int,
+                 bridge_eid: str,
+                 bridge_ports: str,
+                 debug: bool = False,
+                 exit_on_error: bool = False,
+                 **kwargs):
+        super().__init__(lfclient_host=mgr,
+                         lfclient_port=mgr_port,
+                         debug_=debug,
+                         _exit_on_error=exit_on_error)
 
-        eid = self.name_to_eid(self.bridge_list[0])
+        self.bridge_eid = bridge_eid
+        self.bridge_ports = bridge_ports
+
+        eid = self.name_to_eid(self.bridge_eid)
         self.shelf = eid[0]
         self.resource = eid[1]
         self.bridge_name = eid[2]
 
     def build(self):
-        # Build bridges
-        eid_str = "%s.%s.%s" % (1, self.resource, self.bridge_name)
+        """Create bridge port as specified."""
         nd = False
-        for td in self.target_device.split(","):
+        for td in self.bridge_ports.split(","):
             eid = self.name_to_eid(td)
             if not nd:
                 nd = eid[2]
@@ -76,16 +78,19 @@ class CreateBridge(Realm):
 
 
         if LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
-                                             port_list=[eid_str],
+                                             port_list=[self.bridge_eid],
                                              debug_=self.debug):
             self._pass("Bond interface went admin up.")
         else:
             self._fail("Bond interface did NOT go admin up.")
 
     def cleanup(self):
-        eid = "%s.%s.%s" % (self.shelf, self.resource, self.bridge_name)
-        self.rm_port(eid, check_exists=False, debug_=self.debug)
-        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=[eid], debug=self.debug):
+        """Remove specified bridge port."""
+        self.rm_port(self.bridge_eid, check_exists=False, debug_=self.debug)
+
+        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
+                                              port_list=[self.bridge_eid],
+                                              debug=self.debug):
             self._pass("Ports successfully cleaned up.")
         else:
             self._fail("Ports NOT successfully cleaned up.")
@@ -102,6 +107,7 @@ def parse_args():
         description='''''')
 
     parser.add_argument('--bridge_name',
+                        dest='bridge_eid',
                         required=True,
                         help='Name of the bridge port to create. This can be either the name only '
                              'or the full EID. If not the full EID, the desired resource will be '
@@ -136,17 +142,14 @@ def main():
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    # This code supports creating only single bridge at a time
-    bridge_list = [args.bridge_name]
-
-    create_bridge = CreateBridge(_host=args.mgr,
-                                 _port=args.mgr_port,
-                                 _bridge_list=bridge_list,
-                                 _debug_on=args.debug,
-                                 target_device=args.bridge_ports)
+    create_bridge = CreateBridge(mgr=args.mgr,
+                                 mgr_port=args.mgr_port,
+                                 bridge_eid=args.bridge_eid,
+                                 bridge_ports=args.bridge_ports,
+                                 debug=args.debug)
 
     create_bridge.build()
-    logger.info('Created bridge: %s' % bridge_list[0])
+    logger.info('Created bridge: %s' % args.bridge_eid)
 
     if not args.no_cleanup:
         sleep(5)
