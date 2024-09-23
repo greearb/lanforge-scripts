@@ -130,41 +130,26 @@ def parse_args():
 
 
 def main():
-    help_summary = '''\
-     This script will create variable number of bridges between the interfaces defined by the user
-    '''
+    help_summary = "This script will create a single LANforge bridge port "\
+                   "using the specified bridge port interfaces."
 
     args = parse_args()
 
     if args.help_summary:
         print(help_summary)
         exit(0)
-    # if args.debug:
-    #    pprint.pprint(args)
-    #    time.sleep(5)
 
+    # Configure logging
     logger_config = lf_logger_config.lf_logger_config()
-    # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    create_bridge = CreateBridge(mgr=args.mgr,
-                                 mgr_port=args.mgr_port,
-                                 bridge_eid=args.bridge_eid,
-                                 bridge_ports=args.bridge_ports,
-                                 debug=args.debug)
-
+    create_bridge = CreateBridge(**vars(args))
     create_bridge.build()
 
     if not args.no_cleanup:
         sleep(5)
-
         create_bridge.cleanup()
-
-    if create_bridge.passes():
-        create_bridge.exit_success()
-    else:
-        create_bridge.exit_fail()
 
 
 if __name__ == "__main__":
