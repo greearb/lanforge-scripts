@@ -103,7 +103,7 @@ class BaseInteropWifi(Realm):
         self.release = release
         self.debug = _debug_on
         self.screen_size_prcnt = screen_size_prcnt
-        self.supported_sdk = ["11", "12", "13"]
+        self.supported_sdk = ["11", "12", "13", "14", "15"]
         self.supported_devices_names = []
         self.supported_devices_resource_id = None
         self.log_dur = log_dur
@@ -1164,251 +1164,251 @@ class RealDevice(Realm):
             if(selected_laptops != []):
                 await self.laptops_obj.disconnect_wifi(port_list=selected_laptops)
                 time.sleep(10)
-        if self.reboot==False and self.disconnect_devices==False:
-            if(selected_androids != []):
-                await self.androids_obj.stop_app(port_list=selected_androids)
-                # await self.androids_obj.forget_all_networks(port_list=selected_androids)
-                await self.androids_obj.configure_wifi(port_list=selected_androids)
-                
-                if(selected_laptops == []):  
-                    print("WAITING FOR 120 seconds")
-                    time.sleep(120)
-            if(selected_laptops != []):
-                # if laptop['eap_method']!="" or laptop['eap_method']!= None or laptop['eap_method']!="NA":
-                await self.laptops_obj.rm_station(port_list=selected_laptops)
-                time.sleep(10)
-                #trial for making port up before configuration
-                await self.laptops_obj.set_port_1(port_list=selected_laptops)
-                time.sleep(10)
-                await self.laptops_obj.add_station(port_list=selected_laptops)
-                time.sleep(30)
-                #check for enterprise for enterprise configuration
-                if i==True:
-                    await self.laptops_obj.set_wifi_extra(port_list=selected_laptops)
-                    time.sleep(10)
-                await self.laptops_obj.set_port(port_list=selected_laptops)
-                # await self.laptops_obj.set_port(port_list=selected_laptops)
-                # time.sleep(60)
-                # logging.info('Applying the new Wi-Fi configuration. Waiting for 2 minutes for the new configuration to apply.')
-                print("WAITING TOTAL 120 SECONDS FOR CONFIGURATION TO APPLY")
-                time.sleep(70)
-                exclude_laptops_con=[]
-                for laptop in selected_laptops:
-                    current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
-                    current_laptop_port_data = current_laptop_port_data['interface']
-                    if (current_laptop_port_data['down'] == True):
-                        exclude_laptops_con.append(laptop)
-                        continue
-                if exclude_laptops_con!=[]:
-                    print(exclude_laptops_con)
-                    print("WAITING FOR EXTRA 30 SECONDS")
-                    time.sleep(30)
-
-                exclude_laptops_1=[]
-                for laptop in selected_laptops:
-                    current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
-                    current_laptop_port_data = current_laptop_port_data['interface']
-                    if (current_laptop_port_data['down'] == True):
-                        exclude_laptops_1.append(laptop)
-                        continue
-                if (exclude_laptops_1!=[]):
-                    print("RETRY FOR: ",exclude_laptops_1)
-                    await self.laptops_obj.set_port_1(port_list=exclude_laptops_1)
-                    time.sleep(10)
-                    await self.laptops_obj.add_station(port_list=exclude_laptops_1)
-                    time.sleep(30)
-                    await self.laptops_obj.set_port(port_list=exclude_laptops_1)
-                    time.sleep(60)
-                exclude_laptops_2=[]
-                
-                for laptop in selected_laptops:
-                    current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
-                    current_laptop_port_data = current_laptop_port_data['interface']
-                    if (current_laptop_port_data['down'] == True):
-                        exclude_laptops_2.append(laptop)
-                        continue
-                if (exclude_laptops_2!=[]):
-                    print("RETRY-2 FOR: ",exclude_laptops_2)
-                    await self.laptops_obj.add_station(port_list=exclude_laptops_2)
-                    await self.laptops_obj.set_port(port_list=exclude_laptops_2)
-                    # await self.laptops_obj.set_port_1(port_list=exclude_laptops_2)
-                    time.sleep(60)
+        # if self.reboot==False and self.disconnect_devices==False:
+        if(selected_androids != []):
+            await self.androids_obj.stop_app(port_list=selected_androids)
+            # await self.androids_obj.forget_all_networks(port_list=selected_androids)
+            await self.androids_obj.configure_wifi(port_list=selected_androids)
             
-            # for androids
-            exclude_androids = []
-            for android in selected_androids:
-                if (android[3] == '2g'):
-                    curr_ssid = self.ssid_2g
-                elif (android[3] == '5g'):
-                    curr_ssid = self.ssid_5g
-                elif (android[3] == '6g'):
-                    curr_ssid = self.ssid_6g
-
-                # get resource id for the android device from interop tab
-                resource_id = self.json_get('/adb/1/1/{}'.format(android[2]))['devices']['resource-id']
-
-                # if there is no resource id in interop tab
-                if(resource_id == ''):
-                    logging.warning(
-                        'The android with serial {} is missing resource id. Excluding it from testing'.format(android[2]))
-                    exclude_androids.append(android)
-                    continue
-
-                # fetching resource data for android device
-                current_android_resource_data = \
-                self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
-
-                if(current_android_resource_data['phantom']):
-                    logging.warning(
-                        'The android with serial {} is in phantom state in resource manager. Excluding it from testing'.format(android[2]))
-                    exclude_androids.append(android)
-                    continue
-
-                # fetching port data for the android device
-                current_android_port_data = \
-                self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
-
-                current_android_port_data.update(current_android_resource_data)
-                # checking if the android is connected to the desired ssid
-                if (current_android_port_data['ssid'] != curr_ssid):
-                    logging.warning(
-                        'The android with serial {} is not conneted to the given SSID {}. Excluding it from testing'.format(
-                            android[2], curr_ssid))
-                    exclude_androids.append(android)
-                    continue
-
-                # checking if the android is active or down
-                if(current_android_port_data['ip'] == '0.0.0.0'):
-                    logging.warning('The android with serial {} is down. Excluding it from testing'.format(android[2]))
-                    exclude_androids.append(android)
-                    continue
-
-                username = \
-                self.json_get('resource/{}/{}?fields=user'.format(resource_id.split('.')[0], resource_id.split('.')[1]))[
-                    'resource']['user']
-
-                self.selected_devices.append(resource_id)
-                self.selected_macs.append(current_android_port_data['mac'])
-                self.report_labels.append('{} android {}'.format(resource_id, username)[:25])
-                self.android += 1
-                self.android_list.append(resource_id)
-                
-                current_sta_name = resource_id + '.wlan0'
-                self.station_list.append(current_sta_name)
-
-                self.devices_data[current_sta_name] = current_android_port_data
-                self.devices_data[current_sta_name]['ostype'] = 'android'
-
-                selected_t_devices[resource_id] = {
-                    'hw version': 'Android',
-                    'MAC': current_android_port_data['mac'],
-                    'IP': current_android_port_data['ip'],
-                    'SSID': current_android_port_data['ssid']
-                }
-                
-                
-            for android in exclude_androids:
-                selected_androids.remove(android)
-
-            # for laptops
-            exclude_laptops = []
+            if(selected_laptops == []):  
+                print("WAITING FOR 120 seconds")
+                time.sleep(120)
+        if(selected_laptops != []):
+            # if laptop['eap_method']!="" or laptop['eap_method']!= None or laptop['eap_method']!="NA":
+            await self.laptops_obj.rm_station(port_list=selected_laptops)
+            time.sleep(10)
+            #trial for making port up before configuration
+            await self.laptops_obj.set_port_1(port_list=selected_laptops)
+            time.sleep(10)
+            await self.laptops_obj.add_station(port_list=selected_laptops)
+            time.sleep(30)
+            #check for enterprise for enterprise configuration
+            if i==True:
+                await self.laptops_obj.set_wifi_extra(port_list=selected_laptops)
+                time.sleep(10)
+            await self.laptops_obj.set_port(port_list=selected_laptops)
+            # await self.laptops_obj.set_port(port_list=selected_laptops)
+            # time.sleep(60)
+            # logging.info('Applying the new Wi-Fi configuration. Waiting for 2 minutes for the new configuration to apply.')
+            print("WAITING TOTAL 120 SECONDS FOR CONFIGURATION TO APPLY")
+            time.sleep(70)
+            exclude_laptops_con=[]
             for laptop in selected_laptops:
-                if (laptop['band'] == '2g'):
-                    curr_ssid = self.ssid_2g
-                elif (laptop['band'] == '5g'):
-                    curr_ssid = self.ssid_5g
-                elif (laptop['band'] == '6g'):
-                    curr_ssid = self.ssid_6g
-
-                # check SSID and IP values from port manager
-                current_laptop_port_data = self.json_get(
-                    '/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
-                if(current_laptop_port_data is None):
-                    logging.warning(
-                        'The laptop with port {}.{}.{} not found. Excluding it from testing'.format(laptop['shelf'],
-                                                                                                    laptop['resource'],
-                                                                                                    laptop['sta_name']))
-                    exclude_laptops.append(laptop)
-                    continue
-
+                current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
                 current_laptop_port_data = current_laptop_port_data['interface']
-
-                # checking if the laptop is connected to the desired ssid
-                if (current_laptop_port_data['ssid'] != curr_ssid):
-                    logging.warning(
-                        'The laptop with port {}.{}.{} is not conneted to the given SSID {}. Excluding it from testing'.format(
-                            laptop['shelf'], laptop['resource'], laptop['sta_name'], curr_ssid))
-                    exclude_laptops.append(laptop)
-                    
-                    continue
                 if (current_laptop_port_data['down'] == True):
-                    logging.warning(
-                        'The laptop with port {}.{}.{} is in down state {}.Please check the wifi. Excluding it from testing'.format(
-                            laptop['shelf'], laptop['resource'], laptop['sta_name'], curr_ssid))
-                    exclude_laptops.append(laptop)
+                    exclude_laptops_con.append(laptop)
                     continue
+            if exclude_laptops_con!=[]:
+                print(exclude_laptops_con)
+                print("WAITING FOR EXTRA 30 SECONDS")
+                time.sleep(30)
 
-                # checking if the laptop is active or down
-                if(current_laptop_port_data['ip'] == '0.0.0.0'):
-                    logging.warning(
-                        'The laptop with port {}.{}.{} is 0.0.0.0. IP. Excluding it from testing'.format(laptop['shelf'],
+            exclude_laptops_1=[]
+            for laptop in selected_laptops:
+                current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+                current_laptop_port_data = current_laptop_port_data['interface']
+                if (current_laptop_port_data['down'] == True):
+                    exclude_laptops_1.append(laptop)
+                    continue
+            if (exclude_laptops_1!=[]):
+                print("RETRY FOR: ",exclude_laptops_1)
+                await self.laptops_obj.set_port_1(port_list=exclude_laptops_1)
+                time.sleep(10)
+                await self.laptops_obj.add_station(port_list=exclude_laptops_1)
+                time.sleep(30)
+                await self.laptops_obj.set_port(port_list=exclude_laptops_1)
+                time.sleep(60)
+            exclude_laptops_2=[]
+            
+            for laptop in selected_laptops:
+                current_laptop_port_data = self.json_get('/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+                current_laptop_port_data = current_laptop_port_data['interface']
+                if (current_laptop_port_data['down'] == True):
+                    exclude_laptops_2.append(laptop)
+                    continue
+            if (exclude_laptops_2!=[]):
+                print("RETRY-2 FOR: ",exclude_laptops_2)
+                await self.laptops_obj.add_station(port_list=exclude_laptops_2)
+                await self.laptops_obj.set_port(port_list=exclude_laptops_2)
+                # await self.laptops_obj.set_port_1(port_list=exclude_laptops_2)
+                time.sleep(60)
+        
+        # for androids
+        exclude_androids = []
+        for android in selected_androids:
+            if (android[3] == '2g'):
+                curr_ssid = self.ssid_2g
+            elif (android[3] == '5g'):
+                curr_ssid = self.ssid_5g
+            elif (android[3] == '6g'):
+                curr_ssid = self.ssid_6g
+
+            # get resource id for the android device from interop tab
+            resource_id = self.json_get('/adb/1/1/{}'.format(android[2]))['devices']['resource-id']
+
+            # if there is no resource id in interop tab
+            if(resource_id == ''):
+                logging.warning(
+                    'The android with serial {} is missing resource id. Excluding it from testing'.format(android[2]))
+                exclude_androids.append(android)
+                continue
+
+            # fetching resource data for android device
+            current_android_resource_data = \
+            self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
+
+            if(current_android_resource_data['phantom']):
+                logging.warning(
+                    'The android with serial {} is in phantom state in resource manager. Excluding it from testing'.format(android[2]))
+                exclude_androids.append(android)
+                continue
+
+            # fetching port data for the android device
+            current_android_port_data = \
+            self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
+
+            current_android_port_data.update(current_android_resource_data)
+            # checking if the android is connected to the desired ssid
+            if (current_android_port_data['ssid'] != curr_ssid):
+                logging.warning(
+                    'The android with serial {} is not conneted to the given SSID {}. Excluding it from testing'.format(
+                        android[2], curr_ssid))
+                exclude_androids.append(android)
+                continue
+
+            # checking if the android is active or down
+            if(current_android_port_data['ip'] == '0.0.0.0'):
+                logging.warning('The android with serial {} is down. Excluding it from testing'.format(android[2]))
+                exclude_androids.append(android)
+                continue
+
+            username = \
+            self.json_get('resource/{}/{}?fields=user'.format(resource_id.split('.')[0], resource_id.split('.')[1]))[
+                'resource']['user']
+
+            self.selected_devices.append(resource_id)
+            self.selected_macs.append(current_android_port_data['mac'])
+            self.report_labels.append('{} android {}'.format(resource_id, username)[:25])
+            self.android += 1
+            self.android_list.append(resource_id)
+            
+            current_sta_name = resource_id + '.wlan0'
+            self.station_list.append(current_sta_name)
+
+            self.devices_data[current_sta_name] = current_android_port_data
+            self.devices_data[current_sta_name]['ostype'] = 'android'
+
+            selected_t_devices[resource_id] = {
+                'hw version': 'Android',
+                'MAC': current_android_port_data['mac'],
+                'IP': current_android_port_data['ip'],
+                'SSID': current_android_port_data['ssid']
+            }
+            
+            
+        for android in exclude_androids:
+            selected_androids.remove(android)
+
+        # for laptops
+        exclude_laptops = []
+        for laptop in selected_laptops:
+            if (laptop['band'] == '2g'):
+                curr_ssid = self.ssid_2g
+            elif (laptop['band'] == '5g'):
+                curr_ssid = self.ssid_5g
+            elif (laptop['band'] == '6g'):
+                curr_ssid = self.ssid_6g
+
+            # check SSID and IP values from port manager
+            current_laptop_port_data = self.json_get(
+                '/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
+            if(current_laptop_port_data is None):
+                logging.warning(
+                    'The laptop with port {}.{}.{} not found. Excluding it from testing'.format(laptop['shelf'],
                                                                                                 laptop['resource'],
                                                                                                 laptop['sta_name']))
-                    exclude_laptops.append(laptop)
-                    continue
-                #checking for windows gateway ip in-order to get ip confirmation
-                if(current_laptop_port_data["gateway ip"] == "0.0.0.0") and (laptop['os'] != 'Lin'):
-                    logging.warning(
-                        'The laptop with port {}.{}.{} is 0.0.0.0. gateway IP. Excluding it from testing'.format(laptop['shelf'],
-                                                                                                laptop['resource'],
-                                                                                                laptop['sta_name']))
-                    
-                    exclude_laptops.append(laptop)
-                    continue
+                exclude_laptops.append(laptop)
+                continue
 
-                current_laptop_resource_data = self.json_get('resource/{}/{}'.format(laptop['shelf'], laptop['resource']))[
-                    'resource']
-                hostname = current_laptop_resource_data['hostname']
+            current_laptop_port_data = current_laptop_port_data['interface']
 
-                current_laptop_port_data.update(current_laptop_resource_data)
-
-                # adding port id to selected_device_eids
-                current_resource_id = '{}.{}.{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name'])
-                self.selected_devices.append(current_resource_id)
-                self.selected_macs.append(current_laptop_port_data['mac'])
-                self.report_labels.append('{} {} {}'.format(current_resource_id, laptop['os'], hostname)[:25])
-
-                selected_t_devices[current_resource_id] = {
-                    'MAC': current_laptop_port_data['mac'],
-                    'IP': current_laptop_port_data['ip'],
-                    'SSID': current_laptop_port_data['ssid']
-                }
-                if(laptop['os'] == 'Win'):
-                    self.windows += 1
-                    self.windows_list.append(current_resource_id)
-                    selected_t_devices[current_resource_id]['hw version'] = 'Win'
-                    current_laptop_port_data['ostype'] = 'windows'
-                elif(laptop['os'] == 'Lin'):
-                    self.linux += 1
-                    self.linux_list.append(current_resource_id)
-                    selected_t_devices[current_resource_id]['hw version'] = 'Lin'
-                    current_laptop_port_data['ostype'] = 'linux'
-                elif(laptop['os'] == 'Apple'):
-                    self.mac += 1
-                    self.mac_list.append(current_resource_id)
-                    selected_t_devices[current_resource_id]['hw version'] = 'Mac'
-                    current_laptop_port_data['ostype'] = 'macos'
+            # checking if the laptop is connected to the desired ssid
+            if (current_laptop_port_data['ssid'] != curr_ssid):
+                logging.warning(
+                    'The laptop with port {}.{}.{} is not conneted to the given SSID {}. Excluding it from testing'.format(
+                        laptop['shelf'], laptop['resource'], laptop['sta_name'], curr_ssid))
+                exclude_laptops.append(laptop)
                 
-                current_sta_name = current_resource_id
-                self.station_list.append(current_sta_name)
+                continue
+            if (current_laptop_port_data['down'] == True):
+                logging.warning(
+                    'The laptop with port {}.{}.{} is in down state {}.Please check the wifi. Excluding it from testing'.format(
+                        laptop['shelf'], laptop['resource'], laptop['sta_name'], curr_ssid))
+                exclude_laptops.append(laptop)
+                continue
 
-                self.devices_data[current_sta_name] = current_laptop_port_data
+            # checking if the laptop is active or down
+            if(current_laptop_port_data['ip'] == '0.0.0.0'):
+                logging.warning(
+                    'The laptop with port {}.{}.{} is 0.0.0.0. IP. Excluding it from testing'.format(laptop['shelf'],
+                                                                                            laptop['resource'],
+                                                                                            laptop['sta_name']))
+                exclude_laptops.append(laptop)
+                continue
+            #checking for windows gateway ip in-order to get ip confirmation
+            if(current_laptop_port_data["gateway ip"] == "0.0.0.0") and (laptop['os'] != 'Lin'):
+                logging.warning(
+                    'The laptop with port {}.{}.{} is 0.0.0.0. gateway IP. Excluding it from testing'.format(laptop['shelf'],
+                                                                                            laptop['resource'],
+                                                                                            laptop['sta_name']))
+                
+                exclude_laptops.append(laptop)
+                continue
 
-            for laptop in exclude_laptops:
-                selected_laptops.remove(laptop)
+            current_laptop_resource_data = self.json_get('resource/{}/{}'.format(laptop['shelf'], laptop['resource']))[
+                'resource']
+            hostname = current_laptop_resource_data['hostname']
 
-            df = pd.DataFrame(data=selected_t_devices).transpose()
-            print(df)
+            current_laptop_port_data.update(current_laptop_resource_data)
+
+            # adding port id to selected_device_eids
+            current_resource_id = '{}.{}.{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name'])
+            self.selected_devices.append(current_resource_id)
+            self.selected_macs.append(current_laptop_port_data['mac'])
+            self.report_labels.append('{} {} {}'.format(current_resource_id, laptop['os'], hostname)[:25])
+
+            selected_t_devices[current_resource_id] = {
+                'MAC': current_laptop_port_data['mac'],
+                'IP': current_laptop_port_data['ip'],
+                'SSID': current_laptop_port_data['ssid']
+            }
+            if(laptop['os'] == 'Win'):
+                self.windows += 1
+                self.windows_list.append(current_resource_id)
+                selected_t_devices[current_resource_id]['hw version'] = 'Win'
+                current_laptop_port_data['ostype'] = 'windows'
+            elif(laptop['os'] == 'Lin'):
+                self.linux += 1
+                self.linux_list.append(current_resource_id)
+                selected_t_devices[current_resource_id]['hw version'] = 'Lin'
+                current_laptop_port_data['ostype'] = 'linux'
+            elif(laptop['os'] == 'Apple'):
+                self.mac += 1
+                self.mac_list.append(current_resource_id)
+                selected_t_devices[current_resource_id]['hw version'] = 'Mac'
+                current_laptop_port_data['ostype'] = 'macos'
+            
+            current_sta_name = current_resource_id
+            self.station_list.append(current_sta_name)
+
+            self.devices_data[current_sta_name] = current_laptop_port_data
+
+        for laptop in exclude_laptops:
+            selected_laptops.remove(laptop)
+
+        df = pd.DataFrame(data=selected_t_devices).transpose()
+        print(df)
         return [self.selected_devices, self.report_labels, self.selected_macs]
 
     async def configure_wifi_groups(self,select_serials,serials_input,ssid_input,passwd_input,enc_input,eap_method_input,eap_identity_input,ieee80211,key_management,private_key,ca_cert,client_cert,pk_passwd,pac_file):
