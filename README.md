@@ -17,6 +17,23 @@ For more advanced users wanting to develop their own automation, we offer the fo
 - Perl modules in [`LANforge/`](./LANforge/)
   - See the [`README`](./LANforge/README.md) for more details.
 
+## Contents
+
+- [LANforge Perl, Python, and Shell Scripts](#lanforge-perl-python-and-shell-scripts)
+  - [Overview](#overview)
+  - [Contents](#contents)
+  - [Quick Tips](#quick-tips)
+    - [Documentation Links](#documentation-links)
+    - [Commonly Used Scripts](#commonly-used-scripts)
+    - [Exploring LANforge JSON API/Crafting CLI Commands](#exploring-lanforge-json-apicrafting-cli-commands)
+  - [Python Scripts](#python-scripts)
+  - [Perl and Shell Scripts](#perl-and-shell-scripts)
+  - [Compatibility](#compatibility)
+  - [Setup and Installation](#setup-and-installation)
+  - [Requirements](#requirements)
+  - [License](#license)
+  - [Support/Contact Info](#supportcontact-info)
+
 ## Quick Tips
 
 ### Documentation Links
@@ -74,10 +91,7 @@ More information on other LANforge JSON API endpoints can be by navigating to th
 
 See the [LANforge Python Scripts README](./py-scripts/README.md) for more information, including setup for use on non-LANforge systems.
 
-
-### Python Scripts in `py-scripts/`
-
-Test scripts and helper scripts written in Python.
+Existing offerings largely include test and helper scripts written, in addition to importable library code for external use and/or use in new automation.
 
 Helper scripts, especially creation and modification scripts, are designed in a "toolbox" approach. Each "toolbox" script performs a single task, like a tool in the toolbox. For example, the [`create_station.py`](./py-scripts/create_station.py) is designed to create and configure LANforge station ports, with many options for that specific use case.
 
@@ -148,7 +162,7 @@ Helper scripts, especially creation and modification scripts, are designed in a 
 | `wlan_capacity_calculator.py`      | Standard Script for WLAN Capacity Calculator |
 | `ws_generic_monitor_test.py`       | This example is to demonstrate ws_generic_monitor to monitor events triggered by scripts, This script when running, will monitor the events triggered by test_ipv4_connection.py |
 
-## Perl and Shell Scripts ##
+## Perl and Shell Scripts
 
 | Name | Purpose |
 |------|---------|
@@ -207,7 +221,7 @@ Helper scripts, especially creation and modification scripts, are designed in a 
 Scripts will be kept backwards and forwards compatible with LANforge
 releases as much as possible.
 
-## Installation
+## Setup and Installation
 
 These scripts call each other and rely on the structure of this directory. To use these scripts in other locations,
 such as your laptop, either copy the entire scripts directory or do a `git clone` of this repository. Just copying
