@@ -654,10 +654,11 @@ class Roam(Realm):
             for atten_set in self.roam_data[iteration].keys():
                 for station in self.roam_data[iteration][atten_set].keys():
                     if self.roam_data[iteration][atten_set][station]['Status']:
-                        total_successful_roams += 1
                         roamed_to_bssid = self.roam_data[iteration][atten_set][station]['BSSID after roaming']
-                        self.bssid_based_totals[roamed_to_bssid] += 1
-                        self.station_based_roam_count[station] += 1
+                        if roamed_to_bssid in self.bssids:
+                            total_successful_roams += 1
+                            self.bssid_based_totals[roamed_to_bssid] += 1
+                            self.station_based_roam_count[station] += 1
         # for atten_set in self.attenuator_combinations:
         #     for iteration_values in self.roam_data[atten_set].values():
         #         for station_data in iteration_values.values():
@@ -983,7 +984,7 @@ def main():
     optional.add_argument('--wait_time',
                           help='Waiting time (seconds) between iterations',
                           type=int,
-                          default=30)
+                          default=60)
 
     optional.add_argument('--channel',
                           help='Channel',
