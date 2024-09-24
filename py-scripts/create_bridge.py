@@ -36,6 +36,7 @@ class CreateBridge(Realm):
                  ipv4_address: list,
                  ipv4_netmask: list,
                  ipv4_gateway: list,
+                 create_admin_down: bool,
                  debug: bool = False,
                  exit_on_error: bool = False,
                  **kwargs):
@@ -59,6 +60,8 @@ class CreateBridge(Realm):
         self.ipv4_netmask = ipv4_netmask
         self.ipv4_gateway = ipv4_gateway
 
+        self.create_admin_down = create_admin_down
+
     def build(self):
         """Create bridge port as specified."""
         logger.info(f"Creating bridge port \'{self.bridge_eid}\'")
@@ -80,19 +83,31 @@ class CreateBridge(Realm):
         }
         self.json_post("cli-json/add_br", data)
 
-        # TODO: Proper wait until bridge port appears
-        sleep(2)
+        # 2. Verify bridge port created
+        ret = LFUtils.wait_until_ports_appear(base_url=self.lfclient_url,
+                                              port_list=[self.bridge_eid],
+                                              debug=self.debug)
+        if not ret:
+            logger.error(f"Failed to create bridge port \'{self.bridge_eid}\'")
+            exit(1)
 
-        # 2. Configure bridge port as user specifies
+        # 3. Configure bridge port as user specifies
         set_port_interest_flags = 0
         set_port_cur_flags = 0
         set_port_cur_flags_mask = 0
 
+        # Admin up/down setting
+        set_port_interest_flags |= LFJsonCommand.SetPortInterest.ifdown.value
+        if self.create_admin_down:
+            set_port_cur_flags_mask |= LFJsonCommand.SetPortCurrentFlags.if_down.value
+            set_port_cur_flags |= LFJsonCommand.SetPortCurrentFlags.if_down.value
+
+        # IPv4 configuration. Either DHCPv4, static, or none
+        #
         # Always set DHCPv4 in current flags mask, as this ensures
         # DHCPv4 setting is alwasy modified whether we turn it on or not
         set_port_cur_flags_mask |= LFJsonCommand.SetPortCurrentFlags.use_dhcp.value
 
-        # IPv4 configuration. Either DHCPv4, static, or none
         if self.dhcpv4:
             set_port_cur_flags |= LFJsonCommand.SetPortCurrentFlags.use_dhcp.value
             set_port_interest_flags |= LFJsonCommand.SetPortInterest.dhcp.value
@@ -114,13 +129,14 @@ class CreateBridge(Realm):
         }
         self.json_post("cli-json/set_port", bridge_set_port)
 
-        # 3. Verify bridge port created
-        ret = LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
-                                                port_list=[self.bridge_eid],
-                                                debug_=self.debug)
-        if not ret:
-            logger.error(f"Failed to create bridge port \'{self.bridge_eid}\'")
-            exit(1)
+        # 4. Check goes admin up, unless '--create_admin_down' specified
+        if not self.create_admin_down:
+            ret = LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
+                                                    port_list=[self.bridge_eid],
+                                                    debug_=self.debug)
+            if not ret:
+                logger.error(f"Bridge port \'{self.bridge_eid}\' did not go admin up")
+                exit(1)
 
         logger.info(f"Successfully created bridge port \'{self.bridge_eid}\'")
 
@@ -165,6 +181,10 @@ def parse_args():
     # Optional arguments
     parser.add_argument('--cleanup',
                         help='Clean up any created ports before exiting.',
+                        action='store_true')
+    parser.add_argument("--create_admin_down",
+                        help='Create bridge port in admin down state. '
+                             'Will not attempt to admin up bridged ports.',
                         action='store_true')
 
     # Optional IPv4 configuration
