@@ -31,7 +31,7 @@
     
     EXAMPLE-6:
     Command Line Interface to run ping plotter with existing real stations instead of giving input after starting the test
-    python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --target 192.168.1.61 --resources 1.10.wlan0,1.11.wlan0
+    python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --target 192.168.1.61 --resources 1.10,1.11
     
     SCRIPT_CLASSIFICATION : Test
 
@@ -254,7 +254,7 @@ class Ping(Realm):
             if(real_sta_list == ['all']):
                 self.real_sta_list, _, _ = real_devices.query_user(dowebgui=True, device_list='all')
             else:
-                self.real_sta_list = real_sta_list
+                self.real_sta_list, _, _ = real_devices.query_user(dowebgui=True, device_list=','.join(real_sta_list))
         if base_interop_obj is not None:
             self.Devices = base_interop_obj
 
@@ -263,6 +263,7 @@ class Ping(Realm):
             logger.error('There are no real devices in this testbed. Aborting test')
             exit(0)
 
+        self.real_sta_list = self.filter_iOS_devices(self.real_sta_list)
         logging.info('{}'.format(*self.real_sta_list))
 
         for sta_name in self.real_sta_list:
@@ -991,7 +992,7 @@ connectivity problems.
 
         EXAMPLE-6:
         Command Line Interface to run ping plotter with existing real stations instead of giving input after starting the test
-        python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --target 192.168.1.61 --resources 1.10.wlan0,1.11.wlan0
+        python3 lf_interop_ping_plotter.py --mgr 192.168.200.63 --real --ping_interval 5 --ping_duration 1m --target 192.168.1.61 --resources 1.10,1.11
         
         SCRIPT_CLASSIFICATION : Test
 
@@ -1257,7 +1258,7 @@ connectivity problems.
             Devices.get_devices()
             ping.Devices = Devices
             if webUI_resources is not None:
-                webUI_resources = ping.filter_iOS_devices(webUI_resources)
+                # webUI_resources = ping.filter_iOS_devices(webUI_resources)
                 if len(webUI_resources) == 0:
                     logger.info("There are no devices available")
                     exit(1)
