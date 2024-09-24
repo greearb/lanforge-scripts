@@ -1002,20 +1002,21 @@ class VideoStreamingTest(Realm):
 
             # Iterate through the total wait time data
             for i in range(len(self.data["total_wait_time"])):
-                
                 # If the status is 'Stopped', append 0 to the video rate dictionary and overall video rate
                 if self.data['status'][i] !='Run':
 
                     video_rate_dict[i].append(0)
                     overall_video_rate.append(0)
-                    individual_df_data.extend([0,0,0,rssi_data[i],link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min(video_rate_dict[i]),max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
+                    min_value_video_rate = self.process_list(video_rate_dict[i])
+                    individual_df_data.extend([0,0,0,rssi_data[i],link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min_value_video_rate,max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
                 
                 # If the status is not 'Stopped', append the calculated video rate to the video rate dictionary and overall video rate
                 else:
 
                     video_rate_dict[i].append(round(self.data["video_format_bitrate"][i]/1000000,2))
                     overall_video_rate.append(round(self.data["video_format_bitrate"][i]/1000000,2))
-                    individual_df_data.extend([round(self.data["video_format_bitrate"][i]/1000000,2),round(self.data["total_wait_time"][i]/1000,2),self.data["total_urls"][i],int(rssi_data[i]),link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min(video_rate_dict[i]),max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
+                    min_value_video_rate = self.process_list(video_rate_dict[i])
+                    individual_df_data.extend([round(self.data["video_format_bitrate"][i]/1000000,2),round(self.data["total_wait_time"][i]/1000,2),self.data["total_urls"][i],int(rssi_data[i]),link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min_value_video_rate,max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
             
             individual_df_data.extend([sum(overall_video_rate),present_time,iteration+1,actual_start_time.strftime('%Y-%m-%d %H:%M:%S'),self.data['end_time_webGUI'][0],self.data['remaining_time_webGUI'][0],"Running"])
             individual_df.loc[len(individual_df)]=individual_df_data
@@ -1055,11 +1056,13 @@ class VideoStreamingTest(Realm):
             if self.data['status'][i]!='Run':
                 video_rate_dict[i].append(0)
                 overall_video_rate.append(0)
-                individual_df_data.extend([0,0,0,rssi_data[i],link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min(video_rate_dict[i]),max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
+                min_value_video_rate = self.process_list(video_rate_dict[i])
+                individual_df_data.extend([0,0,0,rssi_data[i],link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min_value_video_rate,max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
             else:
                 overall_video_rate.append(round(self.data["video_format_bitrate"][i]/1000000,2))
                 video_rate_dict[i].append(round(self.data["video_format_bitrate"][i]/1000000,2))
-                individual_df_data.extend([round(self.data["video_format_bitrate"][i]/1000000,2),round(self.data["total_wait_time"][i]/1000,2),self.data["total_urls"][i],int(rssi_data[i]),link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min(video_rate_dict[i]),max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
+                min_value_video_rate = self.process_list(video_rate_dict[i])
+                individual_df_data.extend([round(self.data["video_format_bitrate"][i]/1000000,2),round(self.data["total_wait_time"][i]/1000,2),self.data["total_urls"][i],int(rssi_data[i]),link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min_value_video_rate,max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
 
         if iteration+1 == len(incremental_capacity_list): 
             individual_df_data.extend([sum(overall_video_rate),present_time,iteration+1,actual_start_time.strftime('%Y-%m-%d %H:%M:%S'),self.data['end_time_webGUI'][0],0,"Stopped"])
@@ -1126,6 +1129,13 @@ class VideoStreamingTest(Realm):
             new_array = [0] + middle_elements + [array_size - 1]
             updated_array=[to_updated_array[index] for index in new_array]
         return updated_array
+
+    def process_list(self,lst):
+        if all(item == 0 for item in lst):
+            return 0
+        else:
+            non_zero_values = [item for item in lst if item != 0]
+            return min(non_zero_values)
 
     def generate_report(self,date, iterations_before_test_stopped_by_user,test_setup_info, realtime_dataset, report_path = '', cx_order_list = []):
         logging.info("Creating Reports")
@@ -1227,6 +1237,7 @@ class VideoStreamingTest(Realm):
                 # Filter columns related to the current device
                 columns_with_substring = [col for col in data_iter.columns if k in col]
                 filtered_df = data_iter[columns_with_substring]
+                min_val=self.process_list(filtered_df[[col for col in  filtered_df.columns if "video_format_bitrate" in col][0]].values.tolist())
                 if iter !=0:
                     # Filter columns related to the current device from the previous iteration
                     before_iter_columns_with_substring = [col for col in before_data_iter.columns if k in col]
@@ -1234,7 +1245,7 @@ class VideoStreamingTest(Realm):
                 
                 # Extract and compute max, min, and average video rates
                 max_video_rate.append(max(filtered_df[[col for col in  filtered_df.columns if "video_format_bitrate" in col][0]].values.tolist()))
-                min_video_rate.append(min(filtered_df[[col for col in  filtered_df.columns if "video_format_bitrate" in col][0]].values.tolist()))
+                min_video_rate.append(min_val)
                 avg_video_rate.append(round(sum(filtered_df[[col for col in  filtered_df.columns if "video_format_bitrate" in col][0]].values.tolist())/len(filtered_df[[col for col in  filtered_df.columns if "video_format_bitrate" in col][0]].values.tolist()),2))
                 wait_time_data.append(filtered_df[[col for col in  filtered_df.columns if "total_wait_time" in col][0]].values.tolist()[-1])
                 rssi_data.append(int(round(sum(filtered_df[[col for col in  filtered_df.columns if "RSSI" in col][0]].values.tolist())/len(filtered_df[[col for col in  filtered_df.columns if "RSSI" in col][0]].values.tolist()),2))*-1)
@@ -1926,7 +1937,7 @@ def main():
                         with open(file_path, 'r') as file:
                             data = json.load(file)
                             if data["status"] != "Running":
-                                break 
+                                break  
                     test_stopped_by_user= obj.monitor_for_runtime_csv(args.duration,file_path,individual_df,i,actual_start_time,resource_list_sorted,cx_order_list[i])
                 else:
                     test_stopped_by_user=obj.monitor_for_runtime_csv(args.duration,file_path,individual_df,i,actual_start_time,resource_list_sorted,cx_order_list[i])
