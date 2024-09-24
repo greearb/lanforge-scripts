@@ -1,20 +1,19 @@
-# LANforge Python JSON Scripts #
+# LANforge Python JSON Scripts
 
-Similar to the JSON sibling directory that provides Perl JSON adapters
-with the LANforge client, this directory provides Python adapters to
-the LANforge client. The LANforge client is the LANforge Java GUI
-package running with the `-http` switch (by default) and possibly in the *headless*
-mode using the `-daemon` switch.
+**NOTE:** While we still support the `py-json` components listed here, new LANforge automation will leverage the auto-generated [LANforge API](../lanforge_client/) Python JSON components.
 
-Follow our [getting started cookbook](http://www.candelatech.com/cookbook.php?vol=cli&book=Querying+the+LANforge+GUI+for+JSON+Data)
-to learn more about how to operate your LANforge client.
+Similar to the sibling directory [`LANforge/`](../LANforge/) that provides Perl JSON adapters for Perl-based LANforge automation, the `py-json` directory provides Python adapters for Python-based LANforge automation. Existing LANforge automation-based test and helper scripts exist mostly in [`py-scripts/`](../py-scripts/). This directory (`py-json`) is largely intended for utility and library Python code for use in external scripts.
 
-## Getting Started ##
-The first step is to run update_deps.py which is located in py-scripts. This command will install all dependencies necessary for lanforge-scripts on your system.
+To leverage this automation, the LANforge GUI must be active and running with the `-http` switch (active by default). It is possible to run the LANforge GUI in *headless* mode using the `-daemon` switch, as well.
 
-New automation tests and JSON client scripts should go in `../py-scripts`. This directory
-is intended for utility and library scripts. To use this module, make sure your include path
-captures this module by adding it to your `sys.path`. We recommend your scripts in `../py-scripts`
+Follow our [getting started cookbook](http://www.candelatech.com/cookbook.php?vol=cli&book=Querying+the+LANforge+GUI+for+JSON+Data) to learn more about how to leverage the LANforge JSON API or email [`support@candelatech.com`](mailto:support@candelatech.com) with questions.
+
+
+## Getting Started
+
+To get started, please first follow the setup instructions outlined in the `py-scripts` README [here](../py-scripts/README.md).
+
+To use this module, make sure your include path captures this module by adding it to your `sys.path`. We recommend your scripts in `../py-scripts`
 begin with these imports:
 
     if 'py-json' not in sys.path:
@@ -175,7 +174,3 @@ This directory defines the LANforge module holding the following classes:
     * remove_cx(): request a list of CX names be removed
     * remove_endps(): request a list of endpoint names be removed
     * exec_wrap(): hair trigger method that exits when a command fails when called by os.system()
-
-
-Have fun coding!
-support@candelatech.com
