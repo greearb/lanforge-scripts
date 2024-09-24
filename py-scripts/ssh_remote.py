@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# flake8: noqa
 
 ##################################################################################
 # Run command on remote system over ssh

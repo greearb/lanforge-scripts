@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 Purpose: To be generic script for LANforge-Interop devices(Real clients) which runs layer4-7 traffic
     For now the test script supports Real Browser test for Androids. 

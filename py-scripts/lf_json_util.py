@@ -1,4 +1,4 @@
-
+# flake8: noqa
 def standardize_json_results(results):
     '''
     standardize_json_results takes a dict of information retrieved from json_get and standardizes it to use the plural version of

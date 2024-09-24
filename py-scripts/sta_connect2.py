@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 '''
 NAME: sta_connect2.py
 

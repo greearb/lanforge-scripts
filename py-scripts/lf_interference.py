@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 example: ./lf_interference.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge --dut_upstream 1.1.eth1
         --batch_size 1 --loop_iter 1 --pull_report_flag --protocol UDP-IPv4 --duration 240000 --download_rate 1Gbps

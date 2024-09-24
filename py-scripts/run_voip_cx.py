@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 This script will start a named set of voip connections and report their data to a csv file
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 # This script will set the LANforge to a BLANK database then it will load the specified database
 # and start a graphical report
 import sys

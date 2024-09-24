@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 
  This program is used to read in a LANforge Dataplane CSV file and output

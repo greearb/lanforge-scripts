@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
     NAME:       lf_sniff_radio.py
     PURPOSE:    This script will sniff a Radio after changing the Radio settings.
