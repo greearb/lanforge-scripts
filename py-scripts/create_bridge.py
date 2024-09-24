@@ -63,8 +63,10 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFJsonCommand # noqa
+
 
 class CreateBridge(Realm):
     def __init__(self,
