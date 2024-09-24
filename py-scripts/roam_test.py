@@ -1056,6 +1056,9 @@ def main():
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
+    bssids = []
+    for bssid in args.bssids:
+        bssids.append(bssid.upper())
     if (args.station_list is not None):
         stations = args.station_list.split(',')
         roam_test = Roam(
@@ -1067,7 +1070,7 @@ def main():
             # attenuator1=args.attenuator1,
             # attenuator2=args.attenuator2,
             attenuators=args.attenuators,
-            bssids=args.bssids,
+            bssids=bssids,
             step=args.step,
             max_attenuation=args.max_attenuation,
             ssh_username=args.ssh_username,
