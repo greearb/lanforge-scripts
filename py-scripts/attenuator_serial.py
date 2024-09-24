@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 this file is used in tip for getting serial number of attenuators
 """

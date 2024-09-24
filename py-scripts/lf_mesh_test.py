@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 
 """
 Note: To Run this script gui should be opened with

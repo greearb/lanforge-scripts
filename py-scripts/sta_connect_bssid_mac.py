@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Name: sta_connect_bssid_mac.py
 Purpose:

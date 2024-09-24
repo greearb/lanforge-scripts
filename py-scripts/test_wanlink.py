@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 # Create and modify WAN Links from the command line.
 # Written by Candela Technologies Inc.
 # Updated by: Erin Grimes

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 """
 NAME: test_ip_connection.py
 This script combines functionality of test_ipv4_connection.py and test_ipv6_connection.py.

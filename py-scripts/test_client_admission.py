@@ -1,3 +1,4 @@
+# flake8: noqa
 """ This script will create one station at a time and generate downstream traffic at 5Mbps  then again create next station create layer3 and will continue doing same until Ap stops admiting client
     This script can be used for for client admission test for particular AP
 

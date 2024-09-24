@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa
 import importlib
 import argparse
 import sta_scan_test
