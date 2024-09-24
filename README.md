@@ -7,7 +7,9 @@ These scripts span a variety of use cases, including automating Chamber View tes
 
 **No additional setup is required to run these scripts on a system with LANforge pre-installed**. On your LANforge system, you can find this repository in the `/home/lanforge/scripts/` directory. (e.g. CT523c, CT521b). The contents of the directory match the version of LANforge installed on your system (see the [tagged releases](https://github.com/greearb/lanforge-scripts/tags) to clone specific version.)
 
-For more advanced users needing to develop their own automation, we offer the following:
+To setup and use these scripts on a non-LANforge system or to use a specific version (e.g. specific LANforge release), please follow the instructions outlined in the [LANforge Python Scripts README](./py-scripts/README.md).
+
+For more advanced users wanting to develop their own automation, we offer the following:
 - Auto-generated Python library in [`lanforge_client/`](./lanforge_client/)
   - **NOTE: This library is under development and subject to change as it progresses.**
   - Designed to make LANforge CLI commands and LANforge JSON API endpoints available in Python.
@@ -66,11 +68,11 @@ To access this tool, perform the following steps:
 
 More information on other LANforge JSON API endpoints can be by navigating to the main (root) endpoint `http://localhost:8080/` or querying it through `curl` (very verbose, e.g. `curl http://localhost:8080 | jq`).
 
-## Python Scripts ##
+## Python Scripts
 
 **NOTE: LANforge Python scripts require Python 3.7+** (which is backwards compatible to Fedora 27 systems).
 
-See the [LANforge Python Scripts README](./py-scripts/README.md) for more information.
+See the [LANforge Python Scripts README](./py-scripts/README.md) for more information, including setup for use on non-LANforge systems.
 
 ### Python Scripts py-json/LANforge ###
 
@@ -127,10 +129,11 @@ Core communication files to LANforge
 | `ws_generic_monitor.py`           | Class: WS_Listener web socket listener Use example: ws_generic_monitor_test.py, ws_generic_monitor to monitor events triggered by scripts, This script when running, will monitor the events triggered by test_ipv4_connection.py |
 
 
+### Python Scripts in `py-scripts/`
 
-### Python Scripts py-scripts ###
+Test scripts and helper scripts written in Python.
 
-Test scripts and helper scripts
+Helper scripts, especially creation and modification scripts, are designed in a "toolbox" approach. Each "toolbox" script performs a single task, like a tool in the toolbox. For example, the [`create_station.py`](./py-scripts/create_station.py) is designed to create and configure LANforge station ports, with many options for that specific use case.
 
 | Name | Purpose |
 |------|---------|
@@ -253,38 +256,43 @@ Test scripts and helper scripts
 | `wait_on_ports.pl`               | waits on ports to have IP addresses, can up/down port to stimulate new DHCP lease |
 | `wifi-roaming-times.pl`          | parses `wpa_supplicant_log.wiphyX` file to determine roaming times |
 
-### LANForge Monitoring ###
-From LANforge cli on port 4001 do a 'show_event' to see events from LANforge
+## Compatibility
 
-### Compatibility ###
 Scripts will be kept backwards and forwards compatible with LANforge
 releases as much as possible.
 
-### Installation ###
+## Installation
+
 These scripts call each other and rely on the structure of this directory. To use these scripts in other locations,
-such as your laptop, either copy the entire scripts directory or do a __git clone__ of this repository. Just copying
-one script to a separate directory is going to break its requirements.
+such as your laptop, either copy the entire scripts directory or do a `git clone` of this repository. Just copying
+one script to a separate directory will likely break its requirements.
 
-### Requirements ###
-The perl scripts require the following perl packages to be installed. Most of these
-perl packages are available through your repository as `.deb` or `.rpm` packages.
+See the setup steps outlined in the `py-scripts/` README [here](./py-scripts/README.md) for more information, including configuring a specific version of LANforge scripts.
 
-| Perl Package       | RPM              | Required       |
-| -------------------|------------------|----------------|
-| Net::Telnet        | perl-Net-Telnet |  Yes            |
-| JSON               | perl-JSON       |  Yes, for JSON parsing |
-| JSON::PrettyPrint  | perl-JSON-PP    |  No, useful for debugging |
+## Requirements
 
-| Python3 Package  |  RPM    | Required    |
-|-------------------------|-----------|---------------|
-| Pexpect                 | python3-pexpect | yes |
-| XlsxWriter             | python3-xlsxwriter | yes, Xlsx output |
+**NOTE:** Pre-installed LANforge systems generally do not require additional setup, save for specific advanced use cases.
 
-### License ###
+LANforge Perl automation requirements are outlined below. See the `py-scripts/` README [here](./py-scripts/README.md) for information on LANforge Python automation requirements.
+
+To use LANforge Perl automation, the system which will run the scripts must have the following packages installed. On Linux systems, most of these packages are available through your system's package manager as `.deb` or `.rpm` packages.
+
+Please contact support@candelatech.com if you have any questions.
+
+| Package            | RPM                | Required       |
+| -------------------|--------------------|----------------|
+| Net::Telnet        | perl-Net-Telnet    | Yes            |
+| JSON               | perl-JSON          | Yes, for JSON parsing |
+| JSON::PrettyPrint  | perl-JSON-PP       | No, but useful for debugging |
+| Pexpect            | python3-pexpect    | Yes |
+| XlsxWriter         | python3-xlsxwriter | Yes, for Xlsx output |
+
+## License
+
 Code in this repository is released under the BSD license (see license.txt).
 
+## Support/Contact Info
 
-### Support ###
 Please contact support@candelatech.com if you have any questions.
 
 _Thanks,
