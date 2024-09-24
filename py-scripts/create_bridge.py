@@ -1,7 +1,47 @@
 #!/usr/bin/env python3
 """
-Copyright 2021 Candela Technologies Inc
-License: Free to distribute and modify. LANforge systems must be licensed.
+NAME:       create_bridge.py
+
+PURPOSE:    Create a bridge port using specified child bridge ports.
+
+            This script will optionally set IPv4 configuration (static or dynamic), if specified.
+            The specified IPv4 configuration will be set for the bridge port when specified.
+            Child bridge port IPv4 configuration will always be cleared (TODO).
+
+EXAMPLE:
+            # Bridge with two child bridge ports. No IPv4 configuration specified.
+                ./create_bridge.py \
+                    --bridge_name   1.1.br0 \
+                    --bridge_ports  1.1.eth2,1.1.eth3
+
+            # Bridge with two child bridge ports. No IPv4 configuration specified.
+            # Assumes bridge created on resource 1 (assumed from bridge child ports).
+                ./create_bridge.py \
+                    --bridge_name   br0 \
+                    --bridge_ports  1.1.eth2,1.1.eth3
+
+            # Bridge with two child bridge ports created in down state. No IPv4 configuration specified.
+                ./create_bridge.py \
+                    --bridge_name   1.1.br0 \
+                    --bridge_ports  1.1.eth2,1.1.eth3
+                    --create_admin_down
+
+            # Bridge with two child bridge ports created. DHCPv4 enabled.
+                ./create_bridge.py \
+                    --bridge_name   1.1.br0 \
+                    --bridge_ports  1.1.eth2,1.1.eth3
+                    --dhcpv4
+
+            # Bridge with two child bridge ports created. Static IPv4 configuration.
+                ./create_bridge.py \
+                    --bridge_name   1.1.br0 \
+                    --bridge_ports  1.1.eth2,1.1.eth3
+                    --ipv4_address  172.16.0.10 \
+                    --ipv4_netmask  255.255.255.0 \
+                    --ipv4_gateway  172.16.0.1
+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2024 Candela Technologies Inc
 """
 import sys
 import os
@@ -162,7 +202,50 @@ def parse_args():
          Create bridges
             ''',
 
-        description='''''')
+        description='''
+NAME:       create_bridge.py
+
+PURPOSE:    Create a bridge port using specified child bridge ports.
+
+            This script will optionally set IPv4 configuration (static or dynamic), if specified.
+            The specified IPv4 configuration will be set for the bridge port when specified.
+            Child bridge port IPv4 configuration will always be cleared (TODO).
+
+EXAMPLE:
+            # Bridge with two child bridge ports. No IPv4 configuration specified.
+                ./create_bridge.py \
+                    --bridge_name   1.1.br0 \
+                    --bridge_ports  1.1.eth2,1.1.eth3
+
+            # Bridge with two child bridge ports. No IPv4 configuration specified.
+            # Assumes bridge created on resource 1 (assumed from bridge child ports).
+                ./create_bridge.py \
+                    --bridge_name   br0 \
+                    --bridge_ports  1.1.eth2,1.1.eth3
+
+            # Bridge with two child bridge ports created in down state. No IPv4 configuration specified.
+                ./create_bridge.py \
+                    --bridge_name   1.1.br0 \
+                    --bridge_ports  1.1.eth2,1.1.eth3
+                    --create_admin_down
+
+            # Bridge with two child bridge ports created. DHCPv4 enabled.
+                ./create_bridge.py \
+                    --bridge_name   1.1.br0 \
+                    --bridge_ports  1.1.eth2,1.1.eth3
+                    --dhcpv4
+
+            # Bridge with two child bridge ports created. Static IPv4 configuration.
+                ./create_bridge.py \
+                    --bridge_name   1.1.br0 \
+                    --bridge_ports  1.1.eth2,1.1.eth3
+                    --ipv4_address  172.16.0.10 \
+                    --ipv4_netmask  255.255.255.0 \
+                    --ipv4_gateway  172.16.0.1
+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2024 Candela Technologies Inc
+            ''')
 
     parser.add_argument('--bridge_name',
                         dest='bridge_eid',
