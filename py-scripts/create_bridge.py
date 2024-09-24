@@ -23,6 +23,8 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+from lanforge_client.lanforge_api import LFJsonCommand
 
 class CreateBridge(Realm):
     def __init__(self,
@@ -30,6 +32,10 @@ class CreateBridge(Realm):
                  mgr_port: int,
                  bridge_eid: str,
                  bridge_ports: str,
+                 dhcpv4: bool,
+                 ipv4_address: list,
+                 ipv4_netmask: list,
+                 ipv4_gateway: list,
                  debug: bool = False,
                  exit_on_error: bool = False,
                  **kwargs):
@@ -46,13 +52,26 @@ class CreateBridge(Realm):
         self.resource = eid[1]
         self.bridge_name = eid[2]
 
+        # No bridge profile in py-json, so do everything
+        # basic configuration by hand in this script
+        self.dhcpv4 = dhcpv4
+        self.ipv4_address = ipv4_address
+        self.ipv4_netmask = ipv4_netmask
+        self.ipv4_gateway = ipv4_gateway
+
     def build(self):
         """Create bridge port as specified."""
         logger.info(f"Creating bridge port \'{self.bridge_eid}\'")
 
         # TODO: Clear IP configuration for bridged ports
+        # TODO: Validate bridged ports exist
+        # TODO: Ensure bridge devices set up? Require at least one bridge device up for bridge to go up
         bridge_port_names = [LFUtils.name_to_eid(port)[2] for port in self.bridge_ports]
 
+        # 1. Create bridge port
+        #
+        # The 'add_br' command doesn't support creating ports admin down,
+        # so must admin them down in subsequent 'set_port' command
         data = {
             "shelf": self.shelf,
             "resource": self.resource,
@@ -61,17 +80,41 @@ class CreateBridge(Realm):
         }
         self.json_post("cli-json/add_br", data)
 
+        # TODO: Proper wait until bridge port appears
+        sleep(2)
+
+        # 2. Configure bridge port as user specifies
+        set_port_interest_flags = 0
+        set_port_cur_flags = 0
+        set_port_cur_flags_mask = 0
+
+        # Always set DHCPv4 in current flags mask, as this ensures
+        # DHCPv4 setting is alwasy modified whether we turn it on or not
+        set_port_cur_flags_mask |= LFJsonCommand.SetPortCurrentFlags.use_dhcp.value
+
+        # IPv4 configuration. Either DHCPv4, static, or none
+        if self.dhcpv4:
+            set_port_cur_flags |= LFJsonCommand.SetPortCurrentFlags.use_dhcp.value
+            set_port_interest_flags |= LFJsonCommand.SetPortInterest.dhcp.value
+        elif self.ipv4_address:
+            set_port_interest_flags |= LFJsonCommand.SetPortInterest.ip_address.value \
+                | LFJsonCommand.SetPortInterest.ip_Mask.value \
+                | LFJsonCommand.SetPortInterest.ip_gateway.value
+
         bridge_set_port = {
             "shelf": self.shelf,
             "resource": self.resource,
             "port": self.bridge_name,
-            "current_flags": 0x80000000,
-            # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
-            "interest": 0x4000
+            "current_flags_msk": set_port_cur_flags_mask,
+            "current_flags": set_port_cur_flags,
+            "interest": set_port_interest_flags,
+            "ip_addr": self.ipv4_address,
+            "netmask": self.ipv4_netmask,
+            "gateway": self.ipv4_gateway,
         }
         self.json_post("cli-json/set_port", bridge_set_port)
 
-        # Verify bridge port created
+        # 3. Verify bridge port created
         ret = LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
                                                 port_list=[self.bridge_eid],
                                                 debug_=self.debug)
@@ -124,6 +167,38 @@ def parse_args():
                         help='Clean up any created ports before exiting.',
                         action='store_true')
 
+    # Optional IPv4 configuration
+    #
+    # Limit users to only one of static or DHCP IPv4 configuration.
+    # Allow users to specify no L3 configuration.
+    #
+    # As this script only creates a single bridge,
+    # only accept a single static IPv4 configuration for the bridge
+    ipv4_cfg = parser.add_mutually_exclusive_group(required=False)
+    ipv4_cfg.add_argument('--dhcp', '--dhcpv4', '--use_dhcp',
+                          dest='dhcpv4',
+                          help='Enable DHCPv4 on created bridge port',
+                          action='store_true')
+    ipv4_cfg.add_argument('--ip', '--ipv4_address',
+                          dest='ipv4_address',
+                          type=str,
+                          help='Set static IPv4 address for the created bridge port',
+                          default=None)
+
+    # Only checked when static configuration specified
+    parser.add_argument('--netmask', '--ipv4_netmask',
+                        dest='ipv4_netmask',
+                        type=str,
+                        help='IPv4 subnet mask to apply to created bridge port '
+                             'when static IPv4 configuration requested',
+                        default=None)
+    parser.add_argument('--gateway', '--ipv4_gateway',
+                        dest='ipv4_gateway',
+                        type=str,
+                        help='IPv4 gateway to apply to created bridge port '
+                             'when static IPv4 configuration requested',
+                        default=None)
+
     return parser.parse_args()
 
 
@@ -156,6 +231,18 @@ def validate_args(args):
             resource_id = port_eid[1]
         elif resource_id != port_eid[1]:
             logger.error("Cannot specify bridge ports on separate resources")
+            exit(1)
+
+    if args.ipv4_address:
+        # IPv4 subnet mask required if static IPv4 configuration specified
+        if not args.ipv4_netmasks:
+            logger.error("No IPv4 subnet mask specified")
+            exit(1)
+
+        # IPv4 gateway required if static IPv4 configuration specified
+        if not args.ipv4_gateways:
+            # TODO: Should we make this a warn and continue?
+            logger.error("No IPv4 gateway specified")
             exit(1)
 
 
