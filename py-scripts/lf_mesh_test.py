@@ -18,7 +18,7 @@ the options and how best to input data.
       --duration 15s \
       --download_speed 85% --upload_speed 56Kbps \
       --raw_line 'velocity: 100' \
-      --raw_lines_file example-configs/mesh-ferndale-cfg.txt \
+      --raw_lines_file cv_examples/example_cfgs/mesh-ferndale-cfg.txt \
       --test_rig Ferndale-Mesh-01 --pull_report
 
 Note:
@@ -244,10 +244,10 @@ def main():
       --duration 15s \\
       --download_speed 85% --upload_speed 56Kbps \\
       --raw_line 'velocity: 100' \\
-      --raw_lines_file example-configs/mesh-ferndale-cfg.txt \\
+      --raw_lines_file cv_examples/example_cfgs/mesh-ferndale-cfg.txt \\
       --test_rig Ferndale-Mesh-01 --pull_report
 
-      NOTE:  There is quite a lot of config needed, see example-configs/mesh-ferndale-cfg.txt
+      NOTE:  There is quite a lot of config needed, see cv_examples/example_cfgs/mesh-ferndale-cfg.txt
          Suggestion is to configure the test through the GUI, make sure it works, then view
          the config and paste it into your own cfg.txt file.
 

@@ -19,7 +19,7 @@ the options and how best to input data.
       --local_lf_report_dir=/tmp/my_report \
       --dut5 'TR398-DUT ruckus750-5 4c:b1:cd:18:e8:ec (1)' \
       --dut2 'TR398-DUT ruckus750-2 4c:b1:cd:18:e8:e8 (2)' \
-      --raw_lines_file example-configs/tr398v2-ferndale-ac-cfg.txt \
+      --raw_lines_file cv_examples/example_cfgs/tr398v2-ferndale-ac-cfg.txt \
       --set 'Calibrate 802.11AX Attenuators' 0 \
       --set 'Calibrate Virt-Sta Attenuators' 0 \
       --set '6.1.1 Receiver Sensitivity' 0 \
@@ -55,7 +55,7 @@ Note:
 
     The RSSI values are calibrated, so you will need to run the calibration step and
     call with appropriate values for your particular testbed.  This is loaded from
-    example-configs/tr398v2-ferndale-ac-cfg.txt in this example.
+    cv_examples/example_cfgs/tr398v2-ferndale-ac-cfg.txt in this example.
     Contents of that file is a list of raw lines, for instance:
 
 rssi_0_2-0: -26
@@ -395,7 +395,7 @@ def main():
       --local_lf_report_dir /tmp/my-report \\
       --dut5 'TR398-DUT-r750 ruckus-r750-5g 4c:b1:cd:18:e8:ec (1)' \\
       --dut2 'TR398-DUT-r750 ruckus-r750-2g 4c:b1:cd:18:e8:e8 (2)' \\
-      --raw_lines_file example-configs/tr398v2-ferndale-ac-cfg.txt \\
+      --raw_lines_file cv_examples/example_cfgs/tr398v2-ferndale-ac-cfg.txt \\
       --set 'Calibrate 802.11AX Attenuators' 0 \\
       --set 'Calibrate 802.11AC Attenuators' 0 \\
       --set '6.1.1 Receiver Sensitivity' 0 \\
