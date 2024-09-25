@@ -36,6 +36,8 @@ For more advanced users wanting to develop their own automation, we offer the fo
 
 ## Quick Tips
 
+**NOTE:** In LANforge documentation, the term 'port' is used interchangable for network interface.
+
 ### Documentation Links
 
 - [LANforge CLI Users Guide](https://www.candelatech.com/lfcli_ug.php)
@@ -97,22 +99,18 @@ Helper scripts, especially creation and modification scripts, are designed in a 
 
 | Name | Purpose |
 |------|---------|
-| `create_bond.py`                   | This script can be used to create a bond |
-| `create_bridge.py`                 | Script for creating a variable number of bridges |
-| `create_chamberview.py`            | Script for creating a chamberview scenario |
-| `create_l3.py`                     | This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints |
-| `create_l4.py`                     | This script will create a variable number of layer4 stations each with their own set of cross-connects and endpoints |
-| `create_macvlan.py`                | Script for creating a variable number of macvlans |
-| `create_qvlan.py`                  | Script for creating a variable number of qvlans |
-| `create_station.py`                | Script for creating a variable number of stations |
-| `create_station_from_df.py`        | Script for creating a variable number of stations from a file |
-| `create_vap.py`                    | Script for creating a variable number of VAPs |
-| `create_vr.py`                     | Script for creating a variable number of bridges |
+| `create_bond.py`                   | Creates and configures a single Bond port using a variable number of child ports |
+| [`create_bridge.py`](./py-scripts/create_bridge.py) | Creates and configures a single Bridge port using a variable number of child ports |
+| `create_chamberview_dut.py`        | Creates a single LANforge DUT object, primarily useful in Chamber View |
+| `create_chamberview.py`            | Creates a single LANforge Chamber View Scenario |
+| `create_l3.py`                     | Creates and configures a variable number of LANforge L3 CX traffic pairs using existing ports |
+| `create_l4.py`                     | Creates and configures a variable number of LANforge L4 traffic endpoints using existing ports |
+| [`create_macvlan.py`](./py-scripts/create_macvlan.py) | Creates and configures a variable number of MACVLAN ports (different from 802.1Q VLAN) using a single parent interface |
+| [`create_qvlan.py`](./py-scripts/create_qvlan.py) | Creates and configures a variable number of 802.1Q VLAN ports using a single parent interface |
+| [`create_station.py`](./py-scripts/create_station.py) | Creates and configures a variable number of WiFi stations using a single parent radio |
+| `create_vap.py`                    | Creates and configures a variable number of WiFi virtual APs (vAPs) using a single parent radio |
 | `csv_convert.py`                   | Python script to read in a LANforge Dataplane CSV file and output a csv file that works with a customer's RvRvO visualization tool.|
 | `csv_processor.py`                 | Python script to assist processing csv files|
-| `download_test.py`                 | download_test.py will do lf_report::add_kpi(tags, 'throughput-download-bps', $my_value);|
-| `event_breaker.py`                 | This file is intended to expose concurrency problems in the /events/ URL handler by querying events rapidly. Please use concurrently with event_flood.py. |
-| `event_flood.py`                   | This file is intended to expose concurrency problems in the /events/ URL handler by inserting events rapidly. Please concurrently use with event_breaker.py.|
 | `lf_ap_auto_test.py`               | This script is used to automate running AP-Auto tests |
 | `lf_dataplane_test.py`             | This script is used to automate running Dataplane tests |
 | `lf_ftp_test.py`                   | Python script will create stations and endpoints to generate and verify layer-4 traffic over an ftp connection |
@@ -131,22 +129,12 @@ Helper scripts, especially creation and modification scripts, are designed in a 
 | `sta_connect2.py`                  | Create a station, run TCP and UDP traffic then verify traffic was received. Stations are cleaned up afterwards |
 | `sta_connect_example.py`           | Example of how to instantiate StaConnect and run the test |
 | `sta_connect_multi_example.py`     | Example of how to instantiate StaConnect and run the test |
-| `station_layer3.py`                | this script creates one station with given arguments |
 | `stations_connected.py`            | Contains examples of using realm to query stations and get specific information from them |
 | `test_client_admission.py`         | This script will create one station at a time and generate downstream traffic |
 | `test_fileio.py`                   | Test FileIO traffic |
 | `test_generic.py`                  | Test generic traffic using generic cross-connect and endpoint type |
-| `test_ipv4_connection.py`          | Test connections to a VAP of varying security types (WEP, WPA, WPA2, WPA3, Open) |
-| `test_ipv4_l4.py`                  | Test layer 4 traffic using layer 4 cross-connect and endpoint type |
-| `test_ipv4_l4_ftp_upload.py`       | Test ftp upload traffic |
-| `test_ipv4_l4_ftp_urls_per_ten.py` | Test the number of urls per ten minutes in ftp traffic |
-| `test_ipv4_l4_ftp_wifi.py`         | Test ftp upload traffic wifi-wifi |
-| `test_ipv4_l4_urls_per_ten.py`     | Test urls per ten minutes in layer 4 traffic |
-| `test_ipv4_l4_wifi.py`             | Test layer 4 upload traffic wifi-wifi|
 | `test_ipv4_ttls.py`                | Test connection to ttls system |
-| `test_ipv4_variable_time.py`       | Test connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open) |
 | `test_ipv6_connection.py`          | Test IPV6 connection to VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open) |
-| `test_ipv6_variable_time.py`       | Test IPV6 connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open) |
 | `test_l3_WAN_LAN.py`               | Test traffic over a bridged NAT connection |
 | `test_l3_longevity.py`             | Create variable stations on multiple radios, configurable rates, PDU, ToS, TCP and/or UDP traffic, upload and download, attenuation |
 | `test_l3_powersave_traffic.py`     | Python script to test for layer 3 powersave traffic |
@@ -154,9 +142,7 @@ Helper scripts, especially creation and modification scripts, are designed in a 
 | `test_l3_unicast_traffic_gen.py`   | Generate unicast traffic over a list of stations|
 | `test_status_msg.py`               | Test the status message passing functions of /status-msg |
 | `test_wanlink.py`                  | Python script to test wanlink creation |
-| `test_wpa_passphrases.py`          | Python script to test challenging wpa psk passphrases |
 | `testgroup.py`                     | Python script to test creation and control of test groups |
-| `testgroup2.py`                    | Python script to test creation and control of test groups |
 | `tip_station_powersave.py`         | Generate and test for powersave packets within traffic run over multiple stations |
 | `update_dependencies.py`           | Python script to update dependencies for various Candelatech python scripts |
 | `wlan_capacity_calculator.py`      | Standard Script for WLAN Capacity Calculator |
