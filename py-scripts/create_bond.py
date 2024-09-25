@@ -75,7 +75,7 @@ class CreateBond(Realm):
             'network_devs': nd
         }
         self.json_post("cli-json/add_bond", data)
-        #time.sleep(3)
+        # time.sleep(3)
         bond_set_port = {
             "shelf": self.shelf,
             "resource": self.resource,
@@ -156,7 +156,7 @@ def main():
 
     create_bond = CreateBond(_host=args.mgr,
                              _port=args.mgr_port,
-                             _eid = args.bond_name,
+                             _eid=args.bond_name,
                              _network_dev_list=args.network_dev_list,
                              _debug_on=args.debug)
     create_bond.build()
@@ -169,6 +169,7 @@ def main():
         create_bond.exit_success()
     else:
         create_bond.exit_fail()
+
 
 if __name__ == "__main__":
     main()
