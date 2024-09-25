@@ -801,6 +801,7 @@ INCLUDE_IN_README:
 ''')
     required = parser.add_argument_group('required arguments')
     required.add_argument('--start_id',
+                          type=int,
                           help='Specify the station starting id \n e.g: --start_id <value> default 0',
                           default=0)
 
@@ -984,18 +985,14 @@ def main():
         print(help_summary)
         exit(0)
 
-    start_id = 0
-    if args.start_id != 0:
-        start_id = int(args.start_id)
-
     num_sta = 1
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
     station_list = LFUtils.port_name_series(prefix=args.prefix,
-                                            start_id=start_id,
-                                            end_id=start_id + num_sta - 1,
+                                            start_id=args.start_id,
+                                            end_id=args.start_id + num_sta - 1,
                                             padding_number=10000,
                                             radio=args.radio)
 
