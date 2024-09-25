@@ -109,7 +109,6 @@ def parse_args():
         epilog='''\
          Create bonds
             ''',
-
         description='''\
 NAME:       create_bond.py
 
@@ -130,10 +129,13 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             ''')
 
     required = parser.add_argument_group('required arguments')
-
-    required.add_argument('--bond_name', help='Name of the bridge to create',)
-    required.add_argument('--network_dev_list', help='list of network devices in the bond, must be comma separated '
-                          'with no spaces',)
+    required.add_argument('--bond_name',
+                          type=str,
+                          help='Name of the bridge to create',)
+    required.add_argument('--network_dev_list',
+                          type=str,
+                          help='List of network devices in the bond, '
+                               'must be comma separated with no spaces')
 
     return parser.parse_args()
 
