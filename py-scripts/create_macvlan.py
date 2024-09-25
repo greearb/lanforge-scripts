@@ -2,14 +2,17 @@
 """
 NAME:       create_macvlan.py
 
-PURPOSE:    Create one or more MACVLAN ports on the specified parent port.
+PURPOSE:    Create and configure one or more MACVLAN ports using the specified parent port.
+
+NOTES:      MACVLAN ports can only be created with a Ethernet, Bond, Redir, or 802.1Q VLAN port
+            as the parent port.
+
+            MACVLAN ports are different than 802.1Q VLAN ports.
 
             This script will optionally set IPv4 configuration (static or dynamic), if specified.
-            The selected IPv4 configuration method will be applied to all created MACVLAN ports
-            created by this script.
+            The selected IPv4 configuration method will be applied to all ports created by this script.
 
-EXAMPLE:
-            # Single MACVLAN with MACVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
+EXAMPLE:    # Single MACVLAN with MACVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
                 ./create_macvlan.py \
                     --parent        1.1.eth3 \
                     --macvlan_ids   10
@@ -42,24 +45,24 @@ EXAMPLE:
                     --ipv4_netmask  255.255.255.0 \
                     --ipv4_gateway  172.16.0.1
 
-SCRIPT_CLASSIFICATION:  Creation
+SCRIPT_CLASSIFICATION:
+            Creation
 
-SCRIPT_CATEGORIES:  Functional 
+SCRIPT_CATEGORIES:
+            Functional
 
-NOTES:      You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
+STATUS:     Functional
 
-STATUS: Functional
+VERIFIED_ON:
+            09-JUN-2023,
+            GUI Version:  5.4.6
+            Kernel Version: 5.19.17+
 
-VERIFIED_ON:   09-JUN-2023,
-             GUI Version:  5.4.6
-             Kernel Version: 5.19.17+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2024 Candela Technologies Inc.
 
-LICENSE:
-          Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
-
-INCLUDE_IN_README: False
-
+INCLUDE_IN_README:
+            False
 """
 
 import sys
@@ -165,14 +168,17 @@ def parse_args():
         description='''\
 NAME:       create_macvlan.py
 
-PURPOSE:    Create one or more MACVLAN ports on the specified parent port.
+PURPOSE:    Create and configure one or more MACVLAN ports using the specified parent port.
+
+NOTES:      MACVLAN ports can only be created with a Ethernet, Bond, Redir, or 802.1Q VLAN port
+            as the parent port.
+
+            MACVLAN ports are different than 802.1Q VLAN ports.
 
             This script will optionally set IPv4 configuration (static or dynamic), if specified.
-            The selected IPv4 configuration method will be applied to all created MACVLAN ports
-            created by this script.
+            The selected IPv4 configuration method will be applied to all ports created by this script.
 
-EXAMPLE:
-            # Single MACVLAN with MACVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
+EXAMPLE:    # Single MACVLAN with MACVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
                 ./create_macvlan.py \
                     --parent        1.1.eth3 \
                     --macvlan_ids   10
@@ -205,24 +211,24 @@ EXAMPLE:
                     --ipv4_netmask  255.255.255.0 \
                     --ipv4_gateway  172.16.0.1
 
-SCRIPT_CLASSIFICATION:  Creation
+SCRIPT_CLASSIFICATION:
+            Creation
 
-SCRIPT_CATEGORIES:  Functional 
+SCRIPT_CATEGORIES:
+            Functional
 
-NOTES:      You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
+STATUS:     Functional
 
-STATUS: Functional
+VERIFIED_ON:
+            09-JUN-2023,
+            GUI Version:  5.4.6
+            Kernel Version: 5.19.17+
 
-VERIFIED_ON:   09-JUN-2023,
-             GUI Version:  5.4.6
-             Kernel Version: 5.19.17+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2024 Candela Technologies Inc.
 
-LICENSE:
-          Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
-
-INCLUDE_IN_README: False
-
+INCLUDE_IN_README:
+            False
 ''')
     # Required arguments
     parser.add_argument('--parent', '--parent_port', '--macvlan_parent',
