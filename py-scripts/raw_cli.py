@@ -50,9 +50,7 @@ TO DO NOTES:
     * Add parameter to suppress pre_exec error checking (suppress_related_commands)
 """
 import logging
-import os
 import sys
-import time
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -61,8 +59,6 @@ if sys.version_info[0] != 3:
 import importlib
 import argparse
 import pprint
-import inspect
-import collections
 sys.path.insert(1, "../")
 
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
