@@ -973,8 +973,8 @@ def main():
     args = parse_args()
     validate_args(args)
 
+    # Configure logging
     logger_config = lf_logger_config.lf_logger_config()
-    # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
@@ -1000,7 +1000,6 @@ def main():
                                             radio=args.radio)
 
     logger.info("Stations to create: {}".format(station_list))
-
     create_station = CreateStation(**vars(args),
                                    sta_list=station_list,
                                    up=(not args.create_admin_down),
@@ -1009,7 +1008,6 @@ def main():
 
     if not args.no_pre_cleanup:
         create_station.cleanup()
-
     else:
         already_available_stations = create_station.get_station_list()
         if len(already_available_stations) > 0:
