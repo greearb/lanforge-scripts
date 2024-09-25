@@ -139,6 +139,9 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
                           'with no spaces',)
 
     args = parser.parse_args()
+
+    help_summary = "This script will create and configure a single bond port "\
+                   "using the specified child ports."
     if args.help_summary:
         print(help_summary)
         exit(0)
