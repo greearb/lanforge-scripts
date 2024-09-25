@@ -1,28 +1,21 @@
 #!/usr/bin/env python3
-
 """
-NAME: create_bond.py
+NAME:       create_bond.py
 
-PURPOSE:
-    Script to create a bond.
-    This script can be used to create a bond, only one can be created at a time. Network devices must be specified
-     as a list of comma-separated items with no spaces.
+PURPOSE:    Create and configure a single bond port using the specified child ports.
 
-EXAMPLE:
-    Use './create_bond.py --help' to see command line usage and options
+EXAMPLE:    # Bond with two child bridge ports. No IPv4 configuration specified.
+                ./create_bond.py \
+                    --bond_name         bond0 \
+                    --network_dev_list  eth1,eth2
 
-    ./create_bond.py --mgr localhost --bond_name bond0 --network_dev_list eth1,eth2 --no_cleanup --debug
+VERIFIED_ON:
+            Tested on 03/22/2023:
+            Kernel version: 5.19.17+
+            GUI version: 5.4.6
 
-NOTES:
-
-    Tested on 03/22/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
-
-COPYRIGHT:
-    Copyright 2021 Candela Technologies Inc
-    License: Free to distribute and modify. LANforge systems must be licensed.
-
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2024 Candela Technologies Inc
 """
 import sys
 import os
@@ -121,29 +114,22 @@ def main():
             ''',
 
         description='''\
---------------------
-NAME: create_bond.py
+NAME:       create_bond.py
 
-PURPOSE:
-    Script to create a bond.
-    This script can be used to create a bond, only one can be created at a time. Network devices must be specified
-     as a list of comma-separated items with no spaces.
+PURPOSE:    Create and configure a single bond port using the specified child ports.
 
-EXAMPLE:
-    Use './create_bond.py --help' to see command line usage and options
+EXAMPLE:    # Bond with two child bridge ports. No IPv4 configuration specified.
+                ./create_bond.py \
+                    --bond_name         bond0 \
+                    --network_dev_list  eth1,eth2
 
-    ./create_bond.py --mgr localhost --bond_name bond0 --network_dev_list eth1,eth2 --no_cleanup --debug
+VERIFIED_ON:
+            Tested on 03/22/2023:
+            Kernel version: 5.19.17+
+            GUI version: 5.4.6
 
-NOTES:
-
-    Tested on 03/22/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
-
-COPYRIGHT:
-    Copyright 2021 Candela Technologies Inc
-    License: Free to distribute and modify. LANforge systems must be licensed.
-
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2024 Candela Technologies Inc
             ''')
 
     required = parser.add_argument_group('required arguments')
