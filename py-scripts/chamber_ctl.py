@@ -38,19 +38,9 @@ import time
 sys.path.insert(1, "../")
 sys.path.insert(1, "../../")
 
-if "SHELL" in os.environ.keys():
-    lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-    from lanforge_client.lanforge_api import LFSession
-    from lanforge_client.lanforge_api import LFJsonCommand
-    from lanforge_client.lanforge_api import LFJsonQuery
-    realm = importlib.import_module("py-json.realm")
-    Realm = realm.Realm
-else:
-    import lanforge_api
-    from lanforge_api import LFJsonCommand
-    from lanforge_api import LFJsonQuery
-    import realm
-    from realm import Realm
+lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 logger = logging.getLogger(__name__)
