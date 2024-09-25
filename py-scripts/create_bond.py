@@ -101,10 +101,8 @@ class CreateBond(Realm):
         else:
             self._fail("Ports NOT successfully cleaned up.")
 
-def main():
-    help_summary='''\
-     This script will create bond between the interfaces defined by the user
-    '''
+
+def parse_args():
     parser = LFCliBase.create_basic_argparse(
         prog='create_bond.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -137,7 +135,11 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
     required.add_argument('--network_dev_list', help='list of network devices in the bond, must be comma separated '
                           'with no spaces',)
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
 
     help_summary = "This script will create and configure a single bond port "\
                    "using the specified child ports."
