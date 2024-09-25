@@ -146,8 +146,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         print(help_summary)
         exit(0)
 
+    # Configure logging
     logger_config = lf_logger_config.lf_logger_config()
-    # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
@@ -155,13 +155,11 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
                              _port=args.mgr_port,
                              _eid = args.bond_name,
                              _network_dev_list=args.network_dev_list,
-                             _debug_on=args.debug
-                             )
+                             _debug_on=args.debug)
     create_bond.build()
 
     if not args.no_cleanup:
         sleep(5)
-
         create_bond.cleanup()
 
     if create_bond.passes():
