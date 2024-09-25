@@ -774,7 +774,7 @@ class Roam(Realm):
         bssid_based_failed_roams = [bssid_based_total_attempted_roams[roam] - list(self.bssid_based_totals.values())[roam] for roam in range(len(self.bssid_based_totals.values()))]
         bssid_based_graph = lf_bar_graph_horizontal(_data_set=[list(self.bssid_based_totals.values())],
                                         _xaxis_name='Roam Count',
-                                        _yaxis_name='Wireless Clients',
+                                        _yaxis_name='BSSIDs',
                                         _label=['Roams'],
                                         _graph_image_name='BSSID based Successful vs Failed',
                                         _yaxis_label=list(self.bssid_based_totals.keys()),
@@ -820,12 +820,12 @@ class Roam(Realm):
         y_fig_size = len(self.station_based_roam_count.keys()) * .5 + 4
 
         # graph for above
-        station_based_total_attempted_roams = [total_attempted_roams // len(self.station_list)] * len(self.station_list)
+        station_based_total_attempted_roams = [ len(self.attenuator_combinations) * self.iterations ] * len(self.station_based_roam_count.keys())
         station_based_failed_roams = []
         # for station_index in range(len(station_based_roam_count)):
         #     station_based_failed_roams.append(station_based_total_attempted_roams[station_index] - station_based_roam_count[station_index])
-        for station in self.station_based_roam_count:
-            station_based_failed_roams.append((total_attempted_roams // len(self.station_list)) - self.station_based_roam_count[station])
+        for station_ind, station in enumerate(self.station_based_roam_count):
+            station_based_failed_roams.append(station_based_total_attempted_roams[station_ind] - self.station_based_roam_count[station])
         station_based_graph = lf_bar_graph_horizontal(_data_set=[station_based_total_attempted_roams, list(self.station_based_roam_count.values()), station_based_failed_roams],
                                         _xaxis_name='Roam Count',
                                         _yaxis_name='Wireless Clients',
@@ -848,6 +848,7 @@ class Roam(Realm):
                                         _enable_csv=True,
                                         _color_name=['orange', 'darkgreen', 'red'])
 
+        print([station_based_total_attempted_roams, list(self.station_based_roam_count.values()), station_based_failed_roams])
         station_based_graph_png = station_based_graph.build_bar_graph_horizontal()
         logging.info('graph name {}'.format(station_based_graph_png))
         report.set_graph_image(station_based_graph_png)
