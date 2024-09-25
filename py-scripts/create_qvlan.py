@@ -265,6 +265,12 @@ def validate_args(args):
 def main():
     args = parse_args()
 
+    help_summary = "This script will create and configure a one or more 802.1Q VLAN ports " \
+                   "using the specified single parent port."
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     # Configure logging
     logger_config = lf_logger_config.lf_logger_config()
     logger_config.set_level(level=args.log_level)
