@@ -65,15 +65,9 @@ import inspect
 import collections
 sys.path.insert(1, "../")
 
-if "SHELL" in os.environ.keys():
-    lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-    from lanforge_client.lanforge_api import LFSession
-    from lanforge_client.lanforge_api import LFJsonCommand
-    from lanforge_client.lanforge_api import LFJsonQuery
-else:
-    import lanforge_api
-    from lanforge_api import LFJsonCommand
-    from lanforge_api import LFJsonQuery
+lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFJsonQuery
 
 logger = logging.getLogger(__name__)
 
