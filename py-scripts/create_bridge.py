@@ -2,14 +2,15 @@
 """
 NAME:       create_bridge.py
 
-PURPOSE:    Create a bridge port using specified child bridge ports.
+PURPOSE:    Create and configure a single bridge port using the specified child ports.
+
+NOTES:      WiFi station interfaces are not supported as a child port.
 
             This script will optionally set IPv4 configuration (static or dynamic), if specified.
             The specified IPv4 configuration will be set for the bridge port when specified.
             Child bridge port IPv4 configuration will always be cleared (TODO).
 
-EXAMPLE:
-            # Bridge with two child bridge ports. No IPv4 configuration specified.
+EXAMPLE:    # Bridge with two child bridge ports. No IPv4 configuration specified.
                 ./create_bridge.py \
                     --bridge_name   1.1.br0 \
                     --bridge_ports  1.1.eth2,1.1.eth3
@@ -41,7 +42,7 @@ EXAMPLE:
                     --ipv4_gateway  172.16.0.1
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2024 Candela Technologies Inc
+            Copyright 2024 Candela Technologies Inc.
 """
 import sys
 import os
@@ -207,14 +208,15 @@ def parse_args():
         description='''
 NAME:       create_bridge.py
 
-PURPOSE:    Create a bridge port using specified child bridge ports.
+PURPOSE:    Create and configure a single bridge port using the specified child ports.
+
+NOTES:      WiFi station interfaces are not supported as a child port.
 
             This script will optionally set IPv4 configuration (static or dynamic), if specified.
             The specified IPv4 configuration will be set for the bridge port when specified.
             Child bridge port IPv4 configuration will always be cleared (TODO).
 
-EXAMPLE:
-            # Bridge with two child bridge ports. No IPv4 configuration specified.
+EXAMPLE:    # Bridge with two child bridge ports. No IPv4 configuration specified.
                 ./create_bridge.py \
                     --bridge_name   1.1.br0 \
                     --bridge_ports  1.1.eth2,1.1.eth3
@@ -246,7 +248,7 @@ EXAMPLE:
                     --ipv4_gateway  172.16.0.1
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2024 Candela Technologies Inc
+            Copyright 2024 Candela Technologies Inc.
             ''')
 
     parser.add_argument('--bridge_name',
