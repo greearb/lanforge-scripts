@@ -352,11 +352,10 @@ def validate_args(args):
 
 
 def main():
-    help_summary = "This script will create a single LANforge bridge port "\
-                   "using the specified bridge port interfaces."
-
     args = parse_args()
 
+    help_summary = "This script will create a single LANforge bridge port "\
+                   "using the specified bridge port interfaces."
     if args.help_summary:
         print(help_summary)
         exit(0)
