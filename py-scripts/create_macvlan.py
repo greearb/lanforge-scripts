@@ -324,14 +324,11 @@ def validate_args(args):
 
 
 def main():
-    help_summary = '''\
-    This script will create a variable number of macvlans on a specified ethernet port(eth1/eth2). It's important to 
-    note that the script can only add MAC-VLANs to Ethernet, Bonding and 802.1Q VLAN devices. The script has the 
-    feasibility to create the macvlan interfaces based on user-specified numbers.
-            '''
-
     args = parse_args()
 
+    help_summary = "This script will create and configure one or more MACVLAN ports " \
+                   "using the specified single parent port. Note that MACVLAN ports " \
+                   "are different than 802.1Q VLAN ports."
     if args.help_summary:
         print(help_summary)
         exit(0)
