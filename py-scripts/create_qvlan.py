@@ -2,14 +2,13 @@
 """
 NAME:       create_qvlan.py
 
-PURPOSE:    Create one or more QVLAN port on the specified parent port.
+PURPOSE:    Create and configure one or more QVLAN port using the specified parent port.
 
-            This script will optionally set IPv4 configuration (static or dynamic), if specified.
+NOTES:      This script will optionally set IPv4 configuration (static or dynamic), if specified.
             The selected IPv4 configuration method will be applied to all created QVLAN ports
             created by this script.
 
-EXAMPLE:
-            # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
+EXAMPLE:    # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
                 ./create_qvlan.py \
                     --parent        1.1.eth3 \
                     --qvlan_ids     10
@@ -41,6 +40,9 @@ EXAMPLE:
                     --ipv4_address  172.16.0.10 172.10.0.20 \
                     --ipv4_netmask  255.255.255.0 \
                     --ipv4_gateway  172.16.0.1
+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2024 Candela Technologies Inc.
 """
 import sys
 import os
@@ -131,14 +133,13 @@ def parse_args():
         description="""
 NAME:       create_qvlan.py
 
-PURPOSE:    Create one or more QVLAN port on the specified parent port.
+PURPOSE:    Create and configure one or more QVLAN port using the specified parent port.
 
-            This script will optionally set IPv4 configuration (static or dynamic), if specified.
+NOTES:      This script will optionally set IPv4 configuration (static or dynamic), if specified.
             The selected IPv4 configuration method will be applied to all created QVLAN ports
             created by this script.
 
-EXAMPLE:
-            # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
+EXAMPLE:    # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. No IPv4 configuration specified.
                 ./create_qvlan.py \
                     --parent        1.1.eth3 \
                     --qvlan_ids     10
@@ -170,6 +171,9 @@ EXAMPLE:
                     --ipv4_address  172.16.0.10 172.10.0.20 \
                     --ipv4_netmask  255.255.255.0 \
                     --ipv4_gateway  172.16.0.1
+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2024 Candela Technologies Inc.
 """)
     # Required arguments
     parser.add_argument('--parent', '--parent_port', '--qvlan_parent',
