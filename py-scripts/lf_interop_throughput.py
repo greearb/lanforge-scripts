@@ -1426,12 +1426,11 @@ class Throughput(Realm):
                             _obj_title="Detailed Result Table ",
                             _obj="The below tables provides detailed information for the throughput test on each device.")
                 report.build_objective()
-
                 bk_dataframe = {
                             " Device Type " : device_type[0:int(incremental_capacity_list[i])],
                             " Username": devices_on_running[0:int(incremental_capacity_list[i])],
                             " SSID " : self.ssid_list[0:int(incremental_capacity_list[i])],
-                            " MAC ": [mac.split(' ')[1] for mac in self.mac_id1_list[0:int(incremental_capacity_list[i])]],
+                            " MAC ": [mac.split(' ')[1] for mac in self.mac_id_list[0:int(incremental_capacity_list[i])]],
                             " Channel ":self.channel_list[0:int(incremental_capacity_list[i])],
                             " Mode" : self.mode_list[0:int(incremental_capacity_list[i])],
                             " Direction":direction_in_table[0:int(incremental_capacity_list[i])],
@@ -1707,7 +1706,7 @@ class Throughput(Realm):
                             " Device Type " : device_type[int(incremental_capacity_list[i])-1],
                             " Username": devices_on_running[-1],
                             " SSID " : self.ssid_list[int(incremental_capacity_list[i])-1],
-                            " MAC " : str(self.mac_id1_list[int(incremental_capacity_list[i])-1]).split(' ')[-1],
+                            " MAC " : str(self.mac_id_list[int(incremental_capacity_list[i])-1]).split(' ')[-1],
                             " Channel ":self.channel_list[int(incremental_capacity_list[i])-1],
                             " Mode" : self.mode_list[int(incremental_capacity_list[i])-1],
                             " Direction":direction_in_table[-1],

@@ -1008,7 +1008,7 @@ class VideoStreamingTest(Realm):
                     video_rate_dict[i].append(0)
                     overall_video_rate.append(0)
                     min_value_video_rate = self.process_list(video_rate_dict[i])
-                    individual_df_data.extend([0,0,0,rssi_data[i],link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min_value_video_rate,max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
+                    individual_df_data.extend([0,0,self.data["total_urls"][i],rssi_data[i],link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min_value_video_rate,max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
                 
                 # If the status is not 'Stopped', append the calculated video rate to the video rate dictionary and overall video rate
                 else:
@@ -1057,7 +1057,7 @@ class VideoStreamingTest(Realm):
                 video_rate_dict[i].append(0)
                 overall_video_rate.append(0)
                 min_value_video_rate = self.process_list(video_rate_dict[i])
-                individual_df_data.extend([0,0,0,rssi_data[i],link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min_value_video_rate,max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
+                individual_df_data.extend([0,0,self.data["total_urls"][i],rssi_data[i],link_speed_data[i],self.data["total_buffer"][i],self.data["total_err"][i],min_value_video_rate,max(video_rate_dict[i]),sum(video_rate_dict[i])/len(video_rate_dict[i])])
             else:
                 overall_video_rate.append(round(self.data["video_format_bitrate"][i]/1000000,2))
                 video_rate_dict[i].append(round(self.data["video_format_bitrate"][i]/1000000,2))
@@ -1304,7 +1304,7 @@ class VideoStreamingTest(Realm):
                             _obj="")
             report.build_objective()
             # Create a horizontal bar graph for total URLs per device 
-            graph=lf_bar_graph_horizontal(_data_set=[total_url_data],
+            graph=lf_bar_graph_horizontal(_data_set=[total_urls[:created_incremental_values[iter]]],
                                             _xaxis_name="Total Urls",
                                             _yaxis_name="Devices",
                                             _graph_image_name=f"total_urls_image_name{iter}",
