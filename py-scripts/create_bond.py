@@ -21,7 +21,6 @@ import sys
 import os
 import importlib
 import argparse
-import time
 import logging
 from time import sleep
 
