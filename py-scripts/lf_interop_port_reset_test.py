@@ -609,7 +609,7 @@ class InteropPortReset(Realm):
                         logging.info("Starting APP for %s" % i)
                         self.interop.start(device=i)
                     if self.all_laptops:
-                        if self.wait_for_ip(station_list=self.all_laptops, timeout_sec=-1):
+                        if self.wait_for_ip(station_list=self.all_laptops, timeout_sec=60):
                             logging.info("PASSED : ALL STATIONS GOT IP")
                         else:
                             logging.info("FAILED : MAY BE NOT ALL STATIONS ACQUIRED IP'S")
