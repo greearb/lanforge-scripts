@@ -1045,8 +1045,7 @@ class Candela:
                                         result_dir_name=f"Qos_Test_Report")
         data_set, load, res = self.qos_test.generate_graph_data_set(data)
 
-    def start_ping_test(self, ssid, password, encryption, target,
-                        interval=1, ping_test_duration=60, device_list=[], background=False):
+    def start_ping_test(self, ssid, password, encryption, target, ping_test_duration=60, device_list=[], background=False):
         """
         Method to start and run the ping test on the selected devices.
 
@@ -1055,7 +1054,6 @@ class Candela:
             password (str): Password for the given SSID. [BLANK] if encryption is open.
             encryption (str): Encryption for the given SSID.
             target (str): IP or Domain name of the target.
-            interval (int, optional): Time interval between two packets in seconds. Defaults to 1.
             ping_test_duration (int, optional): Time duration to run the test in seconds. Defaults to 60.
             device_list (list, optional): List of port names of all the selected devices. Defaults to [].
 
@@ -1064,7 +1062,7 @@ class Candela:
         """        
         device_list = self.filter_iOS_devices(device_list)
         target = target
-        interval = interval
+        interval = 1
         # starting part of the ping test
         ping_test_obj = ping_test.Ping(host=self.lanforge_ip, port=self.port, ssid=ssid, security=encryption,
                                             password=password, lanforge_password="lanforge", target=target,
