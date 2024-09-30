@@ -45,14 +45,17 @@ class ZoomClient:
             "profile.managed_default_content_settings.geolocation": 1,
             "profile.managed_default_content_settings.media_stream": 1
         }
-        chrome_options.add_argument("--disable-gpu")
+        # chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
-        # chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-notifications")
         chrome_options.add_argument("--use-fake-ui-for-media-stream")
+        chrome_options.add_argument("--ignore-certificate-errors")
         chrome_options.add_experimental_option("prefs", prefs)
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-infobars")
+        chrome_options.add_argument("--disable-3d-apis")
+        chrome_options.add_argument("--disable-popup-blocking")  # Block popups
         self.driver = webdriver.Chrome(options=chrome_options)
         self.driver.maximize_window()
         self.wait = WebDriverWait(self.driver, 90)
@@ -87,12 +90,12 @@ class ZoomClient:
             while self.end_time > datetime.now(self.tz).isoformat():
                 print("monitoring the test","time remaining is")
                 print(self.start_time,self.end_time)
-                print()
                 stats = self.collecting_stats()
                 csv_writer.writerow(stats)
+                file.flush()
                 time.sleep(5)
         print("test has been completed")
-        self.transfer_files(f"{self.hostname}.csv")
+        # self.transfer_files(f"{self.hostname}.csv")
         self.stop_zoom()
 
 
@@ -375,5 +378,9 @@ class ZoomClient:
         return None
 if __name__ == "__main__":
     # Example usage:
-    zoom_client = ZoomClient()  # Replace with your actual server IP
+    zoom_client = ZoomClient()
+    try:
+        os.remove('{}.csv'.format(zoom_client.hostname))
+    except:
+        pass
     zoom_client.start_zoom()

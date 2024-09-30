@@ -30,7 +30,8 @@ lf_line_graph = lf_graph.lf_line_graph
 lf_stacked_graph = lf_graph.lf_stacked_graph
 lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
 class ZoomAutomation:
-    def __init__(self, hosts_file='hosts.csv', credential_file='credentials.txt',ssid="SSID",band="5G",security="wpa2",apname="AP Name",audio = True, video = True,lanforge_ip="localhost",wait_time = 30):
+    def __init__(self, hosts_file='hosts.csv', credential_file='credentials.txt',ssid="SSID",band="5G",security="wpa2",apname="AP Name",
+                 sigin_email=None,sigin_passwd= None, duration=1, participants = 3 ,audio = True, video = True,lanforge_ip="localhost",wait_time = 30):
         self.hosts_file = hosts_file
         self.credential_file = credential_file
         self.flask_ip = lanforge_ip
@@ -45,24 +46,40 @@ class ZoomAutomation:
         self.login_completed = False  # Initially set to False
         self.remote_login_url = ""  # Initialize remote login URL
         self.remote_login_passwd = ""  # Initialize remote login password
-        self.sigin_email = ""
-        self.sigin_passwd = ""
+        
         self.test_start = False
         self.start_time = None
         self.end_time = None
         self.participants_joined = 0
-        self.participants_req = None
+        
         self.ap_name = apname
         self.ssid = ssid
         self.band = band
         self.security = security
         self.tz = pytz.timezone('Asia/Kolkata')
-        self.path = "/home/lanforge/lanforge-scripts/py-scripts/zoom_automation/test_results"
+        # self.path = "/home/lanforge/lanforge-scripts/py-scripts/zoom_automation/test_results"
         self.not_processed_clients = []
         self.clients_disconnected = False
         self.audio = audio
         self.video = video
         self.wait_time = wait_time
+
+        self.sigin_email = sigin_email
+        self.sigin_passwd = sigin_passwd
+        self.duration = duration
+        self.participants_req = participants
+
+        # Get the current working directory
+        current_dir = os.getcwd()
+        print("Current Working Directory:", current_dir)
+
+        # Define the additional directory you want to add
+        additional_dir = "test_results"
+
+        # Combine the current directory with the additional directory
+        self.path = os.path.join(current_dir, additional_dir)
+
+        print("New Path:", self.path )
 
         os.makedirs(self.path, exist_ok=True)
 
@@ -170,6 +187,56 @@ class ZoomAutomation:
             if client:
                 client.close()
 
+    def get_csv_files(self,local_path):
+        for client_to_get in self.clients:
+            hostname = client_to_get.get('hostname', 'N/A')
+            ip = client_to_get.get('IP', 'N/A')
+            username = client_to_get.get('username', 'N/A')
+            password = client_to_get.get('password', 'N/A')
+            os_type = client_to_get.get('os_type', 'N/A')
+            client = None
+            try:
+                client = paramiko.SSHClient()
+                client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                client.connect(hostname=ip, username=username, password=password)
+
+                
+
+
+                file_to_transfer = '{}.csv'.format(hostname)
+                remote_dir = self.get_remote_dir_not_inc(os_type, username)
+                
+                                 
+                sftp = client.open_sftp()
+                
+                file_prefix = '{}'.format(hostname)
+                # List files in the remote directory
+                remote_files = sftp.listdir(remote_dir)
+
+                # Filter files that match the specified prefix
+                matching_files = [file for file in remote_files if file.startswith(file_prefix)]
+                
+                for file in matching_files:
+                    remote_file_path = os.path.join(remote_dir, file)
+                   
+                    # Download the matching file
+                    sftp.get(remote_file_path, local_path+file_to_transfer)
+                    sftp.close()
+                    print(f"  - Successfully fetched '{file_to_transfer}' from {hostname}:{remote_file_path}")
+                    break
+            
+            except Exception as e:
+                print(f"Error while fetching csv file for {hostname}: {e}<-----------------------no csv files")
+                try:
+                    os.remove(local_path+file_to_transfer)
+                    print("removing not found")
+                except:
+                    pass
+                
+            finally:
+                if client:
+                    client.close()
+
     def get_remote_dir(self, os_type, username):
         os_type = os_type.lower()
         if os_type == "linux":
@@ -180,6 +247,17 @@ class ZoomAutomation:
             return f"C:/Users/{username}/Documents/zoom_automation/"
         elif os_type == "mac":
             self.mac += 1
+            return f"/Users/{username}/Documents/zoom_automation/"
+        else:
+            raise ValueError(f"Unsupported os_type: {os_type}")
+
+    def get_remote_dir_not_inc(self, os_type, username):
+        os_type = os_type.lower()
+        if os_type == "linux":
+            return f"/home/{username}/Documents/zoom_automation/"
+        elif os_type == "windows":
+            return f"C:/Users/{username}/Documents/zoom_automation/"
+        elif os_type == "mac":
             return f"/Users/{username}/Documents/zoom_automation/"
         else:
             raise ValueError(f"Unsupported os_type: {os_type}")
@@ -279,13 +357,9 @@ class ZoomAutomation:
         self.end_time = self.start_time + timedelta(minutes=self.duration)
         return [self.start_time,self.end_time]
         
-    def run(self, duration, lanforge_ip, sigin_email, sigin_passwd, participants):
+    def run(self):
         # Store the email and password in the instance
-        self.sigin_email = sigin_email
-        self.sigin_passwd = sigin_passwd
-        self.duration = duration
-        self.flask_ip = lanforge_ip
-        self.participants_req = participants
+        
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
         flask_thread.start()
@@ -306,16 +380,22 @@ class ZoomAutomation:
             if client_type == 'host':
                 print(f"Processing Host ({hostname})")
                 self.ssh_and_transfer_files(hostname, ip, username, password, os_type, client_type,client)
-            
+        login_tries = 0    
         while not self.login_completed:
-            try:
-                response = requests.get(f"http://{self.flask_ip}:5000/login_completed")
-                data = response.json()
-                self.login_completed = data.get('login_completed', False)
-                time.sleep(5)
-            except Exception as e:
-                print(f"Error while checking login_completed status: {e}")
-                time.sleep(5)
+            time.sleep(5)
+            login_tries += 1
+            if login_tries > 30:
+                print("Unable to login in host. Exiting the test")
+                return
+            
+            # try:
+            #     response = requests.get(f"http://{self.flask_ip}:5000/login_completed")
+            #     data = response.json()
+            #     self.login_completed = data.get('login_completed', False)
+            #     time.sleep(5)
+            # except Exception as e:
+            #     print(f"Error while checking login_completed status: {e}")
+            #     time.sleep(5)
 
         for client in self.clients:
             hostname = client.get('hostname', 'N/A')
@@ -395,7 +475,7 @@ class ZoomAutomation:
 
         print("path: {}".format(report_path))
         print("path_date_time: {}".format(report_path_date_time))
-
+        self.get_csv_files(local_path=report_path_date_time+"/")
         report.set_title("Zoom Call Automated Report")
         report.build_banner()
 
@@ -468,7 +548,7 @@ class ZoomAutomation:
                 "video_pktloss_r":[],
             }
             try:
-                file_path = os.path.join(self.path, f'{client["hostname"]}.csv')
+                file_path = os.path.join(report_path_date_time, f'{client["hostname"]}.csv')
                 with open(file_path, mode='r',encoding='utf-8', errors='ignore') as file:
                     csv_reader = csv.DictReader(file)
                     for row in csv_reader:
@@ -519,12 +599,12 @@ class ZoomAutomation:
 
                         temp_min_video_pktloss_s =min(temp_min_video_pktloss_s,float((row["Sent Video Packet loss (%)"]).split(" ")[0].replace("%",""))) if temp_min_video_pktloss_s > 0 and float((row["Sent Video Packet loss (%)"]).split(" ")[0].replace("%","")) > 0 else ( float((row["Sent Video Packet loss (%)"]).split(" ")[0].replace("%","")) if float((row["Sent Video Packet loss (%)"]).split(" ")[0].replace("%","")) > 0 else temp_min_video_pktloss_s) 
                         temp_min_video_pktloss_r =min(temp_min_video_pktloss_r,float((row["Sent Video Packet loss (%)"]).split(" ")[0].replace("%",""))) if temp_min_video_pktloss_r > 0 and float((row["Sent Video Packet loss (%)"]).split(" ")[0].replace("%","")) > 0 else ( float((row["Sent Video Packet loss (%)"]).split(" ")[0].replace("%","")) if float((row["Sent Video Packet loss (%)"]).split(" ")[0].replace("%","")) > 0 else temp_min_video_pktloss_r) 
-
-                      
+         
             except Exception as e:
                 print(f"error in reading data in client {client['hostname']}",e)
                 no_csv_client.append(client['hostname'])
                 rejected_clients.append(client)
+            
             if client["hostname"] not in no_csv_client:
                 client_array.append(client["hostname"])
                 accepted_clients.append(client)
@@ -553,13 +633,14 @@ class ZoomAutomation:
                 min_video_pktloss_s.append(temp_min_video_pktloss_s)
                 max_video_pktloss_r.append(temp_max_video_pktloss_r)
                 min_video_pktloss_r.append(temp_min_video_pktloss_r)
-                print(per_client_data)
 
                 final_dataset.append(per_client_data.copy())
-        
+        print("accepted_client",accepted_clients)
+        print("nocsverror",no_csv_client)
+        print("rejected_client",rejected_clients)
         report.set_table_title("Test Devices:")
         report.build_table_title()
-        print(final_dataset)
+        
         device_details = pd.DataFrame({
             'Device Name': [client['hostname'] for client in accepted_clients],
             'OS Type': [client['os_type'] for client in accepted_clients],
@@ -809,10 +890,10 @@ class ZoomAutomation:
         # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
         # report.write_pdf(_page_size = 'A4', _orientation='Landscape')
         report.write_pdf(_page_size='Legal', _orientation='Landscape')
-        for client in self.clients:
-            file_to_move_path = os.path.join(self.path, f'{client["hostname"]}.csv')
-            print(file_to_move_path)
-            self.move_files(file_to_move_path,report_path_date_time)
+        # for client in self.clients:
+        #     file_to_move_path = os.path.join(self.path, f'{client["hostname"]}.csv')
+        #     print(file_to_move_path)
+        #     self.move_files(file_to_move_path,report_path_date_time)
 
 
 if __name__ == "__main__":
@@ -831,6 +912,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
-    automation = ZoomAutomation(audio=args.audio, video=args.video, lanforge_ip=args.lanforge_ip,wait_time=args.wait_time)
-    automation.run(args.duration, args.lanforge_ip, args.sigin_email, args.sigin_passwd, args.participants)
+    automation = ZoomAutomation(audio=args.audio, video=args.video, lanforge_ip=args.lanforge_ip,duration=args.duration,sigin_email= args.sigin_email,sigin_passwd = args.sigin_passwd,participants= args.participants,wait_time=args.wait_time)
+    automation.run()
 

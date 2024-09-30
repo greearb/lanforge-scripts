@@ -47,13 +47,15 @@ class ZoomHost:
             "profile.managed_default_content_settings.geolocation": 1,
             "profile.managed_default_content_settings.media_stream": 1
         }
-        chrome_options.add_argument("--disable-gpu")
+        # chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
-        # chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-notifications")
         chrome_options.add_experimental_option("prefs", prefs)
+        chrome_options.add_argument("--disable-3d-apis")
         chrome_options.add_argument("--use-fake-ui-for-media-stream")
-
+        chrome_options.add_argument("--ignore-certificate-errors")
+        chrome_options.add_argument("--disable-popup-blocking")  # Block popups
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-infobars")
         self.driver = webdriver.Chrome(options=chrome_options)
@@ -81,8 +83,10 @@ class ZoomHost:
         action = webdriver.ActionChains(self.driver)
                           
         self.wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "button.btn-index-signin"))).click()                   
-        self.wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "input#email"))).send_keys(self.login_email)                    
+        self.wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "input#email"))).send_keys(self.login_email)
+        action.move_by_offset(10, 20).perform()                    
         self.wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "input#password"))).send_keys(self.login_passwd)
+        action.move_by_offset(-10, -20).perform()
         time.sleep(5)                 
         self.wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "button#js_btn_login"))).click()  
         self.wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "button.main__action-btn"))).click() 
@@ -445,6 +449,7 @@ class ZoomHost:
                     print("Error: credentials.txt is empty.")
         except IOError:
             print(f"Error: Unable to read {credentials_file}")
+    
     def get_stats_flags(self):
         endpoint_url = f"{self.base_url}/stats_opt"
         try:
@@ -512,6 +517,10 @@ class ZoomHost:
 
 if __name__ == "__main__":
     zoom_host = ZoomHost()  # Replace with your actual server IP
+    try:
+        os.remove('{}.csv'.format(zoom_host.hostname))
+    except:
+        pass
     zoom_host.read_credentials()
     zoom_host.start_zoom()
     wait_limit = datetime.now() + timedelta(seconds = 60)
@@ -551,11 +560,12 @@ if __name__ == "__main__":
             print(len(header))
             stats = zoom_host.collecting_stats()
             csv_writer.writerow(stats)
+            file.flush()
             time.sleep(5)
     print("test has been completed")
     zoom_host.wait_for_exit()
     zoom_host.send_client_disconnection()
     zoom_host.stop_zoom()
-    zoom_host.transfer_files(f'{zoom_host.hostname}.csv')
-    
+    # zoom_host.transfer_files(f'{zoom_host.hostname}.csv')
+    print("Test completed")
     
