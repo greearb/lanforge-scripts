@@ -368,7 +368,7 @@ class InteropPortReset(Realm):
                 if win_association_rejection:
                     # Updating the connects
                     actual_connects = win_association_attempt - win_association_rejection
-                    print('win association attempts {}, win rejection attempts {}'.format(win_association_attempt, win_association_rejection))
+                    # print('win association attempts {}, win rejection attempts {}'.format(win_association_attempt, win_association_rejection))
                     if actual_connects == win_connected_count:
                         win_connected_count = win_connected_count
                     else:
@@ -440,15 +440,15 @@ class InteropPortReset(Realm):
                 else:
                     if other_association_attempt == other_connected_count:
                         other_connected_count = other_connected_count
-                    else:
-                        # Double-checking & adding remarks if any
-                        if other_connected_count > 1 or other_connected_count == 0:
-                            port_name = phn_name.split(".")
-                            port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
-                            if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
-                                other_connected_count = 1
-                            else:
-                                other_connected_count = 0
+                    # else:
+                    # Double-checking & adding remarks if any
+                    if other_connected_count > 1 or other_connected_count == 0:
+                        port_name = phn_name.split(".")
+                        port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
+                        if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
+                            other_connected_count = 1
+                        else:
+                            other_connected_count = 0
                 logging.info("Final Connected Count for %s: %s" % (phn_name, other_connected_count))
                 local_dict[str(phn_name)]["Connected"] = other_connected_count
                 # Updating the association-rejections
@@ -959,15 +959,16 @@ class InteropPortReset(Realm):
 
             date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
             # self.lf_report.move_data(_file_name="overall_reset_test.log")
-            security = ""
-            if self.encryp == "psk2":
-                security = "wpa2"
-            elif self.encryp == "psk3":
-                security = "wpa3"
-            elif self.encryp == "psk":
-                security = "wpa"
-            else:
-                security = "open"
+            # security = ""
+            # if self.encryp == "psk2":
+            #     security = "wpa2"
+            # elif self.encryp == "psk3":
+            #     security = "wpa3"
+            # elif self.encryp == "psk":
+            #     security = "wpa"
+            # else:
+            #     security = "open"
+            security = self.encryp
             test_setup_info = {
                 "DUT Name": self.dut_name,
                 "LANforge ip": self.host,
