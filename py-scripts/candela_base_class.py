@@ -15,6 +15,8 @@ import lf_interop_ping as ping_test
 from lf_interop_throughput import Throughput
 from lf_interop_video_streaming import VideoStreamingTest
 from lf_interop_real_browser_test import RealBrowserTest
+from lf_interop_port_reset_test import InteropPortReset
+from roam_test import Roam
 from test_l3 import L3VariableTime
 from lf_kpi_csv import lf_kpi_csv
 import lf_cleanup
@@ -99,6 +101,52 @@ class Candela:
         response = requests.post(url=self.api_url + endp, json=payload)
         return response
 
+    def set_radio_channel(self, channel=-1, radio='1.1.wiphy0'):
+        """
+        Method to set Radio Channel
+        Args:
+            channel (int, optional): Channel number. Set -1 to set channel to Auto. Defaults to -1.
+            radio (str, optional): . Defaults to '1.1.wiphy0'.
+
+        Returns:
+            object: Response object
+        """        
+        shelf, resource, port = radio.split('.')
+        radio_config = {
+            'shelf': shelf,
+            'resource': resource,
+            'radio': port,
+            'channel': channel
+        }
+        response = self.api_post('/cli-json/set_wifi_radio', payload=radio_config)
+        return response
+    
+    def start_sniffer(self, ssh_username='lanforge', ssh_password='lanforge', interface='sniffer0', pcap_name='~/Desktop/sniff.pcap'):
+        """
+        Method to start sniffing on a selected interface with a pcap name.
+
+        Args:
+            interface (str, optional): Interface to start the tshark sniffer. Defaults to 'eth1'.
+            pcap_name (str, optional): PCAP name to store the sniffer output. Defaults to '~/Desktop/sniff.pcap'.
+        """
+
+        self.sniff_obj = Roam(lanforge_ip=self.lanforge_ip,
+                              port=self.port,
+                              ssh_username=ssh_username,
+                              ssh_password=ssh_password,
+                              sniff_radio=interface,
+                              sniff=True,
+                              attenuators=['1','1'])
+        
+        self.sniff_obj.connect()
+        self.sniff_obj.start_sniff(interface=interface, pcap_name=pcap_name)
+        self.sniff_obj.disconnect()
+
+    def stop_sniffer(self):
+        self.sniff_obj.connect()
+        self.sniff_obj.stop_sniff()
+        self.sniff_obj.disconnect()
+    
     def misc_clean_up(self,layer3=False,layer4=False):
         """
         Use for the cleanup of cross connections
@@ -162,6 +210,21 @@ class Candela:
                     if all_columns['parent dev'] == 'wiphy0':
                         all_devices[resource_port].update(all_columns)
         return all_devices
+
+    def get_android_info(self):
+        """
+        Method to get Android Details from Interop Tab
+
+        Returns:
+            list: List of Dicts containing info of each android
+        """        
+        interop_response, interop_data = self.api_get('/adb')
+        if 'devices' in interop_data:
+            interop_devices = interop_data['devices']
+            return interop_devices
+        else:
+            logging.error('Malformed response: {}, {}'.format(interop_response, interop_data))
+            return []
 
     def get_client_connection_details(self, device_list: list):
         """
@@ -947,6 +1010,7 @@ class Candela:
         else:
             data = qos_test_overall_real()
         return data
+
     def stop_qos_test(self):
         """
         Method to stop QOS test.
@@ -2422,6 +2486,191 @@ class Candela:
         
         self.multicast_test.report.write_pdf_with_timestamp(_page_size='A3', _orientation='Landscape')
 
+    def start_port_reset_test(self,**kwargs):
+        """
+        Initiates a Port Reset test with various configurable parameters.
+
+        Args:
+            
+            dut (str): DUT name
+                            Default is 'TestDut'
+            device_list (str): Provide port IDs of  devices to run the test on, e.g., "1.10.wlan0,1.12.wlan0.
+                            Default is an empty list [].
+            ssid (str): SSID
+
+            passwd (str): Password for the given SSID.
+                            Use [BLANK] incase of Open Encryption.
+
+            encryp (str) Encryption type
+                            Default is psk2
+            
+            reset (int) No. of resets to be performed
+                            Default is 2
+
+            suporrted_release (list): List of supported Android versions.
+                            Default is ['12']
+
+            time_int (int): Specify the time interval in seconds after which reset should happen.
+                            Default is 5
+            
+            mgr_ip (str):   Specify the upstream IP to which Androids are to be clustered while configuring.
+
+            forget_network (bool): True if clear wifi profile needs to be applied on Androids, False otherwise.
+            
+            "background_run (bool)": Port resets will happen in background.
+
+        """ 
+        device_list = kwargs.get("device_list","")
+        # device_list = self.filter_iOS_devices(device_list)
+        if len(device_list.split(',')) == 0:
+            print('No devices specified.')
+            exit(1)
+        kwargs['device_list'] = device_list
+        background_run = kwargs.get("background_run",False)
+        if background_run:
+            logging.info('Started port reset test in background.')
+            del kwargs['background_run']
+            self.port_reset_monitoring_thread=threading.Thread(target=self.start_preset_test,kwargs=kwargs)
+            self.port_reset_monitoring_thread.start()
+        else:
+            del kwargs['background_run']
+            self.start_preset_test(**kwargs)
+    
+    def start_preset_test(self,
+                        ssid,
+                        passwd,
+                        encryp,
+                        mgr_ip,
+                        dut='TestDut',
+                        reset=2,
+                        # clients=args.clients,
+                        time_int=5,
+                        # wait_time=args.wait_time,
+                        suporrted_release=['12'],
+                        device_list="",
+                        forget_network=True):
+        self.port_reset_object = InteropPortReset(
+                           host=self.lanforge_ip,
+                           port=self.port,
+                           dut=dut,
+                           ssid=ssid,
+                           passwd=passwd,
+                           encryp=encryp,
+                           reset=reset,
+                           time_int=time_int,
+                           suporrted_release=suporrted_release,
+                           mgr_ip=mgr_ip,
+                           device_list=device_list,
+                           forget_network=forget_network
+                           )
+        self.port_reset_object.selecting_devices_from_available()
+        self.reset_dict, self.preset_duration = self.port_reset_object.run()
+        return self.reset_dict
+    
+    def generate_preset_report(self):
+        """
+        Method to generate report for Port Reset test.
+        """
+        try:
+            logging.info('Running the port reset test in background.\nWaiting until the test is completed.')
+            self.port_reset_monitoring_thread.join()
+        except:
+            logging.info('Port Reset test is not running in background.')
+        self.port_reset_object.generate_report(reset_dict=self.reset_dict, test_dur=self.preset_duration)
+    
+    def start_roam_test(self, **kwargs):
+        """
+        Initiates a Port Reset test with various configurable parameters.
+
+        Args:
+
+            attenuators (list): List of attenuator serials.
+
+            bssids (list): List of BSSIDs of the APs.
+
+            step (int): Attenuation increment/decrement step size.
+                            Default is 10
+
+            max_attenuation (int): Maximum attenuation value (dBm) for the attenuators.
+                                    Provide the value without negative sign.
+                                    Default is 95.
+            
+            ssh_username (str): SSH username.
+                                    Default is lanforge
+            
+            ssh_password (str): SSH password.
+                                    Default is lanforge
+
+            wait_time (int): Waiting time (seconds) between iterations.
+                            Default is 60
+            
+            iterations (int): No. of roam iterations.
+                            Default is 1
+            
+            device_list (list): Enter the devices on which the test should be run. Ex: ['1.10.wlan0', '1.11.wlan0']
+            
+            "background_run (bool)": Port resets will happen in background.
+
+        """
+        device_list = kwargs.get("device_list","")
+        if len(device_list) == 0:
+            print('No devices specified.')
+            exit(1)
+        
+        background_run = kwargs.get("background_run",False)
+        if background_run:
+            logging.info('Started roam test in background.')
+            del kwargs['background_run']
+            self.roam_test_thread=threading.Thread(target=self.roam_test,kwargs=kwargs)
+            self.roam_test_thread.start()
+        else:
+            del kwargs['background_run']
+            self.roam_test(**kwargs)
+    
+    def roam_test(self,
+                    attenuators,
+                    bssids,
+                    device_list,
+                    wait_time=60,
+                    step=10,
+                    max_attenuation=95,
+                    ssh_username='lanforge',
+                    ssh_password='lanforge',
+                    upstream='1.1.eth1',
+                    channel='AUTO',
+                    frequency=-1,
+                    iterations=1
+                  ):
+        self.roam_test_object = Roam(
+            lanforge_ip=self.lanforge_ip,
+            port=self.port,
+            attenuators=attenuators,
+            bssids=bssids,
+            step=step,
+            max_attenuation=max_attenuation,
+            ssh_username=ssh_username,
+            ssh_password=ssh_password,
+            upstream=upstream,
+            wait_time=wait_time,
+            channel=channel,
+            frequency=frequency,
+            iterations=iterations,
+            iteration_based=True
+        )
+        self.roam_test_object.station_list = device_list
+        logging.info('Selected stations\t{}'.format(device_list))
+        self.roam_test_object.soft_roam_test()
+    
+    def generate_roam_test_report(self):
+        """
+        Method to generate report for Roam test.
+        """
+        try:
+            logging.info('Running the roam test in background.\nWaiting until the test is completed.')
+            self.roam_test_thread.join()
+        except:
+            logging.info('Roam test is not running in background.')
+        self.roam_test_object.generate_report()
 
 logger_config = lf_logger_config.lf_logger_config()
 candela_apis = Candela(ip='192.168.214.61', port=8080)
@@ -2554,3 +2803,37 @@ candela_apis = Candela(ip='192.168.214.61', port=8080)
 # time.sleep(60)
 # candela_apis.stop_multicast_test()
 # candela_apis.generate_report_multicast_test()
+
+# To Run Roam Test
+# candela_apis.start_roam_test(attenuators=['1.1.1031', '1.1.3374'],
+#                              device_list=['1.11.wlan0', '1.13.wlan0'],
+#                              bssids=['90:3c:b3:b1:70:0d', '90:3c:b3:6c:41:c5'],
+#                              wait_time=1,
+#                              step=1000, background_run=True)
+# candela_apis.generate_roam_test_report()
+
+# To Run Port Reset Test
+# candela_apis.start_port_reset_test(
+#     device_list='test43',
+#     ssid='Roaming',
+#     passwd='lanforge',
+#     encryp='psk2',
+#     reset=1,
+#     suporrted_release=['11', '12', '13'],
+#     mgr_ip='192.168.214.209',
+#     forget_network=True,
+#     background_run=True
+# )
+# candela_apis.generate_preset_report()
+
+# To get android info
+# print(candela_apis.get_android_info())
+
+# To set radio channel
+# candela_apis.set_radio_channel(channel=10, radio='1.1.wiphy0')
+
+# To start sniffer
+# candela_apis.start_sniffer(interface='sniffer0', pcap_name='~/Desktop/sniff.pcap')
+
+# To stop sniffer
+# candela_apis.stop_sniffer()
