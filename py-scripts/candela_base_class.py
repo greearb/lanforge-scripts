@@ -15,6 +15,7 @@ import lf_interop_ping as ping_test
 from lf_interop_throughput import Throughput
 from lf_interop_video_streaming import VideoStreamingTest
 from lf_interop_real_browser_test import RealBrowserTest
+from zoom_automation.zoom_main import ZoomAutomation
 from lf_interop_port_reset_test import InteropPortReset
 from roam_test import Roam
 from test_l3 import L3VariableTime
@@ -2670,6 +2671,9 @@ class Candela:
             logging.info('Roam test is not running in background.')
         self.roam_test_object.generate_report()
 
+    def start_zoom(self,sigin_email,sigin_passwd,duration=1,participants=10,audio=True,video=True):
+        self.zoom_obj = ZoomAutomation(sigin_email=sigin_email,sigin_passwd=sigin_passwd,audio=audio,video=video,duration=duration,lanforge_ip=self.lanforge_ip,participants=participants)
+        self.zoom_obj.run()
 logger_config = lf_logger_config.lf_logger_config()
 candela_apis = Candela(ip='192.168.214.61', port=8080)
 
@@ -2801,6 +2805,9 @@ candela_apis = Candela(ip='192.168.214.61', port=8080)
 # time.sleep(60)
 # candela_apis.stop_multicast_test()
 # candela_apis.generate_report_multicast_test()
+
+# To RUN ZOOM TEST
+# candela_apis.start_zoom(duration=2 , sigin_email = "test@gmail.com" ,sigin_passwd ="test@1" ,participants=10 ,audio = True ,video = True)
 
 # To Run Roam Test
 # candela_apis.start_roam_test(attenuators=['1.1.1031', '1.1.3374'],

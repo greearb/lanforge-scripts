@@ -32,8 +32,8 @@ lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
 class ZoomAutomation:
     def __init__(self, hosts_file='hosts.csv', credential_file='credentials.txt',ssid="SSID",band="5G",security="wpa2",apname="AP Name",
                  sigin_email=None,sigin_passwd= None, duration=1, participants = 3 ,audio = True, video = True,lanforge_ip="localhost",wait_time = 30):
-        self.hosts_file = hosts_file
-        self.credential_file = credential_file
+        self.hosts_file = os.path.join(os.path.dirname(__file__),hosts_file)
+        self.credential_file = os.path.join(os.path.dirname(__file__),credential_file)
         self.flask_ip = lanforge_ip
         self.app = Flask(__name__)
         self.windows = 0
@@ -77,7 +77,7 @@ class ZoomAutomation:
         additional_dir = "test_results"
 
         # Combine the current directory with the additional directory
-        self.path = os.path.join(current_dir, additional_dir)
+        self.path = os.path.join(os.path.dirname(__file__), additional_dir)
 
         print("New Path:", self.path )
 
@@ -175,7 +175,7 @@ class ZoomAutomation:
                 file_data = f.read()
                 sftp = client.open_sftp()
                 sftp.put(local_path, remote_path)
-                sftp.put(self.credential_file, os.path.join(remote_dir, self.credential_file))  # Transfer credentials.txt
+                sftp.put(self.credential_file, os.path.join(remote_dir, 'credentials.txt'))  # Transfer credentials.txt
                 sftp.close()
                 print(f"  - Successfully transferred '{file_to_transfer}' to {hostname}:{remote_path}")
         
