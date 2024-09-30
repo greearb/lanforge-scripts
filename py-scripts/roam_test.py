@@ -36,6 +36,7 @@ class Roam(Realm):
                  ssh_username='root',
                  ssh_password='lanforge',
                  sniff_radio='1.1.wiphy0',
+                 sniff=False,
                  station_radio='1.1.wiphy0',
                  band='5G',
                 #  ap1_bssid=None,
@@ -101,6 +102,7 @@ class Roam(Realm):
 
         self.real_devices = real_devices
         self.sniff_radio = sniff_radio
+        self.sniff = sniff
         self.sniff_duration = sniff_duration
         self.station_radio = station_radio
         self.band = band
@@ -140,12 +142,13 @@ class Roam(Realm):
                         logging.info('Attenuator {} is not in the test attenuators list. Setting the attenuation value to max.'.format(atten_serial_name))
                         self.set_atten(atten_serial_name, self.max_attenuation)
 
-        self.sniff_radio_resource, self.sniff_radio_shelf, self.sniff_radio_port, _ = self.name_to_eid(
-            self.sniff_radio)
+        if self.sniff:
+            self.sniff_radio_resource, self.sniff_radio_shelf, self.sniff_radio_port, _ = self.name_to_eid(
+                self.sniff_radio)
 
-        self.monitor = self.new_wifi_monitor_profile(
-            resource_=self.sniff_radio_resource, up_=False)
-        self.create_monitor()
+            self.monitor = self.new_wifi_monitor_profile(
+                resource_=self.sniff_radio_resource, up_=False)
+            self.create_monitor()
 
         self.staConnect = sta_connect.StaConnect2(host=self.lanforge_ip, port=self.port,
                                                   outfile="sta_connect2.csv")
@@ -179,7 +182,7 @@ class Roam(Realm):
     
     def stop_cx(self):
         for cx_name in self.cx_profile.created_cx.keys():
-            print(cx_name)
+            # print(cx_name)
             self.stop_cx(cx_name)
 
     def set_attenuators(self, atten1, atten2):
@@ -283,7 +286,7 @@ class Roam(Realm):
         self.pcap_names.append(pcap_name)
         sniff_cmd = 'tshark -i {} -w {} > /dev/null 2>&1 &'.format(
             interface, pcap_name)
-        print(sniff_cmd)
+        logging.info('{}'.format(sniff_cmd))
         self.ssh_execute(sniff_cmd)
         
         stdin, stdout, stderr = self.ssh_execute(
@@ -291,7 +294,7 @@ class Roam(Realm):
         self.monitor_pid = stdout.readline().split()[1]
         pid = self.monitor_pid
         
-        print('Started sniffer on {} with pid {}'.format(interface, pid))
+        logging.info('Started sniffer on {} with pid {}'.format(interface, pid))
     
     def save_files(self, test_dir_name=""):
         # self.connect()
@@ -557,7 +560,8 @@ class Roam(Realm):
             return False
 
     def soft_roam_test(self):
-        self.connect()
+        if self.sniff:
+            self.connect()
         for station in self.station_list:
             self.station_based_roam_count[station] = 0
         for bssid in self.bssids:
@@ -575,7 +579,8 @@ class Roam(Realm):
                 }
                 for atten_set in self.attenuator_combinations:
                     current_iteration_roam_data = {}
-                    self.start_sniff(pcap_name='/home/lanforge/Desktop/iteration_{}_roam_{}.pcap'.format(current_iteration, self.attenuator_combinations.index(atten_set)))
+                    if self.sniff:
+                        self.start_sniff(pcap_name='/home/lanforge/Desktop/iteration_{}_roam_{}.pcap'.format(current_iteration, self.attenuator_combinations.index(atten_set)))
                     
                     # for displaying purpose
                     print('========================================================================')
@@ -622,8 +627,9 @@ class Roam(Realm):
                         # print(current_iteration_roam_data)
                     # print(current_iteration_roam_data)
                     self.roam_data[current_iteration][atten_set] = current_iteration_roam_data
-                    logging.info('Stopping sniffer')
-                    self.stop_sniff()
+                    if self.sniff:
+                        logging.info('Stopping sniffer')
+                        self.stop_sniff()
                     self.active_attenuator, self.passive_attenuator = self.passive_attenuator, self.active_attenuator
                 logging.info('Iteration {} complete'.format(current_iteration))
                 # self.roam_data[atten_set].update({
@@ -671,6 +677,46 @@ class Roam(Realm):
 
         logging.info('{}'.format(self.bssid_based_totals))
         logging.info('{}'.format(self.station_based_roam_count))
+
+        device_level_data = {}
+        self.windows = 0
+        self.linux = 0
+        self.mac = 0
+        self.android = 0
+        for station in self.station_based_roam_count.keys():
+            shelf, resource, port = station.split('.')
+            current_sta_data = self.json_get('/port/{}/{}/{}'.format(shelf, resource, port))
+            if 'interface' not in current_sta_data.keys():
+                logging.warning('Malformed or missing data for the client {}'.format(station))
+                continue
+            current_sta_data = current_sta_data['interface']
+            device_level_data[station] = { 
+                'mac': current_sta_data['mac'],
+                'Signal': current_sta_data['signal']
+            }            
+            
+            
+            current_resource_data = self.json_get('/resource/{}/{}/{}'.format(shelf, resource, port))
+            if 'resource' not in current_resource_data.keys():
+                logging.warning('Malformed or missing data for the resource {}'.format(station))
+                continue
+            current_resource_data = current_resource_data['resource']
+            device_level_data[station]['Device'] = [ current_resource_data['user'] if current_resource_data['user'] != '' else current_resource_data['hostname'] ][0]
+            hw_version = current_resource_data['hw version']
+            if 'Win' in hw_version:
+                device_level_data[station]['OS'] = 'Windows'
+                self.windows += 1
+            elif 'Linux' in hw_version:
+                device_level_data[station]['OS'] = 'Linux'
+                self.linux += 1
+            elif 'Apple' in hw_version:
+                device_level_data[station]['OS'] = 'Apple'
+                self.mac += 1
+            else:
+                device_level_data[station]['OS'] = 'Android'
+                self.android += 1
+        
+        logging.info('{}'.format(device_level_data))
         
         logging.info('Generating Report')
 
@@ -691,10 +737,11 @@ class Roam(Realm):
         test_setup_info = {
             'SSID': [self.ssid if self.ssid else 'TEST CONFIGURED'][0],
             'Security': [self.security if self.ssid else 'TEST CONFIGURED'][0],
-            'Sniffer Radio': [self.sniff_radio if self.sniff_radio else 'TEST CONFIGURED'][0],
+            'Sniffer Radio': ['No Sniffer' if not self.sniff else self.sniff_radio if self.sniff_radio else 'TEST CONFIGURED'][0],
             # 'Station Type': self.sta_type,
             'Iterations': self.iterations,
-            'No of Devices': len(self.station_list),
+            'No of Roams': self.iterations * 2,
+            'No of Devices': '{} (A:{}, W:{}, L:{}, M:{})'.format(len(self.station_list), self.android, self.windows, self.linux, self.mac),
             # 'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
         }
         report.test_setup_table(
@@ -807,7 +854,7 @@ class Roam(Realm):
             'BSSID': list(self.bssid_based_totals.keys()),
             'Successful Roams': list(self.bssid_based_totals.values())
         })
-        print(bssid_based_roam_data)
+        # print(bssid_based_roam_data)
         report.set_table_dataframe(bssid_based_roam_data)
         report.build_table()
 
@@ -848,7 +895,7 @@ class Roam(Realm):
                                         _enable_csv=True,
                                         _color_name=['orange', 'darkgreen', 'red'])
 
-        print([station_based_total_attempted_roams, list(self.station_based_roam_count.values()), station_based_failed_roams])
+        # print([station_based_total_attempted_roams, list(self.station_based_roam_count.values()), station_based_failed_roams])
         station_based_graph_png = station_based_graph.build_bar_graph_horizontal()
         logging.info('graph name {}'.format(station_based_graph_png))
         report.set_graph_image(station_based_graph_png)
@@ -857,9 +904,12 @@ class Roam(Realm):
         report.set_csv_filename(station_based_graph_png)
         report.move_csv_file()
         report.build_graph()
-
+            
         station_based_roam_data = pd.DataFrame({
-            'Station': list(self.station_based_roam_count.keys()),
+            'Device': [ device_level_data[station]['Device'] for station in self.station_based_roam_count.keys()],
+            'OS': [ device_level_data[station]['OS'] for station in self.station_based_roam_count.keys()],
+            'MAC': [ device_level_data[station]['mac'] for station in self.station_based_roam_count.keys()],
+            'Signal Strength (dBm)': [ device_level_data[station]['Signal'] for station in self.station_based_roam_count.keys()],
             'Attempted Roams': station_based_total_attempted_roams,
             'Successful Roams': list(self.station_based_roam_count.values()),
             'Failed Roams': station_based_failed_roams
@@ -875,7 +925,8 @@ class Roam(Realm):
         report.write_pdf()
 
         # pulling pcaps
-        self.save_files(test_dir_name=report_path_date_time)
+        if self.sniff:
+            self.save_files(test_dir_name=report_path_date_time)
 
         # self.disconnect()
 
@@ -1022,6 +1073,10 @@ def main():
     optional.add_argument('--sniff_radio',
                           help='Sniffer Radio',
                           default='1.1.wiphy0')
+
+    optional.add_argument('--sniff_packets',
+                          help='Enable this flag to sniff packets on the specified radio',
+                           action='store_true')
     # optional.add_argument('--sniff_duration',
     #                       help='Sniff duration',
     #                       type=int,
@@ -1066,6 +1121,7 @@ def main():
             lanforge_ip=args.mgr,
             port=args.port,
             sniff_radio=args.sniff_radio,
+            sniff=args.sniff_packets,
             # ap1_bssid=args.ap1_bssid,
             # ap2_bssid=args.ap2_bssid,
             # attenuator1=args.attenuator1,
@@ -1078,9 +1134,9 @@ def main():
             ssh_password=args.ssh_password,
             # sniff_duration=args.sniff_duration,
             upstream=args.upstream,
-            # ssid=args.ssid,
-            # security=args.security,
-            # password=args.password,
+            ssid=args.ssid,
+            security=args.security,
+            password=args.password,
             wait_time=args.wait_time,
             channel=args.channel,
             frequency=args.frequency,
@@ -1093,6 +1149,7 @@ def main():
             lanforge_ip=args.mgr,
             port=args.port,
             sniff_radio=args.sniff_radio,
+            sniff=args.sniff_packets,
             station_radio=args.sta_radio,
             band=args.band,
             # ap1_bssid=args.ap1_bssid,
