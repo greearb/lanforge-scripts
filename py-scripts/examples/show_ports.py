@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 """
-NAME: show_ports.py
+NAME:       show_ports.py
 
-PURPOSE:
-    This script serves both as an example for automating LANforge using the REST API
-    and as a minimal example to show general port information.
+PURPOSE:    This script serves both as an example for automating LANforge using the REST API
+            and as a minimal example to show general port information.
 
-    While the script will always show basic information like the port name, port EID, phantom status, down status.
-    Other fields visible in the 'Port Mgr' GUI tab are supported when passed via the `--addtl_fields` argument.
+            While the script will always show basic information like the port name, port EID,
+            phantom status, down status. Other fields visible in the 'Port Mgr' GUI tab are
+            supported when passed via the `--addtl_fields` argument.
 
-EXAMPLE:
-    ./show_ports.py --mgr 192.168.30.12 --addtl_fields "hardware,mode,channel,signal"
+EXAMPLE:    # Query testbed managed by '192.168.30.12' LANforge for all ports
+            # for data in 'hardware', 'mode', 'channel', and 'signal' columns of
+            # the 'Port Mgr' tab
+            ./show_ports.py --mgr 192.168.30.12 --addtl_fields "hardware,mode,channel,signal"
+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2024 Candela Technologies Inc.
 """
 import argparse
 from http import HTTPStatus
