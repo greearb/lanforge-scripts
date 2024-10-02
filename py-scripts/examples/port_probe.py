@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """
-NAME: port_probe.py
+NAME:       port_probe.py
 
-PURPOSE:
-    This script serves both as an example for automating LANforge using the REST API
-    and as a minimal port probe example.
+PURPOSE:    This script serves both as an example for automating LANforge using the REST API
+            and as a minimal port probe example.
 
-    It is designed to find and show details about a specific port. If the port is related to WiFi,
-    the gathered details will include the port's radio information and regulatory information,
-    among other items.
+            It is designed to find and show details about a specific port. If the port is related to WiFi,
+            the gathered details will include the port's radio information and regulatory information,
+            among other items.
 
-EXAMPLE:
-    ./port_probe.py --mgr 192.168.30.12 --port_eid 1.1.wiphy0
+EXAMPLE:    # Query the '192.168.30.12' LANforge manager for information on port 'wiphy0'
+            ./port_probe.py --mgr 192.168.30.12 --port_eid 1.1.wiphy0
+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2024 Candela Technologies Inc.
 """
 import argparse
 from http import HTTPStatus
