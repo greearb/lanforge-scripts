@@ -33,6 +33,7 @@ logging.basicConfig(level=logging.INFO,
 DEFAULT_FIELDS = ["_links", "port", "alias", "down", "phantom"]
 DEFAULT_FIELDS_CSV = ",".join(DEFAULT_FIELDS)
 
+
 def show_ports(mgr: str = "localhost", mgr_port: int = 8080, resource: str = "all", addtl_fields: str = "") -> pandas.DataFrame:
     """
     Using the LANforge REST API, gather and print specified information on all ports.
@@ -71,7 +72,7 @@ def show_ports(mgr: str = "localhost", mgr_port: int = 8080, resource: str = "al
 
     ports_data = json_data.get("interfaces")
     if not ports_data:
-        logger.error(f"Key \'interfaces\' not in JSON data")
+        logger.error("Key \'interfaces\' not in JSON data")
         exit(1)
 
     # Unpack ports data into temporary data structure
