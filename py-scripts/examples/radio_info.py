@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-'''
-NAME: radio_info.py
+"""
+NAME:       radio_info.py
 
-PURPOSE:
-    This script queries and displays general information for all radios in a LANforge testbed.
-    Information queried includes WiFi generation, number of stations and vAPs supported,
-    driver, and firmware version for all resources in the testbed.
+PURPOSE:    This script queries and displays general information for all radios in a LANforge testbed.
 
-EXAMPLE:
-    ./radio_info.py --mgr 192.168.30.22
-'''
+            Information queried includes WiFi generation, number of stations and vAPs supported,
+            driver, and firmware version for all resources in the testbed.
+
+EXAMPLE:    # Query radio info for all radios in testbed managed by '192.168.30.22' LANforge
+            ./radio_info.py --mgr 192.168.30.22
+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2024 Candela Technologies Inc.
+"""
 
 import argparse
 import logging
