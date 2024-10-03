@@ -7,7 +7,7 @@ import sys
 import os
 import importlib
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -41,5 +41,3 @@ distrib_load = {
 
 if __name__ == '__main__':
     LFUtils.expand_endp_histogram(distrib_load)
-
-

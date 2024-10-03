@@ -200,7 +200,7 @@ class Android():
             else:
                 shelf, resource, serial, ssid, passwd, enc, eap_method, eap_identity = port_data
                 curr_ssid, curr_passwd, curr_encryption, curr_eap_method, curr_eap_identity = ssid, passwd, enc, eap_method, eap_identity
-            
+
             username = self.get_username(shelf, resource)
 
             if (username is None):

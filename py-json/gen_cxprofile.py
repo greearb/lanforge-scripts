@@ -56,28 +56,28 @@ class GenCXProfile(LFCliBase):
             self.json_post('/cli-json/set_endp_report_timer', data, debug_=True)
         else:
             logger.warning('Endpoint name not specified for setting the report timer')
-    
+
     # If not specified, default client_type is linux
     def parse_command(self, sta_name, gen_name, client_type="linux", ip=None):
         if self.type == "lfping":
             self._parse_ping_cmd(sta_name=sta_name, client_type=client_type, ip=ip)
-            
+
         elif self.type == "generic":
             if self.cmd == "":
                 logger.critical("Please ensure cmd has been set correctly")
                 raise ValueError("Please ensure cmd has been set correctly")
-            
+
         elif self.type == "speedtest":
             self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % sta_name
 
         elif self.type == "iperf3" and self.dest:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_%s.pid" % (self.dest, sta_name, gen_name)
-            
+
         elif self.type == "iperf3_serv" and self.dest:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -s --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_%s.pid" % (sta_name, gen_name)
-            
+
         elif self.type == "lfcurl":
             if self.file_output:
                 self.cmd = "./scripts/lf_curl.sh  -p %s -i AUTO -o %s -n %s -d %s" % \
@@ -746,4 +746,3 @@ class GenCXProfile(LFCliBase):
             if output_format.lower() != 'csv':
                 pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format,
                                              save_path=report_file)
-
