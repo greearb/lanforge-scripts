@@ -843,7 +843,7 @@ INCLUDE_IN_README:
                           ' 7 ABC (3x3) \n'
                           ' 8 ABCD (4x4) \n'
                           ' 9 (8x8) \n',
-                          default='-1')
+                          default='0')
     optional.add_argument("--radio_channel",
                           help='Radio Channel: \n'
                           ' default: AUTO \n'
