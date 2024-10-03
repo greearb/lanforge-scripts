@@ -59,3 +59,15 @@ To configure Git pre-commit hooks, run the following steps:
     # The same steps will run when you enter 'git commit'
     pre-commit run
     ```
+
+#### Unable to Commit Due to `pre-commit` Failure
+
+During normal use `pre-commit` may prevent you from generating a commit due to a failure during its checks. **Generally, you should always fix issues highlighted (and sometimes fixed) by `pre-commit`.** However, there are times where you must skip these and force a commit. This section details how to do so.
+
+In this repository, we configure `pre-commit` to perform basic sanity checks, including checks for trailing whitespace, non-PEP compliant whitespace usage, and YAML syntax checking. These checks are run when generating a commit (`git commit`) or when manually run (`pre-commit run`).
+
+The tool itself will automatically fix some issues for you, helping avoid failures during automated code linting run on pull request and push. In this case, the fixes `pre-commit` makes require you to re-stage (`git add`) the fixed files and reattempt commit. Most of these checks (except YAML syntax checking) are also run during automated code linting, which is run on pull request and push.
+
+We're slowly working to add more Python scripts to automated code linting using GitHub Actions. However, most scripts are not included at this point and we do not yet have a way to configure `pre-commit` to ignore non-included or non-Python scripts. Should you encounter failures during commit which you would like to bypass, re-run `git commit` with the `--no-verify` to bypass `pre-commit` and force a commit.
+
+We ask that you force commits only in limited cases. The feedback and fixes from `pre-commit` are valuable and help us ensure code quality in this repository. Any failures during automated linting checks in GitHub Actions will require re-submission of your pull request to fix the issue.
