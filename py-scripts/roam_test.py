@@ -43,7 +43,8 @@ class Roam(Realm):
                 #  ap2_bssid=None,
                 #  attenuator1=None,
                 #  attenuator2=None,
-                 attenuators=[],
+                 attenuator='',
+                 attenuator_modules=[],
                  bssids=[],
                  step=100,
                  max_attenuation=950,
@@ -77,7 +78,10 @@ class Roam(Realm):
         # self.ap2_bssid = ap2_bssid
         # self.attenuator1 = attenuator1
         # self.attenuator2 = attenuator2
-        self.attenuators = attenuators
+        self.attenuator = attenuator
+        self.attenuator_modules = []
+        for atten_module_comb in attenuator_modules:
+            self.attenuator_modules.append(atten_module_comb.split(','))
         self.step = step
         self.max_attenuation = max_attenuation
         self.bssids = bssids
@@ -120,15 +124,15 @@ class Roam(Realm):
         self.station_based_roam_count = {}
         self.pcap_names = []
 
-        if(len(self.attenuators) == 1):
-            logging.error('Cannot perform roaming with only one attenuator. Please provide atleast two attenuators.')
+        if(len(self.attenuator_modules) == 1):
+            logging.error('Cannot perform roaming with only one module. Please provide atleast two modules.')
             exit(1)
         # self.attenuator_combinations = list(combinations(self.attenuators, 2)) # generating 2 pair combinations for the given attenuators
         self.attenuator_combinations  = []
-        attenuators = self.attenuators + [self.attenuators[0]]
+        attenuators = self.attenuator_modules + [self.attenuator_modules[0]]
         for atten_index in range(len(attenuators) - 1):
             self.attenuator_combinations.append((attenuators[atten_index], attenuators[atten_index + 1]))
-        logging.info('Test will be performed on the APs with the following attenuator combinations {}'.format(self.attenuator_combinations))
+        logging.info('Test will be performed on the APs with the following module combinations {}'.format(self.attenuator_combinations))
 
         all_attenuators = self.atten_list()
         if(all_attenuators is None or all_attenuators == []):
@@ -137,7 +141,7 @@ class Roam(Realm):
         else:
             for atten_serial in all_attenuators:
                 atten_serial_name, atten_values = list(atten_serial.keys())[0], list(atten_serial.values())[0]
-                if(atten_serial_name not in self.attenuators):
+                if(atten_serial_name != self.attenuator):
                     if(atten_values['state'] != 'Phantom'):
                         logging.info('Attenuator {} is not in the test attenuators list. Setting the attenuation value to max.'.format(atten_serial_name))
                         self.set_atten(atten_serial_name, self.max_attenuation)
@@ -186,26 +190,28 @@ class Roam(Realm):
             self.stop_cx(cx_name)
 
     def set_attenuators(self, atten1, atten2):
-        logging.info('Setting attenuation to {} for attenuator {}'.format(
-            0, atten1))
-        self.set_atten(atten1, 0)
+        for atten_module in atten1:
+            logging.info('Setting attenuation to {} for module {}'.format(
+                0, atten_module))
+            self.set_atten(eid=self.attenuator, atten_idx=atten_module, atten_ddb=0)
 
         logging.info(
-            'Setting active attenuator as {}'.format(atten1))
+            'Setting active module as {}'.format(atten1))
         self.active_attenuator = atten1
 
         logging.info(
-            'Setting passive attenuator as {}'.format(atten2))
+            'Setting passive module as {}'.format(atten2))
         self.passive_attenuator = atten2
 
-        logging.info('Setting attenuation to {} for attenuator {}'.format(
-            self.max_attenuation, atten2))
-        self.set_atten(atten2, self.max_attenuation)
+        for atten_module in atten2:
+            logging.info('Setting attenuation to {} for module {}'.format(
+                self.max_attenuation, atten_module))
+            self.set_atten(eid=self.attenuator, atten_idx=atten_module, atten_ddb=self.max_attenuation)
 
-        for atten in self.attenuators:
+        for atten in self.attenuator_modules:
             if(atten not in [atten1, atten2]):
-                logging.info('Setting unused attenuator {} value to maximum attenuation.'.format(atten))
-                self.set_atten(atten, self.max_attenuation)
+                logging.info('Setting unused module {} value to maximum attenuation.'.format(atten))
+                self.set_atten(eid=self.attenuator, atten_idx=atten, atten_ddb=self.max_attenuation)
 
     def get_port_data(self, station, field):
         shelf, resource, port = station.split('.')
@@ -584,7 +590,7 @@ class Roam(Realm):
                     
                     # for displaying purpose
                     print('========================================================================')
-                    print('Roaming test started on the attenuator combination {} - {}'.format(atten_set[0], atten_set[1]))
+                    print('Roaming test started on the attenuator module combination {} - {}'.format(atten_set[0], atten_set[1]))
                     print('========================================================================')
 
                     atten1, atten2 = atten_set
@@ -599,15 +605,17 @@ class Roam(Realm):
 
                     for attenuator_change_index in range(len(self.attenuator_increments)):
 
-                        logging.info('Setting the attenuation to {} for attenuator {}'.format(
-                            self.attenuator_increments[attenuator_change_index], self.active_attenuator))
-                        self.set_atten(
-                            self.active_attenuator, self.attenuator_increments[attenuator_change_index])
+                        for atten_module in self.active_attenuator:
+                            logging.info('Setting the attenuation to {} for attenuator module {}'.format(
+                                self.attenuator_increments[attenuator_change_index], atten_module))
+                            self.set_atten(
+                                eid=self.attenuator, atten_idx=atten_module, atten_ddb=self.attenuator_increments[attenuator_change_index])
 
-                        logging.info('Setting the attenuation to {} for attenuator {}'.format(
-                            self.attenuator_decrements[attenuator_change_index], self.passive_attenuator))
-                        self.set_atten(
-                            self.passive_attenuator, self.attenuator_decrements[attenuator_change_index])
+                        for atten_module in self.passive_attenuator:
+                            logging.info('Setting the attenuation to {} for attenuator module {}'.format(
+                                self.attenuator_decrements[attenuator_change_index], atten_module))
+                            self.set_atten(
+                                eid=self.attenuator, atten_idx=atten_module, atten_ddb=self.attenuator_decrements[attenuator_change_index])
 
                         logging.info(
                             'Waiting for {} seconds before monitoring the stations'.format(self.wait_time))
@@ -626,7 +634,8 @@ class Roam(Realm):
                                 }
                         # print(current_iteration_roam_data)
                     # print(current_iteration_roam_data)
-                    self.roam_data[current_iteration][atten_set] = current_iteration_roam_data
+                    atten_set = [','.join(comb) for comb in atten_set]
+                    self.roam_data[current_iteration][' '.join(atten_set)] = current_iteration_roam_data
                     if self.sniff:
                         logging.info('Stopping sniffer')
                         self.stop_sniff()
@@ -686,7 +695,16 @@ class Roam(Realm):
         for station in self.station_based_roam_count.keys():
             shelf, resource, port = station.split('.')
             current_sta_data = self.json_get('/port/{}/{}/{}'.format(shelf, resource, port))
-            if 'interface' not in current_sta_data.keys():
+            if current_sta_data is None:
+                logging.warning('Data not found for the station {}'.format(station))
+                device_level_data[station] = { 
+                    'mac': 'NA',
+                    'Signal': 'NA',
+                    'Device': station,
+                    'OS': 'NA',
+                }
+                continue
+            elif 'interface' not in current_sta_data.keys():
                 logging.warning('Malformed or missing data for the client {}'.format(station))
                 continue
             current_sta_data = current_sta_data['interface']
@@ -994,6 +1012,19 @@ def main():
                           " client you want to create i.e 11r,11r-sae,"
                           " 11r-sae-802.1x or simple as none", default="11r")
 
+    required.add_argument('--attenuator',
+                          help='Attenuator serial',
+                          required=True)
+
+    required.add_argument('--attenuator_modules',
+                          nargs='+',
+                          help='Attenuator modules', 
+                          required=True)
+    required.add_argument('--bssids',
+                          nargs='+',
+                          help='BSSIDs', 
+                          required=True)
+
     optional = parser.add_argument_group('Optional Arguments')
 
     optional.add_argument('--mgr',
@@ -1017,14 +1048,6 @@ def main():
     # optional.add_argument('--iteration_based',
     #                       help='Enable this flag to run the roam test based on iterations rather than duration',
     #                       action='store_true')
-    optional.add_argument('--attenuators',
-                          nargs='+',
-                          help='Attenuator serials', 
-                          required=True)
-    optional.add_argument('--bssids',
-                          nargs='+',
-                          help='BSSIDs', 
-                          required=True)
     optional.add_argument('--iterations',
                           help='Number of iterations to perform roam test',
                           type=int,
@@ -1126,7 +1149,8 @@ def main():
             # ap2_bssid=args.ap2_bssid,
             # attenuator1=args.attenuator1,
             # attenuator2=args.attenuator2,
-            attenuators=args.attenuators,
+            attenuator=args.attenuator,
+            attenuator_modules=args.attenuator_modules,
             bssids=bssids,
             step=args.step,
             max_attenuation=args.max_attenuation,
@@ -1156,7 +1180,8 @@ def main():
             # ap2_bssid=args.ap2_bssid,
             # attenuator1=args.attenuator1,
             # attenuator2=args.attenuator2,
-            attenuators=args.attenuators,
+            attenuator=args.attenuator,
+            attenuator_modules=args.attenuator_modules,
             bssids=args.bssids,
             step=args.step,
             max_attenuation=args.max_attenuation,
