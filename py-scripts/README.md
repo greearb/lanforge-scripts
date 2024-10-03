@@ -1,5 +1,5 @@
 # LANforge Python Scripts
-This directory contains Python scripts to configure and test devices with LANforge Traffic Generators.
+This directory contains Python scripts to configure and test devices with LANforge traffic generation and network impairment systems.
 
 For more information, see the following online documentation or email [`support@candelatech.com`](mailto:support@candelatech.com) with questions.
 * [LANforge Scripting Cookbook](http://www.candelatech.com/scripting_cookbook.php)
@@ -9,21 +9,32 @@ For more information, see the following online documentation or email [`support@
 ## Setup
 **NOTE: LANforge Python scripts require Python 3.7+** (which is backwards compatible to Fedora 27 systems).
 
-There are two primary methods of accessing LANforge scripts:
+There are two primary methods to access LANforge scripts (either for use or development):
 
-1. LANforge system with the scripts pre-installed
+1. [LANforge system with the scripts pre-installed](#pre-installed-lanforge-system-usage)
 
-2. Cloning or downloading the scripts from the [Git repo](https://github.com/greearb/lanforge-scripts)
+2. [Cloning or downloading the scripts from the Git repository](#cloning-from-git-repository-usage) (repository linked [here](https://github.com/greearb/lanforge-scripts))
 
 ### Pre-installed LANforge System Usage
 On pre-installed LANforge systems, LANforge scripts are installed in `/home/lanforge/scripts/py-scripts/`. No further setup is required (dependencies come pre-installed). These pre-installed scripts match the LANforge software version on the system.
 
 ### Cloning from Git Repository Usage
-For users who clone or download these scripts from the Git repo, some setup is required. We assume you already have Python and Git installed.
+**NOTE:** This process is generally for more advanced users or developers. However, customers under support may email [`support@candelatech.com`](mailto:support@candelatech.com) with any questions, and we can guide you through.
 
-Primarily there are two main setup components to complete before running LANforge scripts on a non-LANforge system. First, ensure that the LANforge scripts version you cloned matches that of your LANforge system (it is possible to run with the latest version, but this is not recommended). Second, install the required LANforge scripts dependencies (we strongly suggest virtual environments, e.g. `virtualenv`).
+For users who clone or download these scripts from the Git repo, some setup is required.
+
+We assume you are familiar with the command line (e.g. `bash`) and already have both Python and Git installed (recall that Python 3.7 is the minimum supported version).
+
+Please complete the following two steps before running LANforge scripts on a non-LANforge system (outlined in this [section](#setup-instructions)):
+1. Ensure that the LANforge scripts version cloned matches your LANforge system version
+   - It is possible to run with the latest version, but this is not recommended
+2. Install the required LANforge scripts dependencies
+   - We strongly suggest virtual environments (e.g. `virtualenv`) to avoid possible dependency issues. This is common practice when working with Python projects.
 
 #### Setup Instructions
+
+**NOTE:** Developers and anyone looking to contribute to LANforge scripts should also familiarize themselves with the information outlined in the [`CONBTRIBUTING.md` document](../CONTRIBUTING.md).
+
 1. Open a shell and clone LANforge scripts
 
     ```Bash
@@ -51,7 +62,7 @@ Primarily there are two main setup components to complete before running LANforg
 
 5. Create and source a Python virtual environment (optional but **strongly suggested**)
 
-    We suggest Python's [builtin virtual environment tool](https://docs.python.org/3/tutorial/venv.html) for simplicity, although other tools with more configuration like [Anaconda](https://anaconda.org/) will work as well.
+    We suggest Python's [builtin virtual environment tool](https://docs.python.org/3/tutorial/venv.html) for simplicity, although other tools requiring more configuration like [Anaconda](https://anaconda.org/) will work as well.
 
     ```Bash
     # Create Python virtual environment named 'venv'
@@ -88,12 +99,12 @@ To learn more about automating Chamber View tests like TR-398, WiFi Capacity Tes
 
 ## LANforge Python Scripts Directory Structure
 * py-scripts - configuration, unit test, module, and library scripts
-* cv_examples - bash scripts for ochastrating Chamberview tests 
+* cv_examples - bash scripts for ochastrating Chamberview tests
 * py-json - core libraries providing direct intraction with LANforge Traffic Generator
 * py-json/LANforge - JSON intraction with LANforge Traffic Generator.
 * lanforge_client/ - alpha version of JSON interface to LANforge Traffic Generator.
 
-## Scripts accessing Serial ports. 
+## Scripts accessing Serial ports.
 On Linux, you must explicitly allow users to access serial devices. Otherwise, using a USB serial device requires root permissions (e.g. have to use `sudo`).
 
 There are several methods to do so, each depending on the distribution (all requiring root access to the system). Often the easiest is to perform the following:
