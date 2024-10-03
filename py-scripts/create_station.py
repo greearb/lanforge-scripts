@@ -831,8 +831,9 @@ INCLUDE_IN_README:
     optional.add_argument("--mac_pattern",
                           help="MAC randomization pattern for created stations. "
                                "In full MAC address pattern, the \'*\' indicates "
-                               "randomizable characters Most users will not adjust "
-                               "this option.",
+                               "randomizable characters. Most users will not adjust "
+                               "this option. Note that this does not explicitly set "
+                               "the locally-administered address bit.",
                           default="xx:xx:xx:*:*:xx")
     optional.add_argument("--radio_antenna",
                           help='Number of spatial streams: \n'
