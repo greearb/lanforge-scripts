@@ -2583,7 +2583,9 @@ class Candela:
 
         Args:
 
-            attenuators (list): List of attenuator serials.
+            attenuator (str): Attenuator serial.
+
+            attenuator_modules (list): List of attenuator modules. Example: ['0,1', '2,3']
 
             bssids (list): List of BSSIDs of the APs.
 
@@ -2627,7 +2629,8 @@ class Candela:
             self.roam_test(**kwargs)
     
     def roam_test(self,
-                    attenuators,
+                    attenuator,
+                    attenuator_modules,
                     bssids,
                     device_list,
                     wait_time=60,
@@ -2643,7 +2646,8 @@ class Candela:
         self.roam_test_object = Roam(
             lanforge_ip=self.lanforge_ip,
             port=self.port,
-            attenuators=attenuators,
+            attenuator=attenuator,
+            attenuator_modules=attenuator_modules,
             bssids=bssids,
             step=step,
             max_attenuation=max_attenuation,
@@ -2810,7 +2814,7 @@ candela_apis = Candela(ip='192.168.214.61', port=8080)
 # candela_apis.start_zoom(duration=2 , sigin_email = "test@gmail.com" ,sigin_passwd ="test@1" ,participants=10 ,audio = True ,video = True)
 
 # To Run Roam Test
-# candela_apis.start_roam_test(attenuators=['1.1.1031', '1.1.3374'],
+# candela_apis.start_roam_test(attenuator='1.1.3192', attenuator_modules=['0,1', '2,3'],
 #                              device_list=['1.11.wlan0', '1.13.wlan0'],
 #                              bssids=['90:3c:b3:b1:70:0d', '90:3c:b3:6c:41:c5'],
 #                              wait_time=1,
