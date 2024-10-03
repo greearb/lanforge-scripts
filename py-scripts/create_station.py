@@ -327,6 +327,7 @@ class CreateStation(Realm):
                  mode,
                  sta_list,
                  station_flags,
+                 mac_pattern,
                  security,
                  password,
                  eap_method,
@@ -408,6 +409,7 @@ class CreateStation(Realm):
         self.station_profile.ssid_pass = self.password,
         self.station_profile.security = self.security
         self.station_profile.mode = self.mode
+        self.station_profile.set_command_param("add_sta", "mac", mac_pattern)
 
         if self.sta_flags is not None:
             _flags = self.sta_flags.split(',')
@@ -826,6 +828,12 @@ INCLUDE_IN_README:
                           help='station flags to add. eg: --station_flags ht40_disable',
                           required=False,
                           default=None)
+    optional.add_argument("--mac_pattern",
+                          help="MAC randomization pattern for created stations. "
+                               "In full MAC address pattern, the \'*\' indicates "
+                               "randomizable characters Most users will not adjust "
+                               "this option.",
+                          default="xx:xx:xx:*:*:xx")
     optional.add_argument("--radio_antenna",
                           help='Number of spatial streams: \n'
                           ' default = -1 \n'
