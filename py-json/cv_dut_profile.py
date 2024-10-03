@@ -161,4 +161,3 @@ class cv_dut(LFCliBase):
             "dut": dut_name,
             "text": text
         })
-

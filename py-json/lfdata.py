@@ -95,5 +95,3 @@ class LFDataCollection:
             for name in header_row_[3:-3]:
                 temp_list.append(merge[name])
             return temp_list
-
-# class WebSocket():

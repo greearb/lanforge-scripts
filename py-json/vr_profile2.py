@@ -80,7 +80,7 @@ class VRProfile(BaseProfile):
     """
 
     '''
-        https://pypi.org/project/geometer/    
+        https://pypi.org/project/geometer/
     '''
 
     def get_netsmith_bounds(self, resource=None):
@@ -737,6 +737,3 @@ class VRProfile(BaseProfile):
         new_x = randint(bounds.x+15, bounds.x+bounds.width-15)
         new_y = randint(bounds.y+15, bounds.y+bounds.height-15)
         return (new_x, new_y)
-###
-###
-###
