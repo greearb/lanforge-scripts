@@ -39,18 +39,20 @@ DEFAULT_FIELDS_CSV = ",".join(DEFAULT_FIELDS)
 
 
 def show_ports(mgr: str = "localhost", mgr_port: int = 8080, resource: str = "all", addtl_fields: str = "") -> pandas.DataFrame:
-    """
-    Using the LANforge REST API, gather and print specified information on all ports.
+    """Gather and print specified information on all ports using the LANforge API.
+
     Generally the LANforge IP address is that of the manager system for the testbed.
 
-    :param mgr: LANforge manager IP address
-    :param mgr_port: LANforge manager REST API port (almost always '8080')
-    :param mgr: LANforge resource ID. When specified and not -1, limit port information to that resource.
-                By default, port information is shown for all resources.
-    :param addtl_fields: Comma separated list of additional fields to print. Permitted
-                         fields are those visible in the 'Port Mgr' GUI tab.
-    :return: Pandas DataFrame containing the desired ports data
-    :rtype: pandas.DataFrame
+    Args:
+        mgr: LANforge manager IP address
+        mgr_port: LANforge manager REST API port (almost always '8080')
+        resource: LANforge resource ID. When specified and not -1, limit port information
+            to that resource. By default, port information is shown for all resources.
+        addtl_fields: Comma separated list of additional fields to print. Permitted
+            fields are those visible in the 'Port Mgr' GUI tab.
+
+    Returns:
+        Pandas DataFrame containing the desired ports data
     """
     # Query LANforge system for port info (returned as JSON)
     base_url = f"http://{mgr}:{mgr_port}"   # Manager system to query (GUI must be running)
@@ -98,6 +100,7 @@ def show_ports(mgr: str = "localhost", mgr_port: int = 8080, resource: str = "al
 
 
 def parse_args():
+    """Parse CLI arguments."""
     parser = argparse.ArgumentParser(
         prog="show_ports.py",
         formatter_class=argparse.RawTextHelpFormatter,
