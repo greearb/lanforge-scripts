@@ -20,8 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 class StationProfile:
-    DHCP: str = "DHCP"
-
     def __init__(self, lfclient_url, local_realm,
                  ssid="NA",
                  ssid_pass="NA",
