@@ -18,23 +18,6 @@ add_sta = importlib.import_module("py-json.LANforge.add_sta")
 
 logger = logging.getLogger(__name__)
 
-# Uncomment below to include autogen library.
-# if os.environ.get("LF_USE_AUTOGEN") == 1:
-#         lf_json_autogen = importlib.import_module("py-json.LANforge.lf_json_autogen")
-#         LFJsonPost = jf_json_autogen.LFJsonPost
-
-# use the station profile to set the combination of features you want on your stations
-# once this combination is configured, build the stations with the build(resource, radio, number) call
-# build() calls will fail if the station already exists. Please survey and clean your resource
-# before calling build()
-#         realm = importlib.import_module("py-json.realm")
-#         Realm = realm.Realm
-#         survey = Realm.findStations(resource=1)
-#         Realm.removeStations(survey)
-#         profile = Realm.newStationProfile()
-#         profile.set...
-#         profile.build(resource, radio, 64)
-
 
 class StationProfile:
     DHCP: str = "DHCP"
