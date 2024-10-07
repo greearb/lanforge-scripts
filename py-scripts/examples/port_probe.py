@@ -34,13 +34,14 @@ logging.basicConfig(level=logging.INFO,
 
 
 def probe_port(port: str, mgr: str = "localhost", mgr_port: int = 8080):
-    """
-    Using the LANforge REST API, submit and gather the results of a port probe for the specied port.
+    """Submit and gather the results of a port probe for the specied port.
+
     Generally the LANforge IP address is that of the manager system for the testbed.
 
-    :param port: Port EID to probe, e.g. '1.1.wiphy0'
-    :param mgr: LANforge manager IP address
-    :param mgr_port: LANforge manager REST API port (almost always '8080')
+    Args:
+        port: Port EID to probe, e.g. '1.1.wiphy0'
+        mgr: LANforge manager IP address
+        mgr_port: LANforge manager REST API port (almost always '8080')
     """
     # First query LANforge system for radio info (returned as JSON)
     base_url = f"http://{mgr}:{mgr_port}"   # Manager system to query (GUI must be running)
@@ -87,6 +88,7 @@ def probe_port(port: str, mgr: str = "localhost", mgr_port: int = 8080):
 
 
 def parse_args():
+    """Parse CLI arguments."""
     parser = argparse.ArgumentParser(
         prog="port_probe.py",
         formatter_class=argparse.RawTextHelpFormatter,
