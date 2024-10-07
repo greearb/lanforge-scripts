@@ -13,7 +13,6 @@ EXAMPLE:    # Query radio info for all radios in testbed managed by '192.168.30.
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             Copyright 2024 Candela Technologies Inc.
 """
-
 import argparse
 import logging
 import requests
@@ -28,13 +27,14 @@ logging.basicConfig(level=logging.INFO,
 
 
 def query_radio_information(mgr: str = "localhost", mgr_port: int = 8080) -> pandas.DataFrame:
-    """
-    Queries specified LANforge manager for general information on all radios in testbed.
+    """Queries specified LANforge manager for general information on all radios in testbed.
 
-    :param mgr: LANforge manager IP address
-    :param mgr_port: LANforge manager REST API port (almost always '8080')
-    :returns: Radio information
-    :rtype: pandas.DataFrame
+    Args:
+        mgr: LANforge manager IP address
+        mgr_port: LANforge manager REST API port (almost always '8080')
+
+    Returns:
+        Pandas DataFrame containing Radio information
     """
     # First query LANforge system for radio info (returned as JSON)
     base_url = f"http://{mgr}:{mgr_port}"   # Manager system to query (GUI must be running)
@@ -86,6 +86,7 @@ def query_radio_information(mgr: str = "localhost", mgr_port: int = 8080) -> pan
 
 
 def parse_args():
+    """Parse CLI arguments."""
     parser = argparse.ArgumentParser(
         prog="radio_info.py",
         formatter_class=argparse.RawTextHelpFormatter,
