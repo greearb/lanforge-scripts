@@ -35,6 +35,20 @@ def main(mgr: str,
          port_eid: str,
          column_names: str,
          **kwargs):
+    """Query specified port using LANforge API.
+
+    Column names may be optionally provided to query specific data.
+    Whether specified or not, this function will always query the
+    following fields: 'down', 'phantom', and 'ip'
+
+    Args:
+        mgr: LANforge manager IP address
+        mgr_port: LANforge manager REST API port (almost always '8080')
+        port_eid: EID of port to query (e.g. '1.1.wlan0')
+        column_names: Comma separated list of LANforge JSON API fields
+            to query for the '/port' endpoint (corresponds to columns
+            in the 'Port Mgr' table in the LANforge GUI)
+    """
     # Parse out column names into list, if specified.
     # Otherwise, use default to handful of standard columns
     if column_names != "":
