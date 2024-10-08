@@ -33,6 +33,12 @@ from lanforge_client import lanforge_api  # noqa
 def main(mgr: str,
          mgr_port: int,
          **kwargs):
+    """Query LANforge system for all port information using LANforge API.
+
+    Args:
+        mgr: LANforge manager IP address
+        mgr_port: LANforge manager REST API port (almost always '8080')
+    """
     # Instantiate a LANforge API session with the specified LANforge system.
     #
     # The JSON API port is almost always 8080. The LANforge server port,
