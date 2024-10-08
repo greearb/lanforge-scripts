@@ -420,6 +420,7 @@ class CreateStation(Realm):
         logger.debug(pprint.pformat(self.sta_list))
 
     def cleanup(self):
+        """Remove any conflicting LANforge port(s)."""
         for station in self.sta_list:
             logger.info('Removing the station {} if exists'.format(station))
             self.rm_port(station, check_exists=True)
@@ -428,7 +429,7 @@ class CreateStation(Realm):
             exit(1)
 
     def build(self):
-        # Build stations
+        """Create LANforge port(s) as specified."""
         self.station_profile.use_security(security_type=self.security,
                                           ssid=self.ssid,
                                           passwd=self.password)
@@ -551,6 +552,7 @@ class CreateStation(Realm):
                 logger.info("Please re-check the configuration applied")
 
     def modify_radio(self, mgr, radio, antenna, channel, tx_power, country_code):
+        """Configure LANforge WiFi radio port as specified."""
         shelf, resource, radio, *nil = LFUtils.name_to_eid(radio)
 
         modify_radio = lf_modify_radio.lf_modify_radio(lf_mgr=mgr)
@@ -563,6 +565,7 @@ class CreateStation(Realm):
                                     _country_code=country_code)
 
     def get_station_list(self):
+        """Query LANforge system for list of all WiFi Station ports."""
         response = super().json_get("/port/list?fields=_links,alias,device,port+type")
 
         available_stations = []
@@ -574,6 +577,7 @@ class CreateStation(Realm):
 
 
 def parse_args():
+    """Parse CLI arguments."""
     parser = LFCliBase.create_basic_argparse(  # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
         prog='create_station.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -936,6 +940,7 @@ INCLUDE_IN_README:
 
 
 def validate_args(args):
+    """Validate CLI arguments."""
     if args.radio is None:
         logger.error("--radio required")
         exit(1)
@@ -980,6 +985,7 @@ def validate_args(args):
 
 
 def main():
+    """Create LANforge WiFi station port(s) using specified options."""
     args = parse_args()
     validate_args(args)
 
