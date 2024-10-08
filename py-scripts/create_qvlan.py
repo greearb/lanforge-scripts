@@ -114,6 +114,7 @@ class CreateQVlan(Realm):
                     qvlan_profile.gateway = ipv4_gateways[ix]
 
     def build(self):
+        """Create LANforge port(s) as specified."""
         logger.info("Creating QVLAN port(s)")
         for qvlan_profile in self.qvlan_profiles:
             ret = qvlan_profile.create(debug=self.debug, sleep_time=0)
@@ -127,6 +128,7 @@ class CreateQVlan(Realm):
 
 
 def parse_args():
+    """Parse CLI arguments."""
     parser = LFCliBase.create_bare_argparse(
         prog='create_qvlan.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -233,6 +235,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 
 
 def validate_args(args):
+    """Validate CLI arguments."""
     # User either specifies DHCPv4, static IPv4 configuration, or no IPv4 configuration
     if args.ipv4_addresses:
         num_addresses = len(args.ipv4_addresses)
@@ -267,6 +270,7 @@ def validate_args(args):
 
 
 def main():
+    """Create LANforge 802.1Q VLAN port(s) using specified options."""
     args = parse_args()
 
     help_summary = "This script will create and configure a one or more 802.1Q VLAN ports " \
