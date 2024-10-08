@@ -34,6 +34,24 @@ def main(mgr: str,
          mgr_port: int,
          column_names: str,
          **kwargs):
+    """Query associated stations for LANforge vAPs using LANforge API.
+
+    Currently, this script does not support querying a specific virtual
+    access point (vAP). If multiple vAPs exist on a system, then associated
+    station data for all vAPs is queried.
+
+    Column names may be optionally provided to query specific data.
+    Whether specified or not, this function will always query the
+    following fields: 'station ssid', 'station bssid', 'ip',
+    'signal avg', tx rate', and 'rx rate'.
+
+    Args:
+        mgr: LANforge manager IP address
+        mgr_port: LANforge manager REST API port (almost always '8080')
+        column_names: Comma separated list of LANforge JSON API fields
+            to query for the '/stations' endpoint (corresponds to columns
+            in the 'vAP Stations' table in the LANforge GUI)
+    """
     # Parse out column names into list, if specified.
     # Otherwise, default to handful of standard columns
     if column_names != "":
