@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 NAME:       create_station.py
 
 PURPOSE:    Create and configure one or more of WiFi stations ports using the
