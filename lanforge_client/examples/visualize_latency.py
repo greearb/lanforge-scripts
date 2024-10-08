@@ -34,7 +34,14 @@ def main(mgr: str,
          endp: str,
          width: int,
          **kwargs):
+    """Query and display visualization of LANforge L3 endpoint latency using LANforge API.
 
+    Args:
+        mgr: LANforge manager IP address
+        mgr_port: LANforge manager REST API port (almost always '8080')
+        endp: Endpoint name or EID whose latency data will queried and displayed
+        width: Text width for latency visualization
+    """
     # Instantiate a LANforge API session with the specified LANforge system.
     #
     # The JSON API port is almost always 8080. The LANforge server port,
