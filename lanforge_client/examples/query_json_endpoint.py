@@ -36,6 +36,14 @@ def main(mgr: str,
          json_endpoint: str,
          fields: str,
          **kwargs):
+    """Query specified LANforge JSON API endpoint using LANforge API.
+
+    Args:
+        mgr: LANforge manager IP address
+        mgr_port: LANforge manager REST API port (almost always '8080')
+        json_endpoint: LANforge JSON API endpoint (e.g. '/ports')
+        fields: Comma separated list of fields to query LANforge JSON API endpoint for
+    """
     # Parse out fields into list, if specified.
     if fields != "":
         fields = fields.split(",")
