@@ -140,11 +140,13 @@ class CreateMacVlan(Realm):
                     macvlan_profile.gateway = ipv4_gateways[ix]
 
     def cleanup(self):
+        """Remove any conflicting LANforge port(s)."""
         logger.info("Cleaning up any created or conflicting MACVLAN ports")
         for macvlan_profile in self.macvlan_profiles:
             macvlan_profile.cleanup()
 
     def build(self):
+        """Create LANforge port(s) as specified."""
         logger.info("Creating MACVLAN port(s)")
         for macvlan_profile in self.macvlan_profiles:
             ret = macvlan_profile.create(debug=self.debug, sleep_time=0)
@@ -158,6 +160,7 @@ class CreateMacVlan(Realm):
 
 
 def parse_args():
+    """Parse CLI arguments."""
     parser = LFCliBase.create_bare_argparse(
         prog='create_macvlan.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -293,6 +296,7 @@ INCLUDE_IN_README:
 
 
 def validate_args(args):
+    """Validate CLI arguments."""
     # User either specifies DHCPv4, static IPv4 configuration, or no IPv4 configuration
     #
     # If user specified static configuration, ensure that number of specified ports
@@ -330,6 +334,7 @@ def validate_args(args):
 
 
 def main():
+    """Create LANforge MACVLAN port(s) using specified options."""
     args = parse_args()
 
     help_summary = "This script will create and configure one or more MACVLAN ports " \
