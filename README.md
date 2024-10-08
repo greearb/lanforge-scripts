@@ -2,12 +2,14 @@
 
 **This repository contains a collection of scripts and Python and Perl-based scripting libraries designed to automate LANforge systems.**
 
+Please contact [`support@candelatech.com`](mailto:support@candelatech.com) if you have any questions or encounter issues.
+
 ## Overview
 These scripts span a variety of use cases, including automating Chamber View tests, configuring LANforge ports and traffic pairs, and much more.
 
 **No additional setup is required to run these scripts on a system with LANforge pre-installed**. On your LANforge system, you can find this repository in the `/home/lanforge/scripts/` directory. (e.g. CT523c, CT521b). The contents of the directory match the version of LANforge installed on your system (see the [tagged releases](https://github.com/greearb/lanforge-scripts/tags) to clone specific version.)
 
-To setup and use these scripts on a non-LANforge system or to use a specific version (e.g. specific LANforge release), please follow the instructions outlined in the [LANforge Python Scripts README](./py-scripts/README.md).
+To setup and use these scripts on a system without LANforge pre-installed or to use a specific version (e.g. specific LANforge release), please follow the instructions outlined in the [LANforge Python Scripts README](./py-scripts/README.md).
 
 For more advanced users wanting to develop their own automation, we offer the following:
 - Auto-generated Python library in [`lanforge_client/`](./lanforge_client/)
@@ -30,9 +32,9 @@ For more advanced users wanting to develop their own automation, we offer the fo
   - [Perl and Shell Scripts](#perl-and-shell-scripts)
   - [Compatibility](#compatibility)
   - [Setup and Installation](#setup-and-installation)
-  - [Requirements](#requirements)
+    - [Python Scripts](#python-scripts-1)
+    - [Perl Scripts](#perl-scripts)
   - [License](#license)
-  - [Support/Contact Info](#supportcontact-info)
 
 ## Quick Tips
 
@@ -93,9 +95,9 @@ More information on other LANforge JSON API endpoints can be by navigating to th
 
 See the [LANforge Python Scripts README](./py-scripts/README.md) for more information, including setup for use on non-LANforge systems.
 
-Existing offerings largely include test and helper scripts written, in addition to importable library code for external use and/or use in new automation.
+Existing offerings largely include test and helper scripts in addition to importable library code for external use and/or use in new automation.
 
-Helper scripts, especially creation and modification scripts, are designed in a "toolbox" approach. Each "toolbox" script performs a single task, like a tool in the toolbox. For example, the [`create_station.py`](./py-scripts/create_station.py) is designed to create and configure LANforge station ports, with many options for that specific use case.
+Helper scripts, especially creation and modification scripts, are designed as tools in a toolbox. Each toolbox script performs a single task, like a tool in the toolbox. For example, the [`create_station.py`](./py-scripts/create_station.py) is designed to create and configure LANforge station ports, providing many options for that specific use case.
 
 | Name | Purpose |
 |------|---------|
@@ -144,7 +146,7 @@ Helper scripts, especially creation and modification scripts, are designed in a 
 | `test_wanlink.py`                  | Python script to test wanlink creation |
 | `testgroup.py`                     | Python script to test creation and control of test groups |
 | `tip_station_powersave.py`         | Generate and test for powersave packets within traffic run over multiple stations |
-| `update_dependencies.py`           | Python script to update dependencies for various Candelatech python scripts |
+| `update_dependencies.py`           | Installs required Python dependencies required to run LANforge Python scripts. See the [`py-scripts/` README](./py-scripts/README.md#setup) for more information. |
 | `wlan_capacity_calculator.py`      | Standard Script for WLAN Capacity Calculator |
 | `ws_generic_monitor_test.py`       | This example is to demonstrate ws_generic_monitor to monitor events triggered by scripts, This script when running, will monitor the events triggered by test_ipv4_connection.py |
 
@@ -209,21 +211,17 @@ releases as much as possible.
 
 ## Setup and Installation
 
-These scripts call each other and rely on the structure of this directory. To use these scripts in other locations,
-such as your laptop, either copy the entire scripts directory or do a `git clone` of this repository. Just copying
-one script to a separate directory will likely break its requirements.
+Pre-installed LANforge systems generally do not require additional setup, save for specific advanced use cases. The scripts version on the system (located in `/home/lanforge/scripts/`) will match the version of LANforge software installed.
 
-See the setup steps outlined in the `py-scripts/` README [here](./py-scripts/README.md) for more information, including configuring a specific version of LANforge scripts.
+As currently implemented, scripts in this repository require the structure of this directory as present. Many scripts import from and call into each other (primarily Python), so modifying script location will likely break script assumptions. Things that may break assumptions and prevent script usage include moving the script to another directory.
 
-## Requirements
+### Python Scripts
 
-**NOTE:** Pre-installed LANforge systems generally do not require additional setup, save for specific advanced use cases.
+See the setup steps outlined in the `py-scripts/` README [here](./py-scripts/README.md) for Python scripting setup, including configuring a specific version of LANforge scripts.
 
-LANforge Perl automation requirements are outlined below. See the `py-scripts/` README [here](./py-scripts/README.md) for information on LANforge Python automation requirements.
+### Perl Scripts
 
 To use LANforge Perl automation, the system which will run the scripts must have the following packages installed. On Linux systems, most of these packages are available through your system's package manager as `.deb` or `.rpm` packages.
-
-Please contact support@candelatech.com if you have any questions.
 
 | Package            | RPM                | Required       |
 | -------------------|--------------------|----------------|
@@ -235,11 +233,4 @@ Please contact support@candelatech.com if you have any questions.
 
 ## License
 
-Code in this repository is released under the BSD license (see license.txt).
-
-## Support/Contact Info
-
-Please contact support@candelatech.com if you have any questions.
-
-_Thanks,
-Ben_
+Code in this repository is released under the BSD license (see [license.txt](./license.txt)).
