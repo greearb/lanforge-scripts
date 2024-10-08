@@ -40,6 +40,7 @@ if sys.version_info[0] != 3:
 
 
 class ResourceInfo:
+    """LANforge resource data."""
     def __init__(self,
                  resource_id: str,
                  hostname: str = "",
@@ -63,6 +64,7 @@ class ResourceInfo:
 
 
 class PortInfo:
+    """LANforge port data."""
     def __init__(self,
                  port_id: str,
                  port_type: str = "",
@@ -81,6 +83,7 @@ class PortInfo:
 
 
 class EndpInfo:
+    """LANforge L3 endpoint data."""
     def __init__(self,
                  endp_name: str,
                  eid: str = "",
@@ -102,8 +105,8 @@ def health_check_info(mgr: str = "localhost", mgr_port: int = 8080, **kwargs):
     Leverages LANforge JSON API running on port 8080 when GUI is active.
 
     Args:
-        mgr (str): LANforge manager IP address
-        mgr_port (int): LANforge manager REST API port (almost always '8080')
+        mgr: LANforge manager IP address
+        mgr_port: LANforge manager REST API port (almost always '8080')
     """
     # 0. Initialize data to print later
     json_api_up = False
@@ -186,9 +189,9 @@ def query_lanforge(base_url: str, endpoint: str, fields: list = None) -> tuple:
     """Query LANforge system for desired data from JSON API endpoint.
 
     Args:
-        base_url (str): URL of LANforge JSON API (e.g. 'http://192.168.1.101:8080')
-        endpoint (str): JSON API endpoint to query
-        fields (str): Optional fields to query the specified JSON API endpoint with
+        base_url: URL of LANforge JSON API (e.g. 'http://192.168.1.101:8080')
+        endpoint: JSON API endpoint to query
+        fields: Optional fields to query the specified JSON API endpoint with
 
     Returns:
         Two element tuple containing return code and return data.
@@ -242,7 +245,7 @@ def query_resource_data(base_url: str) -> tuple:
     """Query LANforge for desired resource data.
 
     Args:
-        base_url (str): Base LANforge JSON API URL to query using JSON HTTP GET
+        base_url: Base LANforge JSON API URL to query using JSON HTTP GET
 
     Returns:
         Two element tuple containing return code and return data.
@@ -329,7 +332,7 @@ def query_port_data(base_url: str) -> tuple:
     """Query LANforge for desired port data.
 
     Args:
-        base_url (str): Base LANforge JSON API URL to query using JSON HTTP GET
+        base_url: Base LANforge JSON API URL to query using JSON HTTP GET
 
     Returns:
         Two element tuple containing return code and return data.
@@ -413,7 +416,7 @@ def query_endp_data(base_url: str) -> tuple:
     """Query LANforge for desired Layer 3 endpoint data.
 
     Args:
-        base_url (str): Base LANforge JSON API URL to query using JSON HTTP GET
+        base_url: Base LANforge JSON API URL to query using JSON HTTP GET
 
     Returns:
         Two element tuple containing return code and return data.
@@ -501,8 +504,8 @@ def filter_stations_to_resource(resource_data_list: list, port_data_list: list) 
     station objects into the respective 'ResourceInfo' objects.
 
     Args:
-        resource_data_list (list[ResourceInfo]): List of queried 'ResourceInfo' objects
-        port_data_list (list[PortInfo]): List of queried 'PortInfo' objects
+        resource_data_list: List of queried 'ResourceInfo' objects
+        port_data_list: List of queried 'PortInfo' objects
     """
     sta_ports_list = [port for port in port_data_list if port.port_type == "WIFI-STA"]
 
@@ -524,8 +527,8 @@ def filter_endps_to_resource(resource_data_list: list, endp_data_list: list) -> 
     objects into the respective 'ResourceInfo' objects.
 
     Args:
-        resource_data_list (list[ResourceInfo]): List of queried 'ResourceInfo' objects
-        endp_data_list (list[PortInfo]): List of queried 'EndpInfo' objects
+        resource_data_list: List of queried 'ResourceInfo' objects
+        endp_data_list: List of queried 'EndpInfo' objects
     """
     for rsrc in resource_data_list:
         this_rsrc_endps = [endp for endp in endp_data_list if endp.resource_id == rsrc.resource_id]
