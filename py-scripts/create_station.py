@@ -96,108 +96,108 @@ NOTES:      This script is intended to only create and configure stations. See o
                 Note this is the path on the LANforge system where this station will be created.
 
 EXAMPLE:    # Create a single station
-               ./create_station.py \\
-                   --mgr       <lanforge ip> \\
-                   --radio     1.1.wiphy1 \\
-                   --ssid      <ssid> \\
-                   --passwd    <password> \\
+               ./create_station.py \
+                   --mgr       <lanforge ip> \
+                   --radio     1.1.wiphy1 \
+                   --ssid      <ssid> \
+                   --passwd    <password> \
                    --security  wpa2
 
             # Create multiple stations
-               ./create_station.py \\
-                   --mgr           <lanforge ip> \\
-                   --radio         1.1.wiphy1 \\
-                   --ssid          <ssid> \\
-                   --passwd        <password> \\
-                   --security      wpa2 \\
+               ./create_station.py \
+                   --mgr           <lanforge ip> \
+                   --radio         1.1.wiphy1 \
+                   --ssid          <ssid> \
+                   --passwd        <password> \
+                   --security      wpa2 \
                    --num_stations  10
 
             # Create a multiple stations with specific numbering scheme
             # In this example, create five stations with names of the format: "sta1000", "sta1001", "sta1002", etc.
-               ./create_station.py \\
-                   --mgr           <lanforge ip> \\
-                   --radio         1.1.wiphy1 \\
-                   --ssid          <ssid> \\
-                   --passwd        <password> \\
-                   --security      wpa2 \\
-                   --start_id      1000 \\
+               ./create_station.py \
+                   --mgr           <lanforge ip> \
+                   --radio         1.1.wiphy1 \
+                   --ssid          <ssid> \
+                   --passwd        <password> \
+                   --security      wpa2 \
+                   --start_id      1000 \
                    --num_stations  5
 
             # Create a station, configuring radio settings like antenna, channel, etc.
             # In this example, configure radio to use antennas (2x2 station) and channel 6
-               ./create_station.py \\
-                   --mgr           <lanforge ip> \\
-                   --radio         1.1.wiphy1 \\
-                   --ssid          <ssid> \\
-                   --passwd        <password> \\
-                   --security      wpa2 \\
-                   --radio_antenna 2 \\
+               ./create_station.py \
+                   --mgr           <lanforge ip> \
+                   --radio         1.1.wiphy1 \
+                   --ssid          <ssid> \
+                   --passwd        <password> \
+                   --security      wpa2 \
+                   --radio_antenna 2 \
                    --radio_channel 6
 
             # Create a station, configuring the station to be a specific WiFi mode
             # (e.g. configuring an 802.11ax-capable radio to create an 802.11ac station)
             # See the 'add_sta' command's mode option in the CLI documentation for
             # available mode settings. Link here: http://www.candelatech.com/lfcli_ug.php#add_sta
-               ./create_station.py
-                   --mgr       <lanforge ip> \\
-                   --radio     1.1.wiphy1 \\
-                   --ssid      <ssid> \\
-                   --passwd    <password>  \\
-                   --security  wpa2 \\
+               ./create_station.py \
+                   --mgr       <lanforge ip> \
+                   --radio     1.1.wiphy1 \
+                   --ssid      <ssid> \
+                   --passwd    <password>  \
+                   --security  wpa2 \
                    --mode      6
 
             # Create a station, configuring specific station flags
             # In this example, enable 160MHz channels and disable 802.11ac short guard interval (SGI).
-               ./create_station.py \\
-                   --mgr           <lanforge ip> \\
-                   --radio         1.1.wiphy1 \\
-                   --ssid          <ssid> \\
-                   --passwd        <password> \\
-                   --security      wpa2
-                   --radio_antenna 2 \\
-                   --radio_channel 6 \\
+               ./create_station.py \
+                   --mgr           <lanforge ip> \
+                   --radio         1.1.wiphy1 \
+                   --ssid          <ssid> \
+                   --passwd        <password> \
+                   --security      wpa2 \
+                   --radio_antenna 2 \
+                   --radio_channel 6 \
                    --station_flags "ht160_enable,disable_sgi"
 
             # Create a station using TLS-based enterprise authentication
             # Note that paths are paths on the LANforge system where the station will be created.
-               ./create_station.py \\
-                   --mgr               <lanforge ip> \\
-                   --radio             1.1.wiphy1 \\
-                   --ssid              <ssid> \\
-                   --security          <wpa2|wpa3> \\
-                   --key_mgmt          <key_mgmt>
-                   --pairwise_cipher   <cipher> \\
-                   --groupwise_cipher  <cipher> \\
-                   --eap_method        TLS \\
-                   --eap_identity      <username> \\
-                   --eap_password      <password> \\
-                   --pk_passwd         <password> \\
-                   --private_key       <path> \\
+               ./create_station.py \
+                   --mgr               <lanforge ip> \
+                   --radio             1.1.wiphy1 \
+                   --ssid              <ssid> \
+                   --security          <wpa2|wpa3> \
+                   --key_mgmt          <key_mgmt> \
+                   --pairwise_cipher   <cipher> \
+                   --groupwise_cipher  <cipher> \
+                   --eap_method        TLS \
+                   --eap_identity      <username> \
+                   --eap_password      <password> \
+                   --pk_passwd         <password> \
+                   --private_key       <path> \
                    --ca_cert           <path>
 
             # Create a station using TTLS-based enterprise authentication
-               ./create_station.py \\
-                   --mgr               <lanforge ip> \\
-                   --radio             1.1.wiphy1 \\
-                   --ssid              <ssid> \\
-                   --security          <wpa2|wpa3> \\
-                   --key_mgmt          <TTLS|PEAP>
-                   --pairwise_cipher   <cipher> \\
-                   --groupwise_cipher  <cipher> \\
-                   --eap_method        TTLS \\
-                   --eap_identity      <username> \\
+               ./create_station.py \
+                   --mgr               <lanforge ip> \
+                   --radio             1.1.wiphy1 \
+                   --ssid              <ssid> \
+                   --security          <wpa2|wpa3> \
+                   --key_mgmt          <TTLS|PEAP> \
+                   --pairwise_cipher   <cipher> \
+                   --groupwise_cipher  <cipher> \
+                   --eap_method        TTLS \
+                   --eap_identity      <username> \
                    --eap_password      <password>
 
             #    Create station specifying a custom 'wpa_supplicant' config command
             #    In this example, specify a background scanning 'wpa_supplicant' command, useful for roaming.
             #    Here, the background scan is configured to a threshold of -65 dBm RSSI with a short and long interval of 50 and 300 seconds.
             #    See 'man wpa_supplicant.conf' for more information.
-                   ./create_station.py \\
-                       --mgr               <lanforge ip> \\
-                       --radio             1.1.wiphy1 \\
-                       --ssid              <ssid> \\
-                       --passwd            <password> \\
-                       --security          wpa2 \\
+                   ./create_station.py \
+                       --mgr               <lanforge ip> \
+                       --radio             1.1.wiphy1 \
+                       --ssid              <ssid> \
+                       --passwd            <password> \
+                       --security          wpa2 \
                        --custom_wifi_cmd   'bgscan="simple:50:-65:300"'
 
 SCRIPT_CLASSIFICATION:
@@ -581,7 +581,7 @@ def parse_args():
          Create stations
             ''',
 
-        description='''\
+        description="""\
 NAME:       create_station.py
 
 PURPOSE:    Create and configure one or more of WiFi stations ports using the
@@ -678,108 +678,108 @@ NOTES:      This script is intended to only create and configure stations. See o
                 Note this is the path on the LANforge system where this station will be created.
 
 EXAMPLE:    # Create a single station
-               ./create_station.py \\
-                   --mgr       <lanforge ip> \\
-                   --radio     1.1.wiphy1 \\
-                   --ssid      <ssid> \\
-                   --passwd    <password> \\
+               ./create_station.py \
+                   --mgr       <lanforge ip> \
+                   --radio     1.1.wiphy1 \
+                   --ssid      <ssid> \
+                   --passwd    <password> \
                    --security  wpa2
 
             # Create multiple stations
-               ./create_station.py \\
-                   --mgr           <lanforge ip> \\
-                   --radio         1.1.wiphy1 \\
-                   --ssid          <ssid> \\
-                   --passwd        <password> \\
-                   --security      wpa2 \\
+               ./create_station.py \
+                   --mgr           <lanforge ip> \
+                   --radio         1.1.wiphy1 \
+                   --ssid          <ssid> \
+                   --passwd        <password> \
+                   --security      wpa2 \
                    --num_stations  10
 
             # Create a multiple stations with specific numbering scheme
             # In this example, create five stations with names of the format: "sta1000", "sta1001", "sta1002", etc.
-               ./create_station.py \\
-                   --mgr           <lanforge ip> \\
-                   --radio         1.1.wiphy1 \\
-                   --ssid          <ssid> \\
-                   --passwd        <password> \\
-                   --security      wpa2 \\
-                   --start_id      1000 \\
+               ./create_station.py \
+                   --mgr           <lanforge ip> \
+                   --radio         1.1.wiphy1 \
+                   --ssid          <ssid> \
+                   --passwd        <password> \
+                   --security      wpa2 \
+                   --start_id      1000 \
                    --num_stations  5
 
             # Create a station, configuring radio settings like antenna, channel, etc.
             # In this example, configure radio to use antennas (2x2 station) and channel 6
-               ./create_station.py \\
-                   --mgr           <lanforge ip> \\
-                   --radio         1.1.wiphy1 \\
-                   --ssid          <ssid> \\
-                   --passwd        <password> \\
-                   --security      wpa2 \\
-                   --radio_antenna 2 \\
+               ./create_station.py \
+                   --mgr           <lanforge ip> \
+                   --radio         1.1.wiphy1 \
+                   --ssid          <ssid> \
+                   --passwd        <password> \
+                   --security      wpa2 \
+                   --radio_antenna 2 \
                    --radio_channel 6
 
             # Create a station, configuring the station to be a specific WiFi mode
             # (e.g. configuring an 802.11ax-capable radio to create an 802.11ac station)
             # See the 'add_sta' command's mode option in the CLI documentation for
             # available mode settings. Link here: http://www.candelatech.com/lfcli_ug.php#add_sta
-               ./create_station.py
-                   --mgr       <lanforge ip> \\
-                   --radio     1.1.wiphy1 \\
-                   --ssid      <ssid> \\
-                   --passwd    <password>  \\
-                   --security  wpa2 \\
+               ./create_station.py \
+                   --mgr       <lanforge ip> \
+                   --radio     1.1.wiphy1 \
+                   --ssid      <ssid> \
+                   --passwd    <password>  \
+                   --security  wpa2 \
                    --mode      6
 
             # Create a station, configuring specific station flags
             # In this example, enable 160MHz channels and disable 802.11ac short guard interval (SGI).
-               ./create_station.py \\
-                   --mgr           <lanforge ip> \\
-                   --radio         1.1.wiphy1 \\
-                   --ssid          <ssid> \\
-                   --passwd        <password> \\
-                   --security      wpa2
-                   --radio_antenna 2 \\
-                   --radio_channel 6 \\
+               ./create_station.py \
+                   --mgr           <lanforge ip> \
+                   --radio         1.1.wiphy1 \
+                   --ssid          <ssid> \
+                   --passwd        <password> \
+                   --security      wpa2 \
+                   --radio_antenna 2 \
+                   --radio_channel 6 \
                    --station_flags "ht160_enable,disable_sgi"
 
             # Create a station using TLS-based enterprise authentication
             # Note that paths are paths on the LANforge system where the station will be created.
-               ./create_station.py \\
-                   --mgr               <lanforge ip> \\
-                   --radio             1.1.wiphy1 \\
-                   --ssid              <ssid> \\
-                   --security          <wpa2|wpa3> \\
-                   --key_mgmt          <key_mgmt>
-                   --pairwise_cipher   <cipher> \\
-                   --groupwise_cipher  <cipher> \\
-                   --eap_method        TLS \\
-                   --eap_identity      <username> \\
-                   --eap_password      <password> \\
-                   --pk_passwd         <password> \\
-                   --private_key       <path> \\
+               ./create_station.py \
+                   --mgr               <lanforge ip> \
+                   --radio             1.1.wiphy1 \
+                   --ssid              <ssid> \
+                   --security          <wpa2|wpa3> \
+                   --key_mgmt          <key_mgmt> \
+                   --pairwise_cipher   <cipher> \
+                   --groupwise_cipher  <cipher> \
+                   --eap_method        TLS \
+                   --eap_identity      <username> \
+                   --eap_password      <password> \
+                   --pk_passwd         <password> \
+                   --private_key       <path> \
                    --ca_cert           <path>
 
             # Create a station using TTLS-based enterprise authentication
-               ./create_station.py \\
-                   --mgr               <lanforge ip> \\
-                   --radio             1.1.wiphy1 \\
-                   --ssid              <ssid> \\
-                   --security          <wpa2|wpa3> \\
-                   --key_mgmt          <TTLS|PEAP>
-                   --pairwise_cipher   <cipher> \\
-                   --groupwise_cipher  <cipher> \\
-                   --eap_method        TTLS \\
-                   --eap_identity      <username> \\
+               ./create_station.py \
+                   --mgr               <lanforge ip> \
+                   --radio             1.1.wiphy1 \
+                   --ssid              <ssid> \
+                   --security          <wpa2|wpa3> \
+                   --key_mgmt          <TTLS|PEAP> \
+                   --pairwise_cipher   <cipher> \
+                   --groupwise_cipher  <cipher> \
+                   --eap_method        TTLS \
+                   --eap_identity      <username> \
                    --eap_password      <password>
 
             #    Create station specifying a custom 'wpa_supplicant' config command
             #    In this example, specify a background scanning 'wpa_supplicant' command, useful for roaming.
             #    Here, the background scan is configured to a threshold of -65 dBm RSSI with a short and long interval of 50 and 300 seconds.
             #    See 'man wpa_supplicant.conf' for more information.
-                   ./create_station.py \\
-                       --mgr               <lanforge ip> \\
-                       --radio             1.1.wiphy1 \\
-                       --ssid              <ssid> \\
-                       --passwd            <password> \\
-                       --security          wpa2 \\
+                   ./create_station.py \
+                       --mgr               <lanforge ip> \
+                       --radio             1.1.wiphy1 \
+                       --ssid              <ssid> \
+                       --passwd            <password> \
+                       --security          wpa2 \
                        --custom_wifi_cmd   'bgscan="simple:50:-65:300"'
 
 SCRIPT_CLASSIFICATION:
@@ -800,7 +800,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README:
             False
-''')
+""")
     required = parser.add_argument_group('required arguments')
     required.add_argument('--start_id',
                           type=int,
