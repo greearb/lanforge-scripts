@@ -38,7 +38,9 @@ add_sta_flags = {
     "ft-roam-over-ds"      : 0x800000000000,    # Roam over DS when AP supports it.
     "rrm-ignore-beacon-req": 0x1000000000000,   # Ignore (reject) RRM Beacon measurement request.
     "use-owe"              : 0x2000000000000,   # Enable OWE
-    "be320-enable"         : 0x4000000000000    # Enable 320Mhz mode.
+    "be320-enable"         : 0x4000000000000,   # Enable 320Mhz mode.
+    "disable-mlo"          : 0x8000000000000,   # Disable OFDMA
+    "ignore-edca"          : 0x20000000000000,  # Request station to ignore EDCA settings
 }
 add_sta_modes = {
     "AUTO"        :  0,        #  802.11g
