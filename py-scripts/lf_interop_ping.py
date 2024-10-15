@@ -55,6 +55,8 @@ import pandas as pd
 import importlib
 import copy
 import logging
+import asyncio
+import csv
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
@@ -70,6 +72,8 @@ from lf_report import lf_report
 from station_profile import StationProfile
 import interop_connectivity
 from LANforge import LFUtils
+DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
+
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -97,7 +101,24 @@ class Ping(Realm):
                  virtual=None,
                  duration=1,
                  real=None,
-                 debug=False):
+                 debug=False,file_name=None,
+                 profile_name=None,group_name=None,eap_method=None,
+                 eap_identity=None,
+                 ieee80211=None,
+                 ieee80211u=None,
+                 ieee80211w=None,
+                 enable_pkc=None,
+                 bss_transition=None,
+                 power_save=None,
+                 disable_ofdma=None,
+                 roam_ft_ds=None,
+                 key_management=None,
+                 pairwise=None,
+                 private_key=None,
+                 ca_cert=None,
+                 client_cert=None,
+                 pk_passwd=None,
+                 pac_file=None,server_ip=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -130,6 +151,28 @@ class Ping(Realm):
         self.generic_endps_profile.dest = self.target
         self.generic_endps_profile.interval = self.interval
         self.Devices = None
+        self.eap_method = eap_method
+        self.eap_identity = eap_identity
+        self.ieee80211 = ieee80211
+        self.ieee80211u= ieee80211u
+        self.ieee80211w= ieee80211w
+        self.enable_pkc= enable_pkc
+        self.bss_transition= bss_transition
+        self.power_save= power_save
+        self.disable_ofdma= disable_ofdma
+        self.roam_ft_ds= roam_ft_ds
+        self.key_management = key_management
+        self.pairwise = pairwise
+        self.private_key = private_key
+        self.ca_cert= ca_cert
+        self.client_cert = client_cert
+        self.pk_passwd = pk_passwd
+        self.pac_file = pac_file
+        self.profile_name=profile_name
+        self.file_name=file_name
+        self.group_name=group_name
+        self.server_ip=server_ip
+        self.real=real
 
     def change_target_to_ip(self):
 
@@ -182,10 +225,12 @@ class Ping(Realm):
     # Args:
     #   devices: Connected RealDevice object which has already populated tracked real device
     #            resources through call to get_devices()
-    def select_real_devices(self, real_devices, real_sta_list=None, base_interop_obj=None):
-        if real_sta_list is None:
-            self.real_sta_list, _, _ = real_devices.query_user()
+    def select_real_devices(self, real_devices, real_sta_list=None, base_interop_obj=None,device_list=None):
+        if real_sta_list==None:
+            #print("HI")
+            self.real_sta_list, _, _ = real_devices.query_user(device_list=device_list)
         else:
+            #print("HElo",real_sta_list)
             self.real_sta_list = real_sta_list
         if base_interop_obj is not None:
             self.Devices = base_interop_obj
@@ -210,6 +255,19 @@ class Ping(Realm):
         self.windows = self.Devices.windows
         self.mac = self.Devices.mac
         self.linux = self.Devices.linux
+        d_list=[]
+        obj=DeviceConfig.DeviceConfig(lanforge_ip=self.host,file_name=self.file_name)
+        for i in self.real_sta_list:
+            b=i.split('.')
+            d_list.append(b[0]+'.'+b[1])
+        device_map={}
+        expected_val=input("Enter the expected value for the following devices{} eg 8,6,2: ".format(d_list)).split(',')
+        if(len(d_list)==len(expected_val)):
+            for i in range(len(d_list)):
+                device_map[d_list[i]]=expected_val[i]
+            #print("DEVVVVVVVV",device_map)
+            obj.update_device_csv('PingPacketLoss',device_map)
+        return d_list
 
     def buildstation(self):
         logging.info('Creating Stations {}'.format(self.sta_list))
@@ -376,7 +434,10 @@ class Ping(Realm):
         self.remarks = []
         self.device_ssid = []
         # packet_count_data = {}
+        os_type=[]
         for device, device_data in self.result_json.items():
+            
+            os_type.append(device_data['os'])
             self.packets_sent.append(int(device_data['sent']))
             self.packets_received.append(int(device_data['recv']))
             self.packets_dropped.append(int(device_data['dropped']))
@@ -446,16 +507,63 @@ class Ping(Realm):
         report.move_csv_file()
         report.build_graph()
 
-        dataframe1 = pd.DataFrame({
-            'Wireless Client': self.device_names,
-            'MAC': self.device_mac,
-            'Channel': self.device_channels,
-            'SSID ' : self.device_ssid,
-            'Mode': self.device_modes,
-            'Packets Sent': self.packets_sent,
-            'Packets Received': self.packets_received,
-            'Packets Loss': self.packets_dropped
-        })
+        if(self.real):   
+            res_list=[]
+            test_input_list=[]
+            pass_fail_list=[]
+            interop_tab_data = self.json_get('/adb/')["devices"]
+            for client in range(len(os_type)):
+                if(os_type[client]!='Android'):
+                    res_list.append(self.device_names[client])
+                else:
+                    for dev in interop_tab_data:
+                        for item in dev.values():
+                            if(item['user-name']==self.device_names[client]):
+                                res_list.append(item['name'].split('.')[2])
+
+            with open('device.csv', mode='r') as file:
+                reader = csv.DictReader(file)
+                rows = list(reader)
+                fieldnames = reader.fieldnames
+            for row in rows:
+                device = row['DeviceList']
+                #print(row)  
+                if device in res_list:
+                    test_input_list.append(row['PingPacketLoss'])
+            percent_pac_loss=[]
+            for i in range(len(self.packets_sent)):
+                percent_pac_loss.append(((self.packets_sent[i]-self.packets_received[i])/self.packets_sent[i])*100)
+            for i in range(len(test_input_list)):
+                if(int(test_input_list[i])>=percent_pac_loss[i]):
+                    pass_fail_list.append('PASS')
+                else:
+                    pass_fail_list.append('FAIL')
+
+            dataframe1 = pd.DataFrame({
+                'Wireless Client': self.device_names,
+                'MAC': self.device_mac,
+                'Channel': self.device_channels,
+                'SSID ' : self.device_ssid,
+                'Mode': self.device_modes,
+                'Packets Sent': self.packets_sent,
+                'Packets Received': self.packets_received,
+                'Packets Loss': self.packets_dropped,
+                " Percentage of Packet loss":percent_pac_loss,
+                " Expected loss": test_input_list,
+                "Status ":pass_fail_list
+            })
+        else:
+            dataframe1 = pd.DataFrame({
+                'Wireless Client': self.device_names,
+                'MAC': self.device_mac,
+                'Channel': self.device_channels,
+                'SSID ' : self.device_ssid,
+                'Mode': self.device_modes,
+                'Packets Sent': self.packets_sent,
+                'Packets Received': self.packets_received,
+                'Packets Loss': self.packets_dropped,
+                " Percentage of Packet loss":percent_pac_loss,
+            })
         report.set_table_dataframe(dataframe1)
         report.build_table()
 
@@ -677,7 +785,26 @@ effectively over the network and pinpoint potential issues affecting connectivit
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')    
-
+    parser.add_argument('--group_name', type=str, help='Enter group name')
+    parser.add_argument('--profile_name', type=str, help='Enter profile name')
+    parser.add_argument('--file_name', type=str, help='Enter file name')
+    parser.add_argument("--eap_method", type=str,default='DEFAULT')
+    parser.add_argument("--eap_identity", type=str,default='')
+    parser.add_argument("--ieee80211",action="store_true")
+    parser.add_argument("--ieee80211u",action="store_true")
+    parser.add_argument("--ieee80211w",type=int,default=1)
+    parser.add_argument("--enable_pkc",action="store_true")
+    parser.add_argument("--bss_transition",action="store_true")
+    parser.add_argument("--power_save",action="store_true")
+    parser.add_argument("--disable_ofdma",action="store_true")
+    parser.add_argument("--roam_ft_ds",action="store_true")
+    parser.add_argument("--key_management", type=str,default='DEFAULT')
+    parser.add_argument("--pairwise", type=str,default='[BLANK]')
+    parser.add_argument("--private_key", type=str,default='[BLANK]')
+    parser.add_argument("--ca_cert", type=str,default='[BLANK]')
+    parser.add_argument("--client_cert", type=str,default='[BLANK]')
+    parser.add_argument("--pk_passwd", type=str,default='[BLANK]')
+    parser.add_argument("--pac_file", type=str,default='[BLANK]')
 
     args = parser.parse_args()
 
@@ -710,7 +837,10 @@ effectively over the network and pinpoint potential issues affecting connectivit
     if (args.security != 'open' and args.passwd == '[BLANK]'):
         print('--passwd required')
         exit(0)
-    if(args.use_default_config == False):
+    if(args.ssid != None and args.passwd != None and args.group_name != None and args.profile_name !=None):
+        print('either --ssid,--password or --profile_name,--group_name should be given')
+        exit(0)
+    if(args.use_default_config == False and args.group_name is None and args.file_name is None and args.profile_name is None):
         if(args.ssid is None):
             print('--ssid required for Wi-Fi configuration')
             exit(0)
@@ -722,6 +852,35 @@ effectively over the network and pinpoint potential issues affecting connectivit
         if(args.server_ip is None):
             print('--server_ip or upstream ip required for Wi-fi configuration')
             exit(0)
+    if(args.group_name!=None):
+        selected_groups=args.group_name.split(',')
+    else:
+        selected_groups=[]
+    if(args.profile_name!=None):
+        selected_profiles=args.profile_name.split(',')
+    else:
+        selected_profiles=[]
+    if(len(selected_groups)!=len(selected_profiles)):
+        print("Number of groups should match number of profiles")
+        exit(0)
+    
+
+       
+
+
+
+
+    if(args.group_name!=None):
+        selected_groups=args.group_name.split(',')
+    else:
+        selected_groups=[]
+    if(args.profile_name!=None):
+        selected_profiles=args.profile_name.split(',')
+    else:
+        selected_profiles=[]
+    if(len(selected_groups)!=len(selected_profiles)):
+        print("Number of groups should match number of profiles")
+        exit(0)
 
     mgr_ip = args.mgr
     mgr_password = args.mgr_passwd
@@ -737,6 +896,28 @@ effectively over the network and pinpoint potential issues affecting connectivit
     duration = args.ping_duration
     configure = not args.use_default_config
     debug = args.debug
+    group_name=args.group_name
+    file_name=args.file_name
+    profile_name=args.profile_name
+    eap_method=args.eap_method
+    eap_identity=args.eap_identity
+    ieee80211=args.ieee80211
+    ieee80211u=args.ieee80211u
+    ieee80211w=args.ieee80211w
+    enable_pkc=args.enable_pkc
+    bss_transition=args.bss_transition
+    power_save=args.power_save
+    disable_ofdma=args.disable_ofdma
+    roam_ft_ds=args.roam_ft_ds
+    key_management=args.key_management
+    pairwise=args.pairwise
+    private_key=args.private_key
+    ca_cert=args.ca_cert
+    client_cert=args.client_cert
+    pk_passwd=args.pk_passwd
+    pac_file=args.pac_file
+    real=args.real
+
 
     if (debug):
         print('''Specified configuration:
@@ -778,50 +959,81 @@ effectively over the network and pinpoint potential issues affecting connectivit
         Devices = RealDevice(manager_ip=mgr_ip, selected_bands=[])
         Devices.get_devices()
         ping.Devices = Devices
-        ping.select_real_devices(real_devices=Devices)
+        #ping.select_real_devices(real_devices=Devices)
 
         if(configure):
 
-            # for androids
-            logger.info('Configuring Wi-Fi on the selected devices')
-            if(Devices.android_list == []):
-                logging.info('There are no Androids to configure Wi-Fi')
+            obj=DeviceConfig.DeviceConfig(lanforge_ip=mgr_ip,file_name=file_name)
+            obj.device_csv_file()
+            if(group_name!=None and file_name!=None and profile_name!=None):
+                selected_groups=group_name.split(',')
+                selected_profiles=profile_name.split(',')
+                config_devices={}    
+                for i in range(len(selected_groups)):
+                    config_devices[selected_groups[i]]=selected_profiles[i]
+                #print("CONFIGURED DICT",config_devices)
+                obj.initiate_group()
+                asyncio.run(obj.connectivity(config_devices))
+                adbresponse=obj.adb_obj.get_devices()
+                resource_manager=obj.laptop_obj.get_devices()
+                all_res={}
+                # print("ADBBBBBBBB",adbresponse)
+                # print("RESSSSSS",resource_manager)
+                df1=obj.display_groups(obj.groups)
+                groups_list=df1.to_dict(orient='list')
+                group_devices={}
+               
+                for adb in adbresponse:   
+                    group_devices[adb['serial']]=adb['eid']
+                for res in resource_manager:
+                    all_res[res['hostname']]=res['shelf']+'.'+res['resource']
+                eid_list=[]
+                for grp_name in groups_list.keys():
+                    for g_name in selected_groups:
+                        if(grp_name == g_name):
+                            for j in groups_list[grp_name]:
+                                if(j in group_devices.keys()):
+                                    eid_list.append(group_devices[j])
+                                elif(j in all_res.keys()):
+                                    eid_list.append(all_res[j])
+                ping.select_real_devices(real_devices=Devices,device_list=eid_list)
             else:
-                androids = interop_connectivity.Android(lanforge_ip=mgr_ip, port=mgr_port, server_ip=server_ip, ssid=ssid, passwd=password, encryption=security)
-                androids_data = androids.get_serial_from_port(port_list=Devices.android_list)
-
-                androids.stop_app(port_list = androids_data)
-
-                # androids.set_wifi_state(port_list=androids_data, state='disable')
-
-                # time.sleep(5)
-
-                androids.set_wifi_state(port_list=androids_data, state='enable')
-
-                androids.configure_wifi(port_list=androids_data)
-
-            # for laptops
-            laptops = interop_connectivity.Laptop(lanforge_ip=mgr_ip, port=8080, server_ip=server_ip, ssid=ssid, passwd=password, encryption=security)
-            all_laptops = Devices.windows_list + Devices.linux_list + Devices.mac_list
-
-            if(all_laptops == []):
-                logging.info('There are no laptops selected to configure Wi-Fi')
-            else:
-
-                laptops_data = laptops.get_laptop_from_port(port_list=all_laptops)
-
-                # works only for linux
-                laptops.rm_station(port_list=laptops_data)
-                time.sleep(2)
-
-                laptops.add_station(port_list=laptops_data)
-                time.sleep(2)
-
-                laptops.set_port(port_list=laptops_data)
-
-            if(Devices.android_list != [] or all_laptops != []):
-                logging.info('Waiting 20s for the devices to configure to Wi-Fi')
-                time.sleep(20)
+                all_devices=obj.get_all_devices()
+                device_list=[]
+                config_dict={
+                            'ssid':ssid,
+                            'passwd':password,
+                            'enc':security,
+                            'eap_method':eap_method,
+                            'eap_identity':eap_identity,
+                            'ieee80211':ieee80211,
+                            'ieee80211u':ieee80211u,
+                            'ieee80211w':ieee80211w,
+                            'enable_pkc':enable_pkc,
+                            'bss_transition':bss_transition,
+                            'power_save':power_save,
+                            'disable_ofdma':disable_ofdma,
+                            'roam_ft_ds':roam_ft_ds,
+                            'key_management':key_management,
+                            'pairwise':pairwise,
+                            'private_key':private_key,
+                            'ca_cert':ca_cert,
+                            'client_cert':client_cert,
+                            'pk_passwd':pk_passwd,
+                            'pac_file':pac_file,
+                            'server_ip':server_ip,
+                        }
+                for device in all_devices:
+                    if(device["type"]=='laptop'):
+                        device_list.append(device["shelf"]+'.'+device["resource"]+" "+device["hostname"])
+                    else:
+                        device_list.append(device["shelf"]+'.'+device["resource"]+" "+device["serial"])
+                print("Available devices:", device_list)
+                dev_list = input("Enter the desired resources to run the test:").split(',')
+                asyncio.run(obj.connectivity(device_list=dev_list,wifi_config=config_dict))
+                ping.select_real_devices(real_devices=Devices,device_list=dev_list)
+            
+            
 
     # station precleanup
     ping.cleanup()
@@ -1020,6 +1232,11 @@ effectively over the network and pinpoint potential issues affecting connectivit
 
     # station post cleanup
     # ping.cleanup()
+
+    # if args.local_lf_report_dir == "":
+    #     ping.generate_report()
+    # else:
+    #     ping.generate_report(report_path=args.local_lf_report_dir)
 
     ping.generate_report()
 

@@ -1784,8 +1784,10 @@ class RealDevice(Realm):
         if dowebgui:
             self.selected_device_eids=device_list.split(",")
         else:
-            self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
-
+            if(device_list==""):
+                self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
+            else:
+                self.selected_device_eids =device_list
         # if all is selected making the list as empty string so that it would consider all devices
         if(self.selected_device_eids == ['all']):
             self.selected_device_eids = all_devices_list

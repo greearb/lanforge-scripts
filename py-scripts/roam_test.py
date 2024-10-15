@@ -11,6 +11,7 @@ import datetime
 import importlib
 import paramiko
 import traceback
+import csv
 import pandas as pd
 # from itertools import combinations # to generate pair combinations for attenuators
 
@@ -24,6 +25,8 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 realm = importlib.import_module("py-json.realm")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 sta_connect = importlib.import_module("py-scripts.sta_connect2")
+DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
+
 Realm = realm.Realm
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -374,6 +377,7 @@ class Roam(Realm):
         radio = self.station_radio
         sta_list = self.get_station_list()
         print("Available list of stations on lanforge-GUI :", sta_list)
+        print("111111111111111111111111111",sta_list)
         logging.info(str(sta_list))
         if not sta_list:
             print("No stations are available on lanforge-GUI")
@@ -566,6 +570,7 @@ class Roam(Realm):
             return False
 
     def soft_roam_test(self):
+
         if self.sniff:
             self.connect()
         for station in self.station_list:
@@ -922,7 +927,37 @@ class Roam(Realm):
         report.set_csv_filename(station_based_graph_png)
         report.move_csv_file()
         report.build_graph()
-            
+        res_list=[]
+        test_input_list=[]
+        pass_fail_list=[]
+       # print("urllllll ksoawruodsn",pass_fail_list,self.url_data)
+        for client in [ device_level_data[station]['OS'] for station in self.station_based_roam_count.keys()]:
+            if(client!='Android'):
+                res_list.append([ device_level_data[station]['Device'] for station in self.station_based_roam_count.keys()])
+            else:
+                interop_tab_data = self.json_get('/adb/')["devices"]
+                for dev in interop_tab_data:
+                    for item in dev.values():
+                        if(item['user-name'] in [ device_level_data[station]['Device'] for station in self.station_based_roam_count.keys()]):
+                            res_list.append(item['name'].split('.')[2])
+
+        with open('device.csv', mode='r') as file:
+            reader = csv.DictReader(file)
+            rows = list(reader)
+            fieldnames = reader.fieldnames
+        for row in rows:
+            device = row['DeviceList']
+            #print(row)  
+            if device in res_list:
+                test_input_list.append(row['Roaming'])
+            successful_roams=list(self.station_based_roam_count.values())
+
+        for i in range(len(test_input_list)):
+            print("555555",test_input_list[i],successful_roams[i])
+            if(int(test_input_list[i])<=successful_roams[i]):
+                pass_fail_list.append('PASS')
+            else:
+                pass_fail_list.append('FAIL')
         station_based_roam_data = pd.DataFrame({
             'Device': [ device_level_data[station]['Device'] for station in self.station_based_roam_count.keys()],
             'OS': [ device_level_data[station]['OS'] for station in self.station_based_roam_count.keys()],
@@ -930,7 +965,9 @@ class Roam(Realm):
             'Signal Strength (dBm)': [ device_level_data[station]['Signal'] for station in self.station_based_roam_count.keys()],
             'Attempted Roams': station_based_total_attempted_roams,
             'Successful Roams': list(self.station_based_roam_count.values()),
-            'Failed Roams': station_based_failed_roams
+            'Failed Roams': station_based_failed_roams,
+            'Expected Roams':test_input_list,
+            'Status':pass_fail_list
         })
         print(station_based_roam_data)
         report.set_table_dataframe(station_based_roam_data)
@@ -1140,6 +1177,21 @@ def main():
         bssids.append(bssid.upper())
     if (args.station_list is not None):
         stations = args.station_list.split(',')
+        obj=DeviceConfig.DeviceConfig(lanforge_ip=args.mgr,file_name='')
+        obj.device_csv_file()
+        device_list=[]
+        expected_dict={}
+        flag=0
+        for sta in stations:
+            device_list.append(sta.split('.')[0]+'.'+sta.split('.')[1])
+        expected_list=input("Enter the expected number to roams for {} eg:2,3: ".format(device_list)).split(',')
+       # print("11111111111111",device_list,expected_list)
+        for val in range(len(expected_list)):
+            expected_dict[device_list[val]]=expected_list[val]
+       # print("33333333333333333",expected_dict)
+        obj.update_device_csv('Roaming',expected_dict)
+        
+
         roam_test = Roam(
             lanforge_ip=args.mgr,
             port=args.port,
@@ -1167,6 +1219,7 @@ def main():
             iterations=args.iterations
         )
         roam_test.station_list = stations
+        print("ffff",roam_test.station_list)
         logging.info('Selected stations\t{}'.format(stations))
     else:
         roam_test = Roam(
@@ -1203,6 +1256,7 @@ def main():
             frequency=args.frequency,
             iterations=args.iterations
         )
+        print("sssssssssssss",roam_test.station_list)
         logging.info(
             'Starting sniffer with roam_test.pcap')
         # roam_test.start_sniff(

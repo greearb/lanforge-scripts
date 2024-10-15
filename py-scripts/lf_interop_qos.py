@@ -65,6 +65,8 @@ import copy
 import logging
 import json
 import pandas as pd
+import asyncio
+import csv
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +88,7 @@ from lf_graph import lf_bar_graph_horizontal
 from datetime import datetime, timedelta
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 
 class ThroughputQOS(Realm):
     def __init__(self,
@@ -97,6 +100,8 @@ class ThroughputQOS(Realm):
                  upstream=None,
                  num_stations=10,
                  host="localhost",
+                 file_name=None,
+                 profile_name=None,group_name=None,
                  port=8080,
                  test_name=None,
                  device_list=[],
@@ -116,7 +121,25 @@ class ThroughputQOS(Realm):
                  ip="localhost",
                  user_list=[], real_client_list=[], real_client_list1=[], hw_list=[], laptop_list=[], android_list=[], mac_list=[], windows_list=[], linux_list=[],
                  total_resources_list=[], working_resources_list=[], hostname_list=[], username_list=[], eid_list=[],
-                 devices_available=[], input_devices_list=[], mac_id1_list=[], mac_id_list=[]):
+                 devices_available=[], input_devices_list=[], mac_id1_list=[], mac_id_list=[],
+                 server_ip=None,eap_method=None,
+                 eap_identity=None,
+                 ieee80211=None,
+                 ieee80211u=None,
+                 ieee80211w=None,
+                 enable_pkc=None,
+                 bss_transition=None,
+                 power_save=None,
+                 disable_ofdma=None,
+                 roam_ft_ds=None,
+                 key_management=None,
+                 pairwise=None,
+                 private_key=None,
+                 ca_cert=None,
+                 client_cert=None,
+                 pk_passwd=None,
+                 pac_file=None,
+                 csv_direction=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
         self.ssid_list = []
@@ -175,6 +198,28 @@ class ThroughputQOS(Realm):
         self.dowebgui = dowebgui
         self.ip = ip
         self.device_found = False
+        self.profile_name=profile_name
+        self.file_name=file_name
+        self.group_name=group_name
+        self.eap_method = eap_method
+        self.eap_identity = eap_identity
+        self.ieee80211 = ieee80211
+        self.ieee80211u= ieee80211u
+        self.ieee80211w= ieee80211w
+        self.enable_pkc= enable_pkc
+        self.bss_transition= bss_transition
+        self.power_save= power_save
+        self.disable_ofdma= disable_ofdma
+        self.roam_ft_ds= roam_ft_ds
+        self.key_management = key_management
+        self.pairwise = pairwise
+        self.private_key = private_key
+        self.ca_cert= ca_cert
+        self.client_cert = client_cert
+        self.pk_passwd = pk_passwd
+        self.pac_file = pac_file
+        self.server_ip=server_ip
+        self.csv_direction=csv_direction
 
     def os_type(self):
         response = self.json_get("/resource/all")
@@ -209,6 +254,100 @@ class ThroughputQOS(Realm):
         #print("android_list :",self.android_list)
 
     def phantom_check(self,ftp_test=False):
+        obj=DeviceConfig.DeviceConfig(lanforge_ip=self.host,file_name=self.file_name)
+        obj.device_csv_file()
+        if(self.group_name!=None and self.file_name!=None and self.device_list==[] and self.profile_name!=None):
+            selected_groups=self.group_name.split(',')
+            selected_profiles=self.profile_name.split(',')
+            config_devices={}    
+            for i in range(len(selected_groups)):
+                config_devices[selected_groups[i]]=selected_profiles[i]
+            #print("CONFIGURED DICT",config_devices)
+            obj.initiate_group()
+            asyncio.run(obj.connectivity(config_devices))
+        elif(self.device_list!=[]):
+            #obj.initiate_group()
+            # response = self.json_get("/resource/all")
+            # new_data={'Profile':'profile','ssid':self.ssid,'enc':self.security,'passwd':self.password}
+            # profile_csv = 'profile_demo.csv'
+            # print(new_data)
+            # with open(profile_csv, mode='w', newline='') as file:
+            #     writer = csv.DictWriter(file, fieldnames=new_data.keys())
+            #     writer.writeheader()
+            #     writer.writerow(new_data)
+            # groups_csv = 'groups_demo.csv'
+            # grp_data = {'group': self.device_list.split(',')} 
+            # with open(groups_csv, mode='w', newline='') as file:
+            #     writer = csv.writer(file)
+            #     writer.writerow(['group']) 
+            #     for device in grp_data['group']:
+            #         for hostname in response['resources']:
+            #             for h_name in hostname.values():
+            #                 if(h_name['eid']==device):
+            #                     writer.writerow([h_name['hostname']])
+            all_devices= obj.get_all_devices()
+            config_dict={
+                'ssid':self.ssid,
+                'passwd':self.password,
+                'enc':self.security,
+                'eap_method':self.eap_method,
+                'eap_identity':self.eap_identity,
+                'ieee80211':self.ieee80211,
+                'ieee80211u':self.ieee80211u,
+                'ieee80211w':self.ieee80211w,
+                'enable_pkc':self.enable_pkc,
+                'bss_transition':self.bss_transition,
+                'power_save':self.power_save,
+                'disable_ofdma':self.disable_ofdma,
+                'roam_ft_ds':self.roam_ft_ds,
+                'key_management':self.key_management,
+                'pairwise':self.pairwise,
+                'private_key':self.private_key,
+                'ca_cert':self.ca_cert,
+                'client_cert':self.client_cert,
+                'pk_passwd':self.pk_passwd,
+                'pac_file':self.pac_file,
+                'server_ip':self.server_ip,
+
+            }
+            self.device_list=self.device_list.split(',')
+            asyncio.run(obj.connectivity(device_list=self.device_list,wifi_config=config_dict))
+        elif(self.device_list==[]):
+            all_devices= obj.get_all_devices()
+            device_list=[]
+            config_dict={
+                        'ssid':self.ssid,
+                        'passwd':self.password,
+                        'enc':self.security,
+                        'eap_method':self.eap_method,
+                        'eap_identity':self.eap_identity,
+                        'ieee80211':self.ieee80211,
+                        'ieee80211u':self.ieee80211u,
+                        'ieee80211w':self.ieee80211w,
+                        'enable_pkc':self.enable_pkc,
+                        'bss_transition':self.bss_transition,
+                        'power_save':self.power_save,
+                        'disable_ofdma':self.disable_ofdma,
+                        'roam_ft_ds':self.roam_ft_ds,
+                        'key_management':self.key_management,
+                        'pairwise':self.pairwise,
+                        'private_key':self.private_key,
+                        'ca_cert':self.ca_cert,
+                        'client_cert':self.client_cert,
+                        'pk_passwd':self.pk_passwd,
+                        'pac_file':self.pac_file,
+                        'server_ip':self.server_ip,
+                    }
+            for device in all_devices:
+                if(device["type"]=='laptop'):
+                    device_list.append(device["shelf"]+'.'+device["resource"]+" "+device["hostname"])
+                else:
+                    device_list.append(device["shelf"]+'.'+device["resource"]+" "+device["serial"])
+            print("Available devices:", device_list)
+            self.device_list = input("Enter the desired resources to run the test:").split(',')
+            asyncio.run(obj.connectivity(device_list=self.device_list,wifi_config=config_dict))
+
+
         port_eid_list, same_eid_list,original_port_list=[],[],[]
         response = self.json_get("/resource/all")
         for key,value in response.items():
@@ -279,11 +418,39 @@ class ThroughputQOS(Realm):
                     print(eid + ' ' + device)
                     self.user_list.append(device)
         #checking for the availability of slected devices to run test
+
+        adbresponse=obj.adb_obj.get_devices()
+        print("AVAILABLE DEVICES TO RUN TEST : ",self.user_list)
+        logging.info(self.user_list)
+        if(self.group_name!=None and self.file_name!=None and self.device_list==[] and self.profile_name!=None):
+            #obj.initiate_group()
+            df1=obj.display_groups(obj.groups)
+            groups_list=df1.to_dict(orient='list')
+            group_devices=[]
+            #asyncio.run(obj.connectivity({self.group_name:self.profile_name}))
+            #print("Groups list",groups_list)
+            for grp_name in groups_list.keys():
+                for g_name in selected_groups:
+                    if(grp_name==g_name):
+                        for j in groups_list[grp_name]:
+                            #print("j=",j)
+                            for i in self.user_list:
+                                if(i.split(' ')[1]=='android'):
+                                    for adb_dict in adbresponse:
+                                        if(adb_dict['serial']==j):
+                                            if(adb_dict['eid'] not in self.device_list):
+                                                self.device_list.append(adb_dict['eid'])
+                                else: 
+                                    if(j==i.split(' ')[2]):
+                                        self.device_list.append(i.split(' ')[0])
+
+
+
         if len(self.device_list) != 0:
             devices_list = self.device_list
             available_list = []
             not_available = []
-            for input_device in devices_list.split(','):
+            for input_device in devices_list:
                 found = False
                 for device in self.devices_available:
                     if input_device + " " in device:
@@ -295,7 +462,16 @@ class ThroughputQOS(Realm):
                     logger.warning(input_device + " is not available to run test")
 
             if len(available_list) > 0:
-
+                device_map={}
+                expected_val=input("Enter the expected {} value in MBPS for the following devices{} eg 8,6,2: ".format(self.csv_direction,available_list)).split(',')
+                if(len(available_list)==len(expected_val)):
+                    for i in range(len(available_list)):
+                        device_map[available_list[i]]=expected_val[i]
+                    #print("DEVVVVVVVV",device_map)
+                    obj.update_device_csv(self.csv_direction,device_map)
+                else:
+                    print("Enter correct number of values")
+                    exit(0)
                 logger.info("Test is initiated on devices: {}".format(available_list))
                 devices_list = ','.join(available_list)
                 self.device_found = True
@@ -380,7 +556,7 @@ class ThroughputQOS(Realm):
             if int(self.cx_profile.side_a_min_bps) != 0:
                 self.direction = "Upload"
                 direction = 'UL'
-        print("direction",self.direction)
+        #print("direction",self.direction)
         traffic_type=(self.traffic_type.strip("lf_")).upper()
         traffic_direction_list,cx_list,traffic_type_list = [],[],[]
         for client in range(len(self.real_client_list)):
@@ -974,7 +1150,7 @@ class ThroughputQOS(Realm):
         upload_list,download_list,individual_upload_list,individual_download_list=[],[],[],[]
         individual_set,colors,labels=[],[],[]
         individual_drop_a_list, individual_drop_b_list = [], []
-        list=[[],[],[],[]]
+        list1=[[],[],[],[]]
         data_set={}
         rate_down= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
         rate_up= str(str(int(self.cx_profile.side_a_min_bps) / 1000000) +' '+'Mbps')
@@ -1012,15 +1188,15 @@ class ThroughputQOS(Realm):
         if self.direction == "Bi-direction":
             load = 'Upload'+':'+rate_up + ','+ 'Download'+':'+ rate_down
             for key in res['test_results'][0][0]:
-                list[0].append(res['test_results'][0][0][key]['VI'])
-                list[1].append(res['test_results'][0][0][key]['VO'])
-                list[2].append(res['test_results'][0][0][key]['BK'])
-                list[3].append(res['test_results'][0][0][key]['BE'])
+                list1[0].append(res['test_results'][0][0][key]['VI'])
+                list1[1].append(res['test_results'][0][0][key]['VO'])
+                list1[2].append(res['test_results'][0][0][key]['BK'])
+                list1[3].append(res['test_results'][0][0][key]['BE'])
             for key in res['test_results'][0][1]:
-                list[0].append(res['test_results'][0][1][key]['VI'])
-                list[1].append(res['test_results'][0][1][key]['VO'])
-                list[2].append(res['test_results'][0][1][key]['BK'])
-                list[3].append(res['test_results'][0][1][key]['BE'])
+                list1[0].append(res['test_results'][0][1][key]['VI'])
+                list1[1].append(res['test_results'][0][1][key]['VO'])
+                list1[2].append(res['test_results'][0][1][key]['BK'])
+                list1[3].append(res['test_results'][0][1][key]['BE'])
         x_fig_size = 15
         y_fig_size = len(self.real_client_list1) * .5 + 4
         if len(res.keys()) > 0:
@@ -1031,9 +1207,57 @@ class ThroughputQOS(Realm):
                 logger.info(res)
                 logger.info(load)
                 logger.info(data_set)
+                
+                res_list=[]
+                test_input_list=[]
+                pass_fail_list=[]
+                interop_tab_data = self.json_get('/adb/')["devices"]
+           
+                for client in self.real_client_list:
+                    if(client.split(' ')[1]!='android'):
+                        res_list.append(client.split(' ')[2])
+                    else:
+                        for dev in interop_tab_data:
+                            for item in dev.values():
+                                if(item['user-name']==client.split(' ')[2]):
+                                    res_list.append(item['name'].split('.')[2])
+
+                with open('device.csv', mode='r') as file:
+                    reader = csv.DictReader(file)
+                    rows = list(reader)
+                    fieldnames = reader.fieldnames
+                for row in rows:
+                    device = row['DeviceList']
+                    #print(row)  
+                    if device in res_list:
+                        test_input_list.append(row[self.csv_direction])
+                direction=''
+                for i in range(len(test_input_list)):
+                    if(self.csv_direction.split('_')[2]=='BiDi'):
+                        if(float(test_input_list[i])<=float(upload_list[i].split(' ')[0]) and float(test_input_list[i])<=float(download_list[i].split(' ')[0])):
+                            pass_fail_list.append('PASS')
+                            direction='bidirectional'
+                        else:
+                            pass_fail_list.append('FAIL')
+                            direction='bidirectional'
+                    elif(self.csv_direction.split('_')[2]=='UL'):
+                        if(float(test_input_list[i])<=float(upload_list[i].split(' ')[0])):
+                            pass_fail_list.append('PASS')
+                            direction='upload'
+                        else:
+                            pass_fail_list.append('FAIL')
+                            direction='upload'
+                    else:
+                        # print(float(test_input_list[i]),float(download_list[i].split(' ')[0]))
+                        if(float(test_input_list[i])<=float(download_list[i].split(' ')[0])):
+                            pass_fail_list.append('PASS')
+                            direction='download'
+                        else:
+                            pass_fail_list.append('FAIL')
+                            direction='download'
                 if "BK" in self.tos:
                     if self.direction=="Bi-direction":
-                        individual_set=list[2]
+                        individual_set=list1[2]
                         individual_download_list=individual_set[0]
                         individual_upload_list=individual_set[1]
                         individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['BK']
@@ -1082,6 +1306,7 @@ class ThroughputQOS(Realm):
                     report.set_csv_filename(graph_png)
                     report.move_csv_file()
                     report.build_graph()
+
                     bk_dataframe = {
                         " Client Name " : self.real_client_list,
                         " MAC " : self.mac_id_list,
@@ -1092,7 +1317,9 @@ class ThroughputQOS(Realm):
                         " Offered upload rate(Mbps) " : upload_list,
                         " Offered download rate(Mbps) " : download_list,
                         " Observed upload rate(Mbps) " : individual_upload_list,
-                        " Observed download rate(Mbps)" : individual_download_list
+                        " Observed download rate(Mbps)" : individual_download_list,
+                        " Expected "+direction+" rate(Mbps)": test_input_list,
+
                     }
                     if self.direction == "Bi-direction":
                         bk_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
@@ -1102,13 +1329,14 @@ class ThroughputQOS(Realm):
                             bk_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
                         elif self.direction == "Download":
                             bk_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    bk_dataframe[" Status "] = pass_fail_list    
                     dataframe1 = pd.DataFrame(bk_dataframe)
                     report.set_table_dataframe(dataframe1)
                     report.build_table()
                 logger.info("Graph and table for BK tos are built")
                 if "BE" in self.tos:
                     if self.direction=="Bi-direction":
-                        individual_set=list[3]
+                        individual_set=list1[3]
                         individual_download_list=individual_set[0]
                         individual_upload_list=individual_set[1]
                         individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['BE']
@@ -1168,7 +1396,9 @@ class ThroughputQOS(Realm):
                         " Offered upload rate(Mbps) " : upload_list,
                         " Offered download rate(Mbps) " : download_list,
                         " Observed upload rate(Mbps) " : individual_upload_list,
-                        " Observed download rate(Mbps)" : individual_download_list
+                        " Observed download rate(Mbps)" : individual_download_list,
+                        " Expected "+direction+" rate(Mbps)": test_input_list,
+
                     }
                     if self.direction == "Bi-direction":
                         be_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
@@ -1178,13 +1408,14 @@ class ThroughputQOS(Realm):
                             be_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
                         elif self.direction == "Download":
                             be_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    be_dataframe[" Status "] = pass_fail_list
                     dataframe2 = pd.DataFrame(be_dataframe)
                     report.set_table_dataframe(dataframe2)
                     report.build_table()
                 logger.info("Graph and table for BE tos are built")
                 if "VI" in self.tos:
                     if self.direction=="Bi-direction":
-                        individual_set=list[0]
+                        individual_set=list1[0]
                         individual_download_list=individual_set[0]
                         individual_upload_list=individual_set[1]
                         individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['VI']
@@ -1234,6 +1465,8 @@ class ThroughputQOS(Realm):
                     report.set_csv_filename(graph_png)
                     report.move_csv_file()
                     report.build_graph()
+
+
                     vi_dataframe = {
                         " Client Name " : self.real_client_list,
                         " MAC " : self.mac_id_list,
@@ -1244,7 +1477,9 @@ class ThroughputQOS(Realm):
                         " Offered upload rate(Mbps) " : upload_list,
                         " Offered download rate(Mbps) " : download_list,
                         " Observed upload rate(Mbps) " : individual_upload_list,
-                        " Observed download rate(Mbps)" : individual_download_list
+                        " Observed download rate(Mbps)" : individual_download_list,
+                        " Expected "+direction+" rate(Mbps)": test_input_list,
+                        
                     }
                     if self.direction == "Bi-direction":
                         vi_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
@@ -1254,6 +1489,7 @@ class ThroughputQOS(Realm):
                             vi_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
                         elif self.direction == "Download":
                             vi_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    vi_dataframe[" Status "] = pass_fail_list
                     print("Df", vi_dataframe)
                     dataframe3 = pd.DataFrame(vi_dataframe)
                     report.set_table_dataframe(dataframe3)
@@ -1261,7 +1497,7 @@ class ThroughputQOS(Realm):
                 logger.info("Graph and table for VI tos are built")
                 if "VO" in self.tos:
                     if self.direction=="Bi-direction":
-                        individual_set=list[1]
+                        individual_set=list1[1]
                         individual_download_list=individual_set[0]
                         individual_upload_list=individual_set[1]
                         individual_drop_a_list = res['test_results'][0][2]['drop_per']['rx_drop_a']['VO']
@@ -1321,7 +1557,9 @@ class ThroughputQOS(Realm):
                         " Offered upload rate(Mbps) " : upload_list,
                         " Offered download rate(Mbps) " : download_list,
                         " Observed upload rate(Mbps) " : individual_upload_list,
-                        " Observed download rate(Mbps)" : individual_download_list
+                        " Observed download rate(Mbps)" : individual_download_list,
+                        " Expected "+direction+" rate(Mbps)": test_input_list,
+
                     }
                     if self.direction == "Bi-direction":
                         vo_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
@@ -1331,6 +1569,7 @@ class ThroughputQOS(Realm):
                             vo_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
                         elif self.direction == "Download":
                             vo_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    vo_dataframe[" Status "] = pass_fail_list
                     print("Df", vo_dataframe)
                     dataframe4 = pd.DataFrame(vo_dataframe)
                     report.set_table_dataframe(dataframe4)
@@ -1467,6 +1706,27 @@ def main():
                               help='Enable debugging')
     parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
                         action="store_true")
+    required.add_argument('--group_name', type=str, help='Enter group name')
+    required.add_argument('--profile_name', type=str, help='Enter profile name')
+    required.add_argument('--file_name', type=str, help='Enter file name')
+    optional.add_argument("--eap_method", type=str,default='DEFAULT')
+    optional.add_argument("--eap_identity", type=str,default='')
+    optional.add_argument("--ieee80211",action="store_true")
+    optional.add_argument("--ieee80211u",action="store_true")
+    optional.add_argument("--ieee80211w",type=int,default=1)
+    optional.add_argument("--enable_pkc",action="store_true")
+    optional.add_argument("--bss_transition",action="store_true")
+    optional.add_argument("--power_save",action="store_true")
+    optional.add_argument("--disable_ofdma",action="store_true")
+    optional.add_argument("--roam_ft_ds",action="store_true")
+    optional.add_argument("--key_management", type=str,default='DEFAULT')
+    optional.add_argument("--pairwise", type=str,default='NA')
+    optional.add_argument("--private_key", type=str,default='NA')
+    optional.add_argument("--ca_cert", type=str,default='NA')
+    optional.add_argument("--client_cert", type=str,default='NA')
+    optional.add_argument("--pk_passwd", type=str,default='NA')
+    optional.add_argument("--pac_file", type=str,default='NA')
+    optional.add_argument("--server_ip", type=str,default='NA')
 
     args = parser.parse_args()
 
@@ -1484,7 +1744,17 @@ def main():
 
     loads = {}
     station_list = []
-    data= {}
+    data= {}  
+
+
+    if(args.group_name!=None):
+        selected_groups=args.group_name.split(',')
+    else:
+        selected_groups=[]
+    if(args.profile_name!=None):
+        selected_profiles=args.profile_name.split(',')
+    else:
+        selected_profiles=[]
 
     if args.download and args.upload:
         loads = {'upload': str(args.upload).split(","), 'download': str(args.download).split(",")}
@@ -1500,89 +1770,133 @@ def main():
             for i in range(len(args.upload)):
                 loads['download'].append(0)
             loads_data=loads["upload"]
-    print(loads)
-    if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
-        args.test_duration = int(args.test_duration[0:-1])
-    elif args.test_duration.endswith('m') or args.test_duration.endswith('M'):
-        args.test_duration = int(args.test_duration[0:-1]) * 60
-    elif args.test_duration.endswith('h') or args.test_duration.endswith('H'):
-        args.test_duration = int(args.test_duration[0:-1]) * 60 * 60
-    elif args.test_duration.endswith(''):
-        args.test_duration = int(args.test_duration)
+    #print(loads)
 
-    for index in range(len(loads_data)):
-        throughput_qos = ThroughputQOS(host=args.mgr,
-                                        ip=args.mgr,
-                                        port=args.mgr_port,
-                                        number_template="0000",
-                                        ap_name=args.ap_name,
-                                        name_prefix="TOS-",
-                                        upstream=args.upstream_port,
-                                        ssid=args.ssid,
-                                        password=args.passwd,
-                                        security=args.security,
-                                        test_duration=args.test_duration,
-                                        use_ht160=False,
-                                        side_a_min_rate=int(loads['upload'][index]),
-                                        side_b_min_rate=int(loads['download'][index]),
-                                        traffic_type=args.traffic_type,
-                                        tos=args.tos,
-                                        dowebgui=args.dowebgui,
-                                        test_name=args.test_name,
-                                        result_dir=args.result_dir,
-                                        device_list=args.device_list,
-                                        _debug_on=args.debug)
-        throughput_qos.os_type()
-        throughput_qos.phantom_check()
-        # checking if we have atleast one device available for running test
+
+    #print("111111111111111111111111111111111",args.download,args.upload)
+    if(args.download!=None and args.upload!=None):
+        direction='L3_'+args.traffic_type.split('_')[1].upper()+'_BiDi'
+    elif( args.upload!=None):
+        direction='L3_'+args.traffic_type.split('_')[1].upper()+'_UL'
+    else:
+        direction='L3_'+args.traffic_type.split('_')[1].upper()+'_DL'
+
+
+
+    if((args.group_name!=None and args.profile_name!=None and args.file_name!=None and args.device_list==[] and args.ssid==None and (len(selected_groups)==len(selected_profiles))) or(args.group_name==None and args.profile_name==None and args.file_name==None and args.ssid!=None and args.passwd!=None and args.security!=None)):
+        if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
+            args.test_duration = int(args.test_duration[0:-1])
+        elif args.test_duration.endswith('m') or args.test_duration.endswith('M'):
+            args.test_duration = int(args.test_duration[0:-1]) * 60
+        elif args.test_duration.endswith('h') or args.test_duration.endswith('H'):
+            args.test_duration = int(args.test_duration[0:-1]) * 60 * 60
+        elif args.test_duration.endswith(''):
+            args.test_duration = int(args.test_duration)
+
+        for index in range(len(loads_data)):
+            throughput_qos = ThroughputQOS(host=args.mgr,
+                                            ip=args.mgr,
+                                            port=args.mgr_port,
+                                            number_template="0000",
+                                            ap_name=args.ap_name,
+                                            name_prefix="TOS-",
+                                            upstream=args.upstream_port,
+                                            ssid=args.ssid,
+                                            password=args.passwd,
+                                            security=args.security,
+                                            test_duration=args.test_duration,
+                                            use_ht160=False,
+                                            side_a_min_rate=int(loads['upload'][index]),
+                                            side_b_min_rate=int(loads['download'][index]),
+                                            traffic_type=args.traffic_type,
+                                            tos=args.tos,
+                                            csv_direction=direction,
+                                            dowebgui=args.dowebgui,
+                                            test_name=args.test_name,
+                                            result_dir=args.result_dir,
+                                            device_list=args.device_list,
+                                            _debug_on=args.debug,group_name=args.group_name,
+                                            profile_name=args.profile_name,
+                                            file_name=args.file_name,
+                                            eap_method=args.eap_method,
+                                eap_identity=args.eap_identity,
+                                ieee80211=args.ieee80211,
+                                ieee80211u=args.ieee80211u,
+                                ieee80211w=args.ieee80211w,
+                                enable_pkc=args.enable_pkc,
+                                bss_transition=args.bss_transition,
+                                power_save=args.power_save,
+                                disable_ofdma=args.disable_ofdma,
+                                roam_ft_ds=args.roam_ft_ds,
+                                key_management=args.key_management,
+                                pairwise=args.pairwise,
+                                private_key=args.private_key,
+                                ca_cert=args.ca_cert,
+                                client_cert=args.client_cert,
+                                pk_passwd=args.pk_passwd,
+                                pac_file=args.pac_file,
+                                server_ip=args.server_ip)
+            throughput_qos.os_type()
+            throughput_qos.phantom_check()
+            # checking if we have atleast one device available for running test
+            if throughput_qos.dowebgui == "True":
+                if throughput_qos.device_found == False:
+                    logger.warning("No Device is available to run the test hence aborting the test")
+                    df1 = pd.DataFrame([{
+                        "BE_dl": 0,
+                        "BE_ul": 0,
+                        "BK_dl": 0,
+                        "BK_ul": 0,
+                        "VI_dl": 0,
+                        "VI_ul": 0,
+                        "VO_dl": 0,
+                        "VO_ul": 0,
+                        "timestamp": datetime.now().strftime('%H:%M:%S'),
+                        'status': 'Stopped'
+                    }]
+                    )
+                    df1.to_csv('{}/overall_throughput.csv'.format(throughput_qos.result_dir), index=False)
+                    raise ValueError("Aborting the test....")
+            throughput_qos.build()
+            throughput_qos.start(False, False)
+            time.sleep(10)
+            connections_download, connections_upload, drop_a_per, drop_b_per = throughput_qos.monitor()
+            logger.info("connections download {}".format(connections_download))
+            logger.info("connections upload {}".format(connections_upload))
+            throughput_qos.stop()
+            time.sleep(5)
+            test_results['test_results'].append(throughput_qos.evaluate_qos(connections_download,connections_upload, drop_a_per, drop_b_per))
+            data.update(test_results)
+        test_end_time = datetime.now().strftime("%Y %d %H:%M:%S")
+        print("Test ended at: ", test_end_time)
+        
+        input_setup_info = {
+            "contact": "support@candelatech.com"
+        }
+        throughput_qos.cleanup()
+        throughput_qos.generate_report(data=data, input_setup_info=input_setup_info, report_path=throughput_qos.result_dir)
+    #updating webgui running json with latest entry and test status completed 
         if throughput_qos.dowebgui == "True":
-            if throughput_qos.device_found == False:
-                logger.warning("No Device is available to run the test hence aborting the test")
-                df1 = pd.DataFrame([{
-                    "BE_dl": 0,
-                    "BE_ul": 0,
-                    "BK_dl": 0,
-                    "BK_ul": 0,
-                    "VI_dl": 0,
-                    "VI_ul": 0,
-                    "VO_dl": 0,
-                    "VO_ul": 0,
-                    "timestamp": datetime.now().strftime('%H:%M:%S'),
-                    'status': 'Stopped'
-                }]
-                )
-                df1.to_csv('{}/overall_throughput.csv'.format(throughput_qos.result_dir), index=False)
-                raise ValueError("Aborting the test....")
-        throughput_qos.build()
-        throughput_qos.start(False, False)
-        time.sleep(10)
-        connections_download, connections_upload, drop_a_per, drop_b_per = throughput_qos.monitor()
-        logger.info("connections download {}".format(connections_download))
-        logger.info("connections upload {}".format(connections_upload))
-        throughput_qos.stop()
-        time.sleep(5)
-        test_results['test_results'].append(throughput_qos.evaluate_qos(connections_download,connections_upload, drop_a_per, drop_b_per))
-        data.update(test_results)
-    test_end_time = datetime.now().strftime("%Y %d %H:%M:%S")
-    print("Test ended at: ", test_end_time)
-    
-    input_setup_info = {
-        "contact": "support@candelatech.com"
-    }
-    throughput_qos.cleanup()
-    throughput_qos.generate_report(data=data, input_setup_info=input_setup_info, report_path=throughput_qos.result_dir)
-   #updating webgui running json with latest entry and test status completed 
-    if throughput_qos.dowebgui == "True":
-        last_entry = throughput_qos.overall[len(throughput_qos.overall) - 1]
-        last_entry["status"] = "Stopped"
-        last_entry["timestamp"] = datetime.now().strftime("%d/%m %I:%M:%S %p")
-        last_entry["remaining_time"] = "0"
-        last_entry["end_time"] = last_entry["timestamp"]
-        throughput_qos.overall.append(
-            last_entry
-        )
-        df1 = pd.DataFrame(throughput_qos.overall)
-        df1.to_csv('{}/overall_throughput.csv'.format(args.result_dir, ), index=False)
+            last_entry = throughput_qos.overall[len(throughput_qos.overall) - 1]
+            last_entry["status"] = "Stopped"
+            last_entry["timestamp"] = datetime.now().strftime("%d/%m %I:%M:%S %p")
+            last_entry["remaining_time"] = "0"
+            last_entry["end_time"] = last_entry["timestamp"]
+            throughput_qos.overall.append(
+                last_entry
+            )
+            df1 = pd.DataFrame(throughput_qos.overall)
+            df1.to_csv('{}/overall_throughput.csv'.format(args.result_dir, ), index=False)
+    elif(len(selected_groups)!=len(selected_profiles)):
+        print("Number of groups should match number of profiles")
+    elif(args.group_name!=None and args.profile_name!=None and args.file_name!=None and args.device_list!=[]):
+        print("Either group name or device list should be entered not both")
+    elif(args.ssid!=None and args.profile_name!=None):
+        print(args.ssid,args.profile_name)
+        print("Either ssid or profile name should be given")
+    elif(args.device_list!=[] and (args.ssid==None or args.passwd==None or args.security==None)):
+        print("Please provide ssid password and security when device list is given")
+
 
 
 
