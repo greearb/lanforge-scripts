@@ -49,6 +49,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import logging
 import asyncio
+import csv
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -61,6 +62,8 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_report_pdf = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
+DeviceConfig=importlib.import_module("py-scripts.DeviceConfig")
+
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -134,13 +137,30 @@ class InteropPortReset(Realm):
             devices = self.base_interop_profile.query_all_devices_to_configure_wifi(device_list=self.device_list.split(','))
         asyncio.run(self.base_interop_profile.configure_wifi(devices[0] + devices[1] + devices[2]))
         self.real_sta_list = self.base_interop_profile.station_list
-        print(self.real_sta_list)
         real_device_data = self.base_interop_profile.devices_data
         if len(self.real_sta_list) == 0:
             logging.error('There are no real devices in this testbed. Aborting the test.')
             exit(0)
         logging.info(f"{self.real_sta_list}")
+        config_obj=DeviceConfig.DeviceConfig(lanforge_ip=self.host)
+        config_obj.device_csv_file()
+        interop_tab_data = self.json_get('/adb/')["devices"]
+        available_list=[]
+        for dev in self.real_sta_list:
+            available_list.append(dev.split('.')[0]+'.'+dev.split('.')[1])
+        print("availablelist",available_list)
+         
+        if len(self.real_sta_list)>0:
 
+            device_map={}
+            expected_val=input("Enter the expected value for the following devices{} eg 8,6,2: ".format(available_list)).split(',')
+            if(len(available_list)==len(expected_val)):
+                for i in range(len(available_list)):
+                    device_map[available_list[i]]=expected_val[i]
+                config_obj.update_device_csv('PortReset',device_map)
+            else:
+                print("Enter correct number of values")
+                exit(0)
         for sta_name in self.real_sta_list:
             if sta_name not in real_device_data:
                 logger.error('Real Station not in devices data')
@@ -1051,6 +1071,30 @@ class InteropPortReset(Realm):
             for i in range(len(d_name)):
                 s_no.append(i + 1)
 
+            res_list=[]
+            test_input_list=[]
+            pass_fail_list=[]
+
+            for i in range(len(d_name)):
+                if(device_type[i]=='Android'):
+                    res_list.append(d_name[i].split('.')[2])
+                else:
+                    res_list.append(user_name[i])
+            with open('device.csv', mode='r') as file:
+                reader = csv.DictReader(file)
+                rows = list(reader)
+            
+            for row in rows:
+                device = row['DeviceList']  
+                if device in res_list:
+                    test_input_list.append(row['PortReset'])
+
+            for i in range(len(test_input_list)):
+                if(int(test_input_list[i])<=self.total_connects[i]):
+                    pass_fail_list.append('PASS')
+                else:
+                    pass_fail_list.append('FAIL')
+            print("AAAAAA",res_list,test_input_list,pass_fail_list)
             table_2 = {
                 "S.No": s_no,
                 "Name of the Devices": d_name,
@@ -1063,7 +1107,9 @@ class InteropPortReset(Realm):
                 "Scans": self.total_scans,
                 "Assoc Attemts": self.total_ass_attemst,
                 "Assoc Rejects": self.total_ass_rejects,
-                "Connects": self.total_connects
+                "Connects": self.total_connects,
+                "Expected Connects":test_input_list,
+                "Status":pass_fail_list,
             }
             test_setup = pd.DataFrame(table_2)
             self.lf_report.set_table_dataframe(test_setup)

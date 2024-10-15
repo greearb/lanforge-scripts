@@ -105,7 +105,8 @@ import logging
 import json
 import pandas as pd
 import shutil
-
+import asyncio
+import csv
 logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
@@ -125,7 +126,7 @@ from lf_graph import lf_bar_graph_horizontal
 from lf_graph import lf_line_graph
 
 from datetime import datetime, timedelta
-
+DeviceConfig=importlib.import_module("py-scripts.DeviceConfig")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class Throughput(Realm):
@@ -161,6 +162,26 @@ class Throughput(Realm):
                 precleanup=False,
                 do_interopability=False,
                 ip="localhost",
+                file_name=None,group_name=None,profile_name=None,
+                eap_method=None,
+                eap_identity=None,
+                ieee80211=None,
+                ieee80211u=None,
+                ieee80211w=None,
+                enable_pkc=None,
+                bss_transition=None,
+                power_save=None,
+                disable_ofdma=None,
+                roam_ft_ds=None,
+                key_management=None,
+                pairwise=None,
+                private_key=None,
+                ca_cert=None,
+                client_cert=None,
+                pk_passwd=None,
+                pac_file=None,
+                server_ip=None,
+                csv_direction='',
                 user_list=[], real_client_list=[], real_client_list1=[], hw_list=[], laptop_list=[], android_list=[], mac_list=[], windows_list=[], linux_list=[],
                 total_resources_list=[], working_resources_list=[], hostname_list=[], username_list=[], eid_list=[],
                 devices_available=[], input_devices_list=[], mac_id1_list=[], mac_id_list=[],overall_avg_rssi=[]):
@@ -237,6 +258,29 @@ class Throughput(Realm):
         self.device_found = False
         self.incremental=incremental
         self.precleanup=precleanup
+        self.file_name=file_name
+        self.group_name=group_name
+        self.profile_name=profile_name
+        #for advanced config
+        self.eap_method = eap_method
+        self.eap_identity = eap_identity
+        self.ieee80211 = ieee80211
+        self.ieee80211u= ieee80211u
+        self.ieee80211w= ieee80211w
+        self.enable_pkc= enable_pkc
+        self.bss_transition= bss_transition
+        self.power_save= power_save
+        self.disable_ofdma= disable_ofdma
+        self.roam_ft_ds= roam_ft_ds
+        self.key_management = key_management
+        self.pairwise = pairwise
+        self.private_key = private_key
+        self.ca_cert= ca_cert
+        self.client_cert = client_cert
+        self.pk_passwd = pk_passwd
+        self.pac_file = pac_file
+        self.server_ip=server_ip
+        self.csv_direction=csv_direction
 
     def os_type(self):
         """
@@ -281,6 +325,81 @@ class Throughput(Realm):
 
         """
         port_eid_list,same_eid_list,original_port_list=[],[],[]
+        obj=DeviceConfig.DeviceConfig(lanforge_ip=self.host,file_name=self.file_name)
+        obj.device_csv_file()
+        if(self.group_name!=None and self.file_name!=None and self.device_list==[] and self.profile_name!=None):
+            selected_groups=self.group_name.split(',')
+            selected_profiles=self.profile_name.split(',')
+            config_devices={}
+            for i in range(len(selected_groups)):
+                config_devices[selected_groups[i]]=selected_profiles[i]
+
+        #print("CONFIGURED DICT",config_devices)
+            obj.initiate_group()
+            asyncio.run(obj.connectivity(config_devices))
+        elif(self.device_list!=[]):
+            
+            all_devices= obj.get_all_devices()
+            config_dict={
+                'ssid':self.ssid,
+                'passwd':self.password,
+                'enc':self.security,
+                'eap_method':self.eap_method,
+                'eap_identity':self.eap_identity,
+                'ieee80211':self.ieee80211,
+                'ieee80211u':self.ieee80211u,
+                'ieee80211w':self.ieee80211w,
+                'enable_pkc':self.enable_pkc,
+                'bss_transition':self.bss_transition,
+                'power_save':self.power_save,
+                'disable_ofdma':self.disable_ofdma,
+                'roam_ft_ds':self.roam_ft_ds,
+                'key_management':self.key_management,
+                'pairwise':self.pairwise,
+                'private_key':self.private_key,
+                'ca_cert':self.ca_cert,
+                'client_cert':self.client_cert,
+                'pk_passwd':self.pk_passwd,
+                'pac_file':self.pac_file,
+                'server_ip':self.server_ip,
+
+            }
+            self.device_list=self.device_list.split(',')
+            asyncio.run(obj.connectivity(device_list=self.device_list,wifi_config=config_dict))
+        elif(self.device_list==[]):
+            all_devices= obj.get_all_devices()
+            device_list=[]
+            config_dict={
+                        'ssid':self.ssid,
+                        'passwd':self.password,
+                        'enc':self.security,
+                        'eap_method':self.eap_method,
+                        'eap_identity':self.eap_identity,
+                        'ieee80211':self.ieee80211,
+                        'ieee80211u':self.ieee80211u,
+                        'ieee80211w':self.ieee80211w,
+                        'enable_pkc':self.enable_pkc,
+                        'bss_transition':self.bss_transition,
+                        'power_save':self.power_save,
+                        'disable_ofdma':self.disable_ofdma,
+                        'roam_ft_ds':self.roam_ft_ds,
+                        'key_management':self.key_management,
+                        'pairwise':self.pairwise,
+                        'private_key':self.private_key,
+                        'ca_cert':self.ca_cert,
+                        'client_cert':self.client_cert,
+                        'pk_passwd':self.pk_passwd,
+                        'pac_file':self.pac_file,
+                        'server_ip':self.server_ip,
+                    }
+            for device in all_devices:
+                if(device["type"]=='laptop'):
+                    device_list.append(device["shelf"]+'.'+device["resource"]+" "+device["hostname"])
+                else:
+                    device_list.append(device["shelf"]+'.'+device["resource"]+" "+device["serial"])
+            print("Available devices:", device_list)
+            self.device_list = input("Enter the desired resources to run the test:").split(',')
+            asyncio.run(obj.connectivity(device_list=self.device_list,wifi_config=config_dict))
 
         # Retrieve all resources from the LANforge
         response=self.json_get("/resource/all")
@@ -311,15 +430,9 @@ class Throughput(Realm):
                                         self.linux_list.append(b['hw version'])
                                         self.devices_available.append(b['eid'] +" " +'Lin'+" "+ b['hostname'])
                             elif "Apple" in b['hw version']:
-                                if b['kernel']=='':
-                                    self.eid_list.append(b['eid'])
-                                    self.mac_list.append(b['hw version'])
-                                    self.devices_available.append(b['eid'] +" " +'iOS'+" "+ b['hostname'])
-                                else:
-                                    self.eid_list.append(b['eid'])
-                                    self.mac_list.append(b['hw version'])
-                                    #self.hostname_list.append(b['eid']+ " " +b['hostname'])
-                                    self.devices_available.append(b['eid'] +" " +'Mac'+" "+ b['hostname'])
+                                self.eid_list.append(b['eid'])
+                                self.mac_list.append(b['hw version'])
+                                self.devices_available.append(b['eid'] +" " +'Mac'+" "+ b['hostname'])
                             else:
                                 self.eid_list.append(b['eid'])
                                 self.android_list.append(b['hw version'])
@@ -359,7 +472,33 @@ class Throughput(Realm):
                 if eid in device:
                     self.user_list.append(device)
 
+        adbresponse=obj.adb_obj.get_devices()
+      
 
+        print("AVAILABLE DEVICES TO RUN TEST : ",self.user_list)
+        logging.info(self.user_list)
+        if(self.group_name!=None and self.file_name!=None and self.device_list==[] and self.profile_name!=None):
+            #obj.initiate_group()
+            df1=obj.display_groups(obj.groups)
+            groups_list=df1.to_dict(orient='list')
+            
+            #asyncio.run(obj.connectivity({self.group_name:self.profile_name}))
+            print("Groups list",groups_list)
+            for grp_name in groups_list.keys():
+                for g_name in selected_groups:
+                    if(grp_name==g_name):
+                        for j in groups_list[grp_name]:
+                            for i in self.user_list:
+                                if(i.split(' ')[1]=='android'):
+                                    for adb_dict in adbresponse:
+                                        if(adb_dict['serial']==j):
+                                            if(adb_dict['eid'] not in self.device_list):
+                                                self.device_list.append(adb_dict['eid'])
+                                else: 
+                                    if(j==i.split(' ')[2]):
+                                        self.device_list.append(i.split(' ')[0])
+                                    #group_devices.append(j)
+        
 
         # If self.device_list is provided, check availability against devices_available
         if len(self.device_list) != 0:
@@ -368,7 +507,7 @@ class Throughput(Realm):
             not_available=[]
 
             # Iterate over each input device in devices_list
-            for input_device in devices_list.split(','):
+            for input_device in devices_list:
                 found=False
 
                 # Check if input_device exists in devices_available
@@ -383,6 +522,15 @@ class Throughput(Realm):
             
             # If available_list is not empty, log info and set self.device_found to True
             if len(available_list)>0:
+                device_map={}
+                expected_val=input("Enter the expected {} value for the following devices{} in Mbps eg 8,6,2: ".format(self.csv_direction,available_list)).split(',')
+                if(len(available_list)==len(expected_val)):
+                    for i in range(len(available_list)):
+                        device_map[available_list[i]]=expected_val[i]
+                    obj.update_device_csv(self.csv_direction,device_map)
+                else:
+                    print("Enter correct number of values")
+                    exit(0)
                 logger.info("Test is intiated on these devices {}".format(available_list))
                 devices_list=','.join(available_list)
                 self.device_found=True
@@ -394,12 +542,10 @@ class Throughput(Realm):
 
             # If self.device_list is not provided, prompt user to select devices from user_list
             logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(self.user_list))
-            devices_list = input("Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices: ")
+            devices_list = input("Enter the desired resources to run the test:")
 
         # If no devices are selected or only comma is entered, log an error and return False
-        if devices_list =="all":
-            devices_list=""
-        if(devices_list==","):
+        if(devices_list=="" or devices_list==","):
             logger.error("Selected Devices are not available in the lanforge")
             return False,self.real_client_list
         
@@ -436,9 +582,10 @@ class Throughput(Realm):
             for i in self.mac_id1_list:
                 if eid in i:
                     self.mac_id_list.append(i.strip(eid+' '))
+
         # Check if incremental_capacity is provided and ensure selected devices are sufficient
         if (len(self.incremental_capacity)>0 and int(self.incremental_capacity.split(',')[-1])>len(self.mac_id_list)):
-            logger.error("Devices available are less than given incremental capacity")
+            logger.error("Devices selected is less than given incremental capacity")
             return False,self.real_client_list
 
         else:
@@ -521,7 +668,7 @@ class Throughput(Realm):
 
     def create_cx(self):
         direction=''
-
+        
         # Determine direction based on side_a_min_bps and side_b_min_bps
         if int(self.cx_profile.side_b_min_bps)!=2560 and int(self.cx_profile.side_a_min_bps)!=2560:
             self.direction = "Bi-direction"
@@ -1426,6 +1573,52 @@ class Throughput(Realm):
                             _obj="The below tables provides detailed information for the throughput test on each device.")
                 report.build_objective()
                 self.mac_id_list = [item.split()[-1] if ' ' in item else item for item in self.mac_id_list]
+                res_list=[]
+                test_input_list=[]
+                pass_fail_list=[]
+                interop_tab_data = self.json_get('/adb/')["devices"]
+
+                for j in range(len(device_type[0:int(incremental_capacity_list[i])])):
+                    if(device_type[0:int(incremental_capacity_list[i])][j]!='Android'):
+                        res_list.append(devices_on_running[0:int(incremental_capacity_list[i])][j])
+                    else:
+                        for dev in interop_tab_data:
+                            for item in dev.values():
+                                if(item['user-name']==devices_on_running[0:int(incremental_capacity_list[i])][j]):
+                                    res_list.append(item['name'].split('.')[2])
+
+                with open('device.csv', mode='r') as file:
+                    reader = csv.DictReader(file)
+                    rows = list(reader)
+            
+                for row in rows:
+                    device = row['DeviceList']  
+                    if device in res_list:
+                        test_input_list.append(row[self.csv_direction])
+                direction=''
+                for k in range(len(test_input_list)):
+                    if(self.csv_direction.split('_')[2]=='BiDi'):
+                        if(float(test_input_list[k])<=float([n for n in upload_data[0:int(incremental_capacity_list[i])]][k]) and float(test_input_list[k])<=float([n for n in download_data[0:int(incremental_capacity_list[i])]][k])):
+                            pass_fail_list.append('PASS')
+                            direction='bidirectional'
+                        else:
+                            pass_fail_list.append('FAIL')
+                            direction='bidirectional'
+                    elif(self.csv_direction.split('_')[2]=='UL'):
+                        if(float(test_input_list[k])<=float([n for n in upload_data[0:int(incremental_capacity_list[i])]][k])):
+                            pass_fail_list.append('PASS')
+                            direction='upload'
+                        else:
+                            pass_fail_list.append('FAIL')
+                            direction='upload'
+                    else:
+                        
+                        if(float(test_input_list[k])<=float([n for n in download_data[0:int(incremental_capacity_list[i])]][k])):
+                            pass_fail_list.append('PASS')
+                            direction='download'
+                        else:
+                            pass_fail_list.append('FAIL')
+                            direction='download'
                 bk_dataframe = {
                             " Device Type " : device_type[0:int(incremental_capacity_list[i])],
                             " Username": devices_on_running[0:int(incremental_capacity_list[i])],
@@ -1439,10 +1632,12 @@ class Throughput(Realm):
                             " Offered upload rate(Mbps) " : upload_list[0:int(incremental_capacity_list[i])],
                             " Observed upload rate(Mbps) " : [str(n)+" Mbps" for n in upload_data[0:int(incremental_capacity_list[i])]],
                             " RSSI ": ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[0:int(incremental_capacity_list[i])]],
+                            " Expected "+direction+" value":test_input_list,
                             " Link Speed ":self.link_speed_list[0:int(incremental_capacity_list[i])],
-                            " Packet Size(Bytes) ":[str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]]
+                            " Packet Size(Bytes) ":[str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
+                            " Status ":pass_fail_list
                         }
-    
+                print("dataframe",bk_dataframe)
                 dataframe1 = pd.DataFrame(bk_dataframe)
                 report.set_table_dataframe(dataframe1)
                 report.build_table()
@@ -1703,6 +1898,53 @@ class Throughput(Realm):
                             _obj="The below tables provides detailed information for the throughput test on each device.")
                 report.build_objective()
                 self.mac_id_list = [item.split()[-1] if ' ' in item else item for item in self.mac_id_list]
+                res_list=[]
+                test_input_list=[]
+                pass_fail_list=[]
+                interop_tab_data = self.json_get('/adb/')["devices"]
+
+                for j in range(len(device_type[int(incremental_capacity_list[i])-1])):
+                    if(device_type[int(incremental_capacity_list[i])-1][j]!='Android'):
+                        res_list.append(devices_on_running[-1][j])
+                    else:
+                        for dev in interop_tab_data:
+                            for item in dev.values():
+                                if(item['user-name']==devices_on_running[-1][j]):
+                                    res_list.append(item['name'].split('.')[2])
+
+                with open('device.csv', mode='r') as file:
+                    reader = csv.DictReader(file)
+                    rows = list(reader)
+            
+                for row in rows:
+                    device = row['DeviceList']  
+                    if device in res_list:
+                        test_input_list.append(row[self.csv_direction])
+                direction=''
+                for k in range(len(test_input_list)):
+                    if(self.csv_direction.split('_')[2]=='BiDi'):
+                        if(float(test_input_list[k])<=float(upload_data[-1][k]) and float(test_input_list[k])<=float(download_data[-1][k][k])):
+                            pass_fail_list.append('PASS')
+                            direction='bidirectional'
+                        else:
+                            pass_fail_list.append('FAIL')
+                            direction='bidirectional'
+                    elif(self.csv_direction.split('_')[2]=='UL'):
+                        if(float(test_input_list[k])<=float(upload_data[-1][k])):
+                            pass_fail_list.append('PASS')
+                            direction='upload'
+                        else:
+                            pass_fail_list.append('FAIL')
+                            direction='upload'
+                    else:
+                        
+                        if(float(test_input_list[k])<=float(download_data[-1][k])):
+                            pass_fail_list.append('PASS')
+                            direction='download'
+                        else:
+                            pass_fail_list.append('FAIL')
+                            direction='download'
+
                 bk_dataframe = {
                             " Device Type " : device_type[int(incremental_capacity_list[i])-1],
                             " Username": devices_on_running[-1],
@@ -1716,9 +1958,10 @@ class Throughput(Realm):
                             " Offered upload rate(Mbps) " : upload_list[-1],
                             " Observed upload rate(Mbps) " : [str(upload_data[-1])+" Mbps" ],
                             " RSSI ":  ['' if rssi_data[-1] == 0 else '-'+str(rssi_data[-1])+ " dbm"],
+                            " Expected "+direction+" value":test_input_list,
                             " Link Speed ":self.link_speed_list[int(incremental_capacity_list[i])-1],
-                            # " Packet Size(Bytes) ":[str(n)+" Bytes" for n in packet_size_in_table[0:int(incremental_capacity_list[i])]]
-                        }
+                            " Status":pass_fail_list
+                        }  
     
                 dataframe1 = pd.DataFrame(bk_dataframe)
                 report.set_table_dataframe(dataframe1)
@@ -1889,6 +2132,28 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--security',help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >',default="open")
     optional.add_argument('--test_name',help='Specify test name to store the runtime csv results', default=None)
     optional.add_argument('--result_dir',help='Specify the result dir to store the runtime logs', default='')
+  
+    optional.add_argument("--eap_method", type=str,default='DEFAULT')
+    optional.add_argument("--eap_identity", type=str,default='')
+    optional.add_argument("--ieee80211",action="store_true")
+    optional.add_argument("--ieee80211u",action="store_true")
+    optional.add_argument("--ieee80211w",type=int,default=1)
+    optional.add_argument("--enable_pkc",action="store_true")
+    optional.add_argument("--bss_transition",action="store_true")
+    optional.add_argument("--power_save",action="store_true")
+    optional.add_argument("--disable_ofdma",action="store_true")
+    optional.add_argument("--roam_ft_ds",action="store_true")
+    optional.add_argument("--key_management", type=str,default='DEFAULT')
+    optional.add_argument("--pairwise", type=str,default='[BLANK]')
+    optional.add_argument("--private_key", type=str,default='[BLANK]')
+    optional.add_argument("--ca_cert", type=str,default='[BLANK]')
+    optional.add_argument("--client_cert", type=str,default='[BLANK]')
+    optional.add_argument("--pk_passwd", type=str,default='[BLANK]')
+    optional.add_argument("--pac_file", type=str,default='[BLANK]')
+    optional.add_argument('--file_name', type=str, help='specify the file name')
+    optional.add_argument('--group_name', type=str, help='specify the group name')
+    optional.add_argument('--profile_name', type=str, help='specify the profile name')
+    optional.add_argument('--server_ip',type=str,default=None)
 
     parser.add_argument('--help_summary', help='Show summary of what this script does', default=None)
 
@@ -1907,161 +2172,212 @@ Copyright 2023 Candela Technologies Inc.
     if args.download and args.upload:
         loads = {'upload': str(args.upload).split(","), 'download': str(args.download).split(",")}
         loads_data=loads["download"]
+        
     elif args.download:
         loads = {'upload': [], 'download': str(args.download).split(",")}
         for i in range(len(args.download)):
             loads['upload'].append(2560)
         loads_data=loads["download"]
+        
     else:
         if args.upload:
             loads = {'upload': str(args.upload).split(","), 'download': []}
             for i in range(len(args.upload)):
                 loads['download'].append(2560)
             loads_data=loads["upload"]
+   
+    if(args.download!='2560' and args.download!='0' and args.upload!='0' and args.upload!='2560' ):
+        csv_direction='L3_'+args.traffic_type.split('_')[1].upper()+'_BiDi'
+    elif(args.upload!='2560' and args.upload!='0'):
+        csv_direction='L3_'+args.traffic_type.split('_')[1].upper()+'_UL'
+    else:
+        csv_direction='L3_'+args.traffic_type.split('_')[1].upper()+'_DL'
+
 
     if args.do_interopability:
         args.incremental_capacity="1"
    
+    if(args.group_name!=None):
+        selected_groups=args.group_name.split(',')
+    else:
+        selected_groups=[]
+    if(args.profile_name!=None):
+        selected_profiles=args.profile_name.split(',')
+    else:
+        selected_profiles=[]
 
     # Parsing test_duration
-    if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
-        args.test_duration = int(args.test_duration[0:-1])
+    if((args.group_name!=None and args.profile_name!=None and args.file_name!=None and args.device_list==[] and args.ssid==None and (len(selected_groups)==len(selected_profiles))) or(args.group_name==None and args.profile_name==None and args.file_name==None and args.ssid!=None and args.passwd!=None and args.security!=None) or (args.group_name==None and args.profile_name==None and args.file_name==None and args.ssid!=None and args.passwd==None and args.security.lower() =='open')):
+
+        if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
+            args.test_duration = int(args.test_duration[0:-1])
+        
+        elif args.test_duration.endswith('m') or args.test_duration.endswith('M'):
+            args.test_duration = int(args.test_duration[0:-1]) * 60 
     
-    elif args.test_duration.endswith('m') or args.test_duration.endswith('M'):
-        args.test_duration = int(args.test_duration[0:-1]) * 60 
- 
-    elif args.test_duration.endswith('h') or args.test_duration.endswith('H'):
-        args.test_duration = int(args.test_duration[0:-1]) * 60 * 60 
+        elif args.test_duration.endswith('h') or args.test_duration.endswith('H'):
+            args.test_duration = int(args.test_duration[0:-1]) * 60 * 60 
+        
+        elif args.test_duration.endswith(''):
+            args.test_duration = int(args.test_duration)
+
+        # Parsing report_timer
+        if args.report_timer.endswith('s') or args.report_timer.endswith('S') :
+            args.report_timer=int(args.report_timer[0:-1]) 
+
+        elif args.report_timer.endswith('m') or args.report_timer.endswith('M')   :
+            args.report_timer=int(args.report_timer[0:-1]) * 60
+
+        elif args.report_timer.endswith('h') or args.report_timer.endswith('H')  :
+            args.report_timer=int(args.report_timer[0:-1]) * 60 * 60
+
+        elif args.test_duration.endswith(''):        
+            args.report_timer=int(args.report_timer)
+
+        
+        if (int(args.packet_size)<16 or int(args.packet_size)>65507) and int(args.packet_size)!=-1:
+            logger.error("Packet size should be greater than 16 bytes and less than 65507 bytes incorrect")
+            return
     
-    elif args.test_duration.endswith(''):
-        args.test_duration = int(args.test_duration)
+        for index in range(len(loads_data)):
+            throughput = Throughput(host=args.mgr,
+                                    ip=args.mgr,
+                                    port=args.mgr_port,
+                                    number_template="0000",
+                                    ap_name=args.ap_name,
+                                    name_prefix="TOS-",
+                                    upstream=args.upstream_port,
+                                    ssid=args.ssid,
+                                    password=args.passwd,
+                                    security=args.security,
+                                    test_duration=args.test_duration,
+                                    use_ht160=False,
+                                    side_a_min_rate=int(loads['upload'][index]),
+                                    side_b_min_rate=int(loads['download'][index]),
+                                    side_a_min_pdu=int(args.packet_size),
+                                    side_b_min_pdu=int(args.packet_size),
+                                    traffic_type=args.traffic_type,
+                                    tos=args.tos,
+                                    dowebgui=args.dowebgui,
+                                    test_name=args.test_name,
+                                    result_dir=args.result_dir,
+                                    device_list=args.device_list,
+                                    incremental_capacity=args.incremental_capacity,
+                                    report_timer=args.report_timer,
+                                    load_type=args.load_type,
+                                    do_interopability=args.do_interopability,
+                                    incremental=args.incremental,
+                                    precleanup=args.precleanup,
+                                    file_name=args.file_name,
+                                    group_name=args.group_name,
+                                    profile_name=args.profile_name,
+                                    eap_method=args.eap_method,
+                                    eap_identity=args.eap_identity,
+                                    ieee80211=args.ieee80211,
+                                    ieee80211u=args.ieee80211u,
+                                    ieee80211w=args.ieee80211w,
+                                    enable_pkc=args.enable_pkc,
+                                    bss_transition=args.bss_transition,
+                                    power_save=args.power_save,
+                                    disable_ofdma=args.disable_ofdma,
+                                    roam_ft_ds=args.roam_ft_ds,
+                                    key_management=args.key_management,
+                                    pairwise=args.pairwise,
+                                    private_key=args.private_key,
+                                    ca_cert=args.ca_cert,
+                                    client_cert=args.client_cert,
+                                    pk_passwd=args.pk_passwd,
+                                    pac_file=args.pac_file,
+                                    server_ip=args.server_ip,
+                                    csv_direction=csv_direction
+                                    )
 
-    # Parsing report_timer
-    if args.report_timer.endswith('s') or args.report_timer.endswith('S') :
-        args.report_timer=int(args.report_timer[0:-1]) 
+            throughput.os_type()
 
-    elif args.report_timer.endswith('m') or args.report_timer.endswith('M')   :
-        args.report_timer=int(args.report_timer[0:-1]) * 60
+            check_condition,clients_to_run=throughput.phantom_check()
 
-    elif args.report_timer.endswith('h') or args.report_timer.endswith('H')  :
-        args.report_timer=int(args.report_timer[0:-1]) * 60 * 60
+            if check_condition==False:
+                return
 
-    elif args.test_duration.endswith(''):        
-        args.report_timer=int(args.report_timer)
+            check_increment_condition=throughput.check_incremental_list()
 
-    
-    if (int(args.packet_size)<16 or int(args.packet_size)>65507) and int(args.packet_size)!=-1:
-        logger.error("Packet size should be greater than 16 bytes and less than 65507 bytes incorrect")
-        return
-   
-    for index in range(len(loads_data)):
-        throughput = Throughput(host=args.mgr,
-                                ip=args.mgr,
-                                port=args.mgr_port,
-                                number_template="0000",
-                                ap_name=args.ap_name,
-                                name_prefix="TOS-",
-                                upstream=args.upstream_port,
-                                ssid=args.ssid,
-                                password=args.passwd,
-                                security=args.security,
-                                test_duration=args.test_duration,
-                                use_ht160=False,
-                                side_a_min_rate=int(loads['upload'][index]),
-                                side_b_min_rate=int(loads['download'][index]),
-                                side_a_min_pdu=int(args.packet_size),
-                                side_b_min_pdu=int(args.packet_size),
-                                traffic_type=args.traffic_type,
-                                tos=args.tos,
-                                dowebgui=args.dowebgui,
-                                test_name=args.test_name,
-                                result_dir=args.result_dir,
-                                device_list=args.device_list,
-                                incremental_capacity=args.incremental_capacity,
-                                report_timer=args.report_timer,
-                                load_type=args.load_type,
-                                do_interopability=args.do_interopability,
-                                incremental=args.incremental,
-                                precleanup=args.precleanup
-                                )
-
-        throughput.os_type()
-
-        check_condition,clients_to_run=throughput.phantom_check()
-
-        if check_condition==False:
-            return
-
-        check_increment_condition=throughput.check_incremental_list()
-
-        if check_increment_condition==False:
-            logger.error("Incremental values given for selected devices are incorrect")
-            return
-        
-        elif(len(args.incremental_capacity)>0 and check_increment_condition==False):
-            logger.error("Incremental values given for selected devices are incorrect")
-            return
-        
-        created_cxs = throughput.build()
-        time.sleep(10)
-        created_cxs=list(created_cxs.keys())
-        individual_dataframe_column=[]
-        
-        to_run_cxs,to_run_cxs_len,created_cx_lists_keys,incremental_capacity_list = throughput.get_incremental_capacity_list()
-        
-        for i in range(len(clients_to_run)):
-
-            # Extend individual_dataframe_column with dynamically generated column names
-            individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop A {clients_to_run[i]}', f'Rx % Drop B{clients_to_run[i]}',f'RSSI {clients_to_run[i]} ',f'Link Speed {clients_to_run[i]} '])
-        
-        individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop A', 'Overall Rx % Drop B','Iteration','TIMESTAMP','Start_time','End_time','Remaining_Time','Incremental_list','status'])
-        individual_df=pd.DataFrame(columns=individual_dataframe_column)
-
-        overall_start_time=datetime.now()
-        overall_end_time=overall_start_time + timedelta(seconds=int(args.test_duration)*len(incremental_capacity_list))
-
-        for i in range(len(to_run_cxs)):
-            # Check the load type specified by the user
-            if args.load_type == "wc_intended_load":
-                # Perform intended load for the current iteration
-                throughput.perform_intended_load(i,incremental_capacity_list)
-                if i!=0:
-
-                    # Stop throughput testing if not the first iteration
-                    throughput.stop()
-
-                # Start specific connections for the current iteration
-                throughput.start_specific(created_cx_lists_keys[:incremental_capacity_list[i]])
-            else:
-                if (args.do_interopability and i!=0):
-                    throughput.stop_specific(to_run_cxs[i-1])
-                    time.sleep(5)
-                throughput.start_specific(to_run_cxs[i])
-
-            # Determine device names based on the current iteration
-            device_names=created_cx_lists_keys[:to_run_cxs_len[i][-1]]
-
-            # Monitor throughput and capture all dataframes and test stop status
-            all_dataframes,test_stopped_by_user = throughput.monitor(i,individual_df,device_names,incremental_capacity_list,overall_start_time,overall_end_time)
+            if check_increment_condition==False:
+                logger.error("Incremental values given for selected devices are incorrect")
+                return
             
-            # Check if the test was stopped by the user
-            if test_stopped_by_user==False:
+            elif(len(args.incremental_capacity)>0 and check_increment_condition==False):
+                logger.error("Incremental values given for selected devices are incorrect")
+                return
+            
+            created_cxs = throughput.build()
+            time.sleep(10)
+            created_cxs=list(created_cxs.keys())
+            individual_dataframe_column=[]
+            
+            to_run_cxs,to_run_cxs_len,created_cx_lists_keys,incremental_capacity_list = throughput.get_incremental_capacity_list()
+            
+            for i in range(len(clients_to_run)):
 
-                # Append current iteration index to iterations_before_test_stopped_by_user
-                iterations_before_test_stopped_by_user.append(i)
-            else:
+                # Extend individual_dataframe_column with dynamically generated column names
+                individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop A {clients_to_run[i]}', f'Rx % Drop B{clients_to_run[i]}',f'RSSI {clients_to_run[i]} ',f'Link Speed {clients_to_run[i]} '])
+            
+            individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop A', 'Overall Rx % Drop B','Iteration','TIMESTAMP','Start_time','End_time','Remaining_Time','Incremental_list','status'])
+            individual_df=pd.DataFrame(columns=individual_dataframe_column)
 
-                # Append current iteration index to iterations_before_test_stopped_by_user 
-                iterations_before_test_stopped_by_user.append(i)
-                break
+            overall_start_time=datetime.now()
+            overall_end_time=overall_start_time + timedelta(seconds=int(args.test_duration)*len(incremental_capacity_list))
 
-    #     logger.info("connections download {}".format(connections_download))
-    #     logger.info("connections upload {}".format(connections_upload))
-    throughput.stop()
-    if args.postcleanup:
-        throughput.cleanup()
-    throughput.generate_report(list(set(iterations_before_test_stopped_by_user)),incremental_capacity_list,data=all_dataframes,data1=to_run_cxs_len,report_path=throughput.result_dir)
+            for i in range(len(to_run_cxs)):
+                # Check the load type specified by the user
+                if args.load_type == "wc_intended_load":
+                    # Perform intended load for the current iteration
+                    throughput.perform_intended_load(i,incremental_capacity_list)
+                    if i!=0:
+
+                        # Stop throughput testing if not the first iteration
+                        throughput.stop()
+
+                    # Start specific connections for the current iteration
+                    throughput.start_specific(created_cx_lists_keys[:incremental_capacity_list[i]])
+                else:
+                    if (args.do_interopability and i!=0):
+                        throughput.stop_specific(to_run_cxs[i-1])
+                        time.sleep(5)
+                    throughput.start_specific(to_run_cxs[i])
+
+                # Determine device names based on the current iteration
+                device_names=created_cx_lists_keys[:to_run_cxs_len[i][-1]]
+
+                # Monitor throughput and capture all dataframes and test stop status
+                all_dataframes,test_stopped_by_user = throughput.monitor(i,individual_df,device_names,incremental_capacity_list,overall_start_time,overall_end_time)
+                
+                # Check if the test was stopped by the user
+                if test_stopped_by_user==False:
+
+                    # Append current iteration index to iterations_before_test_stopped_by_user
+                    iterations_before_test_stopped_by_user.append(i)
+                else:
+
+                    # Append current iteration index to iterations_before_test_stopped_by_user 
+                    iterations_before_test_stopped_by_user.append(i)
+                    break
+
+        #     logger.info("connections download {}".format(connections_download))
+        #     logger.info("connections upload {}".format(connections_upload))
+        throughput.stop()
+        if args.postcleanup:
+            throughput.cleanup()
+        throughput.generate_report(list(set(iterations_before_test_stopped_by_user)),incremental_capacity_list,data=all_dataframes,data1=to_run_cxs_len,report_path=throughput.result_dir)
+    elif(len(selected_groups)!=len(selected_profiles)):
+        print("Number of groups should match number of profiles")
+    elif(args.group_name!=None and args.profile_name!=None and args.file_name!=None and args.device_list!=[]):
+        print("Either group name or device list should be entered not both")
+    elif(args.ssid!=None and args.profile_name!=None):
+        print("Either ssid or profile name should be given")
+    elif(args.file_name!=None and (args.group_name==None or args.profile_name==None) ):
+        print("Please enter the correct set of arguments")
+    elif(args.device_list!=[] and (args.ssid==None or args.passwd==None or args.security==None)):
+        print("Please provide ssid password and security when device list is given")
 if __name__ == "__main__":
     main()
 
-    
