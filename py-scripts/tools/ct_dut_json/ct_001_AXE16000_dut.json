@@ -1,0 +1,28 @@
+{
+    "ct_AX88U_dut":{
+        "Notes":[
+            "This json file describes the device undertest as input to ./lf_check.py",
+            "The variables that are capitalize are used for configuration",
+            "The dut related configuration is contained in this file",
+            "DUT_SET_NAME is an input to wifi capacity, dataplane and ap_auto tests, for --set parameter",
+            "The DUT_NAME must be part of DUT_SET_NAME"
+        ]  
+    },
+    "test_dut":{
+        "DUT_SET_NAME": "DUT_NAME ASUS_GT-AXE16000",
+        "USE_DUT_NAME": "ASUS_GT-AXE16000",
+        "DUT_SW": "3.0.0.4.388_24374",
+        "DUT_HW": "1.0",
+        "DUT_SN": "12345678",
+        "wireless_network_dict":{
+            "ssid_idx=0":{"ssid_idx":"0","SSID_USED":"ASUS_2C","SSID_PW_USED":"hello123","BSSID_TO_USE":"c8:7f:54:14:42:2c","SECURITY_USED":"wpa2"},
+            "ssid_idx=1":{"ssid_idx":"1","SSID_USED":"ASUS_2C_5G-1","SSID_PW_USED":"hello123","BSSID_TO_USE":"c8:7f:54:14:42:30","SECURITY_USED":"wpa2"},
+            "ssid_idx=2":{"ssid_idx":"2","SSID_USED":"ASUS_2C_5G-2","SSID_PW_USED":"hello123","BSSID_TO_USE":"c8:7f:54:14:42:34","SECURITY_USED":"wpa2"},
+            "ssid_idx=3":{"ssid_idx":"3","SSID_USED":"ASUS_2C_6G","SSID_PW_USED":"hello123","BSSID_TO_USE":"c8:7f:54:14:42:38","SECURITY_USED":"wpa2"}
+        },
+        "UPSTREAM_PORT":"1.1.eth2",
+        "UPSTREAM_ALIAS":"eth2",
+        "DATABASE_SQLITE":"./tools/CT_001_AXE16000.db"
+    }
+}
+			
