@@ -147,7 +147,7 @@ if ($ttype ne "") {
     if ($verbosity >= 1) {
         print doCmd("cv set '$tname' 'VERBOSITY' '$verbosity'");
     }
-  print doCmd("cv click '$tname' 'Auto Save Report'");
+  print doCmd("cv set '$tname' auto_save 1");
 
   for ($i = 0; $i<@modifiers_key; $i++) {
      my $k = $modifiers_key[$i];
