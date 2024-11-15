@@ -538,15 +538,16 @@ clean_pcap_files() {
     cd /tmp
     rm -f *pcap *pcapng
     cd /home/lanforge
-    local vile_list=(`find tmp/ report-data/ local/tmp/ lf_reports/ html-reports/ Documents/ \
+    local vile_list=()
+    mapfile -d'' < <(find tmp/ report-data/ local/tmp/ lf_reports/ html-reports/ Documents/ \
         -type f -a \( \
-               -name '*.pcap'       \
-            -o -name '*.pcap.gz'    \
-            -o -name '*.pcap.xz'    \
-            -o -name '*.pcapng'     \
-            -o -name '*.pcapng.gz'  \
-            -o -name '*.pcapng.xz'  \
-        \) 2>/dev/null ||:`)
+               -iname '*.pcap'       \
+            -o -iname '*.pcap.gz'    \
+            -o -iname '*.pcap.xz'    \
+            -o -iname '*.pcapng'     \
+            -o -iname '*.pcapng.gz'  \
+            -o -iname '*.pcapng.xz'  \
+        \) -print0 2>/dev/null ||:)
     counter=1
     for f in "${vile_list[@]}"; do
         (( $verbose > 0 )) && echo "    removing $f" || echo -n " ${counter}/${#vile_list[@]}"
@@ -561,18 +562,22 @@ clean_pcap_files() {
 compress_report_data() {
     note "compress report data..."
     cd /home/lanforge
-    # local csvfiles=( $( find /home/lanforge -iname "*.csv"  -print0 ))
-    local vile_list=(`find html-reports/ lf_reports/ report-data/ tmp/ \
+
+    local vile_list=()
+    mapfile -d '' vile_list < <(find html-reports/ lf_reports/ report-data/ tmp/ \
         -type f -a \( \
-               -name '*.csv' \
-            -o -name '*.pdf' \
-            -o -name '*.html' \
-            -o -name '*.pcap' \
-            -o -name '*.pcapng' \)`)
+               -iname '*.csv' \
+            -o -iname '*.pdf' \
+            -o -iname '*.html' \
+            -o -iname '*.pcap' \
+            -o -iname '*.pcapng' \) -print0 )
     counter=1
+
     for f in "${vile_list[@]}"; do
-        (( $verbose > 0 )) && echo "    compressing $f" || echo -n " ${counter}/${#vile_list[@]}"
+        (( $verbose > 0 )) && echo "    compressing [$f]" || echo -n " ${counter}/${#vile_list[@]}"
+        #echo " nice xz -T0 -5 [$f]"
         nice xz -T0 -5 "$f"
+        #sleep 1
         (( counter+=1 ))
     done
     totals[r]=0
@@ -835,7 +840,7 @@ lf_downloads=()
 survey_lf_downloads() {
     debug "Surveying /home/lanforge, /var/www/html downloads,"
     #echo "*************************************************************"
-    mapfile -t lf_downloads < <(find /home/lanforge/Downloads /var/www/html \
+    mapfile -d '' lf_downloads < <(find /home/lanforge/Downloads /var/www/html \
       -mindepth 1 -maxdepth 1 -type f -a \( \
            -iname '*gz'         \
         -o -iname '*z2'         \
@@ -848,12 +853,14 @@ survey_lf_downloads() {
         -o -iname 'gnu*'        \
         -o -iname 'LANforge*'   \
         -o -iname 'xorp*'       \
-      \))
+      \) -print0 \
+      | tee /tmp/lf_downloads.txt )
     #printf '     %s\n' "${lf_downloads[@]}"
     #echo "*************************************************************"
-
-    if [[ ${lf_downloads+x} = x ]]; then
-        totals[d]=$(du -hc "${lf_downloads[@]}" | awk '/total/{print $1}')
+    local lf_download_count=$(grep -zc $'\0' /tmp/lf_downloads.txt)
+    if (( lf_download_count > 0 )); then
+        totals[d]=$(du -hcs --files0-from=/tmp/lf_downloads.txt \
+                    | tail -1)
         [[ x${totals[d]} = x ]] && totals[d]=0
     else
         totals[d]=0
