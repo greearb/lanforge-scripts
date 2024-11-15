@@ -895,9 +895,11 @@ survey_var_log() {
 var_tmp_files=()
 survey_var_tmp() {
     debug "Surveying var tmp"
-    mapfile -t var_tmp_files < <(find /var/tmp -type f 2>/dev/null || :)
-    if [[ ${var_tmp_files+x} = x ]]; then
-        totals[t]=$(du -sh "${var_tmp_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
+    # mapfile -d'' -t var_tmp_files < <(find /var/tmp -print0 -type f 2>/dev/null || :)
+    find /var/tmp -print0 -type f > /tmp/var_tmp_files.txt 2>/dev/null ||:
+    local var_tmp_count=$(grep -zc $'\0' /tmp/var_tmp_files.txt)
+    if (( var_tmp_count > 0 )); then
+        totals[t]=$(du -sh --files0-from=/tmp/var_tmp_files.txt | awk '{print $1}' )
         [[ x${totals[t]} = x ]] && totals[t]=0 ||:
     else
         totals[t]=0
