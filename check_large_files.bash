@@ -905,10 +905,10 @@ var_tmp_files=()
 survey_var_tmp() {
     debug "Surveying var tmp"
     # mapfile -d'' -t var_tmp_files < <(find /var/tmp -print0 -type f 2>/dev/null || :)
-    find /var/tmp -print0 -type f > /tmp/var_tmp_files.txt 2>/dev/null ||:
+    find /var/tmp -type f -print0 > /tmp/var_tmp_files.txt 2>/dev/null ||:
     local var_tmp_count=$(grep -zc $'\0' /tmp/var_tmp_files.txt)
     if (( var_tmp_count > 0 )); then
-        totals[t]=$(du -sh --files0-from=/tmp/var_tmp_files.txt | awk '{print $1}' )
+        totals[t]=$(du -shc --files0-from=/tmp/var_tmp_files.txt | tail -1 )
         [[ x${totals[t]} = x ]] && totals[t]=0 ||:
     else
         totals[t]=0
@@ -977,22 +977,22 @@ survey_pcap_files() {
 
     local fsiz=0
     local fnum=0
-    local pcap_list=(`find tmp/ report-data/ local/tmp/ lf_reports/ html-reports/ Documents/ \
+    find tmp/ report-data/ local/tmp/ lf_reports/ html-reports/ Documents/ /tmp \
         -type f -a \( \
-               -name '*.pcap'       \
-            -o -name '*.pcap.gz'    \
-            -o -name '*.pcap.xz'    \
-            -o -name '*.pcapng'     \
-            -o -name '*.pcapng.gz'  \
-            -o -name '*.pcapng.xz'  \
-        \) 2>/dev/null ||:`)
-    pcap_list+=(`find /tmp -type f -a \( -name '*pcap' -o -name '*.pcapng' \)`)
-    fnum=$(( 0 + ${#pcap_list[@]} ))
-
+               -iname '*.pcap'       \
+            -o -iname '*.pcap.gz'    \
+            -o -iname '*.pcap.xz'    \
+            -o -iname '*.pcapng'     \
+            -o -iname '*.pcapng.gz'  \
+            -o -iname '*.pcapng.xz'  \
+        \) -print0 \
+        > /tmp/pcap_files.txt 2>/dev/null ||:
+    # pcap_list+=(`find /tmp -type f -a \( -name '*pcap' -o -name '*.pcapng' \)`)
+    fnum=$(grep -zc $'\0' /tmp/pcap_files.txt)
     if (( $fnum > 0 )); then
-        fsiz=$(du -hc "${pcap_list[@]}" | awk '/total/{print $1}')
+        fsiz=$(du -hcs --files0-from=/tmp/pcap_files.txt | tail -1)
     fi
-    totals[p]="$fnum files ($fsiz): ${#pcap_list[@]} pcap"
+    totals[p]="$fnum files ($fsiz):  pcap"
     [[ x${totals[p]} = x ]] && totals[p]=0
     cd "$starting_dir"
 }
