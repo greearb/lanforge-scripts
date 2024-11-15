@@ -887,10 +887,12 @@ survey_ath10_files() {
 var_log_files=()
 survey_var_log() {
     debug "Surveying var log"
-    mapfile -t var_log_files < <(find /var/log -type f -size +256k \
-        -not \( -path '*/journal/*' -o -path '*/sa/*' -o -path '*/lastlog' \) 2>/dev/null ||:)
-    if [[ ${var_log_files+x} = x ]]; then
-        totals[l]=$(du -hc "${var_log_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
+    mapfile -d'' var_log_files < <(find /var/log -type f -size +256k \
+        -not \( -path '*/journal/*' -o -path '*/sa/*' -o -path '*/lastlog' \) -print0 \
+        | tee /tmp/var_log_files.txt 2>/dev/null ||:)
+    local log_count=$(grep -zc $'\0' /tmp/var_log_files.txt)
+    if (( log_count > 0 )); then
+        totals[l]=$(du -hcs --files0-from=/tmp/var_log_files.txt 2>/dev/null | tail -1 )
         [[ x${totals[l]} = x ]] && totals[l]=0 ||:
     else
         totals[l]=0
