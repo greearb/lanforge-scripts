@@ -1,4 +1,4 @@
-#!/bin/bash
+~~#!/bin/bash
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #      Check for large files and purge the ones requested                                               #
 #                                                                                                       #
@@ -1025,18 +1025,34 @@ survey_report_data() {
 
     local fsiz=0
     local fnum=0
-    local csv_list=(`find report-data/ html-reports/ lf_reports/ \
-        -type f -a -name '*.csv' 2>/dev/null ||:`)
-    local pdf_list=(`find report-data/ html-reports/ lf_reports/ Documents/ \
-        -type f -a -name '*.pdf' 2>/dev/null ||:`)
-    local pcap_list=(`find tmp/ report-data/ local/tmp/ lf_reports/ Documents/ \
-        -type f -a \( -name '*.pcap' -o -name '*.pcapng' \) 2>/dev/null ||:`)
-    fnum=$(( ${#csv_list[@]} + ${#pdf_list[@]} + ${#pcap_list[@]} ))
+
+    find report-data/ html-reports/ lf_reports/ \
+        -print0 -type f -a -iname '*.csv' \
+        > /tmp/csv_list.txt 2>/dev/null ||:
+    # grep -zc $'\0' is like wc -l for null terminated lines
+    local csv_count=$(grep -zc $'\0' /tmp/csv_list.txt)
+
+    find report-data/ html-reports/ lf_reports/ Documents/ \
+        -print0 -type f -a -iname '*.pdf' \
+        > /tmp/pdf_list.txt 2>/dev/null ||:
+    local pdf_count=$(grep -zc $'\0' /tmp/pdf_list.txt)
+
+    find tmp/ report-data/ local/tmp/ lf_reports/ Documents/ \
+        -print0 -type f -a \( -iname '*.pcap' -o -iname '*.pcapng' \) \
+         > /tmp/pcap_list.txt 2>/dev/null ||:
+    local pcap_count=$(grep -zc $'\0' /tmp/pcap_list.txt)
+
+    fnum=$(( csv_count + pdf_count + pcap_count ))
 
     if (( $fnum > 0 )); then
-        fsiz=$(du -hc "${csv_list[@]}" "${pdf_list[@]}" "${pcap_list[@]}" | awk '/total/{print $1}')
+        fsiz=$(du -hc \
+                --files0-from=/tmp/csv_list.txt \
+                --files0-from=/tmp/pdf_list.txt \
+                --files0-from=/tmp/pcap_list.txt \
+                | awk '/total/{print $1}')
     fi
-    totals[r]="$fnum files ($fsiz): ${#csv_list[@]} csv, ${#pdf_list[@]} pdf, ${#pcap_list[@]} pcap"
+    totals[r]="$fnum files ($fsiz): $csv_count csv, $pdf_count pdf, $pcap_count pcap"
+
     [[ x${totals[r]} = x ]] && totals[r]=0
     # report_files=("CSV files: $fnum tt $fsiz")
     cd "$starting_dir"
