@@ -1,4 +1,4 @@
-~~#!/bin/bash
+#!/bin/bash
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #      Check for large files and purge the ones requested                                               #
 #                                                                                                       #
