@@ -43,6 +43,7 @@ my $help = 0;
 
 our @prog_names = (
     "btserver",
+    "caja",
     "curl",
     "dhclient",
     "dnsmasq",
@@ -52,10 +53,13 @@ our @prog_names = (
     "java",
     "l4helper",
     # "logchopper",
+    "mate-panel",
     "nginx",
     "perl",
     "php-fpm",
     "pipe_helper",
+    "python3",
+    "ssh",
     "vsftpd",
     "wget",
     "wpa_cli",
@@ -97,7 +101,7 @@ sub monitor {
     }
     # print Data::Dumper->Dump(['ra_pid_list', $self->{ra_pid_list}] ), "\n";
     my $pidlist = join(" ", @{$self->{ra_pid_list}});
-    $cmd = qq(echo $pidlist | xargs ps -o rss -p | tail -n+2);
+    $cmd = qq(echo $pidlist | xargs ps -o rss -p 2>/dev/null | tail -n+2);
     # print "CMD2: $cmd\n";
     my @mem_lines=`$cmd`;
     chomp(@mem_lines);
