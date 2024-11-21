@@ -471,7 +471,7 @@ class Realm(LFCliBase):
         tos = _tos
         # Convert some human readable values to numeric needed by LANforge.
         if _tos == "BK":
-            tos = "64"
+            tos = "32"
         if _tos == "BE":
             tos = "96"
         if _tos == "VI":
