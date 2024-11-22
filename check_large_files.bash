@@ -992,13 +992,18 @@ survey_compressed_files() {
     debug "Surveying compressed /home/lanforge "
     cd /home/lanforge
     mapfile -t compressed_files < <( find Documents/ html-reports/ lf_reports/ report-data/ tmp/ -type f \
-        -a \( -name "*.gz" -o -name "*.xz" -o -name "*.bz2" -o -name "*.7z" -o -name "*.zip" \) 2>/dev/null ||:)
+        -a \( -iname "*.gz" \
+            -o -iname "*.xz" \
+            -o -iname "*.bz2" \
+            -o -iname "*.7z" \
+            -o -iname "*.zst" \
+            -o -iname "*.zsd" \
+            -o -iname "*.zip" \) 2>/dev/null ||:)
     if (( ${#compressed_files[@]} < 1 )); then
         debug "no compressed files found"
         totals[z]=0
         return
     fi
-
     totals[z]=$( du -xhc "${compressed_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
     # set +veux
     [[ x${totals[z]} = x ]] && totals[z]=0 ||:
