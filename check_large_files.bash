@@ -584,22 +584,39 @@ compress_report_data() {
     cd /home/lanforge
 
     local vile_list=()
-    mapfile -d '' vile_list < <(find html-reports/ lf_reports/ report-data/ tmp/ \
-        -type f -a \( \
-               -iname '*.csv' \
-            -o -iname '*.pdf' \
-            -o -iname '*.html' \
-            -o -iname '*.pcap' \
-            -o -iname '*.pcapng' \) -print0 )
-    counter=1
+    mapfile -d '' vile_list < <(cat /tmp/csv_list.txt /tmp/pdf_list.txt /tmp/pcap_list.txt )
 
-    for f in "${vile_list[@]}"; do
-        (( $verbose > 0 )) && echo "    compressing [$f]" || echo -n " ${counter}/${#vile_list[@]}"
-        #echo " nice xz -T0 -5 [$f]"
-        nice xz -T0 -5 "$f"
-        #sleep 1
-        (( counter+=1 ))
-    done
+    counter=1
+    echo "There are ${#vile_list[@]} files to compress..."
+    if (( ${#vile_list[@]} < 1)); then
+        echo "...not enough files to compress"
+        rm -f /tmp/csv_list.txt /tmp/pdf_list.txt /tmp/pcap_list.txt
+        return
+    fi
+    local line
+    for line in "${vile_list[@]}" ; do
+        echo "$line"
+    done > /tmp/report_list.txt
+    if [[ -x /usr/bin/zstd ]]; then
+        echo "Found zstd..."
+        set -x
+        if [[ -s /home/lanforge/.report.dict ]]; then
+            echo "Found zstd training data in /home/lanforge/.report.dict"
+        else
+            echo "training zstd to /home/lanforge/.report.dict. Do not erase that file."
+            #cat /tmp/csv_list.txt /tmp/pdf_list.txt /tmp/pcap_list.txt > /tmp/zstd.list
+            mapfile -t train_list < /tmp/report_list.txt
+            zstd --train "${train_list[@]}" -o /home/lanforge/.report.dict -v
+        fi
+        echo "compressing..."
+        zstd --filelist /tmp/report_list.txt -D /home/lanforge/.report.dict --rm -v
+        set +x
+    else
+         echo "zstd not found. Using xz..."
+         cat csv_list.txt /tmp/pdf_list.txt /tmp/pcap_list.txt > /tmp/xz.list
+         xz --fast --files0=/tmp/xz.list -T0 -v
+    fi
+    rm -f /tmp/csv_list.txt /tmp/pdf_list.txt /tmp/pcap_list.txt
     totals[r]=0
     cd -
     echo ""
@@ -1070,18 +1087,18 @@ survey_report_data() {
     local fnum=0
 
     find report-data/ html-reports/ lf_reports/ \
-        -print0 -type f -a -iname '*.csv' \
+        -type f -a -iname '*.csv' -print0 \
         > /tmp/csv_list.txt 2>/dev/null ||:
     # grep -zc $'\0' is like wc -l for null terminated lines
     local csv_count=$(grep -zc $'\0' /tmp/csv_list.txt)
 
     find report-data/ html-reports/ lf_reports/ Documents/ \
-        -print0 -type f -a -iname '*.pdf' \
+        -type f -a -iname '*.pdf' -print0  \
         > /tmp/pdf_list.txt 2>/dev/null ||:
     local pdf_count=$(grep -zc $'\0' /tmp/pdf_list.txt)
 
     find tmp/ report-data/ local/tmp/ lf_reports/ Documents/ \
-        -print0 -type f -a \( -iname '*.pcap' -o -iname '*.pcapng' \) \
+        -type f -a \( -iname '*.pcap' -o -iname '*.pcapng' \) -print0 \
          > /tmp/pcap_list.txt 2>/dev/null ||:
     local pcap_count=$(grep -zc $'\0' /tmp/pcap_list.txt)
 
