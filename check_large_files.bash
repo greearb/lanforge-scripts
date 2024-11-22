@@ -536,10 +536,9 @@ clean_mnt_lf_files() {
 clean_pcap_files() {
     note "Purging pcap data..."
     cd /tmp
-    rm -f *pcap *pcapng
+    rm -f *pcap *pcapng *pcap.xz *pcapng.xz *.pcap.gz *.pcapng.gz
     cd /home/lanforge
-    local vile_list=()
-    mapfile -d'' < <(find tmp/ report-data/ local/tmp/ lf_reports/ html-reports/ Documents/ \
+    find tmp/ report-data/ local/ lf_reports/ html-reports/ Documents/ \
         -type f -a \( \
                -iname '*.pcap'       \
             -o -iname '*.pcap.gz'    \
@@ -547,11 +546,17 @@ clean_pcap_files() {
             -o -iname '*.pcapng'     \
             -o -iname '*.pcapng.gz'  \
             -o -iname '*.pcapng.xz'  \
-        \) -print0 2>/dev/null ||:)
+        \) -print0 > /tmp/pcap_list.txt
+    local vile_list=()
+    if [[ -s /tmp/pcap_list.txt ]]; then
+        mapfile -d '' vile_list < /tmp/pcap_list.txt
+    fi
     counter=1
     for f in "${vile_list[@]}"; do
         (( $verbose > 0 )) && echo "    removing $f" || echo -n " ${counter}/${#vile_list[@]}"
         rm -f "$f"
+        echo -n "."
+        sleep 0.05
         (( counter+=1 ))
     done
     totals[p]=0
@@ -587,13 +592,19 @@ compress_report_data() {
 
 clean_var_tmp() {
     note "clean var tmp"
+    if [[ ! -s /tmp/var_tmp_files.txt ]]; then
+        note "  no files surveyed"
+        return
+    fi
+    mapfile -d '' var_tmp_files < /tmp/var_tmp_files.txt
     if (( $verbose > 0 )); then
         printf "    %s\n" "${var_tmp_files[@]}"
         sleep 1
     fi
     for f in "${var_tmp_files[@]}"; do
         rm -f "$f"
-        sleep 0.2
+        echo -n '.'
+        sleep 0.05
     done
 }
 
