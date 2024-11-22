@@ -342,12 +342,19 @@ clean_compressed_files() {
 
 clean_lflogs() {
     note "Cleaning LANforge logs..."
-    local f
-    if (( ${#removable_lflogs[@]} > 0 )); then
-        for f in "${removable_lflogs[@]}"; do
-            echo "rm -f $f"
-        done
+    local fname
+    cd /home/lanforge
+    if [[ -s /tmp/removable_lflogs.txt ]]; then
+        while IFS= read -r -d '' fname ; do
+            if [[ -f "$fname" ]]; then
+                echo -n "."
+                rm -f "$fname"
+                sleep 0.05
+            fi
+        done < /tmp/removable_lflogs.txt
     fi
+    rm -f /tmp/removable_lflogs.txt
+    cd -
     removable_lflogs=()
     totals[e]=0
     survey_lflogs
@@ -1014,28 +1021,34 @@ survey_lflogs() {
     local fsiz=0
     local fnum=0
     cd /home/lanforge
-    mapfile -t removable_lflogs < <( find ./vr_conf/./wifi/ ./l4logs/ /usr/local/lanforge/nginx/ ./l3helper/ \
+    mapfile -d '' removable_lflogs < <( find \
+        ./vr_conf/ ./wifi/ ./l4logs/ /usr/local/lanforge/nginx/ ./l3helper/ /var/log/httpd/ \
         -type f -a \( \
-                -name 'error.log'               \
-            -o -name '*_access.log'             \
-            -o -name '*_error.log'              \
-            -o -name 'lanforge_log_*'           \
-            -o -name 'run_*.out'                \
-            -o -name 'ath10k_fw_kern_logs*txt'  \
-            -o -name 'xorp-log*.txt'            \
-            -o -name 'HgenHelper*_log*'         \
-            -o -name 'hostapd_log_*'            \
-            -o -name 'wpa_supplicant_log_*'     \
-            -o -name 'gnuforge_log_*'           \
-            -o -name 'helper_shared_log_*'      \
-        \) 2>/dev/null ||:)
-    fnum=$(( 0 + ${#removable_lflogs[@]} ))
-
+                -iname 'error.log'               \
+            -o -iname '*access.log'              \
+            -o -iname '*access_log'              \
+            -o -iname '*access_log-*'            \
+            -o -iname '*error.log'               \
+            -o -iname '*error_log'               \
+            -o -iname '*error_log-*'             \
+            -o -iname 'ssl_error_log'            \
+            -o -iname 'ssl_error_log-*'          \
+            -o -iname 'lanforge_log_*'           \
+            -o -iname 'run_*.out'                \
+            -o -iname 'ath10k_fw_kern_logs*txt'  \
+            -o -iname 'xorp-log*.txt'            \
+            -o -iname 'HgenHelper*_log*'         \
+            -o -iname 'hostapd_log_*'            \
+            -o -iname 'wpa_supplicant_log_*'     \
+            -o -iname 'gnuforge_log_*'           \
+            -o -iname 'helper_shared_log_*'      \
+        \) -print0 > /tmp/removable_lflogs.txt ||:)
+    fnum=$( grep -cz '' /tmp/removable_lflogs.txt )
     #printf '      %s\n' "${removable_lflogs[@]}"
     if (( $fnum > 0 )); then
-        fsiz=$(du -hc "${removable_lflogs[@]}" | awk '/total/{print $1}')
+        fsiz=$(du -sch --files0-from=/tmp/removable_lflogs.txt | tail -1)
     fi
-    totals[e]="$fnum files ($fsiz): ${#removable_lflogs[@]}"
+    totals[e]="$fnum files ($fsiz)"
     [[ x${totals[e]} = x ]] && totals[e]=0
     cd "$starting_dir"
 }
