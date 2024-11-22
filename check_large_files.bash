@@ -483,13 +483,18 @@ clean_var_log() {
     note "Vacuuming journal..."
     journalctl --vacuum-size 1M
     local vee=""
+    if [[ -s /tmp/var_log_files.txt ]]; then
+        mapfile -d '' var_log_files < /tmp/var_log_files.txt
+    fi
     if (( $verbose > 0 )); then
         echo "Removing these log files:"
         printf '      %s\n' "${var_log_files[@]}"
         vee="-v"
+        sleep 1
     fi
     if (( ${#var_log_files[@]} < 1 )); then
         note "    No notable files in /var/log to remove: ${#var_log_files[@]} "
+        rm -f /tmp/var_log_files.txt
         return
     fi
     cd /var/log
@@ -518,7 +523,10 @@ clean_var_log() {
             *)
                 rm -f $vee "$file";;
         esac
+        echo -n "."
+        sleep 0.05
     done
+    rm -f /tmp/var_log_files.txt
     cd "$starting_dir"
 }
 
