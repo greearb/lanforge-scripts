@@ -2368,6 +2368,75 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/ADD_CELL_EMULATOR> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#add_cell_emulator
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_add_cell_emulator(self, 
+                               cur_profile: str = None,                  # Profile that should be running
+                               device_type: str = None,                  # Device type
+                               ipaddr: str = None,                       # IPv4 address for the Cell Emulator
+                               model: str = None,                        # Product Model
+                               resource: int = None,                     # Resource number. [W]
+                               serno: str = None,                        # Serial number.
+                               shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                               response_json_list: list = None,
+                               debug: bool = False,
+                               errors_warnings: list = None,
+                               suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_add_cell_emulator(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if cur_profile is not None:
+            data["cur_profile"] = cur_profile
+        if device_type is not None:
+            data["device_type"] = device_type
+        if ipaddr is not None:
+            data["ipaddr"] = ipaddr
+        if model is not None:
+            data["model"] = model
+        if resource is not None:
+            data["resource"] = resource
+        if serno is not None:
+            data["serno"] = serno
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__ + ": no parameters to submit")
+        response = self.json_post(url="/cli-json/add_cell_emulator",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+
+    def post_add_cell_emulator_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_cell_emulator(cur_profile=param_map.get("cur_profile"),
+                                    device_type=param_map.get("device_type"),
+                                    ipaddr=param_map.get("ipaddr"),
+                                    model=param_map.get("model"),
+                                    resource=param_map.get("resource"),
+                                    serno=param_map.get("serno"),
+                                    shelf=param_map.get("shelf"),
+                                    )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_CHAMBER> type requests
 
         https://www.candelatech.com/lfcli_ug.php#add_chamber
@@ -3646,6 +3715,7 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_gre
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_gre(self, 
+                     local_dev: str = None,                    # Specify local network device to transport the GRE traffic.
                      local_lower_ip: str = None,               # The local lower-level IP to use.
                      port: str = None,                         # Name of the GRE to create, suggested to start with 'gre'
                      # [W]
@@ -3666,6 +3736,8 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if local_dev is not None:
+            data["local_dev"] = local_dev
         if local_lower_ip is not None:
             data["local_lower_ip"] = local_lower_ip
         if port is not None:
@@ -3698,7 +3770,8 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_add_gre(local_lower_ip=param_map.get("local_lower_ip"),
+        self.post_add_gre(local_dev=param_map.get("local_dev"),
+                          local_lower_ip=param_map.get("local_lower_ip"),
                           port=param_map.get("port"),
                           remote_lower_ip=param_map.get("remote_lower_ip"),
                           report_timer=param_map.get("report_timer"),
@@ -3824,6 +3897,7 @@ class LFJsonCommand(JsonCommand):
         DISABLE_EPSV = 0x1000                  # 4096 Disable FTP EPSV option
         DISABLE_PASV = 0x800                   # 2048 Disable FTP PASV option (will use PORT command)
         GSSNEGOTIATE = 0x4                     # 4 GSS authentication
+        HTTP3_ONLY = 0x20000                   # HTTP3 (aka QUIC) support. Requires https URL.
         INCLUDE_HEADERS = 0x100                # 256 especially for IMAP
         LF_L4_REAL_BROWSER_TEST = 0x2000       # 8192 Enable Real Browser Test
         LF_L4_VIDEO_STREAM_TEST = 0x10000      # 65536 Enable Video Stream Test
@@ -4328,6 +4402,7 @@ class LFJsonCommand(JsonCommand):
         NAT = 0x100                         # Enable NAT if this object is in a virtual router
         RRM_IGNORE_BEACON_REQ = 0x2000      # Request station ignore RRM beacon measurement request.
         SKIP_DHCP_ROAM = 0x10               # Ask station to not re-do DHCP on roam.
+        SPATIAL_REUSE = 0x10000             # VAP with spatial-reuse enabled (wifi-7 only).
         WEP = 0x2                           # Use WEP encryption
         WPA = 0x4                           # Use WPA encryption
         WPA2 = 0x8                          # Use WPA2 encryption
@@ -4700,6 +4775,7 @@ class LFJsonCommand(JsonCommand):
         ht160_enable = 0x100000000                     # Enable HT160 mode.
         ht40_disable = 0x800                           # Disable HT-40 even if hardware and AP support it.
         ibss_mode = 0x20000000                         # Station should be in IBSS mode.
+        ignore_edca = 0x20000000000000                 # Request station to ignore EDCA settings
         lf_sta_migrate = 0x8000                        # OK-To-Migrate (Allow station migration between LANforge
         # +radios)
         mesh_mode = 0x400000000                        # Station should be in MESH mode.
@@ -6686,6 +6762,91 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/ADD_WG> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#add_wg
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_add_wg(self, 
+                    allowed_ips: str = None,                  # Specify the allowed IPs for this Wireguard interface.
+                    endpoint: str = None,                     # The wireguard Endpoint config text.
+                    local_dev: str = None,                    # Specify local network device to transport the Wireguard
+                    # traffic.
+                    local_ip_port: str = None,                # Specify the local IP port. Zero for Wireguard default of
+                    # 51820.
+                    peer_pub_key: str = None,                 # The peer's public key text.
+                    port: str = None,                         # Name of the Wireguard interface to create, suggested to
+                    # start with 'wg' [R]
+                    report_timer: int = None,                 # Report timer for this port, leave blank or use NA for
+                    # defaults.
+                    resource: int = None,                     # Resource number. [W]
+                    shelf: int = 1,                           # Shelf number. [R][D:1]
+                    user_priv_key: str = None,                # The private key text.
+                    response_json_list: list = None,
+                    debug: bool = False,
+                    errors_warnings: list = None,
+                    suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_add_wg(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if allowed_ips is not None:
+            data["allowed_ips"] = allowed_ips
+        if endpoint is not None:
+            data["endpoint"] = endpoint
+        if local_dev is not None:
+            data["local_dev"] = local_dev
+        if local_ip_port is not None:
+            data["local_ip_port"] = local_ip_port
+        if peer_pub_key is not None:
+            data["peer_pub_key"] = peer_pub_key
+        if port is not None:
+            data["port"] = port
+        if report_timer is not None:
+            data["report_timer"] = report_timer
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if user_priv_key is not None:
+            data["user_priv_key"] = user_priv_key
+        if len(data) < 1:
+            raise ValueError(__name__ + ": no parameters to submit")
+        response = self.json_post(url="/cli-json/add_wg",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+
+    def post_add_wg_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_wg(allowed_ips=param_map.get("allowed_ips"),
+                         endpoint=param_map.get("endpoint"),
+                         local_dev=param_map.get("local_dev"),
+                         local_ip_port=param_map.get("local_ip_port"),
+                         peer_pub_key=param_map.get("peer_pub_key"),
+                         port=param_map.get("port"),
+                         report_timer=param_map.get("report_timer"),
+                         resource=param_map.get("resource"),
+                         shelf=param_map.get("shelf"),
+                         user_priv_key=param_map.get("user_priv_key"),
+                         )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_WL_ENDP> type requests
 
         https://www.candelatech.com/lfcli_ug.php#add_wl_endp
@@ -6784,7 +6945,8 @@ class LFJsonCommand(JsonCommand):
                    # adb-filename | lfver | event-id
                    arg3: str = None,                         # Argument 3: noprobe | migrate-sta-mac-pattern | adb-key |
                    # kver | event-value-1
-                   arg5: str = None,                         # Argument 4: table-speed | extra-upgrade-args | event-value-2
+                   arg4: str = None,                         # Argument 4: table-speed | extra-upgrade-args | event-value-2
+                   arg5: str = None,                         # Argument 5: table-tilt
                    cmd: str = None,                          # Admin command:
                    # resync_clock|write_xorp_cfg|scan_complete|ifup_post_complete|flush_complete|req_migrate|rfgen|chamber|clean_logs|upgrade|mobile|dhcpd
                    response_json_list: list = None,
@@ -6805,6 +6967,8 @@ class LFJsonCommand(JsonCommand):
             data["arg2"] = arg2
         if arg3 is not None:
             data["arg3"] = arg3
+        if arg4 is not None:
+            data["arg4"] = arg4
         if arg5 is not None:
             data["arg5"] = arg5
         if cmd is not None:
@@ -6832,6 +6996,7 @@ class LFJsonCommand(JsonCommand):
         self.post_admin(arg1=param_map.get("arg1"),
                         arg2=param_map.get("arg2"),
                         arg3=param_map.get("arg3"),
+                        arg4=param_map.get("arg4"),
                         arg5=param_map.get("arg5"),
                         cmd=param_map.get("cmd"),
                         )
@@ -7127,12 +7292,26 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#clear_cx_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    class ClearCxCountersClearFlags(Enum):
+    class ClearCxCountersClearFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
+                int:flag_val = 0
+                flag_val = LFPost.set_flags(ClearCxCountersClearFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-        PORTS_TOO = 1       # Clear port counters this CX uses as well.
-        SEND_EVENT = 2      # Send event when clearing counters.
+
+        MLO_LINKS_TOO = 0x4      # Clear MLO link counters even if not clearing port counters.
+        PORTS_TOO = 0x1          # Clear port and MLO Link counters this CX uses as well.
+        SEND_EVENT = 0x2         # Send event when clearing counters.
+
+        # use to get in value of flag
+        @classmethod
+        def valueof(cls, name=None):
+            if name is None:
+                return name
+            if name not in cls.__members__:
+                raise ValueError("ClearCxCountersClearFlags has no member:[%s]" % name)
+            return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_clear_cx_counters(self, 
                                clear_flags: str = None,                  # Optional argument to control clear logic.
@@ -7185,12 +7364,26 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#clear_endp_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    class ClearEndpCountersClearFlags(Enum):
+    class ClearEndpCountersClearFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            This class is stateless. It can do binary flag math, returning the integer value.
             Example Usage: 
+                int:flag_val = 0
+                flag_val = LFPost.set_flags(ClearEndpCountersClearFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-        PORTS_TOO = 1       # Clear this endpoint's port counters as well.
-        SEND_EVENT = 2      # Send event when clearing counters.
+
+        MLO_LINKS_TOO = 0x4      # Clear MLO link counters even if not clearing port counters.
+        PORTS_TOO = 0x1          # Clear this endpoint's port counters as well.
+        SEND_EVENT = 0x2         # Send event when clearing counters.
+
+        # use to get in value of flag
+        @classmethod
+        def valueof(cls, name=None):
+            if name is None:
+                return name
+            if name not in cls.__members__:
+                raise ValueError("ClearEndpCountersClearFlags has no member:[%s]" % name)
+            return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_clear_endp_counters(self, 
                                  clear_flags: str = None,                  # Optional argument to control clear logic.
@@ -7314,10 +7507,11 @@ class LFJsonCommand(JsonCommand):
         dhcp4_lease = "dhcp4_lease"    # Remove dhcp lease files for IPv4 DHCP
         dhcp6_lease = "dhcp6_lease"    # Remove dhcp lease files for IPv6 DHCP
         dhcp_leases = "dhcp_leases"    # Remove dhcp lease files for IPv4 and IPv6 DHCP
+        mlo_links = "mlo_links"        # Clear (just) the MLO link stats.
 
     def post_clear_port_counters(self, 
                                  extra: str = None,                        # Clear something else instead: dhcp4_lease |
-                                 # dhcp6_lease | dhcp_leases
+                                 # dhcp6_lease | dhcp_leases | mlo_links
                                  port: str = None,                         # The number of the port in question, or 'ALL'.
                                  # [W]
                                  resource: int = None,                     # The number of the resource in question, or
@@ -10527,6 +10721,59 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/RM_CELL_EMULATOR> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#rm_cell_emulator
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_rm_cell_emulator(self, 
+                              resource: int = None,                     # Resource number. [W]
+                              serno: str = None,                        # Cell emulator serial number
+                              shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                              response_json_list: list = None,
+                              debug: bool = False,
+                              errors_warnings: list = None,
+                              suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_rm_cell_emulator(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if resource is not None:
+            data["resource"] = resource
+        if serno is not None:
+            data["serno"] = serno
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__ + ": no parameters to submit")
+        response = self.json_post(url="/cli-json/rm_cell_emulator",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+
+    def post_rm_cell_emulator_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_cell_emulator(resource=param_map.get("resource"),
+                                   serno=param_map.get("serno"),
+                                   shelf=param_map.get("shelf"),
+                                   )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_CHAMBER> type requests
 
         https://www.candelatech.com/lfcli_ug.php#rm_chamber
@@ -12656,6 +12903,8 @@ class LFJsonCommand(JsonCommand):
             Example Usage: 
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         AdvLatency = "AdvLatency"                          # Enable Advanced Latency Reporting, only valid for L3
+        AdvLatencyOneWay = "AdvLatencyOneWay"              # Report Advanced Latency for one-way (Rx) traffic,
+        # +rather than round trip.
         AutoHelper = "AutoHelper"                          # Automatically run on helper process
         BindSIP = "BindSIP"                                # if SIP is in DUT, true. Default is false.
         ClearPortOnStart = "ClearPortOnStart"              # clear stats on start
@@ -15192,7 +15441,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_voip_info(self, 
                            aq_audio_band: str = None,                # Audio band for AQ scoring. 0: narrow-band, 1:
-                           # wide-band, 2: super-wide-band. Default is 0.
+                           # super-wide-band, 2: full-band. Default is 0.
                            aq_call_report_count: str = None,         # Number of AQ Call Report. Default is 0.
                            codec: str = None,                        # Codec to use for the voice stream, supported values:
                            # G711U, G711A, SPEEX, g726-16, g726-24, g726-32,
@@ -16591,7 +16840,7 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(SetWifiTxoTxoFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        block_traffic = 0x2      # Disable all tx/rx traffic for a given radio. This can only be
+        block_traffic = 0x2      # Disable all tx/rx traffic from entering/exiting the network stack.
         enable_agg = 0x1         # Enable aggregation. This can only be enabled on Intel radios (feature disabled
         # +for now).
         enable_bf = 0x10         # Enable Beamforming.
@@ -17103,12 +17352,68 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/SHOW_CELL_EMULATOR> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#show_cell_emulator
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_show_cell_emulator(self, 
+                                resource: int = None,                     # Resource number, or 'all'. [W]
+                                serno: str = None,                        # Serial number for requested Cell Emulator, or
+                                # 'all'. [W]
+                                shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
+                                response_json_list: list = None,
+                                debug: bool = False,
+                                errors_warnings: list = None,
+                                suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_show_cell_emulator(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if resource is not None:
+            data["resource"] = resource
+        if serno is not None:
+            data["serno"] = serno
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__ + ": no parameters to submit")
+        response = self.json_post(url="/cli-json/show_cell_emulator",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+
+    def post_show_cell_emulator_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_cell_emulator(resource=param_map.get("resource"),
+                                     serno=param_map.get("serno"),
+                                     shelf=param_map.get("shelf"),
+                                     )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_CHAMBER> type requests
 
         https://www.candelatech.com/lfcli_ug.php#show_chamber
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_chamber(self, 
                           name: str = None,                         # Chamber Name or 'ALL'. [W][D:ALL]
+                          splat: str = None,                        # Splat number (lower number = more recent) to view,
+                          # ALL, or NA
                           response_json_list: list = None,
                           debug: bool = False,
                           errors_warnings: list = None,
@@ -17123,6 +17428,8 @@ class LFJsonCommand(JsonCommand):
         data = {}
         if name is not None:
             data["name"] = name
+        if splat is not None:
+            data["splat"] = splat
         if len(data) < 1:
             raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/show_chamber",
@@ -17144,6 +17451,7 @@ class LFJsonCommand(JsonCommand):
         TODO: check for default argument values
         TODO: fix comma counting
         self.post_show_chamber(name=param_map.get("name"),
+                               splat=param_map.get("splat"),
                                )
         """
 
@@ -17798,6 +18106,63 @@ class LFJsonCommand(JsonCommand):
         TODO: fix comma counting
         self.post_show_group(group=param_map.get("group"),
                              )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/SHOW_MLO_LINK> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#show_mlo_link
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_show_mlo_link(self, 
+                           mlo_index: str = None,                    # MLO Link Index, or 'all'.
+                           port: str = None,                         # Port number, or 'all'.
+                           resource: int = None,                     # Resource number, or 'all'.
+                           shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                           response_json_list: list = None,
+                           debug: bool = False,
+                           errors_warnings: list = None,
+                           suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_show_mlo_link(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if mlo_index is not None:
+            data["mlo_index"] = mlo_index
+        if port is not None:
+            data["port"] = port
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__ + ": no parameters to submit")
+        response = self.json_post(url="/cli-json/show_mlo_link",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+
+    def post_show_mlo_link_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_mlo_link(mlo_index=param_map.get("mlo_index"),
+                                port=param_map.get("port"),
+                                resource=param_map.get("resource"),
+                                shelf=param_map.get("shelf"),
+                                )
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -18804,6 +19169,7 @@ class LFJsonCommand(JsonCommand):
                         # guess if left blank.
                         duration: str = None,                     # Duration for doing a capture (in seconds). Default is 5
                         # minutes for dumpcap/tshark, and forever for wireshark
+                        p_filter: str = None,                     # Optional capture filter.
                         flags: str = None,                        # Flags that control how the sniffing is done.
                         outfile: str = None,                      # Optional file location for saving a capture.
                         port: str = None,                         # The port we are trying to run the packet sniffer on. See
@@ -18828,6 +19194,8 @@ class LFJsonCommand(JsonCommand):
             data["display"] = display
         if duration is not None:
             data["duration"] = duration
+        if p_filter is not None:
+            data["filter"] = p_filter
         if flags is not None:
             data["flags"] = flags
         if outfile is not None:
@@ -18862,6 +19230,7 @@ class LFJsonCommand(JsonCommand):
         TODO: fix comma counting
         self.post_sniff_port(display=param_map.get("display"),
                              duration=param_map.get("duration"),
+                             filter=param_map.get("filter"),
                              flags=param_map.get("flags"),
                              outfile=param_map.get("outfile"),
                              port=param_map.get("port"),
@@ -21117,7 +21486,8 @@ class LFJsonQuery(JsonQuery):
         rx+rate+%28last%29, rx+rate+ll, rx+wrong+dev, script, send+buf, source+addr, 
         tcp+mss, tcp+rtx, tos, tx+bytes, tx+pdus, tx+pkts+ll, tx+rate, tx+rate+%281%C2%A0min%29, 
         tx+rate+%28last%29, tx+rate+ll, type        # hidden columns:
-        drop-count-5m, latency-5m, rt-latency-5m, rx-silence-3s
+        adv-rt-latency-5m, drop-count-5m, latency-5m, rt-latency-5m, rx-silence-3s, 
+      
     Example URL: /endp?fields=1st+rx,a%2Fb
 
     Example py-json call (it knows the URL):
@@ -21589,9 +21959,11 @@ class LFJsonQuery(JsonQuery):
         /generic/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
-        bps+rx, bps+tx, command, delay, dropped, eid, elapsed, entity+id, last+results, 
-        name, pdu%2Fs+rx, pdu%2Fs+tx, rpt+timer, rpt%23, rx+bytes, rx+pkts, status, tx+bytes, 
-        tx+pkts, type
+        bps+rx, bps+tx, command, delay, dropped, eid, elapsed, entity+id, jitter, 
+        last+results, lr+bps+rx, lr+bps+tx, lr+delay, lr+dropped, lr+jitter, lr+pdu%2Fs+rx, 
+        lr+pdu%2Fs+tx, lr+rx+bytes, lr+rx+pkts, lr+tx+bytes, lr+tx+pkts, name, pdu%2Fs+rx, 
+        pdu%2Fs+tx, rpt+timer, rpt%23, rx+bytes, rx+pkts, status, tx+bytes, tx+pkts, 
+        type
     Example URL: /generic?fields=bps+rx,bps+tx
 
     Example py-json call (it knows the URL):
@@ -21609,7 +21981,22 @@ class LFJsonQuery(JsonQuery):
         'eid':          # Entity ID
         'elapsed':      # Amount of time (seconds) this endpoint has been running (or ran.)
         'entity id':    # Entity ID
+        'jitter':       # Jitter reported by this endpoint.
         'last results': # Latest output from the Generic Endpoint.
+        'lr bps rx':    # Last Reported Transmit rate reported by this endpoint. IPERF only.
+        'lr bps tx':    # Last Reported Receive rate reported by this endpoint. IPERF only.
+        'lr delay':     # Last Reported Round-Trip-Time (latency) for this endpoint
+                        # (microseconds). IPERF only.
+        'lr dropped':   # Last Reported Dropped PDUs reported by this endpoint. IPERF only.
+        'lr jitter':    # Last Reported Jitter reported by this endpoint.
+        'lr pdu/s rx':  # Last Reported Received packets-per-second reported by this endpoint.
+                        # IPERF only.
+        'lr pdu/s tx':  # Last Reported Transmitted packets-per-second reported by this endpoint.
+                        # IPERF only.
+        'lr rx bytes':  # Last Reported Received bytes reported by this endpoint. IPERF only.
+        'lr rx pkts':   # Last Reported Received PDUs reported by this endpoint. IPERF only.
+        'lr tx bytes':  # Last Reported Transmitted bytes reported by this endpoint. IPERF only.
+        'lr tx pkts':   # Last Reported Transmitted PDUs reported by this endpoint. IPERF only.
         'name':         # Endpoint's Name.
         'pdu/s rx':     # Received packets-per-second reported by this endpoint.
         'pdu/s tx':     # Transmitted packets-per-second reported by this endpoint.
@@ -22013,10 +22400,10 @@ class LFJsonQuery(JsonQuery):
         device, dhcp+%28ms%29, down, entity+id, gateway+ip, hardware, ip, ipv6+address, 
         ipv6+gateway, key%2Fphrase, login-fail, login-ok, logout-fail, logout-ok, mac, 
         mask, misc, mode, mtu, no+cx+%28us%29, noise, parent+dev, phantom, port, port+type, 
-        pps+rx, pps+tx, qlen, reset, retry+failed, rx+bytes, rx+crc, rx+drop, rx+errors, 
-        rx+fifo, rx+frame, rx+length, rx+miss, rx+over, rx+pkts, rx-rate, sec, signal, 
-        ssid, status, time-stamp, tx+abort, tx+bytes, tx+crr, tx+errors, tx+fifo, 
-        tx+hb, tx+pkts, tx+wind, tx-failed+%25, tx-rate, wifi+retries        # hidden columns:
+        pps+rx, pps+tx, qlen, reset, retry+failed, rf+loss, rx+bytes, rx+crc, rx+drop, 
+        rx+errors, rx+fifo, rx+frame, rx+length, rx+miss, rx+over, rx+pkts, rx-rate, 
+        sec, signal, ssid, status, time-stamp, tx+abort, tx+bytes, tx+crr, tx+errors, 
+        tx+fifo, tx+hb, tx+pkts, tx+wind, tx-failed+%25, tx-rate, wifi+retries        # hidden columns:
         antenna_count, beacon_rx_signal, port_cur_flags_h, port_cur_flags_l, port_supported_flags_h, 
         port_supported_flags_l, resource, rx_multicast, tx_dropped
     Example URL: /port?fields=4way+time+%28us%29,activity
@@ -22101,6 +22488,9 @@ class LFJsonQuery(JsonQuery):
         'reset':          # Current Reset-State.
         'retry failed':   # Number of Wireless packets that the interface failed to send due to
                           # excessive retries.
+        'rf loss':        # Amount of RX/RX RF Loss in 1/2 dB from SMA port to the internal
+                          # Radio.Some radios can report this, and it can be used in calibration
+                          # toincrease calibration accuracy.
         'rx bytes':       # Total number of bytes received by this Interface.
         'rx crc':         # Total number of packets dropped because of a bad CRC/FCS.
         'rx drop':        # Total number of dropped packets on recieve.  Usually means driver/kernel
@@ -22633,10 +23023,10 @@ class LFJsonQuery(JsonQuery):
 
     When requesting specific column names, they need to be URL encoded:
         app-id, bps-rx-3s, bps-tx-3s, build+date, cli-port, cpu, ct-kernel, ctrl-ip, 
-        ctrl-port, df-boot, df-home, df-root, eid, entity+id, free+mem, free+swap, 
-        gps, hostname, hw+version, kernel, load, max+if-up, max+staged, mem, phantom, 
-        ports, rf-path, rx+bytes, shelf, sta+up, sw+version, swap, tx+bytes, user, 
-              # hidden columns:
+        ctrl-port, device+type, df-boot, df-home, df-root, eid, entity+id, free+mem, 
+        free+swap, gps, hostname, hw+version, kernel, load, max+if-up, max+staged, 
+        mem, phantom, ports, rf-path, rx+bytes, shelf, sta+up, sw+version, swap, 
+        tx+bytes, user        # hidden columns:
         timestamp
     Example URL: /resource?fields=app-id,bps-rx-3s
 
@@ -22647,53 +23037,55 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        'app-id':     # Interop app ID, if this is an Interop resource.
-        'bps-rx-3s':  # Rate in bits-per-second that the manager issending management data to
-                      # the resource, averaged over the last 3 seconds.This is TCP payload data,
-                      # and does not count the IP and Ethernet overhead.
-        'bps-tx-3s':  # Rate in bits-per-second that the manager isreceiving management data
-                      # from the resource, averaged over the last 3 seconds.This is TCP payload
-                      # data, and does not count the IP and Ethernet overhead.
-        'build date': # LANforge Software build date on the machine.
-        'cli-port':   # Text (telnet) interface IP Port.
-        'cpu':        # CPU information for the machine.
-        'ct-kernel':  # Is this running a kernel provided by Candela Technologies?This can be
-                      # used by automation logic to make better decisions.
-        'ctrl-ip':    # IP Address of the Control Interface.
-        'ctrl-port':  # Binary interface IP Port.
-        'df-boot':    # Free-space (MB) in /boot file system.If actual value is greater than
-                      # 65535, 65535 will be shown.
-        'df-home':    # Free-space (MB) in /home file sysytem.If actual value is greater than
-                      # 65535, 65535 will be shown.
-        'df-root':    # Free-space (MB) in / file system.If actual value is greater than 65535,
-                      # 65535 will be shown.
-        'eid':        # Resource EID (Shelf.Resource).
-        'entity id':  # Entity ID
-        'free mem':   # Free Memory (Kbytes) in the machine.  If this is too low, performance
-                      # will be degraded.
-        'free swap':  # Free Swap (Kbytes) in the machine.  If this is too low, performance will
-                      # be degraded.
-        'gps':        # GPS Info for this machine, if GPS is attached.
-        'hostname':   # The name for this resource, as reported by the resource.
-        'hw version': # Hardware version on the machine.
-        'kernel':     # Kernel version
-        'load':       # Unix process load..
-        'max if-up':  # Max number of interface-config scripts try to run at once.
-        'max staged': # Max number of interfaces the system will try to bringup at once.
-        'mem':        # Total memory (Kbytes) on the machine.
-        'phantom':    # Is the resource PHANTOM (undiscovered) or not.
-        'ports':      # All real and phantom ports on this machine.
-        'rf-path':    # Configure current RF path between this device and the DUT.Informational
-                      # only at this time.
-        'rx bytes':   # Total management TCP payload bytes received from the manager process by
-                      # this resource.
-        'shelf':      # Number of shelf that this resource belongs to.
-        'sta up':     # Max number of stations to bring up per radio per 0.25s tick.
-        'sw version': # LANforge Software version running on the machine.
-        'swap':       # Total swap space (Kbytes) on the machine.
-        'tx bytes':   # Total management TCP payload bytes sent from this resource to the
-                      # manager process.
-        'user':       # The user-name for this resource.
+        'app-id':      # Interop app ID, if this is an Interop resource.
+        'bps-rx-3s':   # Rate in bits-per-second that the manager issending management data to
+                       # the resource, averaged over the last 3 seconds.This is TCP payload data,
+                       # and does not count the IP and Ethernet overhead.
+        'bps-tx-3s':   # Rate in bits-per-second that the manager isreceiving management data
+                       # from the resource, averaged over the last 3 seconds.This is TCP payload
+                       # data, and does not count the IP and Ethernet overhead.
+        'build date':  # LANforge Software build date on the machine.
+        'cli-port':    # Text (telnet) interface IP Port.
+        'cpu':         # CPU information for the machine.
+        'ct-kernel':   # Is this running a kernel provided by Candela Technologies?This can be
+                       # used by automation logic to make better decisions.
+        'ctrl-ip':     # IP Address of the Control Interface.
+        'ctrl-port':   # Binary interface IP Port.
+        'device type': # Card device type such as Linux/Interop, Linux, Windows, Mac OS, Android,
+                       # IOS, or Unknown.
+        'df-boot':     # Free-space (MB) in /boot file system.If actual value is greater than
+                       # 65535, 65535 will be shown.
+        'df-home':     # Free-space (MB) in /home file sysytem.If actual value is greater than
+                       # 65535, 65535 will be shown.
+        'df-root':     # Free-space (MB) in / file system.If actual value is greater than 65535,
+                       # 65535 will be shown.
+        'eid':         # Resource EID (Shelf.Resource).
+        'entity id':   # Entity ID
+        'free mem':    # Free Memory (Kbytes) in the machine.  If this is too low, performance
+                       # will be degraded.
+        'free swap':   # Free Swap (Kbytes) in the machine.  If this is too low, performance will
+                       # be degraded.
+        'gps':         # GPS Info for this machine, if GPS is attached.
+        'hostname':    # The name for this resource, as reported by the resource.
+        'hw version':  # Hardware version on the machine.
+        'kernel':      # Kernel version
+        'load':        # Unix process load..
+        'max if-up':   # Max number of interface-config scripts try to run at once.
+        'max staged':  # Max number of interfaces the system will try to bringup at once.
+        'mem':         # Total memory (Kbytes) on the machine.
+        'phantom':     # Is the resource PHANTOM (undiscovered) or not.
+        'ports':       # All real and phantom ports on this machine.
+        'rf-path':     # Configure current RF path between this device and the DUT.Informational
+                       # only at this time.
+        'rx bytes':    # Total management TCP payload bytes received from the manager process by
+                       # this resource.
+        'shelf':       # Number of shelf that this resource belongs to.
+        'sta up':      # Max number of stations to bring up per radio per 0.25s tick.
+        'sw version':  # LANforge Software version running on the machine.
+        'swap':        # Total swap space (Kbytes) on the machine.
+        'tx bytes':    # Total management TCP payload bytes sent from this resource to the
+                       # manager process.
+        'user':        # The user-name for this resource.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -22774,17 +23166,19 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        'bb-gain':                      # RX Gain AMP, (0-62, 2db steps)
+        'bb-gain':                      # RX AMP gain, (0-62, 2db steps)
         'burst offset':                 # FCC5 burst offset.For W53 this is the blank-time.
         'chirp width':                  # W53 Chirp width in khz.
         'entity id':                    # -
         'frequency':                    # The RF generator's center frequency in Mhz.
         'frequency modulation':         # Frequency Modulation for FCC5 configuration.
-        'gain':                         # Main RF Gain AMP
-        'if-gain':                      # Fine precision RF Tx and Rx gain AMP (0-40)
+        'gain':                         # Main AMP RF gain. If using external amplification, set this gain to
+                                        # zero.
+        'if-gain':                      # Fine precision RF Tx and Rx AMP gain (0-40)
         'name':                         # Attenuator module identifier (shelf . resource . serial-num).
         'ofdm duration':                # Duration for OFDM radar test.
-        'ofdm header modulation':       # Type of interval for OFDM Header modulation.
+        'ofdm header modulation':       # Type of interval for OFDM Header modulation. NOISE is only for Energy
+                                        # Detect, other selections are for Signal Detect.
         'ofdm payload modulation':      # Type of interval for OFDM Payload modulation.
         'one burst':                    # Run one pulse train and then stop.
         'pulse count':                  # The number of pulses in each group.
@@ -22801,7 +23195,8 @@ class LFJsonQuery(JsonQuery):
         'status':                       # Current status of the RF Generator helper process.
         'sweep time':                   # The time between groups of pulses.
         'time period 1 off':            # Time period 1 of no transmission noise modulation.
-        'time period 1 on':             # Time period 1 of modulated noise transmission.
+        'time period 1 on':             # Time period 1 of modulated noise transmission. When value is set to
+                                        # zero, the generator will be put in continuous mode.
         'time period 2 off':            # Time period 2 of no transmission noise modulation.
         'time period 2 on':             # Time period 2 of modulated noise transmission.
         'time period 3 off':            # Time period 3 of no transmission noise modulation.
@@ -22809,7 +23204,8 @@ class LFJsonQuery(JsonQuery):
         'trials center':                # Number of trials in the center range of specified UUT channel.
         'trials high':                  # Number of trials in the upper range of specified UUT channel.
         'trials low':                   # Number of trials in the low range of specified UUT channel.
-        'trigger amp':                  # Trigger amplitude for pulse-detect tool.  In 1/100ths of an amp units.
+        'trigger amp':                  # Trigger amplitude, the amplitude threshold needed for the  pulse detect
+                                        # tool to detect a pulse.  In 1/100ths of an amp units.
         'trigger dbm':                  # Trigger dBm for pulse-detect tool.
         'uut channel':                  # UUT Channel for FCC5 configuration.
     }
@@ -23479,13 +23875,14 @@ class LFJsonQuery(JsonQuery):
         /voip-endp/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
-        attenuation+%28agc%29, avg+delay, calls+answered, calls+attempted, calls+completed, 
-        calls+failed, cf+404, cf+408, cf+busy, cf+canceled, delay, destination+addr, 
-        dropped, dup+pkts, eid, elapsed, entity+id, jb+cur, jb+over, jb+silence, 
-        jb+under, jitter, mng, mos-lqo, mos-lqo%23, name, ooo+pkts, pingpong, reg+state, 
-        rst, rtp+rtt, run, rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, source+addr, 
-        state, tx+bytes, tx+pkts, vad+pkts
-    Example URL: /voip-endp?fields=attenuation+%28agc%29,avg+delay
+        attenuation, audio+band, avg+delay, calls+answered, calls+attempted, calls+completed, 
+        calls+failed, cf+404, cf+408, cf+busy, cf+canceled, channel, delay, destination+addr, 
+        device+type, dropped, dup+pkts, eid, elapsed, entity+id, jb+cur, jb+over, 
+        jb+silence, jb+under, jitter, mng, mobile+bt+mac, mos-lqo, mos-lqo%23, name, 
+        ooo+pkts, phone+%23, pingpong, reg+state, rst, rtp+rtt, run, rx+bytes, rx+pkts, 
+        scoring+bklg, snr+deg, snr+ref, state, tx+bytes, tx+file, tx+pkts, vad+pkts, 
+      
+    Example URL: /voip-endp?fields=attenuation,audio+band
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_voip_endp(eid_list=['1.234', '1.344'],
@@ -23494,58 +23891,67 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        'attenuation (agc)': # Attenuation (Automatic gain control) values from POLQA/PESQ report
-                             # (unit: dB)
-        'avg delay':         # Average delay values between reference and degraded/test audio file from
-                             # POLQA/PESQ report (unit: ms)
-        'calls answered':    # Number of calls that where the remote answered
-        'calls attempted':   # Number of calls that have been attempted
-        'calls completed':   # Number of calls that have been successfully completed
-        'calls failed':      # Number of calls that did not succeed for any reason.
-        'cf 404':            # Number of calls failed for '404': callee not found.
-        'cf 408':            # Number of calls failed for '408': callee did not answer.
-        'cf busy':           # Number of calls failed because callee is busy.
-        'cf canceled':       # Number of calls failed because they were canceled.
-        'delay':             # Average latency in milliseconds for packets received by this endpoint.
-        'destination addr':  # Destination Address (MAC, ip/port, VoIP destination).
-        'dropped':           # Total dropped packets, as identified by gaps in RTP sequence numbers
-                             # (pre jitter buffer).
-        'dup pkts':          # Total duplicate packets, as identified by RTP sequence numbers (pre
-                             # jitter buffer).
-        'eid':               # Entity ID
-        'elapsed':           # Amount of time (seconds) this endpoint has been running (or ran.)
-        'entity id':         # Entity ID
-        'jb cur':            # Current number of packets in the jitter buffer waiting to be played /
-                             # Jitter Buffer Size.
-        'jb over':           # Total times the jitter buffer was given more packets than it could hold.
-        'jb silence':        # Silence is played when there is no valid voice packet, due to drop, or
-                             # reorder/jitter/latency out of range of the jitter buffer.
-        'jb under':          # Total times the reader asked for a packet to play but the jitter buffer
-                             # was empty.
-        'jitter':            # Average interpacket variation, calculated per RFC 1889 A.8.
-        'mng':               # Is the Endpoint managed or not?
-        'mos-lqo':           # Mean Opinion Score (Listening Quality Objective) by POLQA/PESQ report
-                             # for the report number (MOS-LQO#).
-        'mos-lqo#':          # The report number to which the POLQA/PESQ MOS-LQO value corresponds.
-        'name':              # Endpoint's Name.
-        'ooo pkts':          # Total out-of-order packets, as identified by RTP sequence numbers (pre
-                             # jitter buffer).
-        'pingpong':          # Number of PingPongs of audio play and record over Continuous call.
-        'reg state':         # Current State of the Endpoint.
-        'rst':               # How many times has the endpoint been restarted due to abnormal
-                             # termination.
-        'rtp rtt':           # Round trip latency as reported by RTCP
-        'run':               # Is the Endpoint is Running or not.
-        'rx bytes':          # Total received bytes count.
-        'rx pkts':           # Total received packet count.
-        'scoring bklg':      # POLQA/PESQ server call processing backlog.
-        'snr deg':           # Signal to noise ratio of the degraded audio file. Unit: dB
-        'snr ref':           # Signal to noise ratio of the reference audio file. Unit: dB
-        'source addr':       # Source Address (MAC, ip/port, VoIP source).
-        'state':             # Phone registration state
-        'tx bytes':          # Total transmitted bytes count.
-        'tx pkts':           # Total transmitted packet count.
-        'vad pkts':          # Total VAD (Silence Suppression) packets suppressed before transmit.
+        'attenuation':      # Attenuation (Automatic gain control) values from POLQA/PESQ report
+                            # (unit: dB)
+        'audio band':       # Select POLQA audio band for AQ listening conditions such as Narrow Band
+                            # (NB) or Super Wide Band (SWB).VoIP testing supports only NB for now.
+        'avg delay':        # Average delay values between reference and degraded/test audio file from
+                            # POLQA/PESQ report (unit: ms)
+        'calls answered':   # Number of calls that where the remote answered
+        'calls attempted':  # Number of calls that have been attempted
+        'calls completed':  # Number of calls that have been successfully completed
+        'calls failed':     # Number of calls that did not succeed for any reason.
+        'cf 404':           # Number of calls failed for '404': callee not found.
+        'cf 408':           # Number of calls failed for '408': callee did not answer.
+        'cf busy':          # Number of calls failed because callee is busy.
+        'cf canceled':      # Number of calls failed because they were canceled.
+        'channel':          # Audio channel types. Example:Bluetooth,Analog (over cable using
+                            # internal/external audio sound card),Digital (If VoIP), orUnknown (If
+                            # unmanaged).
+        'delay':            # Average latency in milliseconds for packets received by this endpoint.
+        'destination addr': # Destination Address (MAC, ip/port, VoIP destination).
+        'device type':      # Audio device types. Example: Mobile, VoIP, or unknown.
+        'dropped':          # Total dropped packets, as identified by gaps in RTP sequence numbers
+                            # (pre jitter buffer).
+        'dup pkts':         # Total duplicate packets, as identified by RTP sequence numbers (pre
+                            # jitter buffer).
+        'eid':              # Entity ID
+        'elapsed':          # Amount of time (seconds) this endpoint has been running (or ran.)
+        'entity id':        # Entity ID
+        'jb cur':           # Current number of packets in the jitter buffer waiting to be played /
+                            # Jitter Buffer Size.
+        'jb over':          # Total times the jitter buffer was given more packets than it could hold.
+        'jb silence':       # Silence is played when there is no valid voice packet, due to drop, or
+                            # reorder/jitter/latency out of range of the jitter buffer.
+        'jb under':         # Total times the reader asked for a packet to play but the jitter buffer
+                            # was empty.
+        'jitter':           # Average interpacket variation, calculated per RFC 1889 A.8.
+        'mng':              # Is the Endpoint managed or not?
+        'mobile bt mac':    # Mobile Bluetooth MAC address in xx:xx:xx:xx:xx:xx format.AUTO will
+                            # return previously connected address if available.
+        'mos-lqo':          # Mean Opinion Score (Listening Quality Objective) by POLQA/PESQ report
+                            # for the report number (MOS-LQO#).
+        'mos-lqo#':         # The report number to which the POLQA/PESQ MOS-LQO value corresponds.
+        'name':             # Endpoint's Name.
+        'ooo pkts':         # Total out-of-order packets, as identified by RTP sequence numbers (pre
+                            # jitter buffer).
+        'phone #':          # Source Address (MAC, ip/port, VoIP source).
+        'pingpong':         # Number of PingPongs of audio play and record over Continuous call.
+        'reg state':        # Current State of the Endpoint.
+        'rst':              # How many times has the endpoint been restarted due to abnormal
+                            # termination.
+        'rtp rtt':          # Round trip latency as reported by RTCP
+        'run':              # Is the Endpoint is Running or not.
+        'rx bytes':         # Total received bytes count.
+        'rx pkts':          # Total received packet count.
+        'scoring bklg':     # POLQA/PESQ server call processing backlog.
+        'snr deg':          # Signal to noise ratio of the degraded audio file. Unit: dB
+        'snr ref':          # Signal to noise ratio of the reference audio file. Unit: dB
+        'state':            # Phone registration state
+        'tx bytes':         # Total transmitted bytes count.
+        'tx file':          # Complete path to .wav file that will be transmitted
+        'tx pkts':          # Total transmitted packet count.
+        'vad pkts':         # Total VAD (Silence Suppression) packets suppressed before transmit.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -24575,6 +24981,7 @@ class LFSession(BaseSession):
                 "add_cd": self.command_instance.post_add_cd,
                 "add_cd_endp": self.command_instance.post_add_cd_endp,
                 "add_cd_vr": self.command_instance.post_add_cd_vr,
+                "add_cell_emulator": self.command_instance.post_add_cell_emulator,
                 "add_chamber": self.command_instance.post_add_chamber,
                 "add_chamber_cx": self.command_instance.post_add_chamber_cx,
                 "add_chamber_path": self.command_instance.post_add_chamber_path,
@@ -24614,6 +25021,7 @@ class LFSession(BaseSession):
                 "add_vrcx": self.command_instance.post_add_vrcx,
                 "add_vrcx2": self.command_instance.post_add_vrcx2,
                 "add_wanpath": self.command_instance.post_add_wanpath,
+                "add_wg": self.command_instance.post_add_wg,
                 "add_wl_endp": self.command_instance.post_add_wl_endp,
                 "admin": self.command_instance.post_admin,
                 "apply_vr_cfg": self.command_instance.post_apply_vr_cfg,
@@ -24682,6 +25090,7 @@ class LFSession(BaseSession):
                 "rm_cd": self.command_instance.post_rm_cd,
                 "rm_cd_endp": self.command_instance.post_rm_cd_endp,
                 "rm_cd_vr": self.command_instance.post_rm_cd_vr,
+                "rm_cell_emulator": self.command_instance.post_rm_cell_emulator,
                 "rm_chamber": self.command_instance.post_rm_chamber,
                 "rm_chamber_path": self.command_instance.post_rm_chamber_path,
                 "rm_channel_group": self.command_instance.post_rm_channel_group,
@@ -24766,6 +25175,7 @@ class LFSession(BaseSession):
                 "show_alerts": self.command_instance.post_show_alerts,
                 "show_attenuators": self.command_instance.post_show_attenuators,
                 "show_cd": self.command_instance.post_show_cd,
+                "show_cell_emulator": self.command_instance.post_show_cell_emulator,
                 "show_chamber": self.command_instance.post_show_chamber,
                 "show_channel_groups": self.command_instance.post_show_channel_groups,
                 "show_clients": self.command_instance.post_show_clients,
@@ -24780,6 +25190,7 @@ class LFSession(BaseSession):
                 "show_events": self.command_instance.post_show_events,
                 "show_files": self.command_instance.post_show_files,
                 "show_group": self.command_instance.post_show_group,
+                "show_mlo_link": self.command_instance.post_show_mlo_link,
                 "show_pesq": self.command_instance.post_show_pesq,
                 "show_ports": self.command_instance.post_show_ports,
                 "show_ppp_links": self.command_instance.post_show_ppp_links,
