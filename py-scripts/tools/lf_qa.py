@@ -20,6 +20,8 @@ from pathlib import Path
 import time
 import logging
 import re
+import traceback
+
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
@@ -122,7 +124,9 @@ class csv_sql:
                         meta_data_path=meta_data_path, kernel=kernel_version))
                     break
             meta_data_fd.close()
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading meta get_kernel_version_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
         return kernel_version                 
@@ -141,7 +145,9 @@ class csv_sql:
                         meta_data_path=meta_data_path, kernel=kernel_version))
                     break
             meta_data_fd.close()
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading meta get_kernel_version_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
         return radio_firmware                 
@@ -177,7 +183,9 @@ class csv_sql:
                     break
             meta_data_fd.close()
         
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading meta get_gui_version_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
         return gui_version, gui_build_date                 
@@ -212,7 +220,9 @@ class csv_sql:
                     break
 
             meta_data_fd.close()
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading meta get_gui_server_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
         return server_version, server_build_date                
@@ -232,7 +242,9 @@ class csv_sql:
                     break                        
 
             meta_data_fd.close()
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading meta get_gui_server_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
         return test_dir                
@@ -251,7 +263,9 @@ class csv_sql:
             test_id_list = list(kpi_df['test-id'])
             test_id = list(set(test_id_list))
             test_id = test_id[-1]  # done to get element of list
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info(
                 "WARNING: Is test_id set in Manual Test?  exception reading test_id in csv _kpi_path {kpi_path}".format(
                     kpi_path=_kpi_path))
@@ -259,7 +273,9 @@ class csv_sql:
             test_tag_list = list(kpi_df['test-tag'])
             test_tag = list(set(test_tag_list))
             test_tag = test_tag[-1]  # done to get element of list
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info(
                 "WARNING: is test-tag set in Manual Test?, exception reading test-tag in csv _kpi_path {kpi_path}, try meta.txt".format(
                     kpi_path=_kpi_path))
@@ -270,7 +286,9 @@ class csv_sql:
                 _kpi_path = _kpi_path.replace('kpi.csv', '')
                 use_meta_test_tag, test_tag = self.get_test_tag_from_meta(
                     _kpi_path)
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading meta.txt _kpi_path: {kpi_path}".format(
                 kpi_path=_kpi_path))
         if use_meta_test_tag:
@@ -292,7 +310,9 @@ class csv_sql:
                         meta_data_path=meta_data_path, test_run=test_run))
                     break
             meta_data_fd.close()
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading test_run from {_kpi_path}".format(
                 _kpi_path=_kpi_path))
 
@@ -300,7 +320,9 @@ class csv_sql:
             try:
                 test_run = _kpi_path.rsplit('/', 2)[0]
                 logger.info("try harder test_run: {test_run}".format(test_run=test_run))
-            except BaseException:
+            except Exception as x:
+                traceback.print_exception(
+                    Exception, x, x.__traceback__, chain=True)
                 logger.info("exception getting test_run from kpi_path")
             logger.info("Try harder test_run: {test_run} _kpi_path: {_kpi_path}".format(test_run=test_run, _kpi_path=_kpi_path))
         return test_run
@@ -337,7 +359,9 @@ class csv_sql:
                                 meta_data_path=meta_data_path,
                                 test_tag=test_tag))
                 meta_data_fd.close()
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading test_tag from {_kpi_path}".format(
                 _kpi_path=_kpi_path))
 
@@ -596,7 +620,9 @@ class csv_sql:
         self.conn = sqlite3.connect(self.database)
         try:
             self.df.to_sql(self.table, self.conn, if_exists='append')
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("attempt to append to database with different column layout,\
                  caused an exception, input new name --database <new name>")
             print(
@@ -652,7 +678,9 @@ class csv_sql:
         self.conn = sqlite3.connect(self.database)
         try:
             self.df.to_sql(self.table, self.conn, if_exists='append')
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("attempt to append to database with different column layout,\
                  caused an exception, input new name --database <new name>")
             print(
@@ -690,7 +718,9 @@ class csv_sql:
             logger.info("ValueError kpi_fig.write_image {msg}".format(msg=err))
             png_present = False
             # exit(1)
-        except BaseException as err:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("BaseException kpi_fig.write_image{msg}".format(msg=err))
             png_present = False
             # exit(1)
@@ -737,7 +767,9 @@ class csv_sql:
         # sort by date from oldest to newest.
         try:
             df3 = df3.sort_values(by='Date')
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info(("Database empty reading subtest: "
                    "KeyError(key) when sorting by Date for db: {db},"
                    " check Database name, path to kpi, typo in path, exiting".format(db=self.database)))
@@ -760,7 +792,9 @@ class csv_sql:
             self.subtest_passed = int(sum(subtest_passed_list))
             self.subtest_failed = int(sum(subtest_failed_list))
             self.subtest_total = self.subtest_passed + self.subtest_failed
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             warning_msg = ("WARNING subtest values need to be filtered or"
                            " Test is not behaving in filling out subtest values")
             logger.warning(warning_msg)
@@ -818,7 +852,9 @@ class csv_sql:
         # sort by date from oldest to newest.
         try:
             df3 = df3.sort_values(by='Date')
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
             exit(1)
         self.conn.close()
@@ -1242,7 +1278,9 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         print("html report: {}".format(html_report))
         try:
             report.write_pdf_with_timestamp()
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             logger.info("exception write_pdf_with_timestamp()")
 
 
