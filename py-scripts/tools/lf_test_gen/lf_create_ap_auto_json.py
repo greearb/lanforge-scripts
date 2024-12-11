@@ -296,6 +296,7 @@ class lf_create_ap_auto_json():
                     " --upstream UPSTREAM_PORT --batch_size {ap_auto_batch_size} --loop_iter 1 --protocol UDP-IPv4 --duration {ap_auto_duration}",
                     " use_ssid_idx=0 --dut2_0 'USE_DUT_NAME lanforge BSSID_TO_USE (1)'",
                     " use_ssid_idx=1 --dut5_0 'USE_DUT_NAME lanforge BSSID_TO_USE (2)'",
+<<<<<<< HEAD
                     " --max_stations_2 1 --max_stations_5 1 --max_stations_dual 1",
                     " --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 --radio2 1.1.wiphy3 --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
                     " --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
