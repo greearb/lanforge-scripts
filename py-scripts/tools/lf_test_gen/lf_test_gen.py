@@ -70,19 +70,14 @@ class json_gen_gui():
         self.tabControl = ttk.Notebook(self.frame)
         self.rig_tab = ttk.Frame(self.tabControl)
         self.dut_tab = ttk.Frame(self.tabControl)
-        self.chamberview_tab = ttk.Frame(self.tabControl)
         self.wc_tab = ttk.Frame(self.tabControl)
         self.dp_rvr_tab = ttk.Frame(self.tabControl)
         self.ap_auto_tab = ttk.Frame(self.tabControl)
         self.functional_tab = ttk.Frame(self.tabControl)
-        self.creation_tab = ttk.Frame(self.tabControl)
-        self.interop_tab = ttk.Frame(self.tabControl)
-
         self.practice_tab = ttk.Frame(self.tabControl)
 
         self.tabControl.add(self.rig_tab, text='LANforge')
         self.tabControl.add(self.dut_tab, text='Device Under Test')
-        self.tabControl.add(self.chamberview_tab, text='Chamberview Tests')
         self.tabControl.add(self.wc_tab, text='Wifi Capacity')
         self.tabControl.add(self.dp_rvr_tab, text='Data Plane , RvR')
         self.tabControl.add(self.ap_auto_tab, text='AP Auto Beta')
@@ -91,7 +86,6 @@ class json_gen_gui():
         #self.tabControl.add(self.interop_tab, text = 'Interop Tests')
 
         #self.tabControl.add(self.practice_tab, text = 'Pratice Tests')
-
         # self.tabControl.add(self.practice_tab, text = 'Practice') # Please Do not Delete.
         self.tabControl.pack(expand=1, fill="both")
 
@@ -137,23 +131,6 @@ class json_gen_gui():
         #  End of Create Radios
         #
         # ------------------------------------------------------------------------------------
-
-        # -----------------------------------------------------------------------------------
-        #
-        #  Create Chamberview Tests
-        #
-        # -----------------------------------------------------------------------------------
-
-
-
-
-        # -----------------------------------------------------------------------------------
-        #
-        #  End of Create Chamberview Tests
-        #
-        # ------------------------------------------------------------------------------------
-
-
 
         # -----------------------------------------------------------------------------------
         #
