@@ -240,11 +240,25 @@ class lf_create_ap_auto_json():
                 "timeout":"600",
                 "iterations":"1",
                 "load_db":"skip",
-                "command":"lf_wifi_capacity_test.py",
+                "command":"lf_ap_auto_test.py",
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name {ap_auto_test_name}",
                     " --upstream UPSTREAM_PORT --batch_size {ap_auto_batch_size} --loop_iter 1 --protocol UDP-IPv4 --duration {ap_auto_duration}",
+                    " use_ssid_idx=0 --dut2_0 'USE_DUT_NAME lanforge BSSID_TO_USE (1)'",
+                    " use_ssid_idx=1 --dut5_0 'USE_DUT_NAME lanforge BSSID_TO_USE (2)'",
+                    " --max_stations_2 4 --max_stations_5 8 --max_stations_dual 1",
+                    " --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
+                    " --radio5 1.1.wiphy0 --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
+                    " --set 'Basic Client Connectivity' 0",
+                    " --set 'Multi Band Performance' 0",
+                    " --set 'Stability' 1",
+                    " --set 'Multi-Station Throughput vs Pkt Size'  0,",
+                    " --set 'Throughput vs Pkt Size' 0",
+                    " --set 'Capacity' 0",
+                    " --set 'Band-Steering' 0",
+                    " --set 'Skip 2.4Ghz Tests' 0",
+                    " --raw_line 'cx_psk_thresh: 500'",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{ap_auto_test_name}'",
                     " --test_rig TEST_RIG ",
                     " --set DUT_SET_NAME",
@@ -317,7 +331,9 @@ NOTES:
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:
+VERIFIED_ON:   23-MAY-2023,
+             Build Version:  5.4.6
+             Kernel Version: 6.2.14+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
