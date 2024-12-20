@@ -31,40 +31,13 @@ class lf_create_ap_auto_tab():
         self.lf_ap_auto_tab_frame = tkinter.Frame(self.ap_auto_tab)
         self.lf_ap_auto_tab_frame.pack()
 
-#        # lanforge Information for json
-#        self.lf_ap_auto_frame = tkinter.LabelFrame(self.lf_ap_auto_tab_frame, text="AP Auto - Under development")
-#        self.lf_ap_auto_frame.grid(row=0, column=0, sticky="news", padx=20, pady=10)
-#
-#        self.lf_ap_auto_2g_file = tkinter.Label(self.lf_ap_auto_frame, text='2g json file')
-#        self.lf_ap_auto_2g_file.grid(row=1, column=0)
-#        self.lf_ap_auto_2g_file_entry_var = tkinter.StringVar()
-#        self.lf_ap_auto_2g_file_entry_var.set("")
-#        self.lf_ap_auto_2g_file_entry = tkinter.Entry(self.lf_ap_auto_frame, textvariable=self.lf_ap_auto_2g_file_entry_var, width=48)
-#        self.lf_ap_auto_2g_file_entry.grid(row=1, column=1, columnspan=2)
-#        self.window_tooltip.bind(self.lf_ap_auto_2g_file_entry, '''Auto generated name for AP Auto Test Suite''')
-#
-#        self.lf_ap_auto_5g_file = tkinter.Label(self.lf_ap_auto_frame, text='5g json file')
-#        self.lf_ap_auto_5g_file.grid(row=2, column=0)
-#        self.lf_ap_auto_5g_file_entry_var = tkinter.StringVar()
-#        self.lf_ap_auto_5g_file_entry_var.set("")
-#        self.lf_ap_auto_5g_file_entry = tkinter.Entry(self.lf_ap_auto_frame, textvariable=self.lf_ap_auto_5g_file_entry_var, width=48)
-#        self.lf_ap_auto_5g_file_entry.grid(row=2, column=1, columnspan=2)
-#        self.window_tooltip.bind(self.lf_ap_auto_5g_file_entry, '''Auto generated name for AP Auto Test Suite''')
-#
-#        self.lf_ap_auto_6g_file = tkinter.Label(self.lf_ap_auto_frame, text='6g json file')
-#        self.lf_ap_auto_6g_file.grid(row=3, column=0)
-#        self.lf_ap_auto_6g_file_entry_var = tkinter.StringVar()
-#        self.lf_ap_auto_6g_file_entry_var.set("")
-#        self.lf_ap_auto_6g_file_entry = tkinter.Entry(self.lf_ap_auto_frame, textvariable=self.lf_ap_auto_6g_file_entry_var, width=48)
-#        self.lf_ap_auto_6g_file_entry.grid(row=3, column=1, columnspan=2)
-#        self.window_tooltip.bind(self.lf_ap_auto_6g_file_entry, '''Auto generated name for AP Auto Test Suite''')
 
         # file and directory
         self.lf_ap_auto_tab_frame = tkinter.Frame(self.ap_auto_tab)
         self.lf_ap_auto_tab_frame.pack()
 
         # lanforge Information for json
-        self.lf_ap_auto_frame = tkinter.LabelFrame(self.lf_ap_auto_tab_frame, text="Wifi Capacity")
+        self.lf_ap_auto_frame = tkinter.LabelFrame(self.lf_ap_auto_tab_frame, text="AP Auto")
         self.lf_ap_auto_frame.grid(row=0, column=0, sticky="news", padx=20, pady=10)
 
         self.lf_ap_auto_2g_file = tkinter.Label(self.lf_ap_auto_frame, text='2g json file')
