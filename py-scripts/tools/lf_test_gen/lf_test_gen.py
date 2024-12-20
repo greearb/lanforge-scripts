@@ -80,7 +80,7 @@ class json_gen_gui():
         self.tabControl.add(self.dut_tab, text='Device Under Test')
         self.tabControl.add(self.wc_tab, text='Wifi Capacity')
         self.tabControl.add(self.dp_rvr_tab, text='Data Plane , RvR')
-        self.tabControl.add(self.ap_auto_tab, text = 'AP Auto')
+        self.tabControl.add(self.ap_auto_tab, text = 'AP Auto Beta')
         # self.tabControl.add(self.functional_tab, text = 'Functional Tests')
 
         # self.tabControl.add(self.practice_tab, text = 'Practice') # Please Do not Delete.
