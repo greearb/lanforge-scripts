@@ -51,6 +51,9 @@ class lf_create_ap_auto_json():
                  _file_2g,
                  _file_5g,
                  _file_6g,
+                 _dir_2g,
+                 _dir_5g,
+                 _dir_6g,
                  _ap_auto_duration,
                  _use_radio_dict,
                  _radio_dict,
@@ -68,6 +71,12 @@ class lf_create_ap_auto_json():
                  _suite_test_name_6g_dict,
                  _radio_count,
                  _radio_batch_dict,
+                 _lf_ap_auto_use_qa_var,
+                 _lf_ap_auto_use_inspect_var,
+                 _lf_radio_2g,
+                 _lf_radio_5g,
+                 _lf_radio_6g,
+                 _lf_ap_auto_number_dut_indexes_combobox,
                  _lf_ap_auto_basic_client_connectivity,
                  _lf_ap_auto_multi_band_performance,
                  _lf_ap_auto_multi_station_throughput_vs_pkt_size,
@@ -76,9 +85,7 @@ class lf_create_ap_auto_json():
                  _lf_ap_auto_throughput_vs_pkt_size,
                  _lf_ap_auto_capacity,
                  _lf_ap_auto_band_steering,
-                 _lf_ap_auto_long_term,
-                 _lf_ap_auto_use_qa_var,
-                 _lf_ap_auto_use_inspect_var
+                 _lf_ap_auto_long_term
                  ):
         self.test_suite_band = ""
         self.use_radio_dict = _use_radio_dict
@@ -105,10 +112,39 @@ class lf_create_ap_auto_json():
         self.radio_index = ""
 
         # TODO Future copy generated file to alternate file (low priority until requeste)
+        self.dir_2g = _dir_2g
+        self.dir_5g = _dir_5g
+        self.dir_6g = _dir_6g
 
-        self.file_2g = "ct_perf_ap_auto_2g" + _suite_radios_2g + ".json"
-        self.file_5g = "ct_perf_ap_auto_5g" + _suite_radios_5g + ".json"
-        self.file_6g = "ct_perf_ap_auto_6g" + _suite_radios_6g + ".json"
+        self.file_2g = _file_2g
+        self.file_5g = _file_5g
+        self.file_6g = _file_6g
+
+        if self.file_2g == "":
+            self.file_2g = "ct_perf_ap_auto_2g" + _suite_radios_2g + ".json"
+        if self.file_5g == "":
+            self.file_5g = "ct_perf_ap_auto_5g" + _suite_radios_5g + ".json"
+        if self.file_6g == "":
+            self.file_6g = "ct_perf_ap_auto_6g" + _suite_radios_6g + ".json"
+
+        self.dir_file_2g = ""
+        self.dir_file_5g = ""
+        self.dir_file_6g = ""
+
+        if self.dir_2g != "":
+            self.dir_file_2g = self.dir_2g + "/" + self.file_2g
+        else:
+            self.dir_file_2g = self.file_2g
+
+        if self.dir_5g != "":
+            self.dir_file_5g = self.dir_5g + "/" + self.file_5g
+        else:
+            self.dir_file_5g = self.file_5g
+
+        if self.dir_6g != "":
+            self.dir_file_6g = self.dir_6g + "/" + self.file_6g
+        else:
+            self.dir_file_6g = self.file_6g
 
         if _ap_auto_duration == "":
             self.ap_auto_duration = '20000'
@@ -141,6 +177,16 @@ class lf_create_ap_auto_json():
 
     def get_file_6g(self):
         return self.file_6g
+    
+    def get_dir_2g(self):
+        return os.path.dirname(os.path.abspath(self.dir_file_2g))
+
+    def get_dir_5g(self):
+        return os.path.dirname(os.path.abspath(self.dir_file_5g))
+
+    def get_dir_6g(self):
+        return os.path.dirname(os.path.abspath(self.dir_file_6g))
+
 
     # Helper methods
 
@@ -331,9 +377,9 @@ NOTES:
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:   23-MAY-2023,
-             Build Version:  5.4.6
-             Kernel Version: 6.2.14+
+VERIFIED_ON: December 20 2024,
+             Build Version:  5.4.9
+             Kernel Version: 6.11.11+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
