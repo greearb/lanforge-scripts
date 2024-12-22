@@ -796,7 +796,7 @@ class Realm(LFCliBase):
 
             elif pattern.find("[") > 0:
                 # TODO: regex below might have too many hack escapes
-                match = re.search(r"^([^\[]+)\[(\d+)\.\.(\d+)\]$", pattern)
+                match = re.search(r"^([^\[]+)\[(\\d+)\.\.(\\d+)\]$", pattern)
                 if match.group(0):
                     if debug_:
                         logger.debug("[group1]: ", match.group(1))
@@ -969,7 +969,7 @@ class Realm(LFCliBase):
     @staticmethod
     def duration_time_to_milliseconds(time_string):
         if isinstance(time_string, str):
-            pattern = re.compile("^(\d+)(\S+$)")
+            pattern = re.compile("^(\\d+)(\\S+$)")
             td = pattern.match(time_string)
             if td:
                 dur_time = int(td.group(1))
@@ -996,7 +996,7 @@ class Realm(LFCliBase):
     @staticmethod
     def duration_time_to_seconds(time_string):
         if isinstance(time_string, str):
-            pattern = re.compile("^(\d+)([dhms]$)")
+            pattern = re.compile("^(\\d+)([dhms]$)")
             td = pattern.match(time_string)
             if td:
                 dur_time = int(td.group(1))
