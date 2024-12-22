@@ -2436,13 +2436,12 @@ class L3VariableTime(Realm):
                 break
             count += 1
             time.sleep(5)
-        '''            
+        '''
         self.cx_profile.cleanup()
         self.multicast_profile.cleanup()
         for station_profile in self.station_profiles:
             station_profile.cleanup()
         '''
-
 
     @staticmethod
     def csv_generate_column_headers():
@@ -2655,7 +2654,7 @@ def main():
     lfjson_port = 8080
     endp_types = "lf_udp"
 
-    help_summary='''\
+    help_summary = '''\
 The Layer 3 Traffic Generation Test is designed to test the performance of the
 Access Point by running layer 3 TCP and/or UDP Traffic.  Layer-3 Cross-Connects represent a stream
 of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints,
