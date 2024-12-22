@@ -657,7 +657,7 @@ class LFCliBase:
     @staticmethod
     def parse_time(time_string):
         if isinstance(time_string, str):
-            pattern = re.compile("^(\d+)([dhms]$)")
+            pattern = re.compile("^(\\d+)([dhms]$)")
             td = pattern.match(time_string)
             if td is not None:
                 dur_time = int(td.group(1))
