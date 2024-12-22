@@ -1394,14 +1394,14 @@ class L3VariableTime(Realm):
             # Note: the endp eid is shelf.resource.port.endp-id, the eid can be treated somewhat as
             # child class of port-eid , and look up the port the eid is using.
             if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
-                if((endp['delay'] is str and not endp['delay'].isnumeric()) or endp['delay'] is None):
+                if ((endp['delay'] is str and not endp['delay'].isnumeric()) or endp['delay'] is None):
                     logging.debug(
                         'Expected integer response for delay, received non-numeric string instead. Replacing with 0')
                     lat += 0
                 else:
                     lat += int(endp['delay'])
 
-                if((endp['jitter'] is str and not endp['jitter'].isnumeric()) or endp['jitter'] is None):
+                if ((endp['jitter'] is str and not endp['jitter'].isnumeric()) or endp['jitter'] is None):
                     logging.debug(
                         'Expected integer response for jitter, received non-numeric string instead. Replacing with 0')
                     jit += 0
@@ -2656,7 +2656,7 @@ class L3VariableTime(Realm):
         # gather port data
         # TODO
         self.port_data = self.json_get('port/all?fields=alias,port,mac,channel,ssid,mode,bps+rx,rx-rate,bps+tx,tx-rate')
-        #self.port_data = self.json_get('port/all')
+        # self.port_data = self.json_get('port/all')
         self.port_data.pop("handler")
         self.port_data.pop("uri")
         self.port_data.pop("warnings")
