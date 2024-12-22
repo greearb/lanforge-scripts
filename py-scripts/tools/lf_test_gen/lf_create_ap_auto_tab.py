@@ -31,7 +31,6 @@ class lf_create_ap_auto_tab():
         self.lf_ap_auto_tab_frame = tkinter.Frame(self.ap_auto_tab)
         self.lf_ap_auto_tab_frame.pack()
 
-
         # file and directory
         self.lf_ap_auto_tab_frame = tkinter.Frame(self.ap_auto_tab)
         self.lf_ap_auto_tab_frame.pack()
@@ -87,8 +86,6 @@ class lf_create_ap_auto_tab():
         self.lf_ap_auto_6g_dir_entry = tkinter.Entry(self.lf_ap_auto_frame, textvariable=self.lf_ap_auto_6g_dir_entry_var, width=48)
         self.lf_ap_auto_6g_dir_entry.grid(row=3, column=4, columnspan=2)
         self.window_tooltip.bind(self.lf_ap_auto_6g_file_entry, '''Directory for AP Auto Test Suite, if blank will show dir created in''')
-
-
 
         self.lf_ap_auto_duration = tkinter.Label(self.lf_ap_auto_frame, text='test duration (ms)')
         self.lf_ap_auto_duration.grid(row=4, column=0)
@@ -201,7 +198,6 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_ap_auto_number_dut_indexes_combobox.current(2)
         self.lf_ap_auto_number_dut_indexes_combobox.grid(row=4, column=3)
         self.window_tooltip.bind(self.lf_ap_auto_number_dut_indexes_combobox, '''Number of DUT indexes valid in the DUT json''')
-
 
         # Max Stations
         for widget in self.lf_ap_auto_frame.winfo_children():
