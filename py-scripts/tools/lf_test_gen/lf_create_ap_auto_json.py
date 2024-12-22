@@ -177,7 +177,7 @@ class lf_create_ap_auto_json():
 
     def get_file_6g(self):
         return self.file_6g
-    
+
     def get_dir_2g(self):
         return os.path.dirname(os.path.abspath(self.dir_file_2g))
 
@@ -186,7 +186,6 @@ class lf_create_ap_auto_json():
 
     def get_dir_6g(self):
         return os.path.dirname(os.path.abspath(self.dir_file_6g))
-
 
     # Helper methods
 
