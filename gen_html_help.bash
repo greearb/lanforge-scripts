@@ -28,6 +28,7 @@ scripts=(
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
     py-scripts/lf_interop_qos.py
+    py-scripts/lf_interop_port_reset_test.py
 )
 ./gen_html_help.pl "${scripts[@]}" > $DESTF
 echo "...created $DESTF"
