@@ -19,6 +19,7 @@ fi
 
 scripts=(
     py-scripts/create_l3_stations.py
+    py-scripts/create_l4.py
     py-scripts/create_vap.py
     py-scripts/lf_dataplane_test.py
     py-scripts/lf_rvr_test.py
