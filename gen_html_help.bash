@@ -18,8 +18,8 @@ fi
 #DESTF=/var/www/html/greearb/lf/scripts_ug.php
 
 scripts=(
+    py-scripts/create_l3_stations.py
     py-scripts/lf_dataplane_test.py
-    py-scripts/lf_interop_ping.py
     py-scripts/lf_rvr_test.py
     py-scripts/lf_wifi_capacity_test.py
     py-scripts/lf_tr398v4_test.py
@@ -27,9 +27,10 @@ scripts=(
     py-scripts/sta_connect2.py
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
-    py-scripts/lf_interop_qos.py
     py-scripts/lf_interop_port_reset_test.py
     py-scripts/lf_interop_ping.py
+    py-scripts/lf_interop_ping_plotter.py
+    py-scripts/lf_interop_qos.py
 )
 ./gen_html_help.pl "${scripts[@]}" > $DESTF
 echo "...created $DESTF"
