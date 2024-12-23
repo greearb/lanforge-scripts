@@ -18,6 +18,7 @@ fi
 #DESTF=/var/www/html/greearb/lf/scripts_ug.php
 
 scripts=(
+    py-scripts/create_l3.py
     py-scripts/create_l3_stations.py
     py-scripts/create_l4.py
     py-scripts/create_vap.py
