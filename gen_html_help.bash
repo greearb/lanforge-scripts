@@ -19,6 +19,7 @@ fi
 
 scripts=(
     py-scripts/create_bond.py
+    py-scripts/create_bridge.py
     py-scripts/create_chamberview.py
     py-scripts/create_chamberview_dut.py
     py-scripts/create_l3.py
