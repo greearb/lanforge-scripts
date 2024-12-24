@@ -300,11 +300,11 @@ def validate_args(args):
 
     if args.parent_port is None:
         logger.critical("--parent or --parent_port or --macvlan_parent argument required")
-        exit(0)
+        exit(1)
 
     if args.macvlan_ids is None:
         logger.critical("--macvlan_ids argument required")
-        exit(0)
+        exit(1)
 
     # User either specifies DHCPv4, static IPv4 configuration, or no IPv4 configuration
     #
