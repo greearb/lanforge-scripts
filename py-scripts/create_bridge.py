@@ -254,7 +254,6 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 
     parser.add_argument('--bridge_name',
                         dest='bridge_eid',
-                        # required=True, needed to remove to allow help_summary to run,
                         help='Name of the bridge port to create. This can be either the name only '
                              'or the full EID. If not the full EID, the desired resource will be '
                              'inferred from specified child ports')
@@ -312,6 +311,10 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 
 def validate_args(args):
     """Validate CLI arguments."""
+    if args.bridge_eid is None:
+        logger.critical("--bridge_name is required")
+        exit(0)
+
     # Ensure the bridge resource ID is specified,
     # either in the '--bridge_name' argument itself or in the
     # specified ports to bridge ('--bridge_ports' argument)
@@ -369,11 +372,6 @@ def main():
     logger_config = lf_logger_config.lf_logger_config()
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
-
-    # may be moved to validate args
-    if args.bridge_eid is None:
-        logger.critical("--bridge_name is required")
-        exit(0)
 
     validate_args(args)
 
