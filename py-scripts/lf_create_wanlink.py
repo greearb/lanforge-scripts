@@ -3,7 +3,7 @@
 """
 NAME: lf_create_wanlink.py
 
-PURPOSE: create a wanlink using the lanforge api
+PURPOSE: This script creates a wanlink using the lanforge api.
 
 EXAMPLE:
 Both port_A and port_B have the same configuraiton
@@ -373,7 +373,7 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
 
     args = parser.parse_args()
 
-    help_summary = "create a wanlink using the lanforge api" 
+    help_summary = "This script creates a wanlink using the lanforge api." 
     if args.help_summary:
         print(help_summary)
         exit(0)
