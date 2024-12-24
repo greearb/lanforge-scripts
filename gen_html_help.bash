@@ -31,6 +31,7 @@ scripts=(
     py-scripts/create_vap.py
     py-scripts/create_vr.py
     py-scripts/lf_create_vap_cv.py
+    py-scripts/lf_create_wanlink.py
     py-scripts/lf_dataplane_test.py
     py-scripts/lf_rvr_test.py
     py-scripts/lf_wifi_capacity_test.py
