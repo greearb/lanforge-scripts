@@ -297,6 +297,15 @@ INCLUDE_IN_README:
 
 def validate_args(args):
     """Validate CLI arguments."""
+
+    if args.parent_port is None:
+        logger.critical("--parent or --parent_port or --macvlan_parent argument required")
+        exit(0)
+
+    if args.macvlan_ids is None:
+        logger.critical("--macvlan_ids argument required")
+        exit(0)
+
     # User either specifies DHCPv4, static IPv4 configuration, or no IPv4 configuration
     #
     # If user specified static configuration, ensure that number of specified ports
@@ -348,16 +357,6 @@ def main():
     logger_config = lf_logger_config.lf_logger_config()
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
-
-    # may need to be put in validate args
-    if args.parent_port is None:
-        logger.critical("--parent or --parent_port or --macvlan_parent argument required")
-        exit(0)
-
-    # may need to be put in validate args
-    if args.macvlan_ids is None:
-        logger.critical("--macvlan_ids argument required")
-        exit(0)
 
     validate_args(args)
 
