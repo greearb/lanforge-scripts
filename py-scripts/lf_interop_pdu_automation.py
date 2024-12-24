@@ -111,7 +111,18 @@ def main(argv: Optional[Sequence[str]] = None):
     parser.add_argument('--current', help='Current status after running the code eg: --current off/on')
     parser.add_argument('--on_time', help='Time in (integer)minutes for keeping power on eg: --on_time 2')
     parser.add_argument('--off_time', help='Time in (integer)minutes for keeping power off eg: --off_time 5')
+    # Help Summary
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
+
     args = parser.parse_args(argv)
+    help_summary = '''\
+lf_interop_pdu_automation.py  is a stand-alone automation script
+which will automatically power on/off for certain interval in loop
+to prevent the mobile phones over charging. '''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     dic = vars(args)
 
     obj = PDUAutomate(dic['host'], dic['username'], dic['password'])
