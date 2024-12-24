@@ -33,6 +33,11 @@ scripts=(
     py-scripts/lf_create_vap_cv.py
     py-scripts/lf_create_wanlink.py
     py-scripts/lf_dataplane_test.py
+    py-scripts/lf_interop_port_reset_test.py
+    py-scripts/lf_interop_ping.py
+    py-scripts/lf_interop_ping_plotter.py
+    py-scripts/lf_interop_pdu_automation.py
+    py-scripts/lf_interop_qos.py
     py-scripts/lf_rvr_test.py
     py-scripts/lf_sniff_radio.py
     py-scripts/lf_tr398v4_test.py
@@ -41,11 +46,6 @@ scripts=(
     py-scripts/sta_connect2.py
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
-    py-scripts/lf_interop_port_reset_test.py
-    py-scripts/lf_interop_ping.py
-    py-scripts/lf_interop_ping_plotter.py
-    py-scripts/lf_interop_pdu_automation.py
-    py-scripts/lf_interop_qos.py
 )
 ./gen_html_help.pl "${scripts[@]}" > $DESTF
 echo "...created $DESTF"
