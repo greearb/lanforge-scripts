@@ -313,7 +313,7 @@ def validate_args(args):
     """Validate CLI arguments."""
     if args.bridge_eid is None:
         logger.critical("--bridge_name is required")
-        exit(0)
+        exit(1)
 
     # Ensure the bridge resource ID is specified,
     # either in the '--bridge_name' argument itself or in the
