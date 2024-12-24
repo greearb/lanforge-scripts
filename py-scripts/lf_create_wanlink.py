@@ -295,7 +295,7 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
     parser.add_argument("--mgr_port", help="specify the GUI to connect to, default 8080", default="8080")
     parser.add_argument("--lf_user", help="lanforge user name default lanforge", default="lanforge")
     parser.add_argument("--lf_passwd", help="lanforge password defualt lanforge ", default="lanforge")
-    parser.add_argument('--wl_name', '--alias', dest='wl_name', help='(add wl endp) The name of the endpoint we are configuring. [R] ', required=True)
+    parser.add_argument('--wl_name', '--alias', dest='wl_name', help='(add wl endp) The name of the endpoint we are configuring. [R] ')
     parser.add_argument('--cpu_id', help="(add wl endp) The CPU/thread that this process should run on (kernel-mode only). Default = 'NA'", default='NA')
     parser.add_argument('--description', help="(add wl endp) Description for this endpoint, put in single quotes if it contains spaces Default = 'NA'", default='NA')
     parser.add_argument("--latency", help="(add wl endp) The latency (ms) that will be added to each packet entering this WanLink. Default = 'NA' both ports", default='NA')
@@ -368,7 +368,15 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--debug', help='Legacy debug flag', action='store_true')
 
+    # Help Summary
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
+
     args = parser.parse_args()
+
+    help_summary = "create a wanlink using the lanforge api" 
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
@@ -384,7 +392,7 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
         logger_config.load_lf_logger_config()
 
     if not args.wl_name:
-        logger.error("No wanlink name provided")
+        logger.error("--wl_name/--alias required arguments")
         exit(1)
 
     # The order to creating an wanlink between two ethernet ports
