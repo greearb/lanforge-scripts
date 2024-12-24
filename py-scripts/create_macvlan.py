@@ -237,8 +237,8 @@ INCLUDE_IN_README:
     parser.add_argument('--parent', '--parent_port', '--macvlan_parent',
                         dest='parent_port',
                         help='Parent port used by created MACVLAN port(s)',
-                        default=None,
-                        required=True)
+                        # required=True, presence of the arguement checked outside the parser
+                        default=None)
     parser.add_argument('--macvlan_ids',
                         dest='macvlan_ids',
                         nargs='+',
@@ -246,8 +246,8 @@ INCLUDE_IN_README:
                              'One MACVLAN port is created per ID. For static IP configuration, '
                              'the number of IDs specified in this argument must match the number '
                              'of static IP addresses specified in the \'--ipv4_addresses\'.',
-                        default=None,
-                        required=True)
+                        # required=True, presence of the argument checked outside the parser
+                        default=None)
 
     # Optional arguments
     parser.add_argument('--cleanup',
@@ -348,6 +348,16 @@ def main():
     logger_config = lf_logger_config.lf_logger_config()
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
+
+    # may need to be put in validate args
+    if args.parent_port is None:
+        logger.critical("--parent or --parent_port or --macvlan_parent argument required")
+        exit(0)
+
+    # may need to be put in validate args
+    if args.macvlan_ids is None:
+        logger.critical("--macvlan_ids argument required")
+        exit(0)
 
     validate_args(args)
 
