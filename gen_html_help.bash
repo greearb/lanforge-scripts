@@ -25,6 +25,7 @@ scripts=(
     py-scripts/create_l3.py
     py-scripts/create_l3_stations.py
     py-scripts/create_l4.py
+    py-scripts/create_macvlan.py
     py-scripts/create_vap.py
     py-scripts/create_station.py
     py-scripts/create_vr.py
