@@ -43,6 +43,7 @@ scripts=(
     py-scripts/lf_interop_port_reset_test.py
     py-scripts/lf_interop_ping.py
     py-scripts/lf_interop_ping_plotter.py
+    py-scripts/lf_interop_pdu_automation.py
     py-scripts/lf_interop_qos.py
 )
 ./gen_html_help.pl "${scripts[@]}" > $DESTF
