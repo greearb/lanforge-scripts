@@ -987,18 +987,20 @@ def validate_args(args):
 def main():
     """Create LANforge WiFi station port(s) using specified options."""
     args = parse_args()
+
+    help_summary = "This script will create and configure one or more WiFi station ports " \
+                   "using the single specified WiFi radio parent port."
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     validate_args(args)
 
     # Configure logging
     logger_config = lf_logger_config.lf_logger_config()
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
-
-    help_summary = "This script will create and configure one or more WiFi station ports " \
-                   "using the single specified WiFi radio parent port."
-    if args.help_summary:
-        print(help_summary)
-        exit(0)
 
     num_sta = 1
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
