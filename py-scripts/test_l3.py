@@ -6546,7 +6546,7 @@ INCLUDE_IN_README: False
     args = parser.parse_args()
 
     if args.help_summary:
-        logger.info(help_summary)
+        print(help_summary)
         exit(0)
 
     dowebgui = False
