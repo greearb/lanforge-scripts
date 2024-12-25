@@ -221,13 +221,14 @@ def main():
     upgrader = UpdateDependencies(packages=pip_packages)
     version = upgrader.py_version
 
-    help_summary = "The lanforge-scripts/py-scripts and lanforge-scripts/py-json collection require "
-    "a number of Pypi libraries. This script installs those libraries or creates "
-    "a virtual environment for those libraries. This script has been updated to "
-    "detect PEP 668 externally-managed libraries; in the presence of the externally-managed "
-    f"condition, a virtual environment will be created in $home/scripts/venv-${version}. "
-    "This script will update a symlink $home/lanforge/venv to default virtual environment "
-    "as necessary."
+    help_summary = f'''\
+The lanforge-scripts/py-scripts and lanforge-scripts/py-json collection require
+a number of Pypi libraries. This script installs those libraries or creates
+a virtual environment for those libraries. This script has been updated to
+detect PEP 668 externally-managed libraries; in the presence of the externally-managed
+condition, a virtual environment will be created in $home/scripts/venv-${version}.
+This script will update a symlink $home/lanforge/venv to default virtual environment
+as necessary.'''
 
     parser = argparse.ArgumentParser(
         prog="update_dependencies.py",
@@ -304,8 +305,18 @@ def main():
                              "environment is created. Requires a version of python3-pip to be installed. "
                              "This option will help if pip is installed but packages fail with permission errors. " 
                              "Do not use this option in PEP 668 externally managed environments.")
+    
+    # help summary
+    parser.add_argument('--help_summary',
+                        default=None,
+                        action="store_true",
+                        help='Show summary of what this script does')
+    
 
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     py_path = None
     if args.use_python:
