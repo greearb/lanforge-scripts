@@ -320,6 +320,12 @@ class ApAutoTest(cvtest):
 
 
 def main():
+
+    help_summary = '''\
+This script is used to automate running AP-Auto tests.  You
+may need to view an AP Auto test configured through the GUI to understand
+the options and how best to input data.
+'''
     parser = argparse.ArgumentParser(
         prog="lf_ap_auto_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -377,8 +383,17 @@ def main():
                         help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument('--lf_logger_config_json',
                         help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--help_summary',
+                        default=None,
+                        action="store_true",
+                        help='Show summary of what this script does')
+
 
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
