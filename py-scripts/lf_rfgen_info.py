@@ -3,15 +3,15 @@
 
 '''
 NAME:
-lf_hackrf_info.py
+lf_rfgen_info.py
 
 PURPOSE:
-Read the hackrf_info from lanforge
+Read the rfgen_info from lanforge
 May be used as a module
 
 EXAMPLE:
 
-./lf_hackrf_info --mgr <ip>
+./lf_rfgen_info --mgr <ip>
 
 NOTES:
 
@@ -32,15 +32,15 @@ import importlib
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("lf_logger_config")
 
-class lf_hackrf_info():
+class lf_rfgen_info():
     def __init__(self,
                 _mgr='localhost',
                 _port='4001'):
         self.mgr = _mgr
         self.port = _port
-        self.hackrf_info = ''
+        self.rfgen_info = ''
 
-    def get_hackrf_info(self):
+    def get_rfgen_info(self):
         tn = telnetlib.Telnet(self.mgr,port=self.port) # Telnet(host=None, port=0[, timeout])
 
         # command to read all
@@ -50,10 +50,10 @@ class lf_hackrf_info():
         tn.write(CMD +b"\n")
         tn.write(b"exit\n")
 
-        self.hackrf_info=tn.read_all().decode('ascii')
+        self.rfgen_info=tn.read_all().decode('ascii')
 
-        logger.info(self.hackrf_info)
-        return self.hackrf_info
+        logger.info(self.rfgen_info)
+        return self.rfgen_info
 
 def main():
     # arguments
@@ -61,19 +61,19 @@ def main():
         prog='lf_check.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            lf_hackrf_info.py
+            lf_rfgen_info.py
             ''',
         description='''\
 NAME:
-lf_hackrf_info.py
+lf_rfgen_info.py
 
 PURPOSE:
-Read the hackrf_info from lanforge
+Read the rfgen_info from lanforge
 May be used as a module
 
 EXAMPLE:
 
-./lf_hackrf_info --mgr <ip>
+./lf_rfgen_info --mgr <ip>
 
 NOTES:
 
@@ -102,10 +102,10 @@ NOTES:
     if args.log_level:
         logger_config.set_level(level=args.log_level)
 
-    hackrf = lf_hackrf_info(_mgr=args.mgr,
+    rfgen = lf_rfgen_info(_mgr=args.mgr,
                             _port=args.port)
 
-    rf_info = hackrf.get_hackrf_info()
+    rf_info = rfgen.get_rfgen_info()
 
     logger.info(rf_info)
 
