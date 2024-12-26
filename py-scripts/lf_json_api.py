@@ -717,8 +717,18 @@ def main():
     parser.add_argument("--post_requests", type=str, help="perform set request may be a list:  nss , in development")
     parser.add_argument("--nss", type=str, help="--nss 4  set the number of spatial streams for a speific antenna ")
     parser.add_argument("--csv_mode", type=str, help="--csv_mode 'write' or 'append' default: write", choices=['append', 'write'], default='write')
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
+
 
     args = parser.parse_args()
+
+    help_summary="""
+This script will is an example of using LANforge JSON API to use GET Requests to LANforge.
+"""
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
