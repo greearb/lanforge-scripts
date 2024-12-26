@@ -428,7 +428,18 @@ def main():
     parser.add_argument('--ntwk_id', type=str, default='',
                         help='provide network id which you want to forget')
 
+    parser.add_argument('--help_summary', default=None, action="store_true",
+                        help='Show summary of what this script does')
+
     args = parser.parse_args()
+
+    help_summary = '''\
+Call commands/modifications to Interop Devices
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
 
