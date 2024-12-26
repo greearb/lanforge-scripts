@@ -316,8 +316,21 @@ def main():
                         default=False,
                         action="store_true",
                         help="Exit script before turntable reports no movement for more than two pollings.")
+    # help_summary
+    parser.add_argument('--help_summary',
+                        default=None,
+                        action="store_true",
+                        help='Show summary of what this script does')
+
+    help_summary = '''\
+Examine or control a turntable associated with a Chamber View chamber.
+'''
 
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     session = lanforge_api.LFSession(lfclient_url="http://%s:8080" % args.host,
                                      debug=args.debug,
