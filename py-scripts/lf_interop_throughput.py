@@ -1846,7 +1846,7 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--test_name',help='Specify test name to store the runtime csv results', default=None)
     optional.add_argument('--result_dir',help='Specify the result dir to store the runtime logs', default='')
 
-    parser.add_argument('--help_summary', help='Show summary of what this script does', default=None)
+    parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
 
     args=parser.parse_args()
 
