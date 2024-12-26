@@ -44,6 +44,7 @@ scripts=(
     py-scripts/lf_interop_qos.py
     py-scripts/lf_interop_real_browser_test.py
     py-scripts/lf_interop_throughput.py
+    py-scripts/lf_json_api.py
     py-scripts/lf_rfgen_info.py
     py-scripts/lf_rvr_test.py
     py-scripts/lf_sniff_radio.py
