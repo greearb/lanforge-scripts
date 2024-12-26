@@ -1431,8 +1431,8 @@ def main():
 
         
     optional=parser.add_argument_group('Optional arguments to run lf_interop_real_browser_test.py')
-    parser.add_argument("--host", "--mgr", required = True, help='specify the GUI to connect to, assumes port '
-                                                                        '8080')
+    parser.add_argument("--host", "--mgr", help='specify the GUI to connect to, assumes port '
+                                                                        '8080', default=None)
     parser.add_argument("--ssid", default="ssid_wpa_2g", help='specify ssid on which the test will be running')
     parser.add_argument("--passwd", default="something", help='specify encryption password  on which the test will '
                                                         'be running')
@@ -1464,6 +1464,10 @@ def main():
     if args.help_summary:
         print(help_summary)
         exit(0)
+
+    if args.parent_port is None:
+        logger.critical("--host or --mgr argument required")
+        exit(1)
 
     logger_config = lf_logger_config.lf_logger_config()
 
