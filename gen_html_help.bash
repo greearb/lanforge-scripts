@@ -36,6 +36,7 @@ scripts=(
     py-scripts/lf_create_vap_cv.py
     py-scripts/lf_create_wanlink.py
     py-scripts/lf_dataplane_test.py
+    py-scripts/lf_interop_modify.py
     py-scripts/lf_interop_port_reset_test.py
     py-scripts/lf_interop_ping.py
     py-scripts/lf_interop_ping_plotter.py
