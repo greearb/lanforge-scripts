@@ -1047,7 +1047,7 @@ def main():
     """)
 
         
-    parser.add_argument("--host", "--mgr", required = True, help='specify the GUI to connect to, assumes port '
+    parser.add_argument("--host", "--mgr", dest="host", help='specify the GUI to connect to, assumes port '
                                                                         '8080')
     parser.add_argument("--ssid", default="ssid_wpa_2g", help='specify ssid on which the test will be running')
     parser.add_argument("--passwd", default="something", help='specify encryption password  on which the test will '
@@ -1059,7 +1059,8 @@ def main():
     parser.add_argument("--urls_per_tenm", type=int, default=100, help='specify the number of url you want to test on '
                                                                     'per minute')
     parser.add_argument('--duration', type=str, help='time to run traffic')
-    parser.add_argument('--test_name',required = True, help='Name of the Test')
+    parser.add_argument('--test_name',
+                         help='Name of the Test')
     parser.add_argument('--dowebgui',help="If true will execute script for webgui", default=False, type=bool)
     parser.add_argument('--result_dir',help="Specify the result dir to store the runtime logs <Do not use in CLI, --used by webui>", default='')
     # parser.add_argument('--incremental',help="Specify the incremental values <1,2,3..>", required = True, type=str)
@@ -1082,6 +1083,15 @@ def main():
     if args.help_summary:
         print(help_summary)
         exit(0)
+
+    if not args.host:
+        logger.error("--host/--mgr required arguments")
+        exit(1)
+
+    if not args.test_name:
+        logger.error("--test_name required arguments")
+        exit(1)
+
 
     media_source_dict={
                        'dash':'1',
