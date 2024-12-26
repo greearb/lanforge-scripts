@@ -30,6 +30,7 @@ scripts=(
     py-scripts/create_station.py
     py-scripts/create_vap.py
     py-scripts/create_vr.py
+    py-scripts/lf_ap_auto_test.py
     py-scripts/lf_create_vap_cv.py
     py-scripts/lf_create_wanlink.py
     py-scripts/lf_dataplane_test.py
