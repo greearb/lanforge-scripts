@@ -60,7 +60,7 @@ def main():
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
         description='''\
-            Chamberview Tool to check if chamberview is running
+            Chamberview Tool to check if chamberview test is running
 
             ''')
     parser.add_argument("--host", "--mgr", "--lf_mgr", dest='mgr', help='specify the GUI to connect to',default='localhost')
@@ -72,8 +72,17 @@ def main():
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--debug', help='Legacy debug flag', action='store_true')
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
+
 
     args = parser.parse_args()
+    help_summary = '''\
+This script will check if chamberview test is running
+'''
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
