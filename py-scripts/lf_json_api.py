@@ -725,7 +725,6 @@ def main():
     help_summary='''\
 This script will is an example of using LANforge JSON API to use GET Requests to LANforge.
 '''
-
     if args.help_summary:
         print(help_summary)
         exit(0)
