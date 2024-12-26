@@ -57,9 +57,6 @@ class lf_rfgen_info():
 
 
 def main():
-    help_summary = '''\
-This script will read the configuration settings of the RF-Generators connected to a LANforge.
-'''
 
     # arguments
     parser = argparse.ArgumentParser(
@@ -105,6 +102,9 @@ NOTES:
                         help='Show summary of what this script does')
 
     args = parser.parse_args()
+    help_summary = '''\
+This script will read the configuration settings of the RF-Generators connected to a LANforge.
+'''
 
     if args.help_summary:
         print(help_summary)
