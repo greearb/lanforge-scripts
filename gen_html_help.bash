@@ -18,6 +18,7 @@ fi
 #DESTF=/var/www/html/greearb/lf/scripts_ug.php
 
 scripts=(
+    py-scripts/chamber_ctl.py
     py-scripts/create_bond.py
     py-scripts/create_bridge.py
     py-scripts/create_chamberview.py
