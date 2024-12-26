@@ -6,7 +6,7 @@ NAME:
 lf_rfgen_info.py
 
 PURPOSE:
-Read the rfgen_info from lanforge
+This script will read the configuration settings of the RF-Generators connected to a LANforge.
 May be used as a module
 
 EXAMPLE:
@@ -56,9 +56,13 @@ class lf_rfgen_info():
         return self.rfgen_info
 
 def main():
+    help_summary = f'''\
+This script will read the configuration settings of the RF-Generators connected to a LANforge.
+'''
+
     # arguments
     parser = argparse.ArgumentParser(
-        prog='lf_check.py',
+        prog='lf_rfgen_info.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
             lf_rfgen_info.py
@@ -93,9 +97,21 @@ NOTES:
     parser.add_argument('--log_level',
                         default=None,
                         help='Set logging level: debug | info | warning | error | critical')
+    
+    # help summary
+    parser.add_argument('--help_summary',
+                        default=None,
+                        action="store_true",
+                        help='Show summary of what this script does')
+
 
     
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     logger_config = lf_logger_config.lf_logger_config()
 
