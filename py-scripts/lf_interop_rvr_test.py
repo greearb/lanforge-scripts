@@ -652,7 +652,19 @@ def main():
 
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
     args = parser.parse_args()
+
+    help_summary='''\
+lf_interop_rvr_test.py will measure the performance of stations over a certain distance of the DUT. Distance is emulated
+using programmable attenuators and throughput test is run at each distance/RSSI step.
+'''
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
 
