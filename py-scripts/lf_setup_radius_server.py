@@ -150,9 +150,18 @@ parser.add_argument('--input_text', help="""
             secret = testing123
     }
     """, type=str, default=None)
+parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
+
+help_summary='''\
+lf_setup_radius_server.py will add user to users in Radius server for TTLS.
+'''
 
 args = parser.parse_args()
+if args.help_summary:
+    print(help_summary)
+    exit(0)
+
 
 if args.input_text is None or args.input_text == "":
     print("[INPUT ERROR] Input text can not be Empty")
