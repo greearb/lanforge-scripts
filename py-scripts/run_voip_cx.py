@@ -574,12 +574,10 @@ def parse_args():
                         default="localhost")
     parser.add_argument("--csv_file",
                         help="name of the csv output file",
-                        required=True,
                         type=str)
     parser.add_argument("--cx_list", "--cx_names",
                         dest="cx_names_str",
                         help="comma separated list of voip connection names, or 'ALL'",
-                        required=True,
                         type=str)
     parser.add_argument("--debug",
                         help='Enable debugging',
@@ -627,6 +625,15 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    if not args.csv_file:
+        print("--csv_file required")
+        exit(1)
+
+    if not args.cx_names_str:
+        print("--cx_list/--cx_names required")
+        exit(1)
+
     lfapi_session = LFSession(lfclient_url=args.host,
                               debug=args.debug)
 
