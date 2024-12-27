@@ -619,12 +619,20 @@ def parse_args():
                              "Order and length must match the order of connections passed in the "
                              "\'--cx_list\' argument.",
                         nargs="*")
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')    
 
     return parser.parse_args()
 
 
 def main():
+    help_summary='''\
+This script will start a named set of voip connections and report their data to a csv file
+'''
     args = parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     if not args.csv_file:
         print("--csv_file required")
