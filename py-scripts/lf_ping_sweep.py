@@ -613,9 +613,20 @@ Note: --reporting_down_time_percentage is used to calculate the ips which were d
     parser.add_argument("-data_len","--data_lengths",  type=str, nargs='+', help="List of data lengths",default=["6"])
     parser.add_argument("-admin_password","--admin_pass",  type=str, help="provide the admin/root password",default="lanforge")
     parser.add_argument("-reporting_down_time_percentage","--reporting_down_time_percentage",  type=str, help="provide the percentage for calculation of ips which were down more than the percentage of duration, default is 30",default="30%")
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
 
+    help_summary='''
+    This Ping Sweep Test script is designed to discover devices within the network
+    connectivity by measuring latency. It also detects issues like client unavailability time,
+    and average latency, ensuring effective device communication and identifying
+    connectivity problems
+'''
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     logger_config = lf_logger_config.lf_logger_config()
     scan_duration = 60
     # print(args.data_lengths)
