@@ -46,7 +46,18 @@ def main():
     parser.add_argument('--scan_time', help='Specify time in seconds to wait for scan to complete.  Default is 15',
                         default=15, type=int)
     parser.add_argument('--dut_name', help='Specify the name the new DUT should be called. Default name is bssid_dut.', default="bssid_dut")
+
     args = parser.parse_args()
+
+    help_summary='''\
+bssid_to_dut.py creates a temporary station with specified ssid info (ssid, security, password)
+Then starts a scan, waits 15 seconds, and prints scan results to console.
+Takes 2 BSSIDs of ssids (given to temp station) and creates DUT (named what is given in dut_name argument).
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     station_list = args.sta_name
     print("about to create StaScan object...")
