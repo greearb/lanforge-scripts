@@ -537,7 +537,18 @@ see: /py-scritps/lf_pcap.py
 ''')
     parser.add_argument('--pcap_file', '-p', help='provide the pcap file path', dest="pcap_file",  default=None)
     parser.add_argument('--apply_filter', '-f', help='apply the filter you want to', dest='apply_filter', default=None)
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
+    help_summary='''\
+Common Library for reading pcap files and check packet information for specific filters.
+
+SETUP: This script requires pyshark and tshark to be installed before
+'''
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     pcap_obj = LfPcap(
         host="192.168.100.131",
         port=8080,
