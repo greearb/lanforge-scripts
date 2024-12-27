@@ -68,12 +68,20 @@ def main():
             ''',
 
         description='''
-attenuator_serial.py.py:
-    this file is used in tip for getting serial number of attenuators,
+attenuator_serial.py: this file is used in tip for getting serial number of attenuators,
         ''')
 
+    help_summary='''\
+attenuator_serial.py is used in tip for getting serial number of attenuators
+'''
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
     # used for showing help 
-    parser.parse_args()
+    args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     obj = AttenuatorSerial(lfclient_host="localhost", lfclient_port=8802)
     x = obj.show()
