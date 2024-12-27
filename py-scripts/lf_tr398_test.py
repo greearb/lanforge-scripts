@@ -10,7 +10,7 @@ Note: To Run this script gui should be opened with
 This script is used to automate running TR398 tests.  You
 may need to view a TR398 test configured through the GUI to understand
 the options and how best to input data.
-(version 1)
+(Issue 1)
     
     ./lf_tr398_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name tr398-instance --config_name test_con \
@@ -320,7 +320,7 @@ def main():
 This script is used to automate running TR398 tests.  You
 may need to view a TR398 test configured through the GUI to understand
 the options and how best to input data.
-(version 1)
+(Issue 1)
 '''
     args = parser.parse_args()
     if args.help_summary:
