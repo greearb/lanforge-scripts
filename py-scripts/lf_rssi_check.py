@@ -2682,10 +2682,18 @@ Setting wifi_settings per radio
     parser.add_argument('--ap_if_6g', help='--ap_if_6g eth8', default='wl2')
     parser.add_argument('--ap_file', help="--ap_file 'ap_file.txt'", default=None)
     parser.add_argument('--ap_band_list', help="--ap_band_list '2g,5g,6g' supported bands", default='2g,5g,6g')
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
 
 
+    help_summary='''\
+    This script is used to validate RSSI for specific radios, currently a work in progress put on hold.
+'''
 
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     # initialize pass / fail
     test_passed = False
