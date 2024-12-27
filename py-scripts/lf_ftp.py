@@ -1832,7 +1832,18 @@ INCLUDE_IN_README: False
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
+    # help summary
+    optional.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
     args = parser.parse_args()
+
+    help_summary='''\
+lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload
+some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
