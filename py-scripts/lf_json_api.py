@@ -717,7 +717,7 @@ def main():
     parser.add_argument("--post_requests", type=str, help="perform set request may be a list:  nss , in development")
     parser.add_argument("--nss", type=str, help="--nss 4  set the number of spatial streams for a speific antenna ")
     parser.add_argument("--csv_mode", type=str, help="--csv_mode 'write' or 'append' default: write", choices=['append', 'write'], default='write')
-    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
 
     args = parser.parse_args()
