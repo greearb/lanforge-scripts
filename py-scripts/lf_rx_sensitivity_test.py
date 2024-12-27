@@ -306,8 +306,19 @@ def main():
                         help="Specify duration of each traffic run")
     parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
     parser.add_argument("--report_dir", default="")
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
+
+
+    help_summary='''
+This script is used to automate running RX Sensitivity tests.  You
+may need to view a RX Sensitivity test configured through the GUI to understand
+the options and how best to input data.
+'''
 
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # use json config file
     if args.json != "":
