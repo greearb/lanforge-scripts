@@ -402,8 +402,18 @@ This combination of parameters will not re-generate the present CV scenario:
 
     parser.add_argument("--report_file_name", "--report_file", type=str,
                         help="name of the report file")
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
+
+    help_summary='''\
+Chamber View testing script:  Load a Chamber View (CV) scenario, build it, and run a test.
+'''
 
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     if args.lfmgr is not None:
         lfjson_host = args.lfmgr
     if args.port is not None:
