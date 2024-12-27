@@ -1042,7 +1042,18 @@ def main():
                           action='store_true')
     optional.add_argument('--file_path', help='Specify the path of the file, which has the URLs to download'
                                               ' or upload the URLs', default=None)
+    optional.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
+    help_summary='''\
+lf_webpage.py will verify that N clients are connected on a specified band and can download
+some amount of file data from the HTTP server while measuring the time taken by clients to download the file and number of 
+times the file is downloaded.
+'''
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     args.bands.sort()
 
     # Error checking to prevent case issues
