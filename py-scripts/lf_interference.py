@@ -270,7 +270,7 @@ class interference(cv_test):
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="lf_wifi_capacity_test.py",
+        prog="lf_interference.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
         ./lf_interference.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge 
