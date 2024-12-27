@@ -10,6 +10,7 @@ Note: To Run this script gui should be opened with
 This script is used to automate running TR398 tests.  You
 may need to view a TR398 test configured through the GUI to understand
 the options and how best to input data.
+(version 1)
     
     ./lf_tr398_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name tr398-instance --config_name test_con \
@@ -313,8 +314,18 @@ def main():
     parser.add_argument("--local_lf_report_dir",
                         help="--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory",
                         default="")
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
+    help_summary = '''\
+This script is used to automate running TR398 tests.  You
+may need to view a TR398 test configured through the GUI to understand
+the options and how best to input data.
+(version 1)
+'''
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     cv_base_adjust_parser(args)
 
