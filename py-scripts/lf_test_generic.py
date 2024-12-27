@@ -1210,7 +1210,7 @@ def main():
 
     required.add_argument("--lf_user", type=str, help="user: lanforge", default=None)
     required.add_argument("--lf_passwd", type=str, help="passwd: lanforge", default=None)
-    required.add_argument('--test_type', type=str, help='type of command to run. Options: ping, iperf3-client, iperf3-server, iperf3, lfcurl', required=True)
+    required.add_argument('--test_type', type=str, help='type of command to run. Options: ping, iperf3-client, iperf3-server, iperf3, lfcurl')
 
     optional.add_argument('--mgr', help='ip address of lanforge script should be run on. example: 192.168.102.211', default=None)
     optional.add_argument('--mgr_port', help='port which lanforge is running on, on lanforge machine script should be run on. example: 8080', default=8080)
@@ -1296,6 +1296,10 @@ This script also *does not* use any other file except lanforge_api.py.
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_json)
+
+    if not args.test_type:
+        logger.critical("--test_type is a required paramater Options: ping, iperf3-client, iperf3-server, iperf3, lfcurl")
+
     if args.create_report:
         if args.report_file_path is None:
             new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
