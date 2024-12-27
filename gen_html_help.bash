@@ -54,6 +54,7 @@ scripts=(
     py-scripts/lf_tr398_test.py
     py-scripts/lf_tr398v2_test.py
     py-scripts/lf_tr398v4_test.py
+    py-scripts/lf_webpage.py
     py-scripts/lf_wifi_capacity_test.py
     py-scripts/raw_cli.py
     py-scripts/sta_connect2.py
