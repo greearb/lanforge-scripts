@@ -1268,13 +1268,30 @@ def main():
     optional.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     optional.add_argument('--lf_logger_json', help="--lf_logger_config_json <json file> , json configuration of logger")
     optional.add_argument('--debug', '-d', default=False, action="store_true", help='Enable debugging')
+    optional.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
 
     #check if the arguments are empty?
     if (len(sys.argv) <= 2 and not sys.argv[1]):
         print("This python file needs the minimum required args. See add the --help flag to check out all possible arguments.")
         sys.exit(1)
+
+    help_summary='''\
+lf_test_generic.py will create stations and endpoints to generate traffic based on a command-line specified command type.
+
+This script will create a variable number of stations to test generic endpoints. Multiple command types can be tested
+including ping, speedtest, lfcurl, iperf, generic types. The test will check the last-result attribute for different things
+depending on what test is being run. Ping will test for successful pings, speedtest will test for download
+speed, upload speed, and ping time, generic will test for successful generic commands.
+
+This script also *does not* use any other file except lanforge_api.py. 
+'''
         
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
