@@ -50,6 +50,7 @@ scripts=(
     py-scripts/lf_rfgen_info.py
     py-scripts/lf_rvr_test.py
     py-scripts/lf_sniff_radio.py
+    py-scripts/lf_test_generic.py
     py-scripts/lf_tr398v4_test.py
     py-scripts/lf_wifi_capacity_test.py
     py-scripts/raw_cli.py
