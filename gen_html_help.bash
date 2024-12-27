@@ -57,6 +57,7 @@ scripts=(
     py-scripts/lf_webpage.py
     py-scripts/lf_wifi_capacity_test.py
     py-scripts/raw_cli.py
+    py-scripts/run_cv_scenario.py
     py-scripts/sta_connect2.py
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
