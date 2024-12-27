@@ -59,6 +59,7 @@ scripts=(
     py-scripts/raw_cli.py
     py-scripts/run_cv_scenario.py
     py-scripts/run_voip_cx.py
+    py-scripts/rvr_scenario.py
     py-scripts/sta_connect2.py
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
