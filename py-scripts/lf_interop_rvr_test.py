@@ -620,16 +620,15 @@ def main():
     optional.add_argument('--upstream', help='non-station port that generates traffic: <resource>.<port>, '
                                              'e.g: 1.eth1', default='eth1')
     optional.add_argument('--mode', help='used to force mode of stations', default="0")
-    required.add_argument('--ssid', help="ssid for client association with Access Point", required=True)
-    required.add_argument('--security', help="security type of ssid, ex: wpa || wpa2 || wpa3 || open", required=True)
-    required.add_argument('--password', help="password of ssid", required=True)
+    required.add_argument('--ssid', help="ssid for client association with Access Point, REQUIRED")
+    required.add_argument('--security', help="security type of ssid, ex: wpa || wpa2 || wpa3 || open  REQUIRED")
+    required.add_argument('--password', help="password of ssid")
     required.add_argument('--traffic_type', help='provide the traffic Type lf_udp, lf_tcp', default='lf_tcp')
     optional.add_argument('--traffic_direction', help='Traffic direction i.e upload or download or bidirectional',
                           default="bidirectional")
-    required.add_argument('--traffic', help='traffic to be created for the given number of clients (in Mbps)',
-                          required=True)
+    required.add_argument('--traffic', help='traffic to be created for the given number of clients (in Mbps)  REQUIRED')
     required.add_argument('--test_duration', help='sets the duration of the test ex: 2s --> two seconds || 2m '
-                                                  '--> two minutes || 2h --> two hours', required=True)
+                                                  '--> two minutes || 2h --> two hours  Required')
     optional.add_argument('--create_sta', help="used to create stations if you do not prefer existing stations",
                           default=True)
     optional.add_argument('--sta_names',
@@ -666,6 +665,10 @@ def main():
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
+
+    if not args.ssid or not args.security or not args.password or not args.traffic or not args.test_duration:
+        logger.critical("The following arguments are required: --ssid, --security, --password, --traffic, --test_duration")
+        exit(1)
 
     test_start_time = datetime.now().strftime("%b %d %H:%M:%S")
     logger.info("Test started at ", test_start_time)
