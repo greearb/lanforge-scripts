@@ -60,6 +60,7 @@ scripts=(
     py-scripts/lf_tr398v2_test.py
     py-scripts/lf_tr398v4_test.py
     py-scripts/lf_webpage.py
+    py-scripts/lf_we_can_wifi_capacity.py
     py-scripts/lf_wifi_capacity_test.py
     py-scripts/raw_cli.py
     py-scripts/run_cv_scenario.py
