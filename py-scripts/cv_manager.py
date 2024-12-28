@@ -38,8 +38,15 @@ def main():
     parser.add_argument('--scenario', help='Scenario you wish to build')
     parser.add_argument('--debug', help='Enable debugging', default=False, action="store_true")
     parser.add_argument('--mgr', default='localhost')
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
     args = parser.parse_args()
+    help_summary='''\
+cv_manager.py is a simple driver script to load a CV Scenario'
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     manager = CVManager(scenario=args.scenario,
                         debug=args.debug,
