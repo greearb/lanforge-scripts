@@ -3,7 +3,7 @@
 """
 NAME:       lf_atten_mod_test.py
 
-PURPOSE:    This script is used to create the user-specified Layer-3 cross-connection.
+PURPOSE:    lf_atten_mod_test.py is used to modify and/or read the LANforge Attenuator settings.
 
 EXAMPLE:    Set channel four (zero-indexed) of all attenuators on LANforge system \'192.168.200.12\'
             to attenuation value 220 ddB (22.0 dB).
@@ -69,7 +69,7 @@ def main():
         description='''\
 NAME:       lf_atten_mod_test.py
 
-PURPOSE:    This script is used to create the user-specified Layer-3 cross-connection.
+PURPOSE:    lf_atten_mod_test.py is used to modify and/or read the LANforge Attenuator settings. 
 
 EXAMPLE:    Set channel four (zero-indexed) of all attenuators on LANforge system \'192.168.200.12\'
             to attenuation value 220 ddB (22 dB).
