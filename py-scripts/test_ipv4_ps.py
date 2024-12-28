@@ -203,6 +203,15 @@ Generic command layout:
         optional.add_argument('--radio2', help='radio to create monitor on', default='1.wiphy2')
 
     args = parser.parse_args()
+
+    help_summary='''\
+This script test ipv4 ps ,  this script functionality has not been validated recently as of 12/28/2024
+Help summary is put in to allow help_summary test to pass
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
