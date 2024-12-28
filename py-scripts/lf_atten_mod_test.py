@@ -82,7 +82,14 @@ EXAMPLE:    Set channel four (zero-indexed) of all attenuators on LANforge syste
     parser.add_argument('--atten_serno', help='Serial number for requested attenuator, or \'all\'',              default='all')
     parser.add_argument('--atten_idx',   help='Attenuator index eg. For module 1 = 0, module 2 = 1, or \'all\'', default='all')
     parser.add_argument('--atten_val',   help='Requested attenuation in 1/10ths of dB (ddB).',                   default=0)
+
     args = parser.parse_args()
+    help_summary='''\
+lf_atten_mod_test.py is used to modify and/or read the LANforge Attenuator settings.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
