@@ -170,11 +170,16 @@ Example:
     ./csv_convert.py -i ~/dataplane-2022-02-08-12-18-45/text-csv-2.csv -I ~/dataplane-2022-02-08-12-18-45/text-csv-0.csv
         ''')
 
-    parser.add_argument('-i', '--infile', help="input file of csv data", required=True)
-    parser.add_argument('-I', '--infile2', help="secondary input file of csv data", required=True)
+    parser.add_argument('-i', '--infile', help="input file of csv data")
+    parser.add_argument('-I', '--infile2', help="secondary input file of csv data")
     parser.add_argument('-o', '--outfile', help="output file in .csv format", default='outfile.csv')
 
     args = parser.parse_args()
+
+    if not args.infile or not args.infile2:
+        print("error:  the following arguments are required: -i/--infile, -I/--infile2")
+        exit(1)
+
     csv_outfile_name = None
     csv_infile_name = None
     csv_infile_name2 = None
