@@ -364,6 +364,15 @@ test_ipv4_ttls.py:
     parser.add_argument('--enable_pkc', help='enable opportunistic PMKSA WPA2 key caching', default=False)
     parser.add_argument('--vap', help='Create VAP on host device', default=True)
     args = parser.parse_args()
+
+    help_summary='''\
+This script test ipv4 ttls ,  this script functionality has not been validated recently as of 12/28/2024
+Help summary is put in to allow help_summary test to pass
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     num_sta = 2
     if args.num_stations:
         num_stations_converted = int(args.num_stations)
