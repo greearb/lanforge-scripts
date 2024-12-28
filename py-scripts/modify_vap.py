@@ -147,6 +147,15 @@ use-bss-transition   | 0x80000000000   # Enable BSS transition.
 
     args = parser.parse_args()
 
+    help_summary='''\
+./modify_vap.py will modify VAPs on a system. Use the enable_flag to create a flag on a VAP.
+Turn off a flag with the disable_flag option. A list of available flags are available in the
+add_vap.py file in py-json/LANforge.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
 
