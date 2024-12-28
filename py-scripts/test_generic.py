@@ -335,6 +335,18 @@ python3 ./test_generic.py
 
     args = parser.parse_args()
 
+    help_summary='''\
+test_generic.py will create stations and endpoints to generate traffic based on a command-line specified command type.
+
+This script will create a variable number of stations to test generic endpoints. Multiple command types can be tested
+including ping, speedtest, generic types. The test will check the last-result attribute for different things
+depending on what test is being run. Ping will test for successful pings, speedtest will test for download
+speed, upload speed, and ping time, generic will test for successful generic commands
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
