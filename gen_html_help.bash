@@ -18,6 +18,7 @@ fi
 #DESTF=/var/www/html/greearb/lf/scripts_ug.php
 
 scripts=(
+    py-scripts/lf_atten_mod_test.py
     py-scripts/bssid_to_dut.py
     py-scripts/chamber_ctl.py
     py-scripts/create_bond.py
