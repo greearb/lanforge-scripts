@@ -315,6 +315,13 @@ def main():
 
     args = parser.parse_args()
 
+    help_summary='''\
+./lf_we_can_scan.py is used for scanning the ssid using real client.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     station_list = args.sta_name
     sta_scan_test = WeCanStaScan(host=args.mgr,
                                  port=args.mgr_port,
