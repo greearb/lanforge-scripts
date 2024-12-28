@@ -173,8 +173,19 @@ Example:
     parser.add_argument('-i', '--infile', help="input file of csv data")
     parser.add_argument('-I', '--infile2', help="secondary input file of csv data")
     parser.add_argument('-o', '--outfile', help="output file in .csv format", default='outfile.csv')
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
+    help_summary='''\
+csv_convert.py converts the candela brief csv and/or more complete csv into the data for specific customer.
+Both csv files need to be passed in order to have beacon rssi and phy rates since neither
+csv file contains all of that data.
+'''
 
     args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     if not args.infile or not args.infile2:
         print("error:  the following arguments are required: -i/--infile, -I/--infile2")
