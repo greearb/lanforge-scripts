@@ -155,11 +155,16 @@ Command example:
     --outfile
             ''')
     required = parser.add_argument_group('required arguments')
-    required.add_argument('--report_file', help='where you want to store results', required=True)
+    required.add_argument('--report_file', help='where you want to store results')
     parser.add_argument('--database', help='Which database to load', default='FACTORY_DFLT')
     parser.add_argument('--radio2', help='second radio to create stations on', default='wiphy7')
 
     args = parser.parse_args()
+
+    if not args.report_file:
+        print("error: the following arguments are required: --report_file")
+        exit(1)
+
 
     if args.report_file.split('.')[-1] not in ['pkl', 'csv', 'xlsx']:
         raise NameError('Please make sure your file name ends with either pkl, csv, or xlsx')
