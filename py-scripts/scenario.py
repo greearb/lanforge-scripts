@@ -165,6 +165,14 @@ def main():
     parser.add_argument('--check_phantom', help='check if these ports are phantom', default=None, nargs="+")
     args = parser.parse_args()
 
+    help_summary='''\
+The script, scenario.py, will load a database file and control test groups.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
+
     scenario = LoadScenario(mgr=args.mgr,
                             scenario=args.load,
                             action=args.action,
