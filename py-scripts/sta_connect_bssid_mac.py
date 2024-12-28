@@ -114,6 +114,14 @@ def main():
                         help="To enable BSS transition.(by default: False)")
 
     args = parser.parse_args()
+
+    help_summary='''\
+The script can create stations and can be used to set multiple BSSID, MAC to each individual station.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     obj = client_connect(lfclient_host=args.mgr, lfclient_port=args.mgr_port, radio=args.radio, sta_name=args.sta_name,
                          ssid=args.ssid, security=args.security, paswd=args.passwd, bssid=args.bssid,
                          mac=args.mac, bss_trans=args.bss_trans
