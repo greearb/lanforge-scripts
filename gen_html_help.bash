@@ -68,6 +68,7 @@ scripts=(
     py-scripts/rvr_scenario.py
     py-scripts/sta_connect2.py
     py-scripts/sta_connect_multi_example.py
+    py-scripts/sta_scan_test.py
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
     py-scripts/update_dependencies.py
