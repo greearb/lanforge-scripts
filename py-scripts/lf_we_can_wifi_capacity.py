@@ -533,8 +533,16 @@ def main():
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from")
     parser.add_argument("-s", "--stations", type=str, default="",
                         help="If specified, these stations will be used.  If not specified, all available stations will be selected.  Example: 1.1.sta001,1.1.wlan0,...")
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
     args = parser.parse_args()
+
+    help_summary='''\
+./lf_we_can_wifi_capacity.py is used for running Wi-Fi capacity test on real clients (Phones).
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     WFC_Test = WiFiCapacityTest(lfclient_host=args.mgr,
                                 lf_port=args.port,
