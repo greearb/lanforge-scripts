@@ -161,6 +161,15 @@ Command example:
 
     args = parser.parse_args()
 
+    help_summary='''\
+./measure_station_time_up.py if for creating a variable number of stations and
+measures the time it took to admin them up and get IP addresses.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
+
     if not args.report_file:
         print("error: the following arguments are required: --report_file")
         exit(1)
