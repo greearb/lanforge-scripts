@@ -233,6 +233,15 @@ Generic ipv4 command example:
 
     args = parser.parse_args()
 
+    help_summary='''\
+./test_ip_connection.py may not be functional , added this summary to allow the help_summary check to pass
+The script si create station then attemp to authenticate, associate, and receive IP address on the chosen SSID
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
+
     if args.radio is None:
         raise ValueError("--radio required")
 
