@@ -193,6 +193,15 @@ def main():
                         default=15, type=int)
 
     args = parser.parse_args()
+    help_summary='''\
+This scripts optionally creates a station with specified ssid info (can be real or fake ssid, if fake use open for security).
+If not creating a station, it can use existing station.
+Then starts a scan and waits 15 seconds, finally scan results are printed to console.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     station_list = args.sta_name
     sta_scan_test = StaScan(host=args.mgr,
