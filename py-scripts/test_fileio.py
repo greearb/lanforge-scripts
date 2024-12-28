@@ -669,6 +669,23 @@ Generic command layout:
                         default=None)
     args = parser.parse_args()
 
+    help_summary='''\
+test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic.
+
+This script will create a variable number of stations or macvlans to test fileio traffic. Pre-existing stations and
+macvlans can be used as well. Command line options are available to update cross-connects as well as using a list of
+existing cross-connects if desired. if none are given, cross-connects and endpoints will be created by the script.
+Modes such as read-only, write-only, or both can be specified along with ip addresses and starting numbers for sequential
+stations or macvlans that are created in case of limited or pre-existing configurations. The test that is run during
+this script will depend on the mode used, a read-only test will check the read-bps attribute, write-only will check write-bps
+and both will check both attributes. If the relevant attributes increase over the duration of the test it will pass,
+otherwise it will fail.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
+
     parent = LFUtils.name_to_eid(args.macvlan_parent)
     shelf = parent[0]
     resource = parent[1]
