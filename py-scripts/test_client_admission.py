@@ -114,8 +114,22 @@ def main():
     parser.add_argument('-sec', '--security', type=str, help='security')
     parser.add_argument('-rad', '--radio', type=str, help='radio at which client will be connected')
     parser.add_argument('-num_sta', '--num_sta', type=int, help='provide number of stations you want to create', default=60)
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
     # parser.add_argument()
     args = parser.parse_args()
+
+    help_summary='''\
+Script not functional or no longer supported:
+This script will create one station at a time and generate downstream traffic at 5Mbps
+then again create next station create layer3 and will continue doing same
+until Ap stops admiting client.
+This script can be used for for client admission test for particular AP
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     obj = LoadLayer3(lfclient_host=args.host, lfclient_port=8080, ssid=args.ssid, paswd=args.passwd,
                      security=args.security, radio=args.radio, num_sta=args.num_sta)
