@@ -74,6 +74,7 @@ scripts=(
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
     py-scripts/update_dependencies.py
+    py-scripts/webGUI_update_dependencies.py
 )
 ./gen_html_help.pl "${scripts[@]}" > $DESTF
 echo "...created $DESTF"
