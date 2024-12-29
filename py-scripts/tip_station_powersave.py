@@ -402,7 +402,22 @@ $subtype $mac_addresses $wlan.fc.pwrmgt
 
 #Currently, this test can only be applied to UDP connections
         ''')
-    args = parser.parse_args()        
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
+    help_summary='''\
+This script uses filters from realm's PacketFilter class to filter pcap output for specific packets.
+Currently it uses a filter for association packets using wlan.fc.type_subtype<=3. It is also using a filter
+for QOS Null packets using wlan.fc.type_subtype==44. Both filters are also looking for the existence of 
+either the station MAC or the AP MAC in wlan.addr
+These are returned as an array of lines from the output in the format
+$subtype $mac_addresses $wlan.fc.pwrmgt
+'''
+
+    args = parser.parse_args()
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     lfjson_host = "localhost"
     lfjson_port = 8080
