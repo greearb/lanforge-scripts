@@ -78,8 +78,6 @@ def main():
         optional_args.add_argument('--drop_B', help='The drop frequency of port B (%%)', default=None)
         # todo: packet loss A and B
         # todo: jitter A and B
-        optional_args.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
-
 
     parseargs = parser.parse_args()
     help_summary='''\
