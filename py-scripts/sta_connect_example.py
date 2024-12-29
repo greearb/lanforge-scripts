@@ -30,6 +30,14 @@ def main():
 
     args = parser.parse_args()
 
+    help_summary='''\
+This script is no longer supported:  Example of how to instantiate StaConnect and run the test.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
+
     monitor_interval = LFCliBase.parse_time(args.test_duration).total_seconds()
     if args.upstream_port is None:
         args.upstream_port = "eth2"
