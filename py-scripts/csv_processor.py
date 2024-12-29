@@ -128,7 +128,7 @@ def main():
         prog='csv_processor.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
- Useful Information:
+ This script is an simple example on how to process data from a csv file.
             ''',
         
         description='''csv_processor.py:
@@ -138,9 +138,17 @@ def main():
 
     parser.add_argument('-i','--infile', help="file of csv data", default='longevity_results_08_14_2020_14_37.csv')
     parser.add_argument('--debug', help='--debug:  Enable debugging',default=True)
-
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
     args = parser.parse_args()
+
+    help_summary='''\
+This script is an simple example on how to process data from a csv file.
+This script is no longer supported.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     #debug_on = args.debug
 
