@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
 # flake8: noqa
 """ This script will create one station at a time and generate downstream traffic at 5Mbps  then again create next station create layer3 and will continue doing same until Ap stops admiting client
     This script can be used for for client admission test for particular AP
 
-    arguements = >python3 load_21.py -hst 192.168.200.13 -s Nikita -pwd [BLANK] -sec open -rad wiphy1 --num_sta 60
+    arguements = python3 load_21.py -hst 192.168.200.13 -s Nikita -pwd [BLANK] -sec open -rad wiphy1 --num_sta 60
     -Nikita Yadav
     -date: 23-02-2021
 """
