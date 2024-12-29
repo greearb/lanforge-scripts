@@ -46,9 +46,19 @@ def main():
         -co Greenfield
         -cw 15
             ''')
+    parse.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
     try:
         args = parse.parse_args()
+
+        help_summary='''\
+This script calculates the theoretical value of three different stations( 11abg/11n/11ac)
+'''
+
+        if args.help_summary:
+            print(help_summary)
+            exit(0)
+
         # Station
         if args.station:
             Calculator_name = args.station
