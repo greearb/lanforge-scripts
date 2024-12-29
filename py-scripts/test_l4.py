@@ -734,6 +734,15 @@ Generic command example:
 
     args = parser.parse_args()
 
+    help_summary='''\
+Work in Progress
+This script will create stations and endpoints to generate and verify layer-4 traffic by monitoring the urls/s,
+ bytes-rd, or bytes-wr attribute of the endpoints.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
 
