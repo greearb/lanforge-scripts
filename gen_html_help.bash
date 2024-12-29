@@ -66,6 +66,7 @@ scripts=(
     py-scripts/run_cv_scenario.py
     py-scripts/run_voip_cx.py
     py-scripts/rvr_scenario.py
+    py-scripts/ssh_remote.py
     py-scripts/sta_connect2.py
     py-scripts/sta_connect_example.py
     py-scripts/sta_connect_multi_example.py
