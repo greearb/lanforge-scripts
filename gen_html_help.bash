@@ -73,6 +73,7 @@ scripts=(
     py-scripts/test_generic.py
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
+    py-scripts/test_l3_scenario_throughput.py
     py-scripts/test_l3_unicast_traffic_gen.py
     py-scripts/test_l4.py
     py-scripts/test_status_msg.py
