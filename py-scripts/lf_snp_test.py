@@ -1554,7 +1554,7 @@ def main():
     debug_on = False
 
     parser = argparse.ArgumentParser(
-        prog='lf_controller_snp.py',
+        prog='lf_snp_test.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -1562,7 +1562,7 @@ def main():
             ''',
 
         description='''\
-lf_controller_snp.py:
+lf_snp_test.py:
 --------------------
 
 ##################################################################################
