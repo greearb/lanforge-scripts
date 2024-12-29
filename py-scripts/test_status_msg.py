@@ -272,6 +272,21 @@ Actions can be:
     parser.add_argument('--message', type=str, help='message to include')
     args = parser.parse_args()
 
+    help_summary='''\
+This scripts will test the status message passing functions of /status-msg:
+- create a session: PUT /status-msg/<new-session-id>
+- post message: POST /status-msg/<new-session-id>
+- list sessions: GET /status-msg/
+- list messages for session: GET /status-msg/<new-session-id>
+- delete message: DELETE /status-msg/<new-session-id>/message-id
+- delete session: DELETE /status-msg/<new-session-id>/this
+- delete all messages in session: DELETE /status-msg/<new-session-id>/all
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
+
     status_messages = TestStatusMessage(args.mgr,
                                         args.mgr_port,
                                         _debug_on=args.debug,
