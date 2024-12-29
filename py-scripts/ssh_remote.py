@@ -113,7 +113,20 @@ def main():
         help='Password for remote machine',
         default=password)
 
+    parser.add_argument(
+        '--help_summary',
+        action="store_true",
+        help='Show summary of what this script does')
+
     args = parser.parse_args()
+
+    help_summary='''\
+This script is an example do_ap script on remote system.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     ip = args.ip
     username = args.username
     password = args.password
