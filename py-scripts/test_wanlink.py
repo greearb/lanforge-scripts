@@ -78,8 +78,18 @@ def main():
         optional_args.add_argument('--drop_B', help='The drop frequency of port B (%%)', default=None)
         # todo: packet loss A and B
         # todo: jitter A and B
+        optional_args.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
 
     parseargs = parser.parse_args()
+    help_summary='''\
+This script will create and modify WAN Links from the command line.
+'''
+
+    if parseargs.help_summary:
+        print(help_summary)
+        exit(0)
+
     args = {
         "host": parseargs.mgr,
         "port": parseargs.mgr_port,
