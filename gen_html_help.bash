@@ -69,6 +69,7 @@ scripts=(
     py-scripts/sta_connect2.py
     py-scripts/sta_connect_multi_example.py
     py-scripts/sta_scan_test.py
+    py-scripts/test_client_admission.py
     py-scripts/test_fileio.py
     py-scripts/test_generic.py
     py-scripts/test_l3.py
