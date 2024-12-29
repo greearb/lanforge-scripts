@@ -389,10 +389,17 @@ def main():
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     # logging configuration
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
-
-
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
     args = parser.parse_args()
+
+    help_summary='''\
+Module to Process the data that was measured during  lf_rssi_check.py , the process will take in a list of csv files
+extract the data and graph
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
