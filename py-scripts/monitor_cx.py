@@ -327,8 +327,23 @@ def main():
         "--debug", action="store_true", default=False, help="turn on debugging"
     )
     parser.add_argument("--log_level")
+    parser.add_argument(
+        '--help_summary', action="store_true", help='Show summary of what this script does'
+    )
+
 
     args = parser.parse_args()
+
+    help_summary='''\
+ The Monitor CX script is for collecting CSV data from running Layer 3 connections. It reports data for each
+endpoint. Start this script after beginning traffic in the GUI or other means. When all connections have
+stopped, this script will exit. If this script is run before connections are started, it will immediately
+exit.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     if not args.csv_file:
         print("No csv file name provided")
         exit(1)
