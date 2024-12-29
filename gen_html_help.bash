@@ -82,6 +82,7 @@ scripts=(
     py-scripts/test_l3_longevity.py
     py-scripts/test_l3_scenario_throughput.py
     py-scripts/test_l3_unicast_traffic_gen.py
+    py-scripts/test_l3_WAN_LAN.py
     py-scripts/test_l4.py
     py-scripts/test_status_msg.py
     py-scripts/test_wanlink.py
