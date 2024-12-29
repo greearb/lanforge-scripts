@@ -21,8 +21,18 @@ def main():
         '''
     )
     parser.add_argument('--pyjwt', help='Install PyJWT which is necessary for GhostRequest', action="store_true")
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
 
     args = parser.parse_args()
+
+    help_summary='''\
+This script installs python3 webGUI package dependencies.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     print("Installing webGUI Python3 Dependencies")
 
