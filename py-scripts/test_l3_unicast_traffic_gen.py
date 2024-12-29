@@ -467,10 +467,15 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
 
 
                                 Acceptable lengths are 4,5,6,9, 10 (wpa2 TTLS), 12 (wpa3 TTLS), 14 (wpa2 TLS), 16 (wpa3 TLS)
-                                ''',
-                               required=True)
+                                ''')
 
     args = parser.parse_args()
+    help_summary='''\
+Script Deprecated:  This script is replaced by py-scripts/test_l3.py.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
@@ -482,6 +487,9 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
+    if not args.radio_list:
+        logger.critical(" --radio_list is a required argument")
+        exit(1)
 
     side_b = LFUtils.name_to_eid(args.upstream_port)
     resource = side_b[1]
