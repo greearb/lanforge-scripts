@@ -274,8 +274,17 @@ def main():
     parser.add_argument("-t", "--duration", type=str, help="Enter the Time for which you want to run test")
     parser.add_argument("-o", "--report_name", type=str, help="Enter the Name of the Output file ('Report.xlsx')", default='report.xlsx')
     parser.add_argument("-td", "--test_detail", type=str, help="Enter the Test Detail in Quotes ", default='Blank test')
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
     args = parser.parse_args()
+
+    help_summary='''\
+Script not functional or no longer supported: Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     hostname = socket.gethostbyname(socket.gethostname())
     # Loading DUT Scenario
