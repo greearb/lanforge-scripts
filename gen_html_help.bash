@@ -73,6 +73,7 @@ scripts=(
     py-scripts/test_generic.py
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
+    py-scripts/test_status_msg.py
     py-scripts/test_wanlink.py
     py-scripts/update_dependencies.py
     py-scripts/tip_station_powersave.py
