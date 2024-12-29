@@ -1903,6 +1903,9 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                         help='-ptc / --print_test_config , print out the test configuration and exit',
                         action='store_true')
 
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+
+
     ##############################################################
     #
     #  Scaling and Performance Args Parser
@@ -1912,6 +1915,23 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     controller_args = args  # use args.
     # logg.info("args: {}".format(args))
     debug_on = args.debug
+
+    ###############################################################
+    # Help Summary
+    ###############################################################
+
+    help_summary='''\
+This script is functional and is an example.
+This program is to test an AP connected to a controller.
+The AP name is configurable.
+The controler with with a specific ap mode, wifi mode (2.4 Ghz or 5 Ghz),
+    Bandwidth (20,40,80,160) and TX power.
+This currently only works with certain models of Cisco controllers.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
 
     ###############################################################
     # Gather Test Data
