@@ -55,9 +55,9 @@ scripts=(
     py-scripts/lf_interference.py
     py-scripts/lf_interop_modify.py
     py-scripts/lf_interop_pdu_automation.py
-    py-scripts/lf_interop_port_reset_test.py
-    py-scripts/lf_interop_ping.py
     py-scripts/lf_interop_ping_plotter.py
+    py-scripts/lf_interop_ping.py
+    py-scripts/lf_interop_port_reset_test.py
     py-scripts/lf_interop_pdu_automation.py
     py-scripts/lf_interop_qos.py
     py-scripts/lf_interop_real_browser_test.py
