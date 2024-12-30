@@ -19,6 +19,7 @@ fi
 
 scripts=(
     py-scripts/lf_atten_mod_test.py
+    py-scripts/bandsteering.py
     py-scripts/bssid_to_dut.py
     py-scripts/chamber_ctl.py
     py-scripts/create_bond.py
