@@ -24,8 +24,8 @@ scripts=(
     py-scripts/chamber_ctl.py
     py-scripts/create_bond.py
     py-scripts/create_bridge.py
-    py-scripts/create_chamberview.py
     py-scripts/create_chamberview_dut.py
+    py-scripts/create_chamberview.py
     py-scripts/create_l3.py
     py-scripts/create_l3_stations.py
     py-scripts/create_l4.py
