@@ -69,6 +69,7 @@ scripts=(
     py-scripts/lf_logger_config.py
     py-scripts/lf_macvlan.py
     py-scripts/lf_mesh_test.py
+    py-scripts/lf_mixed_traffic.py
     py-scripts/lf_pcap.py
     py-scripts/lf_rfgen_info.py
     py-scripts/lf_rssi_process.py
