@@ -73,6 +73,7 @@ scripts=(
     py-scripts/lf_modify_radio.py
     py-scripts/lf_multipsk.py
     py-scripts/lf_pcap.py
+    py-scripts/lf_ping_sweep.py
     py-scripts/lf_rfgen_info.py
     py-scripts/lf_rssi_process.py
     py-scripts/lf_rvr_test.py
