@@ -75,9 +75,10 @@ scripts=(
     py-scripts/lf_pcap.py
     py-scripts/lf_ping_sweep.py
     py-scripts/lf_report.py
-    py-scripts/lf_rf_char.py
     py-scripts/lf_report_test.py
+    py-scripts/lf_rf_char.py
     py-scripts/lf_rfgen_info.py
+    py-scripts/lf_roam_test.py
     py-scripts/lf_rssi_process.py
     py-scripts/lf_rvr_test.py
     py-scripts/lf_sniff_radio.py
