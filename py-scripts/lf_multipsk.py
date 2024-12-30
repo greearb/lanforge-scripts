@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 # flake8: noqa
 
-"""
+help_summary='''
+    This script is to test the multipsk feature in access point. Multipsk feature states connecting clients using same 
+    ssid but different passwords , here we will create two or 3 passwords with different vlan id on single ssid 
+    and try to connect client with different passwords.
+
+'''
+
+script_description="""
 NAME: lf_multipsk.py
 
 PURPOSE:
@@ -351,10 +358,15 @@ def main():
     parser = Realm.create_basic_argparse(
         prog="lf_multipsk.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        description="lanforge webpage download Test Script")
+        description=f'''{script_description}''')
     parser.add_argument('--n_vlan', help="type number of vlan using in test eg 1 or 2", default=1)
     parser.add_argument('--mode', help="Mode for lf_multipsk", default=None)
     args = parser.parse_args()
+
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     logger_config = lf_logger_config.lf_logger_config()
     # set the logger level to requested value
