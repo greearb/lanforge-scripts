@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 # flake8: noqa
 
-"""
+help_summary='''\
+This program is a helper  class for setting up python logger
+This helper is used by most of the LANforge python scripts.
+'''
+
+
+script_description="""
 NAME: lf_logger_config.py
 
 PURPOSE:
@@ -59,6 +65,8 @@ import sys
 import json
 import logging
 import logging.config
+import argparse # used for help summary
+
 
 # gets the root logger
 logger = logging.getLogger()
@@ -155,3 +163,21 @@ class lf_logger_config:
             print("self.lf_logg_config not set")
             exit(1)
         # print(logger.getEffectiveLevel())
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="lf_logger_config.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description=f"""{help_summary}
+{script_description}""")
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+    args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
+
+if __name__ == "__main__":
+    main()
