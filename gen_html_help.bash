@@ -48,6 +48,7 @@ scripts=(
     py-scripts/lf_continuous_throughput_test.py
     py-scripts/lf_create_vap_cv.py
     py-scripts/lf_create_wanlink.py
+    py-scripts/lf_csv.py
     py-scripts/lf_dataplane_test.py
     py-scripts/lf_ftp.py
     py-scripts/lf_interop_modify.py
