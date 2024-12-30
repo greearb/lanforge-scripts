@@ -41,6 +41,7 @@ scripts=(
     py-scripts/lf_add_profile.py
     py-scripts/lf_ap_auto_test.py
     py-scripts/lf_atten_mod_test.py
+    py-scripts/lf_base_interop_profile.py
     py-scripts/lf_chamberview_tools.py
     py-scripts/lf_create_vap_cv.py
     py-scripts/lf_create_wanlink.py
