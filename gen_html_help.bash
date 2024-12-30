@@ -18,6 +18,7 @@ fi
 #DESTF=/var/www/html/greearb/lf/scripts_ug.php
 
 scripts=(
+    py-scripts/attenuator_serial.py
     py-scripts/bandsteering.py
     py-scripts/bssid_to_dut.py
     py-scripts/chamber_ctl.py
