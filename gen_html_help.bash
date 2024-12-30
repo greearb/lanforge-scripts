@@ -44,6 +44,7 @@ scripts=(
     py-scripts/lf_base_interop_profile.py
     py-scripts/lf_chamberview_tools.py
     py-scripts/lf_cleanup.py
+    py-scripts/lf_client_visualization.py
     py-scripts/lf_create_vap_cv.py
     py-scripts/lf_create_wanlink.py
     py-scripts/lf_dataplane_test.py
