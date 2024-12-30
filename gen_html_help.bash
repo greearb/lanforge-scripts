@@ -18,7 +18,6 @@ fi
 #DESTF=/var/www/html/greearb/lf/scripts_ug.php
 
 scripts=(
-    py-scripts/lf_atten_mod_test.py
     py-scripts/bandsteering.py
     py-scripts/bssid_to_dut.py
     py-scripts/chamber_ctl.py
@@ -37,6 +36,7 @@ scripts=(
     py-scripts/create_vr.py
     py-scripts/csv_processor.py
     py-scripts/lf_ap_auto_test.py
+    py-scripts/lf_atten_mod_test.py
     py-scripts/lf_chamberview_tools.py
     py-scripts/lf_create_vap_cv.py
     py-scripts/lf_create_wanlink.py
