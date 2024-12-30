@@ -31,6 +31,7 @@ scripts=(
     py-scripts/create_l4.py
     py-scripts/create_macvlan.py
     py-scripts/create_qvlan.py
+    py-scripts/create_station_from_df.py
     py-scripts/create_station.py
     py-scripts/create_vap.py
     py-scripts/create_vr.py
