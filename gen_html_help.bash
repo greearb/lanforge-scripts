@@ -35,6 +35,7 @@ scripts=(
     py-scripts/create_station.py
     py-scripts/create_vap.py
     py-scripts/create_vr.py
+    py-scripts/csv_convert.py
     py-scripts/csv_processor.py
     py-scripts/lf_ap_auto_test.py
     py-scripts/lf_atten_mod_test.py
