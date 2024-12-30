@@ -64,6 +64,7 @@ scripts=(
     py-scripts/lf_interop_throughput.py
     py-scripts/lf_interop_video_streaming.py
     py-scripts/lf_json_api.py
+    py-scripts/lf_json_util.py
     py-scripts/lf_kpi_csv.py
     py-scripts/lf_mesh_test.py
     py-scripts/lf_pcap.py
