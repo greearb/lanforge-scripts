@@ -1,9 +1,9 @@
-# #!/usr/bin/env python3
+#!/usr/bin/env python3
 # flake8: noqa
 
 
 
-"""
+'''
     NAME: lf_interop_video_streaming.py
     Purpose: To be generic script for LANforge-Interop devices(Real clients) which runs layer4-7 traffic
     For now the test script supports for Video streaming of real devices.
@@ -42,7 +42,7 @@
     SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
 
     NOTES:
-        1. Use './lf_interop_video_streaming.py --help' to see command line usage and options.
+        1. Use "./lf_interop_video_streaming.py --help" to see command line usage and options.
         2. If --device_list are not given after passing the CLI, a list of available devices will be displayed on the terminal.
         3. To run the test by specifying the incremental capacity, enable the --incremental flag. 
         
@@ -55,9 +55,7 @@
 
         License: Free to distribute and modify. LANforge systems must be licensed.
         Copyright 2023 Candela Technologies Inc.
-
-
-"""
+'''
 import sys
 import os
 import importlib
@@ -976,12 +974,16 @@ class VideoStreamingTest(Realm):
 
 def main():
     help_summary = '''\
-    The Candela Web browser test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like android, Linux,
-    windows, and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for
-    this test, we aim to assess the capacity of network to handle high volumes of traffic while
-    each trial. Along with throughput other measurements made are client connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the
-    AP to be able to handle several stations (within the limitations of the AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that
-    scales well will not show a significant overall throughput decrease as more Real clients are added.
+The Candela Web browser test is designed to measure an Access Point’s client capacity and 
+performance when handling different amounts of Real clients like android, Linux,
+windows, and IOS. The test allows the user to increase the number of clients in user-defined
+steps for each test iteration and measure the per client and the overall throughput for
+this test, we aim to assess the capacity of network to handle high volumes of traffic while
+each trial. Along with throughput other measurements made are client connection times, 
+Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the
+AP to be able to handle several stations (within the limitations of the AP specs) 
+and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that
+scales well will not show a significant overall throughput decrease as more Real clients are added.
     '''
 
     parser = argparse.ArgumentParser(
