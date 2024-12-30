@@ -51,6 +51,7 @@ scripts=(
     py-scripts/lf_csv.py
     py-scripts/lf_dataplane_test.py
     py-scripts/lf_ftp.py
+    py-scripts/lf_graph.py
     py-scripts/lf_interop_modify.py
     py-scripts/lf_interop_port_reset_test.py
     py-scripts/lf_interop_ping.py
