@@ -93,6 +93,7 @@ scripts=(
     py-scripts/lf_webpage.py
     py-scripts/lf_we_can_wifi_capacity.py
     py-scripts/lf_wifi_capacity_test.py
+    py-scripts/measure_station_time_up.py
     py-scripts/monitor_cx.py
     py-scripts/raw_cli.py
     py-scripts/run_cv_scenario.py
