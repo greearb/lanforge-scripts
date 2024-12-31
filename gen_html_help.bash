@@ -86,6 +86,7 @@ scripts=(
     py-scripts/lf_sniff_radio.py
     py-scripts/lf_snp_test.py
     py-scripts/lf_test_generic.py
+    py-scripts/lf_test_max_association.py
     py-scripts/lf_tr398_test.py
     py-scripts/lf_tr398v2_test.py
     py-scripts/lf_tr398v4_test.py
