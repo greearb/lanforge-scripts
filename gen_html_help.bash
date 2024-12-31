@@ -117,6 +117,7 @@ scripts=(
     py-scripts/test_ipv4_ttls.py
     py-scripts/test_ip_variable_time.py
     py-scripts/test_l3_longevity.py
+    py-scripts/test_l3_powersave_traffic.py
     py-scripts/test_l3.py
     py-scripts/test_l3_scenario_throughput.py
     py-scripts/test_l3_unicast_traffic_gen.py
