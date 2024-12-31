@@ -128,8 +128,8 @@ scripts=(
     py-scripts/throughput_qos.py
     py-scripts/tip_station_powersave.py
     py-scripts/update_dependencies.py
-    py-scripts/tip_station_powersave.py
     py-scripts/webGUI_update_dependencies.py
+    py-scripts/wlan_capacity_calculator.py
 )
 ./gen_html_help.pl "${scripts[@]}" > $DESTF
 echo "...created $DESTF"
