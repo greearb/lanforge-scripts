@@ -18,6 +18,15 @@
                     " "
                 ]
             },
+            "LF_HELP_SUMMARY_CHECK":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_help_summary_check.bash",
+                "args":"",
+                "args_list":[
+                    " "
+                ]
+            },
             "CREATE_STATION_5G_MT7915_W7": {
                 "enabled": "FALSE",
                 "load_db": "skip",
