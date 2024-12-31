@@ -126,6 +126,7 @@ scripts=(
     py-scripts/test_status_msg.py
     py-scripts/test_wanlink.py
     py-scripts/throughput_qos.py
+    py-scripts/tip_station_powersave.py
     py-scripts/update_dependencies.py
     py-scripts/tip_station_powersave.py
     py-scripts/webGUI_update_dependencies.py
