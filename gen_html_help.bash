@@ -114,6 +114,7 @@ scripts=(
     py-scripts/testgroup.py
     py-scripts/test_ip_connection.py
     py-scripts/test_ipv4_ps.py
+    py-scripts/test_ipv4_ttls.py
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
     py-scripts/test_l3_scenario_throughput.py
