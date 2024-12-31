@@ -95,6 +95,7 @@ scripts=(
     py-scripts/lf_wifi_capacity_test.py
     py-scripts/measure_station_time_up.py
     py-scripts/modify_station.py
+    py-scripts/modify_vap.py
     py-scripts/monitor_cx.py
     py-scripts/raw_cli.py
     py-scripts/run_cv_scenario.py
