@@ -81,6 +81,7 @@ scripts=(
     py-scripts/lf_roam_test.py
     py-scripts/lf_rssi_process.py
     py-scripts/lf_rvr_test.py
+    py-scripts/lf_rx_sensitivity_test.py
     py-scripts/lf_sniff_radio.py
     py-scripts/lf_snp_test.py
     py-scripts/lf_test_generic.py
