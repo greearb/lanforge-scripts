@@ -111,6 +111,7 @@ scripts=(
     py-scripts/test_client_admission.py
     py-scripts/test_fileio.py
     py-scripts/test_generic.py
+    py-scripts/testgroup.py
     py-scripts/test_l3.py
     py-scripts/test_l3_longevity.py
     py-scripts/test_l3_scenario_throughput.py
