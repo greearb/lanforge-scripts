@@ -44,13 +44,13 @@ def is_cac_done(channel, list):
             return True
     else:
         return False
-    
+
 def is_channel_allowed(channel, list):
     for _channel in list:
         if int(_channel) == channel:
             return True
     else:
-        return False 
+        return False
 
 class create_controller_series_object:
     def __init__(self,
@@ -71,12 +71,12 @@ class create_controller_series_object:
                  timeout=3,
                  pwd=None
                  ):
-        
+
         self.dest = dest
         self.user = user
         self.passwd = passwd
-        
-        
+
+
         self.radio_name_24g = "phy0"
         self.ap_name_24g = "wifi2g"
 
@@ -247,7 +247,7 @@ class create_controller_series_object:
         if r.failed:
             logging.info(f"{radio} radio not configured, Skipping summery")
             return
-        
+
         return r.result[0]
 
 
@@ -311,7 +311,7 @@ class create_controller_series_object:
         else:
             where_clause = f"-w {where}"
 
-        with self.get_mgmt() as console: 
+        with self.get_mgmt() as console:
             r = console.send_command(f"ovsh --json {command} {table} {value_clause} {where_clause}", failed_when_contains=["ERROR: .*"])
 
             if command in ["update"] and not r.failed:
@@ -320,7 +320,7 @@ class create_controller_series_object:
         if not r.failed:
             r.result = json.loads(r.result)
         return r
-       
+
 
     def no_logging_console(self):
         pass
