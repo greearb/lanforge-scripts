@@ -58,7 +58,7 @@ To configure Git pre-commit hooks, run the following steps:
     pre-commit install
     ```
 
-4. ** Run the pre-commit hook before it runs on commit**
+4. **Run the pre-commit hook before it runs on commit**
     ```Bash
     # Without staged any changes, this command will simply skip every
     # pre-commit step. However, it is still useful for visualizing
