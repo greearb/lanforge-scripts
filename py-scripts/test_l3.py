@@ -523,7 +523,6 @@ import os
 import random
 import sys
 import time
-from pprint import pprint
 from pprint import pformat
 import logging
 import platform
