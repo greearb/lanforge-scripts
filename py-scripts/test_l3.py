@@ -7321,7 +7321,7 @@ INCLUDE_IN_README: False
             ip_var_test.stop()
 
     # the banner will be set in Main since the test_l3 object may be imported
-    csv_results_file = ip_var_test.get_results_csv()
+    # csv_results_file = ip_var_test.get_results_csv() # csv_results_file unused flake8
     report.set_title("Test Layer 3 Cross-Connect Traffic: test_l3.py ")
     report.build_banner_left()
     report.start_content_div2()
