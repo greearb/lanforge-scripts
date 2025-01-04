@@ -1374,7 +1374,7 @@ class L3VariableTime(Realm):
 
         eid = port_eid
         eid = self.name_to_eid(port_eid)
-        if self.dowebgui != True:
+        if not self.dowebgui:
             logger.info("endp-stats-for-port, port-eid: {}".format(port_eid))
             logger.debug(
                 "eid: {eid}".format(eid=eid))
@@ -1386,7 +1386,7 @@ class L3VariableTime(Realm):
 
         for endp in endps:
             # pprint(endp)
-            if self.dowebgui != True:
+            if not self.dowebgui:
                 logging.info(pformat(endp))
             eid_endp = endp["eid"].split(".")
             logger.debug(
@@ -2011,7 +2011,7 @@ class L3VariableTime(Realm):
                         log_msg = "main loop, total-dl: {total_dl_bps} total-ul: {total_ul_bps} total-dl-ll: {total_dl_ll_bps}".format(
                             total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
                         # Added logic creating a csv file for webGUI to get runtime data
-                        if self.dowebgui == True:
+                        if self.dowebgui:
                             time_difference = abs(end_time - datetime.datetime.now())
                             total_hours = time_difference.total_seconds() / 3600
                             remaining_minutes = (total_hours % 1) * 60
@@ -2037,7 +2037,7 @@ class L3VariableTime(Realm):
                                     logging.warning('Test is stopped by the user')
                                     self.overall[len(self.overall) - 1]["end_time"] = self.get_time_stamp_local()
                                     break
-                        if self.dowebgui != True:
+                        if not self.dowebgui:
                             logger.debug(log_msg)
 
                         # AP OUTPUT
@@ -2068,14 +2068,14 @@ class L3VariableTime(Realm):
                                         "query-port: %s: incomplete response:" % url)
                                     logger.info(pformat(response))
                                 else:
-                                    if self.dowebgui != True:
+                                    if not self.dowebgui:
                                         # print("response".format(response))
                                         logger.info(pformat(response))
                                     port_data = response['interface']
                                     logger.info(
                                         "From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
-                                    if self.dowebgui != True:
+                                    if not self.dowebgui:
                                         logger.info(
                                             "From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
@@ -2093,7 +2093,7 @@ class L3VariableTime(Realm):
                                         port_data["port"], endps)
 
                                 if tx_dl_mac_found:
-                                    if self.dowebgui != True:
+                                    if not self.dowebgui:
                                         logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(
                                             mac=mac, ap_row_tx_dl=ap_row_tx_dl))
                                     # Find latency, jitter for connections
@@ -2151,7 +2151,7 @@ class L3VariableTime(Realm):
                                         total_dl_pkts_ll,
                                         dl_tx_drop_percent,
                                         ap_row_rx_ul)  # ap_ul_row added
-                                if self.dowebgui != True:
+                                if not self.dowebgui:
                                     logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(
                                         ap_row_rx_ul=ap_row_rx_ul))
 
@@ -2670,7 +2670,7 @@ class L3VariableTime(Realm):
         self.resource_data.pop("handler")
         self.resource_data.pop("uri")
         # self.resource_data.pop("warnings")
-        if self.dowebgui != True:
+        if not self.dowebgui:
             logger.info("self.resource_data type: {dtype}".format(dtype=type(self.port_data)))
         # logger.info("self.resource_data : {data}".format(data=self.port_data))
 
@@ -6536,7 +6536,7 @@ INCLUDE_IN_README: False
     test_l3_parser.add_argument(
         '--dowebgui',
         help='--dowebgui True  if running through webgui',
-        default="False")
+        action='store_true')
     test_l3_parser.add_argument(
         '--test_name',
         help='Test name when running through webgui'
@@ -6557,7 +6557,7 @@ INCLUDE_IN_README: False
     ip = ""
     if args.dowebgui:
         logger.info("In webGUI execution")
-        if args.dowebgui == "True":
+        if args.dowebgui:
             dowebgui = True
             test_name = args.test_name
             ip = args.lfmgr
@@ -7338,7 +7338,7 @@ INCLUDE_IN_README: False
     if ip_var_test.passes():
         test_passed = True
         logger.info("Full test passed, all connections increased rx bytes")
-    if ip_var_test.dowebgui == True:
+    if ip_var_test.dowebgui:
         last_entry = ip_var_test.overall[len(ip_var_test.overall) - 1]
         last_entry["status"] = "Stopped"
         last_entry["timestamp"] = ip_var_test.get_time_stamp_local()
