@@ -536,7 +536,7 @@ import logging
 import platform
 import itertools
 import pandas as pd
-import traceback
+# import traceback # TODO incorporate traceback if using try except
 import json
 
 if sys.version_info[0] != 3:
