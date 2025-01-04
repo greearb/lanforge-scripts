@@ -2105,7 +2105,9 @@ class L3VariableTime(Realm):
                                             mac=mac, ap_row_tx_dl=ap_row_tx_dl))
                                     # Find latency, jitter for connections
                                     # using this port.
-                                    latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent = self.get_endp_stats_for_port(
+                                    (latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll,
+                                     dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll,
+                                     total_ul_pkts_ll, ul_rx_drop_percent) = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
 
                                     ap_row_tx_dl.append(ap_row_chanim)
@@ -2184,7 +2186,9 @@ class L3VariableTime(Realm):
                                     logger.debug(pformat(response))
                                 else:
                                     port_data = response['interface']
-                                    latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent = self.get_endp_stats_for_port(
+                                    (latency, jitter, total_dl_rate, total_dl_rate_ll,
+                                     total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate,
+                                     total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent) = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
                                     self.write_dl_port_csv(
                                         len(temp_stations_list),
@@ -2253,7 +2257,8 @@ class L3VariableTime(Realm):
                     # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
                     # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
                     all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                                    'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
+                                                                                                     'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll',
+                                                                                                     'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
                     all_dl_ports_stations_sum_file_name = self.outfile[:-4]
                     all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + \
                         "-dl-all-eids-sum-per-interval.csv"
