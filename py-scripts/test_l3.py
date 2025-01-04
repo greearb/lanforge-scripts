@@ -6774,35 +6774,34 @@ INCLUDE_IN_README: False
 
                 logger.debug("wifi_extra: {extra}".format(
                     extra=radio_info_dict['wifi_extra']))
-
-                key_mgmt = '[BLANK]'
-                pairwise = '[BLANK]'
-                group = '[BLANK]'
-                psk = '[BLANK]'
-                eap = '[BLANK]'
-                identity = '[BLANK]'
-                anonymous_identity = "[BLANK]"
-                phase1 = "[BLANK]"
-                phase2 = "[BLANK]"
-                passwd = '[BLANK]'
-                pin = '[BLANK]'
-                pac_file = '[BLANK]'
-                private_key = '[BLANK]'
-                pk_password = '[BLANK]'
-                hessid = "00:00:00:00:00:00"
-                realm = "[BLANK]"
-                client_cert = "[BLANK]"
-                imsi = "[BLANK]"
-                milenage = "[BLANK]"
-                domain = "[BLANK]"
-                roaming_consortium = "[BLANK]"
-                venue_group = "[BLANK]"
-                network_type = "[BLANK]"
-                ipaddr_type_avail = "[BLANK]"
-                network_auth_type = "[BLANK]"
-                anqp_3gpp_cell_net = "[BLANK]"
-
-                ieee80211w = 'Optional'
+                # These values are actually assigned as lists below
+                # key_mgmt = '[BLANK]'
+                # pairwise = '[BLANK]'
+                # group = '[BLANK]'
+                # psk = '[BLANK]'
+                # eap = '[BLANK]'
+                # identity = '[BLANK]'
+                # anonymous_identity = "[BLANK]"
+                # phase1 = "[BLANK]"
+                # phase2 = "[BLANK]"
+                # passwd = '[BLANK]'
+                # pin = '[BLANK]'
+                # pac_file = '[BLANK]'
+                # private_key = '[BLANK]'
+                # pk_password = '[BLANK]'
+                # hessid = "00:00:00:00:00:00"
+                # realm = "[BLANK]"
+                # client_cert = "[BLANK]"
+                # imsi = "[BLANK]"
+                # milenage = "[BLANK]"
+                # domain = "[BLANK]"
+                # roaming_consortium = "[BLANK]"
+                # venue_group = "[BLANK]"
+                # network_type = "[BLANK]"
+                # ipaddr_type_avail = "[BLANK]"
+                # network_auth_type = "[BLANK]"
+                # anqp_3gpp_cell_net = "[BLANK]"
+                # ieee80211w = 'Optional'
 
                 wifi_extra_dict = dict(
                     map(
