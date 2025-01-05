@@ -1474,9 +1474,9 @@ class L3VariableTime(Realm):
                             and not endp['rx drop %'].isnumeric()) or endp['rx drop %'] is None:
                         logging.debug(
                             'Expected integer response for rx drop %, received non-numeric string instead. Replacing with 0')
-                        dl_tx_drop_percent = 0
+                        dl_rx_drop_percent = 0
                     else:
-                        dl_tx_drop_percent = round(endp["rx drop %"], 2)
+                        dl_rx_drop_percent = round(endp["rx drop %"], 2)
 
                 # -B upload side
                 else:
@@ -2159,7 +2159,7 @@ class L3VariableTime(Realm):
                                         total_dl_rate,
                                         total_dl_rate_ll,
                                         total_dl_pkts_ll,
-                                        dl_tx_drop_percent,
+                                        dl_rx_drop_percent,
                                         ap_row_rx_ul)  # ap_ul_row added
                                 if not self.dowebgui:
                                     logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(
