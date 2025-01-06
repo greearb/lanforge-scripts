@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # this script does not know where btbits/html lives in relation to your
-# lanforge-scripts checkout directory. The location below is correct in 
+# lanforge-scripts checkout directory. The location below is correct in
 # the case where this script is executed from btbits/x64_btbits/server/lf-scripts
 # (eg, a server build).
 # DESTF=${1:-./scripts_ug.php}  use for testing and local scripts_ug.ph generation in lanforge-scripts
