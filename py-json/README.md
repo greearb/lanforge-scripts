@@ -52,7 +52,6 @@ Core communication files to LANforge
 | `cv_commands.py`                  | This is a library file used to create a chamber view scenario.  import this file as showed in create_chamberview.py to create a scenario |
 | `cv_test_manager.py`              | This script is working as library for chamberview tests.  It holds different commands to automate test. |
 | `cv_test_reports.py`              | Class: lanforge_reports  Pulls reports from LANforge |
-| `dataplane_test_profile.py`       | Library to Run Dataplane Test: Using lf_cv_base class |
 | `dut_profile.py`                  | Class: DUTProfile (new_dut_profile) Use example:  py-scripts/update_dut.py used to updates a Device Under Test (DUT) entry in the LANforge test scenario A common reason to use this would be to update MAC addresses in a DUT when you switch between different items of the same make/model of a DUT |
 | `fio_endp_profile.py`             | Class: FIOEndpProfile (new_fio_endp_profile) Use example: py-scripts/test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic |
 | `gen_cxprofile.py`                | Class: GenCXProfile (new_generic_endp_profile) Use example: test_generic.py  will create stations and endpoints to generate traffic based on a command-line specified command type |
@@ -120,8 +119,8 @@ Module defining the Realm class. `Realm` is a toolbox class that also serves as 
      *`def waitUntilEndpsAppear()`: takes a list of endpoints and waits until they all disappear from the list of existing endpoints
         *deprecated method use def wait_until_endps_appear() instead*
      *`def wait_until_endps_appear()`: takes a list of endpoints and waits until they all appear in the list of existing endpoints
-     *`def waitUntilCxsAppear()`: takes a list of cross connects and waits until they all disappear from the list of existing cross connects 
-        *deprecated method use def wait_until_cxs_appear() instead* 
+     *`def waitUntilCxsAppear()`: takes a list of cross connects and waits until they all disappear from the list of existing cross connects
+        *deprecated method use def wait_until_cxs_appear() instead*
      *`def wait_until_cxs_appear()`: takes a list of cross connects and waits until they all disappear from the list of existing cross connects
      *`def station_map()`: request a map of stations via `/port/list` and alter the list to name based map of only stations
      *`def station_list()`: request a list of stations
@@ -132,7 +131,7 @@ Module defining the Realm class. `Realm` is a toolbox class that also serves as 
       * `sta10+` matches names with port numbers 10 or greater
       * `sta[10..20]` matches a range of stations including the range sta10 -- sta20
      *`def name_to_eid()`: takes a name like `1.1.eth1` and returns it split into an array `[1, 1, "eth1"]`
-     *`def wait_for_ip()`: takes a list of stations and waits until they all have an ip address. Default wait time is 360 seconds, 
+     *`def wait_for_ip()`: takes a list of stations and waits until they all have an ip address. Default wait time is 360 seconds,
                            can take -1 as timeout argument to determine timeout based on mean ip acquisition time
      *`def get_curr_num_ips()`: returns the number of stations with an ip address
      *`def duration_time_to_seconds()`: returns an integer for a time string converted to seconds
@@ -170,8 +169,6 @@ Module defining the Realm class. `Realm` is a toolbox class that also serves as 
 
 ## realm_test.py ##
 Exercises realm.py
-## show_ports.py ##
-This simple example shows how to gather a digest of ports
 ## test_l4.py ##
 Example of how to use LFRequest to create a L4 endpoint
 ## wct-example.py ##
