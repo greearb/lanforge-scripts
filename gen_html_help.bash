@@ -31,7 +31,6 @@ scripts=(
     py-scripts/create_l4.py
     py-scripts/create_macvlan.py
     py-scripts/create_qvlan.py
-    py-scripts/create_station_from_df.py
     py-scripts/create_station.py
     py-scripts/create_vap.py
     py-scripts/create_vr.py
@@ -91,7 +90,6 @@ scripts=(
     py-scripts/lf_tr398v2_test.py
     py-scripts/lf_tr398v4_test.py
     py-scripts/lf_webpage.py
-    py-scripts/lf_we_can_wifi_capacity.py
     py-scripts/lf_wifi_capacity_test.py
     py-scripts/measure_station_time_up.py
     py-scripts/modify_station.py
