@@ -1412,7 +1412,10 @@ class L3VariableTime(Realm):
 
                                         # Find latency, jitter for connections
                                         # using this port.
-                                        self.get_endp_stats_for_port(port_data["port"], endps)
+                                        (latency, jitter, total_dl_rate,
+                                         total_dl_rate_ll, total_dl_pkts_ll,
+                                         total_ul_rate, total_ul_rate_ll,
+                                         total_ul_pkts_ll) = self.get_endp_stats_for_port(port_data["port"], endps)
 
                                         # now report the ap_chanim_stats along
                                         # side of the ap_stats_6g
