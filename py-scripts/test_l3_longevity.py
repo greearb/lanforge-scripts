@@ -504,7 +504,7 @@ class L3VariableTime(Realm):
         output = stdout.read()
         logger.debug("command:  {command} output: {output}".format(command=command, output=output))
         output = output.decode('utf-8', 'ignore')
-        logger.debug("after utf-8 ignoer output: {output}".format(command=command, output=output))
+        logger.debug("after utf-8 ignoer command: {command} output: {output}".format(command=command, output=output))
 
         ssh.close()
         return output
