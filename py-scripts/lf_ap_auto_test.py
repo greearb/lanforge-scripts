@@ -11,7 +11,7 @@ Note: To Run this script gui should be opened with
 This script is used to automate running AP-Auto tests.  You
 may need to view an AP Auto test configured through the GUI to understand
 the options and how best to input data.
-    
+
     ./lf_ap_auto_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth2 \
       --dut5_0 'linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)' \
@@ -63,7 +63,7 @@ spatial_streams: AUTO
 bandw_options: AUTO
 modes: Auto
 upstream_port: 1.1.2 eth2
-operator: 
+operator:
 mconn: 1
 tos: 0
 vid_buf: 1000000
@@ -117,17 +117,17 @@ pf_text0: 2.4 DL 200 70Mbps
 pf_text1: 2.4 DL 512 110Mbps
 pf_text2: 2.4 DL 1024 115Mbps
 pf_text3: 2.4 DL MTU 120Mbps
-pf_text4: 
+pf_text4:
 pf_text5: 2.4 UL 200 88Mbps
 pf_text6: 2.4 UL 512 106Mbps
 pf_text7: 2.4 UL 1024 115Mbps
 pf_text8: 2.4 UL MTU 120Mbps
-pf_text9: 
+pf_text9:
 pf_text10: 5 DL 200 72Mbps
 pf_text11: 5 DL 512 185Mbps
 pf_text12: 5 DL 1024 370Mbps
 pf_text13: 5 DL MTU 525Mbps
-pf_text14: 
+pf_text14:
 pf_text15: 5 UL 200 90Mbps
 pf_text16: 5 UL 512 230Mbps
 pf_text17: 5 UL 1024 450Mbps
@@ -232,7 +232,7 @@ class ApAutoTest(cvtest):
         self.lf_password = lf_password
         self.instance_name = instance_name
         self.config_name = config_name
-        self.verbosity = verbosity        
+        self.verbosity = verbosity
         self.upstream = upstream
         self.pull_report = pull_report
         self.load_old_cfg = load_old_cfg
@@ -331,7 +331,7 @@ the options and how best to input data.
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
     Open this file in an editor and read the top notes for more details.
-    
+
     Example:
     ./lf_ap_auto_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \\
       --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth2 \\
@@ -433,9 +433,9 @@ the options and how best to input data.
     CV_Test.run()
 
     if CV_Test.kpi_results_present():
-        logger.info("lf_dataplane_test generated kpi.csv")
+        logger.info("lf_ap_auto_test generated kpi.csv")
     else:
-        logger.info("FAILED: lf_dataplane_test did not generate kpi.csv)")
+        logger.info("FAILED: lf_ap_auto_test did not generate kpi.csv)")
         exit(1)
 
 
