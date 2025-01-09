@@ -153,8 +153,7 @@ class MeshTest(cvtest):
                  disables=None,
                  raw_lines=None,
                  raw_lines_file="",
-                 sets=None,
-                 ):
+                 sets=None):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
         if enables is None:
@@ -204,7 +203,6 @@ class MeshTest(cvtest):
         # Test related settings
         cfg_options = []
 
-        ### HERE###
         self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
 
         # cmd line args take precedence and so come last in the cfg array.
@@ -273,12 +271,9 @@ def main():
                         default="")
     parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
 
-
-    help_summary='''\
-    This script is used to automate running Mesh tests.  You
-    may need to view a Mesh test configured through the GUI to understand
-    the options and how best to input data.
-'''
+    help_summary = "This script is used to automate running Mesh tests. " \
+                   "You may need to view a Mesh test configured through " \
+                   "the GUI to understand the options and how best to input data."
 
     args = parser.parse_args()
 
@@ -304,8 +299,7 @@ def main():
                        disables=args.disable,
                        raw_lines=args.raw_line,
                        raw_lines_file=args.raw_lines_file,
-                       sets=args.set
-                       )
+                       sets=args.set)
     CV_Test.setup()
     CV_Test.run()
 
