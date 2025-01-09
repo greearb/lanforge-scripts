@@ -12,7 +12,7 @@ may need to view a TR398v2 test configured through the GUI to understand
 the options and how best to input data.
 
     Example 1 :
-    
+
     ./lf_tr398v2_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name tr398-instance --config_name test_con \
       --upstream 1.2.eth2 \
@@ -43,7 +43,7 @@ the options and how best to input data.
     ./lf_tr398v2_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge  \
      --instance_name tr398-max-throughput  --upstream 1.1.eth2  --local_lf_report_dir /home/lanforge/Desktop \
      --pull_report --config_name MAX_THROUGHPUT
-    
+
 
 Note:
     --raw_line 'line contents' will add any setting to the test config. It is not required. This is
@@ -350,7 +350,7 @@ class TR398v2Test(cvtest):
 
         # Test related settings
 
-        # These options are so that the config is 3rd priority, the built-in method is first, and any raw-line is 2nd. 
+        # These options are so that the config is 3rd priority, the built-in method is first, and any raw-line is 2nd.
         # all cfgs are added to the cfg options and the array will be read top to bottom. so last cfg option will override the old c
         cfg_options = []
 
@@ -415,9 +415,9 @@ def main():
   ./lf_tr398v2_test.py --mgr 192.168.100.105 --port 8080 --lf_user lanforge\\
     --lf_password lanforge --instance_name x \\
     --config_name testing --pull_report \\
-    --local_lf_report_dir /tmp --dut5 'ASUS_70 ASUS_70 f0:2f:74:7c:a5:70 (1)' \\ 
+    --local_lf_report_dir /tmp --dut5 'ASUS_70 ASUS_70 f0:2f:74:7c:a5:70 (1)' \\
     --dut2 'ASUS_70 ASUS_70 f0:2f:74:7c:a5:70 (1)' --raw_line "upstream_port: 1.1.eth2"
-    
+
 
    The contents of the 'raw_lines_file' argument can be obtained by manually configuring the
    TR398 issue 2 test in the LANforge GUI, then selecting 'Show Config' in the Advanced configuration tab, then
@@ -452,11 +452,9 @@ def main():
                         default="")
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
-    help_summary='''\
-This script is used to automate running TR398v2 tests.  You
-may need to view a TR398v2 test configured through the GUI to understand
-the options and how best to input data.
-'''
+    help_summary = "This script is used to automate running TR398v2 tests. " \
+                   "You may need to view a TR398v2 test configured through " \
+                   "the GUI to understand the options and how best to input data."
 
     args = parser.parse_args()
 
