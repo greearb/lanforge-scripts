@@ -12,7 +12,6 @@ may need to view a TR398v4 test configured through the GUI to understand
 the options and how best to input data.
 
     Example 1 :
-    
     ./lf_tr398v4_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name tr398-instance --config_name test_con \
       --upstream 1.2.eth2 \
@@ -44,7 +43,7 @@ the options and how best to input data.
     ./lf_tr398v4_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge  \
      --instance_name tr398-max-throughput  --upstream 1.1.eth2  --local_lf_report_dir /home/lanforge/Desktop \
      --pull_report --config_name MAX_THROUGHPUT
-    
+
 
 Note:
     --raw_line 'line contents' will add any setting to the test config. It is not required. This is
@@ -121,26 +120,26 @@ class TR398v4Test(cvtest):
         if sets is None:
             sets = []
 
-        self.lf_host                = lf_host
-        self.lf_port                = lf_port
-        self.lf_user                = lf_user
-        self.lf_password            = lf_password
-        self.instance_name          = instance_name
-        self.config_name            = config_name
-        self.dut6                   = dut6
-        self.dut5                   = dut5
-        self.dut2                   = dut2
-        self.raw_lines_file         = raw_lines_file
-        self.upstream               = upstream
-        self.pull_report            = pull_report
-        self.load_old_cfg           = load_old_cfg
-        self.test_name              = "TR-398 Issue 4"
-        self.enables                = enables
-        self.disables               = disables
-        self.raw_lines              = raw_lines
-        self.sets                   = sets
-        self.local_lf_report_dir    = local_lf_report_dir
-        self.test_rig               = test_rig
+        self.lf_host = lf_host
+        self.lf_port = lf_port
+        self.lf_user = lf_user
+        self.lf_password = lf_password
+        self.instance_name = instance_name
+        self.config_name = config_name
+        self.dut6 = dut6
+        self.dut5 = dut5
+        self.dut2 = dut2
+        self.raw_lines_file = raw_lines_file
+        self.upstream = upstream
+        self.pull_report = pull_report
+        self.load_old_cfg = load_old_cfg
+        self.test_name = "TR-398 Issue 4"
+        self.enables = enables
+        self.disables = disables
+        self.raw_lines = raw_lines
+        self.sets = sets
+        self.local_lf_report_dir = local_lf_report_dir
+        self.test_rig = test_rig
 
     def setup(self):
         # Nothing to do at this time.
@@ -161,9 +160,10 @@ class TR398v4Test(cvtest):
                             brief=False)
 
         # Test related settings
-
-        # These options are so that the config is 3rd priority, the built-in method is first, and any raw-line is 2nd. 
-        # all cfgs are added to the cfg options and the array will be read top to bottom. so last cfg option will override the old c
+        #
+        # These options are so that the config is 3rd priority, the built-in method
+        # is first, and any raw-line is 2nd. All cfgs are added to the cfg options
+        # and the array will be read top to bottom. so last cfg option will override the old cfg
         cfg_options = []
 
         self.apply_cfg_options(cfg_options=cfg_options,
@@ -248,9 +248,9 @@ def main():
   ./lf_tr398v4_test.py --mgr 192.168.100.105 --port 8080 --lf_user lanforge\\
     --lf_password lanforge --instance_name x \\
     --config_name testing --pull_report \\
-    --local_lf_report_dir /tmp --dut5 'ASUS_70 ASUS_70 f0:2f:74:7c:a5:70 (1)' \\ 
+    --local_lf_report_dir /tmp --dut5 'ASUS_70 ASUS_70 f0:2f:74:7c:a5:70 (1)' \\
     --dut2 'ASUS_70 ASUS_70 f0:2f:74:7c:a5:70 (1)' --raw_line "upstream_port: 1.1.eth2"
-    
+
 
    The contents of the 'raw_lines_file' argument can be obtained by manually configuring the
    TR398 issue 2 test in the LANforge GUI, then selecting 'Show Config' in the Advanced configuration tab, then
