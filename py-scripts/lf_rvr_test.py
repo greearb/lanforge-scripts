@@ -134,11 +134,9 @@ import os
 import importlib
 import argparse
 import time
-import json
 import logging
 import subprocess
 from time import sleep
-from os import path
 
 
 if sys.version_info[0] != 3:
