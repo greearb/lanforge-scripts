@@ -53,9 +53,9 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 interop_connectivity = importlib.import_module("py-json.interop_connectivity")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFSession  # noqa: 402
+from lanforge_client.lanforge_api import LFJsonCommand  # noqa: 402
+from lanforge_client.lanforge_api import LFJsonQuery  # noqa: 402
 
 
 class BaseInteropWifi(Realm):
@@ -714,7 +714,7 @@ class RealDevice(Realm):
         self.selected_6g_serials = []
 
         index = 1 # serial number for selection of devices
-        
+
         # fetch all androids
         self.androids_obj = interop_connectivity.Android(
             lanforge_ip=self.manager_ip,
@@ -876,7 +876,7 @@ class RealDevice(Realm):
         # selecting devices only those connected to given SSID and contains IP
         # for androids
         exclude_androids = []
-        for android in selected_androids:    
+        for android in selected_androids:
 
             if (android[3] == '2g'):
                 curr_ssid = self.ssid_2g
@@ -911,7 +911,7 @@ class RealDevice(Realm):
 
 
             current_android_port_data.update(current_android_resource_data)
-            
+
             # checking if the android is connected to the desired ssid
             if (current_android_port_data['ssid'] != curr_ssid):
                 logging.warning(
@@ -935,7 +935,7 @@ class RealDevice(Realm):
             self.report_labels.append('{} android {}'.format(resource_id, username)[:25])
             self.android += 1
             self.android_list.append(resource_id)
-            
+
             current_sta_name = resource_id + '.wlan0'
             self.station_list.append(current_sta_name)
 
@@ -946,8 +946,8 @@ class RealDevice(Realm):
                 'hw version': 'Android',
                 'MAC': current_android_port_data['mac']
             }
-            
-            
+
+
         for android in exclude_androids:
             selected_androids.remove(android)
 
@@ -1022,7 +1022,7 @@ class RealDevice(Realm):
                 self.mac_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Mac'
                 current_laptop_port_data['ostype'] = 'macos'
-            
+
             current_sta_name = current_resource_id
             self.station_list.append(current_sta_name)
 
@@ -1038,7 +1038,7 @@ class RealDevice(Realm):
     async def configure_wifi_groups(self,select_serials,serials_input,ssid_input,passwd_input,enc_input,eap_method_input,eap_identity_input):
         self.station_list = []
         selected_androids = []
-        selected_androids_temp = [] 
+        selected_androids_temp = []
         selected_laptops = []
         selected_t_devices = {}
         print(serials_input,passwd_input)
@@ -1083,9 +1083,9 @@ class RealDevice(Realm):
         logging.info('Applying the new Wi-Fi configuration. Waiting.......')
         # selecting devices only those connected to given SSID and contains IP
         # for androids
-        
+
         return [selected_androids, selected_laptops]
-    
+
     def monitor_connection(self,selected_androids,selected_laptops):
         station_list = []
         selected_t_devices = {}
@@ -1098,11 +1098,11 @@ class RealDevice(Realm):
         linux_list = []
         macs = 0
         mac_list = []
-        
+
         # selecting devices only those connected to given SSID and contains IP
         # for androids
         exclude_androids = []
-        for android in selected_androids:    
+        for android in selected_androids:
 
             curr_ssid = android[3]
 
@@ -1124,7 +1124,7 @@ class RealDevice(Realm):
             self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
 
             current_android_port_data.update(current_android_resource_data)
-            
+
             # checking if the android is connected to the desired ssid
             if (current_android_port_data['ssid'] != curr_ssid):
                 exclude_androids.append(android)
@@ -1144,7 +1144,7 @@ class RealDevice(Realm):
             report_labels.append('{} android {}'.format(resource_id, username))
             androids += 1
             android_list.append(resource_id)
-            
+
             current_sta_name = resource_id + '.wlan0'
             station_list.append(current_sta_name)
 
@@ -1155,14 +1155,14 @@ class RealDevice(Realm):
                 'hw version': 'Android',
                 'MAC': current_android_port_data['mac']
             }
-            
+
         for android in exclude_androids:
             selected_androids.remove(android)
-    
+
         # for laptops
         exclude_laptops = []
         for laptop in selected_laptops:
-            
+
             curr_ssid = laptop["ssid"]
 
             # check SSID and IP values from port manager
@@ -1214,7 +1214,7 @@ class RealDevice(Realm):
                 mac_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Mac'
                 current_laptop_port_data['ostype'] = 'macos'
-            
+
             current_sta_name = current_resource_id
             station_list.append(current_sta_name)
 
@@ -1226,7 +1226,7 @@ class RealDevice(Realm):
         df = pd.DataFrame(data=selected_t_devices).transpose()
         print(df)
         return [selected_devices, report_labels, selected_macs]
-    
+
     # getting data of all real devices already configured to an SSID
     def get_devices(self, only_androids = False):
         devices            = []
@@ -1254,7 +1254,7 @@ class RealDevice(Realm):
             # Get OS version based on 'hw version' field
             hw_ver = resource_data_dict['hw version']
             phantom = resource_data_dict['phantom']
-            # It appends only non-phantom  androids into resources list 
+            # It appends only non-phantom  androids into resources list
             if only_androids :
                 if not hw_ver.startswith(('Win', 'Linux', 'Apple')) and phantom == False:
                     os_type = 'android'
@@ -1322,7 +1322,7 @@ class RealDevice(Realm):
         self.devices_data     = devices_data
 
         return self.devices
-    
+
     # querying the user the required mobiles to test
     def query_user(self, dowebgui=False, device_list=""):
         print('The available real devices are:')
@@ -1401,8 +1401,8 @@ This script is a standard library which support different functionality of inter
     desc = """standard library which supports different functionality of interop
         Operations:
 
-        EXAMPLE-1: 
-        *    Example of scan results: 
+        EXAMPLE-1:
+        *    Example of scan results:
         lf_base_interop_profile.py --host 192.168.1.31 --ssid Airtel_9755718444_5GHz --passwd xyz --crypt psk2
 
         EXAMPLE-2:
@@ -1473,7 +1473,7 @@ This script is a standard library which support different functionality of inter
 
     parser.add_argument('--log_dur', '--ld', type=float, default=0,
                         help='LOG: Gather ADB logs for a duration of this many minutes')
-    
+
     parser.add_argument('--config_wifi', action="store_true",
                         help='Specific this flag to do Wi-Fi connectivity on real devices')
 
