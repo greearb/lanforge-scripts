@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 TEST NAME        :   Rate vs Range Test
 
