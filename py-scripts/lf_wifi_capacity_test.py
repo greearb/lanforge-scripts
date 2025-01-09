@@ -529,7 +529,7 @@ class WiFiCapacityTest(cv_test):
 
         cv_cmds = []
 
-        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name,self.verbosity)
+        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name, self.verbosity)
         cv_cmds.append(cmd)
 
         if self.sort == 'linear':
@@ -550,20 +550,17 @@ class WiFiCapacityTest(cv_test):
 
 
 def main():
-
-    help_summary='''\
-The Candela WiFi Capacity test is designed to measure performance of an
-Access Point when handling different amounts of WiFi Stations.
-The test allows the user to increase the number of stations in user defined
-steps for each test iteration and measure the per station and the overall
-throughput for each trial. Along with throughput other measurements made are
-client connection times, Fairness, % packet loss, DHCP times and more.
-The expected behavior is for the AP to be able to handle several stations
-(within the limitations of the AP specs) and make sure all stations get
-a fair amount of airtime both in the upstream and downstream.
-An AP that scales well will not show a significant over-all throughput
-decrease as more stations are added.
-'''
+    help_summary = "The Candela WiFi Capacity test is designed to measure performance of an " \
+                   "Access Point when handling different amounts of WiFi Stations. " \
+                   "The test allows the user to increase the number of stations in user defined " \
+                   "steps for each test iteration and measure the per station and the overall " \
+                   "throughput for each trial. Along with throughput other measurements made are " \
+                   "client connection times, Fairness, % packet loss, DHCP times and more. " \
+                   "The expected behavior is for the AP to be able to handle several stations " \
+                   "(within the limitations of the AP specs) and make sure all stations get " \
+                   "a fair amount of airtime both in the upstream and downstream. " \
+                   "An AP that scales well will not show a significant over-all throughput " \
+                   "decrease as more stations are added."
 
     parser = argparse.ArgumentParser(
         prog="lf_wifi_capacity_test.py",
@@ -594,8 +591,8 @@ example 2:
 example 3:
 ./lf_wifi_capacity_test.py --mgr 192.168.200.165 --upstream 1.1.eth1 --batch_size 1,5 --protocol UDP-IPv4 --duration 30000
  --upload_rate 1Gbps --download_rate 1Gbps --raw_line 'ip_tos: 128' --raw_line 'do_pf: 1' --raw_line 'pf_min_period_dl: 100'
-  --raw_line 'pf_min_period_ul: 300' --raw_line 'pf_max_reconnects: 3' --num_stations 5 --start_id 333 --create_stations 
-  --radio wiphy0 --ssid Netgear-5g --security wpa2 --paswd sharedsecret --test_rig Testbed-01 --set DUT_NAME linksys-8450 
+  --raw_line 'pf_min_period_ul: 300' --raw_line 'pf_max_reconnects: 3' --num_stations 5 --start_id 333 --create_stations
+  --radio wiphy0 --ssid Netgear-5g --security wpa2 --paswd sharedsecret --test_rig Testbed-01 --set DUT_NAME linksys-8450
   --pull_report
 
 SCRIPT_CLASSIFICATION :  Test
@@ -650,7 +647,7 @@ INCLUDE_IN_README: False
                         help="Protocol ex.TCP-IPv4")
     parser.add_argument("-d", "--duration", type=str, default="",
                         help="duration in ms. ex. 5000")
-    parser.add_argument("--verbosity", default="5",help="Specify verbosity of the report values 1 - 11 default 5")
+    parser.add_argument("--verbosity", default="5", help="Specify verbosity of the report values 1 - 11 default 5")
     parser.add_argument("--download_rate", type=str, default="1Gbps",
                         help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps")
     parser.add_argument("--upload_rate", type=str, default="10Mbps",
@@ -680,7 +677,7 @@ INCLUDE_IN_README: False
                         default=0)
 
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
-    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')    
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
     args = parser.parse_args()
 
@@ -752,11 +749,9 @@ INCLUDE_IN_README: False
                                 test_tag=args.test_tag,
                                 local_lf_report_dir=args.local_lf_report_dir,
                                 sta_list=station_list,
-                                verbosity=args.verbosity
-                                )
+                                verbosity=args.verbosity)
     WFC_Test.setup()
     WFC_Test.run()
-
 
     if WFC_Test.kpi_results_present():
         logger.info("lf_wifi_capacity_test generated kpi.csv")
