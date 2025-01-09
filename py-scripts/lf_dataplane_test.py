@@ -233,32 +233,32 @@ class DataplaneTest(cv_test):
         if sets is None:
             sets = []
 
-        self.lf_host                = lf_host
-        self.lf_port                = lf_port
-        self.lf_user                = lf_user
-        self.lf_password            = lf_password
-        self.instance_name          = instance_name
-        self.config_name            = config_name
-        self.dut                    = dut
-        self.duration               = duration
-        self.upstream               = upstream
-        self.station                = station
-        self.pull_report            = pull_report
-        self.load_old_cfg           = load_old_cfg
-        self.test_name              = "Dataplane"
-        self.upload_speed           = upload_speed
-        self.download_speed         = download_speed
-        self.enables                = enables
-        self.disables               = disables
-        self.raw_lines              = raw_lines
-        self.raw_lines_file         = raw_lines_file
-        self.sets                   = sets
-        self.graph_groups           = graph_groups
-        self.ssh_port               = ssh_port
-        self.local_lf_report_dir    = local_lf_report_dir
-        self.test_rig               = test_rig
-        self.test_tag               = test_tag
-        self.verbosity              = verbosity
+        self.lf_host = lf_host
+        self.lf_port = lf_port
+        self.lf_user = lf_user
+        self.lf_password = lf_password
+        self.instance_name = instance_name
+        self.config_name = config_name
+        self.dut = dut
+        self.duration = duration
+        self.upstream = upstream
+        self.station = station
+        self.pull_report = pull_report
+        self.load_old_cfg = load_old_cfg
+        self.test_name = "Dataplane"
+        self.upload_speed = upload_speed
+        self.download_speed = download_speed
+        self.enables = enables
+        self.disables = disables
+        self.raw_lines = raw_lines
+        self.raw_lines_file = raw_lines_file
+        self.sets = sets
+        self.graph_groups = graph_groups
+        self.ssh_port = ssh_port
+        self.local_lf_report_dir = local_lf_report_dir
+        self.test_rig = test_rig
+        self.test_tag = test_tag
+        self.verbosity = verbosity
 
     def setup(self):
         # Nothing to do at this time.
@@ -313,7 +313,7 @@ class DataplaneTest(cv_test):
 
         cv_cmds = []
 
-        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name,self.verbosity)
+        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name, self.verbosity)
         cv_cmds.append(cmd)
 
         self.create_and_run_test(load_old_cfg=self.load_old_cfg,
@@ -335,21 +335,17 @@ class DataplaneTest(cv_test):
 
 
 def main():
-
-    help_summary='''\
-The Candela Tech WiFi data plane test is designed to conduct an automatic testing of
-all combinations of station types, MIMO types, Channel Bandwidths, Traffic types,
-Traffic direction, Frame sizes etc… It will run a quick throughput test at every
-combination of these test variables and plot all the results in a set of charts to
-compare performance. The user is allowed to define an intended load as a percentage
-of the max theoretical PHY rate for every test combination. The expected behavior
-is that for every test combination the achieved throughput should be at least 70%%
-of the theoretical max PHY rate under ideal test conditions. This test provides
-a way to go through hundreds of combinations in a fully automated fashion and
-very easily find patterns and problem areas which can be further
-debugged using more specific testing.
-
-    '''
+    help_summary = "The Candela Tech WiFi data plane test is designed to conduct an automatic testing of " \
+                   "all combinations of station types, MIMO types, Channel Bandwidths, Traffic types, " \
+                   "Traffic direction, Frame sizes etc… It will run a quick throughput test at every " \
+                   "combination of these test variables and plot all the results in a set of charts to " \
+                   "compare performance. The user is allowed to define an intended load as a percentage " \
+                   "of the max theoretical PHY rate for every test combination. The expected behavior " \
+                   "is that for every test combination the achieved throughput should be at least 70%% " \
+                   "of the theoretical max PHY rate under ideal test conditions. This test provides " \
+                   "a way to go through hundreds of combinations in a fully automated fashion and " \
+                   "very easily find patterns and problem areas which can be further " \
+                   "debugged using more specific testing."
 
     parser = argparse.ArgumentParser(
         prog='lf_dataplane_test',
@@ -566,7 +562,7 @@ INCLUDE_IN_README: False
     parser.add_argument('--help_summary',
                         default=None,
                         action="store_true",
-                        help='Show summary of what this script does')    
+                        help='Show summary of what this script does')
 
     # TODO:  Add debug and log-level support, and propagate as needed.
     # TODO:  Add ability to pull from a machine that is not running the
@@ -585,8 +581,6 @@ INCLUDE_IN_README: False
     if args.lf_logger_config_json:
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-
-
 
     # use json config file
     if args.json:
@@ -662,7 +656,6 @@ INCLUDE_IN_README: False
     else:
         logger.info("FAILED: lf_dataplane_test did not generate kpi.csv)")
         exit(1)
-
 
     if CV_Test.passes():
         CV_Test.exit_success()
