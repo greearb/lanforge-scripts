@@ -189,11 +189,22 @@ class TR398Test(cvtest):
                  raw_lines_file="",
                  dut5="",
                  dut2="",
-                 enables=[],
-                 disables=[],
-                 raw_lines=[],
-                 sets=[]):
+                 enables=None,
+                 disables=None,
+                 raw_lines=None,
+                 sets=None):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
+
+        # NOTE: Do not make default arguments lists, as they are stateful
+        #       across calls to the same initializer (effectively static, in C terms)
+        if not enables:
+            enables = []
+        if not disables:
+            enables = []
+        if not raw_lines:
+            enables = []
+        if not sets:
+            enables = []
 
         self.lf_host = lf_host
         self.lf_port = lf_port
