@@ -120,8 +120,7 @@ class BaseInteropWifi(Realm):
             resource_id[final["resource-id"]] = final["name"]
         self.supported_devices_names = value
         self.supported_devices_resource_id = resource_id
-        logging.info(
-            "List of all Available Devices Serial Numbers in Interop Tab:".format(self.supported_devices_names))
+        logging.info("List of all Available Devices Serial Numbers in Interop Tab:")
         logging.info(self.supported_devices_names)
 
     def get_device_details(self, query="name", device="1.1.RZ8N70TVABP"):
