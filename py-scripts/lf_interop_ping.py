@@ -681,13 +681,11 @@ effectively over the network and pinpoint potential issues affecting connectivit
                         help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
 
-
     args = parser.parse_args()
 
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     # set the logger level to debug
     logger_config = lf_logger_config.lf_logger_config()
@@ -857,7 +855,6 @@ effectively over the network and pinpoint potential issues affecting connectivit
         port, port_data = list(ports.keys())[0], list(ports.values())[0]
         ports_data[port] = port_data
 
-
     time.sleep(duration * 60)
 
     logging.info('Stopping the test')
@@ -960,7 +957,6 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                 ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
                             except:
                                 logging.error('Failed parsing the result for the station {}'.format(station))
-
 
     if (args.real):
         if (type(result_data) == dict):
