@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # flake8: noqa
+
 """
 NAME: lf_base_interop_profile.py
 
@@ -819,7 +820,7 @@ class RealDevice(Realm):
         selected_androids = []
         selected_laptops = []
         selected_t_devices = {}
-        if(select_serials is None):
+        if (select_serials is None):
             if (len(set(self.selected_2g_serials).intersection(self.selected_5g_serials)) == len(
                     set(self.selected_2g_serials).intersection(self.selected_6g_serials)) == len(
                     set(self.selected_5g_serials).intersection(self.selected_6g_serials)) == 0):
@@ -831,7 +832,7 @@ class RealDevice(Realm):
         for selected_serial in select_serials:
             selected_username = self.all_devices[selected_serial]['username']
             selected_os = self.all_devices[selected_serial]['os']
-            if(selected_os == 'Android'):
+            if (selected_os == 'Android'):
                 for android in self.androids:
                     if (android[2] == selected_username):
                         if (selected_serial in self.selected_2g_serials):
@@ -860,11 +861,11 @@ class RealDevice(Realm):
                         selected_laptops.append(laptop)
                         break
 
-        if(selected_androids != []):
+        if (selected_androids != []):
             await self.androids_obj.stop_app(port_list=selected_androids)
             await self.androids_obj.configure_wifi(port_list=selected_androids)
 
-        if(selected_laptops != []):
+        if (selected_laptops != []):
             await self.laptops_obj.rm_station(port_list=selected_laptops)
             await self.laptops_obj.add_station(port_list=selected_laptops)
             await self.laptops_obj.set_port(port_list=selected_laptops)
@@ -888,7 +889,7 @@ class RealDevice(Realm):
             resource_id = self.json_get('/adb/1/1/{}'.format(android[2]))['devices']['resource-id']
 
             # if there is no resource id in interop tab
-            if(resource_id == ''):
+            if (resource_id == ''):
                 logging.warning(
                     'The android with serial {} is missing resource id. Excluding it from testing'.format(android[2]))
                 exclude_androids.append(android)
@@ -898,7 +899,7 @@ class RealDevice(Realm):
             current_android_resource_data = \
                 self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
 
-            if(current_android_resource_data['phantom']):
+            if (current_android_resource_data['phantom']):
                 logging.warning(
                     'The android with serial {} is in phantom state in resource manager. Excluding it from testing'.format(android[2]))
                 exclude_androids.append(android)
@@ -919,7 +920,7 @@ class RealDevice(Realm):
                 continue
 
             # checking if the android is active or down
-            if(current_android_port_data['ip'] == '0.0.0.0'):
+            if (current_android_port_data['ip'] == '0.0.0.0'):
                 logging.warning('The android with serial {} is down. Excluding it from testing'.format(android[2]))
                 exclude_androids.append(android)
                 continue
@@ -962,7 +963,7 @@ class RealDevice(Realm):
             # check SSID and IP values from port manager
             current_laptop_port_data = self.json_get(
                 '/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
-            if(current_laptop_port_data is None):
+            if (current_laptop_port_data is None):
                 logging.warning(
                     'The laptop with port {}.{}.{} not found. Excluding it from testing'.format(laptop['shelf'],
                                                                                                 laptop['resource'],
@@ -981,7 +982,7 @@ class RealDevice(Realm):
                 continue
 
             # checking if the laptop is active or down
-            if(current_laptop_port_data['ip'] == '0.0.0.0'):
+            if (current_laptop_port_data['ip'] == '0.0.0.0'):
                 logging.warning(
                     'The laptop with port {}.{}.{} is down. Excluding it from testing'.format(laptop['shelf'],
                                                                                               laptop['resource'],
@@ -1004,17 +1005,17 @@ class RealDevice(Realm):
             selected_t_devices[current_resource_id] = {
                 'MAC': current_laptop_port_data['mac']
             }
-            if(laptop['os'] == 'Win'):
+            if (laptop['os'] == 'Win'):
                 self.windows += 1
                 self.windows_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Win'
                 current_laptop_port_data['ostype'] = 'windows'
-            elif(laptop['os'] == 'Lin'):
+            elif (laptop['os'] == 'Lin'):
                 self.linux += 1
                 self.linux_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Lin'
                 current_laptop_port_data['ostype'] = 'linux'
-            elif(laptop['os'] == 'Apple'):
+            elif (laptop['os'] == 'Apple'):
                 self.mac += 1
                 self.mac_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Mac'
@@ -1042,7 +1043,7 @@ class RealDevice(Realm):
         for selected_serial in select_serials:
             selected_username = self.all_devices[selected_serial]['username']
             selected_os = self.all_devices[selected_serial]['os']
-            if(selected_os == 'Android'):
+            if (selected_os == 'Android'):
                 for android in self.androids:
                     if (android[2] == selected_username):
                         temp = android.copy()
@@ -1068,11 +1069,11 @@ class RealDevice(Realm):
                         laptop['band'] = '5g'
                         selected_laptops.append(laptop)
                         break
-        if(selected_androids != []):
+        if (selected_androids != []):
             await self.androids_obj.stop_app(port_list=selected_androids_temp)
             await self.androids_obj.configure_wifi(port_list=selected_androids)
 
-        if(selected_laptops != []):
+        if (selected_laptops != []):
             await self.laptops_obj.rm_station(port_list=selected_laptops)
             await self.laptops_obj.add_station(port_list=selected_laptops)
             await self.laptops_obj.set_port(port_list=selected_laptops)
@@ -1107,7 +1108,7 @@ class RealDevice(Realm):
             resource_id = self.json_get('/adb/1/1/{}'.format(android[2]))['devices']['resource-id']
 
             # if there is no resource id in interop tab
-            if(resource_id == ''):
+            if (resource_id == ''):
                 exclude_androids.append(android)
                 continue
 
@@ -1127,7 +1128,7 @@ class RealDevice(Realm):
                 continue
 
             # checking if the android is active or down
-            if(current_android_port_data['ip'] == '0.0.0.0'):
+            if (current_android_port_data['ip'] == '0.0.0.0'):
                 exclude_androids.append(android)
                 continue
 
@@ -1164,7 +1165,7 @@ class RealDevice(Realm):
             # check SSID and IP values from port manager
             current_laptop_port_data = self.json_get(
                 '/port/{}/{}/{}'.format(laptop['shelf'], laptop['resource'], laptop['sta_name']))
-            if(current_laptop_port_data is None):
+            if (current_laptop_port_data is None):
                 exclude_laptops.append(laptop)
                 continue
 
@@ -1176,7 +1177,7 @@ class RealDevice(Realm):
                 continue
 
             # checking if the laptop is active or down
-            if(current_laptop_port_data['ip'] == '0.0.0.0'):
+            if (current_laptop_port_data['ip'] == '0.0.0.0'):
                 exclude_laptops.append(laptop)
                 continue
 
@@ -1195,17 +1196,17 @@ class RealDevice(Realm):
             selected_t_devices[current_resource_id] = {
                 'MAC': current_laptop_port_data['mac']
             }
-            if(laptop['os'] == 'Win'):
+            if (laptop['os'] == 'Win'):
                 self.windows += 1
                 self.windows_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Win'
                 current_laptop_port_data['ostype'] = 'windows'
-            elif(laptop['os'] == 'Lin'):
+            elif (laptop['os'] == 'Lin'):
                 linuxs += 1
                 linux_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Lin'
                 current_laptop_port_data['ostype'] = 'linux'
-            elif(laptop['os'] == 'Apple'):
+            elif (laptop['os'] == 'Apple'):
                 macs += 1
                 mac_list.append(current_resource_id)
                 selected_t_devices[current_resource_id]['hw version'] = 'Mac'
@@ -1343,17 +1344,17 @@ class RealDevice(Realm):
             self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
 
         # if all is seleceted making the list as empty string so that it would consider all devices
-        if(self.selected_device_eids == ['all']):
+        if (self.selected_device_eids == ['all']):
             self.selected_device_eids = all_devices_list
         print('You have selected the below devices for testing')
         # print('Port\t\thw version\t\t\tMAC')
         selected_t_devices = {}
         for selected_device in self.selected_device_eids:
             for device, device_details in self.devices_data.items():
-                if(selected_device + '.' in device):
+                if (selected_device + '.' in device):
                     # filtering interfaces other than wlan0 for android
-                    if('Apple' not in self.devices_data[device]['hw version'] and 'Linux' not in self.devices_data[device]['hw version'] and 'Win' not in self.devices_data[device]['hw version']):
-                        if('wlan0' not in device):
+                    if ('Apple' not in self.devices_data[device]['hw version'] and 'Linux' not in self.devices_data[device]['hw version'] and 'Win' not in self.devices_data[device]['hw version']):
+                        if ('wlan0' not in device):
                             continue
                     selected_t_devices[device] = {
                         'Eid': selected_device,
@@ -1372,13 +1373,13 @@ class RealDevice(Realm):
                                                                                                                                     'hw version'] else 'android'][
                         0], [self.devices_data[device]['user'] if self.devices_data[device]['user'] != '' else
                              self.devices_data[device]['hostname']][0])[:25])
-                    if('Win' in 'Win' in self.devices_data[device]['hw version']):
+                    if ('Win' in 'Win' in self.devices_data[device]['hw version']):
                         self.windows += 1
                         self.windows_list.append(device)
-                    elif('Lin' in 'Lin' in self.devices_data[device]['hw version']):
+                    elif ('Lin' in 'Lin' in self.devices_data[device]['hw version']):
                         self.linux += 1
                         self.linux_list.append(device)
-                    elif('Apple' in self.devices_data[device]['hw version']):
+                    elif ('Apple' in self.devices_data[device]['hw version']):
                         self.mac += 1
                         self.mac_list.append(device)
                     else:
@@ -1488,7 +1489,7 @@ This script is a standard library which support different functionality of inter
         print(help_summary)
         exit(0)
 
-    if(args.config_wifi):
+    if (args.config_wifi):
         real_devices = RealDevice(manager_ip=args.host,
                                   server_ip=args.server_ip,
                                   ssid_2g=args.ssid_2g,
