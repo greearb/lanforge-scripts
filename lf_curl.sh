@@ -1,4 +1,5 @@
 #!/bin/bash
+# set -veux
 if [ -f /home/lanforge/lanforge.profile ]; then
    . /home/lanforge/lanforge.profile
 else
@@ -15,14 +16,16 @@ SOURCE_PORT=""
 DEST_HOST=""
 OUT_FILE=/dev/null
 NUM_LOOPS=1
-
+UPFILE=""
+PROGRESS=""
 help="$0 options:
       -d {destination_url}
+      -f {file to upload}
       -h # this help
       -i {source ip}
       -n {number of times, 0 = infinite}
       -o {output file prefix, /dev/null is default}
-      -p {source port}
+      -p {source port, eg sta0000}
       -v # verbose curl option -#
 E.G.:
    $0 -i 10.0.0.1 -p eth1 -o /tmp/output -d http://example.com/
@@ -33,7 +36,7 @@ Best if used from lf_generic_ping.pl to construct commands referencing this scri
    ./lf_generic_ping.pl --mgr cholla-f19 -r 2 -n curl_ex_ --match 'eth2#' --cmd 'lf_curl.sh -o /tmp/curl_%p.out -i %i -d %d -p %p' --dest http://localhost/
 "
 LFCURL=''
-while getopts ":d:vhi:n:o:p:" OPT ; do
+while getopts ":d:f:vhi:n:o:p:" OPT ; do
    #echo "OPT[$OPT] OPTARG[$OPTARG]"
    case $OPT in
    h)
@@ -42,6 +45,28 @@ while getopts ":d:vhi:n:o:p:" OPT ; do
       ;;
    d)
       DEST_HOST="$OPTARG"
+      ;;
+   f)
+      if [[ -z "${OPTARG:-}" ]]; then
+        echo "Upload file (-f) value missing! Format as -f 'parameter=@<filename>'"
+        exit 1
+      fi
+      UPFILE="$OPTARG"
+      my_upload_file="${UPFILE##*[=@]}";
+
+      if [[ "$UPFILE" == "$my_upload_file" ]]; then
+        echo "Please specify upload filename as 'parameter=@/home/lanforge/filename.txt'"
+        exit 1
+      fi
+
+      if [[ ! -r "$my_upload_file" ]]; then
+        echo "File [$my_upload_file] not found or readable, exiting."
+        exit 1
+      fi
+      if [[ $UPFILE != @* ]]; then
+        UPFILE="@$UPFILE"
+      fi
+      UPFILE="-d $UPFILE"
       ;;
    i)
       PORT_IP="$OPTARG"
@@ -116,7 +141,7 @@ else
    STD_E=""
 fi
 CCMD="$CURL $VERB -Lk --connect-timeout 2 --max-time 10 $PROGRESS \
--D /tmp/lf_curl_h.$$ $OUT_FILE $SOURCE_IP $DEST_HOST"
+   -D /tmp/lf_curl_h.$$ $OUT_FILE $SOURCE_IP $UPFILE $DEST_HOST"
 
 if [[ x$VRF != x ]]; then
    CCMD="$IP vrf exec ${IFNAMES[$L_SOURCE_PORT]} $CCMD"
