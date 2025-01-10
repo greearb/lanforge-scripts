@@ -869,7 +869,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
         for ports in ports_data_dict:
             port, port_data = list(ports.keys())[0], list(ports.values())[0]
             ports_data[port] = port_data
-        if (type(result_data) == dict):
+        if (isinstance(result_data, dict)):
             for station in ping.sta_list:
                 if (station not in ping.real_sta_list):
                     current_device_data = ports_data[station]
@@ -959,7 +959,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                 logging.error('Failed parsing the result for the station {}'.format(station))
 
     if (args.real):
-        if (type(result_data) == dict):
+        if (isinstance(result_data,dict)):
             for station in ping.real_sta_list:
                 current_device_data = Devices.devices_data[station]
                 # logging.info(current_device_data)
