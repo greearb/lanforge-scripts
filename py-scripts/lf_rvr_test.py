@@ -175,14 +175,23 @@ class RvrTest(cvtest):
                  duration="15s",
                  station="1.1.wlan0",
                  dut="NA",
-                 enables=[],
-                 disables=[],
-                 raw_lines=[],
+                 enables=None,
+                 disables=None,
+                 raw_lines=None,
                  raw_lines_file="",
-                 sets=[],
+                 sets=None,
                  verbosity='5'
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
+
+        if not enables:
+            enables = []
+        if not disables:
+            enables = []
+        if not raw_lines:
+            enables = []
+        if not sets:
+            enables = []
 
         self.lf_host = lf_host
         self.lf_port = lf_port
