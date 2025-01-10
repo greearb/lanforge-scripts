@@ -9,7 +9,7 @@
 
     EXAMPLE-1:
     Command Line Interface to run ping test with only virtual clients
-    python3 lf_interop_ping.py --mgr 192.168.200.103  --target 192.168.1.3 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
+    python3 lf_interop_ping.py --mgr 192.168.200.103  --target 192.168.1.3 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
     --passwd OpenWifi --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --debug
 
     EXAMPLE-2:
@@ -25,7 +25,7 @@
     EXAMPLE-4:
     Command Line Interface to run ping test with existing Wi-Fi configuration on the real devices
     python3 lf_interop_ping.py --mgr 192.168.200.63 --real --target 192.168.1.61 --ping_interval 5 --ping_duration 1 --passwd OpenWifi --use_default_config
-    
+
     SCRIPT_CLASSIFICATION : Test
 
     SCRIPT_CATEGORIES: Performance, Functional, Report Generation
@@ -54,7 +54,6 @@ import sys
 import os
 import pandas as pd
 import importlib
-import copy
 import logging
 
 if 'py-json' not in sys.path:
@@ -64,9 +63,7 @@ if 'py-scripts' not in sys.path:
     sys.path.append('/home/lanforge/lanforge-scripts/py-scripts')
 
 from lf_base_interop_profile import RealDevice
-from datetime import datetime, timedelta
 from lf_graph import lf_bar_graph_horizontal
-from lf_graph import lf_bar_graph
 from lf_report import lf_report
 from station_profile import StationProfile
 import interop_connectivity
@@ -148,7 +145,7 @@ class Ping(Realm):
             print(self.target)
         else:
             print(self.target)
-    
+
     def cleanup(self):
 
         if (self.enable_virtual):
@@ -349,9 +346,9 @@ class Ping(Realm):
 
         # objective and description
         report.set_obj_html(_obj_title='Objective',
-                            _obj='''The objective of the ping test is to evaluate network connectivity and measure the round-trip time taken for 
-                            data packets to travel from the source to the destination and back. It helps assess the reliability and latency of the network, 
-                            identifying any packet loss, delays, or variations in response times. The test aims to ensure that devices can communicate 
+                            _obj='''The objective of the ping test is to evaluate network connectivity and measure the round-trip time taken for
+                            data packets to travel from the source to the destination and back. It helps assess the reliability and latency of the network,
+                            identifying any packet loss, delays, or variations in response times. The test aims to ensure that devices can communicate
                             effectively over the network and pinpoint potential issues affecting connectivity.
                             ''')
         report.build_objective()
@@ -532,9 +529,9 @@ class Ping(Realm):
 def main():
 
     help_summary='''\
-The Candela Tech ping test is to evaluate network connectivity and measure the round-trip time taken for 
-data packets to travel from the source to the destination and back. It helps assess the reliability and latency of the network, 
-identifying any packet loss, delays, or variations in response times. The test aims to ensure that devices can communicate 
+The Candela Tech ping test is to evaluate network connectivity and measure the round-trip time taken for
+data packets to travel from the source to the destination and back. It helps assess the reliability and latency of the network,
+identifying any packet loss, delays, or variations in response times. The test aims to ensure that devices can communicate
 effectively over the network and pinpoint potential issues affecting connectivity.
     '''
 
@@ -554,12 +551,12 @@ effectively over the network and pinpoint potential issues affecting connectivit
 
         EXAMPLE-1:
         Command Line Interface to run ping test with only virtual clients
-        python3 lf_interop_ping.py --mgr 192.168.200.103  --target 192.168.1.3 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2 
+        python3 lf_interop_ping.py --mgr 192.168.200.103  --target 192.168.1.3 --virtual --num_sta 1 --radio 1.1.wiphy2 --ssid RDT_wpa2 --security wpa2
         --passwd OpenWifi --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --debug
 
         EXAMPLE-2:
         Command Line Interface to run ping test with only real clients
-        python3 lf_interop_ping.py --mgr 192.168.200.103 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --ssid RDT_wpa2 
+        python3 lf_interop_ping.py --mgr 192.168.200.103 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1 --server_ip 192.168.1.61 --ssid RDT_wpa2
         --security wpa2_personal --passwd OpenWifi
 
         EXAMPLE-3:
@@ -606,7 +603,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                           type=str,
                           help='Target URL or port for ping test',
                           default='1.1.eth1')
-    
+
     optional.add_argument('--ping_interval',
                           type=str,
                           help='Interval (in seconds) between the echo requests',
@@ -620,7 +617,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
     optional.add_argument('--ssid',
                           type=str,
                           help='SSID for connecting the stations')
-    
+
     optional.add_argument('--mgr_port',
                           type=str,
                           default=8080,
@@ -675,14 +672,14 @@ effectively over the network and pinpoint potential issues affecting connectivit
     parser.add_argument('--local_lf_report_dir',
                                 help='--local_lf_report_dir override the report path (lanforge/html-reports), primary used when making another directory lanforge/html-report/<test_rig>',
                                 default="")
-    
+
     # logging configuration:
     parser.add_argument('--log_level', default=None,
                         help='Set logging level: debug | info | warning | error | critical')
 
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
-    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')    
+    parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
 
 
     args = parser.parse_args()
@@ -764,7 +761,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
     # ping object creation
     ping = Ping(host=mgr_ip, port=mgr_port, ssid=ssid, security=security, password=password, radio=radio,
                 lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=duration, debug=debug)
-    
+
     # changing the target from port to IP
     ping.change_target_to_ip()
 
@@ -860,7 +857,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
         port, port_data = list(ports.keys())[0], list(ports.values())[0]
         ports_data[port] = port_data
 
-    
+
     time.sleep(duration * 60)
 
     logging.info('Stopping the test')
@@ -1034,4 +1031,3 @@ effectively over the network and pinpoint potential issues affecting connectivit
 
 if __name__ == "__main__":
     main()
-
