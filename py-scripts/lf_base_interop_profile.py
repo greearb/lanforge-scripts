@@ -1251,8 +1251,8 @@ class RealDevice(Realm):
             hw_ver = resource_data_dict['hw version']
             phantom = resource_data_dict['phantom']
             # It appends only non-phantom  androids into resources list
-            if only_androids :
-                if not hw_ver.startswith(('Win', 'Linux', 'Apple')) and phantom == False:
+            if only_androids:
+                if not hw_ver.startswith(('Win', 'Linux', 'Apple')) and not phantom:
                     os_type = 'android'
                     resources.append(resource_id)
                     resources_os_types[resource_id] = os_type
