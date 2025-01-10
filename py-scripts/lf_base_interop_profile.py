@@ -107,7 +107,7 @@ class BaseInteropWifi(Realm):
         out = json.loads(output)
         final = out["devices"]
         value, resource_id = [], {}
-        if type(final) == list:
+        if isinstance(final, list):
             keys_lst = []
             for i in range(len(final)):
                 keys_lst.append(list(final[i].keys())[0])
@@ -134,7 +134,7 @@ class BaseInteropWifi(Realm):
         output = (stdout.decode("utf-8"))
         out = json.loads(output)
         final = out["devices"]
-        if type(final) == list:
+        if isinstance(final, list):
             keys_lst = []
             for i in range(len(final)):
                 keys_lst.append(list(final[i].keys())[0])
@@ -152,7 +152,7 @@ class BaseInteropWifi(Realm):
         keys = list(lf_query_resource.keys())
         if "resources" in keys:
             res = lf_query_resource["resources"]
-            if type(res) is list:
+            if isinstance(res, list):
                 sec_key = []
                 for i in res:
                     sec_key.append(list(i.keys()))
@@ -284,7 +284,7 @@ class BaseInteropWifi(Realm):
             devices = self.check_sdk_release()
             logging.info(devices)
         else:
-            if type(device) is list:
+            if isinstance(device, list):
                 devices = device
             else:
                 devices = [device]
@@ -324,7 +324,7 @@ class BaseInteropWifi(Realm):
             logging.info(devices)
             self.set_user_name()
         else:
-            if type(device) is list:
+            if isinstance(device, list):
                 devices = device
             else:
                 devices = [device]
@@ -424,7 +424,7 @@ class BaseInteropWifi(Realm):
         keys = list(lf_query_resource.keys())
         if "resources" in keys:
             res = lf_query_resource["resources"]
-            if type(res) is list:
+            if isinstance(res, list):
                 sec_key = []
                 for i in res:
                     sec_key.append(list(i.keys()))
@@ -447,7 +447,7 @@ class BaseInteropWifi(Realm):
         resources = self.json_get("port/all")
         keys = []
         if "interfaces" in list(resources.keys()):
-            if type(resources['interfaces']) is list:
+            if isinstance(resources['interfaces'], list):
                 for i in resources['interfaces']:
                     keys.append(list(i.keys()))
             new_keys = []
@@ -690,7 +690,7 @@ class RealDevice(Realm):
         self.linux = 0
         self.windows = 0
         self.mac = 0
-        self.groups=groups
+        self.groups = groups
 
         if self.groups is False:
             for band in selected_bands:
