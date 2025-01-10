@@ -791,7 +791,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                 androids = interop_connectivity.Android(lanforge_ip=mgr_ip, port=mgr_port, server_ip=server_ip, ssid=ssid, passwd=password, encryption=security)
                 androids_data = androids.get_serial_from_port(port_list=Devices.android_list)
 
-                androids.stop_app(port_list = androids_data)
+                androids.stop_app(port_list=androids_data)
 
                 # androids.set_wifi_state(port_list=androids_data, state='disable')
 
