@@ -132,7 +132,7 @@ class Ping(Realm):
     def change_target_to_ip(self):
 
         # checking if target is an IP or a port
-        if(self.target.count('.') != 3 and self.target.split('.')[-2].isnumeric()):
+        if (self.target.count('.') != 3 and self.target.split('.')[-2].isnumeric()):
             # checking if target is eth1 or 1.1.eth1
             target_port_list = self.name_to_eid(self.target)
             shelf, resource, port, _ = target_port_list
@@ -278,42 +278,42 @@ class Ping(Realm):
         #NOTE if there are any more ping failure cases that are missed, add them here.
 
         # checking if ping output is not empty
-        if(station_ping_data['last_result'] == ""):
+        if (station_ping_data['last_result'] == ""):
             remarks.append('No output for ping')
 
         # illegal division by zero error. Issue with arguments.
-        if('Illegal division by zero' in station_ping_data['last_result']):
+        if ('Illegal division by zero' in station_ping_data['last_result']):
             remarks.append('Illegal division by zero error. Please re-check the arguments passed.')
 
         # unknown host
-        if('Totals:  *** dropped: 0  received: 0  failed: 0  bytes: 0' in station_ping_data['last_result'] or 'unknown host' in station_ping_data['last_result']):
+        if ('Totals:  *** dropped: 0  received: 0  failed: 0  bytes: 0' in station_ping_data['last_result'] or 'unknown host' in station_ping_data['last_result']):
             remarks.append('Unknown host. Please re-check the target')
 
         # checking if IP is existing in the ping command or not for Windows device
-        if(station_ping_data['os'] == 'Windows'):
-            if('None' in station_ping_data['command'] or station_ping_data['command'].split('-n')[0].split('-S')[-1] == "  "):
+        if (station_ping_data['os'] == 'Windows'):
+            if ('None' in station_ping_data['command'] or station_ping_data['command'].split('-n')[0].split('-S')[-1] == "  "):
                 remarks.append('Station has no IP')
 
         # network buffer overflow
-        if('ping: sendmsg: No buffer space available' in station_ping_data['last_result']):
+        if ('ping: sendmsg: No buffer space available' in station_ping_data['last_result']):
             remarks.append('Network buffer overlow')
 
         # checking for no ping states
-        if(float(station_ping_data['min_rtt']) == 0 and float(station_ping_data['max_rtt']) == 0 and float(station_ping_data['avg_rtt']) == 0):
+        if (float(station_ping_data['min_rtt']) == 0 and float(station_ping_data['max_rtt']) == 0 and float(station_ping_data['avg_rtt']) == 0):
 
             # Destination Host Unreachable state
-            if('Destination Host Unreachable' in station_ping_data['last_result']):
+            if ('Destination Host Unreachable' in station_ping_data['last_result']):
                 remarks.append('Destination Host Unrechable')
 
             # Name or service not known state
-            if('Name or service not known' in station_ping_data['last_result']):
+            if ('Name or service not known' in station_ping_data['last_result']):
                 remarks.append('Name or service not known')
 
             # network buffer overflow
-            if('ping: sendmsg: No buffer space available' in station_ping_data['last_result']):
+            if ('ping: sendmsg: No buffer space available' in station_ping_data['last_result']):
                 remarks.append('Network buffer overlow')
 
-        return(remarks)
+        return (remarks)
 
     def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path=''):
         if result_json is not None:
@@ -386,7 +386,7 @@ class Ping(Realm):
             self.device_min.append(float(device_data['min_rtt'].replace(',', '')))
             self.device_max.append(float(device_data['max_rtt'].replace(',', '')))
             self.device_avg.append(float(device_data['avg_rtt'].replace(',', '')))
-            if(device_data['os'] == 'Virtual'):
+            if (device_data['os'] == 'Virtual'):
                 self.report_names.append('{} {}'.format(device, device_data['os'])[0:25])
             else:
                 self.report_names.append('{} {} {}'.format(device, device_data['os'], device_data['name'])[0:25])
@@ -508,7 +508,7 @@ class Ping(Realm):
         report.build_table()
 
         # check if there are remarks for any device. If there are remarks, build table else don't
-        if(self.remarks != []):
+        if (self.remarks != []):
             report.set_table_title('Notes')
             report.build_table_title()
             dataframe3 = pd.DataFrame({
@@ -701,7 +701,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
         logger_config.load_lf_logger_config()
 
     # input sanity
-    if(args.virtual is False and args.real is False):
+    if (args.virtual is False and args.real is False):
         print('Atleast one of --real or --virtual is required')
         exit(0)
     if (args.virtual is True and args.radio is None):
@@ -713,16 +713,16 @@ effectively over the network and pinpoint potential issues affecting connectivit
     if (args.security != 'open' and args.passwd == '[BLANK]'):
         print('--passwd required')
         exit(0)
-    if(args.use_default_config == False):
-        if(args.ssid is None):
+    if (args.use_default_config == False):
+        if (args.ssid is None):
             print('--ssid required for Wi-Fi configuration')
             exit(0)
 
-        if(args.security.lower() != 'open' and args.passwd == '[BLANK]'):
+        if (args.security.lower() != 'open' and args.passwd == '[BLANK]'):
             print('--passwd required for Wi-Fi configuration')
             exit(0)
 
-        if(args.server_ip is None):
+        if (args.server_ip is None):
             print('--server_ip or upstream ip required for Wi-fi configuration')
             exit(0)
 
@@ -783,11 +783,11 @@ effectively over the network and pinpoint potential issues affecting connectivit
         ping.Devices = Devices
         ping.select_real_devices(real_devices=Devices)
 
-        if(configure):
+        if (configure):
 
             # for androids
             logger.info('Configuring Wi-Fi on the selected devices')
-            if(Devices.android_list == []):
+            if (Devices.android_list == []):
                 logging.info('There are no Androids to configure Wi-Fi')
             else:
                 androids = interop_connectivity.Android(lanforge_ip=mgr_ip, port=mgr_port, server_ip=server_ip, ssid=ssid, passwd=password, encryption=security)
@@ -807,7 +807,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
             laptops = interop_connectivity.Laptop(lanforge_ip=mgr_ip, port=8080, server_ip=server_ip, ssid=ssid, passwd=password, encryption=security)
             all_laptops = Devices.windows_list + Devices.linux_list + Devices.mac_list
 
-            if(all_laptops == []):
+            if (all_laptops == []):
                 logging.info('There are no laptops selected to configure Wi-Fi')
             else:
 
@@ -822,7 +822,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
 
                 laptops.set_port(port_list=laptops_data)
 
-            if(Devices.android_list != [] or all_laptops != []):
+            if (Devices.android_list != [] or all_laptops != []):
                 logging.info('Waiting 20s for the devices to configure to Wi-Fi')
                 time.sleep(20)
 
@@ -882,15 +882,15 @@ effectively over the network and pinpoint potential issues affecting connectivit
                         # max_rtt = 0
                         # for result in result_data['last results'].split('\n'):
                         #     # logging.info(result)
-                        #     if(result == ''):
+                        #     if (result == ''):
                         #         continue
                         #     rt_time = result.split()[6]
                         #     logging.info(rt_time.split('time='))
                         #     time_value = float(rt_time.split('time=')[1])
                         #     t_rtt += time_value
-                        #     if(time_value < min_rtt):
+                        #     if (time_value < min_rtt):
                         #         min_rtt = time_value
-                        #     if(max_rtt < time_value):
+                        #     if (max_rtt < time_value):
                         #         max_rtt = time_value
                         # avg_rtt = t_rtt / float(result_data['rx pkts'])
                         # logging.info(t_rtt, min_rtt, max_rtt, avg_rtt)
@@ -928,14 +928,14 @@ effectively over the network and pinpoint potential issues affecting connectivit
                             # min_rtt = 10000
                             # max_rtt = 0
                             # for result in ping_data['last results'].split('\n'):
-                            #     if(result == ''):
+                            #     if (result == ''):
                             #         continue
                             #     rt_time = result.split()[6]
                             #     time_value = float(rt_time.split('time=')[1])
                             #     t_rtt += time_value
-                            #     if(time_value < min_rtt):
+                            #     if (time_value < min_rtt):
                             #         min_rtt = time_value
-                            #     if(max_rtt < time_value):
+                            #     if (max_rtt < time_value):
                             #         max_rtt = time_value
                             # avg_rtt = t_rtt / float(ping_data['rx pkts'])
                             # logging.info(t_rtt, min_rtt, max_rtt, avg_rtt)
