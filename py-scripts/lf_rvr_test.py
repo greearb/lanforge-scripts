@@ -157,33 +157,35 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class RvrTest(cvtest):
+    # TODO: Move defaults to argparse to match other scripts
     def __init__(self,
-                 lf_host="localhost",
-                 lf_port=8080,
-                 ssh_port=22,
-                 local_lf_report_dir="",
+                 lf_host: str = "localhost",
+                 lf_port: int = 8080,
+                 ssh_port: int = 22,
+                 local_lf_report_dir: str = "",
                  graph_groups=None,
-                 lf_user="lanforge",
-                 lf_password="lanforge",
-                 instance_name="rvr_instance",
-                 config_name="rvr_config",
-                 upstream="1.1.eth1",
-                 pull_report=False,
-                 load_old_cfg=False,
-                 upload_speed="0",
-                 download_speed="85%",
-                 duration="15s",
-                 station="1.1.wlan0",
-                 dut="NA",
-                 enables=None,
-                 disables=None,
-                 raw_lines=None,
-                 raw_lines_file="",
-                 sets=None,
-                 verbosity='5'
-                 ):
+                 lf_user: str = "lanforge",
+                 lf_password: str = "lanforge",
+                 instance_name: str = "rvr_instance",
+                 config_name: str = "rvr_config",
+                 upstream: str = "1.1.eth1",
+                 pull_report: bool = False,
+                 load_old_cfg: bool = False,
+                 upload_speed: str = "0",
+                 download_speed: str = "85%",
+                 duration: str = "15s",
+                 station: str = "1.1.wlan0",
+                 dut: str = "NA",
+                 enables: list = None,
+                 disables: list = None,
+                 raw_lines: list = None,
+                 raw_lines_file: str = "",
+                 sets: list = None,
+                 verbosity: str = "5"):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
+        # NOTE: Do not make default arguments lists, as they are stateful
+        #       across calls to the same initializer (effectively static, in C terms)
         if not enables:
             enables = []
         if not disables:
