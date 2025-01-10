@@ -707,13 +707,13 @@ class RealDevice(Realm):
                         '6G band is selected for connectivity for required ssid, encryption and password are not properly provided. Aborting the test')
                     exit(1)
 
-    def query_all_devices_to_configure_wifi(self,device_list=None):
+    def query_all_devices_to_configure_wifi(self, device_list=None):
         self.all_devices = {}
         self.selected_2g_serials = []
         self.selected_5g_serials = []
         self.selected_6g_serials = []
 
-        index = 1 # serial number for selection of devices
+        index = 1  # serial number for selection of devices
 
         # fetch all androids
         self.androids_obj = interop_connectivity.Android(
@@ -793,17 +793,17 @@ class RealDevice(Realm):
                 if ('all' in band):
                     self.selected_2g_serials = list(range(1, index))
                 else:
-                    self.selected_2g_serials = list(map(int, band.replace('2g=','').strip().split(',')))
+                    self.selected_2g_serials = list(map(int, band.replace('2g=', '').strip().split(',')))
             elif ('5g' in band) and ('5g' in self.selected_bands or '5G' in self.selected_bands):
                 if ('all' in band):
                     self.selected_5g_serials = list(range(1, index))
                 else:
-                    self.selected_5g_serials = list(map(int, band.replace('5g=','').strip().split(',')))
+                    self.selected_5g_serials = list(map(int, band.replace('5g=', '').strip().split(',')))
             elif ('6g' in band):
                 if ('all' in band and '6g' in self.selected_bands or '6G' in self.selected_bands):
                     self.selected_6g_serials = list(range(1, index))
                 else:
-                    self.selected_6g_serials = list(map(int, band.replace('6g=','').strip().split(',')))
+                    self.selected_6g_serials = list(map(int, band.replace('6g=', '').strip().split(',')))
 
         print(self.selected_2g_serials, self.selected_5g_serials, self.selected_6g_serials)
         return [self.selected_2g_serials, self.selected_5g_serials, self.selected_6g_serials]
@@ -897,7 +897,7 @@ class RealDevice(Realm):
 
             # fetching resource data for android device
             current_android_resource_data = \
-            self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
+                self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
 
             if(current_android_resource_data['phantom']):
                 logging.warning(
@@ -907,8 +907,7 @@ class RealDevice(Realm):
 
             # fetching port data for the android device
             current_android_port_data = \
-            self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
-
+                self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
 
             current_android_port_data.update(current_android_resource_data)
 
@@ -927,8 +926,8 @@ class RealDevice(Realm):
                 continue
 
             username = \
-            self.json_get('resource/{}/{}?fields=user'.format(resource_id.split('.')[0], resource_id.split('.')[1]))[
-                'resource']['user']
+                self.json_get('resource/{}/{}?fields=user'.format(resource_id.split('.')[0], resource_id.split('.')[1]))[
+                    'resource']['user']
 
             self.selected_devices.append(resource_id)
             self.selected_macs.append(current_android_port_data['mac'])
@@ -946,7 +945,6 @@ class RealDevice(Realm):
                 'hw version': 'Android',
                 'MAC': current_android_port_data['mac']
             }
-
 
         for android in exclude_androids:
             selected_androids.remove(android)
@@ -1035,13 +1033,13 @@ class RealDevice(Realm):
         print(df)
         return [self.selected_devices, self.report_labels, self.selected_macs]
 
-    async def configure_wifi_groups(self,select_serials,serials_input,ssid_input,passwd_input,enc_input,eap_method_input,eap_identity_input):
+    async def configure_wifi_groups(self, select_serials, serials_input, ssid_input, passwd_input, enc_input, eap_method_input, eap_identity_input):
         self.station_list = []
         selected_androids = []
         selected_androids_temp = []
         selected_laptops = []
-        selected_t_devices = {}
-        print(serials_input,passwd_input)
+        # selected_t_devices = {} # unused
+        print(serials_input, passwd_input)
         for selected_serial in select_serials:
             selected_username = self.all_devices[selected_serial]['username']
             selected_os = self.all_devices[selected_serial]['os']
@@ -1086,12 +1084,12 @@ class RealDevice(Realm):
 
         return [selected_androids, selected_laptops]
 
-    def monitor_connection(self,selected_androids,selected_laptops):
+    def monitor_connection(self, selected_androids, selected_laptops):
         station_list = []
         selected_t_devices = {}
         selected_devices = []
         selected_macs = []
-        report_labels= []
+        report_labels = []
         androids = 0
         android_list = []
         linuxs = 0
@@ -1106,7 +1104,6 @@ class RealDevice(Realm):
 
             curr_ssid = android[3]
 
-
             # get resource id for the android device from interop tab
             resource_id = self.json_get('/adb/1/1/{}'.format(android[2]))['devices']['resource-id']
 
@@ -1117,11 +1114,11 @@ class RealDevice(Realm):
 
             # fetching port data for the android device
             current_android_port_data = \
-            self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
+                self.json_get('/port/{}/{}/wlan0'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['interface']
 
             # fetching resource data for android device
             current_android_resource_data = \
-            self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
+                self.json_get('/resource/{}/{}/'.format(resource_id.split('.')[0], resource_id.split('.')[1]))['resource']
 
             current_android_port_data.update(current_android_resource_data)
 
@@ -1136,8 +1133,8 @@ class RealDevice(Realm):
                 continue
 
             username = \
-            self.json_get('resource/{}/{}?fields=user'.format(resource_id.split('.')[0], resource_id.split('.')[1]))[
-                'resource']['user']
+                self.json_get('resource/{}/{}?fields=user'.format(resource_id.split('.')[0], resource_id.split('.')[1]))[
+                    'resource']['user']
 
             selected_devices.append(resource_id)
             selected_macs.append(current_android_port_data['mac'])
@@ -1228,12 +1225,12 @@ class RealDevice(Realm):
         return [selected_devices, report_labels, selected_macs]
 
     # getting data of all real devices already configured to an SSID
-    def get_devices(self, only_androids = False):
-        devices            = []
-        devices_data       = {}
-        resources          = []
+    def get_devices(self, only_androids=False):
+        devices = []
+        devices_data = {}
+        resources = []
         resources_os_types = {}
-        resources_data     = {}
+        resources_data = {}
 
         # Get resources and OS types
         resources_list = self.json_get("/resource/all")["resources"]
@@ -1246,7 +1243,7 @@ class RealDevice(Realm):
                 logging.error('Malformed json response for endpoint /resource/all')
                 raise ValueError('Malformed json response for endpoint /resource/all')
 
-            if resource_data_dict['ct-kernel'] == True:
+            if resource_data_dict['ct-kernel']:
                 # Custom kernel indicates not a real device, so do not track this resource
                 continue
 
@@ -1260,7 +1257,7 @@ class RealDevice(Realm):
                     os_type = 'android'
                     resources.append(resource_id)
                     resources_os_types[resource_id] = os_type
-                    resources_data[resource_id]   = resource_data_dict
+                    resources_data[resource_id] = resource_data_dict
 
             # It appends both androids and laptops into resources list when laptops and android arguments are not passed
             else:
@@ -1275,8 +1272,7 @@ class RealDevice(Realm):
 
                 resources.append(resource_id)
                 resources_os_types[resource_id] = os_type
-                resources_data[resource_id]     = resource_data_dict
-
+                resources_data[resource_id] = resource_data_dict
 
         # Get ports
         # TODO: Add optional argument to function to allow the detection of down ports.
@@ -1288,7 +1284,7 @@ class RealDevice(Realm):
             # Assume three components to port ID, each separated by a period (e.g. '1.1.wlan0')
             # First two components is the resource ID (e.g. '1.1' for '1.1.wlan0')
             port_id_parts = port_id.split('.')
-            resource_id   = port_id_parts[0] + '.' + port_id_parts[1]
+            resource_id = port_id_parts[0] + '.' + port_id_parts[1]
 
             # Skip any non-real devices we have decided to not track
             if resource_id not in resources:
@@ -1315,11 +1311,11 @@ class RealDevice(Realm):
             port_data_dict.update(resources_data[resource_id])
 
             devices.append(port_id)
-            port_data_dict['ostype']  = resources_os_types[resource_id]
-            devices_data[port_id]     = port_data_dict
+            port_data_dict['ostype'] = resources_os_types[resource_id]
+            devices_data[port_id] = port_data_dict
 
-        self.devices          = devices
-        self.devices_data     = devices_data
+        self.devices = devices
+        self.devices_data = devices_data
 
         return self.devices
 
@@ -1343,7 +1339,7 @@ class RealDevice(Realm):
         print(df)
 
         if dowebgui:
-            self.selected_device_eids=device_list.split(",")
+            self.selected_device_eids = device_list.split(",")
         else:
             self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
 
@@ -1395,7 +1391,7 @@ class RealDevice(Realm):
 
 
 def main():
-    help_summary='''\
+    help_summary = '''\
 This script is a standard library which support different functionality of interop including wi-fi connectivity on all kinds of real clients.
     '''
     desc = """standard library which supports different functionality of interop
@@ -1508,14 +1504,14 @@ This script is a standard library which support different functionality of inter
         asyncio.run(real_devices.query_all_devices_to_configure_wifi())
     else:
         obj = BaseInteropWifi(manager_ip=args.host,
-                            port=8080,
-                            ssid=args.ssid,
-                            passwd=args.passwd,
-                            encryption=args.crypt,
-                            release="12",
-                            screen_size_prcnt=0.4,
-                            _debug_on=False,
-                            _exit_on_error=False)
+                              port=8080,
+                              ssid=args.ssid,
+                              passwd=args.passwd,
+                              encryption=args.crypt,
+                              release="12",
+                              screen_size_prcnt=0.4,
+                              _debug_on=False,
+                              _exit_on_error=False)
         z = obj.scan_results()
         print(z)
 
