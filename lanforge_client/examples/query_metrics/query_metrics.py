@@ -297,7 +297,7 @@ def clear_port_counters(session: LFSession, port_eids: list[str]) -> int:
                 logger.error(
                     f"Failed to clear port counters for port \'{port_eid}\', timed out")
                 return -1
-        except BaseException:
+        except BaseException:  # noqa: B036
             logger.error(
                 f"Failed to clear port counters for port \'{port_eid}\', exception encountered")
             return -1
@@ -320,7 +320,7 @@ def clear_cx_counters(session: LFSession, cx_names: list[str]) -> int:
                 logger.error(
                     f"Failed to clear CX counters for CX \'{cx_name}\', timed out")
                 return -1
-        except BaseException:
+        except BaseException:  # noqa: B036
             logger.error(
                 f"Failed to clear CX counters for CX \'{cx_name}\', exception encountered")
             return -1
