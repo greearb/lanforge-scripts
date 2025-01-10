@@ -37,7 +37,7 @@ for item in "${IFLINES[@]}"; do
    fi
 done
 
-if [[ x$VRF_DEBUG = x1 ]]; then
+if [[ x${VRF_DEBUG:-} = x1 ]]; then
    echo "Interfaces: "
    for ifname in "${!IFNAMES[@]}"; do
       echo "IFN   $ifname => ${IFNAMES[$ifname]}"
