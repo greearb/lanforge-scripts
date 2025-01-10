@@ -448,7 +448,7 @@ class Ping(Realm):
             'Wireless Client': self.device_names,
             'MAC': self.device_mac,
             'Channel': self.device_channels,
-            'SSID ' : self.device_ssid,
+            'SSID ': self.device_ssid,
             'Mode': self.device_modes,
             'Packets Sent': self.packets_sent,
             'Packets Received': self.packets_received,
@@ -498,7 +498,7 @@ class Ping(Realm):
             'Wireless Client': self.device_names,
             'MAC': self.device_mac,
             'Channel': self.device_channels,
-            'SSID ' : self.device_ssid,
+            'SSID ': self.device_ssid,
             'Mode': self.device_modes,
             'Min Latency (ms)': self.device_min,
             'Average Latency (ms)': self.device_avg,
@@ -902,7 +902,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                 'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0], # noqa E501
                                 'mac': current_device_data['mac'],
                                 'channel': current_device_data['channel'],
-                                'ssid' : current_device_data['ssid'],
+                                'ssid': current_device_data['ssid'],
                                 'mode': current_device_data['mode'],
                                 'name': station,
                                 'os': 'Virtual',
@@ -946,7 +946,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                     'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0], # noqa E501
                                     'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0], # noqa E501
                                     'mac': current_device_data['mac'],
-                                    'ssid' : current_device_data['ssid'],
+                                    'ssid': current_device_data['ssid'],
                                     'channel': current_device_data['channel'],
                                     'mode': current_device_data['mode'],
                                     'name': station,
@@ -975,7 +975,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                             'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0], # noqa E501
                             'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0], # noqa E501
                             'mac': current_device_data['mac'],
-                            'ssid' : current_device_data['ssid'],
+                            'ssid': current_device_data['ssid'],
                             'channel': current_device_data['channel'],
                             'mode': current_device_data['mode'],
                             'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
@@ -1003,7 +1003,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                 'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0], # noqa E501
                                 'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0], # noqa E501
                                 'mac': current_device_data['mac'],
-                                'ssid' : current_device_data['ssid'],
+                                'ssid': current_device_data['ssid'],
                                 'channel': current_device_data['channel'],
                                 'mode': current_device_data['mode'],
                                 'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
