@@ -714,7 +714,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
     if (args.security != 'open' and args.passwd == '[BLANK]'):
         print('--passwd required')
         exit(0)
-    if (args.use_default_config == False):
+    if (args.use_default_config is False):
         if (args.ssid is None):
             print('--ssid required for Wi-Fi configuration')
             exit(0)
