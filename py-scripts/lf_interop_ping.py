@@ -278,7 +278,7 @@ class Ping(Realm):
     def generate_remarks(self, station_ping_data):
         remarks = []
 
-        #NOTE if there are any more ping failure cases that are missed, add them here.
+        # NOTE if there are any more ping failure cases that are missed, add them here.
 
         # checking if ping output is not empty
         if (station_ping_data['last_result'] == ""):
@@ -531,7 +531,7 @@ class Ping(Realm):
 
 def main():
 
-    help_summary='''\
+    help_summary = '''\
 The Candela Tech ping test is to evaluate network connectivity and measure the round-trip time taken for
 data packets to travel from the source to the destination and back. It helps assess the reliability and latency of the network,
 identifying any packet loss, delays, or variations in response times. The test aims to ensure that devices can communicate
@@ -673,8 +673,8 @@ effectively over the network and pinpoint potential issues affecting connectivit
 
     # local report directory used by lf_report
     parser.add_argument('--local_lf_report_dir',
-                                help='--local_lf_report_dir override the report path (lanforge/html-reports), primary used when making another directory lanforge/html-report/<test_rig>',
-                                default="")
+                        help='--local_lf_report_dir override the report path (lanforge/html-reports), primary used when making another directory lanforge/html-report/<test_rig>',
+                        default="")
 
     # logging configuration:
     parser.add_argument('--log_level', default=None,
@@ -962,7 +962,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                 logging.error('Failed parsing the result for the station {}'.format(station))
 
     if (args.real):
-        if (isinstance(result_data,dict)):
+        if (isinstance(result_data, dict)):
             for station in ping.real_sta_list:
                 current_device_data = Devices.devices_data[station]
                 # logging.info(current_device_data)
@@ -1027,6 +1027,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
         ping.generate_report()
     else:
         ping.generate_report(report_path=args.local_lf_report_dir)
+
 
 if __name__ == "__main__":
     main()
