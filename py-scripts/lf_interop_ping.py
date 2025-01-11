@@ -593,7 +593,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
         Copyright 2023 Candela Technologies Inc.
         '''
     )
-    required = parser.add_argument_group('Required arguments')
+    # required = parser.add_argument_group('Required arguments')
     optional = parser.add_argument_group('Optional arguments')
 
     # optional arguments
@@ -851,7 +851,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
 
     # start generate endpoint
     ping.start_generic()
-    time_counter = 0
+    # time_counter = 0
     ports_data_dict = ping.json_get('/ports/all/')['interfaces']
     ports_data = {}
     for ports in ports_data_dict:
