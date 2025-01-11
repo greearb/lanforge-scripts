@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 
 '''
     NAME: lf_interop_ping.py
