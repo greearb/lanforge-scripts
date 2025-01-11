@@ -55,6 +55,8 @@ import os
 import pandas as pd
 import importlib
 import logging
+import traceback
+
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
@@ -138,7 +140,8 @@ class Ping(Realm):
             shelf, resource, port, _ = target_port_list
             try:
                 target_port_ip = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port))['interface']['ip']
-            except:
+            except Exception as x:
+                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                 logging.error('The target port {} not found on the LANforge. Please change the target.'.format(self.target))
                 exit(0)
             self.target = target_port_ip
@@ -910,7 +913,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                 'last_result': [result_data['last results'].split('\n')[-2] if len(result_data['last results']) != 0 else ""][0]
                             }
                             ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
-                        except:
+                        except BaseException:
                             logging.error('Failed parsing the result for the station {}'.format(station))
 
         else:
@@ -955,7 +958,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                     'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]
                                 }
                                 ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
-                            except:
+                            except BaseException:
                                 logging.error('Failed parsing the result for the station {}'.format(station))
 
     if (args.real):
@@ -984,7 +987,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                             'last_result': [result_data['last results'].split('\n')[-2] if len(result_data['last results']) != 0 else ""][0]
                         }
                         ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
-                    except:
+                    except BaseException:
                         logging.error('Failed parsing the result for the station {}'.format(station))
         else:
             for station in ping.real_sta_list:
@@ -1012,7 +1015,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                 'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]
                             }
                             ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
-                        except:
+                        except BaseException:
                             logging.error('Failed parsing the result for the station {}'.format(station))
 
     logging.info(ping.result_json)
