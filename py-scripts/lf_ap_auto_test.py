@@ -181,6 +181,7 @@ cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
+
 class ApAutoTest(cvtest):
     def __init__(self,
                  lf_host="localhost",
@@ -305,7 +306,7 @@ class ApAutoTest(cvtest):
 
         cv_cmds = []
 
-        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name,self.verbosity)
+        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name, self.verbosity)
         cv_cmds.append(cmd)
 
         logger.info("verbosity is : {verbosity}".format(verbosity=self.verbosity))
@@ -368,7 +369,7 @@ the options and how best to input data.
                         help="Specify 2.4Ghz radio.  May be specified multiple times.")
     parser.add_argument("--radio5", action='append', nargs=1, default=[],
                         help="Specify 5Ghz radio.  May be specified multiple times.")
-    parser.add_argument("--verbosity", default="5",help="Specify verbosity of the report values 1 - 11 default 5")
+    parser.add_argument("--verbosity", default="5", help="Specify verbosity of the report values 1 - 11 default 5")
     parser.add_argument("--local_lf_report_dir",
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
                         default="")
@@ -388,7 +389,6 @@ the options and how best to input data.
                         action="store_true",
                         help='Show summary of what this script does')
 
-
     args = parser.parse_args()
 
     if args.help_summary:
@@ -399,7 +399,6 @@ the options and how best to input data.
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
-
 
     cv_base_adjust_parser(args)
 
@@ -438,11 +437,11 @@ the options and how best to input data.
         logger.info("FAILED: lf_ap_auto_test did not generate kpi.csv)")
         exit(1)
 
-
     if CV_Test.passes():
         CV_Test.exit_success()
     else:
         CV_Test.exit_fail()
+
 
 if __name__ == "__main__":
     main()
