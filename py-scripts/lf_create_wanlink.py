@@ -213,8 +213,8 @@ class lf_create_wanlink():
 
     def add_cx(self,
                _alias=None,
-               _rx_endp=None,  # endp_A
-               _tx_endp=None,  # endp_B
+               _rx_endp=None,  # endp_B
+               _tx_endp=None,  # endp_A
                _test_mgr="default_tm"):
 
         self.command.post_add_cx(alias=_alias,
@@ -531,8 +531,8 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
 
     else:
         result = wanlink.add_cx(_alias=args.wl_name,
-                                _rx_endp=endp_A,
-                                _tx_endp=endp_B,
+                                _rx_endp=endp_B,
+                                _tx_endp=endp_A,
                                 _test_mgr="default_tm")
         logger.info(f"updated wanlink {args.wl_name}")
 
