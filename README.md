@@ -19,6 +19,8 @@ For more advanced users wanting to develop their own automation, we offer the fo
 - Perl modules in [`LANforge/`](./LANforge/)
   - See the [`README`](./LANforge/README.md) for more details.
 
+If you would like to contribute to LANforge scripts, please read the [`CONTRIBUTING.md`](./CONTRIBUTING.md) document for more information.
+
 ## Contents
 
 - [LANforge Perl, Python, and Shell Scripts](#lanforge-perl-python-and-shell-scripts)
