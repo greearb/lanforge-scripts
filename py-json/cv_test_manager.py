@@ -42,7 +42,7 @@ def cv_add_base_parser(parser):
                         dest="mgr",
                         type=str,
                         default="localhost",
-                        help="address of the LANforge GUI machine (localhost is default)")
+                        help="Hostname or IP address of the LANforge GUI machine (localhost is default)")
     parser.add_argument("-o", "--port",
                         dest="port",
                         type=int,
@@ -51,17 +51,17 @@ def cv_add_base_parser(parser):
     parser.add_argument("--lf_user",
                         type=str,
                         default="lanforge",
-                        help="LANforge username to pull reports")
+                        help="LANforge system username used to SSH and pull reports")
     parser.add_argument("--lf_password",
                         type=str,
                         default="lanforge",
-                        help="LANforge Password to pull reports")
+                        help="LANforge system password used to SSH in and pull reports")
 
     parser.add_argument("-i", "--instance_name",
                         dest="instance_name",
                         type=str,
                         default="cv_dflt_inst",
-                        help="create test instance")
+                        help="Chamber View test instance name")
     parser.add_argument("-c", "--config_name",
                         dest="config_name",
                         type=str,
@@ -71,41 +71,53 @@ def cv_add_base_parser(parser):
     parser.add_argument("-r", "--pull_report",
                         dest="pull_report",
                         action='store_true',
-                        help="pull reports from lanforge (by default: False)")
+                        help="Pull reports from LANforge system. Off by default")
     parser.add_argument("--load_old_cfg",
                         action='store_true',
-                        help="Should we first load defaults from previous run of the capacity test?  Default is False")
+                        help="Load defaults from previous run of the test")
 
     parser.add_argument("--enable",
                         action='append',
                         nargs=1,
                         default=[],
-                        help="Specify options to enable (set cfg-file value to 1).  See example raw text config for possible options.  May be specified multiple times.  Most tests are enabled by default, except: longterm")
+                        help="Specify options to enable (set config option value to 1). "
+                             "Often used to enable Chamber View test sub-tests, for example "
+                             "the 'Stability' test in the AP-Auto Chamber View test. "
+                             "See test config for possible options. May be specified multiple times")
     parser.add_argument("--disable",
                         action='append',
                         nargs=1,
                         default=[],
-                        help="Specify options to disable (set value to 0).  See example raw text config for possible options.  May be specified multiple times.")
+                        help="Specify options to disable (set config option value to 0). "
+                             "See test config for possible options. May be specified multiple times.")
     parser.add_argument("--set",
                         action='append',
                         nargs=2,
                         default=[],
-                        help="Specify options to set values based on their label in the GUI. Example: --set 'Basic Client Connectivity' 1  May be specified multiple times.")
+                        help="Specify options to set values based on their label in the GUI. "
+                             "For example, '--set \"Basic Client Connectivity\" 1' "
+                             "May be specified multiple times.")
     parser.add_argument("--raw_line",
                         action='append',
                         nargs=1,
                         default=[],
-                        help="Specify lines of the raw config file.  Example: --raw_line 'test_rig: Ferndale-01-Basic'  See example raw text config for possible options.  This is catch-all for any options not available to be specified elsewhere.  May be specified multiple times.")
-
+                        help="Specify lines of the raw config file. "
+                             "For example, '--raw_line \"test_rig: Ferndale-01-Basic\"' "
+                             "See test config for possible options. "
+                             "This is catch-all for any options not available to be specified elsewhere. "
+                             "May be specified multiple times.")
+    # TODO: Clarify which takes precedent, --raw_line or --raw_lines_file
     parser.add_argument("--raw_lines_file",
                         type=str,
                         default="",
-                        help="Specify a file of raw lines to apply.")
+                        help="Specify a file of raw lines to apply. "
+                             "See the '--raw_line' option for more information.")
 
     # Reporting info
     parser.add_argument("--test_rig",
                         default="",
-                        help="Specify the test rig info for reporting purposes, for instance:  testbed-01")
+                        help="Specify the test rig info for reporting purposes. "
+                             "For example, '--test_rig testbed-01'")
     parser.add_argument("--test_tag",
                         default="",
                         help="Specify the test tag info for reporting purposes, for instance:  testbed-01")
