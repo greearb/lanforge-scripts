@@ -368,7 +368,7 @@ class cv_test(Realm):
                     break
             else:
                 logger.info('Waiting on test completion for kpi')
-                
+
 
             # Of if test stopped for some reason and could not generate report.
             if not self.get_is_running(instance_name):
@@ -394,8 +394,9 @@ class cv_test(Realm):
     def kpi_results_present(self):
         kpi_csv_data_present = False
         kpi_csv = ''
+
         if self.local_lf_report_dir is None or self.local_lf_report_dir == "":
-            logger.info("Report dir empty , No KPI")
+            logger.info("Local report directory not specified. No KPI results present.")
             return False
         else:
             kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
@@ -410,7 +411,7 @@ class cv_test(Realm):
                 logger.info("kpi_csv file not empty size: {kpi_size} {kpi_csv}".format(kpi_size=kpi_size,kpi_csv=kpi_csv))
                 kpi_csv_data_present = True
 
-        return kpi_csv_data_present 
+        return kpi_csv_data_present
 
     # ************************** chamber view **************************
     def add_text_blob_line(self,
