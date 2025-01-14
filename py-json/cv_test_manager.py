@@ -39,10 +39,12 @@ def cv_base_adjust_parser(args):
 
 def cv_add_base_parser(parser):
     parser.add_argument("-m", "--mgr",
+                        dest="mgr",
                         type=str,
                         default="localhost",
                         help="address of the LANforge GUI machine (localhost is default)")
     parser.add_argument("-o", "--port",
+                        dest="port",
                         type=int,
                         default=8080,
                         help="IP Port the LANforge GUI is listening on (8080 is default)")
@@ -56,15 +58,18 @@ def cv_add_base_parser(parser):
                         help="LANforge Password to pull reports")
 
     parser.add_argument("-i", "--instance_name",
+                        dest="instance_name",
                         type=str,
                         default="cv_dflt_inst",
                         help="create test instance")
     parser.add_argument("-c", "--config_name",
+                        dest="config_name",
                         type=str,
                         default="cv_dflt_cfg",
                         help="Config file name")
 
     parser.add_argument("-r", "--pull_report",
+                        dest="pull_report",
                         action='store_true',
                         help="pull reports from lanforge (by default: False)")
     parser.add_argument("--load_old_cfg",
