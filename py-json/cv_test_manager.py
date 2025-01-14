@@ -38,40 +38,71 @@ def cv_base_adjust_parser(args):
 
 
 def cv_add_base_parser(parser):
-    parser.add_argument("-m", "--mgr", type=str, default="localhost",
+    parser.add_argument("-m", "--mgr",
+                        type=str,
+                        default="localhost",
                         help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int, default=8080,
+    parser.add_argument("-o", "--port",
+                        type=int,
+                        default=8080,
                         help="IP Port the LANforge GUI is listening on (8080 is default)")
-    parser.add_argument("--lf_user", type=str, default="lanforge",
+    parser.add_argument("--lf_user",
+                        type=str,
+                        default="lanforge",
                         help="LANforge username to pull reports")
-    parser.add_argument("--lf_password", type=str, default="lanforge",
+    parser.add_argument("--lf_password",
+                        type=str,
+                        default="lanforge",
                         help="LANforge Password to pull reports")
-    parser.add_argument("-i", "--instance_name", type=str, default="cv_dflt_inst",
+
+    parser.add_argument("-i", "--instance_name",
+                        type=str,
+                        default="cv_dflt_inst",
                         help="create test instance")
-    parser.add_argument("-c", "--config_name", type=str, default="cv_dflt_cfg",
+    parser.add_argument("-c", "--config_name",
+                        type=str,
+                        default="cv_dflt_cfg",
                         help="Config file name")
 
-    parser.add_argument("-r", "--pull_report", action='store_true',
+    parser.add_argument("-r", "--pull_report",
+                        action='store_true',
                         help="pull reports from lanforge (by default: False)")
-    parser.add_argument("--load_old_cfg", action='store_true',
+    parser.add_argument("--load_old_cfg",
+                        action='store_true',
                         help="Should we first load defaults from previous run of the capacity test?  Default is False")
 
-    parser.add_argument("--enable", action='append', nargs=1, default=[],
+    parser.add_argument("--enable",
+                        action='append',
+                        nargs=1,
+                        default=[],
                         help="Specify options to enable (set cfg-file value to 1).  See example raw text config for possible options.  May be specified multiple times.  Most tests are enabled by default, except: longterm")
-    parser.add_argument("--disable", action='append', nargs=1, default=[],
+    parser.add_argument("--disable",
+                        action='append',
+                        nargs=1,
+                        default=[],
                         help="Specify options to disable (set value to 0).  See example raw text config for possible options.  May be specified multiple times.")
-    parser.add_argument("--set", action='append', nargs=2, default=[],
+    parser.add_argument("--set",
+                        action='append',
+                        nargs=2,
+                        default=[],
                         help="Specify options to set values based on their label in the GUI. Example: --set 'Basic Client Connectivity' 1  May be specified multiple times.")
-    parser.add_argument("--raw_line", action='append', nargs=1, default=[],
+    parser.add_argument("--raw_line",
+                        action='append',
+                        nargs=1,
+                        default=[],
                         help="Specify lines of the raw config file.  Example: --raw_line 'test_rig: Ferndale-01-Basic'  See example raw text config for possible options.  This is catch-all for any options not available to be specified elsewhere.  May be specified multiple times.")
 
-    parser.add_argument("--raw_lines_file", default="",
+    parser.add_argument("--raw_lines_file",
+                        type=str,
+                        default="",
                         help="Specify a file of raw lines to apply.")
 
     # Reporting info
-    parser.add_argument("--test_rig", default="",
+    parser.add_argument("--test_rig",
+                        default="",
                         help="Specify the test rig info for reporting purposes, for instance:  testbed-01")
-    parser.add_argument("--test_tag", default="",
+    parser.add_argument("--test_tag",
+                        default="",
                         help="Specify the test tag info for reporting purposes, for instance:  testbed-01")
 
 
