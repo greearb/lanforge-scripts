@@ -394,7 +394,7 @@ class cv_test(Realm):
     def kpi_results_present(self):
         kpi_csv_data_present = False
         kpi_csv = ''
-        if self.local_lf_report_dir is None:
+        if self.local_lf_report_dir is None or self.local_lf_report_dir == "":
             logger.info("Report dir empty , No KPI")
             return False
         else:
