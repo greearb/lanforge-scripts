@@ -4,7 +4,7 @@
 
 This library provides a set of methods to operate the [LANforge JSON API](http://www.candelatech.com/cookbook.php?vol=cli&book=JSON:+Querying+the+LANforge+Client+for+JSON+Data). This is a generated library that includes Python classes and methods to perform JSON POSTs for every [LANforge CLI command](https://www.candelatech.com/lfcli_ug.php) and JSON GETs for JSON endpoints presented by the LANforge GUI.
 
-If you are new to this API, please start at the beginning of the [LANforge Scripting Cookbook](http://www.candelatech.com/scripting_cookbook.php). 
+If you are new to this API, please start at the beginning of the [LANforge Scripting Cookbook](http://www.candelatech.com/scripting_cookbook.php).
 
 Example scripts are located in the [`examples/`](./examples/) directory. See the [`README.md`](./examples/README.md) for more information on available examples.
 
@@ -48,32 +48,36 @@ A brief listing of available library code is as follows:
 ## Intended Usage
 
 ### Suggested Workflow
+
 Generally, the workflow for a script using LANforge API will look something like:
+
 1. Import `lanforge_client`
 2. Initiate a [`LFSession`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L24487)
-  - Ensure the script URI is directed at the manager LANforge for your testbed (should your testbed have more than one LANforge)
-  - Also make sure that the GUI is running. To configure the GUI to automatically start, see [this cookbook](https://www.candelatech.com/cookbook.php?vol=misc&book=Automatically+starting+LANforge+GUI+on+login) in the documentation.
+
+- Ensure the script URI is directed at the manager LANforge for your testbed (should your testbed have more than one LANforge)
+- Also make sure that the GUI is running. To configure the GUI to automatically start, see [this cookbook](https://www.candelatech.com/cookbook.php?vol=misc&book=Automatically+starting+LANforge+GUI+on+login) in the documentation.
+
 3. Use a combination of [`LFJsonCommand`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L1392) to configure or [`LFJsonRequest`](https://github.com/greearb/lanforge-scripts/blob/master/lanforge_client/lanforge_api.py#L215) to query the LANforge, respectively.
 
-
 ### Things to Keep in Mind
-This library can be used directly, plus it can be used in conjunction with the LANforge [Realm](https://github.com/greearb/lanforge-scripts/blob/master/py-json/realm.py) class. It is different than than the *Realm* class. *Realm* extends the [lfcli_base](https://github.com/greearb/lanforge-scripts/blob/master/py-json/LANforge/lfcli_base.py) class that provides its own (nearly identical) REST API. The lanforge_client REST methods are built into the *BaseLFJsonRequest* class. 
 
-You would use the *Realm* class to execute high-level operations like:
+This library can be used directly, plus it can be used in conjunction with the LANforge [Realm](https://github.com/greearb/lanforge-scripts/blob/master/py-json/realm.py) class. It is different than than the _Realm_ class. _Realm_ extends the [lfcli_base](https://github.com/greearb/lanforge-scripts/blob/master/py-json/LANforge/lfcli_base.py) class that provides its own (nearly identical) REST API. The lanforge_client REST methods are built into the _BaseLFJsonRequest_ class.
 
-* creating groups of stations
-* creating numerous connections
-* reporting KPI events like test results
+You would use the _Realm_ class to execute high-level operations like:
 
-You would use the *lanforge_client* package in places where:
+- creating groups of stations
+- creating numerous connections
+- reporting KPI events like test results
 
-* you want direct LANforge CLI control that hides the URLs
-  * port specific flags
-  * endpoint specific flags
-* to get session tracking and using callback keys
-* you want an API that hides the REST URLs
+You would use the _lanforge_client_ package in places where:
 
-The Realm class is useful. As the *lanforge_client* package stabilizes, we anticipate replacing lower level parts of the *Realm* based operations to call into the *lanforge_client* package.
+- you want direct LANforge CLI control that hides the URLs
+  - port specific flags
+  - endpoint specific flags
+- to get session tracking and using callback keys
+- you want an API that hides the REST URLs
+
+The Realm class is useful. As the _lanforge_client_ package stabilizes, we anticipate replacing lower level parts of the _Realm_ based operations to call into the _lanforge_client_ package.
 
 ## Getting started
 
@@ -113,4 +117,3 @@ def main():
     pprint.pprint(result)
 
 ```
-
