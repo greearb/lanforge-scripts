@@ -24,7 +24,7 @@ For developer environment setup, please first follow the steps outlined in [here
 
 To avoid the headache of updating your PR and enable minimal back-and-forth, this project supports the same GitHub Actions-based automated code linting checks locally through Git pre-commit hooks. **We strongly encourage configuring pre-commit hooks before submitting a PR**, as passing automated code linting is a requirement for submission review.
 
-If you haven't used Git pre-commit hooks before, pre-commit Git hooks are programs run locally *on commit*. This project uses the pre-commit hooks (using `pre-commit`) to run automated code linting locally, either on commit or manually by running `pre-commit run` (after setup). Pre-commit hooks can be useful for much more than automated code linting, though. Please review the `pre-commit` documentation [here](https://pre-commit.com/) for more information on pre-commit hooks as well as the `pre-commit` tool supported by this project.
+If you haven't used Git pre-commit hooks before, pre-commit Git hooks are programs run locally _on commit_. This project uses the pre-commit hooks (using `pre-commit`) to run automated code linting locally, either on commit or manually by running `pre-commit run` (after setup). Pre-commit hooks can be useful for much more than automated code linting, though. Please review the `pre-commit` documentation [here](https://pre-commit.com/) for more information on pre-commit hooks as well as the `pre-commit` tool supported by this project.
 
 ### Setup
 
@@ -34,39 +34,41 @@ To configure Git pre-commit hooks, run the following steps (assumes already setu
 
 1. **Activate virtual environment**
 
-    Virtual environment setup steps are outlined in the developer environment setup instructions [here](./py-scripts/README.md#cloning-from-git-repository-usage).
+   Virtual environment setup steps are outlined in the developer environment setup instructions [here](./py-scripts/README.md#cloning-from-git-repository-usage).
 
-    Virtual environments are always a good idea for a new project, helping keep separate project
-    dependencies separate from each other. You can keep using this virtual environment for other dependencies of this project as well.
+   Virtual environments are always a good idea for a new project, helping keep separate project
+   dependencies separate from each other. You can keep using this virtual environment for other dependencies of this project as well.
 
-    ```Bash
-    # Substitute the path to your virtual environment here
-    # This is likely to be something in the form of 'x/bin/activate'
-    source venv/bin/activate
-    ```
+   ```Bash
+   # Substitute the path to your virtual environment here
+   # This is likely to be something in the form of 'x/bin/activate'
+   source venv/bin/activate
+   ```
 
 2. **Install the 'pre-commit' package**
-    ```Bash
-    pip install --upgrade pip && pip install pre-commit
-    ```
+
+   ```Bash
+   pip install --upgrade pip && pip install pre-commit
+   ```
 
 3. **Configure this project's pre-commit hooks**
-    ```Bash
-    # The pre-commit configuration contains all required
-    # pre-commit hook tool installation required to setup
-    # local code linting tooling (flake8, black, etc.)
-    pre-commit install
-    ```
+
+   ```Bash
+   # The pre-commit configuration contains all required
+   # pre-commit hook tool installation required to setup
+   # local code linting tooling (flake8, black, etc.)
+   pre-commit install
+   ```
 
 4. **Run the pre-commit hook before it runs on commit**
-    ```Bash
-    # Without staged any changes, this command will simply skip every
-    # pre-commit step. However, it is still useful for visualizing
-    # the process.
-    #
-    # The same steps will run when you enter 'git commit'
-    pre-commit run
-    ```
+   ```Bash
+   # Without staged any changes, this command will simply skip every
+   # pre-commit step. However, it is still useful for visualizing
+   # the process.
+   #
+   # The same steps will run when you enter 'git commit'
+   pre-commit run
+   ```
 
 ### Unable to Commit Due to `pre-commit` Failure
 
