@@ -465,8 +465,9 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
 
     # Comment out some parameters like 'max_jitter', 'drop_freq' and 'wanlink'
     # in order to view the X-Errors headers
-    logger.info(f"drop_freq_A:{drop_freq_A}, drop_freq_B:{drop_freq_B}, min_drop_amt_A:{min_drop_amt_A}, min_drop_amt_B:{min_drop_amt_B},"
-    f" drop_nth_pkt_A:{drop_nth_pkt_A}, drop_nth_pkt_B:{drop_nth_pkt_B}");
+    logger.info(
+        f"drop_freq_A:{drop_freq_A}, drop_freq_B:{drop_freq_B}, min_drop_amt_A:{min_drop_amt_A}, min_drop_amt_B:{min_drop_amt_B},"
+        f" drop_nth_pkt_A:{drop_nth_pkt_A}, drop_nth_pkt_B:{drop_nth_pkt_B}")
 
     # have to determine if the wanlink exists and is running or not
     wl_exists = False
@@ -480,10 +481,10 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
                                       _errors_warnings=ewarns)
     except:
         logger.warning(ewarns)
-    wl_exists = (False, True) [ result is not None ]
+    wl_exists = (False, True)[result is not None]
     if wl_exists:
         logger.debug(pformat(result))
-        wl_running = (False, True) [ result["state"] == "Run"]
+        wl_running = (False, True)[result["state"] == "Run"]
         logger.warning(f"running? {wl_running}")
 
     if wl_running:
@@ -491,7 +492,7 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
                                           cx_state='STOPPED',
                                           test_mgr='all',
                                           debug=args.debug)
-        for n in range(1,60):
+        for n in range(1, 60):
             result = wanlink.query.get_wl(eid_list=args.wl_name,
                                           requested_col_names=("name", "eid", "running"),
                                           debug=False)
