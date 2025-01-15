@@ -317,15 +317,15 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
     parser.add_argument('--dup_freq', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = 0 Both ports (%%)', default="0")
     parser.add_argument('--dup_freq_A', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = None port A (%%)', default=None)
     parser.add_argument('--dup_freq_B', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = None port B (%%)', default=None)
-    parser.add_argument('--extra_buffer', help='(set wanlink info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = -1 Both ports (%%)', default="-1")
-    parser.add_argument('--extra_buffer_A', help='(set wanlink info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = None port A (%%)', default=None)
-    parser.add_argument('--extra_buffer_B', help='(set wanlink info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = None port B (%%)', default=None)
+    parser.add_argument('--extra_buffer', help='(set wanlink info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = -1 Both ports (%%)', default="-1")  # noqa E501
+    parser.add_argument('--extra_buffer_A', help='(set wanlink info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = None port A (%%)', default=None)  # noqa E501
+    parser.add_argument('--extra_buffer_B', help='(set wanlink info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = None port B (%%)', default=None)  # noqa E501
     parser.add_argument('--jitter_freq', help='(set wanlink info) How often, out of 1,000,000 packets, should we apply jitter. Default = 0 both ports (%%)', default="0")
     parser.add_argument('--jitter_freq_A', help='(set wanlink info) How often, out of 1,000,000 packets, should we apply jitter. Default = None port A (%%)', default=None)
     parser.add_argument('--jitter_freq_B', help='(set wanlink info) How often, out of 1,000,000 packets, should we apply jitter. Default = None port B (%%)', default=None)
-    parser.add_argument('--latency_packet', help="(set wanlink info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = 20 both ports", default="20")
-    parser.add_argument('--latency_packet_A', help="(set wanlink info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = None port A", default=None)
-    parser.add_argument('--latency_packet_B', help="(set wanlink info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = None port B", default=None)
+    parser.add_argument('--latency_packet', help="(set wanlink info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = 20 both ports", default="20")  # noqa E501
+    parser.add_argument('--latency_packet_A', help="(set wanlink info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = None port A", default=None)  # noqa E501
+    parser.add_argument('--latency_packet_B', help="(set wanlink info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = None port B", default=None)  # noqa E501
     parser.add_argument('--max_drop_amt', help='(set wanlink info) Maximum amount of packets to drop in a row. Default is 1. both ports', default="1")
     parser.add_argument('--max_drop_amt_A', help='(set wanlink info) Maximum amount of packets to drop in a row. Default is None. port A', default=None)
     parser.add_argument('--max_drop_amt_B', help='(set wanlink info) Maximum amount of packets to drop in a row. Default is None. port B', default=None)
