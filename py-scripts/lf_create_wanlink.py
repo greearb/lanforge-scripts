@@ -238,7 +238,7 @@ class lf_create_wanlink():
                                        errors_warnings=ewarn_list,
                                        debug=self.debug)
             logger.debug(pformat(result))
-        except:
+        except BaseException:
             logger.warning(pformat(ewarn_list))
         return result
 
@@ -479,7 +479,7 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
                                       requested_col_names=("name", "eid"),
                                       debug=args.debug,
                                       _errors_warnings=ewarns)
-    except:
+    except BaseException:
         logger.warning(ewarns)
     wl_exists = (False, True)[result is not None]
     if wl_exists:
