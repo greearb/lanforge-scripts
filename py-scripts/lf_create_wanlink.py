@@ -40,9 +40,9 @@ import logging
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFSession  # noqa: 402
+from lanforge_client.lanforge_api import LFJsonCommand # noqa: 402
+from lanforge_client.lanforge_api import LFJsonQuery # noqa: 402
 
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -373,7 +373,7 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
 
     args = parser.parse_args()
 
-    help_summary = "This script creates a wanlink using the lanforge api." 
+    help_summary = "This script creates a wanlink using the lanforge api."
     if args.help_summary:
         print(help_summary)
         exit(0)
