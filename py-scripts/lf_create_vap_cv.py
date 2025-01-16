@@ -74,12 +74,10 @@ LICENSE:
 INCLUDE_IN_README: False
 
 """
-import subprocess
 import sys
 import os
 import importlib
 import argparse
-import time
 import logging
 import requests
 
