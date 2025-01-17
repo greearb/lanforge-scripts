@@ -9,11 +9,14 @@ PURPOSE:    Validate the port being used for management when trying to talk to t
 NOTES:      # Recommended Usage in py scripts:
             args.mgr_port = validate_port(args.mgr_port)
 
-EXAMPLE:    # Create a single wanpath on endpoint A - attemped with port 4001:
+EXAMPLE:    # Create a single wanlink and a wanpath on one of its endpts - attemped with port 4001:
+            ./lf_create_wanlink.py --mgr 192.168.101.189 --mgr_port 8080 --port_A eth1 --port_B eth2\
+                                   --speed 1024000 --wl_name test_wl --latency 20\
+                                   --log_level debug --debug
+
             ./lf_create_wanpath.py --mgr 192.168.101.189 --mgr_port 4001\
-                --wp_name test_wp-A --wl_endp test_wl-A\
-                --speed 102400 --latency 25 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-                --log_level debug --debug
+                                   --wp_name test_wp-A --wl_endp test_wl-A\
+                                   --log_level debug --debug
 
 SCRIPT_CLASSIFICATION:
             Module
