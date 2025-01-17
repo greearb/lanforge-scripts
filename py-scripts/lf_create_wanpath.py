@@ -68,6 +68,7 @@ LFUtils = importlib.import_module('py-json.LANforge.LFUtils')
 from lanforge_client.lanforge_api import LFSession          # noqa: E402
 from lanforge_client.lanforge_api import LFJsonCommand      # noqa: E402
 from lanforge_client.lanforge_api import LFJsonQuery        # noqa: E402
+from lf_validate_port import validate_port                  # noqa: E402
 
 if sys.version_info[0] != 3:
     print('This script requires Python3')
@@ -285,6 +286,9 @@ def main():
     parser.add_argument('--lf_logger_config_json', help='--lf_logger_config_json <json file> , json configuration of logger')
 
     args = parser.parse_args()
+
+    # validate port
+    args.mgr_port = validate_port(args.mgr_port)
 
     logger_config = lf_logger_config.lf_logger_config()
     if args.log_level:
