@@ -229,6 +229,21 @@ class lf_create_wanpath():
                                       wanlink=wanlink)
 
 
+def validate_port(port):
+    ''' Validate management port (not 4001 or 4002)'''
+    portsRestricted = ['4001', '4002']
+    if port in portsRestricted:
+        logger.error('Ports 4001 and 4002 are reserved. Please choose another port. GUI is typically 8080.')
+        response = input("To continue enter non-reserved port: ")
+        if response != '':
+            return response
+        else:
+            logger.error("No new port selected. Exiting...")
+            exit(1)
+    else:
+        return port
+
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -285,6 +300,9 @@ def main():
     parser.add_argument('--lf_logger_config_json', help='--lf_logger_config_json <json file> , json configuration of logger')
 
     args = parser.parse_args()
+
+    # validate port
+    args.mgr_port = validate_port(args.mgr_port)
 
     logger_config = lf_logger_config.lf_logger_config()
     if args.log_level:
