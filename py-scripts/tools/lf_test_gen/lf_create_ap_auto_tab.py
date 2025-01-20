@@ -127,6 +127,9 @@ Supports mulitple loops
 Estimated duration: 27 minutes.
 Configuration key: capacity''')
 
+
+
+
         self.lf_ap_auto_channel_switching_test_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_channel_switching_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Channel Switching (channel_switch)", variable=self.lf_ap_auto_channel_switching_test_var,
                                                                       onvalue="Use", offvalue="Do Not Use")
@@ -135,16 +138,6 @@ Configuration key: capacity''')
 Configuration key: channel_switch''')
 
 
-
-
-        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Multi STA Throughput vs Pkt Size (tput_multi_sta)", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
-                                                                                         onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check.grid(row=8, column=1, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check, '''Multi STA Throughput vs Pkt Size
-Throughput vs Pkt Size Estimated duration: 50 minutes * number-of-stations-counts minutes.
-Hunt to find best throughput at different frame sizes and different numbers of stations.
-Supports multiple loops''')
 
         self.lf_ap_auto_long_term_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_long_term_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Long Term (long_term)", variable=self.lf_ap_auto_long_term_var,
@@ -155,15 +148,36 @@ Bring up stations and start traffic, let system run in this configuration
 ''')
 
         # column 2
+        self.lf_ap_auto_stability_var = tkinter.StringVar(value="Do Not Use")
+        self.lf_ap_auto_stability_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability (mix_stability)", variable=self.lf_ap_auto_stability_var,
+                                                              onvalue="Use", offvalue="Do Not Use")
+        self.lf_ap_auto_stability_check.grid(row=5, column=1, sticky="news")
+        self.window_tooltip.bind(self.lf_ap_auto_stability_check, '''Stability
+Bring up stations, run VOIP, emulated video, and slow-speed UDP traffi.
+Reset stationsif so configured.
+Check station connection stability and throughput hangs.
+Configurationkey: mix_stability
+''')
+
         self.lf_ap_auto_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Single STA Throughtput vs Pkt Size (tput_single_sta)", variable=self.lf_ap_auto_throughput_vs_pkt_size_var,
                                                                            onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_throughput_vs_pkt_size_check.grid(row=5, column=1, sticky="news")
+        self.lf_ap_auto_throughput_vs_pkt_size_check.grid(row=6, column=1, sticky="news")
         self.window_tooltip.bind(self.lf_ap_auto_throughput_vs_pkt_size_check, '''Single STA Throughput vs Pkt Size
 Hunt to find best throughput at different frames sizes using a single station.
 Supports multiple loops.
 Estimbated duration: 49 minutes.
 Configuration key: tput_single_sta''')
+
+        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
+        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Multi STA Throughput vs Pkt Size (tput_multi_sta)", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
+                                                                                         onvalue="Use", offvalue="Do Not Use")
+        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check.grid(row=7, column=1, sticky="news")
+        self.window_tooltip.bind(self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check, '''Multi STA Throughput vs Pkt Size
+Throughput vs Pkt Size Estimated duration: 50 minutes * number-of-stations-counts minutes.
+Hunt to find best throughput at different frame sizes and different numbers of stations.
+Supports multiple loops''')
+
 
 
 #        self.lf_ap_auto_band_steering_var = tkinter.StringVar(value="Do Not Use")
@@ -174,19 +188,6 @@ Configuration key: tput_single_sta''')
 #Test weather AP will direct stations to lesser utilized channel.
 #Requires that SSID are same for all DUT radios
 #and that BSSIDs are configured properly in the DUT''')
-
-
-        self.lf_ap_auto_stability_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_stability_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability (mix_stability)", variable=self.lf_ap_auto_stability_var,
-                                                              onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_stability_check.grid(row=9, column=1, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_stability_check, '''Stability
-Bring up stations, run VOIP, emulated video, and slow-speed UDP traffi.
-Reset stationsif so configured.
-Check station connection stability and throughput hangs.
-Configurationkey: mix_stability
-''')
-
 
         # row 11
         self.lf_ap_auto_use_qa_var = tkinter.StringVar(value="Use")
