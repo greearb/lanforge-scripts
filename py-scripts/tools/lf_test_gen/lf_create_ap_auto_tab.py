@@ -96,13 +96,16 @@ class lf_create_ap_auto_tab():
 
         # Column 0
         self.lf_ap_auto_basic_client_connectivity_var = tkinter.StringVar(value="Use")
-        self.lf_ap_auto_basic_client_connectivity_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Basic Client Connectivity", variable=self.lf_ap_auto_basic_client_connectivity_var,
+        self.lf_ap_auto_basic_client_connectivity_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Basic Client Connectivity (basic_cx)", variable=self.lf_ap_auto_basic_client_connectivity_var,
                                                                               onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_basic_client_connectivity_check.grid(row=5, column=0, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_basic_client_connectivity_check, '''Basic Client Connectivity Estimatede duration: 12 minutes.
-Creates stations, associates them, and measures connection time.
-Supports mulitple loops''')
+        self.window_tooltip.bind(self.lf_ap_auto_basic_client_connectivity_check, '''Basic Client Connectivity (basic_cx)
+        Creates stations, associates them, and measures connection time.
+        Supports multiple loops.
+        Estimated duration: 12 minutes.
+        Configuration key: basic_cx''')
 
+        # TODO fix the naming
         self.lf_ap_auto_multi_band_performance_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_multi_band_performance_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Multi Band Performance", variable=self.lf_ap_auto_multi_band_performance_var,
                                                                            onvalue="Use", offvalue="Do Not Use")
