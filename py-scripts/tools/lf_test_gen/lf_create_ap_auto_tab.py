@@ -146,15 +146,12 @@ Throughput vs Pkt Size Estimated duration: 50 minutes * number-of-stations-count
 Hunt to find best throughput at different frame sizes and different numbers of stations.
 Supports multiple loops''')
 
-        self.lf_ap_auto_stability_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_stability_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability (mix_stability)", variable=self.lf_ap_auto_stability_var,
+        self.lf_ap_auto_long_term_var = tkinter.StringVar(value="Do Not Use")
+        self.lf_ap_auto_long_term_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Long Term (long_term)", variable=self.lf_ap_auto_long_term_var,
                                                               onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_stability_check.grid(row=9, column=0, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_stability_check, '''Stability
-Bring up stations, run VOIP, emulated video, and slow-speed UDP traffi.
-Reset stationsif so configured.
-Check station connection stability and throughput hangs.
-Configurationkey: mix_stability
+        self.lf_ap_auto_long_term_check.grid(row=9, column=0)
+        self.window_tooltip.bind(self.lf_ap_auto_long_term_check, '''Long Term
+Bring up stations and start traffic, let system run in this configuration
 ''')
 
         # column 2
@@ -178,13 +175,18 @@ Configuration key: tput_single_sta''')
 #Requires that SSID are same for all DUT radios
 #and that BSSIDs are configured properly in the DUT''')
 
-        self.lf_ap_auto_long_term_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_long_term_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Long Term (long_term)", variable=self.lf_ap_auto_long_term_var,
+
+        self.lf_ap_auto_stability_var = tkinter.StringVar(value="Do Not Use")
+        self.lf_ap_auto_stability_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability (mix_stability)", variable=self.lf_ap_auto_stability_var,
                                                               onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_long_term_check.grid(row=9, column=1)
-        self.window_tooltip.bind(self.lf_ap_auto_long_term_check, '''Long Term
-Bring up stations and start traffic, let system run in this configuration
+        self.lf_ap_auto_stability_check.grid(row=9, column=1, sticky="news")
+        self.window_tooltip.bind(self.lf_ap_auto_stability_check, '''Stability
+Bring up stations, run VOIP, emulated video, and slow-speed UDP traffi.
+Reset stationsif so configured.
+Check station connection stability and throughput hangs.
+Configurationkey: mix_stability
 ''')
+
 
         # row 11
         self.lf_ap_auto_use_qa_var = tkinter.StringVar(value="Use")
