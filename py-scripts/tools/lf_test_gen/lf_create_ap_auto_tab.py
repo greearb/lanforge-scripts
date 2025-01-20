@@ -116,52 +116,58 @@ class lf_create_ap_auto_tab():
         Estimated duration: 10 minutes.
         Configuration key: band_steering''')
 
-
-        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Multi STA Throughput vs Pkt Size (tput_multi_sta)", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
-                                                                                         onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check.grid(row=7, column=0, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check, '''Multi STA Throughput vs Pkt Size
-Throughput vs Pkt Size Estimated duration: 50 minutes * number-of-stations-counts minutes.
-Hunt to find best throughput at different frame sizes and different numbers of stations.
-Supports multiple loops''')
-
-        self.lf_ap_auto_stability_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_stability_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability", variable=self.lf_ap_auto_stability_var,
-                                                              onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_stability_check.grid(row=8, column=0, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_stability_check, '''Stability Bring up stations, run VOIP, emulated video, and slow-speed UDP traffic.
-Reset stations if so configured.
-Check station connection stability and throughput hangs''')
-
-        self.lf_ap_auto_channel_switching_test_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_channel_switching_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Channel Switching (channel_switch)", variable=self.lf_ap_auto_channel_switching_test_var,
-                                                                      onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_channel_switching_check.grid(row=9, column=0, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_channel_switching_check, '''Channel Switching
-Configuration key: channel_switch''')
-
-        # column 2
-        self.lf_ap_auto_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Single STA Throughtput vs Pkt Size (tput_single_sta)", variable=self.lf_ap_auto_throughput_vs_pkt_size_var,
-                                                                           onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_throughput_vs_pkt_size_check.grid(row=6, column=1, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_throughput_vs_pkt_size_check, '''Single STA Throughput vs Pkt Size
-Hunt to find best throughput at different frames sizes using a single station.
-Supports multiple loops.
-Estimbated duration: 49 minutes.
-Configuration key: tput_single_sta''')
-
         self.lf_ap_auto_capacity_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_capacity_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Capacity (capacity)", variable=self.lf_ap_auto_capacity_var,
                                                              onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_capacity_check.grid(row=7, column=1)
+        self.lf_ap_auto_capacity_check.grid(row=7, column=0)
         self.window_tooltip.bind(self.lf_ap_auto_capacity_check, '''Capacity
 Throughput with different numbers of stations, and optionally,
 different /a/b/g/n/AC modes, NSS, and packet sizes.
 Supports mulitple loops
 Estimated duration: 27 minutes.
 Configuration key: capacity''')
+
+        self.lf_ap_auto_channel_switching_test_var = tkinter.StringVar(value="Do Not Use")
+        self.lf_ap_auto_channel_switching_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Channel Switching (channel_switch)", variable=self.lf_ap_auto_channel_switching_test_var,
+                                                                      onvalue="Use", offvalue="Do Not Use")
+        self.lf_ap_auto_channel_switching_check.grid(row=8, column=0, sticky="news")
+        self.window_tooltip.bind(self.lf_ap_auto_channel_switching_check, '''Channel Switching
+Configuration key: channel_switch''')
+
+
+
+
+        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
+        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Multi STA Throughput vs Pkt Size (tput_multi_sta)", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
+                                                                                         onvalue="Use", offvalue="Do Not Use")
+        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check.grid(row=8, column=1, sticky="news")
+        self.window_tooltip.bind(self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check, '''Multi STA Throughput vs Pkt Size
+Throughput vs Pkt Size Estimated duration: 50 minutes * number-of-stations-counts minutes.
+Hunt to find best throughput at different frame sizes and different numbers of stations.
+Supports multiple loops''')
+
+        self.lf_ap_auto_stability_var = tkinter.StringVar(value="Do Not Use")
+        self.lf_ap_auto_stability_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability (mix_stability)", variable=self.lf_ap_auto_stability_var,
+                                                              onvalue="Use", offvalue="Do Not Use")
+        self.lf_ap_auto_stability_check.grid(row=9, column=0, sticky="news")
+        self.window_tooltip.bind(self.lf_ap_auto_stability_check, '''Stability
+Bring up stations, run VOIP, emulated video, and slow-speed UDP traffi.
+Reset stationsif so configured.
+Check station connection stability and throughput hangs.
+Configurationkey: mix_stability
+''')
+
+        # column 2
+        self.lf_ap_auto_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
+        self.lf_ap_auto_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Single STA Throughtput vs Pkt Size (tput_single_sta)", variable=self.lf_ap_auto_throughput_vs_pkt_size_var,
+                                                                           onvalue="Use", offvalue="Do Not Use")
+        self.lf_ap_auto_throughput_vs_pkt_size_check.grid(row=5, column=1, sticky="news")
+        self.window_tooltip.bind(self.lf_ap_auto_throughput_vs_pkt_size_check, '''Single STA Throughput vs Pkt Size
+Hunt to find best throughput at different frames sizes using a single station.
+Supports multiple loops.
+Estimbated duration: 49 minutes.
+Configuration key: tput_single_sta''')
+
 
 #        self.lf_ap_auto_band_steering_var = tkinter.StringVar(value="Do Not Use")
 #        self.lf_ap_auto_band_steering_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Band-Steering", variable=self.lf_ap_auto_band_steering_var,
@@ -173,37 +179,35 @@ Configuration key: capacity''')
 #and that BSSIDs are configured properly in the DUT''')
 
         self.lf_ap_auto_long_term_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_long_term_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability (mix_stability)", variable=self.lf_ap_auto_long_term_var,
+        self.lf_ap_auto_long_term_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Long Term (long_term)", variable=self.lf_ap_auto_long_term_var,
                                                               onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_long_term_check.grid(row=9, column=1)
-        self.window_tooltip.bind(self.lf_ap_auto_long_term_check, '''Stability
-Bring up stations, run VOIP, emulated video, and slow-speed UDP traffi.
-Reset stationsif so configured.
-Check station connection stability and throughput hangs.
-Configurationkey: mix_stability
+        self.window_tooltip.bind(self.lf_ap_auto_long_term_check, '''Long Term
+Bring up stations and start traffic, let system run in this configuration
 ''')
 
-        # row 10
+        # row 11
         self.lf_ap_auto_use_qa_var = tkinter.StringVar(value="Use")
         self.lf_ap_auto_use_qa_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="lf_qa (report)", variable=self.lf_ap_auto_use_qa_var,
                                                            onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_use_qa_check.grid(row=10, column=0)
+        self.lf_ap_auto_use_qa_check.grid(row=11, column=0)
         self.window_tooltip.bind(self.lf_ap_auto_use_qa_check, '''Recommended: AP Auto Test Suite Json will include lf_qa.
 lf_qa will compare performance over multiple runs for Chamber View tests and tests that include kpi''')
 
         self.lf_ap_auto_use_inspect_var = tkinter.StringVar(value="Use")
         self.lf_ap_auto_use_inspect_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="lf_inspect (report)", variable=self.lf_ap_auto_use_inspect_var,
                                                                 onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_use_inspect_check.grid(row=10, column=1)
+        self.lf_ap_auto_use_inspect_check.grid(row=11, column=1)
         self.window_tooltip.bind(self.lf_ap_auto_use_inspect_check, '''Recommended: AP Auto Test Suite Json will include lf_inspect.
 lf_inspect will compare performance between two individual runs for Chamber View tests and tests that include kpi''')
 
+        # row 12
         self.lf_ap_auto_save = ttk.Button(self.lf_ap_auto_frame, text='Create AP Auto Test Suite Json', command=self.create_ap_auto_json)
-        self.lf_ap_auto_save.grid(row=11, column=0, sticky="news", padx=20, pady=10)
+        self.lf_ap_auto_save.grid(row=12, column=0, sticky="news", padx=20, pady=10)
         self.window_tooltip.bind(self.lf_ap_auto_save, 'Save Wifi Capacity Json File')
 
         self.lf_ap_auto_clear = ttk.Button(self.lf_ap_auto_frame, text='Clear AP Auto Info', command=self.ap_auto_clear_information)
-        self.lf_ap_auto_clear.grid(row=11, column=1, sticky="news", padx=20, pady=10)
+        self.lf_ap_auto_clear.grid(row=12, column=1, sticky="news", padx=20, pady=10)
         self.window_tooltip.bind(self.lf_ap_auto_clear, 'Clear AP Auto Information, use between test suite generation')
 
         self.lf_ap_auto_number_dut_indexes = tkinter.Label(self.lf_ap_auto_frame, text="Number DUT Indexes")
