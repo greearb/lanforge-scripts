@@ -134,10 +134,11 @@ Reset stations if so configured.
 Check station connection stability and throughput hangs''')
 
         self.lf_ap_auto_channel_switching_test_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_channel_switching_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Channel Switching Test", variable=self.lf_ap_auto_channel_switching_test_var,
+        self.lf_ap_auto_channel_switching_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Channel Switching (channel_switch)", variable=self.lf_ap_auto_channel_switching_test_var,
                                                                       onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_channel_switching_check.grid(row=9, column=0, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_channel_switching_check, '''Channel Switching Test''')
+        self.window_tooltip.bind(self.lf_ap_auto_channel_switching_check, '''Channel Switching
+Configuration key: channel_switch''')
 
         # column 2
         self.lf_ap_auto_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
