@@ -106,14 +106,16 @@ class lf_create_ap_auto_tab():
         Configuration key: basic_cx''')
 
         # TODO fix the naming
-        self.lf_ap_auto_multi_band_performance_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_multi_band_performance_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Multi Band Performance", variable=self.lf_ap_auto_multi_band_performance_var,
+        self.lf_ap_auto_band_steering_var = tkinter.StringVar(value="Do Not Use")
+        self.lf_ap_auto_band_steering_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Band Steering (band_steering)", variable=self.lf_ap_auto_band_steering_var,
                                                                            onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_multi_band_performance_check.grid(row=6, column=0, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_multi_band_performance_check, '''Multi Band Performance Estimated duration: 4 minutes.
-Single_station throughput test each band, using single-band
-rates found in the Throughput test as offered load.
-Supports multiple loops''')
+        self.lf_ap_auto_band_steering_check.grid(row=6, column=0, sticky="news")
+        self.window_tooltip.bind(self.lf_ap_auto_band_steering_check, '''Band Steering
+        Test weather AP will direct stations to lesser utilized channel.
+        Requires that SSID are the same for all DUT radios
+        and that BSSIDs are configured properly in the DUT.
+        Estimated duration: 10 minutes.
+        Configuration key: band_steering''')
 
         self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
@@ -155,14 +157,14 @@ Throughput with different numbers of stations, and optionally,
 different /1/b/g/n/AC modes, NSS, and packet sizes.
 Supports mulitple loops''')
 
-        self.lf_ap_auto_band_steering_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_band_steering_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Band-Steering", variable=self.lf_ap_auto_band_steering_var,
-                                                                  onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_band_steering_check.grid(row=8, column=1)
-        self.window_tooltip.bind(self.lf_ap_auto_band_steering_check, '''Band-Steering Estimated duration: 10 minutes.
-Test weather AP will direct stations to lesser utilized channel.
-Requires that SSID are same for all DUT radios
-and that BSSIDs are configured properly in the DUT''')
+#        self.lf_ap_auto_band_steering_var = tkinter.StringVar(value="Do Not Use")
+#        self.lf_ap_auto_band_steering_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Band-Steering", variable=self.lf_ap_auto_band_steering_var,
+#                                                                  onvalue="Use", offvalue="Do Not Use")
+#        self.lf_ap_auto_band_steering_check.grid(row=8, column=1)
+#        self.window_tooltip.bind(self.lf_ap_auto_band_steering_check, '''Band-Steering Estimated duration: 10 minutes.
+#Test weather AP will direct stations to lesser utilized channel.
+#Requires that SSID are same for all DUT radios
+#and that BSSIDs are configured properly in the DUT''')
 
         self.lf_ap_auto_long_term_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_long_term_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability", variable=self.lf_ap_auto_long_term_var,
@@ -270,13 +272,13 @@ lf_inspect will compare performance between two individual runs for Chamber View
             _lf_radio_6g=self.dut_tab.lf_radio_6g_combobox.get(),
             _lf_ap_auto_number_dut_indexes_combobox=self.lf_ap_auto_number_dut_indexes_combobox,
             _lf_ap_auto_basic_client_connectivity=self.lf_ap_auto_basic_client_connectivity_var,
-            _lf_ap_auto_multi_band_performance=self.lf_ap_auto_multi_band_performance_var,
+            _lf_ap_auto_band_steering=self.lf_ap_auto_band_steering_var,
             _lf_ap_auto_multi_station_throughput_vs_pkt_size=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
             _lf_ap_auto_stability=self.lf_ap_auto_stability_var,
             _lf_ap_auto_channel_switching_test=self.lf_ap_auto_channel_switching_test_var,
             _lf_ap_auto_throughput_vs_pkt_size=self.lf_ap_auto_throughput_vs_pkt_size_var,
             _lf_ap_auto_capacity=self.lf_ap_auto_capacity_var,
-            _lf_ap_auto_band_steering=self.lf_ap_auto_band_steering_var,
+            #_lf_ap_auto_band_steering=self.lf_ap_auto_band_steering_var,
             _lf_ap_auto_long_term=self.lf_ap_auto_long_term_var
         )
 

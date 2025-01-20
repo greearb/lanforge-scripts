@@ -78,13 +78,13 @@ class lf_create_ap_auto_json():
                  _lf_radio_6g,
                  _lf_ap_auto_number_dut_indexes_combobox,
                  _lf_ap_auto_basic_client_connectivity,
-                 _lf_ap_auto_multi_band_performance,
+                 _lf_ap_auto_band_steering,
                  _lf_ap_auto_multi_station_throughput_vs_pkt_size,
                  _lf_ap_auto_stability,
                  _lf_ap_auto_channel_switching_test,
                  _lf_ap_auto_throughput_vs_pkt_size,
                  _lf_ap_auto_capacity,
-                 _lf_ap_auto_band_steering,
+                 #_lf_ap_auto_band_steering,
                  _lf_ap_auto_long_term
                  ):
         self.test_suite_band = ""
@@ -98,13 +98,13 @@ class lf_create_ap_auto_json():
         self.radio_batch_dict = _radio_batch_dict
 
         self.lf_ap_auto_basic_client_connectivity = _lf_ap_auto_basic_client_connectivity
-        self.lf_ap_auto_multi_band_performance = _lf_ap_auto_multi_band_performance
+        self.lf_ap_auto_band_steering = _lf_ap_auto_band_steering
         self.lf_ap_auto_multi_station_throughput_vs_pkt_size = _lf_ap_auto_multi_station_throughput_vs_pkt_size
         self.lf_ap_auto_stability = _lf_ap_auto_stability
         self.lf_ap_auto_channel_switching_test = _lf_ap_auto_channel_switching_test
         self.lf_ap_auto_throughput_vs_pkt_size = _lf_ap_auto_throughput_vs_pkt_size
         self.lf_ap_auto_capacity = _lf_ap_auto_capacity
-        self.lf_ap_auto_band_steering = _lf_ap_auto_band_steering
+        #self.lf_ap_auto_band_steering = _lf_ap_auto_band_steering
         self.lf_ap_auto_long_term = _lf_ap_auto_long_term
 
         self.lf_ap_auto_use_qa_var = _lf_ap_auto_use_qa_var
