@@ -118,15 +118,16 @@ class lf_create_ap_auto_tab():
 
 
         self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
+        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Multi STA Throughput vs Pkt Size (tput_multi_sta)", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
                                                                                          onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check.grid(row=7, column=0, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check, '''Multi-Station Throughput vs Pkt Size Estimated duration: 50 minutes * number-of-stations-counts minutes.
+        self.window_tooltip.bind(self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check, '''Multi STA Throughput vs Pkt Size
+Throughput vs Pkt Size Estimated duration: 50 minutes * number-of-stations-counts minutes.
 Hunt to find best throughput at different frame sizes and different numbers of stations.
 Supports multiple loops''')
 
         self.lf_ap_auto_stability_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_stability_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Multi-Station Throughput vs Pkt Size", variable=self.lf_ap_auto_stability_var,
+        self.lf_ap_auto_stability_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability", variable=self.lf_ap_auto_stability_var,
                                                               onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_stability_check.grid(row=8, column=0, sticky="news")
         self.window_tooltip.bind(self.lf_ap_auto_stability_check, '''Stability Bring up stations, run VOIP, emulated video, and slow-speed UDP traffic.
@@ -142,12 +143,14 @@ Configuration key: channel_switch''')
 
         # column 2
         self.lf_ap_auto_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Throughtput vs Pkt Size", variable=self.lf_ap_auto_throughput_vs_pkt_size_var,
+        self.lf_ap_auto_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Single STA Throughtput vs Pkt Size (tput_single_sta)", variable=self.lf_ap_auto_throughput_vs_pkt_size_var,
                                                                            onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_throughput_vs_pkt_size_check.grid(row=6, column=1, sticky="news")
-        self.window_tooltip.bind(self.lf_ap_auto_throughput_vs_pkt_size_check, '''Throughput vs Pkt Size Estimated duration: 49 minutes.
-Hunt to find best throughput at different frame sizes using a single station.
-Supports multiple loops''')
+        self.window_tooltip.bind(self.lf_ap_auto_throughput_vs_pkt_size_check, '''Single STA Throughput vs Pkt Size
+Hunt to find best throughput at different frames sizes using a single station.
+Supports multiple loops.
+Estimbated duration: 49 minutes.
+Configuration key: tput_single_sta''')
 
         self.lf_ap_auto_capacity_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_capacity_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Capacity (capacity)", variable=self.lf_ap_auto_capacity_var,
