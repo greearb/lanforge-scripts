@@ -105,7 +105,6 @@ class lf_create_ap_auto_tab():
         Estimated duration: 12 minutes.
         Configuration key: basic_cx''')
 
-        # TODO fix the naming
         self.lf_ap_auto_band_steering_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_band_steering_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Band Steering (band_steering)", variable=self.lf_ap_auto_band_steering_var,
                                                                            onvalue="Use", offvalue="Do Not Use")
@@ -116,6 +115,7 @@ class lf_create_ap_auto_tab():
         and that BSSIDs are configured properly in the DUT.
         Estimated duration: 10 minutes.
         Configuration key: band_steering''')
+
 
         self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
@@ -149,13 +149,15 @@ Hunt to find best throughput at different frame sizes using a single station.
 Supports multiple loops''')
 
         self.lf_ap_auto_capacity_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_capacity_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Capacity", variable=self.lf_ap_auto_capacity_var,
+        self.lf_ap_auto_capacity_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Capacity (capacity)", variable=self.lf_ap_auto_capacity_var,
                                                              onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_capacity_check.grid(row=7, column=1)
-        self.window_tooltip.bind(self.lf_ap_auto_capacity_check, '''Capacity Estimated duration: 27 minutes.
+        self.window_tooltip.bind(self.lf_ap_auto_capacity_check, '''Capacity
 Throughput with different numbers of stations, and optionally,
-different /1/b/g/n/AC modes, NSS, and packet sizes.
-Supports mulitple loops''')
+different /a/b/g/n/AC modes, NSS, and packet sizes.
+Supports mulitple loops
+Estimated duration: 27 minutes.
+Configuration key: capacity''')
 
 #        self.lf_ap_auto_band_steering_var = tkinter.StringVar(value="Do Not Use")
 #        self.lf_ap_auto_band_steering_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Band-Steering", variable=self.lf_ap_auto_band_steering_var,
@@ -167,12 +169,15 @@ Supports mulitple loops''')
 #and that BSSIDs are configured properly in the DUT''')
 
         self.lf_ap_auto_long_term_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_long_term_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability", variable=self.lf_ap_auto_long_term_var,
+        self.lf_ap_auto_long_term_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability (mix_stability)", variable=self.lf_ap_auto_long_term_var,
                                                               onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_long_term_check.grid(row=9, column=1)
-        self.window_tooltip.bind(self.lf_ap_auto_long_term_check, '''Long-Term Estimated duration: depends on configured duration.
-Bring up stations and start traffic, let ststem run in  this configuration for sppecified amount of time.
-Does NOT support multiple loops''')
+        self.window_tooltip.bind(self.lf_ap_auto_long_term_check, '''Stability
+Bring up stations, run VOIP, emulated video, and slow-speed UDP traffi.
+Reset stationsif so configured.
+Check station connection stability and throughput hangs.
+Configurationkey: mix_stability
+''')
 
         # row 10
         self.lf_ap_auto_use_qa_var = tkinter.StringVar(value="Use")
