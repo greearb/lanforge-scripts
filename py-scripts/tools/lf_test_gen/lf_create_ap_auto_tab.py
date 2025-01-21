@@ -204,6 +204,13 @@ lf_qa will compare performance over multiple runs for Chamber View tests and tes
         self.window_tooltip.bind(self.lf_ap_auto_use_inspect_check, '''Recommended: AP Auto Test Suite Json will include lf_inspect.
 lf_inspect will compare performance between two individual runs for Chamber View tests and tests that include kpi''')
 
+        self.lf_ap_auto_use_combined_var = tkinter.StringVar(value="Use")
+        self.lf_ap_auto_use_combined_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="combined 2g 5g 6g", variable=self.lf_ap_auto_use_inspect_var,
+                                                                onvalue="Use", offvalue="Do Not Use")
+        self.lf_ap_auto_use_combined_check.grid(row=11, column=2)
+        self.window_tooltip.bind(self.lf_ap_auto_use_combined_check, '''This will create a test cast that uses all the radios selected for AP Auto''')
+
+
         # row 12
         self.lf_ap_auto_save = ttk.Button(self.lf_ap_auto_frame, text='Create AP Auto Test Suite Json', command=self.create_ap_auto_json)
         self.lf_ap_auto_save.grid(row=12, column=0, sticky="news", padx=20, pady=10)
