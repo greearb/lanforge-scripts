@@ -180,17 +180,14 @@ class DUT(dut):
                               ssid_flags_mask=0xFFFFFFFF
                               )
 
+    def add_notes(self, dut_name="DUT", text="[BLANK]"):
+        self.add_note(dut_name=dut_name, text=text)
 
-    def add_notes(self,
-            dut_name="DUT",
-            text="[BLANK]"):
-                self.add_note(dut_name=dut_name,
-                            text=text)
 
 def main():
     help_summary = '''\
     This script create chamberview dut script is designed to configure DUT using chamberview scenario.
-    This script allows the user to configure DUT with the parameters like ssid, password,security and BSSID. 
+    This script allows the user to configure DUT with the parameters like ssid, password,security and BSSID.
     The DUT created can be seen in the chamber view under scenario configuration.
     '''
     parser = argparse.ArgumentParser(
@@ -213,11 +210,11 @@ SCRIPT_CATEGORIES:   Functional
 
 NOTES:
         To Run this script gui should be opened with
-        
+
             path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
                   pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
                   ./lfclient.bash -cli-socket 3990
-        
+
         This script is used to create a DUT in chamber view.
                 Manual steps:
                     1. open GUI
@@ -226,24 +223,24 @@ NOTES:
                     4. Enter Name (DUT Name), SSID , Security type, BSsid (if available)
                     5. click on apply and OK
                     6. you will see a DUT created in chamber view under scenario configuration
-        
+
         If entered DUT name is already created in lanforge,
         it will overwrite on to that DUT ( All information will be overwritten )
         Which means it will "Update the DUT".
-        
+
         If entered DUT name is not already in lanforge,
         then new DUT will be created will all the provided information
-        
+
         The contents of '--ssid' argument are split with shlex, so you can do commands like this as well:
         ./create_chamberview_dut.py --lfmgr localhost --dut_name regression_dut
             --ssid "ssid_idx=0 ssid='j-wpa2-153 space' security='wpa2' password=j-wpa2-153 bssid=04:f0:21:cb:01:8b"
-        
+
         --lfmgr = IP of lanforge
         --mgr_port = Default 8080
         --dut_name = Enter name of DUT ( to update DUT enter same DUT name )
                                     ( enter new DUT name to create a new DUT)
         --ssid = "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41"
-        
+
                 --ssid will take = ssid_idx (from 0 to 7) : we can add upto 7 ssids to a DUT
                                     = ssid : Name of SSID
                                     = security : Security type WPA|WEP|11r|EAP-PEAP ( in case of multiple security add "|"
@@ -311,7 +308,6 @@ INCLUDE_IN_README: False
     parser.add_argument("--dut_notes", default="[BLANK]", help="Add Notes to Chamberview Test, may want to use --dut_notes_clear prior")
     parser.add_argument("--dut_notes_clear", help="Clear out older notes, used prior to adding new notes will set '[BLANK]'", action="store_true")
 
-
     # TODO:  Use lfcli_base for common arguments.
     parser.add_argument('--debug', help='Enable debugging', default=False, action="store_true")
     parser.add_argument('--log_level',
@@ -349,9 +345,9 @@ INCLUDE_IN_README: False
     new_dut.setup()
     new_dut.add_ssids()
     if args.dut_notes_clear:
-        new_dut.add_notes(dut_name=args.dut_name,text='[BLANK]')
+        new_dut.add_notes(dut_name=args.dut_name, text='[BLANK]')
     if args.dut_notes != '[BLANK]':
-        new_dut.add_notes(dut_name=args.dut_name,text=args.dut_notes)
+        new_dut.add_notes(dut_name=args.dut_name, text=args.dut_notes)
     new_dut.cv_test.show_text_blob(None, None, True)  # Show changes on GUI
     new_dut.cv_test.sync_cv()
     time.sleep(2)
