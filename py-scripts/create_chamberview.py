@@ -200,7 +200,7 @@ class CreateChamberview(cv_test):
 
 
 def main():
-    help_summary='''\
+    help_summary = '''\
      This script creates a scenario in which stations,bridged-AP,vap,etc can be created and upstream, upstream-dhcp, uplink-nat can be configured in chamber view.
     '''
     parser = cv_test.create_basic_argparse(
