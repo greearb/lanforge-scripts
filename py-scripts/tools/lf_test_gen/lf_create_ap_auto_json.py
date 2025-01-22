@@ -77,15 +77,15 @@ class lf_create_ap_auto_json():
                  _lf_radio_5g,
                  _lf_radio_6g,
                  _lf_ap_auto_number_dut_indexes_combobox,
-                 _lf_ap_auto_basic_client_connectivity,
-                 _lf_ap_auto_band_steering,
-                 _lf_ap_auto_multi_station_throughput_vs_pkt_size,
-                 _lf_ap_auto_stability,
-                 _lf_ap_auto_channel_switching_test,
-                 _lf_ap_auto_throughput_vs_pkt_size,
-                 _lf_ap_auto_capacity,
+                 _lf_ap_auto_basic_client_connectivity, # basic_cx
+                 _lf_ap_auto_band_steering, # band_steering
+                 _lf_ap_auto_capacity, # capacity
+                 _lf_ap_auto_channel_switching_test, # channel_switch
+                 _lf_ap_auto_long_term, # long_term
+                 _lf_ap_auto_stability, # mix_stability
+                 _lf_ap_auto_throughput_vs_pkt_size, # tput_single_sta
+                 _lf_ap_auto_multi_station_throughput_vs_pkt_size, # tput_multi_sta
                  #_lf_ap_auto_band_steering,
-                 _lf_ap_auto_long_term
                  ):
         self.test_suite_band = ""
         self.use_radio_dict = _use_radio_dict
@@ -169,6 +169,7 @@ class lf_create_ap_auto_json():
 
         self.last_2g_radio = 0
 
+
     def get_file_2g(self):
         return self.file_2g
 
@@ -233,6 +234,9 @@ class lf_create_ap_auto_json():
         self.ap_auto_band_json += """
         "{test_suite}":{{
     """.format(test_suite=self.suite_radios_band)
+
+        # find the tests to enable
+
 
         # find the last radio to include in test
         count_band_radios = 0
