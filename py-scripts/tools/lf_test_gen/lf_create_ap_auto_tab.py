@@ -205,7 +205,7 @@ lf_qa will compare performance over multiple runs for Chamber View tests and tes
 lf_inspect will compare performance between two individual runs for Chamber View tests and tests that include kpi''')
 
         self.lf_ap_auto_use_combined_var = tkinter.StringVar(value="Use")
-        self.lf_ap_auto_use_combined_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="combined 2g 5g 6g", variable=self.lf_ap_auto_use_inspect_var,
+        self.lf_ap_auto_use_combined_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="across multiple radios", variable=self.lf_ap_auto_use_inspect_var,
                                                                 onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_use_combined_check.grid(row=11, column=2)
         self.window_tooltip.bind(self.lf_ap_auto_use_combined_check, '''This will create a test cast that uses all the radios selected for AP Auto''')
@@ -296,13 +296,13 @@ lf_inspect will compare performance between two individual runs for Chamber View
             _lf_ap_auto_number_dut_indexes_combobox=self.lf_ap_auto_number_dut_indexes_combobox,
             _lf_ap_auto_basic_client_connectivity=self.lf_ap_auto_basic_client_connectivity_var,
             _lf_ap_auto_band_steering=self.lf_ap_auto_band_steering_var,
-            _lf_ap_auto_multi_station_throughput_vs_pkt_size=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
-            _lf_ap_auto_stability=self.lf_ap_auto_stability_var,
-            _lf_ap_auto_channel_switching_test=self.lf_ap_auto_channel_switching_test_var,
-            _lf_ap_auto_throughput_vs_pkt_size=self.lf_ap_auto_throughput_vs_pkt_size_var,
             _lf_ap_auto_capacity=self.lf_ap_auto_capacity_var,
+            _lf_ap_auto_channel_switching_test=self.lf_ap_auto_channel_switching_test_var,
+            _lf_ap_auto_long_term=self.lf_ap_auto_long_term_var,
+            _lf_ap_auto_stability=self.lf_ap_auto_stability_var,
+            _lf_ap_auto_throughput_vs_pkt_size=self.lf_ap_auto_throughput_vs_pkt_size_var,
+            _lf_ap_auto_multi_station_throughput_vs_pkt_size=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
             #_lf_ap_auto_band_steering=self.lf_ap_auto_band_steering_var,
-            _lf_ap_auto_long_term=self.lf_ap_auto_long_term_var
         )
 
         if self.radio_frame.suite_radios_2g != "":
