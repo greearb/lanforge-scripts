@@ -1714,23 +1714,15 @@ class Throughput(Realm):
         return updated_array
 
 
-def main():
-    help_summary = '''\
-    The Client Capacity test and Interopability test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like android, Linux,
-    windows, and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for
-    this test, we aim to assess the capacity of network to handle high volumes of traffic while
-    each trial. Along with throughput other measurements made are client connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the
-    AP to be able to handle several stations (within the limitations of the AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that
-    scales well will not show a significant overall throughput decrease as more Real clients are added.
-    '''
+def parse_args():
     parser = argparse.ArgumentParser(
         prog="lf_interop_throughputput.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''\
+        epilog=r'''\
             Provides the available devices and allows user to run the wifi capacity test
             on particular devices by specifying direction as upload, download and bidirectional including different types of loads and incremental capacity.
             ''',
-        description='''\
+        description=r'''\
 
             NAME: lf_interop_throughputput.py
 
@@ -1831,15 +1823,15 @@ def main():
     optional = parser.add_argument_group('Optional arguments to run throughput.py')
 
     required.add_argument('--device_list', help="Enter the devices on which the test should be run", default=[])
-    required.add_argument('--mgr', '--lfmgr', default='localhost', help='hostname for where LANforge GUI is running')
+    required.add_argument('--mgr', '--lfmgr', help='hostname for where LANforge GUI is running')
     required.add_argument('--mgr_port', '--port', default=8080, help='port LANforge GUI HTTP service is running on')
-    required.add_argument('--upstream_port', '-u', default='eth1', help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1')
+    required.add_argument('--upstream_port', '-u', help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1')
     required.add_argument('--ssid', help='WiFi SSID for script objects to associate to')
     required.add_argument('--passwd', '--password', '--key', default="[BLANK]", help='WiFi passphrase/password/key')
-    required.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=False)
+    required.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]')
     required.add_argument('--upload', help='--upload traffic load per connection (upload rate)', default='2560')
     required.add_argument('--download', help='--download traffic load per connection (download rate)', default='2560')
-    required.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="")
+    required.add_argument('--test_duration', help='--test_duration sets the duration of the test')
     required.add_argument('--report_timer', help='--duration to collect data', default="5s")
     required.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
     required.add_argument('--dowebgui', help="If true will execute script for webgui", action='store_true')
@@ -1861,12 +1853,48 @@ def main():
 
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def validate_args(args):
+    '''Validate CLI arguments.'''
+    missed_args = []
+
+    if args.mgr is None:
+        missed_args.append("--mgr")
+    if args.upstream_port is None:
+        missed_args.append("--upstream_port")
+    if args.ssid is None:
+        missed_args.append("--ssid")
+    if args.traffic_type is None:
+        missed_args.append("--traffic_type")
+    if args.test_duration is None:
+        missed_args.append("--test_duration")
+
+    # print missed required arguments
+    if len(missed_args) > 0:
+        logger.error("Required arguments not included: {}".format(missed_args))
+        exit(1)
+
+
+def main():
+
+    args = parse_args()
+
+    help_summary = '''\
+    The Client Capacity test and Interopability test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like android, Linux,
+    windows, and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for
+    this test, we aim to assess the capacity of network to handle high volumes of traffic while
+    each trial. Along with throughput other measurements made are client connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the
+    AP to be able to handle several stations (within the limitations of the AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that
+    scales well will not show a significant overall throughput decrease as more Real clients are added.
+    '''
 
     if args.help_summary:
         print(help_summary)
         exit(0)
 
+    validate_args(args)
     logger_config = lf_logger_config.lf_logger_config()     # noqa: F841
 
     loads = {}
