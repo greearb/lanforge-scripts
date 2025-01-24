@@ -604,6 +604,19 @@ class Throughput(Realm):
         logger.info("cleanup done")
         self.cx_profile.cleanup()
 
+    def get_cx_states(self, device_names):
+        '''
+        Get the cx states of the devices (ie Run, Stopped, WAITING)
+        '''
+        cx_state_list = []
+        for device in device_names:
+            try:
+                device_data = self.json_get('/cx/all')[device]
+                cx_state_list.append(device_data['state'])
+            except KeyError:
+                logger.error("Error: %s key not found in cx data", device)
+        return cx_state_list
+
     def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time):
 
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
@@ -614,9 +627,6 @@ class Throughput(Realm):
         if self.cx_profile.created_cx is None:
             raise ValueError("Monitor needs a list of Layer 3 connections")
 
-        start_time = datetime.now()
-        logger.info("Monitoring cx and endpoints")
-        end_time = start_time + timedelta(seconds=int(self.test_duration))
         self.overall = []
 
         # Initialize variables for real-time connections data
@@ -625,6 +635,23 @@ class Throughput(Realm):
         connections_download = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
         connections_upload_realtime = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
         connections_download_realtime = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+
+        logger.info("Waiting for cx to start")
+        
+        # loop to get_cx_states until one return 'Running'
+        cx_states_down = True
+        while cx_states_down:
+            states = self.get_cx_states(list(self.cx_profile.created_cx.keys()))
+            logger.info("states: {}".format(states))
+
+            for cx_state in states:
+                if cx_state == 'Run':
+                    cx_states_down = False
+            time.sleep(2)
+
+        start_time = datetime.now()
+        logger.info("Monitoring cx and endpoints")
+        end_time = start_time + timedelta(seconds=int(self.test_duration))
 
         # Initialize lists for throughput and drops for each connection
         [(upload.append([]), download.append([]), drop_a.append([]), drop_b.append([]), state.append([])) for i in range(len(self.cx_profile.created_cx))]
