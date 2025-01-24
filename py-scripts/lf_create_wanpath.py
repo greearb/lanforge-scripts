@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-'''
+r'''
 NAME:       lf_create_wanpath.py
 
 PURPOSE:    Create a wanpath using the lanforge api given an existing wanlink endpoint
@@ -35,6 +35,8 @@ NOTES:
 
             # Lanforge api expects 'wanlink' but it is really looking for the endpoint name
                 ie. wanlink test_wl has endpoints test_wl-A and test_wl-B.
+
+            # Note: endp_A is associated with _tx_endp and endp_B is associated with _rx_endp
 
 SCRIPT_CLASSIFICATION:
             Creation
@@ -189,14 +191,6 @@ class lf_create_wanpath():
             wanlink:                   Name of WanLink endpoint [R]
         '''
 
-        # check for required arguments
-        if wanlink is None:
-            logger.error('wanlink is None. wanlink must be set to a valid existing wanlink. Exiting')
-            exit(1)
-        elif alias is None:
-            logger.error('alias is None. alias must be set to the desired name of the wanpath. Exiting')
-            exit(1)
-
         # add wanpath via cli command post_add_wanpath
         self.command.post_add_wanpath(alias=alias,
                                       dest_ip=dest_ip,
@@ -239,7 +233,7 @@ def parse_args():
         epilog='''\
             Create Wanpaths
             ''',
-        description='''\
+        description=r'''\
             NAME:       lf_create_wanpath.py
 
             PURPOSE:    Create a wanpath using the lanforge api given an existing wanlink endpoint
@@ -372,6 +366,7 @@ def main():
     logger_config = lf_logger_config.lf_logger_config()
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
+
     # initialize wanlink
     wanpath = lf_create_wanpath(lf_mgr=args.mgr,
                                 lf_port=8080,
@@ -413,5 +408,5 @@ def main():
                         wanlink=args.wanlink)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
