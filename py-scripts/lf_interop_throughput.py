@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
     NAME: lf_interop_throughput.py
 
     PURPOSE: lf_interop_throughput.py will provide the available devices and allows user to run the wifi capacity test
@@ -240,7 +240,6 @@ class Throughput(Realm):
     def os_type(self):
         """
         Determines OS type of selected devices.
-
         """
         response = self.json_get("/resource/all")
         if "resources" not in response.keys():
@@ -498,6 +497,9 @@ class Throughput(Realm):
         return self.cx_profile.created_cx
 
     def create_cx(self):
+        '''
+        Creates a connection profile.
+        '''
         direction = ''
 
         # Determine direction based on side_a_min_bps and side_b_min_bps
@@ -582,6 +584,9 @@ class Throughput(Realm):
         # self.cx_profile.start_cx_specific(cx_list)
 
     def stop_specific(self, cx_list):
+        '''
+        Stops specific connections from the given list.
+        '''
         logger.info("Stopping specific CXs...")
         for cx_name in cx_list:
             if self.debug:
@@ -593,14 +598,22 @@ class Throughput(Realm):
             }, debug_=self.debug)
 
     def stop(self):
-
+        '''
+        Stops all connections
+        '''
         self.cx_profile.stop_cx()
         self.station_profile.admin_down()
 
     def pre_cleanup(self):
+        '''
+        Pre-cleanup function
+        '''
         self.cx_profile.cleanup()
 
     def cleanup(self):
+        '''
+        Cleanup function
+        '''
         logger.info("cleanup done")
         self.cx_profile.cleanup()
 
@@ -618,6 +631,9 @@ class Throughput(Realm):
         return cx_state_list
 
     def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time):
+        '''
+        Monitor the performance of the devices
+        '''
 
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
         drop_a, drop_a_per, drop_b, drop_b_per, state, state_of_device = [], [], [], [], [], []                                                         # noqa: F841
@@ -637,7 +653,7 @@ class Throughput(Realm):
         connections_download_realtime = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
 
         logger.info("Waiting for cx to start")
-        
+
         # loop to get_cx_states until one return 'Running'
         cx_states_down = True
         while cx_states_down:
@@ -659,9 +675,6 @@ class Throughput(Realm):
         # If using web GUI, set runtime directory
         if self.dowebgui:
             runtime_dir = self.result_dir
-
-        # start_time = datetime.now()
-        # end_time = start_time + timedelta(seconds=int(self.test_duration))
 
         # Continuously collect data until end time is reached
         while datetime.now() < end_time:
@@ -937,7 +950,6 @@ class Throughput(Realm):
     def check_incremental_list(self):
         """
         Checks and generates a list of incremental capacities for connections.
-
         """
         if (len(self.incremental_capacity) == 0 and self.do_interopability is not True and self.incremental):
             self.incremental_capacity = input("Enter the incremental load to run the test:")
@@ -998,9 +1010,7 @@ class Throughput(Realm):
 
     def get_incremental_capacity_list(self):
         """
-
         Generates lists of incremental capacities and connection names for the created connections.
-
         """
 
         cx_incremental_capacity_lists, cx_incremental_capacity_names_lists, incremental_capacity_list_values = [], [], []
@@ -1060,6 +1070,9 @@ class Throughput(Realm):
 
     def generate_report(self, iterations_before_test_stopped_by_user, incremental_capacity_list, data=None, data1=None, report_path='', result_dir_name='Throughput_Test_report',
                         selected_real_clients_names=None):
+        '''
+        Generate a report for the throughput test.
+        '''
 
         if self.do_interopability:
             result_dir_name = "Interopability_Test_report"
@@ -1730,6 +1743,10 @@ class Throughput(Realm):
         report.write_pdf()
 
     def trim_data(self, array_size, to_updated_array):
+        '''
+        Trim the data to the size of array_size
+        '''
+
         if array_size < 6:
             updated_array = to_updated_array
         else:
@@ -1742,6 +1759,10 @@ class Throughput(Realm):
 
 
 def parse_args():
+    '''
+    Parse CLI arguments and categorize
+    '''
+
     parser = argparse.ArgumentParser(
         prog="lf_interop_throughputput.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -1884,7 +1905,10 @@ def parse_args():
 
 
 def validate_args(args):
-    '''Validate CLI arguments.'''
+    '''
+    Validate Required CLI arguments
+    '''
+
     missed_args = []
 
     if args.mgr is None:
