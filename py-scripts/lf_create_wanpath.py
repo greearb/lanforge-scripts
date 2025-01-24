@@ -360,6 +360,12 @@ def main():
 
     args = parse_args()
 
+    help_summary = 'This script will create and configure a wanpath given an existing wanlink endpoint.'
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     validate_args(args)
 
     # Configure logging
