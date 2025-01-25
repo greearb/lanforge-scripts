@@ -364,11 +364,14 @@ def validate_args(args):
 
 
 def main():
-
+    
     args = parse_args()
-    validate_args(args)
 
-    # validate port
+    if args.help_summary:
+        print('This script will create and configure a wanpath given an existing wanlink endpoint.')
+        exit(0)
+
+    validate_args(args)
     args.mgr_port = validate_port(args.mgr_port)
 
     logger_config = lf_logger_config.lf_logger_config()
