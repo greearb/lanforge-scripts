@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-'''
+r'''
 NAME:       lf_create_wanpath.py
 
 PURPOSE:    Create a wanpath using the lanforge api given an existing wanlink endpoint
@@ -246,7 +246,7 @@ def parse_args():
         epilog='''\
             Create Wanpaths
             ''',
-        description='''\
+        description=r'''\
             NAME:       lf_create_wanpath.py
 
             PURPOSE:    Create a wanpath using the lanforge api given an existing wanlink endpoint
@@ -364,7 +364,7 @@ def validate_args(args):
 
 
 def main():
-    
+
     args = parse_args()
 
     if args.help_summary:
