@@ -17,8 +17,8 @@
         "UPSTREAM_PORT":"1.1.eth3",
         "TEST_TIMEOUT": 300,
         "TEST_WINDOW_DAYS": "1",
-        "ATTENUATOR_1": "1.1.65535",
-        "ATTENUATOR_2": "1.1.3360",
+        "ATTENUATOR_1": "1.1.3360",
+        "ATTENUATOR_2": "1.1.65535",
         "ATTENUATOR_3": "1.1.1018",
         "EMAIL_LIST_PRODUCTION": "dylan.eskew@candelatech.com,tricia.smiley@candelatech.com,konikofi@candelatech.com,chuck.rekiere@candelatech.com,rory.little@candelatech.com",
         "EMAIL_LIST_TEST": "tricia.smiley@candelatech.com,chuck.rekiere@candelatech.com",
@@ -26,5 +26,3 @@
         "EMAIL_TXT": "CT-US-007 192.168.102.197"
     }
 }
-
-        
