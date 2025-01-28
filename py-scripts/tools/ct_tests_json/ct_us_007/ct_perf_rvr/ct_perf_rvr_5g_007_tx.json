@@ -5,6 +5,80 @@
         ]
     },
     "test_suites":{
+        "ct_perf_rvr_5g_be200_W10_UDP_tx":{
+            "CC_DUT_BE200_5G_W10_UDP_tx":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME",
+                    " --dut_flag DHCPD-LAN"
+                ]
+                },
+            "CC_BE200_5G_W10_UDP_tx":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario BE200_5G_W10_UDP_tx ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy10,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\""
+                ]
+            },
+            "RVR_BE200_5G_W10_UDP_tx":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "iterations":"1",
+                "load_db":"skip",
+                "command":"lf_rvr_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name BE200_5G_W10_UDP_tx",
+                    " --config_name test_con --upstream UPSTREAM_PORT  --dut USE_DUT_NAME --duration 20000 --station 1.1.wlan10",
+                    " --download_speed 85% --upload_speed 0% --raw_line 'pkts: Custom' ",
+                    " --raw_line 'cust_pkt_sz: 172;256;512;768;1024;MTU' ",
+                    " --raw_line 'directions: DUT Transmit' ",
+                    " --raw_line 'traffic_types: UDP' ",
+                    " --raw_line 'bandw_options: AUTO' ",
+                    " --raw_line 'spatial_streams: AUTO' ",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'BE200_5G_W10_UDP_tx'",
+                    " --raw_line 'attenuator: ATTENUATOR_1'",
+                    " --raw_line 'attenuations: 000,100,200,300,400,450,460,470'",
+                    " --raw_line 'attenuator_mod: 0xf'  ",
+                    " --test_rig TEST_RIG ",
+                    " --set DUT_SET_NAME",
+                    " --verbosity 11"
+                ]
+            }
+            ,
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE --test_suite  TEST_SUITE"
+                ]
+            },
+            "lf_inspect":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_inspect.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
+                ]
+            }
+        },
         "rvr_perf_5g_1_mt7915e_W0_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
