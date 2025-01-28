@@ -655,8 +655,10 @@ class Throughput(Realm):
         logger.info("Waiting for cx to start")
 
         # loop to get_cx_states until one return 'Running'
+        max_retries = 20
         cx_states_down = True
         while cx_states_down:
+            max_retries -= 1
             states = self.get_cx_states(list(self.cx_profile.created_cx.keys()))
             logger.info("states: {}".format(states))
 
@@ -664,6 +666,10 @@ class Throughput(Realm):
                 if cx_state == 'Run':
                     cx_states_down = False
             time.sleep(2)
+
+            if max_retries == 0:
+                logger.error("CXs are not coming up. Exiting the test")
+                exit(1)
 
         start_time = datetime.now()
         logger.info("Monitoring cx and endpoints")
@@ -1871,15 +1877,15 @@ def parse_args():
     optional = parser.add_argument_group('Optional arguments to run throughput.py')
 
     required.add_argument('--device_list', help="Enter the devices on which the test should be run", default=[])
-    required.add_argument('--mgr', '--lfmgr', help='hostname for where LANforge GUI is running')
+    required.add_argument('--mgr', '--lfmgr', help='hostname for where LANforge GUI is running', required=True)
     required.add_argument('--mgr_port', '--port', default=8080, help='port LANforge GUI HTTP service is running on')
-    required.add_argument('--upstream_port', '-u', help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1')
-    required.add_argument('--ssid', help='WiFi SSID for script objects to associate to')
+    required.add_argument('--upstream_port', '-u', help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1', required=True)
+    required.add_argument('--ssid', help='WiFi SSID for script objects to associate to', required=True)
     required.add_argument('--passwd', '--password', '--key', default="[BLANK]", help='WiFi passphrase/password/key')
-    required.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]')
+    required.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
     required.add_argument('--upload', help='--upload traffic load per connection (upload rate)', default='2560')
     required.add_argument('--download', help='--download traffic load per connection (download rate)', default='2560')
-    required.add_argument('--test_duration', help='--test_duration sets the duration of the test')
+    required.add_argument('--test_duration', help='--test_duration sets the duration of the test', required=True)
     required.add_argument('--report_timer', help='--duration to collect data', default="5s")
     required.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
     required.add_argument('--dowebgui', help="If true will execute script for webgui", action='store_true')
@@ -1904,30 +1910,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def validate_args(args):
-    '''
-    Validate Required CLI arguments
-    '''
-
-    missed_args = []
-
-    if args.mgr is None:
-        missed_args.append("--mgr")
-    if args.upstream_port is None:
-        missed_args.append("--upstream_port")
-    if args.ssid is None:
-        missed_args.append("--ssid")
-    if args.traffic_type is None:
-        missed_args.append("--traffic_type")
-    if args.test_duration is None:
-        missed_args.append("--test_duration")
-
-    # print missed required arguments
-    if len(missed_args) > 0:
-        logger.error("Required arguments not included: {}".format(missed_args))
-        exit(1)
-
-
 def main():
 
     args = parse_args()
@@ -1945,7 +1927,6 @@ def main():
         print(help_summary)
         exit(0)
 
-    validate_args(args)
     logger_config = lf_logger_config.lf_logger_config()     # noqa: F841
 
     loads = {}
