@@ -2,7 +2,7 @@
     "ct_perf_rvr_5g_007":{
         "Notes":[
             "This json file describes tests to be run by LANforge system performance 007, note ssid_idx=0 is for Radio-1, ssid_idx_1 is for Radio-2"
-        ]  
+        ]
     },
     "test_suites":{
         "rvr_perf_5g_1_mt7915e_W0_tx":{
@@ -833,7 +833,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_1_mt7921_W6_tx":{
+        "rvr_perf_5g_1_mt7925e_W6_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -902,7 +902,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_2_mt7921_W6_tx":{
+        "rvr_perf_5g_2_mt7925e_W6_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -1119,7 +1119,7 @@
                     " "
                 ]
             }
-        }         
+        }
 
     }
 }
