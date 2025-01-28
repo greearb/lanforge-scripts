@@ -655,8 +655,10 @@ class Throughput(Realm):
         logger.info("Waiting for cx to start")
 
         # loop to get_cx_states until one return 'Running'
+        max_retries = 20
         cx_states_down = True
         while cx_states_down:
+            max_retries -= 1
             states = self.get_cx_states(list(self.cx_profile.created_cx.keys()))
             logger.info("states: {}".format(states))
 
@@ -664,6 +666,10 @@ class Throughput(Realm):
                 if cx_state == 'Run':
                     cx_states_down = False
             time.sleep(2)
+
+            if max_retries == 0:
+                logger.error("CXs are not coming up. Exiting the test")
+                exit(1)
 
         start_time = datetime.now()
         logger.info("Monitoring cx and endpoints")
