@@ -3655,9 +3655,14 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_gen_endp(self, 
                           alias: str = None,                        # Name of endpoint. [R]
+                          gen_flags: str = None,                    # Flags for configuring a generic endpoint. [D:0]
+                          group: str = None,                        # Group ID for {gen_zoom, gen_teams, gen_meet} endpoints
+                          # [D:NA]
                           port: str = None,                         # Port number or name.
                           resource: int = None,                     # Resource number.
                           shelf: int = 1,                           # Shelf name/id. [D:1]
+                          subtype: str = None,                      # Generic Endpoint Subtype: gen_none, gen_zoom,
+                          # gen_teams, gen_meet [D:gen_none]
                           p_type: str = None,                       # Endpoint Type : gen_generic [D:gen_generic]
                           response_json_list: list = None,
                           debug: bool = False,
@@ -3673,12 +3678,18 @@ class LFJsonCommand(JsonCommand):
         data = {}
         if alias is not None:
             data["alias"] = alias
+        if gen_flags is not None:
+            data["gen_flags"] = gen_flags
+        if group is not None:
+            data["group"] = group
         if port is not None:
             data["port"] = port
         if resource is not None:
             data["resource"] = resource
         if shelf is not None:
             data["shelf"] = shelf
+        if subtype is not None:
+            data["subtype"] = subtype
         if p_type is not None:
             data["type"] = p_type
         if len(data) < 1:
@@ -3702,9 +3713,12 @@ class LFJsonCommand(JsonCommand):
         TODO: check for default argument values
         TODO: fix comma counting
         self.post_add_gen_endp(alias=param_map.get("alias"),
+                               gen_flags=param_map.get("gen_flags"),
+                               group=param_map.get("group"),
                                port=param_map.get("port"),
                                resource=param_map.get("resource"),
                                shelf=param_map.get("shelf"),
+                               subtype=param_map.get("subtype"),
                                type=param_map.get("type"),
                                )
         """
@@ -20003,19 +20017,21 @@ class LFJsonQuery(JsonQuery):
         /adb/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        api, app-id, device, device-type, model, name, phantom, product, release, 
-        resource-id, timed-out, unauth, user-name
+        api, app-id, bt+ctrl, bt+mac, device, device-type, model, name, phantom, 
+        product, release, resource-id, timed-out, unauth, user-name, wifi+mac
     Example URL: /adb?fields=api,app-id
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_adb(eid_list=['1.234', '1.344'],
-                                   requested_col_names=['resource-id'], 
+                                   requested_col_names=['wifi mac'], 
                                    debug=True)
 
     The record returned will have these members: 
     {
         'api':         # SDK API Version
         'app-id':      # Interop app identifier.
+        'bt ctrl':     # LANforge bluetooth control device.
+        'bt mac':      # Bluetooth MAC address
         'device':      # Interop device identifier.
         'device-type': # Interop device type
         'model':       # Interop device model identifier.
@@ -20030,6 +20046,7 @@ class LFJsonQuery(JsonQuery):
         'unauth':      # The device is un-authorized. Enable debugging on device to use it.
                        # (Android only)
         'user-name':   # LANforge Interop app username for this Interop device.
+        'wifi mac':    # Wifi MAC address
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -21398,7 +21415,8 @@ class LFJsonQuery(JsonQuery):
         'password-8':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
                            # Identity in the EID-ID field below anduse the EAP Password in this
                            # field.  
-        'serial number':   # DUT Identifier (serial-number, or similar)
+        'serial number':   # DUT Identifier (serial-number, or similar).If this represents an Android
+                           # device managed over ADB, then use ADB identifier.
         'serial port':     # Resource and name of LANforge serial port that connects to this DUT.
                            # (1.1.ttyS0). Does not need to belong to lan_port or wan_port resource.
         'ssid-1':          # WiFi SSID advertised by DUT.
@@ -21486,8 +21504,8 @@ class LFJsonQuery(JsonQuery):
         rx+rate+%28last%29, rx+rate+ll, rx+wrong+dev, script, send+buf, source+addr, 
         tcp+mss, tcp+rtx, tos, tx+bytes, tx+pdus, tx+pkts+ll, tx+rate, tx+rate+%281%C2%A0min%29, 
         tx+rate+%28last%29, tx+rate+ll, type        # hidden columns:
-        adv-rt-latency-5m, drop-count-5m, latency-5m, rt-latency-5m, rx-silence-3s, 
-      
+        adv-one-way-latency, adv-rt-latency, drop-count-5m, latency-5m, rt-latency-5m, 
+        rx-silence-3s
     Example URL: /endp?fields=1st+rx,a%2Fb
 
     Example py-json call (it knows the URL):
