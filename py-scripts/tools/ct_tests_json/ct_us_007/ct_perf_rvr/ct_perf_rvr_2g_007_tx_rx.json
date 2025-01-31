@@ -508,7 +508,7 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
-            "CC_MT7921_2G_W6":{
+            "CC_MT7925e_2G_W6":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
@@ -520,7 +520,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_MT7921_2G_W6_TX_RX":{
+            "RVR_MT7925e_2G_W6_TX_RX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -528,12 +528,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7921_2G_W6_TX_RX",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7925e_2G_W6_TX_RX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan6",
                     " --download_speed 85% --upload_speed 85% --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit;DUT Receive' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7921_2G_W6_TX_RX' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7925e_2G_W6_TX_RX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
                     " --raw_line 'attenuations: 0..+100..700' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
