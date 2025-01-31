@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# flake8: noqa
+
 """
 NAME: lf_cli_to_testjson.py
 
@@ -23,10 +23,10 @@ Example:
  --test_duration 15s\
  --polling_interval 5s\
  --upstream_port 1.1.eth2\
- --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\
- --radio 'radio==wiphy5,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\
- --radio 'radio==wiphy6,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\
- --radio 'radio==wiphy7,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\
+ --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+ --radio 'radio==wiphy5,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+ --radio 'radio==wiphy6,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+ --radio 'radio==wiphy7,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
  --endp_type lf_udp\
  --rates_are_totals\
  --side_a_min_bps=20000\
@@ -43,7 +43,7 @@ Example:
  --test_duration 15s\
  --polling_interval 5s\
  --upstream_port 1.1.eth2\
- --radio 'radio==wiphy4,stations==1,ssid==ax1800_5g,ssid_pw==lf_ax1800_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\
+ --radio 'radio==wiphy4,stations==1,ssid==ax1800_5g,ssid_pw==lf_ax1800_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\\ # noqa: E501
  --endp_type lf_udp\
  --rates_are_totals\
  --side_a_min_bps=20000\
@@ -87,11 +87,9 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 class clitojson():
     def __init__(self,
-
-                 cli_list=["--mgr 192.168.200.147 --port 8080 --lf_user lanforge --lf_password lanforge --instance_name scenario_wpa2_wc --upstream 1.1.eth1 --batch_size 1,3,5 --loop_iter 1 --protocol TCP-IPv4 --duration 20000 --download_rate 10Mbps --upload_rate 10Mbps --pull_report --delete_old_scenario --local_lf_report_dir /home/lanforge/html-scripts --test_tag WCT_MTK7915_W1_5G_40_UDP_BD_AT --test_rig TEST_RIG --set DUT_SET_NAME"],
+                 cli_list=["--mgr 192.168.200.147 --port 8080 --lf_user lanforge --lf_password lanforge --instance_name scenario_wpa2_wc --upstream 1.1.eth1 --batch_size 1,3,5 --loop_iter 1 --protocol TCP-IPv4 --duration 20000 --download_rate 10Mbps --upload_rate 10Mbps --pull_report --delete_old_scenario --local_lf_report_dir /home/lanforge/html-scripts --test_tag WCT_MTK7915_W1_5G_40_UDP_BD_AT --test_rig TEST_RIG --set DUT_SET_NAME"],  # noqa: E501
                  list=[],
                  length_of_cli=[]
-
                  ):
 
         self.cli_list = cli_list
@@ -160,10 +158,10 @@ Example:
  --test_duration 15s\
  --polling_interval 5s\
  --upstream_port 1.1.eth2\
- --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\
- --radio 'radio==wiphy5,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\
- --radio 'radio==wiphy6,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\
- --radio 'radio==wiphy7,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\
+ --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+ --radio 'radio==wiphy5,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+ --radio 'radio==wiphy6,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+ --radio 'radio==wiphy7,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
  --endp_type lf_udp\
  --rates_are_totals\
  --side_a_min_bps=20000\
@@ -180,7 +178,7 @@ Example:
  --test_duration 15s\
  --polling_interval 5s\
  --upstream_port 1.1.eth2\
- --radio 'radio==wiphy4,stations==1,ssid==ax1800_5g,ssid_pw==lf_ax1800_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\
+ --radio 'radio==wiphy4,stations==1,ssid==ax1800_5g,ssid_pw==lf_ax1800_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable'\
  --endp_type lf_udp\
  --rates_are_totals\
  --side_a_min_bps=20000\
