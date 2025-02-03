@@ -562,6 +562,10 @@ INCLUDE_IN_README: False
                         default=None,
                         action="store_true",
                         help='Show summary of what this script does')
+    parser.add_argument('--logger_no_file',
+                        default=None,
+                        action="store_true",
+                        help='Show loggingout without the trailing file name and line')
 
     # TODO:  Add debug and log-level support, and propagate as needed.
     # TODO:  Add ability to pull from a machine that is not running the
@@ -622,6 +626,12 @@ INCLUDE_IN_README: False
             args.raw_line = json_data_tmp
 
     cv_base_adjust_parser(args)
+
+    if args.logger_no_file:
+        f = '%(created)f %(levelname)-8s %(message)s'
+        ff = logging.Formatter(fmt=f)
+        for handler in logging.getLogger().handlers:
+            handler.setFormatter(ff)
 
     CV_Test = DataplaneTest(lf_host=args.mgr,
                             lf_port=args.port,
