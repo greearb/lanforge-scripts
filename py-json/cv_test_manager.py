@@ -376,12 +376,24 @@ class cv_test(Realm):
             exit(1)
 
         not_running = 0
+        ok_status = 1
         while True:
             cmd = "cv get_and_close_dialog"
             dialog = self.run_cv_cmd(cmd)
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
                 logger.info("Popup Dialog:\n")
                 logger.info(dialog[0]["LAST"]["response"])
+
+            if ok_status:
+                cmd = "cv get_status '%s'" % (instance_name)
+                status = self.run_cv_cmd(cmd)
+                if status[0]["LAST"]["response"] != "NO-STATUS" and status[0]["LAST"]["response"] != "NO-INSTANCE":
+                    if "Unknown 1-argument cv command: cv get_status" in status[0]["LAST"]["response"]:
+                        logger.info("Disabling status query, this LANforge GUI version does not support it.")
+                        ok_status = 0
+                    else:
+                        logger.info("Status:\n")
+                        logger.info(status[0]["LAST"]["response"])
 
             check = self.get_report_location(instance_name)
             location = json.dumps(check[0]["LAST"]["response"])
@@ -432,6 +444,7 @@ class cv_test(Realm):
 
         # Clean up any remaining popups.
         while True:
+            cmd = "cv get_and_close_dialog"
             dialog = self.run_cv_cmd(cmd)
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
                 logger.info("Popup Dialog:\n")
