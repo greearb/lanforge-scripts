@@ -78,15 +78,16 @@ MAX_STATIONS_DUAL=10
 
 # AP-Auto sub-tests. '1' enables the test. '0' disables the test.
 TEST_BASIC_CLIENT_CONNECTIVITY=1
+TEST_BAND_STEERING=0
+TEST_CAPACITY=0
+TEST_CHANNEL_SWITCHING=0
+TEST_LONG_TERM=0
+TEST_STABILITY=0
+TEST_SINGLE_STA_THROUGHPUT_VS_PKT_SIZE=0
+TEST_MULTI_STA_THROUGHPUT_VS_PKT_SIZE=0
 TEST_MULTI_BAND_PERFORMANCE=1
 TEST_SKIP_24GHZ=1
-TEST_SKIP_5GHZ=1
-TEST_THROUGHPUT_VS_PKT_SIZE=0
-TEST_CAPACITY=0
-TEST_STABILITY=0
-TEST_BAND_STEERING=0
-TEST_MULTI_STA_THROUGHPUT_VS_PKT_SIZE=0
-TEST_LONG_TERM=0
+TEST_SKIP_5GHZ=0
 
 
 # Allow sourcing a file to override the configuration values set above.
@@ -159,15 +160,16 @@ $LF_PY_SCRIPTS/lf_ap_auto_test.py \
     --max_stations_dual     $MAX_STATIONS_DUAL \
     --radio2                $RADIO_2G \
     --radio5                $RADIO_5G \
-    --set 'Basic Client Connectivity'               $TEST_BASIC_CLIENT_CONNECTIVITY \
-    --set 'Multi Band Performance'                  $TEST_MULTI_BAND_PERFORMANCE \
-    --set 'Skip 2.4Ghz Tests'                       $TEST_SKIP_24GHZ \
-    --set 'Skip 5Ghz Tests'                         $TEST_SKIP_5GHZ \
-    --set 'Throughput vs Pkt Size'                  $TEST_THROUGHPUT_VS_PKT_SIZE \
-    --set 'Capacity'                                $TEST_CAPACITY \
-    --set 'Stability'                               $TEST_STABILITY \
-    --set 'Band-Steering'                           $TEST_BAND_STEERING \
-    --set 'Multi-Station Throughput vs Pkt Size'    $TEST_MULTI_STA_THROUGHPUT_VS_PKT_SIZE \
-    --set 'Long-Term'                               $TEST_LONG_TERM \
+    --set 'basic_cx'        $TEST_BASIC_CLIENT_CONNECTIVITY \
+    --set 'band_steering'   $TEST_BAND_STEERING \
+    --set 'capacity'        $TEST_CAPACITY \
+    --set 'channel_switch'  $TEST_CHANNEL_SWITCHING \
+    --set 'long_term'       $TEST_LONG_TERM \
+    --set 'mix_stability'   $TEST_STABILITY \
+    --set 'tput_single_sta' $TEST_SINGLE_STA_THROUGHPUT_VS_PKT_SIZE \
+    --set 'tput_multi_sta'  $TEST_MULTI_STA_THROUGHPUT_VS_PKT_SIZE \
+    --set 'tput_multi_band' $TEST_MULTI_BAND_PERFORMANCE \
+    --set 'skip_2'          $TEST_SKIP_24GHZ \
+    --set 'skip_5'          $TEST_SKIP_5GHZ \
 
 echo "Test is complete. Report can be found in $RPT_DIR"
