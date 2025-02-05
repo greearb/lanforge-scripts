@@ -194,14 +194,20 @@ class ApAutoTest(cvtest):
                  config_name="ap_auto_config",
                  upstream=None,
                  pull_report=False,
-                 dut5_0="NA",
                  dut2_0="NA",
+                 dut5_0="NA",
+                 dut5b_0="NA",
+                 dut6_0="NA",
                  load_old_cfg=False,
                  max_stations_2=100,
                  max_stations_5=100,
+                 max_stations_5b=100,
+                 max_stations_6=100,
                  max_stations_dual=200,
                  radio2=None,
                  radio5=None,
+                 radio5b=None,
+                 radio6=None,
                  enables=None,
                  disables=None,
                  raw_lines=None,
@@ -218,6 +224,10 @@ class ApAutoTest(cvtest):
             radio2 = []
         if radio5 is None:
             radio5 = []
+        if radio5b is None:
+            radio5b = []
+        if radio6 is None:
+            radio6 = []
         if enables is None:
             enables = []
         if disables is None:
@@ -237,13 +247,19 @@ class ApAutoTest(cvtest):
         self.pull_report = pull_report
         self.load_old_cfg = load_old_cfg
         self.test_name = "AP-Auto"
-        self.dut5_0 = dut5_0
         self.dut2_0 = dut2_0
+        self.dut5_0 = dut5_0
+        self.dut5b_0 = dut5b_0
+        self.dut6_0 = dut6_0
         self.max_stations_2 = max_stations_2
         self.max_stations_5 = max_stations_5
+        self.max_stations_5b = max_stations_5b
+        self.max_stations_6 = max_stations_6
         self.max_stations_dual = max_stations_dual
         self.radio2 = radio2
         self.radio5 = radio5
+        self.radio5b = radio5b
+        self.radio6 = radio6
         self.enables = enables
         self.disables = disables
         self.raw_lines = raw_lines
@@ -282,19 +298,36 @@ class ApAutoTest(cvtest):
             cfg_options.append("radio5-%i: %s" % (ridx, r[0]))
             ridx += 1
 
+        for r in self.radio5b:
+            cfg_options.append("radio5b-%i: %s" % (ridx, r[0]))
+            ridx += 1
+
+        for r in self.radio6:
+            cfg_options.append("radio6-%i: %s" % (ridx, r[0]))
+            ridx += 1
+
         self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
 
         # Command line args take precedence.
         if self.upstream:
             cfg_options.append("upstream_port: %s" % self.upstream)
-        if self.dut5_0 != "":
-            cfg_options.append("dut5-0: " + self.dut5_0)
         if self.dut2_0 != "":
             cfg_options.append("dut2-0: " + self.dut2_0)
+        if self.dut5_0 != "":
+            cfg_options.append("dut5-0: " + self.dut5_0)
+        if self.dut5b_0 != "":
+            cfg_options.append("dut5b-0: " + self.dut5b_0)
+        if self.dut6_0 != "":
+            cfg_options.append("dut6-0: " + self.dut6_0)
         if self.max_stations_2 != -1:
             cfg_options.append("max_stations_2: " + str(self.max_stations_2))
         if self.max_stations_5 != -1:
             cfg_options.append("max_stations_5: " + str(self.max_stations_5))
+        if self.max_stations_5b != -1:
+            cfg_options.append("max_stations_5b: " + str(self.max_stations_5b))
+        if self.max_stations_5 != -1:
+            cfg_options.append("max_stations_6: " + str(self.max_stations_6))
+
         if self.max_stations_dual != -1:
             cfg_options.append("max_stations_dual: " + str(self.max_stations_dual))
         if self.test_tag != "":
@@ -357,17 +390,30 @@ the options and how best to input data.
                         help="Specify maximum 2.4Ghz stations")
     parser.add_argument("--max_stations_5", type=int, default=-1,
                         help="Specify maximum 5Ghz stations")
+    parser.add_argument("--max_stations_5b", type=int, default=-1,
+                        help="Specify maximum 5bGhz stations")
+    parser.add_argument("--max_stations_6", type=int, default=-1,
+                        help="Specify maximum 6Ghz stations")
     parser.add_argument("--max_stations_dual", type=int, default=-1,
                         help="Specify maximum stations for dual-band tests")
-    parser.add_argument("--dut5_0", type=str, default="",
-                        help="Specify 5Ghz DUT entry.  Syntax is somewhat tricky:  DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)")
     parser.add_argument("--dut2_0", type=str, default="",
-                        help="Specify 5Ghz DUT entry.  Syntax is somewhat tricky:  DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24 (1)")
+                        help="Specify 5Ghz DUT entry.  Syntax is somewhat tricky:   DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24 (1)")
+    parser.add_argument("--dut5_0", type=str, default="",
+                        help="Specify 5Ghz DUT entry.  Syntax is somewhat tricky:   DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)")
+    parser.add_argument("--dut5b_0", type=str, default="",
+                        help="Specify 5bGhz DUT entry.  Syntax is somewhat tricky:  DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:26 (3)")
+    parser.add_argument("--dut6_0", type=str, default="",
+                        help="Specify 6Ghz DUT entry.  Syntax is somewhat tricky:   DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:27 (4)")
 
     parser.add_argument("--radio2", action='append', nargs=1, default=[],
                         help="Specify 2.4Ghz radio.  May be specified multiple times.")
     parser.add_argument("--radio5", action='append', nargs=1, default=[],
                         help="Specify 5Ghz radio.  May be specified multiple times.")
+    parser.add_argument("--radio5b", action='append', nargs=1, default=[],
+                        help="Specify 5bGhz radio.  May be specified multiple times.")
+    parser.add_argument("--radio6", action='append', nargs=1, default=[],
+                        help="Specify 6Ghz radio.  May be specified multiple times.")
+
     parser.add_argument("--verbosity", default="5", help="Specify verbosity of the report values 1 - 11 default 5")
     parser.add_argument("--local_lf_report_dir",
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
@@ -411,14 +457,20 @@ the options and how best to input data.
                          pull_report=args.pull_report,
                          local_lf_report_dir=args.local_lf_report_dir,
                          lf_report_dir=args.lf_report_dir,
-                         dut5_0=args.dut5_0,
                          dut2_0=args.dut2_0,
+                         dut5_0=args.dut5_0,
+                         dut5b_0=args.dut5b_0,
+                         dut6_0=args.dut6_0,
                          load_old_cfg=args.load_old_cfg,
                          max_stations_2=args.max_stations_2,
                          max_stations_5=args.max_stations_5,
+                         max_stations_5b=args.max_stations_5b,
+                         max_stations_6=args.max_stations_6,
                          max_stations_dual=args.max_stations_dual,
                          radio2=args.radio2,
                          radio5=args.radio5,
+                         radio5b=args.radio5b,
+                         radio6=args.radio6,
                          enables=args.enable,
                          disables=args.disable,
                          raw_lines=args.raw_line,
