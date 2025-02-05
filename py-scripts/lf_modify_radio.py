@@ -24,7 +24,6 @@ import os
 import sys
 import importlib
 import argparse
-from pprint import pformat  # noqa: F401 - unused import
 import logging
 
 
