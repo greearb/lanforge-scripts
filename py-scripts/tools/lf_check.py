@@ -603,7 +603,7 @@ class lf_check():
         inspect_url = self.inspect_report_html.replace('/home/lanforge', '')
         if inspect_url.startswith('/'):
             inspect_url = inspect_url[1:]
-        allure_report_latest = os.path.join(os.path.dirname(os.path.dirname(report_url)),'allure-report-latest')            
+        allure_report_latest = os.path.join(os.path.dirname(os.path.dirname(report_url)),'allure-report-latest')
 
         # following recommendation
         # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
@@ -613,7 +613,7 @@ class lf_check():
         self.hostname = socket.getfqdn()
         self.server_ip = socket.gethostbyname(self.hostname)
 
-        # IF email is not sent we still need the link 
+        # IF email is not sent we still need the link
 
         # a hostname lacking dots by definition lacks a domain name
         # this is not useful for hyperlinks outside the known domain, so an IP
@@ -639,7 +639,7 @@ http://{host}/{allure}
 lf_check Test Suite Report:
 http://{hostname}/{report}
 """.format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip,
-                suite=self.test_suite, db=self.database_sqlite, host=self.server_ip, allure=allure_report_latest, 
+                suite=self.test_suite, db=self.database_sqlite, host=self.server_ip, allure=allure_report_latest,
                 hostname=self.server_ip, report=report_url,
                 dut_model=self.use_dut_name, dut_hw=self.dut_hw, dut_sw=self.dut_sw, dut_sn=self.dut_serial)
 
@@ -724,20 +724,20 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
         # Add email title summary
         self.message_txt += """
 
-Summary: 
+Summary:
 ========
-Rig: {email} 
-Suite: {suite} 
+Rig: {email}
+Suite: {suite}
 
 Server: {server}
 Server IP: {server_ip}
 
 Results:
 ========
-Tests: {tests} 
-Fail:{fail} 
-Timeout:{timeout} 
-Partial Fail:{partial}  
+Tests: {tests}
+Fail:{fail}
+Timeout:{timeout}
+Partial Fail:{partial}
 
 Duration:
 =========
@@ -755,9 +755,9 @@ json_test_name : {json_test_name}
 
 Server / DB Infomation
 ======================
-Server Ver: {server_ver} 
-Server IP: {hostname}  
-DB: {db} 
+Server Ver: {server_ver}
+Server IP: {hostname}
+DB: {db}
 Date: {date}""".format(
             email=self.email_title_txt,
             suite=self.test_suite,
@@ -814,7 +814,7 @@ Tests Failed:
 """
         if self.test_fail_list:
             for failed_cmd in self.test_fail_list:
-                self.message_txt += """ 
+                self.message_txt += """
 {test}
 
                 """.format(test=failed_cmd)
@@ -828,7 +828,7 @@ Tests Timed Out:
 """
         if self.test_timeout_list:
             for timeout_cmd in self.test_timeout_list:
-                self.message_txt += """ 
+                self.message_txt += """
 {test}
 
                 """.format(test=timeout_cmd)
@@ -1037,7 +1037,7 @@ junit.xml path: allure serve {junit_path}
                 self.test_window_days = '2'
         else:
             self.test_window_days = self.test_window_days
-        
+
         if "LF_MGR_IP" in self.json_rig["test_rig_parameters"]:
             self.lf_mgr_ip = self.json_rig["test_rig_parameters"]["LF_MGR_IP"]
         else:
@@ -1526,7 +1526,7 @@ junit.xml path: allure serve {junit_path}
                         meta_data_path = meta_data_path.split(' ')
                         meta_data_path = meta_data_path[0]
                         meta_data_path = meta_data_path.strip()
-                        meta_data_path = self.report_path + '/' + meta_data_path 
+                        meta_data_path = self.report_path + '/' + meta_data_path
                         report = meta_data_path.replace('/home/lanforge', '')
                         self.report_list.append(report + '/readme.html')
                         meta_data_path = meta_data_path + '/meta.txt'
@@ -1729,7 +1729,7 @@ junit.xml path: allure serve {junit_path}
 
         # stdout_log_link is used for the email reporting to have
         # the corrected path
-        
+
         allure_stdout_log_link = str(stdout_log_txt).replace('/home/lanforge', '')
         # allure_stderr_log_link = str(stderr_log_txt).replace('/home/lanforge', '')
 
@@ -1801,9 +1801,9 @@ junit.xml path: allure serve {junit_path}
         # End properties
         self.junit_results += """
         </properties>
-        """                
+        """
 
-        # TODO removed for now as the text is produced yet since the property does not have a name it shows 
+        # TODO removed for now as the text is produced yet since the property does not have a name it shows
         # up as unknown
         # self.junit_results += """
         #    <system-out>
@@ -2073,12 +2073,12 @@ Example :
 ./lf_check.py --json_rig rig.json --json_dut dut.json --json_test tests.json --suite suite_test
 
 Note if all json data (rig,dut,tests)  in same json file pass same json in for all 3 inputs
-The order of reading the json files it 
+The order of reading the json files it
 1. Rig
 2. Dut
 3. Test
 
-Thus an DUT setting will override the Rig settings.  
+Thus an DUT setting will override the Rig settings.
 This is to allow multiple DUTs connected to a LANforge to have different upstream ports or database.
 
 ---------
@@ -2356,10 +2356,10 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
                 # Get current time from report
                 current_time = report.date
                 logger.debug("report date to be used {date}".format(date=current_time))
-                # TODO how does report handle the output file                
+                # TODO how does report handle the output file
                 if args.outfile == '':
                     csv_results = "{current_time}-{dir}.csv".format(
-                        dir=__dir, current_time=current_time)                
+                        dir=__dir, current_time=current_time)
                 else:
                     csv_results = "{current_time}-{outfile}-{dir}.csv".format(
                         dir=__dir, current_time=current_time)
@@ -2446,7 +2446,7 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
                     traceback.print_exception(
                         Exception, x, x.__traceback__, chain=True)
                     logger.warning(
-                        "WARNING: lanforge_system_node_version exception")
+                        "WARNING: Check LANforge IP, tests aborted")
 
                 lanforge_system_ip = check.get_lanforge_system_ip()
 
@@ -2458,7 +2458,7 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
                     traceback.print_exception(
                         Exception, x, x.__traceback__, chain=True)
                     logger.error(
-                        "ERROR: lanforge_fedora_version exception, tests aborted check lanforge ip")
+                        "ERROR: Check of lanforge IP is correct, tests aborted")
                     exit(1)
 
                 try:
@@ -2851,12 +2851,12 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
 
     # This next bit of code will do the following
     #   Record the GUI build information and Kernel information
-    #   Update the allure history 
+    #   Update the allure history
     #   Build an allure report
     #   Copy the allure report into allure_report_latest
     #   Move allure report to a directory based on a time stamp
     #   Create the allure executor.json file base off the time stamp
-    #   Copy the executor.json into the allure-results 
+    #   Copy the executor.json into the allure-results
 
 
     # save the environment _properties
@@ -2874,7 +2874,7 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
 
     if lf_check_test_suite_list:
         suite_parent = "URL={}\n".format(os.path.dirname(os.path.dirname(lf_check_test_suite_list[0])))
-        allure_environment_properties += suite_parent 
+        allure_environment_properties += suite_parent
 
     count = 0
     allure_suite_strings = ""
@@ -2913,7 +2913,7 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
     # maybe report should contain this funtionality
     allure_epoch = str(int(time.time()))
     allure_epoch_dir = os.path.join(report.path,allure_epoch)
-    
+
 
     # check to see if the directory is present
     if not os.path.exists(report.allure_report_dir):
@@ -2923,7 +2923,7 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
     new_allure_epoch_dir = shutil.copytree(report.allure_report_dir,allure_epoch_dir)
     logger.debug("allure report directory with timestamp {allure_report}".format(allure_report=new_allure_epoch_dir))
 
-    # Update the executor json after copying the data 
+    # Update the executor json after copying the data
     # save executor.json
     allure_executor_dictionary = {
         "reportName": "{report_name}".format(report_name="lf_check"),
@@ -2937,7 +2937,7 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
 
     allure_executor_json = json.dumps(allure_executor_dictionary, indent=4)
     report.set_allure_executor(allure_executor_json)
-    report.write_allure_executor(allure_results_path=allure_results_path)                  
+    report.write_allure_executor(allure_results_path=allure_results_path)
 
 
     # Update allure one time
@@ -2947,7 +2947,7 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
 
     # copy allure report to latest
     allure_latest_dir = os.path.join(report.path,"allure-report-latest")
-        
+
     # check to see if the directory is present
     if not os.path.exists(allure_latest_dir):
         os.makedirs(allure_latest_dir)
