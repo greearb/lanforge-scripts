@@ -2,7 +2,7 @@
     "ct_perf_rvr_2g_5g_6g_007":{
         "Notes":[
             "This json file describes tests to be run by LANforge system performance 007, note ssid_idx=0 is for Radio-1, ssid_idx_1 is for Radio-1"
-        ]  
+        ]
     },
     "test_suites":{
         "rvr_perf_2g_5g_6g_ax210_W2_W3_W4_tx_rx":{
@@ -51,7 +51,7 @@
                     " --raw_line 'directions: DUT Transmit;DUT Receive' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_AX210_2G_5G_6G_W2_W3_W4_TX_RX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
-                    " --raw_line 'attenuations: 000,100,200,300,400,450,460' ",
+                    " --raw_line 'attenuations: 000,100,200,300,400,410,420,430,440' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME",
