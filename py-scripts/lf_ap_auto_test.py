@@ -199,11 +199,11 @@ class ApAutoTest(cvtest):
                  dut5b_0="NA",
                  dut6_0="NA",
                  load_old_cfg=False,
-                 max_stations_2=100,
-                 max_stations_5=100,
-                 max_stations_5b=100,
-                 max_stations_6=100,
-                 max_stations_dual=200,
+                 max_stations_2=0,
+                 max_stations_5=0,
+                 max_stations_5b=0,
+                 max_stations_6=0,
+                 max_stations_dual=0,
                  radio2=None,
                  radio5=None,
                  radio5b=None,
@@ -386,15 +386,15 @@ the options and how best to input data.
     parser.add_argument("-u", "--upstream", type=str, default=None,
                         help="Upstream port for wifi capacity test ex. 1.1.eth1")
 
-    parser.add_argument("--max_stations_2", type=int, default=-1,
+    parser.add_argument("--max_stations_2", type=int, default=0,
                         help="Specify maximum 2.4Ghz stations")
-    parser.add_argument("--max_stations_5", type=int, default=-1,
+    parser.add_argument("--max_stations_5", type=int, default=0,
                         help="Specify maximum 5Ghz stations")
-    parser.add_argument("--max_stations_5b", type=int, default=-1,
+    parser.add_argument("--max_stations_5b", type=int, default=0,
                         help="Specify maximum 5bGhz stations")
-    parser.add_argument("--max_stations_6", type=int, default=-1,
+    parser.add_argument("--max_stations_6", type=int, default=0,
                         help="Specify maximum 6Ghz stations")
-    parser.add_argument("--max_stations_dual", type=int, default=-1,
+    parser.add_argument("--max_stations_dual", type=int, default=0,
                         help="Specify maximum stations for dual-band tests")
     parser.add_argument("--dut2_0", type=str, default="",
                         help="Specify 5Ghz DUT entry.  Syntax is somewhat tricky:   DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24 (1)")
