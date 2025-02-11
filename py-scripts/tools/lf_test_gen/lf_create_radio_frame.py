@@ -39,7 +39,7 @@ class lf_create_radio_frame():
         self.lf_radio_frame.grid(row=0, column=0, sticky="news", padx=20, pady=10)
 
         # 4. Create a Canvas and Scrollbar
-        self.radio_canvas = tkinter.Canvas(self.lf_radio_frame)
+        self.radio_canvas = tkinter.Canvas(self.lf_radio_frame, width=1200, height=360)
         self.radio_scrollbar = tkinter.Scrollbar(self.lf_radio_frame, orient='vertical', command=self.radio_canvas.yview)
         self.radio_canvas.configure(yscrollcommand=self.radio_scrollbar.set)
 
