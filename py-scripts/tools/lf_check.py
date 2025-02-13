@@ -2522,6 +2522,7 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
                     lf_radio_df = pd.DataFrame(
                         columns=[
                             'Radio',
+                            'Port',
                             'WIFI-Radio Driver',
                             'Radio Capabilities',
                             'Firmware Version',
@@ -2554,6 +2555,7 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
 
                             lf_radio_df_new = pd.DataFrame(
                                 {'Radio': [lanforge_radio_json[key]['entity id']],
+                                 'Port':  [lanforge_radio_json[key]['port']],
                                  'WIFI-Radio Driver': [driver],
                                  'Radio Capabilities': [lanforge_radio_json[key]['capabilities']],
                                  'Firmware Version': [firmware_version],
