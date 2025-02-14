@@ -75,6 +75,19 @@ class lf_create_radio_frame():
         self.radio_status_label = tkinter.Label(self.radio_content_frame, text="Radio Status")
         self.radio_status_label.grid(row=0, column=0)
 
+        self.lf_read_radio = ttk.Button(self.radio_content_frame, text='Read Radio Info', command=self.get_lanforge_radio_information)
+        self.lf_read_radio.grid(row=0, column=1, sticky="news", padx=20, pady=10)
+        self.window_tooltip.bind(self.lf_read_radio, 'Read LANforge Radio Information')
+
+        self.lf_apply_radio = ttk.Button(self.radio_content_frame, text='Apply Radio Info', command=self.apply_lanforge_radio_information)
+        self.lf_apply_radio.grid(row=0, column=2, sticky="news", padx=20, pady=10)
+        self.window_tooltip.bind(self.lf_apply_radio, 'Apply Radio Information based on updates')
+
+        self.lf_clear_radio = ttk.Button(self.radio_content_frame, text='Clear Radio Info', command=self.clear_lanforge_radio_information)
+        self.lf_clear_radio.grid(row=0, column=3, sticky="news", padx=20, pady=10)
+        self.window_tooltip.bind(self.lf_clear_radio, 'Clear Radio Information')
+
+
         self.radio_label = tkinter.Label(self.radio_content_frame, text="Radio")
         self.radio_label.grid(row=1, column=1)
 
@@ -127,6 +140,8 @@ class lf_create_radio_frame():
         self.suite_test_name_2g_dict = {}
         self.suite_test_name_5g_dict = {}
         self.suite_test_name_6g_dict = {}
+
+
 
         for radio in range(0, self.max_radios):
 
@@ -206,17 +221,6 @@ or deselect to remove from the test json''')
 The check box may be selected to allow the band to be included in the test json
 or deselect to remove from the test json''')
 
-        self.lf_read_radio = ttk.Button(self.radio_content_frame, text='Read Radio Info', command=self.get_lanforge_radio_information)
-        self.lf_read_radio.grid(row=radio + 3, column=0, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_read_radio, 'Read LANforge Radio Information')
-
-        self.lf_apply_radio = ttk.Button(self.radio_content_frame, text='Apply Radio Info', command=self.apply_lanforge_radio_information)
-        self.lf_apply_radio.grid(row=radio + 3, column=1, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_apply_radio, 'Apply Radio Information based on updates')
-
-        self.lf_clear_radio = ttk.Button(self.radio_content_frame, text='Clear Radio Info', command=self.clear_lanforge_radio_information)
-        self.lf_clear_radio.grid(row=radio + 3, column=2, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_clear_radio, 'Clear Radio Information')
 
         # Max Stations
         for widget in self.radio_content_frame.winfo_children():
