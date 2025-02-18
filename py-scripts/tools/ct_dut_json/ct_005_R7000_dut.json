@@ -1,0 +1,23 @@
+{
+    "ct_R7000_dut":{
+        "Notes":[
+            "This json file describes the device undertest as input to ./lf_check.py",
+            "The variables that are capitalize are used for configuration",
+            "The dut related configuration is contained in this file",
+            "DUT_SET_NAME is an input to wifi capacity, dataplane and ap_auto tests, for --set parameter",
+            "The DUT_NAME must be part of DUT_SET_NAME"
+        ]  
+    },
+    "test_dut":{
+        "DUT_SET_NAME": "DUT_NAME NETGEAR_R7000",
+        "USE_DUT_NAME": "NETGEAR_R7000",
+        "DUT_SW": "V1.0.5.48_1.1.79",
+        "DUT_HW": "1.0",
+        "DUT_SN": "12345678",
+        "wireless_network_dict":{
+            "ssid_idx=0":{"ssid_idx":"0","SSID_USED":"NETGEAR76","SSID_PW_USED":"hello123","BSSID_TO_USE":"c4:04:15:25:25:de","SECURITY_USED":"wpa2"},
+            "ssid_idx=1":{"ssid_idx":"1","SSID_USED":"NETGEAR76-5G","SSID_PW_USED":"hello123","BSSID_TO_USE":"c4:04:15:25:25:dd","SECURITY_USED":"wpa2"}
+        }
+    }
+}
+			
