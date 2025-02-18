@@ -1,0 +1,25 @@
+{
+    "ct_ASUS11AXE_dut":{
+        "Notes":[
+            "This json file describes the device undertest as input to ./lf_check.py",
+            "The variables that are capitalize are used for configuration",
+            "The dut related configuration is contained in this file",
+            "DUT_SET_NAME is an input to wifi capacity, dataplane and ap_auto tests, for --set parameter",
+            "The DUT_NAME must be part of DUT_SET_NAME"
+        ]  
+    },
+    "test_dut":{
+        "DUT_SET_NAME": "DUT_NAME GT-AXE11000",
+        "USE_DUT_NAME": "GT-AXE11000",
+        "DUT_SW": "3.0.0.4.388_23801-g495398a",
+        "DUT_HW": "1.0",
+        "DUT_SN": "12345678",
+        "wireless_network_dict":{
+            "ssid_idx=0":{"ssid_idx":"0","SSID_USED":"asus11axe-2","SSID_PW_USED":"hello123","BSSID_TO_USE":"7c:10:c9:61:99:10","SECURITY_USED":"wpa2"},
+            "ssid_idx=1":{"ssid_idx":"1","SSID_USED":"asus11axe-5","SSID_PW_USED":"hello123","BSSID_TO_USE":"7c:10:c9:61:99:14","SECURITY_USED":"wpa2"},
+            "ssid_idx=2":{"ssid_idx":"2","SSID_USED":"asus11axe-6","SSID_PW_USED":"hello123","BSSID_TO_USE":"7c:10:c9:61:99:18","SECURITY_USED":"wpa3"},
+            "ssid_idx=3":{"ssid_idx":"3","SSID_USED":"asus11axe-guest-6","SSID_PW_USED":"hello123","BSSID_TO_USE":"7c:10:c9:61:99:19","SECURITY_USED":"wpa3"}
+        }
+    }
+}
+			
