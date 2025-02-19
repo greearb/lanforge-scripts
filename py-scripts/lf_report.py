@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
-
 """
 NAME: lf_report.py
 
@@ -41,8 +39,6 @@ import importlib
 from matplotlib import pyplot as plt
 import platform
 import subprocess
-from psutil import TimeoutExpired
-
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -90,19 +86,17 @@ class lf_report:
 
         # allure report is the allure report directory
         self.allure_report_dir_name = _allure_report_dir_name
-        self.allure_report_dir = os.path.join(self.path,self.allure_report_dir_name)
+        self.allure_report_dir = os.path.join(self.path, self.allure_report_dir_name)
 
         allure_report_history = format("{allure_report}/history".format(allure_report=self.allure_report_dir_name))
-        self.allure_report_history = os.path.join(self.path,allure_report_history)
+        self.allure_report_history = os.path.join(self.path, allure_report_history)
         self.allure_report_history_path = str(self.allure_report_history)
-
 
         self.allure_results_history = ""
         self.allure_results = ""
         self.allure_result_dir = ""
-        self.allure_report_timeout = 120 #TODO have configurable or allow process to complete and not wait.
+        self.allure_report_timeout = 120    # TODO have configurable or allow process to complete and not wait.
         self.allure_result = "SUCCESS"
-
 
         self.dataframe = _dataframe
         self.text = ""
@@ -114,7 +108,7 @@ class lf_report:
         if _output_html.lower().endswith(".pdf"):
             raise ValueError("HTML output file cannot end with suffix '.pdf'")
         self.path_date_time = _path_date_time
-        self.report_location = ""  # used by lf_check.py to know where to write the meta data "Report Location:::/home/lanforge/html-reports/wifi-capacity-2021-08-17-04-02-56"
+        self.report_location = ""   # used by lf_check.py to know where to write the meta data "Report Location:::/home/lanforge/html-reports/wifi-capacity-2021-08-17-04-02-56"
         self.write_output_html = ""
         self.write_output_index_html = ""
         self.output_pdf = _output_pdf
@@ -179,7 +173,7 @@ class lf_report:
                 _dst_file = str(self.path_date_time) + '/' + str(directory) + '/' + str(_file_name)
         else:
             _src_file = str(self.current_path) + '/' + str(directory_name)
-            _dst_file = str(self.path_date_time) +  '/' + str(directory_name)
+            _dst_file = str(self.path_date_time) + '/' + str(directory_name)
         shutil.move(_src_file, _dst_file)
 
     def copy_css(self):
@@ -294,8 +288,8 @@ class lf_report:
         self.csv_file_name = fname + ".csv"
 
     def write_dataframe_to_csv(self, _index=False):
-        csv_file = "{path_date_time}/{csv_file_name}".format(path_date_time=self.path_date_time,csv_file_name=self.csv_file_name)
-        self.dataframe.to_csv(csv_file,index=_index)
+        csv_file = "{path_date_time}/{csv_file_name}".format(path_date_time=self.path_date_time, csv_file_name=self.csv_file_name)
+        self.dataframe.to_csv(csv_file, index=_index)
 
     # The _date is set when class is enstanciated / created so this set_date should be used with caution, used to synchronize results
     def set_date(self, _date):
@@ -311,7 +305,7 @@ class lf_report:
         self.dataframe = pd.read_csv(_csv, sep='\t')
 
     # TODO
-    def set_table_dataframe_from_xlsx(self,_xlsx):
+    def set_table_dataframe_from_xlsx(self, _xlsx):
         self.dataframe = pd.read_excel(_xlsx)
 
     def set_custom_html(self, _custom_html):
@@ -355,11 +349,12 @@ class lf_report:
         output_file = str(self.path_date_time) + '/' + str(file)
         logger.info("output file {}".format(output_file))
         return output_file
+
     # Report Location:::/<locaton> as a key in lf_check.py
+
     def write_report_location(self):
         self.report_location = self.path_date_time
         logger.info("Report Location:::{report_location}".format(report_location=self.report_location))
-
 
     def write_html(self):
         if not self.output_html:
@@ -416,10 +411,10 @@ class lf_report:
         return self.write_output_html
 
     # will put the set here
-    def set_allure_environment_properties(self,allure_environment_properties=""):
+    def set_allure_environment_properties(self, allure_environment_properties=""):
         self.allure_environment_properties = allure_environment_properties
 
-    def write_allure_environment_properties(self,allure_results_path=""):
+    def write_allure_environment_properties(self, allure_results_path=""):
         # self.allure_environment_properties_dir ="{}".format(self.path_date_time)
         if allure_results_path == "":
             self.write_out_allure_environment_properties = "{}/environment.properties".format(self.path_date_time)
@@ -437,10 +432,10 @@ class lf_report:
             logger.warning("write_out_allure_environment_properties failed")
         return self.write_out_allure_environment_properties, self.allure_environment_properties_dir
 
-    def set_allure_executor(self,allure_executor):
+    def set_allure_executor(self, allure_executor):
         self.allure_executor = allure_executor
 
-    def write_allure_executor(self,allure_results_path=""):
+    def write_allure_executor(self, allure_results_path=""):
         if allure_results_path == "":
             self.write_out_allure_executor = "{}/executor.json".format(self.path_date_time)
         else:
@@ -457,15 +452,15 @@ class lf_report:
             logger.warning("write_out_allure_executor failed")
         return self.write_out_allure_executor, self.allure_executor_dir
 
-    def set_junit_results(self,junit_results):
+    def set_junit_results(self, junit_results):
         self.junit = junit_results
 
-    def write_junit_results(self,test_suite=""):
-        self.junit_dir ="{}".format(self.path_date_time)
+    def write_junit_results(self, test_suite=""):
+        self.junit_dir = "{}".format(self.path_date_time)
         if test_suite == "":
             self.write_output_junit = "{}/junit.xml".format(self.path_date_time)
         else:
-            self.write_output_junit = "{dir}/{suite}_junit.xml".format(dir=self.path_date_time,suite=test_suite)
+            self.write_output_junit = "{dir}/{suite}_junit.xml".format(dir=self.path_date_time, suite=test_suite)
         logger.info("write_output_html: {}".format(self.write_output_html))
         logger.info("junit_dir: {}".format(self.junit_dir))
         try:
@@ -477,23 +472,22 @@ class lf_report:
             logger.warning("write_junit failed")
         return self.write_output_junit, self.junit_dir
 
-    def update_allure_results_history(self,allure_results_path=""):
+    def update_allure_results_history(self, allure_results_path=""):
         # TODO abiltiy to set the Allure results dir
         if allure_results_path == "":
-            self.allure_results_history_path = os.path.join(self.path_date_time,"history")
+            self.allure_results_history_path = os.path.join(self.path_date_time, "history")
             self.allure_results = "{allure_results_path}".format(allure_results_path=self.path_date_time)
 
         else:
-            #TODO check if the path is passed in for allure results
+            # TODO check if the path is passed in for allure results
             self.allure_results = allure_results_path
-            self.allure_results_history_path = os.path.join(self.allure_results,"history")
+            self.allure_results_history_path = os.path.join(self.allure_results, "history")
 
         # if history not present create history
         if not os.path.exists(self.allure_results_history_path):
             os.makedirs(self.allure_results_history_path)
 
-
-        logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history,allure_results=self.allure_results_history_path))
+        logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history, allure_results=self.allure_results_history_path))
 
         # check to see if the directory is present
         if not os.path.exists(self.allure_results_history_path):
@@ -503,9 +497,9 @@ class lf_report:
         try:
             files = os.listdir(self.allure_report_history)
             for fname in files:
-                allure_report_history_file =  str(self.allure_report_history_path) + '/' + str(fname)
+                allure_report_history_file = str(self.allure_report_history_path) + '/' + str(fname)
                 allure_results_history_file = str(self.allure_results_history_path) + '/' + str(fname)
-                shutil.copy(allure_report_history_file,allure_results_history_file)
+                shutil.copy(allure_report_history_file, allure_results_history_file)
 
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
@@ -513,16 +507,16 @@ class lf_report:
 
     def copy_allure_report(self):
         # TODO abiltiy to set the Allure results dir
-        if allure_results == "":
-            self.allure_results_history_path = os.path.join(self.path_date_time,"history")
+        if allure_results == "":  # noqa F821 - undefined name
+            self.allure_results_history_path = os.path.join(self.path_date_time, "history")
             self.allure_results = "{allure_results_path}".format(allure_results_path=self.path_date_time)
 
         else:
-            #TODO check if the path is passed in for allure results
-            self.allure_results = allure_results
-            self.allure_results_history_path = os.path.join(self.allure_results,"history")
+            # TODO check if the path is passed in for allure results
+            self.allure_results = allure_results  # noqa F821 - undefined name
+            self.allure_results_history_path = os.path.join(self.allure_results, "history")
 
-        logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history,allure_results=self.allure_results_history_path))
+        logger.info("copying history from {allure_report} to {allure_results}".format(allure_report=self.allure_report_history, allure_results=self.allure_results_history_path))
 
         # check to see if the directory is present
         if not os.path.exists(self.allure_results_history_path):
@@ -532,26 +526,25 @@ class lf_report:
         try:
             files = os.listdir(self.allure_report_history)
             for fname in files:
-                allure_report_history_file =  str(self.allure_report_history_path) + '/' + str(fname)
+                allure_report_history_file = str(self.allure_report_history_path) + '/' + str(fname)
                 allure_results_history_file = str(self.allure_results_history_path) + '/' + str(fname)
-                shutil.copy(allure_report_history_file,allure_results_history_file)
+                shutil.copy(allure_report_history_file, allure_results_history_file)
 
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("Either no allure report present or the copy of history failed.")
 
-
-
     def generate_allure_report(self):
         # TODO current the junit.xml is placed in the base directory
         # allure report directory needs to be allure-report
-        allure_command = "allure generate {allure_results} --report-dir {allure_report} --clean".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
-        summary_output = ''
+        allure_command = "allure generate {allure_results} --report-dir {allure_report} --clean".format(allure_results=self.allure_results, allure_report=self.allure_report_dir)
+        summary_output = ''  # noqa F841 - unused variable
+
         # allure_command = "allure generate {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         # allure_command = "allure serve {allure_results} --clean --output {allure_report}".format(allure_results=self.allure_results,allure_report=self.allure_report_dir)
         try:
             logger.info("allure command: {allure_command}".format(allure_command=allure_command))
-            #summary = subprocess.Popen((allure_command).split(' '), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            # summary = subprocess.Popen((allure_command).split(' '), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
             summary = subprocess.Popen((allure_command), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
             out, err = summary.communicate()
@@ -565,8 +558,6 @@ class lf_report:
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("allure command: {allure_command} failed or timed out".format(allure_command=allure_command))
-
-
 
     # https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
     # page_size A4, A3, Letter, Legal
@@ -731,11 +722,10 @@ class lf_report:
         )
         self.html += self.banner_html
 
-
     def build_table_title(self):
         self.table_title_html = """
                     <!-- Table Title-->
-                    <h3 align='left'>{title}</h3> 
+                    <h3 align='left'>{title}</h3>
                     """.format(title=self.table_title)
         self.html += self.table_title_html
 
@@ -759,7 +749,6 @@ class lf_report:
             <p align='left' width='900'>{text}</p>
         """.format(text=self.text)
         self.html += self.text_html
-
 
     def build_date_time(self):
         self.date_time = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%m-m-%S-s")).replace(':', '-')
@@ -792,9 +781,9 @@ class lf_report:
         self.html += self.dataframe_html
 
     def pass_failed_build_table(self):
-        self.dataframe_html = self.dataframe.style.hide_index(subset=None, level=None, names=False).applymap \
-            (self.pass_fail_background).to_html(index=False,
-                                                justify='center')  # have the index be able to be passed in.
+        self.dataframe_html = self.dataframe.style.hide_index(subset=None, level=None, names=False).applymap(
+                              self.pass_fail_background).to_html(index=False,
+                                                                 justify='center')  # have the index be able to be passed in.
         self.html += self.dataframe_html
 
     def save_csv(self, file_name, save_to_csv_data):
@@ -802,7 +791,7 @@ class lf_report:
 
     def save_pie_chart(self, pie_chart_data):
         explode = (0, 0.1)
-        pie_chart = pie_chart_data.plot.pie(y='Pass/Fail', autopct="%.2f%%", explode=explode, figsize=(10, 10),
+        pie_chart = pie_chart_data.plot.pie(y='Pass/Fail', autopct="%.2f%%", explode=explode, figsize=(10, 10),  # noqa E841 - unused variable
                                             shadow=True, startangle=90,
                                             colors=['#4af84a', '#ff1300'])
         plt.savefig(str(self.path_date_time) + '/pie-chart.png')
@@ -838,12 +827,16 @@ class lf_report:
 
         setup_information = """
                             <!-- Test Setup Information -->
-                            <table width='700px' border='1' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'>
-                                
+                            <table width='700px' border='1' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; \
+                             border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; \
+                             border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'>
+
                                 <tr>
                                   <td>""" + str(value) + """</td>
                                   <td>
-                                    <table width='100%' border='0' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'>
+                                    <table width='100%' border='0' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; \
+                                     border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; \
+                                     border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'>
                                       """ + var + """
                                     </table>
                                   </td>
@@ -857,7 +850,7 @@ class lf_report:
     def build_footer(self):
         self.footer_html = """
     <footer class='FooterStyle'>
-        <a href="https://www.candelatech.com/"><img 
+        <a href="https://www.candelatech.com/"><img
             id='BannerLogoFooter' align='right' src="candela_swirl_small-72h.png" border='0'/></a>
         <p>Generated by Candela Technologies LANforge network testing tool</p>
         <p><a href="https://www.candelatech.com">www.candelatech.com</a><p>
@@ -879,7 +872,7 @@ class lf_report:
 function fallbackCopyTextToClipboard(text) {
   var textArea = document.createElement("textarea");
   textArea.value = text;
-  
+
   // Avoid scrolling to bottom
   textArea.style.top = "0";
   textArea.style.left = "0";
@@ -919,7 +912,7 @@ function copyTextToClipboard(ele) {
     def build_objective(self):
         self.obj_html = """
             <!-- Test Objective -->
-            <h3 align='left'>{title}</h3> 
+            <h3 align='left'>{title}</h3>
             <p align='left' width='900'>{objective}</p>
             """.format(title=self.obj_title,
                        objective=self.objective)
@@ -928,12 +921,11 @@ function copyTextToClipboard(ele) {
     def build_description(self):
         self.obj_html = """
             <!-- Test Description -->
-            <h3 align='left'>{title}</h3> 
+            <h3 align='left'>{title}</h3>
             <p align='left' width='900'>{description}</p>
             """.format(title=self.desc_title,
                        description=self.description)
         self.html += self.obj_html
-
 
     def build_graph_title(self):
         self.table_graph_html = """
@@ -970,11 +962,10 @@ function copyTextToClipboard(ele) {
             """.format(image=name)
         self.html += self.chart_html_obj
 
-    def build_chart_custom(self, name, align='center',padding='15px',margin='5px 5px 2em 5px',width='500px',height='500px'):
-
+    def build_chart_custom(self, name, align='center', padding='15px', margin='5px 5px 2em 5px', width='500px', height='500px'):
         self.chart_html_obj = """
               <img align='{align}' style='padding:{padding};margin:{margin};width:{width};height:{height};'
-              src='{image}'/> """.format(image=name,align=align,padding=padding,margin=margin,width=width, height=height)
+              src='{image}'/> """.format(image=name, align=align, padding=padding, margin=margin, width=width, height=height)
         self.html += self.chart_html_obj
 
     def build_banner_cover(self):
@@ -1002,10 +993,11 @@ function copyTextToClipboard(ele) {
         )
         self.html += self.banner_html
 
+
 # Unit Test
 if __name__ == "__main__":
     help_summary = '''\
-     This script is designed to generate reports in file formats such as PDF and HTML, accommodating various user 
+     This script is designed to generate reports in file formats such as PDF and HTML, accommodating various user
      preferences. The reports can encompass a range of elements, including graphs, tables, and customizable objectives,
      tailored to meet specific user requirements
     '''
@@ -1065,7 +1057,7 @@ if __name__ == "__main__":
     report.build_chart("banner.png")
 
     report.build_chart_title('custom width')
-    report.build_chart_custom(name="banner.png",width="1000")
+    report.build_chart_custom(name="banner.png", width="1000")
 
     # report.build_all()
     # report.build_footer()
