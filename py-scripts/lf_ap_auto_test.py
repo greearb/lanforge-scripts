@@ -303,10 +303,12 @@ class ApAutoTest(cvtest):
             cfg_options.append("radio5-%i: %s" % (ridx, r[0]))
             ridx += 1
 
+        ridx = 0
         for r in self.radio5b:
             cfg_options.append("radio5b-%i: %s" % (ridx, r[0]))
             ridx += 1
 
+        ridx = 0
         for r in self.radio6:
             cfg_options.append("radio6-%i: %s" % (ridx, r[0]))
             ridx += 1
