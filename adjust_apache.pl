@@ -378,7 +378,19 @@ if (-f "$fname") {
     }
 
     push(@newlines, "###-LF-HOSTNAME-NEXT-###");
-    push(@newlines, $ip . "    " . $address_map{$ip});
+    # Must be careful because address_map{192.168.1.101} is highly likely to already be printed fetch a blank name
+    if (! exists($used_addresses{$ip})) {
+        if (exists($address_map{$ip})) {
+            push(@newlines, $ip . "    " . $address_map{$ip});
+        }
+        elsif (exists($host_map{$ip})) {
+            push(@newlines, $ip . "    " . $host_map{$ip});
+        }
+        else {
+            push(@newlines, $ip . "     lanforge");
+        }
+    }
+
     if ($debug) {
         print "# ----- new /etc/hosts    ----- ----- ----- ----- ----- ----- ----- ----- ----- -----\n";
         for my $ln (@newlines) {
