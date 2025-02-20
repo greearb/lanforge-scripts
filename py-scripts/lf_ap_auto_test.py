@@ -95,6 +95,7 @@ max_stations_5b: 64
 max_stations_dual: 200
 max_stations_tri: 64
 max_stations_tri_5b: 64
+max_bandwidth: 0, 20, 40, 80, 160, 320
 lt_sta: 2
 voip_calls: 0
 lt_dur: 3600
@@ -207,6 +208,7 @@ class ApAutoTest(cvtest):
                  max_stations_dual=0,
                  max_stations_tri=0,
                  max_stations_tri_5b=0,
+                 max_bandwidth=0,
                  radio2=None,
                  radio5=None,
                  radio5b=None,
@@ -261,6 +263,7 @@ class ApAutoTest(cvtest):
         self.max_stations_dual = max_stations_dual
         self.max_stations_tri = max_stations_tri
         self.max_stations_tri_5b = max_stations_tri_5b
+        self.max_bandwidth = max_bandwidth
         self.radio2 = radio2
         self.radio5 = radio5
         self.radio5b = radio5b
@@ -341,6 +344,8 @@ class ApAutoTest(cvtest):
             cfg_options.append("max_stations_tri: " + str(self.max_stations_tri))
         if self.max_stations_tri_5b != -1:
             cfg_options.append("max_stations_tri_5b: " + str(self.max_stations_tri_5b))
+        if self.max_bandwidth != -1:
+            cfg_options.append("max_bandwidth: " + str(self.max_bandwidth))
         if self.test_tag != "":
             cfg_options.append("test_tag: " + self.test_tag)
 
@@ -382,6 +387,7 @@ the options and how best to input data.
       --dut5_0 'linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)' \\
       --dut2_0 'linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24 (1)' \\
       --max_stations_2 100 --max_stations_5 100 --max_stations_dual 200 --max_stations_tri 64 --max_stations_tri_5b 64\\
+      --max_bandwidth 320\\
       --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 \\
       --radio5 1.1.wiphy1 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 \\
       --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7 \\
@@ -411,6 +417,8 @@ the options and how best to input data.
                         help="Specify maximum stations for tri-band tests")
     parser.add_argument("--max_stations_tri_5b", type=int, default=0,
                         help="Specify maximum stations for tri-band 5b tests")
+    parser.add_argument("--max_bandwidth", type=int, default=0,
+                        help="Specify maximum bandwidth 0, 20, 40, 80, 160, 320, default 0")
     parser.add_argument("--dut2_0", type=str, default="",
                         help="Specify 5Ghz DUT entry.  Syntax is somewhat tricky:   DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24 (1)")
     parser.add_argument("--dut5_0", type=str, default="",
@@ -484,6 +492,7 @@ the options and how best to input data.
                          max_stations_dual=args.max_stations_dual,
                          max_stations_tri=args.max_stations_tri,
                          max_stations_tri_5b=args.max_stations_tri_5b,
+                         max_bandwidth=args.max_bandwidth,
                          radio2=args.radio2,
                          radio5=args.radio5,
                          radio5b=args.radio5b,
