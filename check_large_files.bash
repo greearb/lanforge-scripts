@@ -354,6 +354,11 @@ clean_lflogs() {
         done < /tmp/removable_lflogs.txt
     fi
     rm -f /tmp/removable_lflogs.txt
+    if compgen -G ".vnc/*log" > /dev/null; then
+        for f in .vnc/*log; do
+            echo '' > $f
+        done
+    fi
     cd -
     removable_lflogs=()
     totals[e]=0
