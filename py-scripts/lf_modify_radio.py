@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_modify_radio.py
 
@@ -25,7 +24,6 @@ import os
 import sys
 import importlib
 import argparse
-from pprint import pformat
 import logging
 
 
@@ -35,9 +33,9 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFSession                      # noqa E402
+from lanforge_client.lanforge_api import LFJsonCommand                  # noqa E402
+from lanforge_client.lanforge_api import LFJsonQuery                    # noqa E402
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -49,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 
-#http://www.candelatech.com/lfcli_ug.php#set_wifi_radio
+# http://www.candelatech.com/lfcli_ug.php#set_wifi_radio
 class lf_modify_radio():
     def __init__(self,
                  lf_mgr=None,
@@ -115,7 +113,7 @@ class lf_modify_radio():
     def enable_dhcp_eth(self, interface="1.1.eth2"):
         port_ = interface.split(".")
         self.command.post_set_port(shelf=port_[0],
-                                   resource= port_[1],
+                                   resource=port_[1],
                                    port=port_[2],
                                    current_flags="2147483648",
                                    interest="8552366080",
@@ -126,16 +124,16 @@ class lf_modify_radio():
         self.command.post_set_port(shelf=port_[0],
                                    resource=port_[1],
                                    port=port_[2],
-                                   ip_addr =  self.static_ip,
-                                   netmask = self.ip_mask,
-                                   gateway = self.gateway_ip,
+                                   ip_addr=self.static_ip,
+                                   netmask=self.ip_mask,
+                                   gateway=self.gateway_ip,
                                    interest="8552366108",
                                    debug=self.debug)
 
 
 def main():
     help_summary = '''\
-    This script is designed to modify/adjust the settings of the radio's standard configuration. It allows you to easily 
+    This script is designed to modify/adjust the settings of the radio's standard configuration. It allows you to easily
     modify basic settings like the Country code, Channel/Frequency, Antenna, TX Power, and more. Additionally, the script
     can activate or deactivate various features such as Extra TxStatus and Extra RxStatus for the specified radio.
             '''
@@ -217,7 +215,6 @@ def main():
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-
     if not args.radio:
         print("No radio name provided")
         exit(1)
@@ -253,8 +250,6 @@ def main():
                                     _txpower=args.txpower,
                                     _country_code=country_num)
 
-
-
     '''
     session = LFSession(lfclient_url="http://%s:8080" % args.host,
                         debug=args.debug,
@@ -269,7 +264,7 @@ def main():
     query = session.get_query()
 
     shelf, resource, radio, *nil = LFUtils.name_to_eid(args.radio)
-    
+
     command.post_set_wifi_radio(resource=resource,
                                 radio=radio,
                                 shelf=shelf,
@@ -279,6 +274,6 @@ def main():
                                 debug=args.debug)
     '''
 
+
 if __name__ == "__main__":
     main()
-#

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 import sys
 import os
 import importlib
@@ -41,7 +40,7 @@ def main():
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
     args = parser.parse_args()
-    help_summary='''\
+    help_summary = '''\
 cv_manager.py is a simple driver script to load a CV Scenario'
 '''
     if args.help_summary:

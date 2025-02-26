@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_client_visualization.py
 
@@ -224,10 +223,10 @@ class Client_Visualization(cv_test):
     def delete_exixting_window(self):
         self.delete_instance(self.instance_name)  # Deletes existing window of Client Visualization
 
-    def create_scenario(self,scenario_name="Automation", Rawline=""):
+    def create_scenario(self, scenario_name="Automation", Rawline=""):
         self.pass_raw_lines_to_cv(scenario_name=scenario_name, Rawline=Rawline)  # creates a dummy scenario
 
-    def build_dummy_scenario(self,scenario_name="Automation", Rawline=""):
+    def build_dummy_scenario(self, scenario_name="Automation", Rawline=""):
 
         # example raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
         # but passing empty rawline to create dummy scenario.
@@ -239,7 +238,7 @@ class Client_Visualization(cv_test):
         self.apply_cv_scenario(scenario_name)  # Apply scenario
         self.build_cv_scenario()  # build scenario
 
-    def clean_cv_scenario(self,cv_type="Network-Connectivity",scenario_name=None):
+    def clean_cv_scenario(self, cv_type="Network-Connectivity", scenario_name=None):
         self.rm_cv_text_blob(cv_type, scenario_name)
 
     def run(self):
@@ -256,32 +255,32 @@ class Client_Visualization(cv_test):
 
         # self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
 
-        if self.chart_all_stations :
+        if self.chart_all_stations:
             cfg_options.append("chart_all_stations: " + "1")
         else:
             cfg_options.append("chart_all_stations: " + "0")
-        if self.chart_by_radio :
+        if self.chart_by_radio:
             cfg_options.append("chart_by_radio: " + "1")
         else:
             cfg_options.append("chart_by_radio: " + "0")
-        if self.chart_by_band :
+        if self.chart_by_band:
             cfg_options.append("chart_by_band: " + "1")
         else:
             cfg_options.append("chart_by_band: " + "0")
 
-        if self.chart_by_ssid :
+        if self.chart_by_ssid:
             cfg_options.append("chart_by_ssid: " + "1")
         else:
             cfg_options.append("chart_by_ssid: " + "0")
-        if self.chart_by_bssid :
+        if self.chart_by_bssid:
             cfg_options.append("chart_by_bssid: " + "1")
         else:
             cfg_options.append("chart_by_bssid: " + "0")
-        if self.chart_by_mode :
+        if self.chart_by_mode:
             cfg_options.append("chart_by_mode: " + "1")
         else:
             cfg_options.append("chart_by_mode: " + "0")
-        if self.chart_by_channel :
+        if self.chart_by_channel:
             cfg_options.append("chart_by_channel: " + "1")
         else:
             cfg_options.append("chart_by_channel: " + "0")
@@ -310,7 +309,7 @@ class Client_Visualization(cv_test):
 
         cv_cmds = []
 
-        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name,self.verbosity)
+        cmd = "cv set '%s' 'VERBOSITY' '%s'" % (self.instance_name, self.verbosity)
         cv_cmds.append(cmd)
         try:
 
@@ -318,7 +317,7 @@ class Client_Visualization(cv_test):
                                      self.config_name, self.sets,
                                      self.pull_report, self.lfclient_host, self.lf_user, self.lf_password,
                                      cv_cmds, ssh_port=self.ssh_port, graph_groups_file=self.graph_groups, local_lf_report_dir=self.local_lf_report_dir)
-        except:
+        except:  # noqa: E722
             logger.info("There is already an instance of 'Client Visualization' present in GUI. "
                         "To delete the existing window, use --delete_existing_instance")
             logger.info("Before deleting, make sure to save the report of running instance if needed.")
@@ -343,9 +342,10 @@ class Client_Visualization(cv_test):
         elif duration.endswith(''):
             return str(duration)
 
+
 def main():
 
-    help_summary='''\
+    help_summary = '''\
          The lf_client_visualization script is used to Monitor the connection status of all the clients for user specified duration.
          This report shows the connection status of all the clients in the test. This information is very useful
          when running long duration tests with 1000s of WiFi clients connecting across various bands, channels and SSIDs.
@@ -458,7 +458,8 @@ INCLUDE_IN_README: False
     parser.add_argument("-c", "--config_name", type=str, default="cv_dflt_cfg",
                         help="Config file name")
     parser.add_argument("--raw_line", action='append', nargs=1, default=[],
-                        help="Specify lines of the raw config file.  Example: --raw_line 'test_rig: Ferndale-01-Basic'  See example raw text config for possible options.  This is catch-all for any options not available to be specified elsewhere.  May be specified multiple times.")
+                        help="Specify lines of the raw config file.  Example: --raw_line 'test_rig: Ferndale-01-Basic'  See example raw text config for possible options.\
+                              This is catch-all for any options not available to be specified elsewhere.  May be specified multiple times.")
     parser.add_argument("--raw_lines_file", default="",
                         help="Specify a file of raw lines to apply.")
     parser.add_argument("--set", action='append', nargs=2, default=[],
@@ -487,33 +488,33 @@ INCLUDE_IN_README: False
         logger_config.load_lf_logger_config()
 
     Client_Vis = Client_Visualization(lfclient_host=args.mgr,
-                                lf_port=args.port,
-                                lf_user=args.lf_user,
-                                lf_password=args.lf_password,
-                                instance_name="Client Visualization",
-                                config_name=args.config_name,
-                                duration=args.test_duration,
-                                pull_report=False,
-                                load_old_cfg=False,
-                                time_btw_updates=args.time_btw_updates,
-                                live_chart_duration_msec=args.live_chart_duration,
-                                chart_all_stations=args.all_stations,
-                                chart_by_radio=args.stations_by_radios,
-                                chart_by_band=args.stations_by_Band,
-                                chart_by_ssid=args.stations_by_SSID,
-                                chart_by_bssid=args.stations_by_Bssid,
-                                chart_by_mode=args.stations_by_Mode,
-                                chart_by_channel=args.stations_by_Channel,
-                                CliViz_max_samples_combo = args.max_report_data,
-                                CliViz_compression_interval_ms_combo = args.report_compression_interval,
-                                raw_lines=args.raw_line,
-                                raw_lines_file=args.raw_lines_file,
-                                sets=args.set,
-                                graph_groups=args.graph_groups,
-                                test_rig=args.test_rig,
-                                local_lf_report_dir=args.local_report_dir,
-                                verbosity=args.verbosity
-                                )
+                                      lf_port=args.port,
+                                      lf_user=args.lf_user,
+                                      lf_password=args.lf_password,
+                                      instance_name="Client Visualization",
+                                      config_name=args.config_name,
+                                      duration=args.test_duration,
+                                      pull_report=False,
+                                      load_old_cfg=False,
+                                      time_btw_updates=args.time_btw_updates,
+                                      live_chart_duration_msec=args.live_chart_duration,
+                                      chart_all_stations=args.all_stations,
+                                      chart_by_radio=args.stations_by_radios,
+                                      chart_by_band=args.stations_by_Band,
+                                      chart_by_ssid=args.stations_by_SSID,
+                                      chart_by_bssid=args.stations_by_Bssid,
+                                      chart_by_mode=args.stations_by_Mode,
+                                      chart_by_channel=args.stations_by_Channel,
+                                      CliViz_max_samples_combo=args.max_report_data,
+                                      CliViz_compression_interval_ms_combo=args.report_compression_interval,
+                                      raw_lines=args.raw_line,
+                                      raw_lines_file=args.raw_lines_file,
+                                      sets=args.set,
+                                      graph_groups=args.graph_groups,
+                                      test_rig=args.test_rig,
+                                      local_lf_report_dir=args.local_report_dir,
+                                      verbosity=args.verbosity
+                                      )
     if args.delete_existing_instance:
         Client_Vis.delete_exixting_window()
 
