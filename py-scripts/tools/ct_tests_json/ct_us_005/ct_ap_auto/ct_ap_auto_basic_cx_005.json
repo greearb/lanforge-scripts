@@ -8,7 +8,7 @@
        ]
    },
    "test_suites":{
-       "ct_ap_auto_005":{
+       "ct_ap_auto_basic_cx_005":{
            "CC_AP_AUTO_DUT":{
                "enabled":"TRUE",
                "load_db":"skip",
