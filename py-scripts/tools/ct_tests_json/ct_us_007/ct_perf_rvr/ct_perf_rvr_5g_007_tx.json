@@ -1045,7 +1045,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_1_mt7925_W7_tx":{
+        "rvr_perf_5g_1_mt7925e_W7_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -1114,7 +1114,7 @@
                 ]
             }
         },
-        "rvr_perf_5g_2_mt7925_W7_tx":{
+        "rvr_perf_5g_2_mt7925e_W7_tx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",

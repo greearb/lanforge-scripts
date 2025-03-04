@@ -563,7 +563,7 @@
                 ]
             }
         },
-        "rvr_perf_2g_mt7925_W7_tx_rx":{
+        "rvr_perf_2g_mt7925e_W7_tx_rx":{
             "CC_DUT":{
                 "enabled":"TRUE",
                 "load_db":"skip",
