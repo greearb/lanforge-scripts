@@ -1,3 +1,4 @@
+# flake8: noqa
 # Zoom, YouTube Video Streaming, and Real Browser Automation
 
 ## Objective
