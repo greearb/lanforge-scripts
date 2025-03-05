@@ -1797,23 +1797,23 @@ def main():
 
     # Extend individual_dataframe_column with dynamically generated column names
     for i in range(len(keys)):
-        individual_dataframe_columns.extend(
-            [
-                f'video_format_bitrate{
-                    keys[i]}', f'total_wait_time{
-                    keys[i]}', f'total_urls{
-                    keys[i]}', f'RSSI{
-                        keys[i]}', f'Link Speed{
-                            keys[i]}', f'Total Buffer {
-                                keys[i]}', f'Total Errors {
-                                    keys[i]}', f'Min_Video_Rate{
-                                        keys[i]}', f'Max_Video_Rate{
-                                            keys[i]}', f'Avg_Video_Rate{
-                                                keys[i]}', f'bytes_rd {
-                                                    keys[i]}', f'rx rate {
-                                                        keys[i]} bps', f'frame_rate {
-                                                            keys[i]}', f'Video Quality {
-                                                                keys[i]}'])
+        individual_dataframe_columns.extend([
+            f'video_format_bitrate_{keys[i]}',
+            f'total_wait_time_{keys[i]}',
+            f'total_urls_{keys[i]}',
+            f'RSSI_{keys[i]}',
+            f'Link Speed_{keys[i]}',
+            f'Total Buffer_{keys[i]}',
+            f'Total Errors_{keys[i]}',
+            f'Min_Video_Rate_{keys[i]}',
+            f'Max_Video_Rate_{keys[i]}',
+            f'Avg_Video_Rate_{keys[i]}',
+            f'bytes_rd_{keys[i]}',
+            f'rx rate_{keys[i]} bps',
+            f'frame_rate_{keys[i]}',
+            f'Video Quality_{keys[i]}'
+        ])
+
     individual_dataframe_columns.extend(['overall_video_format_bitrate', 'timestamp', 'iteration', 'start_time', 'end_time', 'remaining_Time', 'status'])
     individual_df = pd.DataFrame(columns=individual_dataframe_columns)
 
