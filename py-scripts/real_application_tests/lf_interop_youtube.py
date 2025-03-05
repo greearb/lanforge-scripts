@@ -981,7 +981,7 @@ class Youtube(Realm):
                                         _yaxis_name="Devices",
                                         _yaxis_categories=self.real_sta_hostname,
                                         _graph_image_name="Dropped Frames vs Total Frames",
-                                        _label=["dropped Frames", "Total Frames",],
+                                        _label=["dropped Frames", "Total Frames"],
                                         _color=None,
                                         _color_edge='red',
                                         _figsize=(x_fig_size, y_fig_size),
