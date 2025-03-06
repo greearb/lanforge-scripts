@@ -1825,7 +1825,7 @@ class RealDevice(Realm):
                     elif ('Lin' in 'Lin' in self.devices_data[device]['hw version']):
                         self.linux += 1
                         self.linux_list.append(device)
-                    elif ('Apple' in self.devices_data[device]['hw version']):
+                    elif ('Apple' in self.devices_data[device]['hw version']) and (self.devices_data[device]['kernel'] != ''):
                         self.mac += 1
                         self.mac_list.append(device)
                     elif ('Apple' in self.devices_data[device]['hw version']) and (self.devices_data[device]['kernel'] == ''):
