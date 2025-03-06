@@ -32,13 +32,15 @@ This project aims to automate Zoom call tests, YouTube video streaming tests, an
 
 ## Script Files and Their Placement
 
-| Device          | Path                                      | Files |
-|---------------|--------------------------------|-------|
-| Lanforge       | `/home/lanforge/lanforge-scripts/py-json` | `gen_cxprofile.py` |
-| Lanforge       | `/home/lanforge/lanforge-scripts/py-scripts/` | `install_dependencies.py`, `lf_interop_zoom.py`, `DeviceConfig.py` |
-| Windows        | `C:\Program Files (x86)\LANforge-Server` | `install_dependencies.py`, `zoom_host.py`, `zoom_client.py` |
-| Linux         | `/home/lanforge` | `install_dependencies.py`, `zoom_host.py`, `zoom_client.py`, `ctzoom.bash` |
-| MacOS         | `/Users/lanforge` | `install_dependencies.py`, `zoom_host.py`, `zoom_client.py`, `ctzoom.bash` |
+| Device      | Path                                               | Files |
+|------------|---------------------------------------------------|-------|
+| Lanforge   | `/home/lanforge/lanforge-scripts/py-json`        | `gen_cxprofile.py` |
+| Lanforge   | `/home/lanforge/lanforge-scripts/py-scripts/`     | `install_dependencies.py`, `DeviceConfig.py` |
+| Lanforge   | `/home/lanforge/lanforge-scripts/py-scripts/real_application_tests/zoom_automation/` | `lf_interop_zoom.py` |
+| Windows    | `C:\Program Files (x86)\LANforge-Server`         | `install_dependencies.py`, `zoom_host.py`, `zoom_client.py` |
+| Linux      | `/home/lanforge`                                  | `install_dependencies.py`, `zoom_host.py`, `zoom_client.py`, `ctzoom.bash` |
+| MacOS      | `/Users/lanforge`                                | `install_dependencies.py`, `zoom_host.py`, `zoom_client.py`, `ctzoom.bash` |
+
 
 ## Prerequisites
 - Cluster all laptops to LANforge.
@@ -58,7 +60,7 @@ sudo apt install python3-tk python3-dev
 
 
 ## Running the Zoom Automation Test
-Navigate to `/home/lanforge/lanforge-scripts/py-scripts/real_application_tests` and execute the script:
+Navigate to `/home/lanforge/lanforge-scripts/py-scripts/real_application_tests/zoom_automation/` and execute the script:
 
 ```bash
 python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.214.219" --sigin_email "demo@gmail.com" --sigin_passwd "Demo@123" --participants 3 --audio --video --resources 1.400,1.200 --zoom_host 1.95 --server_ip 192.168.214.123
@@ -81,13 +83,13 @@ python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.214.219" --sigin_
 
 | Device          | Path                                      | Files |
 |---------------|--------------------------------|-------|
-| Lanforge       | `/home/lanforge/lanforge-scripts/py-scripts/` | `lf_interop_youtube.py` |
+| Lanforge       | `/home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/` | `lf_interop_youtube.py` |
 | Windows        | `C:\Program Files (x86)\LANforge-Server` | `youtube.py`, `youtube_stream.bat` |
 | Linux         | `/home/lanforge` | `youtube.py`, `ctyt.bash` |
 | MacOS         | `/Users/lanforge` | `youtube.py`, `ctyt.bash` |
 
 ## Running the YouTube Streaming Test
-Navigate to `/home/lanforge/lanforge-scripts/py-scripts/real_application_tests` and execute the script:
+Navigate to `/home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/` and execute the script:
 
 ```bash
 python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/-SQop2bI8Eg" --duration 2 --res 1080p --flask_ip 192.168.214.131
@@ -107,7 +109,7 @@ python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/-SQo
 | `ctrb.bash`       | Linux/macOS script for pre-cleanup, post-cleanup, and triggering `real_browser.py`. |
 
 ## Running the Real Browser Test
-Navigate to `/home/lanforge/lanforge-scripts/py-scripts/real_application_tests` and execute the script:
+Navigate to `/home/lanforge/lanforge-scripts/py-scripts/real_application_tests/real_browser/` and execute the script:
 ```bash
 python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "https://mi.com" --duration 1m --debug --flask_ip 192.168.214.131 --server_ip 192.168.214.219 --device_list 1.23,1.95,1.375 --postcleanup
 ```
