@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 example: ./lf_interference.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge --dut_upstream 1.1.eth1
         --batch_size 1 --loop_iter 1 --pull_report_flag --protocol UDP-IPv4 --duration 240000 --download_rate 1Gbps
@@ -71,11 +70,11 @@ class interference(cv_test):
 
         self.lfclient_host = lfclient_host
         self.lf_port = lf_port
-        self.lf_user= "lanforge"
+        self.lf_user = "lanforge"
         self.lf_passwd = "lanforge"
         self.COMMANDS = ["set_port"]
         self.desired_set_port_cmd_flags = []
-        self.desired_set_port_current_flags = ["use_dhcp","dhcp"]  # do not default down, "if_down"
+        self.desired_set_port_current_flags = ["use_dhcp", "dhcp"]  # do not default down, "if_down"
         self.desired_set_port_interest_flags = ["current_flags"]  # do not default down, "ifdown"
         # set_port 1 1 NA NA NA NA NA 2147483648 NA NA NA vap0000
         self.profile_name = None
@@ -83,9 +82,7 @@ class interference(cv_test):
         self.freq = None
         self.set_upstream = True
 
-
-
-    def setup_vap(self, scenario_name="Automation", radio="wiphy0", frequency="-1",name=None, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
+    def setup_vap(self, scenario_name="Automation", radio="wiphy0", frequency="-1", name=None, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
 
         profile = lf_add_profile(lf_mgr=self.lfclient_host,
                                  lf_port=self.lf_port,
@@ -122,7 +119,7 @@ class interference(cv_test):
         self.freq = freq
 
         chamber = create_chamber(lfmgr=self.lfclient_host,
-                 port=self.lf_port)
+                                 port=self.lf_port)
 
         if delete_scenario:
             chamber.clean_cv_scenario(
@@ -140,15 +137,13 @@ class interference(cv_test):
         print(self.raw_line_l1)
 
         chamber.setup(create_scenario=scenario_name,
-                                 line=line,
-                                 raw_line=self.raw_line_l1)
-
+                      line=line,
+                      raw_line=self.raw_line_l1)
 
         return chamber
 
     def build_chamberview(self, chamber, scenario_name):
         chamber.build(scenario_name)        # self.apply_and_build_scenario("Sushant1")
-
 
     def build_and_setup_vap(self, delete_old_scenario=True, scenario_name="Automation", radio="wiphy0", frequency=-1,
                             vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
@@ -160,19 +155,16 @@ class interference(cv_test):
                        vap_pawd=vap_pawd,
                        vap_security=vap_security)
 
-
         chamber = self.setup_chamberview(delete_scenario=delete_old_scenario,
-                               scenario_name=scenario_name,
-                               vap_radio=radio,
-                               profile_name=scenario_name,
-                               freq=frequency,
-                               line=None)
+                                         scenario_name=scenario_name,
+                                         vap_radio=radio,
+                                         profile_name=scenario_name,
+                                         freq=frequency,
+                                         line=None)
 
+        self.build_chamberview(chamber=chamber, scenario_name=scenario_name)
 
-        self.build_chamberview(chamber=chamber,scenario_name=scenario_name)
-
-
-    def build_vap_stations(self, create_vap_stations, vap_stations, vap_security, vap_ssid, vap_paswd, vap_sta_radio ):
+    def build_vap_stations(self, create_vap_stations, vap_stations, vap_security, vap_ssid, vap_paswd, vap_sta_radio):
         if create_vap_stations and vap_stations != "":
             vap_sta = vap_stations.split(",")
             self.station_profile.cleanup(vap_sta)
@@ -182,7 +174,7 @@ class interference(cv_test):
             self.wait_for_ip(station_list=vap_sta)
             logger.info("VAP stations created")
 
-    def build_dut_stations(self, create_dut_stations, dut_stations, dut_security, dut_ssid, dut_paswd, dut_sta_radio ):
+    def build_dut_stations(self, create_dut_stations, dut_stations, dut_security, dut_ssid, dut_paswd, dut_sta_radio):
         if create_dut_stations and dut_stations != "":
             dut_sta = dut_stations.split(",")
             self.station_profile.cleanup(dut_sta)
@@ -192,9 +184,9 @@ class interference(cv_test):
             self.wait_for_ip(station_list=dut_sta)
             logger.info("DUT stations created")
 
-    def create_layer3(self,num_stations=None,use_existing_sta=None,radio="wiphy0",sta_names=None,traffic_type=None,ipv6=None
-                      ,upstream_port=None,ssid=None,passwd=None, security=None,test_duration=None,a_min=None,b_min=None
-                      ,mode=None,ap=None,no_cleanup=None,layer3_cols=None,port_mgr_cols=None,monitor_interval=None,
+    def create_layer3(self, num_stations=None, use_existing_sta=None, radio="wiphy0", sta_names=None, traffic_type=None, ipv6=None,
+                      upstream_port=None, ssid=None, passwd=None, security=None, test_duration=None, a_min=None, b_min=None,
+                      mode=None, ap=None, no_cleanup=None, layer3_cols=None, port_mgr_cols=None, monitor_interval=None,
                       debug=False):
         num_sta = 1
 
@@ -262,26 +254,26 @@ class interference(cv_test):
 
         ip_var_test.build()
 
-
         return ip_var_test
 
     def run_layer3(self, ip_var_test):
         ip_var_test.run_only()
+
 
 def main():
     parser = argparse.ArgumentParser(
         prog="lf_interference.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
-        ./lf_interference.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge 
+        ./lf_interference.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge
         --dut_upstream 1.1.eth1 --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 240000 --download_rate 1Gbps
-         --upload_rate 10Mbps --sort interleave --stations 1.1.sta0000 --create_stations --pull_report --radio "wiphy3" 
-         --ssid "NETGEAR-2G" --security "wpa2" --paswd "[BLANK]" --delete_old_scenario --scenario_name "Automation" 
-         --vap_radio "wiphy0" --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2" 
-         --vap_sta_number 1 --vap_sta_radio "wiphy2" --vap_sta_name sta0000 --vap_sta_traffic_type lf_udp 
-         --vap_sta_upstream_port 1.1.vap0000 --vap_sta_ssid "routed-AP" --vap_sta_passwd "something" 
-         --vap_sta_security "wpa2" --vap_sta_test_duration "60s" --vap_sta_a_min 600000000 --vap_sta_b_min 600000000 
-         --vap_sta_mode 5 --vap_sta_cleanup --vap_sta_monitor_interval 10s    
+         --upload_rate 10Mbps --sort interleave --stations 1.1.sta0000 --create_stations --pull_report --radio "wiphy3"
+         --ssid "NETGEAR-2G" --security "wpa2" --paswd "[BLANK]" --delete_old_scenario --scenario_name "Automation"
+         --vap_radio "wiphy0" --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2"
+         --vap_sta_number 1 --vap_sta_radio "wiphy2" --vap_sta_name sta0000 --vap_sta_traffic_type lf_udp
+         --vap_sta_upstream_port 1.1.vap0000 --vap_sta_ssid "routed-AP" --vap_sta_passwd "something"
+         --vap_sta_security "wpa2" --vap_sta_test_duration "60s" --vap_sta_a_min 600000000 --vap_sta_b_min 600000000
+         --vap_sta_mode 5 --vap_sta_cleanup --vap_sta_monitor_interval 10s
                """)
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
@@ -325,8 +317,6 @@ def main():
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
 
-
-
     parser.add_argument("-dos", "--delete_old_scenario", default=True,
                         action='store_true',
                         help="To delete old scenarios (by default: True)")
@@ -342,8 +332,6 @@ def main():
                         help="vap password (by default: something")
     parser.add_argument("-vse", "--vap_security", default="wpa2",
                         help="vap security (by default: wpa2")
-
-
 
     parser.add_argument("-vsnc", "--vap_sta_number", default=1,
                         help="To set vap station radio (by default: wiphy2)")
@@ -391,13 +379,12 @@ def main():
                         action='store_true',
                         help="")
 
-    parser.add_argument('--help_summary', 
-                        action="store_true", 
+    parser.add_argument('--help_summary',
+                        action="store_true",
                         help='Show summary of what this script does')
 
-
     args = parser.parse_args()
-    help_summary='''\
+    help_summary = '''\
 Use this script to create co-channel and adjacent channel interference, by changing frequency argument.
 Provide same channel for co-channel interference, and adjacent channel for adjacent channel interference.
 This script uses the lf_wifi_capacity_test.py
@@ -465,7 +452,6 @@ This script uses the lf_wifi_capacity_test.py
     lf_interference.build_and_setup_vap(delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
                                         frequency=vap_freq, vap_ssid=vap_ssid, vap_pawd=vap_passwd, vap_security=vap_security)
 
-
     vap_sta_num = args.vap_sta_number
     vap_sta_use_existing_sta = args.vap_sta_use_existing_sta
     vap_sta_radio = args.vap_sta_radio
@@ -487,16 +473,17 @@ This script uses the lf_wifi_capacity_test.py
     vap_sta_port_mgr_cols = args.port_mgr_cols
     vap_sta_debug = args.vap_sta_debug
 
-    obj = lf_interference.create_layer3(num_stations=vap_sta_num,use_existing_sta=vap_sta_use_existing_sta,radio=[vap_sta_radio],sta_names=vap_sta_name,
-                                        traffic_type=vap_sta_traffic_type,ipv6=vap_sta_ipv6 ,upstream_port=[vap_sta_upstream_port],ssid=[vap_sta_ssid],
-                                        passwd=[vap_sta_passwd], security=[vap_sta_security],test_duration=vap_sta_test_duration,a_min=vap_sta_a_min,
-                                        b_min=vap_sta_b_min,mode=vap_sta_mode,ap=vap_sta_ap,no_cleanup=vap_sta_cleanup,monitor_interval=vap_sta_monitor_interval,
-                                        layer3_cols=vap_sta_layer3_cols,debug=vap_sta_debug,
+    obj = lf_interference.create_layer3(num_stations=vap_sta_num, use_existing_sta=vap_sta_use_existing_sta, radio=[vap_sta_radio], sta_names=vap_sta_name,
+                                        traffic_type=vap_sta_traffic_type, ipv6=vap_sta_ipv6, upstream_port=[vap_sta_upstream_port], ssid=[vap_sta_ssid],
+                                        passwd=[vap_sta_passwd], security=[vap_sta_security], test_duration=vap_sta_test_duration, a_min=vap_sta_a_min,
+                                        b_min=vap_sta_b_min, mode=vap_sta_mode, ap=vap_sta_ap, no_cleanup=vap_sta_cleanup, monitor_interval=vap_sta_monitor_interval,
+                                        layer3_cols=vap_sta_layer3_cols, debug=vap_sta_debug,
                                         port_mgr_cols=vap_sta_port_mgr_cols)
 
-    proc = subprocess.Popen([cmd_wifi_capacity], shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
+    proc = subprocess.Popen([cmd_wifi_capacity], shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)  # noqa F841
     time.sleep(120)
     lf_interference.run_layer3(obj)
+
 
 if __name__ == "__main__":
     main()
