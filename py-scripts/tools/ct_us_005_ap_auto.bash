@@ -7,3 +7,6 @@ echo "Running ap_auto_basic_cx"
 
 echo "Running ap_auto_long_term"
 ./ct_us_005_ap_auto_long_term.bash
+
+echo "Running ap_auto_mix_stability"
+./ct_us_005_ap_auto_mix_stability.bash
