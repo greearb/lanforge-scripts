@@ -6,7 +6,7 @@ import sys
 import asyncio
 import requests
 import time
-
+from datetime import datetime
 if (sys.version_info[0] != 3):
     logging.critical('This script requires Python3')
     exit()
@@ -20,25 +20,57 @@ class Android():
                  lanforge_ip=None,
                  port=8080,
                  server_ip=None,
+                 enable_wifi=None,
+                 disconnect_devices=None,
+                 reboot=None,
+                 disable_wifi=None,
                  ssid_2g=None,
                  passwd_2g=None,
                  encryption_2g=None,
                  eap_method_2g=None,
                  eap_identity_2g=None,
+                 ieee80211_2g=None,
+                 key_management_2g=None,
+                 pairwise_2g=None,
+                 private_key_2g=None,
+                 ca_cert_2g=None,
+                 client_cert_2g=None,
+                 pk_passwd_2g=None,
+                 pac_file_2g=None,
                  ssid_5g=None,
                  passwd_5g=None,
                  encryption_5g=None,
                  eap_method_5g=None,
                  eap_identity_5g=None,
+                 ieee80211_5g=None,
+                 key_management_5g=None,
+                 pairwise_5g=None,
+                 private_key_5g=None,
+                 ca_cert_5g=None,
+                 client_cert_5g=None,
+                 pk_passwd_5g=None,
+                 pac_file_5g=None,
                  ssid_6g=None,
                  passwd_6g=None,
                  encryption_6g=None,
                  eap_method_6g=None,
                  eap_identity_6g=None,
+                 ieee80211_6g=None,
+                 key_management_6g=None,
+                 pairwise_6g=None,
+                 private_key_6g=None,
+                 ca_cert_6g=None,
+                 client_cert_6g=None,
+                 pk_passwd_6g=None,
+                 pac_file_6g=None,
                  debug=False):
         self.lanforge_ip = lanforge_ip
         self.port = port
         self.server_ip = server_ip  # upstream IP
+        self.enable_wifi = enable_wifi
+        self.disconnect_devices = disconnect_devices
+        self.reboot = reboot
+        self.disable_wifi = disable_wifi
 
         self.ssid_2g = ssid_2g
         self.passwd_2g = passwd_2g
@@ -55,12 +87,37 @@ class Android():
         # for enterprise authentication
         self.eap_method_2g = eap_method_2g
         self.eap_identity_2g = eap_identity_2g
+        self.ieee80211_2g = ieee80211_2g
+        self.key_management_2g = key_management_2g
+        self.pairwise_2g = pairwise_2g
+        self.private_key_2g = private_key_2g
+        self.ca_cert_2g = ca_cert_2g
+        self.client_cert_2g = client_cert_2g
+        self.pk_passwd_2g = pk_passwd_2g
+        self.pac_file_2g = pac_file_2g
 
         self.eap_method_5g = eap_method_5g
         self.eap_identity_5g = eap_identity_5g
+        self.ieee80211_5g = ieee80211_5g
+        self.key_management_5g = key_management_5g
+        self.pairwise_5g = pairwise_5g
+        self.private_key_5g = private_key_5g
+        self.ca_cert_5g = ca_cert_5g
+        self.client_cert_5g = client_cert_5g
+        self.pk_passwd_5g = pk_passwd_5g
+        self.pac_file_5g = pac_file_5g
 
         self.eap_method_6g = eap_method_6g
         self.eap_identity_6g = eap_identity_6g
+        self.ieee80211_6g = ieee80211_6g
+        self.key_management_6g = key_management_6g
+        self.ieee80211_6g = ieee80211_6g
+        self.pairwise_6g = pairwise_6g
+        self.private_key_6g = private_key_6g
+        self.ca_cert_6g = ca_cert_6g
+        self.client_cert_6g = client_cert_6g
+        self.pk_passwd_6g = pk_passwd_6g
+        self.pac_file_6g = pac_file_6g
 
         self.min_supported_android_version = 10
 
@@ -72,14 +129,17 @@ class Android():
 
     # request function to send json post request to the adb api
     def post_data(self, url, data):
+        logger.info("ANDROID API {} {} {}".format(url, data, datetime.now()))
         try:
-            print(data)
-            logger.info(data)
-            requests.post(url, json=data)
-        except:
-            logger.error('Request failed for port {}'.format(data['adb_id']))
 
+            logger.info(data)
+            response = requests.post(url, json=data)
+            # response.raise_for_status()  # Raise an HTTPError for bad responses
+        except Exception as e:
+            logger.info(e, data)
+            # logger.error('Request failed for port {}'.format(data['adb_id']))
     # stop app
+
     async def stop_app(self, port_list=[]):
         if (port_list == []):
             logger.info('Port list is empty')
@@ -94,6 +154,7 @@ class Android():
                 'shelf': 1,
                 'resource': 1,
                 'adb_id': serial,
+                'key': 8,
                 'adb_cmd': command
             }
             data_list.append(data)
@@ -119,12 +180,13 @@ class Android():
 
         data_list = []
         for port_data in port_list:
-            shelf, resource, serial = port_data
+            shelf, resource, serial, *extra = port_data
 
             data = {
                 'shelf': 1,
                 'resource': 1,
                 'adb_id': serial,
+                'key': 8,
                 'adb_cmd': command
             }
             data_list.append(data)
@@ -132,7 +194,37 @@ class Android():
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, self.post_url, data) for data in data_list]
 
-    def forget_all_networks(self, port_list=[]):
+    async def reboot_android(self, port_list=[], state='enable'):
+        if (port_list == []):
+            logger.info('Port list is empty')
+            return
+
+        # state = state.lower()
+        # if (state != 'enable' and state != 'disable'):
+        #     logger.warning('State argument should be either enable or disable')
+        #     return
+
+        # command = 'shell svc wifi {}'.format(state)
+
+        data_list = []
+        for port_data in port_list:
+            shelf, resource, serial, *extra = port_data
+
+            data = {
+                'shelf': 1,
+                'resource': 1,
+                'adb_id': serial,
+                'key': 8,
+                'adb_cmd': "reboot"
+            }
+            data_list.append(data)
+
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(None, self.post_data, self.post_url, data) for data in data_list]
+        results = await asyncio.gather(*tasks)
+
+    async def forget_all_networks(self, port_list=[]):
+        logger.info("FORGET ALL NETWORKS ANDROID")
         if (port_list == []):
             logger.info('Port list is empty')
             return
@@ -141,7 +233,7 @@ class Android():
 
         data_list = []
         for port_data in port_list:
-            shelf, resource, serial = port_data
+            shelf, resource, serial, *extra = port_data
 
             data = {
                 'shelf': 1,
@@ -150,11 +242,14 @@ class Android():
                 'type': 'adb'
             }
             data_list.append(data)
+        logger.info("DATA LIST: {}".format(data_list))
+        logger.info("URL: {}".format(url))
 
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
-
+        results = await asyncio.gather(*tasks)
     # fetching the username from the interop tab
+
     def get_username(self, shelf, resource):
 
         port = '{}.{}'.format(shelf, resource)
@@ -179,13 +274,16 @@ class Android():
                                 'Android device {} having android version less {}. Some functions may not be supported.'.format(
                                     data['user-name'], self.min_supported_android_version))
                         return (data['user-name'])
+    # configuring wifi for androids
 
     async def configure_wifi(self, port_list=[]):
+        logger.info("CONFIGURE ANDROIDS")
         if (port_list == []):
             logger.info('Port list is empty')
             return
 
         data_list = []
+        data_list_1 = []
 
         for port_data in port_list:
             if len(port_data) == 4:
@@ -202,34 +300,57 @@ class Android():
                 curr_ssid, curr_passwd, curr_encryption, curr_eap_method, curr_eap_identity = ssid, passwd, enc, eap_method, eap_identity
 
             username = self.get_username(shelf, resource)
+            # adding enable wifi option for android clients as a prerequisite step by-default
+            command = 'shell svc wifi enable'
+            data = {
+                'shelf': 1,
+                'resource': 1,
+                'adb_id': serial,
+                'key': 8,
+                'adb_cmd': command
+            }
+            data_list_1.append(data)
 
             if (username is None):
                 # logger.warning('The device with serial {} not found'.format(serial))
                 username = \
-                requests.get('http://{}:{}/adb/1/1/{}'.format(self.lanforge_ip, self.port, serial)).json()['devices'][
-                    'user-name']
+                    requests.get('http://{}:{}/adb/1/1/{}'.format(self.lanforge_ip, self.port, serial)).json()['devices'][
+                        'user-name']
 
             # check if the encryption is personal
-            if (curr_eap_method is None or curr_eap_method == ""):
+
+            # if the encryption is enterprise
+            if (self.ieee80211_2g == True or self.ieee80211_5g == True or self.ieee80211_6g == True):
+                if curr_encryption == "wpa_enterprise":
+                    curr_encryption = "wpa-ent"
+                if curr_encryption == "wpa2_enterprise":
+                    curr_encryption = "wpa2-ent"
+                if curr_encryption == "wpa3_enterprise":
+                    curr_encryption = "wpa3-ent"
                 data = {
                     'shelf': 1,
                     'resource': 1,
                     'adb_id': serial,
-                    'adb_cmd': 'shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity --es auto_start 1 --es username {} --es serverip {} --es ssid {} --es password {} --es encryption {}'.format(
-                        username, self.server_ip, curr_ssid, curr_passwd, curr_encryption)
+                    'key': 8,
+                    'adb_cmd': 'shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity --es auto_start 1 --es username {} --es serverip {} --es ssid {} --es password {} --es encryption {} --es eap_method {} --es eap_user {} --es eap_passwd {}'.format(
+                        username, self.server_ip, curr_ssid, curr_passwd, curr_encryption, curr_eap_method,
+                        curr_eap_identity, curr_passwd)
                 }
-            # if the encryption is enterprise
             else:
                 data = {
                     'shelf': 1,
                     'resource': 1,
                     'adb_id': serial,
-                    'adb_cmd': 'shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity --es auto_start 1 --es username {} --es serverip {} --es ssid {} --es password {} --es encryption {} --es eap_method {} --es eap_user {} --es eap_passwd {}'.format(
-                        username, self.server_ip, curr_ssid, curr_passwd, curr_encryption + "-ent", curr_eap_method,
-                        curr_eap_identity, curr_passwd)
+                    'key': 8,
+                    'adb_cmd': 'shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity --es auto_start 1 --es username {} --es serverip {} --es ssid {} --es password {} --es encryption {}'.format(
+                        username, self.server_ip, curr_ssid, curr_passwd, curr_encryption)
                 }
             data_list.append(data)
-
+        logger.info("DATA LIST: {}".format(data_list))
+        logger.info("URL: {}".format(self.post_url))
+        # execution for enabling wifi
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(None, self.post_data, self.post_url, data) for data in data_list_1]
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, self.post_url, data) for data in data_list]
 
@@ -259,11 +380,12 @@ class Android():
                 # parameters for adb post request
                 try:
                     shelf, resource = interop_tab_data['resource-id'].split('.')
-                except:
+                except BaseException:
                     # logger.warning('Resource id is missing for the device {} therefore skipping the device from usage'.format(name))
                     shelf, resource = '', ''
 
-                devices_data.append([shelf, resource, serial])
+                if data['device-type'] != 'iOS':
+                    devices_data.append([shelf, resource, serial])
 
         else:
             for device_data in interop_tab_data:
@@ -278,11 +400,11 @@ class Android():
 
                     try:
                         shelf, resource = data['resource-id'].split('.')
-                    except:
+                    except BaseException:
                         # logger.warning('Resource id is missing for the device {} therefore skipping the device from usage'.format(name))
                         shelf, resource = '', ''
-
-                    devices_data.append([shelf, resource, serial])
+                    if data['device-type'] != 'iOS':
+                        devices_data.append([shelf, resource, serial])
 
         return (devices_data)
 
@@ -327,25 +449,78 @@ class Laptop():
                  lanforge_ip=None,
                  port=8080,
                  server_ip=None,
+                 enable_wifi=None,
+                 disconnect_devices=None,
+                 reboot=None,
+                 disable_wifi=None,
                  ssid_2g=None,
                  passwd_2g=None,
                  encryption_2g=None,
                  eap_method_2g=None,
                  eap_identity_2g=None,
+                 ieee80211_2g=None,
+                 ieee80211u_2g=None,
+                 ieee80211w_2g=None,
+                 enable_pkc_2g=None,
+                 bss_transition_2g=None,
+                 power_save_2g=None,
+                 disable_ofdma_2g=None,
+                 roam_ft_ds_2g=None,
+                 key_management_2g=None,
+                 pairwise_2g=None,
+                 private_key_2g=None,
+                 ca_cert_2g=None,
+                 client_cert_2g=None,
+                 pk_passwd_2g=None,
+                 pac_file_2g=None,
                  ssid_5g=None,
                  passwd_5g=None,
                  encryption_5g=None,
                  eap_method_5g=None,
                  eap_identity_5g=None,
+                 ieee80211_5g=None,
+                 ieee80211u_5g=None,
+                 ieee80211w_5g=None,
+                 enable_pkc_5g=None,
+                 bss_transition_5g=None,
+                 power_save_5g=None,
+                 disable_ofdma_5g=None,
+                 roam_ft_ds_5g=None,
+                 key_management_5g=None,
+                 pairwise_5g=None,
+                 private_key_5g=None,
+                 ca_cert_5g=None,
+                 client_cert_5g=None,
+                 pk_passwd_5g=None,
+                 pac_file_5g=None,
                  ssid_6g=None,
                  passwd_6g=None,
                  encryption_6g=None,
                  eap_method_6g=None,
                  eap_identity_6g=None,
+                 ieee80211_6g=None,
+                 ieee80211u_6g=None,
+                 ieee80211w_6g=None,
+                 enable_pkc_6g=None,
+                 bss_transition_6g=None,
+                 power_save_6g=None,
+                 disable_ofdma_6g=None,
+                 roam_ft_ds_6g=None,
+                 key_management_6g=None,
+                 pairwise_6g=None,
+                 private_key_6g=None,
+                 ca_cert_6g=None,
+                 client_cert_6g=None,
+                 pk_passwd_6g=None,
+                 pac_file_6g=None,
                  debug=False):
         self.lanforge_ip = lanforge_ip
         self.port = port
         self.server_ip = server_ip  # upstream IP
+        self.enable_wifi = enable_wifi
+        self.disconnect_devices = disconnect_devices
+        self.reboot = reboot
+        self.disable_wifi = disable_wifi
 
         self.ssid_2g = ssid_2g
         self.encryption_2g = encryption_2g
@@ -371,26 +546,78 @@ class Laptop():
         # for enterprise authentication
         self.eap_method_2g = eap_method_2g
         self.eap_identity_2g = eap_identity_2g
+        self.ieee80211_2g = ieee80211_2g
+        self.ieee80211u_2g = ieee80211u_2g
+        self.ieee80211w_2g = ieee80211w_2g
+        self.enable_pkc_2g = enable_pkc_2g
+        self.bss_transition_2g = bss_transition_2g
+        self.power_save_2g = power_save_2g
+        self.disable_ofdma_2g = disable_ofdma_2g
+        self.roam_ft_ds_2g = roam_ft_ds_2g
+        self.key_management_2g = key_management_2g
+        self.pairwise_2g = pairwise_2g
+        self.private_key_2g = private_key_2g
+        self.ca_cert_2g = ca_cert_2g
+        self.client_cert_2g = client_cert_2g
+        self.pk_passwd_2g = pk_passwd_2g
+        self.pac_file_2g = pac_file_2g
 
         self.eap_method_5g = eap_method_5g
         self.eap_identity_5g = eap_identity_5g
+        self.ieee80211_5g = ieee80211_5g
+        self.ieee80211u_5g = ieee80211u_5g
+        self.ieee80211w_5g = ieee80211w_5g
+        self.enable_pkc_5g = enable_pkc_5g
+        self.bss_transition_5g = bss_transition_5g
+        self.power_save_5g = power_save_5g
+        self.disable_ofdma_5g = disable_ofdma_5g
+        self.roam_ft_ds_5g = roam_ft_ds_5g
+        self.key_management_5g = key_management_5g
+        self.pairwise_5g = pairwise_5g
+        self.private_key_5g = private_key_5g
+        self.ca_cert_5g = ca_cert_5g
+        self.client_cert_5g = client_cert_5g
+        self.pk_passwd_5g = pk_passwd_5g
+        self.pac_file_5g = pac_file_5g
 
         self.eap_method_6g = eap_method_6g
         self.eap_identity_6g = eap_identity_6g
+        self.ieee80211_6g = ieee80211_6g
+        self.ieee80211u_6g = ieee80211u_6g
+        self.ieee80211w_6g = ieee80211w_6g
+        self.enable_pkc_6g = enable_pkc_6g
+        self.bss_transition_6g = bss_transition_6g
+        self.power_save_6g = power_save_6g
+        self.disable_ofdma_6g = disable_ofdma_6g
+        self.roam_ft_ds_6g = roam_ft_ds_6g
+        self.key_management_6g = key_management_6g
+        self.pairwise_6g = pairwise_6g
+        self.private_key_6g = private_key_6g
+        self.ca_cert_6g = ca_cert_6g
+        self.client_cert_6g = client_cert_6g
+        self.pk_passwd_6g = pk_passwd_6g
+        self.pac_file_6g = pac_file_6g
 
         # encryption encoding values for station creation
-        self.enc_2g = self.set_encoding(self.encryption_2g)
-        self.enc_5g = self.set_encoding(self.encryption_5g)
-        self.enc_6g = self.set_encoding(self.encryption_6g)
+        self.enc_2g = self.set_encoding(self.encryption_2g, ieee80211u_2g, ieee80211w_2g, enable_pkc_2g, bss_transition_2g, power_save_2g, disable_ofdma_2g,
+                                        roam_ft_ds_2g, key_management_2g, pairwise_2g, private_key_2g, ca_cert_2g, client_cert_2g, pk_passwd_2g, pac_file_2g)
+        self.enc_5g = self.set_encoding(self.encryption_5g, ieee80211u_5g, ieee80211w_5g, enable_pkc_5g, bss_transition_5g, power_save_5g, disable_ofdma_5g,
+                                        roam_ft_ds_5g, key_management_5g, pairwise_5g, private_key_5g, ca_cert_5g, client_cert_5g, pk_passwd_5g, pac_file_5g)
+        self.enc_6g = self.set_encoding(self.encryption_6g, ieee80211u_6g, ieee80211w_6g, enable_pkc_6g, bss_transition_6g, power_save_6g, disable_ofdma_6g,
+                                        roam_ft_ds_6g, key_management_6g, pairwise_6g, private_key_6g, ca_cert_6g, client_cert_6g, pk_passwd_6g, pac_file_6g)
 
         # mac format for creating station
         self.mac = 'xx:xx:xx:*:*:xx'
 
     # set encoding value
-    def set_encoding(self, encryption):
+    def set_encoding(self, encryption, ieee80211u, ieee80211w, enable_pkc, bss_transition, power_save, disable_ofdma,
+                     roam_ft_ds, key_management, pairwise, private_key, ca_cert, client_cert, pk_passwd, pac_file):
+        logger.info("SET ENCODING FOR LAPTOP")
         enc = 0
         if (encryption == 'open'):
             enc = 0
+        elif (encryption == "owe"):
+            enc = 562949953421312
         elif (encryption == 'wpa_personal' or encryption == 'psk' or encryption == 'wpa'):
             enc = 16
         elif (encryption == "wpa2_personal" or encryption == 'psk2' or encryption == 'wpa2'):
@@ -403,17 +630,33 @@ class Laptop():
             enc = 33555456
         elif (encryption == "wpa3_enterprise"):
             enc = 1099545182208
+        elif (encryption == "owe_advanced"):
+            enc = 564049498603520
+        if encryption == "wpa_enterprise" or encryption == "wpa2_enterprise" or encryption == "wpa3_enterprise" or encryption == "owe_advanced":
+            if ieee80211u == True:
+                enc = enc + 131072
+            if enable_pkc == True:
+                enc = enc + 67108864
+            if bss_transition == True:
+                enc = enc + 8796093022208
+            if power_save == True:
+                enc = enc + 34359738368
+            if disable_ofdma == True:
+                enc = enc + 35184372088832
+            if roam_ft_ds == True:
+                enc = enc + 140737488355328
 
         return enc
 
     # request function to send json post request to the given url
     def post_data(self, url, data):
         try:
+            logger.info("LAPTOP API URL: {} DATA: {} TIMESTAMP: {}".format(url, data, datetime.now()))
             logger.info(data)
-            requests.post(url, json=data)
-        except:
-            logger.error('Request failed for port {}'.format(data['port']))
-
+            response = requests.post(url, json=data)
+        except Exception as e:
+            print(e, data)
+            # logger.error('Request failed for port {}'.format(data['port']))
             # method to get the station name from port manager
 
     def get_station_name(self, shelf, resource):
@@ -435,6 +678,7 @@ class Laptop():
     # remove station
     # NOTE this is only for Linux Laptops
     async def rm_station(self, port_list=[]):
+        logger.info("REMOVE STATION LAPTOP")
         if (port_list == []):
             logger.info('Port list is empty')
             return
@@ -453,6 +697,8 @@ class Laptop():
 
         url = 'http://{}:{}/cli-json/rm_vlan'.format(self.lanforge_ip, self.port)
 
+        logger.info("DATA LIST: {}".format(data_list))
+        logger.info("URL: {}".format(url))
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
 
@@ -462,6 +708,7 @@ class Laptop():
 
     # add station
     async def add_station(self, port_list=[]):
+        logger.info("ADD STATION LAPTOP")
         if (port_list == []):
             logger.info('Port list is empty')
             return
@@ -472,48 +719,96 @@ class Laptop():
             resource = port_data['resource']
             sta_name = port_data['sta_name']
             band = port_data['band']
+            os = port_data['os']
             if (band == '2g'):
                 if ("ssid" in port_data):
                     curr_ssid = port_data['ssid']
                     curr_enc = self.set_encoding(port_data['enc'])
                     curr_passwd = port_data['passwd']
+                    enterprise_status = self.ieee80211w_2g
+                    enable_80211w = self.ieee80211w_2g
                 else:
                     curr_ssid = self.ssid_2g
                     curr_passwd = self.passwd_2g
                     curr_enc = self.enc_2g
+                    enterprise_status = self.ieee80211_2g
+                    enable_80211w = self.ieee80211w_2g
+
             elif (band == '5g'):
                 if ("ssid" in port_data):
                     curr_ssid = port_data['ssid']
                     curr_enc = self.set_encoding(port_data['enc'])
                     curr_passwd = port_data['passwd']
+                    enterprise_status = self.ieee80211_5g
+                    enable_80211w = self.ieee80211w_5g
                 else:
                     curr_ssid = self.ssid_5g
                     curr_passwd = self.passwd_5g
                     curr_enc = self.enc_5g
+                    enterprise_status = self.ieee80211_5g
+                    enable_80211w = self.ieee80211w_5g
             elif (band == '6g'):
                 if ("ssid" in port_data):
                     curr_ssid = port_data['ssid']
                     curr_enc = self.set_encoding(port_data['enc'])
                     curr_passwd = port_data['passwd']
+                    enterprise_status = self.ieee80211w_6g
+                    enable_80211w = self.ieee80211w_6g
                 else:
                     curr_ssid = self.ssid_6g
                     curr_passwd = self.passwd_6g
                     curr_enc = self.enc_6g
-
-            data = {
-                'shelf': shelf,
-                'resource': resource,
-                'radio': 'wiphy0',
-                'sta_name': sta_name,
-                'flags': curr_enc,
-                'ssid': curr_ssid,
-                'key': curr_passwd,
-                'mac': self.mac
-            }
+                    enterprise_status = self.ieee80211_6g
+                    enable_80211w = self.ieee80211w_6g
+            if (os in ['Apple', 'Lin']):
+                if enterprise_status == True:
+                    data = {
+                        'shelf': shelf,
+                        'resource': resource,
+                        'radio': 'wiphy0',
+                        'sta_name': sta_name,
+                        'flags': curr_enc,
+                        'ssid': curr_ssid,
+                        'mac': 'xx:xx:xx:*:*:xx',
+                        "ieee80211w": enable_80211w
+                    }
+                else:
+                    data = {
+                        'shelf': shelf,
+                        'resource': resource,
+                        'radio': 'wiphy0',
+                        'sta_name': sta_name,
+                        'flags': curr_enc,
+                        'ssid': curr_ssid,
+                        'mac': 'xx:xx:xx:*:*:xx',
+                        'key': curr_passwd,
+                    }
+            else:
+                if enterprise_status == True:
+                    data = {
+                        'shelf': shelf,
+                        'resource': resource,
+                        'radio': 'wiphy0',
+                        'sta_name': sta_name,
+                        'flags': curr_enc,
+                        'ssid': curr_ssid,
+                        "ieee80211w": enable_80211w
+                    }
+                else:
+                    data = {
+                        'shelf': shelf,
+                        'resource': resource,
+                        'radio': 'wiphy0',
+                        'sta_name': sta_name,
+                        'flags': curr_enc,
+                        'ssid': curr_ssid,
+                        'key': curr_passwd,
+                    }
             data_list.append(data)
 
         url = 'http://{}:{}/cli-json/add_sta'.format(self.lanforge_ip, self.port)
-
+        logger.info("DATA LIST: {}".format(data_list))
+        logger.info("URL: {}".format(url))
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
 
@@ -521,8 +816,91 @@ class Laptop():
         results = await asyncio.gather(*tasks)
         time.sleep(2)
 
-    # set port (enable DHCP)
-    async def set_port(self, port_list=[]):
+    async def set_wifi_extra(self, port_list=[]):
+        logger.info("SET WIFI EXTRA LAPTOP")
+        if (port_list == []):
+            logger.info('Port list is empty')
+            return
+        data_list = []
+
+        for port_data in port_list:
+            shelf = port_data['shelf']
+            resource = port_data['resource']
+            sta_name = port_data['sta_name']
+            band = port_data['band']
+            os = port_data['os']
+            if (band == '2g'):
+                curr_passwd = self.passwd_2g
+                enterprise_status = self.ieee80211_2g
+                key_management = self.key_management_2g
+                pairwise = self.pairwise_2g
+                eap_method = self.eap_method_2g
+                eap_identity = self.eap_identity_2g
+                private_key = self.private_key_2g
+                ca_cert = self.ca_cert_2g
+                client_cert = self.ca_cert_2g
+                pk_passwd = self.pk_passwd_2g
+                pac_file = self.pac_file_2g
+            elif (band == '5g'):
+                curr_passwd = self.passwd_5g
+                enterprise_status = self.ieee80211_5g
+                key_management = self.key_management_5g
+                pairwise = self.pairwise_5g
+                eap_method = self.eap_method_5g
+                eap_identity = self.eap_identity_5g
+                private_key = self.private_key_5g
+                ca_cert = self.ca_cert_5g
+                client_cert = self.ca_cert_5g
+                pk_passwd = self.pk_passwd_5g
+                pac_file = self.pac_file_5g
+            elif (band == '6g'):
+                curr_passwd = self.passwd_6g
+                enterprise_status = self.ieee80211_6g
+                key_management = self.key_management_6g
+                pairwise = self.pairwise_6g
+                eap_method = self.eap_method_6g
+                eap_identity = self.eap_identity_6g
+                private_key = self.private_key_6g
+                ca_cert = self.ca_cert_6g
+                client_cert = self.ca_cert_6g
+                pk_passwd = self.pk_passwd_6g
+                pac_file = self.pac_file_6g
+            if eap_method == "EAP-TTLS":
+                eap_method = "TTLS"
+            if eap_method == "EAP-TLS":
+                eap_method = "TLS"
+            if eap_method == "EAP-PEAP":
+                eap_method = "PEAP"
+            if eap_method == "EAP-PEAP":
+                eap_method = "PEAP"
+            if (enterprise_status == True and os == 'Lin'):
+                # os = port_data['os']
+                # if (os in ['Lin']):
+                data = {
+                    'shelf': shelf,
+                    'resource': resource,
+                    "port": "wlan0",
+                    "key_mgmt": key_management,
+                    "pairwise": pairwise,
+                    "group": pairwise,
+                    "eap": eap_method,
+                    "identity": eap_identity,
+                    "password": curr_passwd,
+                    "private_key": private_key,
+                    "ca_cert": ca_cert,
+                    "client_cert": client_cert,
+                    "pk_passwd": pk_passwd,
+                    "pac_file": pac_file
+                }
+                data_list.append(data)
+        url = 'http://{}:{}/cli-json/set_wifi_extra'.format(self.lanforge_ip, self.port)
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
+
+    async def set_port_1(self, port_list=[]):
+        logger.info("SET PORT LAPTOP")
         if (port_list == []):
             logger.info('Port list is empty')
             return
@@ -533,33 +911,190 @@ class Laptop():
             resource = port_data['resource']
             port = port_data['sta_name']
             interest = port_data['interest']
-
+            # report_timer = port_data['report_timer']
+            current_flags = port_data['current_flags']
             os = port_data['os']
-            if (os in ['Apple', 'Lin']):
-                current_flags = port_data['current_flags']
+            if (os == 'Lin'):
                 data = {
                     'shelf': shelf,
                     'resource': resource,
                     'port': port,
-                    'current_flags': current_flags,
-                    'interest': interest,
+                    'current_flags': 0,
+                    'interest': 8388610,
                     'mac': self.mac
                 }
-            elif (os == 'Win'):
-                report_timer = port_data['report_timer']
-                current_flags = port_data['current_flags']
+            else:
                 data = {
                     'shelf': shelf,
                     'resource': resource,
                     'port': port,
-                    'report_timer': report_timer,
-                    'current_flags': current_flags,
-                    'interest': interest
+                    "report_timer": 1,
+                    'current_flags': 0,
+                    'interest': 92291074,
                 }
             data_list.append(data)
 
         url = 'http://{}:{}/cli-json/set_port'.format(self.lanforge_ip, self.port)
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
 
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
+
+    async def disconnect_wifi(self, port_list=[]):
+        logger.info("SET PORT LAPTOP")
+        if (port_list == []):
+            logger.info('Port list is empty')
+            return
+
+        data_list = []
+        for port_data in port_list:
+            shelf = port_data['shelf']
+            resource = port_data['resource']
+            port = port_data['sta_name']
+            interest = port_data['interest']
+            # report_timer = port_data['report_timer']
+            current_flags = port_data['current_flags']
+            os = port_data['os']
+            if (os == 'Lin'):
+                data = {
+                    'shelf': shelf,
+                    'resource': resource,
+                    'port': port,
+                    'current_flags': 1,
+                    'interest': 8388610,
+                    'mac': self.mac
+                }
+            else:
+                data = {
+                    'shelf': shelf,
+                    'resource': resource,
+                    'port': port,
+                    "report_timer": 1,
+                    'current_flags': 1,
+                    'interest': 8388608,
+                }
+            data_list.append(data)
+
+        url = 'http://{}:{}/cli-json/set_port'.format(self.lanforge_ip, self.port)
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
+
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
+
+    async def reboot_laptop(self, port_list=[]):
+        logger.info("REBOOT LAPTOP")
+        if (port_list == []):
+            logger.info('Port list is empty')
+            return
+
+        data_list = []
+        for port_data in port_list:
+            shelf = port_data['shelf']
+            resource = port_data['resource']
+            port = port_data['sta_name']
+            interest = port_data['interest']
+            # report_timer = port_data['report_timer']
+            current_flags = port_data['current_flags']
+            os = port_data['os']
+
+            data = {
+                'shelf': shelf,
+                'resource': resource
+            }
+            data_list.append(data)
+
+        url = 'http://{}:{}/cli-json/reboot_os'.format(self.lanforge_ip, self.port)
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
+
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
+
+    # set port (enable DHCP)
+    async def set_port(self, port_list=[]):
+        logger.info("SET PORT LAPTOP")
+        if (port_list == []):
+            logger.info('Port list is empty')
+            return
+
+        data_list = []
+        for port_data in port_list:
+            shelf = port_data['shelf']
+            resource = port_data['resource']
+            port = port_data['sta_name']
+            interest = port_data['interest']
+            # report_timer = port_data['report_timer']
+            current_flags = port_data['current_flags']
+            os = port_data['os']
+            if (os == 'Lin'):
+                data = {
+                    'shelf': shelf,
+                    'resource': resource,
+                    'port': port,
+                    "report_timer": 1,
+                    'current_flags': 2147483648,
+                    'interest': 92291074,
+                    'mac': self.mac
+                }
+            else:
+                data = {
+                    'shelf': shelf,
+                    'resource': resource,
+                    'port': port,
+                    "report_timer": 1,
+                    'current_flags': 2147483648,
+                    'interest': 92291074,
+                }
+            data_list.append(data)
+
+        url = 'http://{}:{}/cli-json/set_port'.format(self.lanforge_ip, self.port)
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
+
+        # Use asyncio.gather to await the completion of all tasks
+        results = await asyncio.gather(*tasks)
+
+    async def set_radio(self, port_list=[]):
+        logger.info("SET PORT LAPTOP")
+        if (port_list == []):
+            logger.info('Port list is empty')
+            return
+
+        data_list = []
+        for port_data in port_list:
+            shelf = port_data['shelf']
+            resource = port_data['resource']
+            port = port_data['sta_name']
+            interest = port_data['interest']
+            # report_timer = port_data['report_timer']
+            current_flags = port_data['current_flags']
+            os = port_data['os']
+            if (os == 'Lin'):
+                data = {
+                    'shelf': shelf,
+                    'resource': resource,
+                    'port': 'wiphy0',
+                    "report_timer": 1,
+                    'current_flags': 0,
+                    'interest': 92291074,
+                    'mac': self.mac
+                }
+            else:
+                data = {
+                    'shelf': shelf,
+                    'resource': resource,
+                    'port': port,
+                    "report_timer": 1,
+                    'current_flags': 2147483648,
+                    'interest': 92291074,
+                }
+            data_list.append(data)
+
+        url = 'http://{}:{}/cli-json/set_port'.format(self.lanforge_ip, self.port)
+        logger.info("DATA LIST: {}".format(data_list))
+        logger.info("URL: {}".format(url))
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
 
@@ -589,6 +1124,10 @@ class Laptop():
 
             # filtering Androids from resources
             if (resource['user'] != ''):
+                continue
+
+            # filtering ios from resource manager
+            if (resource['kernel'] == ''):
                 continue
 
             # filtering phantom resources

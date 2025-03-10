@@ -85,6 +85,12 @@ class GenCXProfile(LFCliBase):
             else:
                 logger.critical("Please ensure file_output has been set correctly")
                 raise ValueError("Please ensure file_output has been set correctly")
+        elif self.type == "zoom":
+            pass
+        elif self.type == 'youtube':
+            pass
+        elif self.type == "real_browser":
+            pass
         else:
             logger.critical("Unknown command type")
             raise ValueError("Unknown command type")
