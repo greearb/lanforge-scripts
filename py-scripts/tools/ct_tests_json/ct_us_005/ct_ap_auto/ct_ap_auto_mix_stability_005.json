@@ -1,0 +1,126 @@
+{
+   "ct_ap_auto_005_scripts":{
+       "Notes":[
+           "This json file describes tests to be run by LANforge system",
+           "When doing a create_chamberview.py --create_scenario <name> ",
+           "has no correlation to the --instance_name , instance name is used ",
+           "as a unique identifier for tha chamber-view test run"
+       ]
+   },
+   "test_suites":{
+       "ct_ap_auto_mix_stability_005":{
+           "CC_AP_AUTO_DUT":{
+               "enabled":"TRUE",
+               "load_db":"skip",
+               "command":"create_chamberview_dut.py",
+               "args":"",
+               "args_list":[
+                   " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                   " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                   " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                   " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                   " --ssid 'ssid_idx=3 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                   " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+               ]
+           },
+           "CC_AP_AUTO":{
+               "enabled":"TRUE",
+               "load_db":"skip",
+               "command":"create_chamberview.py",
+               "args":"",
+               "args_list":[
+                   " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                   " --create_scenario AP_AUTO_MIX_STABILITY ",
+                   " --raw_line \"profile_link 1.1 STA-BGN 5 'DUT: axe16000 Radio-1' NA AUTO,AUTO -1 NA\" ",
+                   " --raw_line \"profile_link 1.1 STA-AC  5 'DUT: axe16000 Radio-2' NA AUTO,AUTO -1 NA\" ",
+                   " --raw_line \"profile_link 1.1 STA-AX  5 'DUT: axe16000 Radio-3' NA AUTO,AUTO -1 NA\" ",
+                   " --raw_line \"profile_link 1.1 STA-BE  5 'DUT: axe16000 Radio-4' NA AUTO,AUTO -1 NA\" ",
+                   " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA eth2,AUTO -1 NA\" "
+               ]
+           },
+           "AP_AUTO":{
+               "enabled":"TRUE",
+               "timeout":"600",
+               "iterations":"1",
+               "load_db":"skip",
+               "command":"lf_ap_auto_test.py",
+               "args":"",
+               "args_list":[
+                  " --mgr LF_MGR_IP",
+                  " --port LF_MGR_PORT",
+                  " --lf_user lanforge",
+                  " --lf_password lanforge",
+                  " --instance_name AP_AUTO_MIX_STABILITY",
+                  " --lf_user lanforge",
+                  " --lf_password lanforge",
+                  " --config_name test_con",
+                  " --upstream UPSTREAM_PORT",
+                  " --dut2_0 'axe16000 lanforge 7c:10:c9:61:99:10 (1)'",
+                  " --dut5_0 'axe16000 lanforge 7c:10:c9:61:99:14 (2)'",
+                  " --dut6_0 'axe16000 lanforge 7c:10:c9:61:99:18 (4)'",
+                  " --max_stations_2 5",
+                  " --max_stations_5 5",
+                  " --max_stations_6 5",
+                  " --max_stations_dual 5",
+                  " --radio2 '1.1.4 wiphy0'",
+                  " --radio5 '1.1.5 wiphy1' --radio5 '1.1.7 wiphy3'",
+                  " --radio5 '1.2.4 wiphy0'",
+                  " --radio6 '1.1.8 wiphy4' --radio6 '1.1.9 wiphy5' --radio6 '1.1.10 wiphy6' --radio6 '1.1.11 wiphy7'",
+                  " --radio6 '1.2.7 wiphy3', --radio6 '1.2.8 wiphy4' --radio6 '1.2.9 wiphy5'",
+                  " --set 'basic_cx' 0",
+                  " --set 'band_steering' 0",
+                  " --set 'capacity' 0",
+                  " --set 'channel_switch' 0",
+                  " --set 'long_term' 0",
+                  " --set 'mix_stability' 1",
+                  " --set 'tput_single_sta' 0",
+                  " --set 'tput_multi_sta' 0",
+                  " --set 'tput_multi_band' 0",
+                  " --set 'skip_2' 0",
+                  " --set 'skip_5' 0",
+                  " --set 'skip_5b' 1",
+                  " --set 'skip_6' 0",
+                  " --set 'skip_dual' 1",
+                  " --set 'skip_tri' 1",
+                  " --set 'skip_tri_5b' 1",
+                  " --verbosity 11",
+                  " --raw_line 'cx_psk_thresh: 500'",
+                  " --raw_line 'dur20: 5'",
+                  " --raw_line 'lt_sta_count: 4'",
+                  " --raw_line 'lt_dur: 120'",
+                  " --raw_line 'reset_dur: 300'",
+                  " --raw_line 'reset_duration_min: 5000'",
+                  " --raw_line 'reset_duration_max: 10000'",
+                  " --raw_line 'minimum_port_up_duration_ms: 5000'",
+                  " --pull_report",
+                  " --local_lf_report_dir REPORT_PATH",
+                  " --test_tag 'AP_AUTO_MIX_STABILITY'",
+                  " --test_rig LANforge",
+                  " --set DUT_NAME axe16000",
+                  " --pull_report",
+                  " --local_lf_report_dir REPORT_PATH"
+               ]
+           },
+           "lf_qa":{
+               "enabled":"TRUE",
+               "timeout":"600",
+               "load_db":"skip",
+               "command":"./tools/lf_qa.py",
+               "args":"",
+               "args_list":[
+                   " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+               ]
+           },
+           "lf_inspect":{
+               "enabled":"TRUE",
+               "timeout":"600",
+               "load_db":"skip",
+               "command":"./tools/lf_inspect.py",
+               "args":"",
+               "args_list":[
+                   " --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1"
+               ]
+           }
+       }
+   }
+}
