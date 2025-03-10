@@ -5,13 +5,13 @@
 
     EXAMPLE-1:
     Command Line Interface to run Zoom with specified duration:
-    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --sigin_email "demo@gmail.com" --sigin_passwd "Demo@123" --participants 3 --audio --video --server_ip 192.168.214.123
+    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --server_ip 192.168.214.123
 
 
 
     EXAMPLE-2:
     Command Line Interface to run Zoom on multiple devices:
-    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --sigin_email "demo@gmail.com" --sigin_passwd "Demo@123" --participants 3 --audio --video
+    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
       --resources 1.400,1.375 --zoom_host 1.95 --server_ip 192.168.214.123
 
 
@@ -215,14 +215,10 @@ class ZoomAutomation(Realm):
 
         @self.app.route('/test_started', methods=['GET', 'POST'])
         def test_started():
-
             if request.method == 'GET':
-
                 return jsonify({"test_started": self.test_start})
             elif request.method == 'POST':
-
                 data = request.json
-
                 self.test_start = data.get('test_started', False)
                 return jsonify({"message": f"Updated test_start status to {self.test_start}"})
 
@@ -286,23 +282,6 @@ class ZoomAutomation(Realm):
             # Return the latest data for all hostnames
             return jsonify(self.data_store), 200
 
-        # @self.app.route('/stop_zoom', methods=['GET'])
-
-        # def stop_zoom():
-        #     # Return the latest data for all hostnames
-        #     logging.info("Stopping the test through webui")
-
-        #     response = jsonify({"message": "Stopping Zoom Test"})
-        #     response.status_code = 200
-        #     self.stop_signal = True
-        #     def shutdown():
-        #         #os._exit(0)
-        #         sys.exit(0)
-
-        #     response.call_on_close(shutdown)
-
-        #     return response
-
         @self.app.route('/stop_zoom', methods=['GET'])
         def stop_zoom():
             """
@@ -310,15 +289,12 @@ class ZoomAutomation(Realm):
             """
             logging.info("Stopping the test through web UI")
             self.stop_signal = True  # Signal to stop the application
-
             # Respond to the client
             response = jsonify({"message": "Stopping Zoom Test"})
             response.status_code = 200
-
             # Trigger shutdown in a separate thread to avoid blocking
             shutdown_thread = threading.Thread(target=self.shutdown)
             shutdown_thread.start()
-
             return response
 
         try:
@@ -363,6 +339,20 @@ class ZoomAutomation(Realm):
             logging.error(f"Error in check_gen_cx function {e}", exc_info=True)
             logging.info(f"generic endpoint data {generic_endpoint}")
 
+    def wait_for_flask(self, url="http://127.0.0.1:5000/get_latest_stats", timeout=10):
+        """Wait until the Flask server is up, but exit if it takes longer than `timeout` seconds."""
+        start_time = time.time()  # Record the start time
+        while time.time() - start_time < timeout:
+            try:
+                response = requests.get(url, timeout=1)
+                if response.status_code == 200:
+                    logging.info("✅ Flask server is up and running!")
+                    return
+            except requests.exceptions.ConnectionError:
+                time.sleep(1)
+        logging.error("❌ Flask server did not start within 10 seconds. Exiting.")
+        sys.exit(1)
+
     def run(self, duration, server_ip, sigin_email, sigin_passwd, participants):
         # Store the email and password in the instance
         self.sigin_email = sigin_email
@@ -374,10 +364,7 @@ class ZoomAutomation(Realm):
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
         flask_thread.start()
-
-        # Give the Flask server some time to start
-        time.sleep(5)
-
+        self.wait_for_flask()
         ports_list = []
         eid = ""
         resource_ip = ""
@@ -462,8 +449,7 @@ class ZoomAutomation(Realm):
                 break
         self.new_port_list = [item.split('.')[2] for item in self.real_sta_list]
 
-        if (self.generic_endps_profile.create(ports=[self.real_sta_list[0]], real_client_os_types=[self.real_sta_os_type[0]])):
-            logging.info("=================================================================================================")
+        if self.generic_endps_profile.create(ports=[self.real_sta_list[0]], real_client_os_types=[self.real_sta_os_type[0]]):
             logging.info('Real client generic endpoint creation completed.')
         else:
             logging.error('Real client generic endpoint creation failed.')
@@ -490,7 +476,7 @@ class ZoomAutomation(Realm):
 
                 generic_endpoint = self.json_get(f'/generic/{self.generic_endps_profile.created_endp[0]}')
                 endp_status = generic_endpoint["endpoint"]["status"]
-                if (endp_status == "Stopped"):
+                if endp_status == "Stopped":
                     logging.info("Failed to Start the Host Device")
                     self.generic_endps_profile.cleanup()
                     sys.exit(1)
@@ -499,8 +485,7 @@ class ZoomAutomation(Realm):
                 logging.info(f"Error while checking login_completed status: {e}")
                 time.sleep(5)
 
-        if (self.generic_endps_profile.create(ports=self.real_sta_list[1:], real_client_os_types=self.real_sta_os_type[1:])):
-            logging.info("=================================================================================================")
+        if self.generic_endps_profile.create(ports=self.real_sta_list[1:], real_client_os_types=self.real_sta_os_type[1:]):
             logging.info('Real client generic endpoint creation completed.')
         else:
             logging.error('Real client generic endpoint creation failed.')
@@ -511,7 +496,7 @@ class ZoomAutomation(Realm):
                 cmd = f"py zoom_client.py --ip {self.flask_ip}"
                 # cmd = "zoom_test.bat --ip %s --type %s" % (self.flask_ip,"client")
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-            elif (self.real_sta_os_type[i] == 'linux'):
+            elif self.real_sta_os_type[i] == 'linux':
                 cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[i], self.flask_ip, "client")
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_type[i] == 'macos':
@@ -572,23 +557,14 @@ class ZoomAutomation(Realm):
                         # Check conditions for adding the device
                         key_parts = key.split(".")
                         extracted_key = ".".join(key_parts[:2])
-                        if (
-                            extracted_key == device
-                            and not value["phantom"]
-                            and not value["down"]
-                            and value["parent dev"] != ""
-                        ):
+                        if extracted_key == device and not value["phantom"] and not value["down"] and value["parent dev"] != "":
                             final_device_list.append(key)  # Add to final_device_list in order
                             break  # Stop after finding the first match for the current device to maintain order
 
             self.real_sta_list = final_device_list
 
-        # # Sort `self.real_sta_list` based on the second part of each station name
-        # self.real_sta_list = sorted(self.real_sta_list, key=lambda x: int(x.split('.')[1]))
-
         # Log an error and exit if no real stations are selected for testing
-
-        if (len(self.real_sta_list) == 0):
+        if len(self.real_sta_list) == 0:
             logger.error('There are no real devices in this testbed. Aborting test')
             exit(0)
 
@@ -605,23 +581,12 @@ class ZoomAutomation(Realm):
         self.real_sta_hostname = [self.real_sta_data[real_sta_name]['hostname'] for real_sta_name in self.real_sta_data]
 
         self.zoom_host = self.real_sta_list[0]
-        # Combine hostname and OS type into a single string
-        # self.hostname_os_combination = ", ".join(
-        #     f"{self.real_sta_data[real_sta_name]['hostname']} ({self.real_sta_data[real_sta_name]['ostype']})"
-        #     for real_sta_name in self.real_sta_data
-        # )
-        # self.hostname_os_combination = ", ".join(
-        #     f"{hostname} ({os_type})"
-        #     for hostname, os_type in zip(self.real_sta_hostname, self.real_sta_os_type)
-        # )
-
         self.hostname_os_combination = [
             f"{hostname} ({os_type})"
             for hostname, os_type in zip(self.real_sta_hostname, self.real_sta_os_type)
         ]
 
         for key, value in self.real_sta_data.items():
-
             if value['ostype'] == 'windows':
                 self.windows = self.windows + 1
             elif value['ostype'] == 'macos':
@@ -1227,8 +1192,8 @@ def main():
         parser = argparse.ArgumentParser(description="Zoom Automation Script")
         parser.add_argument('--duration', type=int, required=True, help="Duration of the Zoom meeting in minutes")
         parser.add_argument('--lanforge_ip', type=str, required=True, help="LANforge IP address")
-        parser.add_argument('--sigin_email', type=str, required=True, help="Sign-in email")
-        parser.add_argument('--sigin_passwd', type=str, required=True, help="Sign-in password")
+        parser.add_argument('--signin_email', type=str, required=True, help="Sign-in email")
+        parser.add_argument('--signin_passwd', type=str, required=True, help="Sign-in password")
         parser.add_argument('--participants', type=int, required=True, help="no of participanrs")
         parser.add_argument('--audio', action='store_true')
         parser.add_argument('--video', action='store_true')
@@ -1288,37 +1253,36 @@ def main():
             logger_config.lf_logger_config_json = args.lf_logger_config_json
             logger_config.load_lf_logger_config()
 
-        if (True):
-            if (args.expected_passfail_value is not None and args.device_csv_name is not None):
+        if True:
+            if args.expected_passfail_value is not None and args.device_csv_name is not None:
                 logging.error("Specify either expected_passfail_value or device_csv_name")
                 exit(1)
 
-            if (args.group_name is not None):
+            if args.group_name is not None:
                 args.group_name = args.group_name.strip()
                 selected_groups = args.group_name.split(',')
             else:
                 selected_groups = []
 
-            if (args.profile_name is not None):
+            if args.profile_name is not None:
                 args.profile_name = args.profile_name.strip()
                 selected_profiles = args.profile_name.split(',')
             else:
                 selected_profiles = []
 
-            if (len(selected_groups) != len(selected_profiles)):
+            if len(selected_groups) != len(selected_profiles):
                 logging.error("Number of groups should match number of profiles")
                 exit(0)
-
-            elif (args.group_name is not None and args.profile_name is not None and args.file_name is not None and args.resources is not None):
+            elif args.group_name is not None and args.profile_name is not None and args.file_name is not None and args.resources is not None:
                 logging.error("Either group name or device list should be entered not both")
                 exit(0)
-            elif (args.ssid is not None and args.profile_name is not None):
+            elif args.ssid is not None and args.profile_name is not None:
                 logging.error("Either ssid or profile name should be given")
                 exit(0)
-            elif (args.file_name is not None and (args.group_name is None or args.profile_name is None)):
+            elif args.file_name is not None and (args.group_name is None or args.profile_name is None):
                 logging.error("Please enter the correct set of arguments")
                 exit(0)
-            elif (args.config and ((args.ssid is None or (args.passwd is None and args.security.lower() != 'open') or (args.passwd is None and args.security is None)))):
+            elif args.config and ((args.ssid is None or (args.passwd is None and args.security.lower() != 'open') or (args.passwd is None and args.security is None))):
                 logging.error("Please provide ssid password and security for configuration of devices")
                 exit(0)
 
@@ -1339,17 +1303,15 @@ def main():
                                     selected_bands=['5G'])
             laptops = realdevice.get_devices()
 
-            if args.file_name:
-                if args.do_webUI:
-
-                    new_filename = args.file_name[:-4]
+            if args.file_name and args.do_webUI:
+                new_filename = args.removesuffix(".csv")
             else:
                 new_filename = args.file_name
             config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.lanforge_ip, file_name=new_filename)
 
             if not args.expected_passfail_value and args.device_csv_name is None:
                 config_obj.device_csv_file(csv_name="device.csv")
-            if (args.group_name is not None and args.file_name is not None and args.profile_name is not None):
+            if args.group_name is not None and args.file_name is not None and args.profile_name is not None:
                 selected_groups = args.group_name.split(',')
                 selected_profiles = args.profile_name.split(',')
                 config_devices = {}
@@ -1373,11 +1335,11 @@ def main():
                 eid_list = []
                 for grp_name in groups_list.keys():
                     for g_name in selected_groups:
-                        if (grp_name == g_name):
+                        if grp_name == g_name:
                             for j in groups_list[grp_name]:
-                                if (j in group_devices.keys()):
+                                if j in group_devices.keys():
                                     eid_list.append(group_devices[j])
-                                elif (j in all_res.keys()):
+                                elif j in all_res.keys():
                                     eid_list.append(all_res[j])
                 if args.zoom_host in eid_list:
                     # Remove the existing instance of args.zoom_host from the list
@@ -1387,9 +1349,7 @@ def main():
 
                 args.resources = ",".join(id for id in eid_list)
             else:
-                if args.resources:
-                    all_devices = config_obj.get_all_devices()
-                    config_dict = {
+                config_dict = {
                         'ssid': args.ssid,
                         'passwd': args.passwd,
                         'enc': args.encryp,
@@ -1412,15 +1372,15 @@ def main():
                         'pac_file': args.pac_file,
                         'server_ip': args.server_ip,
 
-                    }
-                    if (args.group_name is None and args.file_name is None and args.profile_name is None):
+                }
+                if args.resources:
+                    all_devices = config_obj.get_all_devices()
+                    if args.group_name is None and args.file_name is None and args.profile_name is None:
                         dev_list = args.resources.split(',')
                         if not args.do_webUI:
-
                             args.zoom_host = args.zoom_host.strip()
                             if args.zoom_host in dev_list:
                                 dev_list.remove(args.zoom_host)
-
                             dev_list.insert(0, args.zoom_host)
                         if args.config:
                             asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
@@ -1428,34 +1388,10 @@ def main():
                 else:
                     all_devices = config_obj.get_all_devices()
                     device_list = []
-                    config_dict = {
-                        'ssid': args.ssid,
-                        'passwd': args.passwd,
-                        'enc': args.encryp,
-                        'eap_method': args.eap_method,
-                        'eap_identity': args.eap_identity,
-                        'ieee80211': args.ieee80211,
-                        'ieee80211u': args.ieee80211u,
-                        'ieee80211w': args.ieee80211w,
-                        'enable_pkc': args.enable_pkc,
-                        'bss_transition': args.bss_transition,
-                        'power_save': args.power_save,
-                        'disable_ofdma': args.disable_ofdma,
-                        'roam_ft_ds': args.roam_ft_ds,
-                        'key_management': args.key_management,
-                        'pairwise': args.pairwise,
-                        'private_key': args.private_key,
-                        'ca_cert': args.ca_cert,
-                        'client_cert': args.client_cert,
-                        'pk_passwd': args.pk_passwd,
-                        'pac_file': args.pac_file,
-                        'server_ip': args.server_ip,
-
-                    }
                     for device in all_devices:
-                        if (device["type"] != 'laptop'):
+                        if device["type"] != 'laptop':
                             device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-                        elif (device["type"] == 'laptop'):
+                        elif device["type"] == 'laptop':
                             device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
                     print("Available Devices For Testing")
                     for device in device_list:
@@ -1469,11 +1405,10 @@ def main():
                         asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
 
             result_list = []
-            if (not args.do_webUI):
+            if not args.do_webUI:
                 if args.resources:
                     resources = args.resources.split(',')
                     resources = [r for r in resources if len(r.split('.')) > 1]
-
                     # resources = sorted(resources, key=lambda x: int(x.split('.')[1]))
                     get_data = zoom_automation.select_real_devices(real_device_obj=realdevice, real_sta_list=resources)
                     for item in get_data:
@@ -1489,7 +1424,7 @@ def main():
                 else:
                     resources = zoom_automation.select_real_devices(real_device_obj=realdevice)
             else:
-                if (args.do_webUI):
+                if args.do_webUI:
                     zoom_automation.path = args.report_dir
                 resources = args.resources.split(',')
                 extracted_parts = [res.split('.')[:2] for res in resources]
@@ -1517,11 +1452,11 @@ def main():
                         }
                         zoom_automation.updating_webui_runningjson(obj)
 
-            if (not zoom_automation.check_tab_exists()):
+            if not zoom_automation.check_tab_exists():
                 logging.error('Generic Tab is not available.\nAborting the test.')
                 exit(0)
 
-            zoom_automation.run(args.duration, args.server_ip, args.sigin_email, args.sigin_passwd, args.participants)
+            zoom_automation.run(args.duration, args.server_ip, args.signin_email, args.signin_passwd, args.participants)
             # zoom_automation.run(args.duration, '10.253.8.108' ,args.sigin_email, args.sigin_passwd, args.participants)
             zoom_automation.data_store.clear()
             zoom_automation.generate_report()
@@ -1530,7 +1465,7 @@ def main():
         logging.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
         traceback.print_exc()
     finally:
-        if (args.do_webUI):
+        if args.do_webUI:
             try:
                 url = f"http://{args.lanforge_ip}:5454/update_status_yt"
                 # url = f"http://localhost:5454/update_status_yt"
