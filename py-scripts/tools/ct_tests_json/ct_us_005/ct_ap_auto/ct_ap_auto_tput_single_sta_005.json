@@ -87,7 +87,7 @@
                   " --raw_line 'lt_dur: 120'",
                   " --raw_line 'cx_psk_thresh: 500'",
                   " --raw_line 'lt_sta_count: 4'",
-                  " --raw_line 'dur20: 20'",
+                  " --raw_line 'dur20: 7'",
                   " --raw_line 'hunt_iter: 5'",
                   " --pull_report",
                   " --local_lf_report_dir REPORT_PATH",
