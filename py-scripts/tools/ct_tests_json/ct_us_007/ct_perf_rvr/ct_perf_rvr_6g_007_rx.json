@@ -584,19 +584,19 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
-            "CC_MT7925_6G_W7":{
+            "CC_MT7925e_6G_W7":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario RVR_MT7925_6G",
+                    " --create_scenario RVR_MT7925e_6G",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-4' NA wiphy7,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
-            "RVR_MT7925_6G_W7_RX":{
+            "RVR_MT7925e_6G_W7_RX":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"5000",
@@ -604,12 +604,12 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7925_6G_W7_RX",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name RVR_MT7925e_6G_W7_RX",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut USE_DUT_NAME --duration 20s --station 1.1.wlan7",
                     " --download_speed 0 --upload_speed 85% --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Receive' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7925_6G_W7_RX' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'RVR_MT7925e_6G_W7_RX' ",
                     " --raw_line 'attenuator: ATTENUATOR_1' ",
                     " --raw_line 'attenuations: 000,100,200,300,400,410,420,430,440,470' ",
                     " --raw_line 'attenuator_mod: 0xf'  ",
