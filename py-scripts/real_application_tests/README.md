@@ -63,7 +63,7 @@ sudo apt install python3-tk python3-dev
 Navigate to `/home/lanforge/lanforge-scripts/py-scripts/real_application_tests/zoom_automation/` and execute the script:
 
 ```bash
-python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.214.219" --sigin_email "demo@gmail.com" --sigin_passwd "Demo@123" --participants 3 --audio --video --resources 1.400,1.200 --zoom_host 1.95 --server_ip 192.168.214.123
+python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --resources 1.400,1.200 --zoom_host 1.95 --server_ip 192.168.214.123
 ```
 
 ---
