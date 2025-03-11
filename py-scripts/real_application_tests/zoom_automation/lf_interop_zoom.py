@@ -104,8 +104,8 @@ class ZoomAutomation(Realm):
         self.login_completed = False  # Initially set to False
         self.remote_login_url = ""  # Initialize remote login URL
         self.remote_login_passwd = ""  # Initialize remote login password
-        self.sigin_email = ""
-        self.sigin_passwd = ""
+        self.signin_email = ""
+        self.signin_passwd = ""
         self.test_start = False
         self.start_time = None
         self.end_time = None
@@ -193,11 +193,11 @@ class ZoomAutomation(Realm):
 
         @self.app.route('/get_host_email', methods=['GET'])
         def get_host_email():
-            return jsonify({"host_email": self.sigin_email})
+            return jsonify({"host_email": self.signin_email})
 
         @self.app.route('/get_host_passwd', methods=['GET'])
         def get_host_passwd():
-            return jsonify({"host_passwd": self.sigin_passwd})
+            return jsonify({"host_passwd": self.signin_passwd})
 
         @self.app.route('/get_participants_joined', methods=['GET'])
         def get_participants_joined():
@@ -353,10 +353,10 @@ class ZoomAutomation(Realm):
         logging.error("❌ Flask server did not start within 10 seconds. Exiting.")
         sys.exit(1)
 
-    def run(self, duration, server_ip, sigin_email, sigin_passwd, participants):
+    def run(self, duration, server_ip, signin_email, signin_passwd, participants):
         # Store the email and password in the instance
-        self.sigin_email = sigin_email
-        self.sigin_passwd = sigin_passwd
+        self.signin_email = signin_email
+        self.signin_passwd = signin_passwd
         self.duration = duration
         self.flask_ip = server_ip
         # self.flask_ip = '10.253.8.108'
@@ -687,8 +687,8 @@ class ZoomAutomation(Realm):
                 "Configured Devices": self.hostname_os_combination,
                 'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac})',
                 'Test Duration(min)': self.duration,
-                'EMAIL ID': self.sigin_email,
-                "PASSWORD": self.sigin_passwd,
+                'EMAIL ID': self.signin_email,
+                "PASSWORD": self.signin_passwd,
                 "HOST": self.real_sta_list[0],
                 "TEST TYPE": testtype,
                 "SSID": self.ssid,
@@ -707,8 +707,8 @@ class ZoomAutomation(Realm):
                 "Configured Devices": self.hostname_os_combination,
                 'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac})',
                 'Test Duration(min)': self.duration,
-                'EMAIL ID': self.sigin_email,
-                "PASSWORD": self.sigin_passwd,
+                'EMAIL ID': self.signin_email,
+                "PASSWORD": self.signin_passwd,
                 "HOST": self.real_sta_list[0],
                 "TEST TYPE": testtype,
 
@@ -719,8 +719,8 @@ class ZoomAutomation(Realm):
                 "Configured Devices": self.hostname_os_combination,
                 'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac})',
                 'Test Duration(min)': self.duration,
-                'EMAIL ID': self.sigin_email,
-                "PASSWORD": self.sigin_passwd,
+                'EMAIL ID': self.signin_email,
+                "PASSWORD": self.signin_passwd,
                 "HOST": self.real_sta_list[0],
                 "TEST TYPE": testtype,
 
@@ -730,8 +730,8 @@ class ZoomAutomation(Realm):
 
             'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac})',
             'Test Duration(min)': self.duration,
-            'EMAIL ID': self.sigin_email,
-            "PASSWORD": self.sigin_passwd,
+            'EMAIL ID': self.signin_email,
+            "PASSWORD": self.signin_passwd,
             "HOST": self.real_sta_list[0],
             "TEST TYPE": testtype
 
@@ -1457,7 +1457,6 @@ def main():
                 exit(0)
 
             zoom_automation.run(args.duration, args.server_ip, args.signin_email, args.signin_passwd, args.participants)
-            # zoom_automation.run(args.duration, '10.253.8.108' ,args.sigin_email, args.sigin_passwd, args.participants)
             zoom_automation.data_store.clear()
             zoom_automation.generate_report()
             logging.info("Test Completed Sucessfully")
