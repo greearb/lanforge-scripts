@@ -396,6 +396,7 @@ class ThroughputQOS(Realm):
     def monitor(self):
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download, avg_upload, avg_download, avg_upload_throughput, avg_download_throughput, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b, dropa_connections, dropb_connections = {
         }, [], [], [], [], {}, {}, [], [], [], [], {}, {}, [], [], {}, {}
+        # Initialized seperate variables for average values for report changes
         drop_a, drop_a_per, drop_b, drop_b_per, avg_drop_b_per, avg_drop_a_per = [], [], [], [], [], []
         if (self.test_duration is None) or (int(self.test_duration) <= 1):
             raise ValueError("Monitor test duration should be > 1 second")
@@ -413,6 +414,7 @@ class ThroughputQOS(Realm):
         connections_download = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
         connections_upload_realtime = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
         connections_download_realtime = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+        # Initialize dictionaries for average values of connections (upload, download and drop)
         connections_upload_avg = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
         connections_download_avg = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
         dropa_connections = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
@@ -458,6 +460,7 @@ class ThroughputQOS(Realm):
                     }
                 }
             )
+        # Added background_run to allow the test to continue running, bypassing the duration limit for nile requirement.
         while datetime.now() < end_time or getattr(self, "background_run", None):
             index += 1
             # removed the fields query from endp so that the cx names will be given in the reponse as keys instead of cx_ids
@@ -614,6 +617,7 @@ class ThroughputQOS(Realm):
                         time.sleep(120)
             else:
                 time.sleep(1)
+            # average upload download and drop is calculated
             for ind, k in enumerate(throughput):
                 avg_upload[ind].append(throughput[ind][1])
                 avg_download[ind].append(throughput[ind][0])
@@ -625,6 +629,7 @@ class ThroughputQOS(Realm):
             download[index].append(throughput[index][0])
             drop_a[index].append(throughput[index][2])
             drop_b[index].append(throughput[index][3])
+        # Rounding of the results upto 2 decimals
         upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
         drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
@@ -635,19 +640,19 @@ class ThroughputQOS(Realm):
         avg_drop_b_per = [float(round(sum(i) / len(i), 2)) for i in avg_drop_b]
         keys = list(connections_upload.keys())
         keys = list(connections_download.keys())
-
+        # Updated the calculated values to the respective connections in dictionary
         for i in range(len(download_throughput)):
-            connections_download.update({keys[i]: float(f"{(download_throughput[i] ):.2f}")})
+            connections_download.update({keys[i]: download_throughput[i]})
         for i in range(len(upload_throughput)):
-            connections_upload.update({keys[i]: float(f"{(upload_throughput[i] ):.2f}")})
+            connections_upload.update({keys[i]: upload_throughput[i]})
         for i in range(len(avg_download_throughput)):
-            connections_download_avg.update({keys[i]: float(f"{(avg_download_throughput[i] ):.2f}")})
+            connections_download_avg.update({keys[i]: avg_download_throughput[i]})
         for i in range(len(avg_upload_throughput)):
-            connections_upload_avg.update({keys[i]: float(f"{(avg_upload_throughput[i] ):.2f}")})
+            connections_upload_avg.update({keys[i]: avg_upload_throughput[i]})
         for i in range(len(avg_drop_a_per)):
-            dropa_connections.update({keys[i]: float(f"{(avg_drop_a_per[i] ):.2f}")})
+            dropa_connections.update({keys[i]: avg_drop_a_per[i]})
         for i in range(len(avg_drop_b_per)):
-            dropb_connections.update({keys[i]: float(f"{(avg_drop_b_per[i] ):.2f}")})
+            dropb_connections.update({keys[i]: avg_drop_b_per[i]})
         logger.info("connections download {}".format(connections_download))
         logger.info("connections {}".format(connections_upload))
         self.connections_download, self.connections_upload, self.drop_a_per, self.drop_b_per = connections_download, connections_upload, drop_a_per, drop_b_per
@@ -982,6 +987,7 @@ class ThroughputQOS(Realm):
         individual_drop_a_list, individual_drop_b_list = [], []
         list = [[], [], [], []]
         data_set = {}
+        # Initialized dictionaries to store average upload ,download and drop values with respect to tos
         avg_res = {'Upload': {
             'VO': [],
             'VI': [],
@@ -1010,6 +1016,9 @@ class ThroughputQOS(Realm):
         }
         rate_down = str(str(int(self.cx_profile.side_b_min_bps) / 1000000) + ' ' + 'Mbps')
         rate_up = str(str(int(self.cx_profile.side_a_min_bps) / 1000000) + ' ' + 'Mbps')
+        # Updated the dictionaries with the respective average upload download and drop values for a particular tos
+        # EXAMPLE DATA FOR UPLOAD:
+        # {'1.10androidSamsung_M21_UDP_UL_VI-0': 1.0, '1.10androidSamsung_M21_UDP_UL_VO-1': 0.96,'1.10androidSamsung_M21_UDP_UL_BE- 2': 0.78,'1.10androidSamsung_M21_UDP_UL_BK-3': 1.0}
         if self.direction == 'Upload':
             load = rate_up
             data_set = res['test_results'][0][1]
