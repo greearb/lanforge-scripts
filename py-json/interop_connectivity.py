@@ -148,6 +148,7 @@ class Android():
         data_list = []
 
         command = 'shell am force-stop com.candela.wecan'
+        # Added key for adb request
         for port_data in port_list:
             shelf, resource, serial, band = port_data
             data = {
@@ -792,7 +793,7 @@ class Laptop():
                         'sta_name': sta_name,
                         'flags': curr_enc,
                         'ssid': curr_ssid,
-                        "ieee80211w": enable_80211w
+                        'ieee80211w': enable_80211w
                     }
                 else:
                     data = {
@@ -879,18 +880,18 @@ class Laptop():
                 data = {
                     'shelf': shelf,
                     'resource': resource,
-                    "port": "wlan0",
-                    "key_mgmt": key_management,
-                    "pairwise": pairwise,
-                    "group": pairwise,
-                    "eap": eap_method,
-                    "identity": eap_identity,
-                    "password": curr_passwd,
-                    "private_key": private_key,
-                    "ca_cert": ca_cert,
-                    "client_cert": client_cert,
-                    "pk_passwd": pk_passwd,
-                    "pac_file": pac_file
+                    'port': "wlan0",
+                    'key_mgmt': key_management,
+                    'pairwise': pairwise,
+                    'group': pairwise,
+                    'eap': eap_method,
+                    'identity': eap_identity,
+                    'password': curr_passwd,
+                    'private_key': private_key,
+                    'ca_cert': ca_cert,
+                    'client_cert': client_cert,
+                    'pk_passwd': pk_passwd,
+                    'pac_file': pac_file
                 }
                 data_list.append(data)
         url = 'http://{}:{}/cli-json/set_wifi_extra'.format(self.lanforge_ip, self.port)
@@ -898,6 +899,7 @@ class Laptop():
         tasks = [loop.run_in_executor(None, self.post_data, url, data) for data in data_list]
         # Use asyncio.gather to await the completion of all tasks
         results = await asyncio.gather(*tasks)
+    # For preconfiguration making wifi port up
 
     async def set_port_1(self, port_list=[]):
         logger.info("SET PORT LAPTOP")
@@ -910,9 +912,9 @@ class Laptop():
             shelf = port_data['shelf']
             resource = port_data['resource']
             port = port_data['sta_name']
-            interest = port_data['interest']
+            # interest = port_data['interest']
             # report_timer = port_data['report_timer']
-            current_flags = port_data['current_flags']
+            # current_flags = port_data['current_flags']
             os = port_data['os']
             if (os == 'Lin'):
                 data = {
@@ -928,7 +930,7 @@ class Laptop():
                     'shelf': shelf,
                     'resource': resource,
                     'port': port,
-                    "report_timer": 1,
+                    'report_timer': 1,
                     'current_flags': 0,
                     'interest': 92291074,
                 }
@@ -952,9 +954,9 @@ class Laptop():
             shelf = port_data['shelf']
             resource = port_data['resource']
             port = port_data['sta_name']
-            interest = port_data['interest']
+            # interest = port_data['interest']
             # report_timer = port_data['report_timer']
-            current_flags = port_data['current_flags']
+            # current_flags = port_data['current_flags']
             os = port_data['os']
             if (os == 'Lin'):
                 data = {
@@ -970,7 +972,7 @@ class Laptop():
                     'shelf': shelf,
                     'resource': resource,
                     'port': port,
-                    "report_timer": 1,
+                    'report_timer': 1,
                     'current_flags': 1,
                     'interest': 8388608,
                 }
@@ -993,10 +995,10 @@ class Laptop():
         for port_data in port_list:
             shelf = port_data['shelf']
             resource = port_data['resource']
-            port = port_data['sta_name']
-            interest = port_data['interest']
+            # port = port_data['sta_name']
+            # interest = port_data['interest']
             # report_timer = port_data['report_timer']
-            current_flags = port_data['current_flags']
+            # current_flags = port_data['current_flags']
             os = port_data['os']
 
             data = {
@@ -1024,16 +1026,16 @@ class Laptop():
             shelf = port_data['shelf']
             resource = port_data['resource']
             port = port_data['sta_name']
-            interest = port_data['interest']
+            # interest = port_data['interest']
             # report_timer = port_data['report_timer']
-            current_flags = port_data['current_flags']
+            # current_flags = port_data['current_flags']
             os = port_data['os']
             if (os == 'Lin'):
                 data = {
                     'shelf': shelf,
                     'resource': resource,
                     'port': port,
-                    "report_timer": 1,
+                    'report_timer': 1,
                     'current_flags': 2147483648,
                     'interest': 92291074,
                     'mac': self.mac
@@ -1043,7 +1045,7 @@ class Laptop():
                     'shelf': shelf,
                     'resource': resource,
                     'port': port,
-                    "report_timer": 1,
+                    'report_timer': 1,
                     'current_flags': 2147483648,
                     'interest': 92291074,
                 }
@@ -1067,16 +1069,16 @@ class Laptop():
             shelf = port_data['shelf']
             resource = port_data['resource']
             port = port_data['sta_name']
-            interest = port_data['interest']
+            # interest = port_data['interest']
             # report_timer = port_data['report_timer']
-            current_flags = port_data['current_flags']
+            # current_flags = port_data['current_flags']
             os = port_data['os']
             if (os == 'Lin'):
                 data = {
                     'shelf': shelf,
                     'resource': resource,
                     'port': 'wiphy0',
-                    "report_timer": 1,
+                    'report_timer': 1,
                     'current_flags': 0,
                     'interest': 92291074,
                     'mac': self.mac
@@ -1086,7 +1088,7 @@ class Laptop():
                     'shelf': shelf,
                     'resource': resource,
                     'port': port,
-                    "report_timer": 1,
+                    'report_timer': 1,
                     'current_flags': 2147483648,
                     'interest': 92291074,
                 }
