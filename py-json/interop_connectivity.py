@@ -1037,7 +1037,7 @@ class Laptop():
                     'port': port,
                     'report_timer': 1,
                     'current_flags': 2147483648,
-                    'interest': 92291074,
+                    'interest': 92291074,# To set the dhcp,dhcp release,IPv4 selection and station up
                     'mac': self.mac
                 }
             else:
@@ -1047,7 +1047,7 @@ class Laptop():
                     'port': port,
                     'report_timer': 1,
                     'current_flags': 2147483648,
-                    'interest': 92291074,
+                    'interest': 92291074,# To set the dhcp,dhcp release,IPv4 selection and station up
                 }
             data_list.append(data)
 
@@ -1080,7 +1080,7 @@ class Laptop():
                     'port': 'wiphy0',
                     'report_timer': 1,
                     'current_flags': 0,
-                    'interest': 92291074,
+                    'interest': 92291074,# To set the dhcp,dhcp release,IPv4 selection and station up
                     'mac': self.mac
                 }
             else:
@@ -1090,7 +1090,7 @@ class Laptop():
                     'port': port,
                     'report_timer': 1,
                     'current_flags': 2147483648,
-                    'interest': 92291074,
+                    'interest': 92291074,# To set the dhcp,dhcp release,IPv4 selection and station up
                 }
             data_list.append(data)
 
