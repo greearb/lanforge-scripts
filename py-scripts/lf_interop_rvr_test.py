@@ -321,9 +321,11 @@ class RvR(Realm):
                 indivisual_df = []
                 upload_sum = 0
                 download_sum = 0
+                # Accumulating upload/download values for cxs
                 for res in response:
                     upload_sum += res["bps rx b"]
                     download_sum += res["bps rx a"]
+                # converting bytes to megabytes
                 upload_sum = float(f"{upload_sum / 1000000:.2f}")
                 download_sum = float(f"{download_sum / 1000000:.2f}")
 
@@ -576,6 +578,7 @@ class RvR(Realm):
                         Download[phone] = phone_x[traffic_type][phone][direction]
 
         final_dataset_per_client = {} 
+        # creating per-client dataset based on traffic direction 
         for traffic_type in phone_x:
             final_dataset_per_client[traffic_type]={}
             for phone in phone_x[traffic_type]:
@@ -586,9 +589,11 @@ class RvR(Realm):
                     final_dataset_per_client[traffic_type][phone]["upload"] = [phone_x[traffic_type][phone]["upload"]]
                 else:
                     final_dataset_per_client[traffic_type][phone]["download"] = [phone_x[traffic_type][phone]["download"]]
+                # apending rssi regardless of direction
                 final_dataset_per_client[traffic_type][phone]["RSSI Strength(in dBm)"] = [phone_x[traffic_type][phone]["Signal Strength"]]
         phone_x = final_dataset_per_client
         final_dataset_per_attenuation = {}
+        # creating per-attenuation dataset based on traffic direction
         for traffic_type in res:
             final_dataset_per_attenuation[traffic_type]={}
             for attenuation in res[traffic_type]:
