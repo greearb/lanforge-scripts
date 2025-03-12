@@ -618,34 +618,34 @@ class Laptop():
         if (encryption == 'open'):
             enc = 0
         elif (encryption == "owe"):
-            enc = 562949953421312
+            enc = 562949953421312 #flags.use-owe
         elif (encryption == 'wpa_personal' or encryption == 'psk' or encryption == 'wpa'):
-            enc = 16
+            enc = 16 #flags.wpa_enable
         elif (encryption == "wpa2_personal" or encryption == 'psk2' or encryption == 'wpa2'):
-            enc = 1024
+            enc = 1024 #flags.wpa2_enable
         elif (encryption == "wpa3_personal" or encryption == 'psk3' or encryption == 'wpa3'):
-            enc = 1099511627776
+            enc = 1099511627776 #flags.use-wpa3
         elif (encryption == "wpa_enterprise"):
-            enc = 33554448
+            enc = 33554448 #flag.8021x_radius ,flag.wpa_enable
         elif (encryption == "wpa2_enterprise"):
-            enc = 33555456
+            enc = 33555456 #flag.8021x_radius ,flag.wpa2_enable
         elif (encryption == "wpa3_enterprise"):
-            enc = 1099545182208
+            enc = 1099545182208 #flag.8021x_radius ,flag.use_wpa3
         elif (encryption == "owe_advanced"):
-            enc = 564049498603520
+            enc = 564049498603520 #flag.8021x_radius ,flag.use_wpa3 ,flag.use-owe
         if encryption == "wpa_enterprise" or encryption == "wpa2_enterprise" or encryption == "wpa3_enterprise" or encryption == "owe_advanced":
             if ieee80211u == True:
-                enc = enc + 131072
+                enc = enc + 131072 #flag.80211u_enable
             if enable_pkc == True:
-                enc = enc + 67108864
+                enc = enc + 67108864 #flag.80211r_pmska_cache
             if bss_transition == True:
-                enc = enc + 8796093022208
+                enc = enc + 8796093022208 #flag.use-bss-transition
             if power_save == True:
-                enc = enc + 34359738368
+                enc = enc + 34359738368 #flag.power_save_enable
             if disable_ofdma == True:
-                enc = enc + 35184372088832
+                enc = enc + 35184372088832 #flag.disable-ofdma
             if roam_ft_ds == True:
-                enc = enc + 140737488355328
+                enc = enc + 140737488355328 #flag.ft-roam-over-ds
 
         return enc
 
