@@ -155,6 +155,7 @@ class Android():
                 'shelf': 1,
                 'resource': 1,
                 'adb_id': serial,
+                #key=8  modification for adb API to add faster callback option
                 'key': 8,
                 'adb_cmd': command
             }
@@ -187,6 +188,7 @@ class Android():
                 'shelf': 1,
                 'resource': 1,
                 'adb_id': serial,
+                #key=8  modification for adb API to add faster callback option
                 'key': 8,
                 'adb_cmd': command
             }
@@ -215,6 +217,7 @@ class Android():
                 'shelf': 1,
                 'resource': 1,
                 'adb_id': serial,
+                #key=8  modification for adb API to add faster callback option
                 'key': 8,
                 'adb_cmd': "reboot"
             }
@@ -307,6 +310,7 @@ class Android():
                 'shelf': 1,
                 'resource': 1,
                 'adb_id': serial,
+                #key=8  modification for adb API to add faster callback option
                 'key': 8,
                 'adb_cmd': command
             }
@@ -332,6 +336,7 @@ class Android():
                     'shelf': 1,
                     'resource': 1,
                     'adb_id': serial,
+                    #key=8  modification for adb API to add faster callback option
                     'key': 8,
                     'adb_cmd': 'shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity --es auto_start 1 --es username {} --es serverip {} --es ssid {} --es password {} --es encryption {} --es eap_method {} --es eap_user {} --es eap_passwd {}'.format(
                         username, self.server_ip, curr_ssid, curr_passwd, curr_encryption, curr_eap_method,
@@ -342,6 +347,7 @@ class Android():
                     'shelf': 1,
                     'resource': 1,
                     'adb_id': serial,
+                    #key=8  modification for adb API to add faster callback option
                     'key': 8,
                     'adb_cmd': 'shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity --es auto_start 1 --es username {} --es serverip {} --es ssid {} --es password {} --es encryption {}'.format(
                         username, self.server_ip, curr_ssid, curr_passwd, curr_encryption)
