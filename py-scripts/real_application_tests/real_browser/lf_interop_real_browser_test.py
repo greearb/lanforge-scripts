@@ -322,25 +322,13 @@ class RealBrowserTest(Realm):
 
         for i in range(0, len(self.laptop_os_types)):
             if self.laptop_os_types[i] == 'windows':
-                # cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.lfclient_host, self.real_sta_hostname[i], self.duration,self.resolution)
-                # cmd = "py real_browser.py --url %s --duration %s --count %s --server %s" % (self.url,self.duration,self.count,self.host)
-                # cmd = ".\real_browser.ps1 -Url %s -Duration %s -Server %s" %(self.url,self.duration,self.host)
-                # cmd = ".\\real_browser.ps1 -Url %s -Duration %s -Server %s" % (self.url, self.duration, self.host)
-                # cmd = "real_browser.bat --url %s --server %s --duration %s" % (self.url, self.host,self.duration)
                 cmd = "real_browser.bat --url %s --server %s --duration %s" % (self.url, self.flask_ip, self.duration)
-
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.laptop_os_types[i] == 'linux':
-                # cmd = "su -l lanforge  ctrb.bash %s %s %s %s" % (self.new_port_list[i], self.url, self.host, self.duration)
-                # cmd = "su -l lanforge  ctrb.bash %s %s %s %s" % (self.new_port_list[i], self.url, self.host, self.duration)
                 cmd = "su -l lanforge  ctrb.bash %s %s %s %s" % (self.new_port_list[i], self.url, self.flask_ip, self.duration)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-
             elif self.laptop_os_types[i] == 'macos':
-                # cmd = "sudo bash real_browser.bash --url %s --server %s  --duration %s" % (self.url, self.host, self.duration)
-                # cmd = "sudo bash real_browser.bash --url %s --server %s  --duration %s" % (self.url, self.flask_ip, self.duration)
                 cmd = "sudo bash ctrb.bash --url %s --server %s  --duration %s" % (self.url, self.flask_ip, self.duration)
-                # cmd = "python3 real_browser.py --url %s --server %s  --duration %s" % (self.url, self.host, self.duration)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
         if len(self.phone_data) != 0:
@@ -697,18 +685,8 @@ class RealBrowserTest(Realm):
     def stop(self):
         """
             Stops the layer 4-7 traffic for created CX endpoints.
-
-            This method performs the following actions:
-            1. If resource IDs are provided, sets the remaining time in webGUI to "0:00:00".
-            2. Logs a message indicating the intention to set the CX state to 'Stopped'.
-            3. Stops the CX for HTTP profile.
+            Stops the generic cross connections
         """
-        # Stops the layer 4-7 traffic for created CX end points
-        # Set remaining time in webGUI to "0:00:00" if resource IDs are provided
-        # if self.resource_ids:
-        #     self.data['remaining_time_webGUI'] = ["0:00:00"] * len(self.data['status'])
-        # logging.info("Setting Cx State to Stopped")
-        # Stop the CX for HTTP profile
         self.http_profile.stop_cx()
         self.generic_endps_profile.stop_cx()
         self.stop_signal = True
@@ -719,40 +697,8 @@ class RealBrowserTest(Realm):
         self.generic_endps_profile.cleanup()
 
     def postcleanup(self):
-        # Cleans the layer 4-7 traffic for created CX end points
         self.http_profile.cleanup()
         self.generic_endps_profile.cleanup()
-
-    def cleanup(self, os_types_dict):
-        """
-        Cleans up generic endpoints and associated CX endpoints based on operating system types.
-
-        Parameters:
-        - os_types_dict (dict): Dictionary mapping station identifiers to their respective operating system types.
-
-        This method performs the following actions:
-        1. Checks each station in os_types_dict against self.other_os_list.
-        2. If a match is found, appends 'CX_yt-{station}' and 'yt-{station}' to created_cx and created_endp lists respectively.
-        3. Logs a message indicating the start of generic endpoint cleanup.
-        4. Calls cleanup method of generic_endps_profile to remove created endpoints.
-        5. Clears created_cx and created_endp lists.
-        6. Logs a message indicating successful cleanup.
-        """
-        # Check each station in os_types_dict against self.other_os_list
-        for station in os_types_dict:
-            if any(item.startswith(station) for item in self.other_os_list):
-                # Append CX and endpoint names to created_cx and created_endp lists
-                self.generic_endps_profile.created_cx.append(
-                    'CX_yt-{}'.format(station))
-                self.generic_endps_profile.created_endp.append(
-                    'yt-{}'.format(station))
-        logging.info('Cleaning up generic endpoints if exists')
-        # Call cleanup method of generic_endps_profile to remove created endpoints
-        # self.generic_endps_profile.cleanup()
-        # # Clear created_cx and created_endp lists
-        # self.generic_endps_profile.created_cx = []
-        # self.generic_endps_profile.created_endp = []
-        logging.info('Cleanup Successful')
 
     def set_available_resources_ids(self, available_list):
         self.resource_ids = available_list
@@ -844,13 +790,6 @@ class RealBrowserTest(Realm):
                             self.webui_ostypes.append("Mac")
                             webui_mac += 1
         self.webui_devices = f'Total({len(self.webui_ostypes)}) : A({webui_android}), W({webui_windows}),L({webui_linux}),M({webui_mac})'
-
-        # Create the hostname_os_combinations using webui_hostnames and webui_ostypes
-        # self.hostname_os_combination = ", ".join(
-        #     f"{hostname} ({os_type})"
-        #     for hostname, os_type in zip(self.webui_hostnames, self.webui_ostypes)
-        # )
-
         self.hostname_os_combination = [
             f"{hostname} ({os_type})"
             for hostname, os_type in zip(self.webui_hostnames, self.webui_ostypes)
@@ -872,29 +811,21 @@ class RealBrowserTest(Realm):
 
         @self.app.route('/stop_rb', methods=['GET'])
         def stop_rb():
-            # Return the latest data for all hostnames
             logging.info("Stopping the test through WEB GUI")
-
             response = jsonify({"message": "Stopping Zoom Test"})
             response.status_code = 200
-
             self.stop()
 
             def shutdown():
                 os._exit(0)
-
             response.call_on_close(shutdown)
-
             return response
 
         @self.app.route('/upload_stats', methods=['POST'])
         def upload_stats():
-
             temp_data = request.get_json()
-
             for hostname, stats in temp_data.items():
                 self.laptop_stats[hostname] = stats
-
             return jsonify({"status": "success"}), 200
 
         @self.app.route('/check_stop', methods=['GET'])
@@ -913,7 +844,6 @@ class RealBrowserTest(Realm):
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
         flask_thread.start()
-
         # Give the Flask server some time to start
         time.sleep(5)
 
@@ -926,17 +856,13 @@ class RealBrowserTest(Realm):
         """
         for gen_endp in self.generic_endps_profile.created_endp:
             generic_endpoint = self.json_get(f'/generic/{gen_endp}')
-
             if not generic_endpoint or "endpoint" not in generic_endpoint:
                 logging.info(f"Error fetching endpoint data for {gen_endp}")
                 return False  # Handle case where endpoint data is not available
-
             endp_status = generic_endpoint["endpoint"].get("status", "")
-
             # If the endpoint status is not 'Stopped' or 'WAITING', return False
             if endp_status not in ["Stopped", "WAITING"]:
                 return False
-
         # If all endpoints are in 'Stopped' or 'WAITING', return True
         return True
 
@@ -945,48 +871,36 @@ class RealBrowserTest(Realm):
         try:
             test_time = timedelta(minutes=duration)
             end_time = datetime.now() + test_time
-
             est_end_time = end_time + timedelta(minutes=1)
-
             logging.info(f"End time of the Test {end_time}")
             logging.info(f"Estimated End time of the Test {est_end_time}")
-
             headers = ['device_type', 'device_name', 'total_urls', 'uc_min', 'uc_avg', 'uc_max', 'total_err', 'time_to_target_urls', 'cx_name']
-
             last_data = []
             mobile_data = {}
-
-            # Dictionary to track time taken for each device to reach the next target
             time_taken = {}
-
             self.original_dir = os.getcwd()
-
             if self.dowebgui:
                 os.chdir(self.result_dir)
 
             start_time = datetime.now()
-            while (datetime.now() <= end_time or (not self.check_gen_cx())):
+            while datetime.now() <= end_time or not self.check_gen_cx():
                 try:
 
-                    if (datetime.now() > est_end_time):
+                    if datetime.now() > est_end_time:
                         break
                     if datetime.now() > end_time and self.stop_mobile_cx:
                         self.http_profile.stop_cx()
                         self.stop_mobile_cx = False
                     last_data = []
-                    # Open the CSV file in write mode inside the loop to overwrite previous data
                     with open('real_time_data.csv', mode='w', newline='') as file:
                         writer = csv.DictWriter(file, fieldnames=headers)
-                        # Write the CSV headers only once, at the beginning
                         writer.writeheader()
-                        if (self.laptop_stats is not None):
+                        if self.laptop_stats is not None:
                             for laptop, stats in self.laptop_stats.items():
                                 if laptop not in self.device_targets:
                                     self.device_targets[laptop] = initial_target_urls
                                 # Check if the device reaches the current target URL count
                                 if stats.get('total_urls', 0) >= self.device_targets[laptop] and laptop not in time_taken:
-                                    # time_taken[laptop] = (datetime.now() - start_time).total_seconds()
-                                    # time_taken[laptop] = (datetime.now() - stats.get('start_time',start_time)).total_seconds()
                                     time_taken[laptop] = (datetime.now() - datetime.fromisoformat(stats.get("start_time", start_time.isoformat()))).total_seconds()
                                 row = {
                                     'device_type': 'laptop',
@@ -1001,14 +915,12 @@ class RealBrowserTest(Realm):
                                 }
                                 # Check if the device reaches the current target URL count
                                 if stats.get('total_urls', 0) >= self.device_targets[laptop] and laptop not in time_taken:
-                                    # time_taken[laptop] = (datetime.now() - start_time).total_seconds()
-                                    # time_taken[laptop] = (datetime.now() - stats.get('start_time',start_time)).total_seconds()
                                     time_taken[laptop] = (datetime.now() - datetime.fromisoformat(stats.get("start_time", start_time.isoformat()))).total_seconds()
                                     row['time_to_target_urls'] = time_taken[laptop]
                                 writer.writerow(row)
-                                last_data.append(row)  # Store the latest row in last_data
+                                last_data.append(row)
                         # Collect data for mobile devices
-                        if (True):
+                        if True:
                             mobile_data = self.local_realm.json_get("layer4/%s/list?fields=name,status,total-urls,uc-min,uc-avg,uc-max,total-err,bad-url" %
                                                                     (','.join(self.created_cx.keys())))
                             total_urls = []
@@ -1025,14 +937,11 @@ class RealBrowserTest(Realm):
                                     for key, value in endpoint.items():
                                         if True:
                                             cx_name = value.get('name', 'NA')
-                                            # Apply the regex to extract the number after 'http' from the device name
                                             match = re.search(r'http(\d+)', cx_name)
-                                            res_no = match.group(1) if match else 'NA'  # Get the number after 'http' or 'NA' if not found
+                                            res_no = match.group(1) if match else 'NA'
                                             hostname = self.local_realm.json_get("resource/1/%s/list?fields=user" % (res_no))
                                             hostname = hostname["resource"]["user"]
-                                            # pass_url = (value.get('total-urls', 0) - value.get('total-err',0))
                                             pass_url = value.get('total-urls', 0)
-                                            # Append the values for each mobile device
                                             total_urls.append(pass_url)
                                             uc_min.append(value.get('uc-min', 0.0))
                                             uc_avg.append(value.get('uc-avg', 0.0))
@@ -1040,11 +949,10 @@ class RealBrowserTest(Realm):
                                             total_err.append(value.get('total-err', 0))
                                             hostnames.append(hostname)
                                             cx_names.append(cx_name)
-                                            # Initialize target URL for the first iteration if not set
                                             if hostname not in self.device_targets:
                                                 self.device_targets[hostname] = initial_target_urls
                                             # Check if the mobile device reaches the current target URL count
-                                            if (pass_url >= self.device_targets[hostname] and hostname not in time_taken):
+                                            if pass_url >= self.device_targets[hostname] and hostname not in time_taken:
                                                 time_taken[hostname] = (datetime.now() - start_time).total_seconds()
                                 # Save each mobile device's data to the CSV
                                 for i in range(len(total_urls)):
@@ -1060,24 +968,21 @@ class RealBrowserTest(Realm):
                                         'cx_name': cx_names[i],
                                     }
                                     writer.writerow(row)
-                                    last_data.append(row)  # Store the latest row in last_data
+                                    last_data.append(row)
                             # Handle the case where only one CX endpoint is created
                             elif len(self.created_cx.keys()) == 1:
                                 endpoint = mobile_data.get('endpoint', {})
                                 if True:
                                     cx_name = endpoint.get('name', 'NA')
-                                    # Apply the regex to extract the number after 'http' from the device name
                                     match = re.search(r'http(\d+)', cx_name)
-                                    res_no = match.group(1) if match else 'NA'  # Get the number after 'http' or 'NA' if not foun
+                                    res_no = match.group(1) if match else 'NA'
                                     hostname = self.local_realm.json_get("resource/1/%s/list?fields=user" % (res_no))
                                     hostname = hostname["resource"]["user"]
-                                    # Initialize target URL for the first iteration if not set
                                     if hostname not in self.device_targets:
                                         self.device_targets[hostname] = initial_target_urls
                                     # Check if the mobile device reaches the current target URL count
-                                    # pass_url = (endpoint.get('total-urls', 0) - endpoint.get('total-err',0))
                                     pass_url = endpoint.get('total-urls', 0)
-                                    if (pass_url >= self.device_targets[hostname]):
+                                    if pass_url >= self.device_targets[hostname]:
                                         if hostname not in time_taken:
                                             time_taken[hostname] = (datetime.now() - start_time).total_seconds()
                                     row = {
@@ -1092,7 +997,7 @@ class RealBrowserTest(Realm):
                                         'cx_name': cx_name
                                     }
                                     writer.writerow(row)
-                                    last_data.append(row)  # Store the latest row in last_data
+                                    last_data.append(row)
                     time.sleep(1)
                 except Exception as e:
                     logging.exception(f"Error in get_stats function {e}", exc_info=True)
@@ -1124,7 +1029,6 @@ class RealBrowserTest(Realm):
     def updating_webui_runningjson(self, obj):
         data = {}
         file_path = self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name)
-
         # Wait until the file exists
         while not os.path.exists(file_path):
             logging.info("Waiting for the Running Json file to be created")
@@ -1132,10 +1036,8 @@ class RealBrowserTest(Realm):
         logging.info("Running Json file created")
         with open(file_path, 'r') as file:
             data = json.load(file)
-
         for key in obj:
             data[key] = obj[key]
-
         with open(file_path, 'w') as file:
             json.dump(data, file, indent=4)
 
@@ -1198,7 +1100,6 @@ class RealBrowserTest(Realm):
                 'SSID': self.report_ssid,
                 "Security": self.encryp
 
-
             }
         elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
             # Map each group with a profile
@@ -1217,11 +1118,8 @@ class RealBrowserTest(Realm):
                 'URL': self.url,
                 'Test Duration (min)': self.duration,
 
-
-
             }
         else:
-
             # Test setup info
             test_setup_info = {
 
@@ -1231,8 +1129,6 @@ class RealBrowserTest(Realm):
                 'Required URL Count': self.count,
                 'URL': self.url,
                 'Test Duration (min)': self.duration,
-
-
 
             }
 
@@ -1345,9 +1241,6 @@ class RealBrowserTest(Realm):
                 "Link Speed": tx_rate_data
 
             }
-            # print("==========================")
-            # print("checking test_results",test_results)
-
             test_results_df = pd.DataFrame(test_results)
             report.set_table_dataframe(test_results_df)
             report.build_table()
@@ -1365,7 +1258,7 @@ class RealBrowserTest(Realm):
                 else:
                     for dev in interop_tab_data:
                         for item in dev.values():
-                            if (item['user-name'] in device_names):
+                            if item['user-name'] in device_names:
                                 name_to_append = item['name'].split('.')[2]
                                 if name_to_append not in res_list:
                                     res_list.append(item['name'].split('.')[2])
@@ -1384,7 +1277,7 @@ class RealBrowserTest(Realm):
                 if device in res_list:
                     test_input_list.append(row['RealBrowser URLcount'])
             for j in range(len(test_input_list)):
-                if (float(test_input_list[j]) <= float(total_urls[j])):
+                if float(test_input_list[j]) <= float(total_urls[j]):
                     pass_fail_list.append('PASS')
                 else:
                     pass_fail_list.append('FAIL')
@@ -1395,7 +1288,7 @@ class RealBrowserTest(Realm):
             test_input_list = [self.expected_passfail_value for val in range(len(device_type_data))]
             pass_fail_list = []
             for j in range(len(test_input_list)):
-                if (float(self.expected_passfail_value) <= float(total_urls[j])):
+                if float(self.expected_passfail_value) <= float(total_urls[j]):
                     pass_fail_list.append("PASS")
                 else:
                     pass_fail_list.append("FAIL")
@@ -1418,8 +1311,6 @@ class RealBrowserTest(Realm):
             "Status ": pass_fail_list
 
         }
-        # print("======================================")
-        # print("final-test_results",final_test_results)
         test_results_df = pd.DataFrame(final_test_results)
         report.set_table_dataframe(test_results_df)
         report.build_table()
@@ -1480,9 +1371,6 @@ class RealBrowserTest(Realm):
         for i in range(0, len(device_names)):
             for resource in rm_data['resources']:
                 for key, value in resource.items():
-                    # print("checking value of hostname",value['hostname'])
-                    # print("value of device_names[i]",device_names[i])
-
                     if value['hostname'] == device_names[i] and device_type_data[i] == "laptop":
                         final_eid_data.append(value['eid'])
                         device_type_data[i] = value["device type"]
@@ -1667,23 +1555,21 @@ def main():
             logger_config.load_lf_logger_config()
 
         # TODO refactor to be logger for consistency
-        if (args.expected_passfail_value is not None and args.device_csv_name is not None):
+        if args.expected_passfail_value is not None and args.device_csv_name is not None:
             logging.error("Specify either expected_passfail_value or device_csv_name")
             exit(1)
 
-        if (args.group_name is not None):
+        if args.group_name is not None:
             selected_groups = args.group_name.split(',')
         else:
             selected_groups = []
-        if (args.profile_name is not None):
+        if args.profile_name is not None:
             selected_profiles = args.profile_name.split(',')
         else:
             selected_profiles = []
 
-        if (args.dowebgui):
+        if args.dowebgui:
             url = f"http://{args.host}:5454/update_status_yt"
-            # url = f"http://localhost:8000/read_rb_data_from_csv"
-            # url = f"http://10.253.8.108:8000/update_status_yt"
             response = requests.post(url)
 
             if response.status_code == 200:
@@ -1691,38 +1577,38 @@ def main():
             else:
                 logging.info(f'Error: {response.status_code}')
 
-        if (True):
+        if True:
 
-            if (args.expected_passfail_value is not None and args.device_csv_name is not None):
+            if args.expected_passfail_value is not None and args.device_csv_name is not None:
                 logging.error("Specify either expected_passfail_value or device_csv_name")
                 exit(0)
 
-            if (args.group_name is not None):
+            if args.group_name is not None:
                 args.group_name = args.group_name.strip()
                 selected_groups = args.group_name.split(',')
             else:
                 selected_groups = []
 
-            if (args.profile_name is not None):
+            if args.profile_name is not None:
                 args.profile_name = args.profile_name.strip()
                 selected_profiles = args.profile_name.split(',')
             else:
                 selected_profiles = []
 
-            if (len(selected_groups) != len(selected_profiles)):
+            if len(selected_groups) != len(selected_profiles):
                 logging.error("Number of groups should match number of profiles")
                 exit(0)
 
-            elif (args.group_name is not None and args.profile_name is not None and args.file_name is not None and args.device_list is not None):
+            elif args.group_name is not None and args.profile_name is not None and args.file_name is not None and args.device_list is not None:
                 logging.error("Either group name or device list should be entered not both")
                 exit(0)
-            elif (args.ssid is not None and args.profile_name is not None):
+            elif args.ssid is not None and args.profile_name is not None:
                 logging.error("Either ssid or profile name should be given")
                 exit(0)
-            elif (args.file_name is not None and (args.group_name is None or args.profile_name is None)):
+            elif args.file_name is not None and (args.group_name is None or args.profile_name is None):
                 logging.error("Please enter the correct set of arguments")
                 exit(0)
-            elif (args.config and ((args.ssid is None or (args.passwd is None and args.security.lower() != 'open') or (args.passwd is None and args.security is None)))):
+            elif args.config and ((args.ssid is None or (args.passwd is None and args.security.lower() != 'open') or (args.passwd is None and args.security is None))):
                 logging.error("Please provide ssid password and security for configuration of devices")
                 exit(0)
 
@@ -1773,8 +1659,6 @@ def main():
                                   )
 
             obj.run_flask_server()
-
-            # Initialize empty lists and dictionaries for resource management
             resource_ids_sm = []
             resource_set = set()
             resource_list = []
@@ -1789,7 +1673,7 @@ def main():
             config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.host, file_name=new_filename, wait_time=args.wait_time)
             if not args.expected_passfail_value and args.device_csv_name is None:
                 config_obj.device_csv_file(csv_name="device.csv")
-            if (args.group_name is not None and args.file_name is not None and args.profile_name is not None):
+            if args.group_name is not None and args.file_name is not None and args.profile_name is not None:
                 selected_groups = args.group_name.split(',')
                 selected_profiles = args.profile_name.split(',')
                 config_devices = {}
@@ -1803,26 +1687,16 @@ def main():
 
             #  Process resource IDs when web GUI is enabled
             if args.dowebgui and args.group_name:
-                # Split resource IDs from args into a list
                 resource_ids_sm = args.device_list.split(',')
-                # Convert list to set to remove duplicates
                 resource_set = set(resource_ids_sm)
-                # Sort the set to maintain order
                 resource_list = sorted(resource_set)
-                # Generate a comma-separated string of sorted resource IDs
                 resource_ids_generated = ','.join(resource_list)
                 resource_list_sorted = resource_list
-                # Query devices based on the generated resource IDs
                 selected_devices, report_labels, selected_macs = obj.devices.query_user(dowebgui=args.dowebgui, device_list=resource_ids_generated)
-                # Modify obj.resource_ids to include only the second part of each ID (after '.')
                 obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list.split(","))
-
                 available_resources = [int(num) for num in obj.resource_ids.split(',')]
             else:
-
-                if args.device_list:
-                    all_devices = config_obj.get_all_devices()
-                    config_dict = {
+                config_dict = {
                         'ssid': args.ssid,
                         'passwd': args.passwd,
                         'enc': args.encryp,
@@ -1845,8 +1719,10 @@ def main():
                         'pac_file': args.pac_file,
                         'server_ip': args.server_ip,
 
-                    }
-                    if (args.group_name is None and args.file_name is None and args.profile_name is None):
+                }
+                if args.device_list:
+                    all_devices = config_obj.get_all_devices()
+                    if args.group_name is None and args.file_name is None and args.profile_name is None:
                         dev_list = args.device_list.split(',')
                         if args.config:
                             config_list = asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
@@ -1867,42 +1743,13 @@ def main():
                     available_resources = list(set(available_resources))
                     resource_list_sorted = sorted(available_resources)
 
-                    # print("checking obj.andriod devices")
-                    # print(obj.android_devices)
-
-                    # print("22222",available_resources)
-
                 else:
                     all_devices = config_obj.get_all_devices()
                     device_list = []
-                    config_dict = {
-                        'ssid': args.ssid,
-                        'passwd': args.passwd,
-                        'enc': args.encryp,
-                        'eap_method': args.eap_method,
-                        'eap_identity': args.eap_identity,
-                        'ieee80211': args.ieee80211,
-                        'ieee80211u': args.ieee80211u,
-                        'ieee80211w': args.ieee80211w,
-                        'enable_pkc': args.enable_pkc,
-                        'bss_transition': args.bss_transition,
-                        'power_save': args.power_save,
-                        'disable_ofdma': args.disable_ofdma,
-                        'roam_ft_ds': args.roam_ft_ds,
-                        'key_management': args.key_management,
-                        'pairwise': args.pairwise,
-                        'private_key': args.private_key,
-                        'ca_cert': args.ca_cert,
-                        'client_cert': args.client_cert,
-                        'pk_passwd': args.pk_passwd,
-                        'pac_file': args.pac_file,
-                        'server_ip': args.server_ip,
-
-                    }
                     for device in all_devices:
-                        if (device["type"] != 'laptop'):
+                        if device["type"] != 'laptop':
                             device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-                        elif (device["type"] == 'laptop'):
+                        elif device["type"] == 'laptop':
                             device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
                     print("Available devices:")
                     for device in device_list:
@@ -1920,15 +1767,9 @@ def main():
 
                     if obj.android_list:
                         resource_ids = ",".join([item.split(".")[1] for item in obj.android_list])
-
                         num_list = list(map(int, resource_ids.split(',')))
-
-                        # Sort the list
                         num_list.sort()
-
-                        # Join the sorted list back into a string
                         sorted_string = ','.join(map(str, num_list))
-
                         obj.resource_ids = sorted_string
                         resource_ids1 = list(map(int, sorted_string.split(',')))
                         modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
@@ -1948,9 +1789,9 @@ def main():
                 exit()
             if len(available_resources) > 0:
                 device_map = {}
-                if (not args.expected_passfail_value and args.device_csv_name is None):
+                if not args.expected_passfail_value and args.device_csv_name is None:
                     expected_val = input("Enter the expected value for the following devices{} eg 8,6,2: ".format(available_resources)).split(',')
-                    if (len(available_resources) == len(expected_val)):
+                    if len(available_resources) == len(expected_val):
                         for i in range(len(available_resources)):
                             device_map[obj.android_list[i].split('.')[0] + '.' + obj.android_list[i].split('.')[1]] = expected_val[i]
                         config_obj.update_device_csv('device.csv', 'RealBrowser URLcount', device_map)
@@ -2147,7 +1988,7 @@ def main():
         logging.error("Error occured", e)
         traceback.print_exc()
     finally:
-        if (args.dowebgui):
+        if args.dowebgui:
             try:
                 url = f"http://{args.host}:5454/update_status_yt"
 
@@ -2169,7 +2010,6 @@ def main():
                     logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
 
             except Exception as e:
-                # Print an error message if an exception occurs during the request
                 logging.error(f"An error occurred while updating status: {e}")
 
         obj.stop()
