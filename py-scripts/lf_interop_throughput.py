@@ -142,7 +142,7 @@ class Throughput(Realm):
                  host="localhost",
                  port=8080,
                  test_name=None,
-                 device_list=[],
+                 device_list=None,
                  result_dir=None,
                  ap_name="",
                  traffic_type=None,
@@ -163,9 +163,9 @@ class Throughput(Realm):
                  precleanup=False,
                  do_interopability=False,
                  ip="localhost",
-                 user_list=[], real_client_list=[], real_client_list1=[], hw_list=[], laptop_list=[], android_list=[], mac_list=[], windows_list=[], linux_list=[],
-                 total_resources_list=[], working_resources_list=[], hostname_list=[], username_list=[], eid_list=[],
-                 devices_available=[], input_devices_list=[], mac_id1_list=[], mac_id_list=[], overall_avg_rssi=[]):
+                 user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
+                 total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
+                 devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
         self.ssid_list = []
@@ -179,7 +179,7 @@ class Throughput(Realm):
         self.host = host
         self.port = port
         self.test_name = test_name
-        self.device_list = device_list
+        self.device_list = device_list if device_list is not None else []
         self.result_dir = result_dir
         self.ssid = ssid
         self.security = security
@@ -214,25 +214,25 @@ class Throughput(Realm):
         self.cx_profile.side_b_max_bps = side_b_max_rate
         self.cx_profile.side_a_min_pdu = side_a_min_pdu
         self.cx_profile.side_b_min_pdu = side_b_min_pdu
-        self.hw_list = hw_list
-        self.laptop_list = laptop_list
-        self.android_list = android_list
-        self.mac_list = mac_list
-        self.windows_list = windows_list
-        self.linux_list = linux_list
-        self.total_resources_list = total_resources_list
-        self.working_resources_list = working_resources_list
-        self.hostname_list = hostname_list
-        self.username_list = username_list
-        self.eid_list = eid_list
-        self.devices_available = devices_available
-        self.input_devices_list = input_devices_list
-        self.real_client_list = real_client_list
-        self.real_client_list1 = real_client_list1
-        self.user_list = user_list
-        self.mac_id_list = mac_id_list
-        self.mac_id1_list = mac_id1_list
-        self.overall_avg_rssi = overall_avg_rssi
+        self.hw_list = hw_list if hw_list is not None else []
+        self.laptop_list = laptop_list if laptop_list is not None else []
+        self.android_list = android_list if android_list is not None else []
+        self.mac_list = mac_list if mac_list is not None else []
+        self.windows_list = windows_list if windows_list is not None else []
+        self.linux_list = linux_list if linux_list is not None else []
+        self.total_resources_list = total_resources_list if total_resources_list is not None else []
+        self.working_resources_list = working_resources_list if working_resources_list is not None else []
+        self.hostname_list = hostname_list if hostname_list is not None else []
+        self.username_list = username_list if username_list is not None else []
+        self.eid_list = eid_list if eid_list is not None else []
+        self.devices_available = devices_available if devices_available is not None else []
+        self.input_devices_list = input_devices_list if input_devices_list is not None else []
+        self.real_client_list = real_client_list if real_client_list is not None else []
+        self.real_client_list1 = real_client_list1 if real_client_list1 is not None else []
+        self.user_list = user_list if user_list is not None else []
+        self.mac_id_list = mac_id_list if mac_id_list is not None else []
+        self.mac_id1_list = mac_id1_list if mac_id1_list is not None else []
+        self.overall_avg_rssi = overall_avg_rssi if overall_avg_rssi is not None else []
         self.dowebgui = dowebgui
         self.do_interopability = do_interopability
         self.ip = ip
