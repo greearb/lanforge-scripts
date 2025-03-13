@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 """
     NAME: lf_interop_youtube.py
 
@@ -59,14 +59,10 @@ log.setLevel(logging.ERROR)
 
 # # Add necessary paths if not already included
 if 'py-json' not in sys.path:
-    # sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-    # sys.path.append('/home/laxmi/Documents/lanforge-scripts/py-json/')
     sys.path.append('/home/lanforge/lanforge-scripts/py-json')
 
 
 if 'py-scripts' not in sys.path:
-    # sys.path.append('/home/agent11/Desktop/lanforge-scripts/py-scripts')
-    # sys.path.append('/home/laxmi/Documents/lanforge-scripts/py-scripts/')
     sys.path.append('/home/lanforge/lanforge-scripts/py-scripts')
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -187,7 +183,7 @@ class Youtube(Realm):
         self.all_stop = False
         self.keys = []
         self.hostname_os_combination = None
-        if (self.do_webUI):
+        if self.do_webUI:
             self.base_dir = os.path.abspath(os.path.join(ui_report_dir, "../../"))
             self.test_name = test_name
 
@@ -200,7 +196,7 @@ class Youtube(Realm):
         self.selected_groups = selected_groups
         self.selected_profiles = selected_profiles
 
-    def stop(self,):
+    def stop(self):
         self.stop_signal = True
 
     def cleanup(self):
@@ -405,8 +401,7 @@ class Youtube(Realm):
 
         self.new_port_list = [item.split('.')[2] for item in self.real_sta_list]
 
-        if (self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client_os_types=self.real_sta_os_types,)):
-            logging.info("=================================================================================================")
+        if self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client_os_types=self.real_sta_os_types,):
             logging.info('Real client generic endpoint creation completed.')
         else:
             logging.error('Real client generic endpoint creation failed.')
@@ -471,17 +466,16 @@ class Youtube(Realm):
                             and value["parent dev"] != ""
                             and value["ip"] != "0.0.0.0"
                         ):
-                            final_device_list.append(key)  # Add to final_device_list in order
-                            break  # Stop after finding the first match for the current device to maintain order
+                            final_device_list.append(key)
+                            break
 
             self.real_sta_list = final_device_list
 
-        # Assign `base_interop_obj` to `self.Devices` if provided
         if base_interop_obj is not None:
             self.Devices = base_interop_obj
 
         # Log an error and exit if no real stations are selected for testing
-        if (len(self.real_sta_list) == 0):
+        if len(self.real_sta_list) == 0:
             logger.error('There are no real devices in this testbed. Aborting test')
             exit(0)
 
@@ -505,11 +499,11 @@ class Youtube(Realm):
 
         for i in range(0, len(self.real_sta_os_types)):
 
-            if (self.real_sta_os_types[i] == 'windows'):
+            if self.real_sta_os_types[i] == 'windows':
                 self.windows = self.windows + 1
-            elif (self.real_sta_os_types[i] == 'linux'):
+            elif self.real_sta_os_types[i] == 'linux':
                 self.linux = self.linux + 1
-            elif (self.real_sta_os_types[i] == 'macos'):
+            elif self.real_sta_os_types[i] == 'macos':
                 self.mac = self.mac + 1
 
         return self.real_sta_list
@@ -529,19 +523,7 @@ class Youtube(Realm):
         self.start_time = datetime.now()
 
     def stop_generic_cx(self,):
-        """
-        Stops a specific generic connection (CX) and records the stop time.
-        Args:
-        - cx_name (str): The name of the specific connection to stop.
-
-        Procedure followed:
-        1. Stops the specific connection using `self.generic_endps_profile.stop_cx_specific(cx_name)`.
-        2. Sets the stop time (`self.stop_time`) to the current datetime.
-        """
-        # Stop the specific connection (CX)
-        # self.generic_endps_profile.stop_cx_specific(cx_name)
         self.generic_endps_profile.stop_cx()
-        # Set the stop time to the current datetime
         self.stop_time = datetime.now()
 
     def set_webUI_stop(self,):
@@ -558,11 +540,9 @@ class Youtube(Realm):
         Note:
         - This method assumes `self.ui_report_dir` contains the path to the directory where runtime_ping_data.json is located.
         """
-        # Open runtime_ping_data.json file for reading
         file_path = self.ui_report_dir
         file_name = '/running_status.json'
         with open(file_path + file_name, 'r') as f:
-            # Step 2: Load JSON data from file into 'data' variable
             data = json.load(f)
             return data['status']
 
@@ -572,25 +552,15 @@ class Youtube(Realm):
         Returns:
             dict or None: The fetched data if successful, None otherwise.
         """
-        # List to store device names (file names)
         self.devices_list = []
-
-        # Define the API endpoint URL
         url = "http://localhost:5002/youtube_stats"
-
-        # Send an HTTP GET request to fetch data from the API
         response = requests.get(url)
         if response.status_code == 200:
             self.data = response.json()
-
-            # Extract the result from the response
             result_data = self.data.get("result", {})
             for device_name, device_data in result_data.items():
-                # Device data includes stats directly
                 stats = {key: value for key, value in device_data.items() if key != "stop"}
                 timestamp = stats.get("Timestamp", {})
-
-                # Update or initialize the device's stats in mydatajson
                 if device_name not in self.mydatajson:
                     self.mydatajson[device_name] = {}
                 if "maxbufferhealth" not in self.mydatajson[device_name]:
@@ -612,7 +582,6 @@ class Youtube(Realm):
                     current_path = os.path.dirname(os.path.abspath(__file__))
                     csv_file_path = os.path.join(current_path, f"{device_name}_youtube_stats_report.csv")
 
-                # Add the file path to the devices list
                 self.devices_list.append(csv_file_path)
 
                 file_exists = os.path.isfile(csv_file_path)
@@ -620,19 +589,13 @@ class Youtube(Realm):
 
                 with open(csv_file_path, mode='a', newline='') as file:
                     writer = csv.writer(file)
-
-                    # Write the headers only if the file is new
                     if not file_exists:
                         writer.writerow(headers)
-
-                    # Write each row of data specific to the device
                     row = [device_name, timestamp]
-                    for header in headers[2:]:  # Skip "Instance Name" and "TimeStamp"
-                        row.append(stats.get(header, "NA"))  # Use "NA" for missing keys
+                    for header in headers[2:]:
+                        row.append(stats.get(header, "NA"))
                     writer.writerow(row)
 
-            # Update the stats API response
-            # self.stats_api_response = self.data
             return self.data
         else:
             logging.error(f"Failed to fetch data from API. Status code: {response.status_code}")
@@ -655,7 +618,6 @@ class Youtube(Realm):
             """
             logging.info("Stopping the test through web UI")
 
-            # Respond to the client immediately
             response = jsonify({"message": "Stopping Youtube Test"})
             response.status_code = 200
 
@@ -680,19 +642,17 @@ class Youtube(Realm):
                     self.stats_api_response = {}
                     return jsonify({"message": "Data cleared"}), 200
 
-                # Handle new data structure
                 for key, value in data.items():
                     if key == "stop":
-                        continue  # Skip processing the 'stop' key
+                        continue
                     device_name = key
                     stats = value
                     stop = data.get("stop", False)
 
-                    # Update stats_api_response with the new data format
                     if device_name not in self.stats_api_response:
                         self.stats_api_response[device_name] = {}
                     self.stats_api_response[device_name] = {
-                        **stats,  # Directly update with stats
+                        **stats,
                         "stop": stop
                     }
 
@@ -729,27 +689,15 @@ class Youtube(Realm):
 
     def stop_test_yt(self,):
         try:
-            # Define the API endpoint URL
             url = f"http://{self.host}:5454/update_status_yt"
-            # url = f"http://localhost:5454/update_status_yt"
-            # url = f"http://10.253.8.108:8000/update_status_yt"
-            # url = f"http://localhost:8000/update_status_yt"
-
-            # Set the headers for the HTTP POST request
             headers = {
                 'Content-Type': 'application/json',
             }
-
-            # The data payload for the POST request
             data = {
                 'status': 'Completed',
                 'name': self.test_name,
             }
-
-            # Send the HTTP POST request to the API endpoint
             response = requests.post(url, json=data, headers=headers)
-
-            # Check the response status code to determine if the request was successful
             if response.status_code == 200:
                 logging.info("Successfully updated STOP status to 'Completed'")
                 pass
@@ -757,18 +705,14 @@ class Youtube(Realm):
                 logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
 
         except Exception as e:
-            # Print an error message if an exception occurs during the request
             logging.error(f"An error occurred while updating status: {e}")
 
     def clear_previous_data(self,):
         try:
-            # Define the API endpoint URL to clear previous data
             url = "http://localhost:5454/youtube_stats"
-            # url = "http://10.253.8.108:8000/youtube_stats"
             headers = {
                 'Content-Type': 'application/json',
             }
-            # Send a POST request with a specific flag to clear the data
             data = {
                 'clear_data': True,
             }
@@ -792,13 +736,8 @@ class Youtube(Realm):
             return
 
         try:
-            # Extract the filename from the source file path
             filename = os.path.basename(source_file)
-
-            # Construct the destination file path
             dest_file = os.path.join(dest_dir, filename)
-
-            # Move the file
             shutil.move(source_file, dest_file)
 
             logging.info(f"Successfully moved '{source_file}' to '{dest_file}'.")
@@ -849,7 +788,7 @@ class Youtube(Realm):
                 "Timestamp": stats.get("Timestamp", ""),
             })
 
-        if (self.do_webUI):
+        if self.do_webUI:
             self.report = lf_report(_output_pdf='youtube_streaming.pdf',
                                     _output_html='youtube_streaming.html',
                                     _results_dir_name="youtube_streaming_report",
@@ -889,11 +828,7 @@ class Youtube(Realm):
             }
 
         elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
-
-            # Map each group with a profile
             gp_pairs = zip(self.selected_groups, self.selected_profiles)
-
-            # Create a string by joining the mapped pairs
             gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
 
             # Test setup info
@@ -1021,15 +956,11 @@ class Youtube(Realm):
         self.report.set_table_dataframe(test_results_df)
         self.report.build_table()
 
-        # # Move the files after they are written
-        # if not self.do_webUI:
         for file_path in self.devices_list:
-            # file_to_move_path = os.path.join(self.report_path_date_time, '..', os.path.basename(file_path))
             self.move_files(file_path, self.report_path_date_time)
 
         original_dir = os.getcwd()
 
-        # Get a list of all CSV files in the specific directory
         if self.do_webUI:
             csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('.csv')]
             os.chdir(self.report_path_date_time)
@@ -1037,34 +968,25 @@ class Youtube(Realm):
             csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('.csv')]
             os.chdir(self.report_path_date_time)
 
-        # Iterate over each CSV file in the directory
         for file_name in csv_files:
-            # Load the CSV file
-
             data = pd.read_csv(file_name)
 
             self.report.set_graph_title('Buffer Health vs Time Graph for {}'.format(file_name.split('_')[0]))
             self.report.build_graph_title()
 
-            # Convert timestamp column to datetime format for easier manipulation
             try:
                 data['TimeStamp'] = pd.to_datetime(data['TimeStamp'], format="%H:%M:%S").dt.time
             except Exception as e:
                 logging.error(f"Error in timestamp conversion for {file_name}: {e}")
                 continue
 
-            # Drop duplicate timestamps and keep only the first occurrence
             data = data.drop_duplicates(subset='TimeStamp', keep='first')
 
-            # Sort data by timestamp
             data = data.sort_values(by='TimeStamp')
 
-            # Extract the relevant columns for the graph
-            # timestamps = data['TimeStamp']
             timestamps = data['TimeStamp'].apply(lambda t: t.strftime('%H:%M:%S'))
             buffer_health = data['BufferHealth']
 
-            # Plot the Buffer Health vs Time graph with at least 30 timestamps on the x-axis
             fig, ax = plt.subplots(figsize=(20, 10))
             plt.plot(timestamps, buffer_health, color='blue', linewidth=2)
 
@@ -1073,7 +995,6 @@ class Youtube(Realm):
             plt.ylabel('Buffer Health', fontweight='bold', fontsize=15)
             plt.title('Buffer Health vs Time Graph for {}'.format(file_name.split('_')[0]), fontsize=18)
 
-            # Set the x-axis ticks to ensure at least 30 timestamps
             if len(timestamps) > 30:
                 tick_interval = len(timestamps) // 30
                 selected_ticks = timestamps[::tick_interval]
@@ -1083,13 +1004,11 @@ class Youtube(Realm):
 
             plt.xticks(rotation=45, ha='right')
 
-            # Save the plot as a PNG file
             output_file = '{}'.format(file_name.split('_')[0]) + 'buffer_health_vs_time.png'
             plt.tight_layout()
             plt.savefig(output_file, dpi=96)
             plt.close()
 
-            # Print the saved plot file path
             logging.info(f"Graph saved for {file_name}: {output_file}")
 
             self.report.set_graph_image(output_file)
@@ -1220,7 +1139,6 @@ def main():
             logger_config.lf_logger_config_json = args.lf_logger_config_json
             logger_config.load_lf_logger_config()
 
-        # Assign arguments to variables for easier access
         mgr_ip = args.mgr
         mgr_port = args.mgr_port
         url = args.url
@@ -1231,7 +1149,7 @@ def main():
         debug = args.debug
 
         # Print debug information if debugging is enabled
-        if (debug):
+        if debug:
             logging.info('''Specified configuration:
             ip:                       {}
             port:                     {}
@@ -1239,38 +1157,38 @@ def main():
             debug:                    {}
             '''.format(mgr_ip, mgr_port, duration, debug))
 
-        if (True):
+        if True:
 
-            if (args.expected_passfail_value is not None and args.device_csv_name is not None):
+            if args.expected_passfail_value is not None and args.device_csv_name is not None:
                 logging.error("Specify either expected_passfail_value or device_csv_name")
                 exit(1)
 
-            if (args.group_name is not None):
+            if args.group_name is not None:
                 args.group_name = args.group_name.strip()
                 selected_groups = args.group_name.split(',')
             else:
                 selected_groups = []
 
-            if (args.profile_name is not None):
+            if args.profile_name is not None:
                 args.profile_name = args.profile_name.strip()
                 selected_profiles = args.profile_name.split(',')
             else:
                 selected_profiles = []
 
-            if (len(selected_groups) != len(selected_profiles)):
+            if len(selected_groups) != len(selected_profiles):
                 logging.error("Number of groups should match number of profiles")
                 exit(0)
 
-            elif (args.group_name is not None and args.profile_name is not None and args.file_name is not None and args.resources is not None):
+            elif args.group_name is not None and args.profile_name is not None and args.file_name is not None and args.resources is not None:
                 logging.error("Either group name or device list should be entered not both")
                 exit(0)
-            elif (args.ssid is not None and args.profile_name is not None):
+            elif args.ssid is not None and args.profile_name is not None:
                 logging.error("Either ssid or profile name should be given")
                 exit(0)
-            elif (args.file_name is not None and (args.group_name is None or args.profile_name is None)):
+            elif args.file_name is not None and (args.group_name is None or args.profile_name is None):
                 logging.error("Please enter the correct set of arguments")
                 exit(0)
-            elif (args.config and ((args.ssid is None or (args.passwd is None and args.security.lower() != 'open') or (args.passwd is None and args.security is None)))):
+            elif args.config and ((args.ssid is None or (args.passwd is None and args.security.lower() != 'open') or (args.passwd is None and args.security is None))):
                 logging.error("Please provide ssid password and security for configuration of devices")
                 exit(0)
 
@@ -1321,7 +1239,7 @@ def main():
             config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.mgr, file_name=new_filename)
             if not args.expected_passfail_value and args.device_csv_name is None:
                 config_obj.device_csv_file(csv_name="device.csv")
-            if (args.group_name is not None and args.file_name is not None and args.profile_name is not None):
+            if args.group_name is not None and args.file_name is not None and args.profile_name is not None:
                 selected_groups = args.group_name.split(',')
                 selected_profiles = args.profile_name.split(',')
                 config_devices = {}
@@ -1346,17 +1264,15 @@ def main():
                 eid_list = []
                 for grp_name in groups_list.keys():
                     for g_name in selected_groups:
-                        if (grp_name == g_name):
+                        if grp_name == g_name:
                             for j in groups_list[grp_name]:
-                                if (j in group_devices.keys()):
+                                if j in group_devices.keys():
                                     eid_list.append(group_devices[j])
-                                elif (j in all_res.keys()):
+                                elif j in all_res.keys():
                                     eid_list.append(all_res[j])
                 args.resources = ",".join(id for id in eid_list)
             else:
-                if args.resources:
-                    all_devices = config_obj.get_all_devices()
-                    config_dict = {
+                config_dict = {
                         'ssid': args.ssid,
                         'passwd': args.passwd,
                         'enc': args.encryp,
@@ -1378,41 +1294,20 @@ def main():
                         'pk_passwd': args.pk_passwd,
                         'pac_file': args.pac_file,
                         'server_ip': args.server_ip
-                    }
-                    if (args.group_name is None and args.file_name is None and args.profile_name is None):
+                }
+                if args.resources:
+                    all_devices = config_obj.get_all_devices()
+                    if args.group_name is None and args.file_name is None and args.profile_name is None:
                         dev_list = args.resources.split(',')
                         if args.config:
                             asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
                 else:
                     all_devices = config_obj.get_all_devices()
                     device_list = []
-                    config_dict = {
-                        'ssid': args.ssid,
-                        'passwd': args.passwd,
-                        'enc': args.encryp,
-                        'eap_method': args.eap_method,
-                        'eap_identity': args.eap_identity,
-                        'ieee80211': args.ieee80211,
-                        'ieee80211u': args.ieee80211u,
-                        'ieee80211w': args.ieee80211w,
-                        'enable_pkc': args.enable_pkc,
-                        'bss_transition': args.bss_transition,
-                        'power_save': args.power_save,
-                        'disable_ofdma': args.disable_ofdma,
-                        'roam_ft_ds': args.roam_ft_ds,
-                        'key_management': args.key_management,
-                        'pairwise': args.pairwise,
-                        'private_key': args.private_key,
-                        'ca_cert': args.ca_cert,
-                        'client_cert': args.client_cert,
-                        'pk_passwd': args.pk_passwd,
-                        'pac_file': args.pac_file,
-                        'server_ip': args.server_ip,
-                    }
                     for device in all_devices:
-                        if (device["type"] != 'laptop'):
+                        if device["type"] != 'laptop':
                             device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-                        elif (device["type"] == 'laptop'):
+                        elif device["type"] == 'laptop':
                             device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
 
                     print("Available devices:")
@@ -1424,7 +1319,7 @@ def main():
                     if args.config:
                         asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
 
-            if (not do_webUI):
+            if not do_webUI:
                 if args.resources:
                     resources = [r.strip() for r in args.resources.split(',')]
                     resources = [r for r in resources if len(r.split('.')) > 1]
@@ -1465,7 +1360,7 @@ def main():
                 youtube.cleanup()
 
             # Check if the required tab exists, and exit if not
-            if (not youtube.check_tab_exists()):
+            if not youtube.check_tab_exists():
                 logging.error('Generic Tab is not available.\nAborting the test.')
                 exit(0)
 
@@ -1477,11 +1372,9 @@ def main():
                 logging.error("No Real Devies Available")
                 exit(0)
 
-            logging.info("==============================================================================")
             logging.info("TEST STARTED")
             logging.info('Running the Youtube Streaming test for {} minutes'.format(duration))
 
-            # Wait for 10 seconds before starting the test
             time.sleep(10)
 
             youtube.start_time = datetime.now()
@@ -1489,8 +1382,6 @@ def main():
 
             duration = args.duration
             end_time = datetime.now() + timedelta(minutes=duration)
-
-            # Get data from API and check for valid data
             initial_data = youtube.get_data_from_api()
 
             while len(initial_data) == 0:
@@ -1506,16 +1397,15 @@ def main():
 
             end_time = datetime.now() + timedelta(minutes=duration)
 
-            while (datetime.now() < end_time or (not youtube.check_gen_cx())):
+            while datetime.now() < end_time or not youtube.check_gen_cx():
                 youtube.get_data_from_api()
                 time.sleep(1)
 
             youtube.generic_endps_profile.stop_cx()
-            logging.info("=================================================================================================")
             logging.info("Duration ended")
 
             logging.info('Stopping the test')
-            if (do_webUI):
+            if do_webUI:
                 youtube.create_report(youtube.stats_api_response, youtube.ui_report_dir)
             else:
 
@@ -1530,7 +1420,7 @@ def main():
     finally:
         youtube.stop()
         # Stopping the Youtube test
-        if (do_webUI):
+        if do_webUI:
             youtube.stop_test_yt()
         logging.info("Waiting for Cleanup of Browsers in Devices")
         time.sleep(10)
