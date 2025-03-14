@@ -502,6 +502,7 @@ class VideoStreamingTest(Realm):
                         "timeout": timeout,
                         "url_rate": self.requests_per_ten,
                         "url": url,
+                        #proxy auth flag 0x200 for BIND DNS check
                         "proxy_auth_type": 0x200,
                         "quiesce_after": self.quiesce_after,
                         "max_speed": self.max_speed
@@ -520,6 +521,7 @@ class VideoStreamingTest(Realm):
                         "ssl_cert_fname": "ca-bundle.crt",
                         "proxy_port": 0,
                         "max_speed": self.max_speed,
+                        #proxy auth flag 0x200 for BIND DNS check
                         "proxy_auth_type": 0x200,
                         "quiesce_after": self.quiesce_after
                     }
@@ -980,7 +982,6 @@ class VideoStreamingTest(Realm):
                             test_stopped_by_user = True
                             break
 
-                # df1 = pd.DataFrame(self.data)
 
                 if self.dowebgui:
                     individual_df.to_csv('{}/video_streaming_realtime_data.csv'.format(self.result_dir), index=False)
