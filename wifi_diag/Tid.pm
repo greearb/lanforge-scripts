@@ -3,7 +3,7 @@ package Tid;
 use strict;
 use warnings;
 use diagnostics;
-use bigint;
+#use bigint;
 use bignum;
 use Carp;
 $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
@@ -115,11 +115,13 @@ sub add_pkt {
     my $starting_seqno = $pkt->{ba_starting_seq};
     my $i;
     my $bitmap = $pkt->{ba_bitmap}; # 0100000000000000 for instance
-    my $bi_as_long = 0;
-    my $bi_mask = 0;
+    my @bi_as_array = (); # What block-ack reports.
+    my @bi_found_array = ();  # We captured packets that matched the BA
     my $q;
+    my $z;
     my $last_timestamp = 0;
     my $glb;
+    my $ba_bit_count = length($bitmap) * 4;
 
     if ($pkt->transmitter() eq $self->{addr_a}) {
       $glb = $self->{glb_fh_ba_tx};
@@ -127,11 +129,19 @@ sub add_pkt {
     else {
       $glb = $self->{glb_fh_ba_rx};
     }
-    for ($q = 0; $q < 8; $q++) {
+    for ($q = 0; $q < length($bitmap)/2; $q++) {
       my $bmap_octet = substr($bitmap, $q * 2, 2);
       my $bmi = hex($bmap_octet);
       #print STDERR "bmap-octet: $bmap_octet bmi: " . hex($bmi) . "\n";
-      $bi_as_long |= ($bmi << ($q * 8));
+      for ($z = 0; $z < 8; $z++) {
+	  my $idx = $q * 8 + $z;
+	  if ($bmi & (1<<$z)) {
+	      $bi_as_array[$idx] = 1;
+	  }
+	  else {
+	      $bi_as_array[$idx] = 0;
+	  }
+      }
     }
 
     for ($i = 0; $i<$pkt_count; $i++) {
@@ -141,12 +151,12 @@ sub add_pkt {
       #print " pkt-rcvr: " . $pkt->receiver() . "\n";
       #print "Starting_seqno:$starting_seqno\n";
       if ($tmp->transmitter() eq $pkt->receiver()) {
-        if (($tmp->seqno() >= $starting_seqno) && ($tmp->seqno() < ($starting_seqno + 64))) {
+        if (($tmp->seqno() >= $starting_seqno) && ($tmp->seqno() < ($starting_seqno + $ba_bit_count))) {
           # tmp pkt might match this BA bitmap..check closer.
           my $diff = $tmp->seqno() - $starting_seqno;
-          if ($bi_as_long & (1 << $diff)) {
+          if ($bi_as_array[$diff]) {
             # Found a matching frame.
-            $bi_mask |= (1 << $diff);
+            $bi_found_array[$diff] = 1;
 
             if ($tmp->block_acked_by() != -1) {
               # This seems to be a common thing, warn once and not again.
@@ -177,40 +187,43 @@ sub add_pkt {
     }# for all pkts
 
     # See if we block-acked anything we could not find?
-    if ($bi_mask != $bi_as_long) {
-      my $missing = $bi_mask ^ $bi_as_long;
-      my $missing_str = "";
-      for ($i = 0; $i<64; $i++) {
-        if ($missing & (1<<$i)) {
-          my $missing_seqno = $starting_seqno + $i;
-          $missing_str .= $missing_seqno . " ";
+    my $missing_str = "";
 
-          # Add a dummy pkt
-          my $dummy = Packet->new(dbg => "tid-add-pkt",
-                                  frame_num => -1,
-                                  receiver => $pkt->transmitter(),
-                                  transmitter => $pkt->receiver(),
-                                  data_subtype => "DUMMY_BA_ACKED",
-                                  timestamp => $pkt->timestamp(),
-                                  seqno => $missing_seqno,
-                                  tid => $self->tidno());
-          $dummy->set_block_acked_by($pkt->frame_num());
-          push(@{$self->{pkts}}, $dummy);
-          # A transmitting block-ack indicates we dropped pkts sent to us.
-          if ($pkt->transmitter() eq $self->{addr_a}) {
-            $self->{dummy_rx_pkts}++;
-            $pkt->{dummy_rx_pkts}++;
-          }
-          else {
-            $self->{dummy_tx_pkts}++;
-            $pkt->{dummy_tx_pkts}++;
-          }
-          #print "pushing dummy pkt, seqno: $missing_seqno\n";
-          $ba_tot++;
-        }
-      }
-      print "WARNING:  block-ack frame: " . $pkt->frame_num() . " acked frames we did not capture, found-these: " . $bi_mask->as_hex .
-        " acked these: " . $bi_as_long->as_hex . " missing: " . $missing->as_hex . "($missing_str), starting-seq-no: $starting_seqno\n";
+    for ($i = 0; $i<@bi_as_array; $i++) {
+	if ($bi_as_array[$i]) {
+	    if ($bi_found_array[$i] != 1) {
+		my $missing_seqno = $starting_seqno + $i;
+		$missing_str .= $missing_seqno . " ";
+
+		# Add a dummy pkt
+		my $dummy = Packet->new(dbg => "tid-add-pkt",
+					frame_num => -1,
+					receiver => $pkt->transmitter(),
+					transmitter => $pkt->receiver(),
+					data_subtype => "DUMMY_BA_ACKED",
+					timestamp => $pkt->timestamp(),
+					seqno => $missing_seqno,
+					tid => $self->tidno());
+		$dummy->set_block_acked_by($pkt->frame_num());
+		push(@{$self->{pkts}}, $dummy);
+		# A transmitting block-ack indicates we dropped pkts sent to us.
+		if ($pkt->transmitter() eq $self->{addr_a}) {
+		    $self->{dummy_rx_pkts}++;
+		    $pkt->{dummy_rx_pkts}++;
+		}
+		else {
+		    $self->{dummy_tx_pkts}++;
+		    $pkt->{dummy_tx_pkts}++;
+		}
+		#print "pushing dummy pkt, seqno: $missing_seqno\n";
+		$ba_tot++;
+	    }# If we did not capture the frame
+	}# If BA acked frame
+    }# For all bits in block-ack
+
+    if ($missing_str ne "") {
+	print "WARNING:  block-ack frame: " . $pkt->frame_num() . " acked frames we did not capture, bitmap: "
+	    . $bitmap . " missing: ($missing_str), starting-seq-no: $starting_seqno\n";
     }
 
     my $new_ba = $ba_tot - $ba_dup;

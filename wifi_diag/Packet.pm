@@ -4,7 +4,7 @@ use warnings;
 use strict;
 
 use bignum;
-use bigint;
+#use bigint;
 our $d_counter = 0;
 
 sub new {
@@ -200,8 +200,8 @@ sub append {
   }
   elsif ($ln =~ /^\s*Block Ack Bitmap: (\S+)/) {
     #print "ba-bitmap: $1\n"; # this bitmap needs to be at least 16 bytes
-     if (length($1) != 16) {
-        print("WARNING:  input-line: $.:  ba_bitmap is " . length($1) . " bytes instead of expected 16: " . $1);
+     if (length($1) != 16 && length($1) != 128) {
+        print("WARNING:  input-line: $.:  ba_bitmap is " . length($1) . " bytes instead of expected 16/128: " . $1);
         $self->{ba_bitmap} = "0000000000000000";  # default to something somewhat sane.
      }
      else {
