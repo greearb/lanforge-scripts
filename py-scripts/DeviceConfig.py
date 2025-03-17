@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 DeviceConfig: A script for managing device configurations and network profiles for ADB devices and laptops.
 
