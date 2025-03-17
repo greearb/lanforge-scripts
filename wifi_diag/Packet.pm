@@ -108,6 +108,10 @@ sub append {
     #print "timestamp: $1\n";
     $self->{timestamp} = $1;
   }
+  elsif ($ln =~ /^\s*Epoch Arrival Time:\s+(\S+)/) {
+    #print "timestamp: $1\n";
+    $self->{timestamp} = $1;
+  }
   elsif ($ln =~ /^.* = This is the last subframe of this A-MPDU: True/) {
     $self->{is_last_ampdu} = 1;
   }
@@ -199,14 +203,8 @@ sub append {
     $self->{ba_tid} = hex($1);
   }
   elsif ($ln =~ /^\s*Block Ack Bitmap: (\S+)/) {
-    #print "ba-bitmap: $1\n"; # this bitmap needs to be at least 16 bytes
-     if (length($1) != 16 && length($1) != 128) {
-        print("WARNING:  input-line: $.:  ba_bitmap is " . length($1) . " bytes instead of expected 16/128: " . $1);
-        $self->{ba_bitmap} = "0000000000000000";  # default to something somewhat sane.
-     }
-     else {
-        $self->{ba_bitmap} = $1;
-     }
+      #print "ba-bitmap: $1\n"; # this bitmap needs to be at least 16 bytes
+      $self->{ba_bitmap} = $1;
   }
   elsif ($ln =~ /.* = Retry: Frame is being retransmitted/) {
     $self->{retrans} = 1;
@@ -281,6 +279,11 @@ sub append {
 sub frame_num {
   my $self = shift;
   return $self->{frame_num};
+}
+
+sub dummy_counter {
+  my $self = shift;
+  return $self->{dummy_counter};
 }
 
 sub type_subtype {

@@ -161,8 +161,9 @@ sub add_pkt {
             if ($tmp->block_acked_by() != -1) {
               # This seems to be a common thing, warn once and not again.
               if ($warn_dup_ba_once) {
-                print "WARNING:  block-ack frame: " . $pkt->frame_num() . " acking frame: " .
-                  $tmp->frame_num() . " already block-acked by frame: " . $tmp->block_acked_by() . ".  This warning will not be shown again.\n";
+                print "WARNING: " . $self->get_logging_id() . " block-ack frame: " . $pkt->frame_num() . " acking frame: " .
+		    $tmp->frame_num() . " Dummy# " . $tmp->dummy_counter() . " already block-acked by frame: " . $tmp->block_acked_by() .
+		    ".  This warning will not be shown again.\n";
                 $warn_dup_ba_once = 0;
               }
               $ba_dup++;
@@ -338,6 +339,12 @@ sub add_pkt {
   }
 
   push(@{$self->{pkts}}, $pkt);
+}
+
+sub get_logging_id {
+    my $self = shift;
+
+    return $self->{addr_a} . " | " . $self->{addr_b} . " | " . $self->{tidno};
 }
 
 sub check_remaining_pkts {
