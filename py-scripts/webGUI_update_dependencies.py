@@ -22,7 +22,7 @@ def main():
     )
     parser.add_argument('--pyjwt', help='Install PyJWT which is necessary for GhostRequest', action="store_true")
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
-
+    parser.add_argument('--xiab', help='Install XiaB additional dependencies', action="store_true")
 
     args = parser.parse_args()
 
@@ -41,18 +41,23 @@ This script installs python3 webGUI package dependencies.
     # 'celery' (conflicts with OS's 'click'.  But I installed rpm celery pkg, maybe this is good enough?)
     # 'python-contrab':  pip doesn't know anything about it evidently.
     # 'django-celery-results':  Version 2.4.0 will install on F36
-    
+
     packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'websocket-client',
                 'xlsxwriter', 'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search',
                 'pyserial','pexpect-serial', 'scp','scipy','simple-geometry','kaleido','psutil','aiohttp','bs4',
                 'django','django-celery-beat','django-enum-choices','django-timezone-field',
                 'flower','jsonfield','matplotlib','psycopg2-binary','wheel','pytest','pytest-html','pytest-json',
-                'django-celery-results','celery',
-                'pytest-json-report','pytest-metadata','python-dateutil','requests','pillow','tabulate','selenium','scapy']
+                'django-celery-results','celery','pytest-json-report','pytest-metadata','python-dateutil',
+                'requests','pillow','tabulate','selenium','scapy','redis','djangorestframework']
     if args.pyjwt:
         packages.append('pyjwt')
     else:
         print('Not installing PyJWT')
+    #Adding XiaB webGUI dependencies with --xiab flag
+    if args.xiab:
+        packages.extend(['channels','django-cors-headers','uvicorn[standard]','python-dotenv'])
+    else:
+        print('Not installing XiaB dependencies')
     packages_installed = []
     packages_failed = []
     subprocess.call("pip3 uninstall jwt", shell=True)
