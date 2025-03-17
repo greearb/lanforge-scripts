@@ -1670,6 +1670,15 @@ class DeviceConfig(Realm):
 
 
 if __name__ == "__main__":
+    help_summary = '''\
+    DeviceConfig: A script for managing device configurations and network profiles for ADB devices and laptops.
+
+    This script allows you to interact with both Android and Laptop devices, configure them for Wi-Fi connectivity,
+    manage groups of devices, and monitor their connections. It provides various features like creating Wi-Fi profiles,
+    configuring devices, and creating or managing groups using a CSV file as the database.
+    Mainly we use these script classes in other script that uses Groups and Profiles
+    '''
+
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -1691,8 +1700,14 @@ if __name__ == "__main__":
     parser.add_argument("--connect_profile", action="store_true")
     parser.add_argument("--create_csv", action="store_true")
     parser.add_argument('--csv_name', type=str, default='', help='')
+    parser.add_argument('--help_summary', help='Show summary of what this script does', action='store_true')
 
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     obj = DeviceConfig(lanforge_ip=args.lanforge_ip, file_name=args.file_name)
 
     if args.create_file:
