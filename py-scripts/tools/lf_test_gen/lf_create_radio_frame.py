@@ -308,6 +308,8 @@ or deselect to remove from the test json''')
                 if 'AX' in radio_type or 'BE' in radio_type:
                     if '7915' in radio_name_tmp:
                         self.use_radio_6g_var_dict[radio].set("Do Not Use")
+                    elif '7921e' in radio_name_tmp:
+                        self.use_radio_6g_var_dict[radio].set("Do Not Use")
                     else:
                         self.use_radio_6g_var_dict[radio].set("Use")
                         self.suite_test_name_6g_dict[radio] = self.radio_model_dict[radio]
