@@ -2,7 +2,7 @@
     "ct_us_001":{
         "Notes":[
             "This json file describes LANforge system and test run configuration"
-        ]  
+        ]
     },
     "test_rig_parameters":{
         "TEST_BED": "CT-US-001",
@@ -16,7 +16,7 @@
         "UPSTREAM_PORT": "1.1.eth2",
         "UPSTREAM_ALIAS": "eth2",
         "TEST_TIMEOUT": 600,
-        "EMAIL_LIST_PRODUCTION": "konikofi@candelatech.com,dylan.eskew@candelatech.com,tricia.smiley@candelatech.com,chuck.rekiere@candelatech.com,rory.little@candelatech.com",
+        "EMAIL_LIST_PRODUCTION": "konikofi@candelatech.com,alex.gavin@candelatech.com,dylan.eskew@candelatech.com,tricia.smiley@candelatech.com,chuck.rekiere@candelatech.com,rory.little@candelatech.com",
         "EMAIL_LIST_TEST": "tricia.smiley@candelatech.com,chuck.rekiere@candelatech.com",
         "EMAIL_TITLE_TXT": "CT-US-001 (192.168.100.116)",
         "EMAIL_TXT": "CT-US-001 (192.168.100.116)"
