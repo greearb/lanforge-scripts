@@ -183,42 +183,42 @@ or deselect to remove from the test json''')
             radio_entry_var.set("")
             radio_entry = tkinter.Entry(self.radio_content_frame, textvariable=self.radio_dict[radio])
             radio_entry.grid(row=radio + 2, column=4)
-            self.window_tooltip.bind(radio_entry, 'Enter LANforge radio shelf.resource.radio, example: 1.1.wiphy0')
+            self.window_tooltip.bind(radio_entry, 'LANforge radio shelf.resource.radio, example: 1.1.wiphy0')
 
             radio_port_entry_var = tkinter.StringVar()
             self.radio_port_dict[radio] = radio_port_entry_var
             radio_port_entry_var.set("")
             radio_port_entry = tkinter.Entry(self.radio_content_frame, textvariable=self.radio_port_dict[radio])
             radio_port_entry.grid(row=radio + 2, column=5)
-            self.window_tooltip.bind(radio_port_entry, 'Enter Radio Port, numberic value')
+            self.window_tooltip.bind(radio_port_entry, 'Radio Port, numberic value')
 
             radio_type_entry_var = tkinter.StringVar()
             self.radio_type_dict[radio] = radio_type_entry_var
             radio_type_entry_var.set("")
             radio_type_entry = tkinter.Entry(self.radio_content_frame, textvariable=self.radio_type_dict[radio])
             radio_type_entry.grid(row=radio + 2, column=6)
-            self.window_tooltip.bind(radio_type_entry, 'Enter Radio Type, example: 802.11abgn-AX')
+            self.window_tooltip.bind(radio_type_entry, 'Radio Type, example: 802.11abgn-AX')
 
             radio_model_entry_var = tkinter.StringVar()
             self.radio_model_dict[radio] = radio_model_entry_var
             radio_model_entry_var.set("")
             radio_model_entry = tkinter.Entry(self.radio_content_frame, textvariable=self.radio_model_dict[radio])
             radio_model_entry.grid(row=radio + 2, column=7)
-            self.window_tooltip.bind(radio_model_entry, 'Enter Radio Model Type, example: AX210')
+            self.window_tooltip.bind(radio_model_entry, 'Radio Model Type, example: AX210')
 
             radio_max_sta_entry_var = tkinter.StringVar()
             self.radio_max_sta_dict[radio] = radio_max_sta_entry_var
             radio_max_sta_entry_var.set("")
             radio_max_sta_entry = tkinter.Entry(self.radio_content_frame, textvariable=self.radio_max_sta_dict[radio])
             radio_max_sta_entry.grid(row=radio + 2, column=8)
-            self.window_tooltip.bind(radio_max_sta_entry, 'Enter Radio Maximum Stations supported')
+            self.window_tooltip.bind(radio_max_sta_entry, 'Radio Maximum Stations supported')
 
             radio_batch_entry_var = tkinter.StringVar()
             self.radio_batch_dict[radio] = radio_batch_entry_var
             radio_batch_entry_var.set("")
             radio_batch_entry = tkinter.Entry(self.radio_content_frame, textvariable=self.radio_batch_dict[radio])
             radio_batch_entry.grid(row=radio + 2, column=9)
-            self.window_tooltip.bind(radio_batch_entry, 'Enter Radio Maximum Batch supported')
+            self.window_tooltip.bind(radio_batch_entry, 'Radio Maximum Batch supported')
 
         # Max Stations
         for widget in self.radio_content_frame.winfo_children():
@@ -274,7 +274,10 @@ or deselect to remove from the test json''')
 
                 radio_name_tmp = radio_name_tmp.strip()
                 if "mt" in radio_name_tmp:
-                    radio_name_tmp = radio_name_tmp.split(' ', maxsplit=1)[0]
+                    if "7921k" in radio_name_tmp:
+                        radio_name_tmp = radio_name_tmp.replace('mt7921e (','mt').replace(')','')
+                    else:
+                        radio_name_tmp = radio_name_tmp.split(' ', maxsplit=1)[0]
                 elif "ath10" in radio_name_tmp:
                     radio_name_tmp = radio_name_tmp.replace(' (', '_').replace(')', '')
                 elif "AX2" in radio_name_tmp:
