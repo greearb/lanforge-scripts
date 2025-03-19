@@ -728,9 +728,10 @@ Summary:
 ========
 Rig: {email}
 Suite: {suite}
+Mail Subject: {subject}
 
-Server: {server}
-Server IP: {server_ip}
+Server (Test Runner): {server}
+Server (Test Runner) IP: {server_ip}
 
 Results:
 ========
@@ -761,6 +762,7 @@ DB: {db}
 Date: {date}""".format(
             email=self.email_title_txt,
             suite=self.test_suite,
+            subject=self.mail_subject,
             duration=self.suite_duration,
             start=self.suite_start_time,
             stop=self.suite_end_time,
