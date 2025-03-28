@@ -111,7 +111,7 @@ class MULTICASTProfile(LFCliBase):
         self.created_mc = {}
 
     def get_mc_names(self):
-        return self.created_mc.keys()
+        return list(self.created_mc.keys())
 
     def refresh_mc(self, debug_=False):
         for endp_name in self.get_mc_names():
