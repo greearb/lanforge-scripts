@@ -533,12 +533,7 @@ class lf_clean(Realm):
         logger.info("clean_sta: finished_clean_port_mgr {looking_port_mgr}".format(looking_port_mgr=finished_clean_port_mgr))
 
 
-def main():
-    help_summary = '''\
-    This script is used for cleaning the cross-connections, layer-3-endpoints, stations and bridges in Lanforge.
-    This script is also used to sanitize the lanforge unit, which means will clean the Port Mgr, Layer-3, L3 Endps,
-    and Layer 4-7 tabs.
-            '''
+def parse_args():
     parser = argparse.ArgumentParser(
         prog='lf_cleanup.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -666,7 +661,17 @@ LICENSE:
     parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
                         action="store_true")
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    help_summary = '''\
+    This script is used for cleaning the cross-connections, layer-3-endpoints, stations and bridges in Lanforge.
+    This script is also used to sanitize the lanforge unit, which means will clean the Port Mgr, Layer-3, L3 Endps,
+    and Layer 4-7 tabs.
+            '''
+
+    args = parse_args()
 
     # Print help summary
     if args.help_summary:
