@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_cleanup.py
 
@@ -233,8 +232,8 @@ class lf_clean(Realm):
 
     # removes endpoints that do not have a related Layer-3 cxs from the L3 Endps gui tab.
     def get_json1(self):
-        response= self.json_get("port/all")
-        return(response)
+        response = self.json_get("port/all")
+        return response
 
     def layer3_endp_clean(self):
         still_looking_endp = True
@@ -288,7 +287,7 @@ class lf_clean(Realm):
             iterations_sta += 1
             logger.info("sta_clean: iterations_sta: {iterations_sta}".format(iterations_sta=iterations_sta))
             try:
-                sta_json = super().json_get("/port/?fields=alias".format(resource=self.resource))['interfaces']
+                sta_json = super().json_get("/port/?fields=alias")['interfaces']
                 # logger.info(sta_json)
             except TypeError:
                 sta_json = None
@@ -364,7 +363,7 @@ class lf_clean(Realm):
         while still_looking_san and iterations_san <= 10:
             iterations_san += 1
             try:
-                port_mgr_json = super().json_get("/port/?fields=port+type,alias".format(resource=self.resource))['interfaces']
+                port_mgr_json = super().json_get("/port/?fields=port+type,alias")['interfaces']
                 # logger.info(port_mgr_json)
                 # logger.info(len(port_mgr_json))
             except TypeError:
@@ -417,7 +416,7 @@ class lf_clean(Realm):
             logger.info("bridge_clean: iterations_br: {iterations_br}".format(iterations_br=iterations_br))
             try:
                 # br_json = super().json_get("port/1/1/list?field=alias")['interfaces']
-                br_json = super().json_get("/port/?fields=port+type,alias".format(resource=self.resource))['interfaces']
+                br_json = super().json_get("/port/?fields=port+type,alias")['interfaces']
             except TypeError:
                 br_json = None
 
@@ -462,7 +461,7 @@ class lf_clean(Realm):
             logger.info("misc_clean: iterations_misc: {iterations_misc}".format(iterations_misc=iterations_misc))
             try:
                 # misc_json = super().json_get("port/1/1/list?field=alias")['interfaces']
-                misc_json = super().json_get("/port/?fields=alias".format(resource=self.resource))['interfaces']
+                misc_json = super().json_get("/port/?fields=alias")['interfaces']
             except TypeError:
                 misc_json = None
 
@@ -563,7 +562,7 @@ class lf_clean(Realm):
 def main():
     help_summary = '''\
     This script is used for cleaning the cross-connections, layer-3-endpoints, stations and bridges in Lanforge.
-    This script is also used to sanitize the lanforge unit, which means will clean the Port Mgr, Layer-3, L3 Endps, 
+    This script is also used to sanitize the lanforge unit, which means will clean the Port Mgr, Layer-3, L3 Endps,
     and Layer 4-7 tabs.
             '''
     parser = argparse.ArgumentParser(
@@ -678,7 +677,7 @@ LICENSE:
         '--sanitize',
         help="--sanitize, this will clear all the created objects on the Layer-3, L3 Endps, Layer 4-7, and Port Mgr LF GUI tabs",
         action='store_true')
-    parser.add_argument('--sleep',help="sleep at completion of cleanup in seconds --sleep 2")
+    parser.add_argument('--sleep', help="sleep at completion of cleanup in seconds --sleep 2")
     parser.add_argument(
         "--debug",
         help="enable debugging",
