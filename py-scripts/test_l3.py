@@ -1195,8 +1195,7 @@ class L3VariableTime(Realm):
             self.ap.say_hi()
 
         else:
-            logger.info(
-                "self.ap_read set to True and self.module is None,  will set self.ap_read to False")
+            logger.debug("self.ap_read set to True and self.module is None, will set self.ap_read to False")
             self.ap_read = False
 
         dur = self.duration_time_to_seconds(self.test_duration)
@@ -1782,6 +1781,7 @@ class L3VariableTime(Realm):
         else:
             # TODO for multicast when using single station there needs to be an interop mode
             # with a single transmitter for all of the multi-cast
+            logger.info("Creating test station port(s)")
             for station_profile in self.station_profiles:
                 if not rebuild and not self.use_existing_station_lists:
                     station_profile.use_security(
@@ -1790,9 +1790,7 @@ class L3VariableTime(Realm):
                         station_profile.ssid_pass)
                     station_profile.set_number_template(
                         station_profile.number_template)
-                    logger.info(
-                        "Creating stations on radio %s" %
-                        (self.radio_name_list[index]))
+                    logger.debug(f"Creating station port(s) on radio {self.radio_name_list[index]}")
 
                     station_profile.create(
                         radio=self.radio_name_list[index],
@@ -1850,13 +1848,18 @@ class L3VariableTime(Realm):
 
     # Returns 0 on success, non-zero on error
     def start(self, print_pass=False):
-        logger.info("Bringing up stations")
+        logger.info(f"Admin up upstream port and station port(s): {self.gather_port_eids()}")
+
+        # Admin up upstream port
         self.admin_up(self.side_b)
+
+        # Admin up created station port(s)
         for station_profile in self.station_profiles:
             for sta in station_profile.station_names:
-                logger.info("Bringing up station %s" % sta)
+                logger.debug(f"Admin up station {sta}")
                 self.admin_up(sta)
-        # TODO - Admin up existing stations
+
+        # Admin up existing station port(s)
         if self.use_existing_station_lists:
             for existing_station in self.existing_station_lists:
                 logger.info("Bringing up existing stations %s" %
@@ -6781,7 +6784,7 @@ and generate a report.
         exit(1)
 
     # Gather data for test reporting and KPI generation
-    logger.info("read in command line paramaters")
+    logger.debug("Read in command line paramaters")
     local_lf_report_dir = args.local_lf_report_dir
     test_rig = args.test_rig
     test_tag = args.test_tag
@@ -6910,7 +6913,7 @@ and generate a report.
     anqp_3gpp_cell_net_list = []
     ieee80211w_list = []
 
-    logger.info("parse radio arguments used for station configuration")
+    logger.debug("Parse radio arguments used for station configuration")
     if radios is not None:
         logger.info("radios {}".format(radios))
         for radio_ in radios:
@@ -7202,7 +7205,7 @@ and generate a report.
             wifi_settings_found = True
             for key in wifi_settings_keys:
                 if key not in radio_info_dict:
-                    logger.info("wifi_settings_keys not enabled")
+                    logger.debug("wifi_settings_keys not enabled")
                     wifi_settings_found = False
                     break
 
@@ -7210,12 +7213,11 @@ and generate a report.
                 # Check for additional flags
                 if {'wifi_mode', 'enable_flags'}.issubset(
                         radio_info_dict.keys()):
-                    logger.info("wifi_settings flags set")
+                    logger.debug("wifi_settings flags set")
                 else:
-                    logger.info(
-                        "wifi_settings is present wifi_mode, enable_flags need to be set")
-                    logger.info(
-                        "or remove the wifi_settings or set wifi_settings==False flag on the radio for defaults")
+                    logger.debug("wifi_settings is present wifi_mode, enable_flags need to be set "
+                                 "or remove the wifi_settings or set wifi_settings==False flag on "
+                                 "the radio for defaults")
                     exit(1)
                 wifi_mode_list.append(radio_info_dict['wifi_mode'])
                 enable_flags_str = radio_info_dict['enable_flags'].replace(
@@ -7320,7 +7322,7 @@ and generate a report.
             "ul_pdus %s and dl_pdus %s arrays are of different lengths will fill shorter list with size AUTO \n" %
             (len(ul_pdus), len(dl_pdus)))
 
-    logger.info("configure and create test object")
+    logger.debug("Configure test object")
     ip_var_test = L3VariableTime(
         endp_types=endp_types,
         args=args,
@@ -7418,22 +7420,25 @@ and generate a report.
         interopt_mode=interopt_mode
     )
 
-    if args.no_pre_cleanup or args.use_existing_station_list:
-        logger.info("No station pre clean up any existing cxs on LANforge")
+    if args.no_pre_cleanup:
+        logger.info("Skipping pre-test cleanup, '--no_pre_cleanup' specified")
+    elif args.use_existing_station_list:
+        logger.info("Skipping pre-test cleanup, '--use_existing_station_list' specified")
     else:
-        logger.info("clean up any existing cxs on LANforge")
+        logger.info("Performing pre-test cleanup")
         ip_var_test.pre_cleanup()
 
-    logger.info("create stations or use passed in station_list, build the test")
+    logger.info("Building test configuration")
     ip_var_test.build()
     if not ip_var_test.passes():
-        logger.critical("build step failed.")
+        logger.critical("Test configuration build failed")
         logger.critical(ip_var_test.get_fail_message())
         exit(1)
 
-    logger.info("Start the test and run for a duration")
+    logger.info("Starting test")
     ip_var_test.start(False)
 
+    # TODO: Only log this if wait actually specified
     logger.info(
         "Pausing {wait} seconds for manual inspection before conclusion of test and possible stopping of traffic and station cleanup".format(
             wait=args.wait))
@@ -7441,14 +7446,17 @@ and generate a report.
 
     # Admin down the stations
     if args.no_stop_traffic:
-        logger.info("--no_stop_traffic set leave traffic running")
+        logger.info("Test complete, '--no_stop_traffic' specified, traffic continues to run")
     else:
         if args.quiesce_cx:
+            logger.info("Test complete, quiescing traffic")
             ip_var_test.quiesce_cx()
             time.sleep(3)
         else:
+            logger.info("Test complete, stopping traffic")
             ip_var_test.stop()
 
+    logger.info("Generating test report")
     # the banner will be set in Main since the test_l3 object may be imported
     # csv_results_file = ip_var_test.get_results_csv() # csv_results_file unused flake8
     report.set_title("Test Layer 3 Cross-Connect Traffic: test_l3.py ")
@@ -7481,14 +7489,17 @@ and generate a report.
         logger.warning("Test Ended: There were Failures")
         logger.warning(ip_var_test.get_fail_message())
 
-    if args.no_cleanup or args.no_stop_traffic:
-        logger.info(
-            "--no_cleanup or --no_stop_traffic set stations will be left intact")
+    if args.no_cleanup:
+        logger.info("Skipping post-test cleanup, '--no_cleanup' specified")
+    elif args.no_stop_traffic:
+        logger.info("Skipping post-test cleanup, '--no_stop_traffic' specified")
     else:
+        logger.info("Performing post-test cleanup")
         ip_var_test.cleanup()
 
+    # TODO: This is redundant if '--no_cleanup' is not specified (already taken care of there)
     if args.cleanup_cx:
-        logger.info("cleaning layer 3 cx")
+        logger.info("Performing post-test CX traffic pair cleanup")
         ip_var_test.cleanup_cx()
 
     if ip_var_test.passes():
