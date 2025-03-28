@@ -9,6 +9,8 @@ echo "Running ap_auto_basic_cx"
 # Band Steering
 
 # Capacity
+echo "Running ap_auto_capacity"
+./ct_us_005_ap_capacity.bash
 
 # Channel Switching
 
