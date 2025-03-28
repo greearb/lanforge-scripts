@@ -6625,8 +6625,9 @@ INCLUDE_IN_README: False
 
     test_l3_parser.add_argument(
         "--wait",
-        help="--wait <time> , time to wait at the end of the test",
-        default='0')
+        help="Time (in seconds) to pause at end of test",
+        type=int,
+        default=0)
 
     test_l3_parser.add_argument('--sta_start_offset', help='Station start offset for building stations',
                                 default='0')
@@ -7438,11 +7439,10 @@ and generate a report.
     logger.info("Starting test")
     ip_var_test.start(False)
 
-    # TODO: Only log this if wait actually specified
-    logger.info(
-        "Pausing {wait} seconds for manual inspection before conclusion of test and possible stopping of traffic and station cleanup".format(
-            wait=args.wait))
-    time.sleep(int(args.wait))
+    if args.wait > 0:
+        logger.info(f"Pausing {args.wait} seconds for manual inspection before test conclusion and "
+                    "possible traffic stop/post-test cleanup")
+        time.sleep(args.wait)
 
     # Admin down the stations
     if args.no_stop_traffic:
