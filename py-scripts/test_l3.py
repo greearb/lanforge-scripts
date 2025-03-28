@@ -6756,7 +6756,7 @@ and generate a report.
     # initialize pass / fail
     test_passed = False
 
-    # set up logger
+    # Configure logging
     logger_config = lf_logger_config.lf_logger_config()
 
     # set the logger level to debug
@@ -6780,8 +6780,7 @@ and generate a report.
             "Argument \'--use_existing_station_list\' specified, but no existing stations provided. See \'--existing_station_list\'")
         exit(1)
 
-    # Gather data for test reporting
-    # for kpi.csv generation
+    # Gather data for test reporting and KPI generation
     logger.info("read in command line paramaters")
     local_lf_report_dir = args.local_lf_report_dir
     test_rig = args.test_rig
@@ -6911,7 +6910,6 @@ and generate a report.
     anqp_3gpp_cell_net_list = []
     ieee80211w_list = []
 
-    #
     logger.info("parse radio arguments used for station configuration")
     if radios is not None:
         logger.info("radios {}".format(radios))
@@ -6932,7 +6930,6 @@ and generate a report.
                         "").replace(
                             ",",
                         " ").split()))
-            # radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"', '').split()))
 
             logger.debug("radio_dict {}".format(radio_info_dict))
 
@@ -6961,37 +6958,8 @@ and generate a report.
                     break
 
             if wifi_extra_found:
-
                 logger.debug("wifi_extra: {extra}".format(
                     extra=radio_info_dict['wifi_extra']))
-                # These values are actually assigned as lists below
-                # key_mgmt = '[BLANK]'
-                # pairwise = '[BLANK]'
-                # group = '[BLANK]'
-                # psk = '[BLANK]'
-                # eap = '[BLANK]'
-                # identity = '[BLANK]'
-                # anonymous_identity = "[BLANK]"
-                # phase1 = "[BLANK]"
-                # phase2 = "[BLANK]"
-                # passwd = '[BLANK]'
-                # pin = '[BLANK]'
-                # pac_file = '[BLANK]'
-                # private_key = '[BLANK]'
-                # pk_password = '[BLANK]'
-                # hessid = "00:00:00:00:00:00"
-                # realm = "[BLANK]"
-                # client_cert = "[BLANK]"
-                # imsi = "[BLANK]"
-                # milenage = "[BLANK]"
-                # domain = "[BLANK]"
-                # roaming_consortium = "[BLANK]"
-                # venue_group = "[BLANK]"
-                # network_type = "[BLANK]"
-                # ipaddr_type_avail = "[BLANK]"
-                # network_auth_type = "[BLANK]"
-                # anqp_3gpp_cell_net = "[BLANK]"
-                # ieee80211w = 'Optional'
 
                 wifi_extra_dict = dict(
                     map(
@@ -7478,7 +7446,6 @@ and generate a report.
         if args.quiesce_cx:
             ip_var_test.quiesce_cx()
             time.sleep(3)
-        # Quisce cx
         else:
             ip_var_test.stop()
 
@@ -7516,7 +7483,7 @@ and generate a report.
 
     if args.no_cleanup or args.no_stop_traffic:
         logger.info(
-            "--no_cleanup or --no_stop_traffic set stations will be left intack")
+            "--no_cleanup or --no_stop_traffic set stations will be left intact")
     else:
         ip_var_test.cleanup()
 
