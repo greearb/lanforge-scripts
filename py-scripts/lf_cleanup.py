@@ -719,14 +719,11 @@ LICENSE:
         logger.info("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.l3_endp, sta=args.sta))
 
         response = clean.get_json1()
-        # print(response)
-        logging.debug(response)
-        logging.debug("The objects that are present in the port Manager")
+        logger.debug(response)
+        logger.debug("The objects that are present in the port Manager")
         for i in range(len(response["interfaces"])):
             response2 = list(response["interfaces"][i].keys())
-            # print(response2)
-            logging.debug(response2)
-
+            logger.debug(response2)
 
         if args.cxs:
             logger.info("cleaning cxs will also clean endp")
