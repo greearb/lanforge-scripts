@@ -531,32 +531,6 @@ class lf_clean(Realm):
         # 4. clean Port Mgr tab:
         finished_clean_port_mgr = self.port_mgr_clean()
         logger.info("clean_sta: finished_clean_port_mgr {looking_port_mgr}".format(looking_port_mgr=finished_clean_port_mgr))
-        '''
-        if self.clean_cxs:
-            # also clean the endp when cleaning cxs
-            still_looking_cxs = self.cxs_clean()
-            still_looking_endp = self.layer3_endp_clean()
-            logger.info("clean_cxs: still_looking_cxs {looking_cxs} still_looking_endp {looking_endp}".format(
-                looking_cxs=still_looking_cxs, looking_endp=still_looking_endp))
-
-        if self.clean_endp and not self.clean_cxs:
-            still_looking_endp = self.layer3_endp_clean()
-            logger.info("clean_endp: still_looking_endp {looking_endp}".format(looking_endp=still_looking_endp))
-
-        if self.clean_port_mgr:
-            still_looking_san = self.port_mgr_clean()
-            logger.info("clean_sta: still_looking_san {looking_sta}".format(looking_sta=still_looking_san))
-        if self.clean_sta:
-            still_looking_sta = self.sta_clean()
-            logger.info("clean_sta: still_looking_sta {looking_sta}".format(looking_sta=still_looking_sta))
-
-        if self.clean_br:
-            still_looking_br = self.bridge_clean()
-            logger.info("clean_br: still_looking_br {looking_br}".format(looking_br=still_looking_br))
-        if self.clean_misc:
-            still_looking_misc = self.misc_clean()
-            logger.info("clean_misc: still_looking_misc {looking_misc}".format(looking_misc=still_looking_misc))
-        '''
 
 
 def main():
@@ -694,19 +668,18 @@ LICENSE:
 
     args = parser.parse_args()
 
-    # help summary
+    # Print help summary
     if args.help_summary:
         print(help_summary)
         exit(0)
 
+    # Configure logging
     logger_config = lf_logger_config.lf_logger_config()
-    # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
     if args.debug:
         logger_config.set_level("debug")
 
-    # if args.cxs or args.endp or args.sta or args.br or args.misc:
     if args.cxs or args.l3_endp or args.sta or args.br or args.misc or args.port_mgr or args.layer4 or args.sanitize:
         clean = lf_clean(host=args.mgr,
                          resource=args.resource,
@@ -748,8 +721,6 @@ LICENSE:
             time.sleep(sleep)
 
         logger.info("Clean done")
-        # print("Clean  cxs_done {cxs_done} endp_done {endp_done} sta_done {sta_done}"
-        #    .format(cxs_done=clean.cxs_done,endp_done=clean.endp_done,sta_done=clean.sta_done))
     else:
         logger.info("please add option of --cxs ,--endp, --sta , --br, --misc to clean")
 
