@@ -5524,8 +5524,11 @@ class L3VariableTime(Realm):
     def set_report_obj(self, report):
         self.report = report
 
-    def set_dut_info(self, dut_model_num='Not Set', dut_hw_version='Not Set',
-                     dut_sw_version='Not Set', dut_serial_num='Not Set'):
+    def set_dut_info(self,
+                     dut_model_num: str = 'Not Set',
+                     dut_hw_version: str = 'Not Set',
+                     dut_sw_version: str = 'Not Set',
+                     dut_serial_num: str = 'Not Set'):
         self.dut_model_num = dut_model_num
         self.dut_hw_version = dut_hw_version
         self.dut_sw_version = dut_sw_version
@@ -5803,6 +5806,16 @@ class L3VariableTime(Realm):
                 self.report.build_table_title()
                 self.report.set_table_dataframe(last_row)
                 self.report.build_table()
+
+    def write_report(self, report):
+        """Write out HTML and PDF report as configured."""
+        self.report.write_report_location()
+        self.report.write_html_with_timestamp()
+        self.report.write_index_html()
+        # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
+        # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+        if platform.system() == 'Linux':
+            self.report.write_pdf_with_timestamp(_page_size='A3', _orientation='Landscape')
 
     def copy_reports_to_home_dir(self):
         curr_path = self.result_dir
@@ -7456,7 +7469,6 @@ and generate a report.
             logger.info("Test complete, stopping traffic")
             ip_var_test.stop()
 
-    logger.info("Generating test report")
     # the banner will be set in Main since the test_l3 object may be imported
     # csv_results_file = ip_var_test.get_results_csv() # csv_results_file unused flake8
     report.set_title("Test Layer 3 Cross-Connect Traffic: test_l3.py ")
@@ -7471,18 +7483,10 @@ and generate a report.
         dut_serial_num=args.dut_serial_num)
     ip_var_test.set_report_obj(report=report)
 
-    # generate report
+    # Generate and write out test report
+    logger.info("Generating test report")
     ip_var_test.generate_report()
-
-    # generate html and pdf
-    report.write_report_location()
-    report.write_html_with_timestamp()
-    report.write_index_html()
-    # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
-    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
-    if platform.system() == 'Linux':
-        report.write_pdf_with_timestamp(
-            _page_size='A3', _orientation='Landscape')
+    ip_var_test.write_report()
 
     # TODO move to after reporting
     if not ip_var_test.passes():
