@@ -109,8 +109,8 @@ class lf_clean(Realm):
         self.br_done = False
         self.misc_done = False
 
-    # removes the endps from the LF gui Layer 4-7 tab (--layer4):
     def layer4_endp_clean(self):
+        """Delete L4-7 endpoints (see the Layer 4-7 tab of the LANforge GUI)."""
         still_looking_endp = True
         iterations_endp = 0
 
@@ -127,12 +127,12 @@ class lf_clean(Realm):
                     layer4_endp_json.pop("warnings")
 
                 for name in list(layer4_endp_json):
-                    # if name != 'handler' and name != 'uri' and name != 'empty':
                     if name == 'endpoint':
-                        # if there is only a single endpoint:
+                        # Single endpoint
                         if type(layer4_endp_json['endpoint']) is dict:
                             endp_name = layer4_endp_json['endpoint']['name']
-                            # Remove Layer 4-7 cross connection:
+
+                            # Delete Layer 4-7 cross connection:
                             req_url = "cli-json/rm_cx"
                             data = {
                                 "test_mgr": "default_tm",
@@ -141,7 +141,7 @@ class lf_clean(Realm):
                             logger.info("Removing {endp_name}...".format(endp_name="CX_" + endp_name))
                             super().json_post(req_url, data)
 
-                            # Remove Layer 4-7 endpoint
+                            # Delete Layer 4-7 endpoint
                             req_url = "cli-json/rm_endp"
                             data = {
                                 "endp_name": endp_name
@@ -149,14 +149,14 @@ class lf_clean(Realm):
                             logger.info("Removing {endp_name}...".format(endp_name=endp_name))
                             super().json_post(req_url, data)
 
-                        # if there are > 1 endpoints:
+                        # More than one endpoint
                         else:
                             for endp_num in layer4_endp_json['endpoint']:
                                 # get L4-Endp name:
                                 for endp_values in endp_num.values():
                                     endp_name = endp_values['name']
                                     if endp_name != '':
-                                        # Remove Layer 4-7 cross connections:
+                                        # Delete Layer 4-7 cross connections:
                                         req_url = "cli-json/rm_cx"
                                         data = {
                                             "test_mgr": "default_tm",
@@ -165,7 +165,7 @@ class lf_clean(Realm):
                                         logger.info("Removing {endp_name}...".format(endp_name="CX_" + endp_name))
                                         super().json_post(req_url, data)
 
-                                        # Remove Layer 4-7 endpoint
+                                        # Delete Layer 4-7 endpoint
                                         req_url = "cli-json/rm_endp"
                                         data = {
                                             "endp_name": endp_name
@@ -177,14 +177,19 @@ class lf_clean(Realm):
                 logger.info("No endpoints found to cleanup")
                 still_looking_endp = False
                 logger.info("clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
+
             if not still_looking_endp:
                 self.endp_done = True
+
             return still_looking_endp
 
-    # removes cxs from the Layer-3 gui tab, and the related l3-endps from the L3 Endps gui tab.
-    # you have to remove CX before removing endpoints belonging to that CX
-    # Note the code changed to only remove CX and not endpoints
     def cxs_clean(self):
+        """
+        Deletes Layer-3 CXs. Does not remove Layer-3 endpoints.
+
+        See the 'Layer-3' and 'L3 Endps' tabs in the LANforge GUI.
+        NOTE: Previously this function removed Layer-3 endpoints as well.
+        """
         still_looking_cxs = True
         iterations_cxs = 1
 
@@ -196,20 +201,20 @@ class lf_clean(Realm):
             if cx_json is not None and 'empty' not in cx_json:
                 logger.info(cx_json.keys())
                 logger.info("Removing old cross connects")
+
                 # delete L3-CX based upon the L3-Endp name & the resource value from
                 # the e.i.d of the associated L3-Endps
                 cx_json.pop("handler")
                 cx_json.pop("uri")
                 if 'warnings' in cx_json:
                     cx_json.pop("warnings")
-                # if type(endp_json['endpoint']) is dict:
 
                 for cx_name in list(cx_json):
                     cxs_eid = cx_json[cx_name]['entity id']
                     cxs_eid_split = cxs_eid.split('.')
-                    # cxs_eid_split[1] == realm resource value:
                     resource_eid = str(cxs_eid_split[1])
                     # logger.info(resource_eid)
+
                     if resource_eid in self.resource or 'all' in self.resource:
                         # remove Layer-3 cx:
                         req_url = "cli-json/rm_cx"
@@ -226,16 +231,24 @@ class lf_clean(Realm):
                 logger.info("No cross connects found to cleanup")
                 still_looking_cxs = False
                 logger.info("clean_cxs still_looking_cxs {cxs_looking}".format(cxs_looking=still_looking_cxs))
+
             if not still_looking_cxs:
                 self.cxs_done = True
+
             return still_looking_cxs
 
-    # removes endpoints that do not have a related Layer-3 cxs from the L3 Endps gui tab.
     def get_json1(self):
         response = self.json_get("port/all")
         return response
 
     def layer3_endp_clean(self):
+        """
+        Delete Layer-3 endpoints with no associated Layer-3 CX.
+
+        To delete a Layer-3 traffic pair in full with this function,
+        first cleanup the CX then cleanup its associated Layer-3 endpoints.
+        See the 'Layer-3' and 'L3 Endps' tabs in the LANforge GUI.
+        """
         still_looking_endp = True
         iterations_endp = 0
 
@@ -246,7 +259,8 @@ class lf_clean(Realm):
             # logger.info(endp_json)
             if endp_json is not None:
                 logger.info("Removing old Layer 3 endpoints")
-                # if there is only a single endpoint:
+
+                # Single endpoint
                 if type(endp_json['endpoint']) is dict:
                     endp_name = endp_json['endpoint']['name']
                     req_url = "cli-json/rm_endp"
@@ -257,7 +271,7 @@ class lf_clean(Realm):
                     logger.info("Removing {endp_name}...".format(endp_name=endp_name))
                     super().json_post(req_url, data)
 
-                # if there are > 1 endpoints:
+                # More than one endpoint
                 else:
                     for name in list(endp_json['endpoint']):
                         endp_name = list(name)[0]
@@ -275,8 +289,10 @@ class lf_clean(Realm):
                 logger.info("No endpoints found to cleanup")
                 still_looking_endp = False
                 logger.info("layer3_clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
+
             if not still_looking_endp:
                 self.endp_done = True
+
             return still_looking_endp
 
     def sta_clean(self):
@@ -357,6 +373,12 @@ class lf_clean(Realm):
 
     # cleans all gui or script created objects from Port Mgr tab
     def port_mgr_clean(self):
+        """
+        Delete all virtual interfaces.
+
+        Read differently, this function attempts to delete anything
+        that isn't a physical port on the system.
+        """
         still_looking_san = True
         iterations_san = 0
 
@@ -373,11 +395,6 @@ class lf_clean(Realm):
             # get and remove LF Port Mgr objects
             if port_mgr_json is not None:
                 logger.info("Removing old stations ")
-                '''
-                NOTE: [LF system - APU2/CT521a]: if wiphy radios are deleted
-                      run the following command and reboot to fix:
-                      /root/lf_kinstall.pl --lfver 5.4.5 --do_sys_reconfig
-                '''
                 for name in list(port_mgr_json):
                     # logger.info(name)
                     # alias is the eid (ex: 1.1.eth0)
@@ -719,7 +736,7 @@ def main():
         logger.debug(response2)
 
     if args.cxs:
-        logger.info("cleaning cxs will also clean endp")
+        logger.info("Requesting CX cleanup will also cleanup endpoints")
         clean.cxs_clean()
     if args.l3_endp:
         clean.layer3_endp_clean()
@@ -741,7 +758,7 @@ def main():
         logger.info(f"Sleeping for {args.sleep} seconds post cleanup")
         time.sleep(args.sleep)
 
-    logger.info("Clean done")
+    logger.info("Requested cleanup complete")
 
 
 if __name__ == "__main__":
