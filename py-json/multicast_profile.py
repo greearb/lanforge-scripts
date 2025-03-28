@@ -2,12 +2,15 @@
 import sys
 import os
 import importlib
+import logging
 import pprint
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
+
+logger = logging.getLogger(__name__)
 
 
 class MULTICASTProfile(LFCliBase):
@@ -120,16 +123,15 @@ class MULTICASTProfile(LFCliBase):
         if self.debug:
             debug_ = True
 
+        logger.info(f"Starting multicast endpoint(s): {self.get_mc_names()}")
         for endp_name in self.get_mc_names():
-            print("Starting mcast endpoint: %s" % endp_name)
+            logger.debug(f"Starting multicast endpoint: {endp_name}")
             json_data = {
                 "endp_name": endp_name
             }
             url = "cli-json/start_endp"
             self.local_realm.json_post(url, json_data, debug_=debug_,
                                        suppress_related_commands_=suppress_related_commands)
-
-        pass
 
     def stop_mc(self, suppress_related_commands=None, debug_=False):
         if self.debug:
