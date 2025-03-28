@@ -5807,7 +5807,7 @@ class L3VariableTime(Realm):
                 self.report.set_table_dataframe(last_row)
                 self.report.build_table()
 
-    def write_report(self, report):
+    def write_report(self):
         """Write out HTML and PDF report as configured."""
         self.report.write_report_location()
         self.report.write_html_with_timestamp()
@@ -5855,6 +5855,65 @@ def valid_endp_types(_endp_type):
                 endp_type)
             exit(1)
     return _endp_type
+
+
+def configure_reporting(local_lf_report_dir: str,
+                        results_dir_name: str,
+                        csv_outfile: str,
+                        test_rig: str,
+                        test_tag: str,
+                        dut_hw_version: str,
+                        dut_sw_version: str,
+                        dut_model_num: str,
+                        dut_serial_num: str,
+                        test_id: str,
+                        **kwargs):
+    """Configure reporting, including report object and KPI CSV."""
+    # Configure report
+    #
+    # Reporting needs to be in same directory when running w/ test framework (lf_check.py)
+    if local_lf_report_dir != "":
+        report = lf_report.lf_report(
+            _path=local_lf_report_dir,
+            _results_dir_name=results_dir_name,
+            _output_html=f"{results_dir_name}.html",
+            _output_pdf=f"{results_dir_name}.pdf")
+    else:
+        report = lf_report.lf_report(
+            _results_dir_name=results_dir_name,
+            _output_html=f"{results_dir_name}.html",
+            _output_pdf=f"{results_dir_name}.pdf")
+
+    # Configure report title banner
+    #
+    # Done outside of test class, as other test scripts currently use the
+    # test class and will configure a different title
+    report.set_title("Test Layer 3 Cross-Connect Traffic: test_l3.py ")
+    report.build_banner_left()
+    report.start_content_div2()
+
+    # Configure KPI CSV. Output located in same directory as report
+    kpi_path = report.get_report_path()
+    logger.info("Report and kpi_path :{kpi_path}".format(kpi_path=kpi_path))
+
+    kpi_csv = lf_kpi_csv.lf_kpi_csv(
+        _kpi_path=kpi_path,
+        _kpi_test_rig=test_rig,
+        _kpi_test_tag=test_tag,
+        _kpi_dut_hw_version=dut_hw_version,
+        _kpi_dut_sw_version=dut_sw_version,
+        _kpi_dut_model_num=dut_model_num,
+        _kpi_dut_serial_num=dut_serial_num,
+        _kpi_test_id=test_id)
+
+    if csv_outfile is not None:
+        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        csv_outfile = "{}_{}-test_l3.csv".format(
+            csv_outfile, current_time)
+        csv_outfile = report.file_add_path(csv_outfile)
+        logger.info("csv output file : {}".format(csv_outfile))
+
+    return report, kpi_csv, csv_outfile
 
 
 def parse_args():
@@ -6798,17 +6857,7 @@ and generate a report.
         exit(1)
 
     # Gather data for test reporting and KPI generation
-    logger.debug("Read in command line paramaters")
-    local_lf_report_dir = args.local_lf_report_dir
-    test_rig = args.test_rig
-    test_tag = args.test_tag
-    dut_hw_version = args.dut_hw_version
-    dut_sw_version = args.dut_sw_version
-    dut_model_num = args.dut_model_num
-    dut_serial_num = args.dut_serial_num
-    # test_priority = args.test_priority  # this may need to be set per test
-    test_id = args.test_id
-
+    logger.info("Read in command line paramaters")
     interopt_mode = args.interopt_mode
 
     if args.test_duration:
@@ -6838,43 +6887,6 @@ and generate a report.
         radios = args.radio
     else:
         radios = None
-
-    # Create report, when running with the test framework (lf_check.py)
-    # results need to be in the same directory
-    logger.info("configure reporting")
-    if local_lf_report_dir != "":
-        report = lf_report.lf_report(
-            _path=local_lf_report_dir,
-            _results_dir_name=args.results_dir_name,
-            _output_html="{results_dir_name}.html".format(
-                results_dir_name=args.results_dir_name),
-            _output_pdf="{results_dir_name}.pdf".format(results_dir_name=args.results_dir_name))
-    else:
-        report = lf_report.lf_report(
-            _results_dir_name=args.results_dir_name,
-            _output_html="{results_dir_name}.html".format(
-                results_dir_name=args.results_dir_name),
-            _output_pdf="{results_dir_name}.pdf".format(results_dir_name=args.results_dir_name))
-
-    kpi_path = report.get_report_path()
-    logger.info("Report and kpi_path :{kpi_path}".format(kpi_path=kpi_path))
-
-    kpi_csv = lf_kpi_csv.lf_kpi_csv(
-        _kpi_path=kpi_path,
-        _kpi_test_rig=test_rig,
-        _kpi_test_tag=test_tag,
-        _kpi_dut_hw_version=dut_hw_version,
-        _kpi_dut_sw_version=dut_sw_version,
-        _kpi_dut_model_num=dut_model_num,
-        _kpi_dut_serial_num=dut_serial_num,
-        _kpi_test_id=test_id)
-
-    if args.csv_outfile is not None:
-        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        csv_outfile = "{}_{}-test_l3.csv".format(
-            args.csv_outfile, current_time)
-        csv_outfile = report.file_add_path(csv_outfile)
-        logger.info("csv output file : {}".format(csv_outfile))
 
     MAX_NUMBER_OF_STATIONS = 1000
 
@@ -7336,6 +7348,10 @@ and generate a report.
             "ul_pdus %s and dl_pdus %s arrays are of different lengths will fill shorter list with size AUTO \n" %
             (len(ul_pdus), len(dl_pdus)))
 
+    # Configure reporting
+    logger.info("Configuring report")
+    report, kpi_csv, csv_outfile = configure_reporting(**vars(args))
+
     logger.debug("Configure test object")
     ip_var_test = L3VariableTime(
         endp_types=endp_types,
@@ -7399,7 +7415,7 @@ and generate a report.
         dowebgui=args.dowebgui,
         ip=ip,
         # for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
-        result_dir=local_lf_report_dir,
+        result_dir=args.local_lf_report_dir,
 
         # wifi extra configuration
         key_mgmt_list=key_mgmt_list,
@@ -7469,13 +7485,7 @@ and generate a report.
             logger.info("Test complete, stopping traffic")
             ip_var_test.stop()
 
-    # the banner will be set in Main since the test_l3 object may be imported
-    # csv_results_file = ip_var_test.get_results_csv() # csv_results_file unused flake8
-    report.set_title("Test Layer 3 Cross-Connect Traffic: test_l3.py ")
-    report.build_banner_left()
-    report.start_content_div2()
-
-    # set dut information for reporting
+    # Set DUT information for reporting
     ip_var_test.set_dut_info(
         dut_model_num=args.dut_model_num,
         dut_hw_version=args.dut_hw_version,
