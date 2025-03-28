@@ -646,7 +646,9 @@ LICENSE:
         '--sanitize',
         help="--sanitize, this will clear all the created objects on the Layer-3, L3 Endps, Layer 4-7, and Port Mgr LF GUI tabs",
         action='store_true')
-    parser.add_argument('--sleep', help="sleep at completion of cleanup in seconds --sleep 2")
+    parser.add_argument('--sleep',
+                        help="Time in seconds to sleep after cleanup",
+                        default=0)
     parser.add_argument(
         "--debug",
         help="enable debugging",
@@ -734,10 +736,10 @@ def main():
     if args.sanitize:
         clean.sanitize_all()
 
-    if args.sleep is not None:
-        sleep = int(args.sleep)
-        logger.info("sleep option selected sleep {sleep} seconds".format(sleep=sleep))
-        time.sleep(sleep)
+    # Optional sleep after performing requested cleanup
+    if args.sleep > 0:
+        logger.info(f"Sleeping for {args.sleep} seconds post cleanup")
+        time.sleep(args.sleep)
 
     logger.info("Clean done")
 
