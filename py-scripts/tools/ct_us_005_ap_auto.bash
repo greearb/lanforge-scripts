@@ -25,5 +25,7 @@ echo "Running ap_auto_single_sta"
 ./ct_us_005_ap_auto_single_sta.bash
 
 # Multi STA Throughput vs Pkt Size
+echo "Running ap_auto_signal_sta"
+./ct_us_005_tput_multi_sta.bash
 
 # Multi Band Throughput
