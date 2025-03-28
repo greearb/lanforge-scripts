@@ -6744,16 +6744,14 @@ and generate a report.
         print(help_summary)
         exit(0)
 
-    dowebgui = False
     test_name = ""
     ip = ""
     if args.dowebgui:
         logger.info("In webGUI execution")
         if args.dowebgui:
-            dowebgui = True
             test_name = args.test_name
             ip = args.lfmgr
-            logger.info("dowebgui", dowebgui, test_name, ip)
+            logger.info("dowebgui", args.dowebgui, test_name, ip)
 
     # initialize pass / fail
     test_passed = False
@@ -7414,7 +7412,7 @@ and generate a report.
 
         # for webgui execution
         test_name=test_name,
-        dowebgui=dowebgui,
+        dowebgui=args.dowebgui,
         ip=ip,
         # for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
         result_dir=local_lf_report_dir,
