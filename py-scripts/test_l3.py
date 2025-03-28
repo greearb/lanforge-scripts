@@ -643,7 +643,7 @@ class L3VariableTime(Realm):
                  ap_if_6g="eth8",
                  ap_report_dir="",
                  ap_file="",
-                 ap_band_list=['2g', '5g', '6g'],
+                 ap_band_list=None,
 
                  #  for webgui
                  dowebgui=False,
@@ -652,35 +652,35 @@ class L3VariableTime(Realm):
                  # for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
                  result_dir="",
                  # wifi extra configuration
-                 key_mgmt_list=[],
-                 pairwise_list=[],
-                 group_list=[],
-                 psk_list=[],
-                 wep_key_list=[],
-                 ca_cert_list=[],
-                 eap_list=[],
-                 identity_list=[],
-                 anonymous_identity_list=[],
-                 phase1_list=[],
-                 phase2_list=[],
-                 passwd_list=[],
-                 pin_list=[],
-                 pac_file_list=[],
-                 private_key_list=[],
-                 pk_password_list=[],
-                 hessid_list=[],
-                 realm_list=[],
-                 client_cert_list=[],
-                 imsi_list=[],
-                 milenage_list=[],
-                 domain_list=[],
-                 roaming_consortium_list=[],
-                 venue_group_list=[],
-                 network_type_list=[],
-                 ipaddr_type_avail_list=[],
-                 network_auth_type_list=[],
-                 anqp_3gpp_cell_net_list=[],
-                 ieee80211w_list=[],
+                 key_mgmt_list=None,
+                 pairwise_list=None,
+                 group_list=None,
+                 psk_list=None,
+                 wep_key_list=None,
+                 ca_cert_list=None,
+                 eap_list=None,
+                 identity_list=None,
+                 anonymous_identity_list=None,
+                 phase1_list=None,
+                 phase2_list=None,
+                 passwd_list=None,
+                 pin_list=None,
+                 pac_file_list=None,
+                 private_key_list=None,
+                 pk_password_list=None,
+                 hessid_list=None,
+                 realm_list=None,
+                 client_cert_list=None,
+                 imsi_list=None,
+                 milenage_list=None,
+                 domain_list=None,
+                 roaming_consortium_list=None,
+                 venue_group_list=None,
+                 network_type_list=None,
+                 ipaddr_type_avail_list=None,
+                 network_auth_type_list=None,
+                 anqp_3gpp_cell_net_list=None,
+                 ieee80211w_list=None,
                  interopt_mode=False
                  ):
 
@@ -1138,38 +1138,38 @@ class L3VariableTime(Realm):
         self.ap_if_6g = ap_if_6g
         self.ap_report_dir = ap_report_dir
         self.ap_file = ap_file
-        self.ap_band_list = ap_band_list
+        self.ap_band_list = ap_band_list if ap_band_list else ['2g', '5g', '6g']
 
         # wifi extra configuration
-        self.key_mgmt_list = key_mgmt_list
-        self.pairwise_list = pairwise_list
-        self.group_list = group_list
-        self.psk_list = psk_list
-        self.wep_key_list = wep_key_list
-        self.ca_cert_list = ca_cert_list
-        self.eap_list = eap_list
-        self.identity_list = identity_list
-        self.anonymous_identity_list = anonymous_identity_list
-        self.phase1_list = phase1_list
-        self.phase2_list = phase2_list
-        self.passwd_list = passwd_list
-        self.pin_list = pin_list
-        self.pac_file_list = pac_file_list
-        self.private_key_list = private_key_list
-        self.pk_password_list = pk_password_list
-        self.hessid_list = hessid_list
-        self.realm_list = realm_list
-        self.client_cert_list = client_cert_list
-        self.imsi_list = imsi_list
-        self.milenage_list = milenage_list
-        self.domain_list = domain_list
-        self.roaming_consortium_list = roaming_consortium_list
-        self.venue_group_list = venue_group_list
-        self.network_type_list = network_type_list
-        self.ipaddr_type_avail_list = ipaddr_type_avail_list
-        self.network_auth_type_list = network_auth_type_list
-        self.anqp_3gpp_cell_net_list = anqp_3gpp_cell_net_list
-        self.ieee80211w_list = ieee80211w_list
+        self.key_mgmt_list = key_mgmt_list if key_mgmt_list else []
+        self.pairwise_list = pairwise_list if pairwise_list else []
+        self.group_list = group_list if group_list else []
+        self.psk_list = psk_list if psk_list else []
+        self.wep_key_list = wep_key_list if wep_key_list else []
+        self.ca_cert_list = ca_cert_list if ca_cert_list else []
+        self.eap_list = eap_list if eap_list else []
+        self.identity_list = identity_list if identity_list else []
+        self.anonymous_identity_list = anonymous_identity_list if anonymous_identity_list else []
+        self.phase1_list = phase1_list if phase1_list else []
+        self.phase2_list = phase2_list if phase2_list else []
+        self.passwd_list = passwd_list if passwd_list else []
+        self.pin_list = pin_list if pin_list else []
+        self.pac_file_list = pac_file_list if pac_file_list else []
+        self.private_key_list = private_key_list if private_key_list else []
+        self.pk_password_list = pk_password_list if pk_password_list else []
+        self.hessid_list = hessid_list if hessid_list else []
+        self.realm_list = realm_list if realm_list else []
+        self.client_cert_list = client_cert_list if client_cert_list else []
+        self.imsi_list = imsi_list if imsi_list else []
+        self.milenage_list = milenage_list if milenage_list else []
+        self.domain_list = domain_list if domain_list else []
+        self.roaming_consortium_list = roaming_consortium_list if roaming_consortium_list else []
+        self.venue_group_list = venue_group_list if venue_group_list else []
+        self.network_type_list = network_type_list if network_type_list else []
+        self.ipaddr_type_avail_list = ipaddr_type_avail_list if ipaddr_type_avail_list else []
+        self.network_auth_type_list = network_auth_type_list if network_auth_type_list else []
+        self.anqp_3gpp_cell_net_list = anqp_3gpp_cell_net_list if anqp_3gpp_cell_net_list else []
+        self.ieee80211w_list = ieee80211w_list if ieee80211w_list else []
 
         # AP information import the module
         if self.ap_read and self.ap_module is not None:
