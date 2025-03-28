@@ -664,6 +664,20 @@ LICENSE:
     return parser.parse_args()
 
 
+def validate_args(args):
+    """Ensure arguments specified for program are valid."""
+    if not (args.cxs
+            or args.l3_endp
+            or args.sta
+            or args.br
+            or args.misc
+            or args.port_mgr
+            or args.layer4
+            or args.sanitize):
+        logger.error("No required clean option specified. Re-run with '--help' for more information.")
+        exit(1)
+
+
 def main():
     help_summary = '''\
     This script is used for cleaning the cross-connections, layer-3-endpoints, stations and bridges in Lanforge.
@@ -672,6 +686,7 @@ def main():
             '''
 
     args = parse_args()
+    validate_args(args)
 
     # Print help summary
     if args.help_summary:
@@ -685,49 +700,46 @@ def main():
     if args.debug:
         logger_config.set_level("debug")
 
-    if args.cxs or args.l3_endp or args.sta or args.br or args.misc or args.port_mgr or args.layer4 or args.sanitize:
-        clean = lf_clean(host=args.mgr,
-                         resource=args.resource,
-                         clean_cxs=args.cxs,
-                         clean_endp=args.l3_endp,
-                         clean_sta=args.sta,
-                         clean_port_mgr=args.port_mgr,
-                         clean_misc=args.misc)
-        logger.info("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.l3_endp, sta=args.sta))
+    clean = lf_clean(host=args.mgr,
+                     resource=args.resource,
+                     clean_cxs=args.cxs,
+                     clean_endp=args.l3_endp,
+                     clean_sta=args.sta,
+                     clean_port_mgr=args.port_mgr,
+                     clean_misc=args.misc)
+    logger.info("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.l3_endp, sta=args.sta))
 
-        response = clean.get_json1()
-        logger.debug(response)
-        logger.debug("The objects that are present in the port Manager")
-        for i in range(len(response["interfaces"])):
-            response2 = list(response["interfaces"][i].keys())
-            logger.debug(response2)
+    response = clean.get_json1()
+    logger.debug(response)
+    logger.debug("The objects that are present in the port Manager")
+    for i in range(len(response["interfaces"])):
+        response2 = list(response["interfaces"][i].keys())
+        logger.debug(response2)
 
-        if args.cxs:
-            logger.info("cleaning cxs will also clean endp")
-            clean.cxs_clean()
-        if args.l3_endp:
-            clean.layer3_endp_clean()
-        if args.sta:
-            clean.sta_clean()
-        if args.port_mgr:
-            clean.port_mgr_clean()
-        if args.br:
-            clean.bridge_clean()
-        if args.misc:
-            clean.misc_clean()
-        if args.layer4:
-            clean.layer4_endp_clean()
-        if args.sanitize:
-            clean.sanitize_all()
+    if args.cxs:
+        logger.info("cleaning cxs will also clean endp")
+        clean.cxs_clean()
+    if args.l3_endp:
+        clean.layer3_endp_clean()
+    if args.sta:
+        clean.sta_clean()
+    if args.port_mgr:
+        clean.port_mgr_clean()
+    if args.br:
+        clean.bridge_clean()
+    if args.misc:
+        clean.misc_clean()
+    if args.layer4:
+        clean.layer4_endp_clean()
+    if args.sanitize:
+        clean.sanitize_all()
 
-        if args.sleep is not None:
-            sleep = int(args.sleep)
-            logger.info("sleep option selected sleep {sleep} seconds".format(sleep=sleep))
-            time.sleep(sleep)
+    if args.sleep is not None:
+        sleep = int(args.sleep)
+        logger.info("sleep option selected sleep {sleep} seconds".format(sleep=sleep))
+        time.sleep(sleep)
 
-        logger.info("Clean done")
-    else:
-        logger.info("please add option of --cxs ,--endp, --sta , --br, --misc to clean")
+    logger.info("Clean done")
 
 
 if __name__ == "__main__":
