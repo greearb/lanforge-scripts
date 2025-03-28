@@ -116,7 +116,7 @@ class lf_clean(Realm):
 
         while still_looking_endp and iterations_endp <= 10:
             iterations_endp += 1
-            logger.info("layer4_endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
+            logger.debug(f"layer4_endp_clean: iterations_endp: {iterations_endp}")
             layer4_endp_json = super().json_get("layer4")
             # logger.info(layer4_endp_json)
             if layer4_endp_json is not None and 'empty' not in layer4_endp_json:
@@ -174,9 +174,9 @@ class lf_clean(Realm):
                                         super().json_post(req_url, data)
                 time.sleep(1)
             else:
-                logger.info("No endpoints found to cleanup")
+                logger.info("No further endpoints found")
                 still_looking_endp = False
-                logger.info("clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
+                logger.debug(f"clean_endp still_looking_endp {still_looking_endp}")
 
             if not still_looking_endp:
                 self.endp_done = True
@@ -195,12 +195,12 @@ class lf_clean(Realm):
 
         while still_looking_cxs and iterations_cxs <= 10:
             iterations_cxs += 1
-            logger.info("cxs_clean: iterations_cxs: {iterations_cxs}".format(iterations_cxs=iterations_cxs))
+            logger.debug("cxs_clean: iterations_cxs: {iterations_cxs}".format(iterations_cxs=iterations_cxs))
             cx_json = super().json_get("cx")
             # endp_json = super().json_get("endp")
             if cx_json is not None and 'empty' not in cx_json:
-                logger.info(cx_json.keys())
-                logger.info("Removing old cross connects")
+                logger.debug(cx_json.keys())
+                logger.debug("Removing old cross connects")
 
                 # delete L3-CX based upon the L3-Endp name & the resource value from
                 # the e.i.d of the associated L3-Endps
@@ -222,15 +222,14 @@ class lf_clean(Realm):
                             "test_mgr": "default_tm",
                             "cx_name": cx_name
                         }
-                        # logger.info(data)
-                        logger.info("Removing {cx_name}...".format(cx_name=cx_name))
+                        logger.debug(f"Removing {cx_name}")
                         super().json_post(req_url, data)
 
                 time.sleep(5)
             else:
-                logger.info("No cross connects found to cleanup")
+                logger.info("No further Layer-3 CXs found")
                 still_looking_cxs = False
-                logger.info("clean_cxs still_looking_cxs {cxs_looking}".format(cxs_looking=still_looking_cxs))
+                logger.debug(f"clean_cxs still_looking_cxs {still_looking_cxs}")
 
             if not still_looking_cxs:
                 self.cxs_done = True
@@ -254,11 +253,11 @@ class lf_clean(Realm):
 
         while still_looking_endp and iterations_endp <= 10:
             iterations_endp += 1
-            logger.info("layer3_endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
+            logger.debug("layer3_endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
             endp_json = super().json_get("endp")
             # logger.info(endp_json)
             if endp_json is not None:
-                logger.info("Removing old Layer 3 endpoints")
+                logger.debug("Removing old Layer 3 endpoints")
 
                 # Single endpoint
                 if type(endp_json['endpoint']) is dict:
@@ -268,7 +267,7 @@ class lf_clean(Realm):
                         "endp_name": endp_name
                     }
                     # logger.info(data)
-                    logger.info("Removing {endp_name}...".format(endp_name=endp_name))
+                    logger.debug(f"Removing {endp_name}")
                     super().json_post(req_url, data)
 
                 # More than one endpoint
@@ -282,13 +281,13 @@ class lf_clean(Realm):
                             "endp_name": endp_name
                         }
                         # logger.info(data)
-                        logger.info("Removing {endp_name}...".format(endp_name=endp_name))
+                        logger.debug(f"Removing {endp_name}")
                         super().json_post(req_url, data)
                 time.sleep(1)
             else:
-                logger.info("No endpoints found to cleanup")
+                logger.info("No further Layer-3 endpoints found")
                 still_looking_endp = False
-                logger.info("layer3_clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
+                logger.debug(f"layer3_clean_endp still_looking_endp {still_looking_endp}")
 
             if not still_looking_endp:
                 self.endp_done = True
@@ -301,17 +300,20 @@ class lf_clean(Realm):
 
         while still_looking_sta and iterations_sta <= 10:
             iterations_sta += 1
-            logger.info("sta_clean: iterations_sta: {iterations_sta}".format(iterations_sta=iterations_sta))
+            logger.debug(f"sta_clean: iterations_sta: {iterations_sta}")
             try:
                 sta_json = super().json_get("/port/?fields=alias")['interfaces']
                 # logger.info(sta_json)
             except TypeError:
+                # TODO: When would this be the case
                 sta_json = None
-                logger.info("sta_json set to None")
+                logger.warning("sta_json set to None")
 
+            # TODO: Refactor this to make common w/ port removal
+            #       And delete on type not on alias
             # get and remove current stations
             if sta_json is not None:
-                logger.info("Removing old stations ")
+                logger.debug("Removing old stations")
                 for name in list(sta_json):
                     for alias in list(name):
                         info = self.name_to_eid(alias)
@@ -327,7 +329,7 @@ class lf_clean(Realm):
                                     "port": info[2]
                                 }
                                 # logger.info(data)
-                                logger.info("Removing {alias}...".format(alias=alias))
+                                logger.debug(f"Removing {alias}")
                                 super().json_post(req_url, data)
                             if 'wlan' in alias:
                                 info = self.name_to_eid(alias)
@@ -338,8 +340,10 @@ class lf_clean(Realm):
                                     "port": info[2]
                                 }
                                 # logger.info(data)
-                                logger.info("Removing {alias}...".format(alias=alias))
+                                logger.debug(f"Removing {alias}")
                                 super().json_post(req_url, data)
+
+                            # TODO: This isn't a station type port
                             if 'moni' in alias:
                                 info = self.name_to_eid(alias)
                                 req_url = "cli-json/rm_vlan"
@@ -349,8 +353,10 @@ class lf_clean(Realm):
                                     "port": info[2]
                                 }
                                 # logger.info(data)
-                                logger.info("Removing {alias}...".format(alias=alias))
+                                logger.debug(f"Removing {alias}")
                                 super().json_post(req_url, data)
+
+                            # TODO: Move this to misc cleanup logic
                             if 'Unknown' in alias:
                                 info = self.name_to_eid(alias)
                                 req_url = "cli-json/rm_vlan"
@@ -360,15 +366,17 @@ class lf_clean(Realm):
                                     "port": info[2]
                                 }
                                 # logger.info(data)
-                                logger.info("Removing {alias}...".format(alias=alias))
+                                logger.debug(f"Removing {alias}")
                                 super().json_post(req_url, data)
                 time.sleep(1)
             else:
-                logger.info("No stations found to cleanup")
+                logger.info("No further stations found")
                 still_looking_sta = False
-                logger.info("clean_sta still_looking_sta {sta_looking}".format(sta_looking=still_looking_sta))
+                logger.debug(f"clean_sta still_looking_sta {still_looking_sta}")
+
             if not still_looking_sta:
                 self.sta_done = True
+
             return still_looking_sta
 
     # cleans all gui or script created objects from Port Mgr tab
@@ -390,11 +398,11 @@ class lf_clean(Realm):
                 # logger.info(len(port_mgr_json))
             except TypeError:
                 port_mgr_json = None
-                logger.info("port_mgr_json set to None")
+                logger.warning("port_mgr_json set to None")
 
             # get and remove LF Port Mgr objects
             if port_mgr_json is not None:
-                logger.info("Removing old stations ")
+                logger.debug("Removing old stations ")
                 for name in list(port_mgr_json):
                     # logger.info(name)
                     # alias is the eid (ex: 1.1.eth0)
@@ -413,24 +421,27 @@ class lf_clean(Realm):
                                     "port": info[2]
                                 }
                                 # logger.info(data)
-                                logger.info("Removing {alias}...".format(alias=alias))
+                                logger.debug(f"Removing {alias}")
                                 super().json_post(req_url, data)
                 time.sleep(1)
             else:
-                logger.info("No stations found to cleanup")
+                logger.info("No further ports found")
                 still_looking_san = False
-                logger.info("port_mgr_clean still_looking_san {still_looking_san}".format(still_looking_san=still_looking_san))
+                logger.debug(f"port_mgr_clean still_looking_san {still_looking_san}")
+
             if not still_looking_san:
                 self.port_mgr_done = True
+
             return still_looking_san
 
     def bridge_clean(self):
         still_looking_br = True
         iterations_br = 0
 
+        # TODO: Merge this w/ prot deletion logic
         while still_looking_br and iterations_br <= 10:
             iterations_br += 1
-            logger.info("bridge_clean: iterations_br: {iterations_br}".format(iterations_br=iterations_br))
+            logger.debug(f"bridge_clean: iterations_br: {iterations_br}")
             try:
                 # br_json = super().json_get("port/1/1/list?field=alias")['interfaces']
                 br_json = super().json_get("/port/?fields=port+type,alias")['interfaces']
@@ -440,7 +451,7 @@ class lf_clean(Realm):
             # get and remove current stations
             if br_json is not None:
                 # logger.info(br_json)
-                logger.info("Removing old bridges ")
+                logger.debug("Removing old bridges")
                 for name in list(br_json):
                     for alias in list(name):
                         port_type = name[alias]['port type']
@@ -457,15 +468,17 @@ class lf_clean(Realm):
                                     "port": info[2]
                                 }
                                 # logger.info(data)
-                                logger.info("Removing {alias}...".format(alias=alias))
+                                logger.debug(f"Removing {alias}")
                                 super().json_post(req_url, data)
                 time.sleep(1)
             else:
-                logger.info("No bridges found to cleanup")
+                logger.info("No further bridge ports found")
                 still_looking_br = False
-                logger.info("clean_bridge still_looking_br {br_looking}".format(br_looking=still_looking_br))
+                logger.debug(f"clean_bridge still_looking_br {still_looking_br}")
+
             if not still_looking_br:
                 self.br_done = True
+
             return still_looking_br
 
     # Some test have various station names or a station named 1.1.eth2
@@ -475,7 +488,7 @@ class lf_clean(Realm):
 
         while still_looking_misc and iterations_misc <= 10:
             iterations_misc += 1
-            logger.info("misc_clean: iterations_misc: {iterations_misc}".format(iterations_misc=iterations_misc))
+            logger.debug(f"misc_clean: iterations_misc: {iterations_misc}")
             try:
                 # misc_json = super().json_get("port/1/1/list?field=alias")['interfaces']
                 misc_json = super().json_get("/port/?fields=alias")['interfaces']
@@ -485,7 +498,7 @@ class lf_clean(Realm):
             # get and remove current stations
             if misc_json is not None:
                 # logger.info(misc_json)
-                logger.info("Removing misc station names phy, 1.1.eth (malformed station name) ")
+                logger.debug("Removing misc station names phy, 1.1.eth (malformed station name) ")
                 for name in list(misc_json):
                     for alias in list(name):
                         if 'phy' in alias and 'wiphy' not in alias:
@@ -500,13 +513,14 @@ class lf_clean(Realm):
                                     "port": info[2]
                                 }
                                 # logger.info(data)
-                                logger.info("Removing {alias}...".format(alias=alias))
+                                logger.debug(f"Removing {alias}")
                                 super().json_post(req_url, data)
+
                         if '1.1.1.1.eth' in alias:
-                            logger.info('alias 1.1.1.1.eth {alias}'.format(alias=alias))
+                            logger.debug(f"alias 1.1.1.1.eth {alias}")
                             # need to hand construct for delete.
                             info = alias.split('.')
-                            logger.info('info {info}'.format(info=info))
+                            logger.debug(f'info {info}')
                             req_url = "cli-json/rm_vlan"
                             # info_2 = "{info2}.{info3}.{info4}".format(info2=info[2], info3=info[3], info4=info[4])
                             misc_resource = str(info[3])
@@ -517,37 +531,45 @@ class lf_clean(Realm):
                                     "port": info[4]
                                 }
                                 # logger.info(data)
-                                logger.info("Removing {alias}...".format(alias=alias))
+                                logger.debug(f"Removing {alias}")
                                 super().json_post(req_url, data)
                 time.sleep(1)
             else:
-                logger.info("No misc found to cleanup")
+                logger.info("No further miscellaneous ports found")
                 still_looking_misc = False
-                logger.info("clean_misc still_looking_misc {misc_looking}".format(misc_looking=still_looking_misc))
+                logger.debug(f"clean_misc still_looking_misc {still_looking_misc}")
+
             if not still_looking_misc:
                 self.misc_done = True
+
             return still_looking_misc
 
-    '''
-        1: delete cx (Layer-3 tab objects)
-        2: delete endp (L3 Endps tab objects)
-        3: delete cx & endp (Layer 4-7 tab objects)
-        4: delete Port Mgr tab objects
-        when deleting sta first, you will end up with phantom CX
-    '''
     def sanitize_all(self):
+        """Run comprehensive, multi-step cleanup
+
+            1: Delete Layer-3 CXs
+            2: Delete Layer-3 endpoints
+            3: Delete Layer-4 endpoints
+            4: Delete ports
+
+            NOTE: When deleting ports before Layer-3 CXs, any CXs
+                  which use the deleted ports will then appear as phantom
+        """
         # 1. clean Layer-3 tab:
         finished_clean_cxs = self.cxs_clean()
-        logger.info("clean_cxs: finished_clean_cxs {looking_cxs}".format(looking_cxs=finished_clean_cxs))
+        logger.debug(f"clean_cxs: finished_clean_cxs {finished_clean_cxs}")
+
         # 2. clean L3 Endps tab:
         finished_clean_endp = self.layer3_endp_clean()
-        logger.info("layer3_clean_endp: finished_clean_endp {looking_endp}".format(looking_endp=finished_clean_endp))
+        logger.debug(f"layer3_clean_endp: finished_clean_endp {finished_clean_endp}")
+
         # 3. clean Layer 4-7 tab:
         finished_clean_l4 = self.layer4_endp_clean()
-        logger.info("clean_l4_endp: finished_clean_l4 {looking_l4}".format(looking_l4=finished_clean_l4))
+        logger.debug(f"clean_l4_endp: finished_clean_l4 {finished_clean_l4}")
+
         # 4. clean Port Mgr tab:
         finished_clean_port_mgr = self.port_mgr_clean()
-        logger.info("clean_sta: finished_clean_port_mgr {looking_port_mgr}".format(looking_port_mgr=finished_clean_port_mgr))
+        logger.debug(f"clean_sta: finished_clean_port_mgr {finished_clean_port_mgr}")
 
 
 def parse_args():
@@ -735,7 +757,7 @@ def main():
                      clean_sta=args.sta,
                      clean_port_mgr=args.port_mgr,
                      clean_misc=args.misc)
-    logger.info("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.l3_endp, sta=args.sta))
+    logger.debug("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.l3_endp, sta=args.sta))
 
     response = clean.get_json1()
     logger.debug(response)
@@ -745,21 +767,30 @@ def main():
         logger.debug(response2)
 
     if args.cxs:
+        logger.info("Deleting Layer-3 CXs")
         logger.info("Requesting CX cleanup will also cleanup endpoints")
         clean.cxs_clean()
+        clean.layer3_endp_clean()
     if args.l3_endp:
+        logger.info("Deleting Layer-3 endpoints")
         clean.layer3_endp_clean()
     if args.sta:
+        logger.info("Deleting stations")
         clean.sta_clean()
     if args.port_mgr:
+        logger.info("Deleting ports")
         clean.port_mgr_clean()
     if args.br:
+        logger.info("Deleting bridges")
         clean.bridge_clean()
     if args.misc:
+        logger.info("Deleting miscellaneous ports")
         clean.misc_clean()
     if args.layer4:
+        logger.info("Deleting Layer-4 endpoints")
         clean.layer4_endp_clean()
     if args.sanitize:
+        logger.info("Deleting ports, Layer-3 CXs and endpoints, and Layer-4 endpoints")
         clean.sanitize_all()
 
     # Optional sleep after performing requested cleanup
