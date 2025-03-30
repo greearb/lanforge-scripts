@@ -31,3 +31,5 @@ echo "Running ap_auto_signal_sta"
 ./ct_us_005_ap_auto_tput_multi_sta.bash
 
 # Multi Band Throughput
+# echo "Running ap_auto_tput_multi_band.bash"
+# ./ct_us_005_ap_auto_tput_multi_band.bash
