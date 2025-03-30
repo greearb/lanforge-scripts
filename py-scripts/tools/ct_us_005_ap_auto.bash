@@ -10,7 +10,7 @@ echo "Running ap_auto_basic_cx"
 
 # Capacity
 echo "Running ap_auto_capacity"
-./ct_us_005_ap_capacity.bash
+./ct_us_005_ap_auto_capacity.bash
 
 # Channel Switching
 
