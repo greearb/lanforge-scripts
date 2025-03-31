@@ -1304,8 +1304,6 @@ class L3VariableTime(Realm):
 
                 # set_wifi_extra
                 if key_mgmt_ != '[BLANK]':
-                    # for teesting
-                    # if key_mgmt_ == '[BLANK]':
                     self.station_profile.set_wifi_extra(key_mgmt=key_mgmt_,
                                                         pairwise=pairwise_,
                                                         group=group_,
@@ -1333,38 +1331,39 @@ class L3VariableTime(Realm):
                                                         network_type=network_type_,
                                                         ipaddr_type_avail=ipaddr_type_avail_,
                                                         network_auth_type=network_auth_type_,
-                                                        anqp_3gpp_cell_net=anqp_3gpp_cell_net_
-                                                        )
+                                                        anqp_3gpp_cell_net=anqp_3gpp_cell_net_)
+
+                    # Configure protected management frames (PMF)
                     if ieee80211w_.lower() == 'disabled':
-                        self.station_profile.set_command_param(
-                            "add_sta", "ieee80211w", 0)
+                        self.station_profile.set_command_param("add_sta", "ieee80211w", 0)
                     elif ieee80211w_.lower() == 'required':
-                        self.station_profile.set_command_param(
-                            "add_sta", "ieee80211w", 2)
-                    # may want to set an error if not optional yet for now default to optional
+                        self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
                     else:
-                        self.station_profile.set_command_param(
-                            "add_sta", "ieee80211w", 1)
+                        # may want to set an error if not optional yet for now default to optional
+                        self.station_profile.set_command_param("add_sta", "ieee80211w", 1)
 
                 # place the enable and disable flags
                 # self.station_profile.desired_add_sta_flags = self.enable_flags
                 # self.station_profile.desired_add_sta_flags_mask = self.enable_flags
-                self.station_profile.set_reset_extra(
-                    reset_port_enable=reset_port_enable_,
-                    test_duration=self.duration_time_to_seconds(
-                        self.test_duration),
-                    reset_port_min_time=self.duration_time_to_seconds(
-                        reset_port_time_min_),
-                    reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
+                test_duration_sec = self.duration_time_to_seconds(self.test_duration)
+                reset_port_min_time_sec = self.duration_time_to_seconds(reset_port_time_min_)
+                reset_port_max_time_sec = self.duration_time_to_seconds(reset_port_time_max_)
+
+                self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,
+                                                     test_duration=test_duration_sec,
+                                                     reset_port_min_time=reset_port_min_time_sec,
+                                                     reset_port_max_time=reset_port_max_time_sec)
                 self.station_profiles.append(self.station_profile)
+
             # Use existing station list is similiar to no rebuild
             if self.use_existing_station_lists:
                 self.station_profile = self.new_station_profile()
                 for existing_station_list in self.existing_station_lists:
-                    self.station_profile.station_names.append(
-                        existing_station_list)
+                    self.station_profile.station_names.append(existing_station_list)
+
                 self.station_profiles.append(self.station_profile)
         else:
+            # Dataplane style test
             pass
 
         self.multicast_profile.host = self.lfclient_host
@@ -1976,8 +1975,6 @@ class L3VariableTime(Realm):
                 self.multicast_profile.side_a_max_pdu = ul_pdu
                 self.multicast_profile.side_b_min_pdu = dl_pdu
                 self.multicast_profile.side_b_max_pdu = dl_pdu
-
-                self
 
                 # Update connections with the new rate and pdu size config.
                 self.build(rebuild=True)
