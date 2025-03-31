@@ -1292,76 +1292,76 @@ class L3VariableTime(Realm):
                     self.anqp_3gpp_cell_net_list,
                     self.ieee80211w_list
             ):
-                self.station_profile = self.new_station_profile()
-                self.station_profile.lfclient_url = self.lfclient_url
-                self.station_profile.ssid = ssid_
-                self.station_profile.ssid_pass = ssid_password_
-                self.station_profile.security = ssid_security_
-                self.station_profile.number_template = self.number_template
-                self.station_profile.mode = mode_
-                self.station_profile.desired_add_sta_flags = enable_flags_.copy()
-                self.station_profile.desired_add_sta_flags_mask = enable_flags_.copy()
+                station_profile = self.new_station_profile()
+                station_profile.lfclient_url = self.lfclient_url
+                station_profile.ssid = ssid_
+                station_profile.ssid_pass = ssid_password_
+                station_profile.security = ssid_security_
+                station_profile.number_template = self.number_template
+                station_profile.mode = mode_
+                station_profile.desired_add_sta_flags = enable_flags_.copy()
+                station_profile.desired_add_sta_flags_mask = enable_flags_.copy()
 
                 # set_wifi_extra
                 if key_mgmt_ != '[BLANK]':
-                    self.station_profile.set_wifi_extra(key_mgmt=key_mgmt_,
-                                                        pairwise=pairwise_,
-                                                        group=group_,
-                                                        psk=psk_,
-                                                        wep_key=wep_key_,
-                                                        ca_cert=ca_cert_,
-                                                        eap=eap_,
-                                                        identity=identity_,
-                                                        anonymous_identity=anonymous_identity_,
-                                                        phase1=phase1_,
-                                                        phase2=phase2_,
-                                                        passwd=passwd_,
-                                                        pin=pin_,
-                                                        pac_file=pac_file_,
-                                                        private_key=private_key_,
-                                                        pk_password=pk_password_,
-                                                        hessid=hessid_,
-                                                        realm=realm_,
-                                                        client_cert=client_cert_,
-                                                        imsi=imsi_,
-                                                        milenage=milenage_,
-                                                        domain=domain_,
-                                                        roaming_consortium=roaming_consortium_,
-                                                        venue_group=venue_group_,
-                                                        network_type=network_type_,
-                                                        ipaddr_type_avail=ipaddr_type_avail_,
-                                                        network_auth_type=network_auth_type_,
-                                                        anqp_3gpp_cell_net=anqp_3gpp_cell_net_)
+                    station_profile.set_wifi_extra(key_mgmt=key_mgmt_,
+                                                   pairwise=pairwise_,
+                                                   group=group_,
+                                                   psk=psk_,
+                                                   wep_key=wep_key_,
+                                                   ca_cert=ca_cert_,
+                                                   eap=eap_,
+                                                   identity=identity_,
+                                                   anonymous_identity=anonymous_identity_,
+                                                   phase1=phase1_,
+                                                   phase2=phase2_,
+                                                   passwd=passwd_,
+                                                   pin=pin_,
+                                                   pac_file=pac_file_,
+                                                   private_key=private_key_,
+                                                   pk_password=pk_password_,
+                                                   hessid=hessid_,
+                                                   realm=realm_,
+                                                   client_cert=client_cert_,
+                                                   imsi=imsi_,
+                                                   milenage=milenage_,
+                                                   domain=domain_,
+                                                   roaming_consortium=roaming_consortium_,
+                                                   venue_group=venue_group_,
+                                                   network_type=network_type_,
+                                                   ipaddr_type_avail=ipaddr_type_avail_,
+                                                   network_auth_type=network_auth_type_,
+                                                   anqp_3gpp_cell_net=anqp_3gpp_cell_net_)
 
                     # Configure protected management frames (PMF)
                     if ieee80211w_.lower() == 'disabled':
-                        self.station_profile.set_command_param("add_sta", "ieee80211w", 0)
+                        station_profile.set_command_param("add_sta", "ieee80211w", 0)
                     elif ieee80211w_.lower() == 'required':
-                        self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
+                        station_profile.set_command_param("add_sta", "ieee80211w", 2)
                     else:
                         # may want to set an error if not optional yet for now default to optional
-                        self.station_profile.set_command_param("add_sta", "ieee80211w", 1)
+                        station_profile.set_command_param("add_sta", "ieee80211w", 1)
 
                 # place the enable and disable flags
-                # self.station_profile.desired_add_sta_flags = self.enable_flags
-                # self.station_profile.desired_add_sta_flags_mask = self.enable_flags
+                # station_profile.desired_add_sta_flags = self.enable_flags
+                # station_profile.desired_add_sta_flags_mask = self.enable_flags
                 test_duration_sec = self.duration_time_to_seconds(self.test_duration)
                 reset_port_min_time_sec = self.duration_time_to_seconds(reset_port_time_min_)
                 reset_port_max_time_sec = self.duration_time_to_seconds(reset_port_time_max_)
 
-                self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,
-                                                     test_duration=test_duration_sec,
-                                                     reset_port_min_time=reset_port_min_time_sec,
-                                                     reset_port_max_time=reset_port_max_time_sec)
-                self.station_profiles.append(self.station_profile)
+                station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,
+                                                test_duration=test_duration_sec,
+                                                reset_port_min_time=reset_port_min_time_sec,
+                                                reset_port_max_time=reset_port_max_time_sec)
+                self.station_profiles.append(station_profile)
 
             # Use existing station list is similiar to no rebuild
             if self.use_existing_station_lists:
-                self.station_profile = self.new_station_profile()
+                station_profile = self.new_station_profile()
                 for existing_station_list in self.existing_station_lists:
-                    self.station_profile.station_names.append(existing_station_list)
+                    station_profile.station_names.append(existing_station_list)
 
-                self.station_profiles.append(self.station_profile)
+                self.station_profiles.append(station_profile)
         else:
             # Dataplane style test
             pass
