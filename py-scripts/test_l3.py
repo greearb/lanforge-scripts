@@ -5815,6 +5815,7 @@ class L3VariableTime(Realm):
             self.report.write_pdf_with_timestamp(_page_size='A3', _orientation='Landscape')
 
     def copy_reports_to_home_dir(self):
+        """Copy generated reports to home directory when run in WebGUI mode."""
         curr_path = self.result_dir
         home_dir = os.path.expanduser("~")
         out_folder_name = "WebGui_Reports"
@@ -5829,9 +5830,18 @@ class L3VariableTime(Realm):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
 
-    # End of the main class.
+    def webgui_finalize(self):
+        """Test report finalization run when in WebGUI mode."""
+        last_entry = self.overall[len(self.overall) - 1]
+        last_entry["status"] = "Stopped"
+        last_entry["timestamp"] = self.get_time_stamp_local()
+        last_entry["end_time"] = self.get_time_stamp_local()
+        self.overall.append(last_entry)
 
-# Check some input values.
+        df1 = pd.DataFrame(self.overall)
+        df1.to_csv('{}/overall_multicast_throughput.csv'.format(self.result_dir), index=False)
+
+        self.copy_reports_to_home_dir()
 
 
 # Only used by argparser, so safe to exit in this function
@@ -7423,6 +7433,7 @@ and generate a report.
         interopt_mode=interopt_mode
     )
 
+    # Perform pre-test cleanup, if configured to do so
     if args.no_pre_cleanup:
         logger.info("Skipping pre-test cleanup, '--no_pre_cleanup' specified")
     elif args.use_existing_station_list:
@@ -7431,6 +7442,7 @@ and generate a report.
         logger.info("Performing pre-test cleanup")
         ip_var_test.pre_cleanup()
 
+    # Build test configuration
     logger.info("Building test configuration")
     ip_var_test.build()
     if not ip_var_test.passes():
@@ -7438,6 +7450,7 @@ and generate a report.
         logger.critical(ip_var_test.get_fail_message())
         exit(1)
 
+    # Run test
     logger.info("Starting test")
     ip_var_test.start(False)
 
@@ -7492,18 +7505,11 @@ and generate a report.
     if ip_var_test.passes():
         test_passed = True
         logger.info("Full test passed, all connections increased rx bytes")
-    if ip_var_test.dowebgui:
-        last_entry = ip_var_test.overall[len(ip_var_test.overall) - 1]
-        last_entry["status"] = "Stopped"
-        last_entry["timestamp"] = ip_var_test.get_time_stamp_local()
-        last_entry["end_time"] = ip_var_test.get_time_stamp_local()
-        ip_var_test.overall.append(
-            last_entry
-        )
-        df1 = pd.DataFrame(ip_var_test.overall)
-        df1.to_csv('{}/overall_multicast_throughput.csv'.format(ip_var_test.result_dir), index=False)
-        # copying to home directory i.e home/user_name
-        ip_var_test.copy_reports_to_home_dir()
+
+    # Run WebGUI-specific post test logic
+    if args.dowebgui:
+        ip_var_test.webgui_finalize()
+
     if test_passed:
         ip_var_test.exit_success()
     else:
