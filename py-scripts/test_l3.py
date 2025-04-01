@@ -774,6 +774,7 @@ class L3VariableTime(Realm):
         self.no_cleanup = no_cleanup
         self.use_existing_station_lists = use_existing_station_lists
         self.existing_station_lists = existing_station_lists
+        self.station_names_list = []
 
         self.wait_for_ip_sec = self.duration_time_to_seconds(wait_for_ip_sec)
         self.exit_on_ip_acquired = exit_on_ip_acquired
@@ -1355,9 +1356,20 @@ class L3VariableTime(Realm):
                     station_profile.station_names.append(existing_station_list)
 
                 self.station_profiles.append(station_profile)
+
+            # Generate list of all stations, both created and existing
+            #
+            # Both are stored in 'self.station_profiles', but only
+            # the 'station_names' field is really valid for the existing
+            # stations profile
+            for station_profile in self.station_profiles:
+                self.station_names_list.extend(station_profile.station_names)
         else:
             # Dataplane style test
-            pass
+            #
+            # No need to create anything, as this assumes both test ports created,
+            # rather than just 'side_b'
+            self.station_names_list = [self.side_a]
 
         self.multicast_profile.host = self.lfclient_host
         self.cx_profile.host = self.lfclient_host
@@ -1367,6 +1379,52 @@ class L3VariableTime(Realm):
         self.lf_endps = None
         self.udp_endps = None
         self.tcp_endps = None
+
+    def _set_ports_up(self):
+        """Set all test ports up."""
+        logger.info(f"Admin up upstream port and station port(s): {self.gather_port_eids()}")
+
+        # Admin up upstream port
+        self.admin_up(self.side_b)
+
+        # Admin up created station port(s)
+        #
+        # NOTE: Could use common 'self.station_names_list' here,
+        #       but there's benefit to up'ing and logging
+        #       created vs. existing stations separately
+        for station_profile in self.station_profiles:
+            for sta in station_profile.station_names:
+                logger.debug(f"Admin up station {sta}")
+                self.admin_up(sta)
+
+        # Admin up existing station port(s)
+        if self.use_existing_station_lists:
+            for existing_station in self.existing_station_lists:
+                logger.debug(f"Bringing up existing stations {existing_station}")
+                self.admin_up(existing_station)
+
+    def _wait_ports_connected(self) -> int:
+        """Check that all test ports connect to the DUT.
+
+        Check includes phantom state, admin state, and IPv4 configured.
+
+        Returns:
+            int: 0 on success, non-zero on failure
+        """
+        success = self.wait_for_ip([self.side_b] + self.station_names_list,
+                                   timeout_sec=self.wait_for_ip_sec)
+        if success:
+            logger.info("All ports connected successfully")
+            if self.exit_on_ip_acquired:
+                logger.info("Configured to exit on successful IPv4 configuration")
+                exit(1)
+        elif self.interopt_mode:
+            logger.warning("Running in InterOp mode, ignoring IPv4 configuration failure and continuing")
+        else:
+            logger.critical("One or more test ports did not receive an IPv4 address "
+                            f"in {self.wait_for_ip_sec} seconds")
+
+        return 0 if success else -1
 
     def get_results_csv(self):
         # print("self.csv_results_file {}".format(self.csv_results_file.name))
@@ -1833,64 +1891,19 @@ class L3VariableTime(Realm):
                 "PASS: Stations & CX build finished: created/updated: %s stations and %s connections." %
                 (self.station_count, self.cx_count))
 
-    # Run the main body of the test logic.
-    # todo there may be a need to start all existing stations on lanforge
-    # sta_json = super().json_get(
-    #   "port/1/{resource}/list?field=alias".format(resource=self.resource))['interfaces']
+    def start(self, print_pass=False) -> int:
+        """Run configured Layer-3 variable time test.
 
-    # Returns 0 on success, non-zero on error
-    def start(self, print_pass=False):
-        logger.info(f"Admin up upstream port and station port(s): {self.gather_port_eids()}")
+        Args:
+            print_pass (bool, optional): Enable printing test pass upon completion.
+                                         Defaults to False.
 
-        # Admin up upstream port
-        self.admin_up(self.side_b)
+        Returns:
+            int: 0 on success, non-zero on failure.
+        """
+        self._set_ports_up()
+        self._wait_ports_connected()
 
-        # Admin up created station port(s)
-        for station_profile in self.station_profiles:
-            for sta in station_profile.station_names:
-                logger.debug(f"Admin up station {sta}")
-                self.admin_up(sta)
-
-        # Admin up existing station port(s)
-        if self.use_existing_station_lists:
-            for existing_station in self.existing_station_lists:
-                logger.info("Bringing up existing stations %s" %
-                            existing_station)
-                self.admin_up(existing_station)
-
-        temp_stations_list = []
-        # temp_stations_list.append(self.side_b)
-        for station_profile in self.station_profiles:
-            temp_stations_list.extend(station_profile.station_names.copy())
-
-        # if self.use_existing_station_lists:
-        #    # for existing_station in self.existing_station_lists:
-        #    temp_stations_list.extend(self.existing_station_lists.copy())
-
-        temp_stations_list_with_side_b = temp_stations_list.copy()
-        # wait for b side to get IP
-        temp_stations_list_with_side_b.append(self.side_b)
-        logger.debug("temp_stations_list {temp_stations_list}".format(
-            temp_stations_list=temp_stations_list))
-        logger.debug("temp_stations_list_with_side_b {temp_stations_list_with_side_b}".format(
-            temp_stations_list_with_side_b=temp_stations_list_with_side_b))
-
-        if self.wait_for_ip(temp_stations_list_with_side_b, timeout_sec=self.wait_for_ip_sec):
-            logger.info("ip's acquired")
-            if self.exit_on_ip_acquired:
-                logger.info("exit_on_ip_acquired")
-                exit(1)
-        else:
-            # No reason to continue
-            logger.critical(
-                "ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
-            if self.interopt_mode:
-                pass  # continue to try to run
-            else:
-                return 1
-
-        # self.csv_generate_column_headers()
-        # logger.debug(csv_header)
         self.csv_add_column_headers()
 
         # dl - ports
@@ -2131,7 +2144,7 @@ class L3VariableTime(Realm):
                                     ap_row_tx_dl.append(ap_row_chanim)
 
                                     self.write_dl_port_csv(
-                                        len(temp_stations_list),
+                                        len(self.station_names_list),
                                         ul,
                                         dl,
                                         ul_pdu_str,
@@ -2160,7 +2173,7 @@ class L3VariableTime(Realm):
                                     # total_ul_rate_ll, total_ul_pkts_ll, ul_tx_drop_percent = self.get_endp_stats_for_port(
                                     #    port_data["port"], endps)
                                     self.write_ul_port_csv(
-                                        len(temp_stations_list),
+                                        len(self.station_names_list),
                                         ul,
                                         dl,
                                         ul_pdu_str,
@@ -2209,7 +2222,7 @@ class L3VariableTime(Realm):
                                      total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent) = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
                                     self.write_dl_port_csv(
-                                        len(temp_stations_list),
+                                        len(self.station_names_list),
                                         ul,
                                         dl,
                                         ul_pdu_str,
@@ -2389,7 +2402,7 @@ class L3VariableTime(Realm):
 
                     # At end of test step, record KPI into kpi.csv
                     self.record_kpi_csv(
-                        len(temp_stations_list),
+                        len(self.station_names_list),
                         ul,
                         dl,
                         ul_pdu_str,
@@ -2402,7 +2415,7 @@ class L3VariableTime(Realm):
 
                     # At end of test step, record results information. This is
                     self.record_results_total(
-                        len(temp_stations_list),
+                        len(self.station_names_list),
                         ul,
                         dl,
                         ul_pdu_str,
