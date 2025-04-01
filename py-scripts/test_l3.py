@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 NAME: test_l3.py
 
@@ -544,37 +543,31 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
+# LANforge automation-specific imports
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
-
-# from lf_graph import lf_bar_graph_horizontal
-# from lf_graph import lf_bar_graph
-
-
-# additional imports for testing with vap
 lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
 modify_vap = importlib.import_module("py-scripts.modify_vap")
 lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
-
-# cleanup library
 lf_cleanup = importlib.import_module("py-scripts.lf_cleanup")
-
-
 Realm = realm.Realm
 
 logger = logging.getLogger(__name__)
 
 
-# This class handles running the test and generating reports.
 class L3VariableTime(Realm):
-    # May raise an exception if incorrect values specified
+    """Test class for variable-time Layer-3 traffic tests.
+
+    This test class provides methods to run the configured test,
+    query data for relevant LANforge ports and traffic pairs during
+    the test, and generate reports upon completion.
+    """
     def __init__(self,
                  endp_types,
                  args,
