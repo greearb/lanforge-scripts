@@ -6798,8 +6798,6 @@ INCLUDE_IN_README: False
 #
 # Safe to exit in this function, as this should only be called by this script
 def main():
-    lfjson_host = "localhost"
-    lfjson_port = 8080
     endp_types = "lf_udp"
 
     help_summary = '''\
@@ -6842,8 +6840,6 @@ and generate a report.
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-    debug = args.debug
-
     # Validate existing station list configuration if specified before starting test
     if not args.use_existing_station_list and args.existing_station_list:
         logger.error("Existing stations specified, but argument \'--use_existing_station_list\' not specified")
@@ -6857,28 +6853,8 @@ and generate a report.
     logger.info("Read in command line paramaters")
     interopt_mode = args.interopt_mode
 
-    if args.test_duration:
-        test_duration = args.test_duration
-
-    if args.polling_interval:
-        polling_interval = args.polling_interval
-
     if args.endp_type:
         endp_types = args.endp_type
-
-    if args.lfmgr:
-        lfjson_host = args.lfmgr
-
-    if args.lfmgr_port:
-        lfjson_port = args.lfmgr_port
-
-    if args.upstream_port:
-        side_b = args.upstream_port
-
-    if args.downstream_port:
-        side_a = args.downstream_port
-    else:
-        side_a = None
 
     if args.radio:
         radios = args.radio
@@ -7354,8 +7330,8 @@ and generate a report.
         endp_types=endp_types,
         args=args,
         tos=args.tos,
-        side_b=side_b,
-        side_a=side_a,
+        side_b=args.upstream_port,
+        side_a=args.downstream_port,
         radio_name_list=radio_name_list,
         number_of_stations_per_radio_list=number_of_stations_per_radio_list,
         ssid_list=ssid_list,
@@ -7378,11 +7354,11 @@ and generate a report.
         attenuators=attenuators,
         atten_vals=atten_vals,
         number_template="00",
-        test_duration=test_duration,
-        polling_interval=polling_interval,
-        lfclient_host=lfjson_host,
-        lfclient_port=lfjson_port,
-        debug=debug,
+        test_duration=args.test_duration,
+        polling_interval=args.polling_interval,
+        lfclient_host=args.lfmgr,
+        lfclient_port=args.lfmgr_port,
+        debug=args.debug,
         kpi_csv=kpi_csv,
         no_cleanup=args.no_cleanup,
         use_existing_station_lists=args.use_existing_station_list,
