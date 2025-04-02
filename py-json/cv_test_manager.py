@@ -344,18 +344,35 @@ class cv_test(Realm):
 
         start_try = 0
         while True:
+            # Attempt to create test as configured
+            #
+            # This may fail for a number of reasons, including there
+            # already being an active test instance with the same name
+            #
+            # Note that this logic only checks for test instance with same name.
+            # It currently has no logic to detect any *other* active tests
+            # with a different test instance name
             response = self.create_test(test_name, instance_name, load_old)
-            if response is not None and "response" in response[0]["LAST"]:
-                if response[0]["LAST"]["response"] == "OK":
+            logger.debug(f"Create test response data: {response}")
+
+            # Check response data to see if test creation was successful
+            if response and len(response) > 0:
+                response = response[0]
+                if "LAST" in response and "response" in response["LAST"] \
+                        and response["LAST"]["response"] == "OK":
+                    # Successfully created test
                     break
-            else:
-                logger.info("Could not create test, try: %i/60:\n" % start_try)
-                pprint(response)
-                start_try += 1
-                if start_try > 60:
-                    logger.error("ERROR:  Could not start within 60 tries, aborting.")
-                    exit(1)
-                time.sleep(1)
+
+                logger.warning(f"Create test response data not in expected format: {response}")
+
+            # Failed to create test, try again until our try counter expires
+            logger.warning(f"Could not create test, try: {start_try}/60:")
+
+            start_try += 1
+            if start_try > 60:
+                logger.error("ERROR:  Could not start within 60 tries, aborting.")
+                exit(1)
+            time.sleep(1)
 
         self.load_test_config(config_name, instance_name)
         self.auto_save_report(instance_name)
