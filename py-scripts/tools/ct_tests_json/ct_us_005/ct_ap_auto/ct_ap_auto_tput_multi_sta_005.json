@@ -89,6 +89,7 @@
                   " --raw_line 'lt_sta_count: 4'",
                   " --raw_line 'dur20: 7'",
                   " --raw_line 'hunt_iter: 5'",
+                  " --raw_line 'station_increment_tput: 1,2'",
                   " --pull_report",
                   " --local_lf_report_dir REPORT_PATH",
                   " --test_tag 'AP_AUTO_TPUT_MULTI_STA'",
