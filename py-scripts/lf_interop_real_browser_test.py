@@ -2,7 +2,7 @@
 # flake8: noqa
 """
 Purpose: To be generic script for LANforge-Interop devices(Real clients) which runs layer4-7 traffic
-    For now the test script supports Real Browser test for Androids. 
+    For now the test script supports Real Browser test for Androids.
 
 Pre-requisites: Real clients should be connected to the LANforge MGR and Interop app should be open on the real clients which are connected to Lanforge
 
@@ -53,7 +53,7 @@ NOTES:
     2. Always specify the duration in minutes (for example: --duration 3 indicates a duration of 3 minutes).
     3. If --device_list are not given after passing the CLI, a list of available devices will be displayed on the terminal.
     4. For --url, you can specify the URL (e.g., www.google.com).
-    5. To run the test by specifying the incremental capacity, enable the --incremental flag. 
+    5. To run the test by specifying the incremental capacity, enable the --incremental flag.
 
 STATUS: BETA RELEASE
 
@@ -69,20 +69,20 @@ Copyright 2023 Candela Technologies Inc.
 
 """
 
-import sys          
-import os          
-import importlib    
-import argparse     
-import time         
-import datetime     
+import sys
+import os
+import importlib
+import argparse
+import time
+import datetime
 import pandas as pd
-import numpy as np  
-import matplotlib.pyplot as plt  
-import logging     
-import json      
+import numpy as np
+import matplotlib.pyplot as plt
+import logging
+import json
 import shutil
-from datetime import datetime, timedelta  
-from lf_graph import lf_bar_graph_horizontal  
+from datetime import datetime, timedelta
+from lf_graph import lf_bar_graph_horizontal
 
 
 
@@ -117,38 +117,38 @@ class RealBrowserTest(Realm):
                 urls_per_tenm=None, duration=None, resource_ids = None, dowebgui = False,result_dir = "",test_name = None, incremental = None,postcleanup=False,precleanup=False):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         # Initialize attributes with provided parameters
-        self.host = host 
-        self.ssid = ssid 
-        self.passwd = passwd 
-        self.encryp = encryp  
+        self.host = host
+        self.ssid = ssid
+        self.passwd = passwd
+        self.encryp = encryp
         self.supported_release = suporrted_release
-        self.max_speed = max_speed  
-        self.url = url  
+        self.max_speed = max_speed
+        self.url = url
         self.urls_per_tenm = urls_per_tenm
-        self.duration = duration  
+        self.duration = duration
         self.resource_ids = resource_ids
         self.dowebgui = dowebgui
-        self.result_dir = result_dir 
-        self.test_name = test_name 
+        self.result_dir = result_dir
+        self.test_name = test_name
         self.incremental = incremental
         self.postCleanUp=postcleanup
         self.preCleanUp=precleanup
-        
-        # Initialize additional attributes
-        self.adb_device_list = None 
-        self.phn_name = [] 
-        self.device_name = []   
-        self.android_devices = []
-        self.other_os_list = [] 
-        self.android_list = []   
-        self.other_list = [] 
-        self.real_sta_data_dict = {} 
-        self.health = None  
-        self.phone_data = None      
 
-        # Initialize RealDevice instance      
+        # Initialize additional attributes
+        self.adb_device_list = None
+        self.phn_name = []
+        self.device_name = []
+        self.android_devices = []
+        self.other_os_list = []
+        self.android_list = []
+        self.other_list = []
+        self.real_sta_data_dict = {}
+        self.health = None
+        self.phone_data = None
+
+        # Initialize RealDevice instance
         self.devices = base_RealDevice(manager_ip = self.host, selected_bands = [])
-        # Initialize local realm 
+        # Initialize local realm
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=8080)
         # Initialize HTTP profile for testing
         self.http_profile = self.local_realm.new_http_profile()
@@ -164,7 +164,7 @@ class RealBrowserTest(Realm):
                                             _exit_on_error=False)
         # Initialize utility
         self.utility = base.UtilityInteropWifi(host_ip=self.host)
-        # Initialize generic endpoints profile 
+        # Initialize generic endpoints profile
         # self.generic_endps_profile = self.new_generic_endp_profile()
         # self.generic_endps_profile.type = 'youtube'
         # self.generic_endps_profile.name_prefix = "yt"
@@ -293,7 +293,7 @@ class RealBrowserTest(Realm):
         self.http_profile.create(ports=self.phone_data, sleep_time=.5,
                                  suppress_related_commands_=None, http=True,
                                  http_ip=self.url, interop=True,timeout=1000)
-    
+
     def convert_to_dict(self,input_list):
         """
             Creating dictionary for devices for pre_cleanup
@@ -318,23 +318,23 @@ class RealBrowserTest(Realm):
             incremental_temp.append(len(keys[index:]))
         elif len(self.incremental) == 1 and len(keys) > 1:
             incremental_value = self.incremental[0]
-            div = len(keys)//incremental_value 
-            mod = len(keys)%incremental_value 
+            div = len(keys)//incremental_value
+            mod = len(keys)%incremental_value
 
             for i in range(div):
                 if len(incremental_temp):
                     incremental_temp.append(incremental_temp[-1] + incremental_value)
                 else:
                     incremental_temp.append(incremental_value)
-            
+
             if mod:
                 incremental_temp.append(incremental_temp[-1] + mod)
             created_incremental_values = incremental_temp
-        
+
         if not created_incremental_values:
             created_incremental_values = self.incremental
         return created_incremental_values
-    
+
     def start(self):
         # Starts the layer 4-7 traffic for created CX end points
         """
@@ -355,7 +355,7 @@ class RealBrowserTest(Realm):
                     continue
         except Exception as e:
             pass
-    
+
     def start_specific(self,cx_start_list):
         """
             Starts the layer 4-7 traffic for specific CX endpoints.
@@ -433,28 +433,28 @@ class RealBrowserTest(Realm):
     #     for interface in response_port['interfaces']:
     #         for port, port_data in interface.items():
     #             result = '.'.join(port.split('.')[:2])
-                
+
     #             # Check if the result exists in ports_list
     #             matching_entry = next((entry for entry in ports_list if entry['eid'] == result), None)
-                
+
     #             if matching_entry:
-    #                 port_ip = port_data['ip']                    
+    #                 port_ip = port_data['ip']
     #                 if port_ip == matching_entry['ctrl-ip']:
     #                     gen_ports_list.append(port.split('.')[-1])
     #                     break
 
     #     gen_ports_list = ",".join(gen_ports_list)
-        
+
     #     # Retrieve OS types excluding Android
     #     real_sta_os_types = [os_types_dict[resource_id] for resource_id in os_types_dict if os_types_dict[resource_id] != 'android']
-        
+
     #     # Create generic endpoints using generic_endps_profile
     #     if (self.generic_endps_profile.create(ports=self.other_list, sleep_time=.5, real_client_os_types=real_sta_os_types, gen_port = gen_ports_list, from_script = "realbrowser")):
     #         logging.info('Real client generic endpoint creation completed.')
     #     else:
     #         logging.error('Real client generic endpoint creation failed.')
     #         exit(0)
-        
+
     #     # Set endpoint report time to ping packet interval
     #     for endpoint in self.generic_endps_profile.created_endp:
     #         self.generic_endps_profile.set_report_timer(endp_name=endpoint, timer=250)
@@ -471,11 +471,11 @@ class RealBrowserTest(Realm):
         # Stops the layer 4-7 traffic for created CX end points
         # Set remaining time in webGUI to "0:00:00" if resource IDs are provided
         if self.resource_ids:
-            self.data['remaining_time_webGUI'] = ["0:00:00"] * len(self.data['status']) 
+            self.data['remaining_time_webGUI'] = ["0:00:00"] * len(self.data['status'])
         logging.info("Setting Cx State to Stopped")
         # Stop the CX for HTTP profile
         self.http_profile.stop_cx()
-    
+
     def precleanup(self):
         self.http_profile.cleanup()
 
@@ -513,7 +513,7 @@ class RealBrowserTest(Realm):
         # self.generic_endps_profile.created_cx = []
         # self.generic_endps_profile.created_endp = []
         logging.info('Cleanup Successful')
-    
+
     def my_monitor(self, data_mon):
         """
             Retrieves monitoring data for the created CX endpoints based on specified data metrics.
@@ -636,7 +636,7 @@ class RealBrowserTest(Realm):
         #     print("formatted_endtime_str",self.formatted_endtime_str)
 
 
-        self.all_cx_list.extend(cx_list) 
+        self.all_cx_list.extend(cx_list)
 
         resource_ids = list(map(int, self.resource_ids.split(',')))
         self.data_for_webui['resources'] = resource_ids
@@ -646,17 +646,17 @@ class RealBrowserTest(Realm):
         df = pd.DataFrame(self.data)
         # If 'start_time' column not present, initialize it to 0
         # if 'start_time' not in df.columns:
-        #     df['start_time'] = 0 
+        #     df['start_time'] = 0
 
         # self.data['start_time'] = [starttime] * len(self.data["name"])
         # self.data['start_time'] = df.apply(
         #     lambda row: (
         #         datetime.now()  # Accumulate inc_value
-        #         if row['start_time'] == 0 and row['name'] in cx_list 
+        #         if row['start_time'] == 0 and row['name'] in cx_list
         #         else row['start_time']  # Keep existing inc_value
-        #     ), 
+        #     ),
         #     axis=1
-        # ) 
+        # )
 
         current_time = datetime.now()
         endtime = ""
@@ -672,7 +672,7 @@ class RealBrowserTest(Realm):
         # Set end_time and remaining_time_webGUI if dowebgui is True
         if self.dowebgui:
             # self.data['end_time'] = [endtime] * len(self.data["name"])
-            end_time = datetime.strptime(endtime, "%Y-%m-%dT%H:%M:%S") 
+            end_time = datetime.strptime(endtime, "%Y-%m-%dT%H:%M:%S")
             self.data["remaining_time"] = [end_time - current_time] * len(self.data['name'])
         # else:
         #     # Set end_time based on conditions for items in cx_list
@@ -680,12 +680,12 @@ class RealBrowserTest(Realm):
         #     self.data['end_time'] = df.apply(
         #         lambda row: (
         #             endtime  # Set endtime if end_time is 0 and name is in cx_list
-        #             if row['end_time'] == 0 and row['name'] in cx_list 
+        #             if row['end_time'] == 0 and row['name'] in cx_list
         #             else row['end_time'] # Keep existing end_time
-        #         ), 
+        #         ),
         #         axis=1
         #     )
- 
+
         endtime_check = datetime.strptime(endtime, "%Y-%m-%dT%H:%M:%S")
         self.data['status'] = self.my_monitor('status')
         self.data['required_count'] = [self.urls_per_tenm] * len(self.data['name'])
@@ -709,7 +709,7 @@ class RealBrowserTest(Realm):
 
         for alias in eid_data["interfaces"]:
             for i in alias:
-                # alias[i]['mac'] alias[i]['ssid'] alias[i]['mode'] resource_hw_data['resource']['user']  
+                # alias[i]['mac'] alias[i]['ssid'] alias[i]['mode'] resource_hw_data['resource']['user']
                 if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
                     resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
                     hw_version = resource_hw_data['resource']['hw version']
@@ -729,11 +729,11 @@ class RealBrowserTest(Realm):
         self.data['device_type'] = device_type
         self.data['username'] = username
         self.data['ssid'] = ssid
-        self.data['mac'] = mac 
-        self.data['mode'] = mode 
+        self.data['mac'] = mac
+        self.data['mode'] = mode
         self.data['rssi'] = rssi
         self.data['channel'] = channel
-        # self.data['tx_rate'] = tx_rate 
+        # self.data['tx_rate'] = tx_rate
         # self.data['rx_rate'] = rx_rate
 
         temp = []
@@ -754,9 +754,9 @@ class RealBrowserTest(Realm):
             one_minute = timedelta(minutes=1)
             # Update remaining_time_webGUI
             if remaining_time_dt < one_minute:
-                self.data['remaining_time_webGUI'] = ["< 1 min"] * len(self.data['status']) 
+                self.data['remaining_time_webGUI'] = ["< 1 min"] * len(self.data['status'])
             else:
-                self.data['remaining_time_webGUI'] = [str(datetime.strptime(self.data['end_time_webGUI'][0], "%Y-%m-%d %H:%M:%S") - datetime.strptime(curr_time, "%Y-%m-%d %H:%M:%S"))] * len(self.data['status']) 
+                self.data['remaining_time_webGUI'] = [str(datetime.strptime(self.data['end_time_webGUI'][0], "%Y-%m-%d %H:%M:%S") - datetime.strptime(curr_time, "%Y-%m-%d %H:%M:%S"))] * len(self.data['status'])
 
             c = 0
             # Update status and other metrics using my_monitor method
@@ -780,12 +780,12 @@ class RealBrowserTest(Realm):
             if cx_list:
                 iterator = self.all_cx_list
             else:
-                iterator = resource_ids 
+                iterator = resource_ids
 
             # len_cx_list = len(cx_list)
             # len_all_cx_list = len(self.all_cx_list)
             for i in range(len(iterator)):
-                if self.all_cx_list[i] in cx_list: 
+                if self.all_cx_list[i] in cx_list:
                     # Handle present value conditions
                     if self.data['total_urls'][i] == self.urls_per_tenm or self.data['total_urls'][i] > self.urls_per_tenm:
                         if temp[i] == 0:
@@ -793,7 +793,7 @@ class RealBrowserTest(Realm):
                     else:
                         if temp[i] == -1:
                             temp[i] = 0
-                else:   
+                else:
                     # Handle conditions based on total_urls_dict varibale
                     if self.total_urls_dict:
                         if ((self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) == self.urls_per_tenm or (self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) > self.urls_per_tenm):
@@ -810,10 +810,10 @@ class RealBrowserTest(Realm):
                         logging.info('Test is stopped by the user')
                         k = 0
                         # Reset time_data if test is stopped
-                        for num in self.time_data:                                
+                        for num in self.time_data:
                             for j in range(len(num)):
                                 if self.time_data[k][j] == -1:
-                                    self.time_data[k][j] = 0 
+                                    self.time_data[k][j] = 0
                             k+=1
                         self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.data["end_time"])
                         break
@@ -829,9 +829,9 @@ class RealBrowserTest(Realm):
 
             # Sleep for 1 second before next iteration
             time.sleep(1)
-            
+
             current_time = datetime.now()
-        
+
         # Finalize end_time_webGUI
         if self.data['end_time_webGUI'][0] < current_time.strftime('%Y-%m-%d %H:%M:%S'):
             self.data['end_time_webGUI'] = [current_time.strftime('%Y-%m-%d %H:%M:%S') ] * len(self.data['name'])
@@ -839,9 +839,9 @@ class RealBrowserTest(Realm):
             curr_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             curr_time_dt = datetime.strptime(curr_time, "%Y-%m-%d %H:%M:%S")
             endtime_dt = datetime.strptime(self.data['end_time_webGUI'][0], "%Y-%m-%d %H:%M:%S")
-            self.data['remaining_time_webGUI'] = ["< 1 min"] * len(self.data['status']) 
+            self.data['remaining_time_webGUI'] = ["< 1 min"] * len(self.data['status'])
         else:
-            self.data['remaining_time_webGUI'] = [str(datetime.strptime(self.data['end_time_webGUI'][0], "%Y-%m-%d %H:%M:%S") - datetime.strptime(curr_time, "%Y-%m-%d %H:%M:%S"))] * len(self.data['status']) 
+            self.data['remaining_time_webGUI'] = [str(datetime.strptime(self.data['end_time_webGUI'][0], "%Y-%m-%d %H:%M:%S") - datetime.strptime(curr_time, "%Y-%m-%d %H:%M:%S"))] * len(self.data['status'])
 
         # Update final metrics after monitoring loop completes
         self.data["total_urls"] = self.my_monitor('total-urls')
@@ -857,7 +857,7 @@ class RealBrowserTest(Realm):
         self.data["rslv_h"] = self.my_monitor('rslv-h')
         self.data["!conn"] = self.my_monitor('!conn')
         self.data["timeout"] = self.my_monitor('timeout')
-        self.data["status"] = self.my_monitor('status') 
+        self.data["status"] = self.my_monitor('status')
 
 
         if cx_list:
@@ -866,7 +866,7 @@ class RealBrowserTest(Realm):
             def add_to_dict(index):
                 for num in index:
                     key = name[num]
-                    value = total_urls[num] 
+                    value = total_urls[num]
                     if key in self.total_urls_dict:
                         self.total_urls_dict[key].append(value)
                     else:
@@ -879,7 +879,7 @@ class RealBrowserTest(Realm):
                 for name_2 in name:
                     if name_1 == name_2:
                         index.append(i)
-                        break 
+                        break
                     i += 1
             add_to_dict(index)
 
@@ -888,7 +888,7 @@ class RealBrowserTest(Realm):
 
         # Store time data in self.time_data and reset end_time if stopped
         for i in range(len(iterator)):
-            if self.all_cx_list[i] in cx_list: 
+            if self.all_cx_list[i] in cx_list:
                 # present value
                 if self.data['total_urls'][i] == self.urls_per_tenm or self.data['total_urls'][i] > self.urls_per_tenm:
                     if temp[i] == 0:
@@ -896,17 +896,17 @@ class RealBrowserTest(Realm):
                 else:
                     if temp[i] == -1:
                         temp[i] = 0
-            else:   
+            else:
                 if self.total_urls_dict:
                     if (self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) == self.urls_per_tenm or (self.data['total_urls'][i] - self.total_urls_dict[self.all_cx_list[i]][-1]) > self.urls_per_tenm:
                         if temp[i] == -1:
                             temp[i] = int((datetime.now() - current_time ).total_seconds())
-        
+
         prev_cx_list = len(self.all_cx_list) - len(cx_list)
         for i in range(prev_cx_list):
             if temp[i] == -1:
                 temp[i] = 0
-        self.time_data.append(temp) 
+        self.time_data.append(temp)
 
         # Storing the necessary data to generate the graph for multiple incremetnal values
         labels = []
@@ -915,7 +915,7 @@ class RealBrowserTest(Realm):
 
         usernames_csv = {}
         df = pd.DataFrame(self.data)
-        
+
         df.apply(
             lambda row: (
                 usernames_csv.update({row['name']: row['username']})
@@ -925,7 +925,7 @@ class RealBrowserTest(Realm):
             axis=1
         )
 
-        
+
         temp_usernames = []
         idx = 0
         for i in self.all_cx_list:
@@ -959,7 +959,7 @@ class RealBrowserTest(Realm):
             temp_tx_rate = []
             for alias in eid_data["interfaces"]:
                 for i in alias:
-                    # alias[i]['mac'] alias[i]['ssid'] alias[i]['mode'] resource_hw_data['resource']['user']  
+                    # alias[i]['mac'] alias[i]['ssid'] alias[i]['mode'] resource_hw_data['resource']['user']
                     if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
                         resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
                         hw_version = resource_hw_data['resource']['hw version']
@@ -971,7 +971,7 @@ class RealBrowserTest(Realm):
                             temp_mode.append(alias[i]['mode'])
                             temp_rssi.append(alias[i]['signal'])
                             temp_channel.append(alias[i]['channel'])
-                            temp_tx_rate.append(alias[i]['tx-rate']) 
+                            temp_tx_rate.append(alias[i]['tx-rate'])
             self.username.append(temp_username)
             self.device_type.append(temp_device_type)
             self.ssid.append(temp_ssid)
@@ -1008,10 +1008,10 @@ class RealBrowserTest(Realm):
 
         df = pd.DataFrame(self.data)
         # Store final data in CSV file based on dowebgui condition
-        if self.dowebgui == True:   
+        if self.dowebgui == True:
             df.to_csv('{}/rb_datavalues.csv'.format(self.result_dir), index=False)
         else:
-            df.to_csv(file_path, mode='w', index=False)     
+            df.to_csv(file_path, mode='w', index=False)
 
     def generate_graph(self, dataset, lis, bands, graph_image_name = "uc-avg"):
         x_fig_size = 18
@@ -1088,7 +1088,7 @@ class RealBrowserTest(Realm):
             ),
             axis=1
         )
-        
+
 
         # Copy total_urls_dict for manipulation
         total_urls_dict_copy = self.total_urls_dict.copy()
@@ -1106,19 +1106,19 @@ class RealBrowserTest(Realm):
             incremental_temp.append(len(keys[index:]))
         elif len(self.incremental) == 1 and len(keys) > 1:
             incremental_value = self.incremental[0]
-            div = len(keys)//incremental_value 
-            mod = len(keys)%incremental_value 
+            div = len(keys)//incremental_value
+            mod = len(keys)%incremental_value
 
             for i in range(div):
                 if len(incremental_temp):
                     incremental_temp.append(incremental_temp[-1] + incremental_value)
                 else:
                     incremental_temp.append(incremental_value)
-            
+
             if mod:
                 incremental_temp.append(incremental_temp[-1] + mod)
             created_incremental_values = incremental_temp
-        
+
         if not created_incremental_values:
             created_incremental_values = self.incremental
 
@@ -1169,7 +1169,7 @@ class RealBrowserTest(Realm):
             idx+=1
             if to_break:
                 break
-        
+
         bands = ['URLs']
 
         # Iterate over labels to generate graphs and reports
@@ -1195,7 +1195,7 @@ class RealBrowserTest(Realm):
             report.move_csv_file()
             report.move_graph_image()
             report.build_graph()
-        
+
             report.set_obj_html(f"Detailed Result Table - Iteration {i+1} ", f"The below tables provides detailed information for the incremental value {created_incremental_values[i]} of the web browsing test.")
             report.build_objective()
 
@@ -1244,13 +1244,13 @@ class RealBrowserTest(Realm):
 
         report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
-        
+
         report.set_obj_html("RealTime URL per device ","")
         report.build_objective()
 
         # Graph 1
         if cx_order_list:
-            self.generate_multiple_graphs(report, cx_order_list) 
+            self.generate_multiple_graphs(report, cx_order_list)
         else:
             graph2 = self.graph_2(dataset2 = dataset2, lis=lis, bands=bands)
             report.set_graph_image(graph2)
@@ -1288,7 +1288,7 @@ class RealBrowserTest(Realm):
 
         for alias in eid_data["interfaces"]:
             for i in alias:
-                # alias[i]['mac'] alias[i]['ssid'] alias[i]['mode'] resource_hw_data['resource']['user']  
+                # alias[i]['mac'] alias[i]['ssid'] alias[i]['mode'] resource_hw_data['resource']['user']
                 if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
                     resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
                     hw_version = resource_hw_data['resource']['hw version']
@@ -1300,13 +1300,13 @@ class RealBrowserTest(Realm):
                         mode.append(alias[i]['mode'])
                         rssi.append(alias[i]['signal'])
                         channel.append(alias[i]['channel'])
-                        tx_rate.append(alias[i]['tx-rate']) 
+                        tx_rate.append(alias[i]['tx-rate'])
         total_urls = self.my_monitor('total-urls')
         urls_per_sec = self.my_monitor('urls/s')
         uc_min_val = self.my_monitor('uc-min')
         uc_avg_val = self.my_monitor('uc-avg')
         uc_max_val = self.my_monitor('uc-max')
-        total_err = self.my_monitor('total-err') 
+        total_err = self.my_monitor('total-err')
         dataframe = {
             " DEVICE TYPE " : device_type,
             " Username " : username,
@@ -1356,12 +1356,12 @@ def main():
     connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the AP to be able to handle several stations
     (within the limitations of the AP specs) and make sure all clients can browse the page.
     '''
-  
+
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
         description='''\
-        
+
         Name: lf_interop_real_browser_test.py
 
         Purpose: To be generic script for LANforge-Interop devices(Real clients) which runs layer4-7 traffic
@@ -1415,7 +1415,7 @@ def main():
             3. If --device_list are not given after passing the CLI, a list of available devices will be displayed on the terminal.
             4. Enter the resource numbers separated by commas (,) in the resource argument and also enclose in double quotes (e.g. : 1.10,1.12).
             5. For --url, you can specify the URL (e.g., www.google.com).
-            6. To run the test by specifying the incremental capacity, enable the --incremental flag. 
+            6. To run the test by specifying the incremental capacity, enable the --incremental flag.
 
         STATUS: BETA RELEASE
 
@@ -1429,10 +1429,10 @@ def main():
 
         ''')
 
-        
+
     optional=parser.add_argument_group('Optional arguments to run lf_interop_real_browser_test.py')
-    parser.add_argument("--host", "--mgr", help='specify the GUI to connect to, assumes port '
-                                                                        '8080', default=None)
+    parser.add_argument("--host", "--mgr", "--parent_port", dest="host", help='specify the GUI to connect to, assumes port '
+                                                                        '8080')
     parser.add_argument("--ssid", default="ssid_wpa_2g", help='specify ssid on which the test will be running')
     parser.add_argument("--passwd", default="something", help='specify encryption password  on which the test will '
                                                         'be running')
@@ -1465,7 +1465,7 @@ def main():
         print(help_summary)
         exit(0)
 
-    if args.parent_port is None:
+    if args.host is None:
         logger.critical("--host or --mgr argument required")
         exit(1)
 
@@ -1488,11 +1488,11 @@ def main():
     # Initialize an instance of RealBrowserTest with various parameters
     obj = RealBrowserTest(host=args.host, ssid=args.ssid, passwd=args.passwd, encryp=args.encryp,
                         suporrted_release=["7.0", "10", "11", "12"], max_speed=args.max_speed,
-                        url=url, urls_per_tenm=args.urls_per_tenm, duration=args.duration, 
+                        url=url, urls_per_tenm=args.urls_per_tenm, duration=args.duration,
                         resource_ids = args.device_list, dowebgui = args.dowebgui,
                         result_dir = args.result_dir,test_name = args.test_name, incremental = args.incremental,postcleanup=args.postcleanup,
                         precleanup=args.precleanup)
-    
+
     # Initialize empty lists and dictionaries for resource management
     resource_ids_sm = []
     resource_set = set()
@@ -1535,13 +1535,13 @@ def main():
         #             obj.android_devices.append(devices[index])
         #         else:
         #             obj.other_os_list.append(devices[index])
-        
+
         # Process resource IDs if provided
         if args.device_list:
             # Extract second part of resource IDs and sort them
             obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list.split(","))
             resource_ids_sm = obj.resource_ids
-            resource_list = resource_ids_sm.split(',')            
+            resource_list = resource_ids_sm.split(',')
             resource_set = set(resource_list)
             resource_list_sorted = sorted(resource_set)
             resource_ids_generated = ','.join(resource_list_sorted)
@@ -1559,7 +1559,7 @@ def main():
             # Extract the second part of each Android device ID and convert to integers
             modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
             modified_other_os_list = list(map(lambda item: int(item.split('.')[1]), obj.other_os_list))
-            
+
             # Verify if all resource IDs are valid for Android devices
             resource_ids = [int(x) for x in sorted_string.split(',')]
             # print(obj.resource_ids,obj.android_devices, modified_list, modified_other_os_list)
@@ -1576,7 +1576,7 @@ def main():
             #         else:
             #             for ele in obj.other_os_list:
             #                 if ele.startswith(element):
-            #                     obj.other_list.append(ele) 
+            #                     obj.other_list.append(ele)
             #     # Extract the second part of each Android device ID and sort them
             #     new_android = [int(item.split('.')[1]) for item in obj.android_list]
 
@@ -1600,14 +1600,14 @@ def main():
 
             resource_ids = sorted(new_android)
             available_resources=list(set(resource_ids))
-              
+
         else:
             # Query user to select devices if no resource IDs are provided
             selected_devices,report_labels,selected_macs = obj.devices.query_user()
             # Handle cases where no devices are selected
             if not selected_devices:
                 logging.info("devices donot exist..!!")
-                return 
+                return
             # Categorize selected devices into Android and other OS types if no_laptops flag is False
             # if not args.no_laptops:
             #     for device in selected_devices:
@@ -1618,10 +1618,10 @@ def main():
             # else:
             # Assign all selected devices as Android devices if no_laptops flag is True
             obj.android_list = selected_devices
-            
+
             # if args.incremental and  (not obj.android_list):
             #     logging.info("Incremental Values are not needed as no android devices are selected")
-            
+
             # Verify if all resource IDs are valid for Android devices
             if obj.android_list:
                 resource_ids = ",".join([item.split(".")[1] for item in obj.android_list])
@@ -1643,7 +1643,7 @@ def main():
                     logging.info("Verify Resource ids, as few are invalid...!!")
                     exit()
                 resource_ids_sm = obj.resource_ids
-                resource_list = resource_ids_sm.split(',')            
+                resource_list = resource_ids_sm.split(',')
                 resource_set = set(resource_list)
                 resource_list_sorted = sorted(resource_set)
                 resource_ids_generated = ','.join(resource_list_sorted)
@@ -1660,7 +1660,7 @@ def main():
             obj.incremental = [int(x) for x in obj.incremental.split(',')]
         else:
             logging.info("incremental Values are not needed as Android devices are not selected..")
-    
+
     # Handle webgui_incremental argument
     if args.webgui_incremental:
         incremental = [int(x) for x in args.webgui_incremental.split(',')]
@@ -1671,7 +1671,7 @@ def main():
     # if obj.incremental and (not obj.resource_ids):
     #     logging.info("incremental values are not needed as Android devices are not selected.")
     #     exit()
-    
+
     # Validate incremental and resource IDs combination
     if obj.incremental and obj.resource_ids:
         resources_list1 = [str(x) for x in obj.resource_ids.split(',')]
@@ -1707,13 +1707,13 @@ def main():
 
     if args.duration.endswith('s') or args.duration.endswith('S'):
         args.duration = round(int(args.duration[0:-1])/60,2)
-    
+
     elif args.duration.endswith('m') or args.duration.endswith('M'):
-        args.duration = int(args.duration[0:-1]) 
- 
+        args.duration = int(args.duration[0:-1])
+
     elif args.duration.endswith('h') or args.duration.endswith('H'):
-        args.duration = int(args.duration[0:-1]) * 60  
-    
+        args.duration = int(args.duration[0:-1]) * 60
+
     elif args.duration.endswith(''):
         args.duration = int(args.duration)
 
@@ -1735,15 +1735,15 @@ def main():
                 if obj.incremental[0] == len(available_resources):
                     test_setup_info_total_duration = args.duration
                 else:
-                    div = len(available_resources)//obj.incremental[0] 
-                    mod = len(available_resources)%obj.incremental[0] 
+                    div = len(available_resources)//obj.incremental[0]
+                    mod = len(available_resources)%obj.incremental[0]
                     if mod == 0:
                         test_setup_info_total_duration = args.duration * (div )
                     else:
                         test_setup_info_total_duration = args.duration * (div + 1)
             else:
                 test_setup_info_total_duration = args.duration * len(incremental_capacity_list_values)
-            # test_setup_info_duration_per_iteration= args.duration 
+            # test_setup_info_duration_per_iteration= args.duration
         else:
             test_setup_info_incremental_values = "No Incremental Value provided"
             test_setup_info_total_duration = args.duration
@@ -1764,10 +1764,10 @@ def main():
                     cx_order_list.append(keys[index:next_index])
                     index = next_index
             elif len(obj.incremental) != 1 and len(keys) > 1:
-                
+
                 index = 0
                 for num in obj.incremental:
-                    
+
                     cx_order_list.append(keys[index: num])
                     index = num
 
@@ -1801,7 +1801,7 @@ def main():
                     logging.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
                 else:
                     logging.info("Test started on Devices with resource Ids : {selected}".format(selected = cx_order_list[i]))
-                
+
                 # duration = 60 * args.duration
                 file_path = "realBrowser.csv"
 
@@ -1820,12 +1820,12 @@ def main():
                         with open(file_path, 'r') as file:
                             data = json.load(file)
                             if data["status"] != "Running":
-                                break 
+                                break
                     obj.monitor_for_runtime_csv(args.duration,file_path,resource_list_sorted,cx_order_list[i])
                 else:
                     obj.monitor_for_runtime_csv(args.duration,file_path,resource_list_sorted,cx_order_list[i])
                     # time.sleep(duration)
-            
+
         else:
             cx_order_list.append(keys[index:])
             obj.start()
@@ -1833,15 +1833,15 @@ def main():
                 logging.info("Test started on Devices with resource Ids : {selected}".format(selected = obj.resource_ids))
             else:
                 logging.info("Test started on Devices with resource Ids : {selected}".format(selected = args.device_list))
-            
+
             # Set duration and file path for monitoring
             duration = 60 * args.duration
             file_path = "realBrowser.csv"
-            
-            
+
+
 
             start_time = time.time()
-            
+
             obj.data["name"] = obj.my_monitor('name')
 
             obj.data["start_time_webGUI"] = [datetime.now().strftime('%Y-%m-%d %H:%M:%S')] * len(keys)
@@ -1878,7 +1878,7 @@ def main():
         date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
 
         # Retrieve resource data for Android devices
-        phone_list = obj.get_resource_data() 
+        phone_list = obj.get_resource_data()
 
         # Initialize and retrieve username data
         username = []
@@ -1904,7 +1904,7 @@ def main():
             "No of Devices" : "Total" + "( " + str(len(phone_list)) + " )",
             "Incremental Values" : "",
             "Required URL Count" : args.urls_per_tenm,
-            "URL" : args.url 
+            "URL" : args.url
         }
         # if obj.incremental:
         #     test_setup_info['Duration per Iteration (min)']= str(test_setup_info_duration_per_iteration)+ " (min)"
@@ -1921,7 +1921,7 @@ def main():
         lis = username
         bands = ['URLs']
         obj.data['total_urls'] = total_urls
-        obj.data['uc_min_val'] = uc_min_val 
+        obj.data['uc_min_val'] = uc_min_val
         obj.data['timeout'] = timeout
     logging.info("Test Completed")
 
@@ -1930,7 +1930,7 @@ def main():
     if obj.resource_ids and obj.incremental :
         for i in range(len(cx_order_list)):
             df = pd.DataFrame(obj.data)
-            names_to_increment = cx_order_list[i] 
+            names_to_increment = cx_order_list[i]
 
             if 'inc_value' not in df.columns:
                 df['inc_value'] = 0
@@ -1938,26 +1938,26 @@ def main():
                 prev_inc_value = len(cx_order_list[i])
             else:
                 prev_inc_value = prev_inc_value + len(cx_order_list[i])
-                
+
             obj.data['inc_value'] = df.apply(
                 lambda row: (
                     prev_inc_value  # Accumulate inc_value
-                    if row['inc_value'] == 0 and row['name'] in names_to_increment 
+                    if row['inc_value'] == 0 and row['name'] in names_to_increment
                     else row['inc_value']  # Keep existing inc_value
-                ), 
+                ),
                 axis=1
             )
 
             df1 = pd.DataFrame(obj.data)
             if args.dowebgui == True:
                 df1.to_csv('{}/rb_datavalues.csv'.format(obj.result_dir), index=False)
-                df1.to_csv(file_path, mode='w', index=False) 
+                df1.to_csv(file_path, mode='w', index=False)
             else:
-                df1.to_csv(file_path, mode='w', index=False)     
+                df1.to_csv(file_path, mode='w', index=False)
         # Generate report for the test
-        obj.generate_report(date,"realBrowser.csv", test_setup_info = test_setup_info, dataset2 = dataset2, dataset = dataset, lis = lis, bands = bands, total_urls = total_urls, uc_min_value = uc_min_value , cx_order_list = cx_order_list) 
+        obj.generate_report(date,"realBrowser.csv", test_setup_info = test_setup_info, dataset2 = dataset2, dataset = dataset, lis = lis, bands = bands, total_urls = total_urls, uc_min_value = uc_min_value , cx_order_list = cx_order_list)
     elif obj.resource_ids:
-        obj.generate_report(date,"realBrowser.csv", test_setup_info = test_setup_info, dataset2 = dataset2, dataset = dataset, lis = lis, bands = bands, total_urls = total_urls, uc_min_value = uc_min_value ) 
+        obj.generate_report(date,"realBrowser.csv", test_setup_info = test_setup_info, dataset2 = dataset2, dataset = dataset, lis = lis, bands = bands, total_urls = total_urls, uc_min_value = uc_min_value )
 
     # Perform post-cleanup operations
     if args.postcleanup:
@@ -1968,7 +1968,7 @@ def main():
     #     obj.cleanup(os_types_dict)
 
     # Save webGUI data if dowebgui is True
-    if args.dowebgui == True and obj.resource_ids: 
+    if args.dowebgui == True and obj.resource_ids:
         resource_ids = list(map(int, obj.resource_ids.split(',')))
         obj.data_for_webui["status"] = ["Completed"] * len(resource_ids)
         obj.data_for_webui["start_time_webGUI"] = obj.data["start_time_webGUI"]
@@ -1977,4 +1977,4 @@ def main():
         df1 = pd.DataFrame(obj.data_for_webui)
         df1.to_csv('{}/rb_datavalues.csv'.format(obj.result_dir), index=False)
 if __name__ == '__main__':
-    main() 
+    main()
