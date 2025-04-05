@@ -430,7 +430,7 @@ class cv_test(Realm):
                     else:
                         filelocation.write(location + '/kpi.csv\n')
                     filelocation.close()
-                logger.info('Waiting on test completion for kpi')
+                logger.info('Ready to pull report from location: %s' % (location))
                 self.lf_report_dir = location
                 if pull_report:
                     try:
@@ -449,7 +449,7 @@ class cv_test(Realm):
 
             # Of if test stopped for some reason and could not generate report.
             if not self.get_is_running(instance_name):
-                logger.info("Detected test is not running.")
+                logger.info("Detected test is not running %s / 5." % (not_running))
                 not_running += 1
                 if not_running > 5:
                     break
