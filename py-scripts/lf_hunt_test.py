@@ -372,7 +372,7 @@ def main():
         prog='lf_hunt_test',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-         Data Plane Test
+         Hunt Test
             ''',
         description="""
 NAME: lf_hunt_test.py
