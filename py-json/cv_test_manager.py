@@ -182,8 +182,17 @@ class cv_test(Realm):
         self.run_cv_cmd(cmd)
 
     # For auto save report
+    # NOTE:  This only changes it from current, which means it
+    # could actually turn auto-save off instead of on.  Use
+    # set_auto_save_report instead.
     def auto_save_report(self, instance):
         cmd = "cv click '%s' 'Auto Save Report'" % instance
+        self.run_cv_cmd(cmd)
+
+    # Set auto save report
+    # onoff:  true or 1 enables, other vlaue disables
+    def set_auto_save_report(self, instance, onoff):
+        cmd = "cv set '%s' 'Auto Save Report' %s" % (instance, onoff)
         self.run_cv_cmd(cmd)
 
     # To get the report location
@@ -375,7 +384,7 @@ class cv_test(Realm):
             time.sleep(1)
 
         self.load_test_config(config_name, instance_name)
-        self.auto_save_report(instance_name)
+        self.set_auto_save_report(instance_name, "true")
 
         for kv in sets:
             cmd = "cv set '%s' '%s' '%s'" % (instance_name, kv[0], kv[1])

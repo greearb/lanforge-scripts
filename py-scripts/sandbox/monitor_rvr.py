@@ -102,7 +102,7 @@ class RunCvScenario(LFCliBase):
             "sleep 5",
             "cv load test_ref '%s'" % self.test_profile,
             "sleep 5",
-            "cv click test_ref 'Auto Save Report'",
+            "cv set test_ref 'Auto Save Report' true",
             "sleep 1",
             "cv click test_ref Start",
             "sleep 2",

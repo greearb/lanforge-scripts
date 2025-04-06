@@ -51,6 +51,7 @@ class RunCvScenario(LFCliBase):
         self.report_verbosity = None
         self.leave_test_open = False
         self.toggle_autosave = False
+        self.set_autosave = None;
         self.click_save = False
         self.commands_pre: list = []
         self.commands_start: list = []
@@ -222,6 +223,9 @@ class RunCvScenario(LFCliBase):
         if self.toggle_autosave:
             commands.append("cv click test_ref 'Auto Save Report'")
 
+        if self.set_autosave:
+            commands.append("cv set test_ref 'Auto Save Report' %s" % self.set_autosave)
+
         if self.commands_pre:
             for pre_cmd in self.commands_pre:
                 logger.info(f"+cmd      pre [{pre_cmd}]")
@@ -366,14 +370,15 @@ This combination of parameters will not re-generate the present CV scenario:
     # While the option --auto_save is available, it is better to
     # configure the test profile with auto save selected so that
     # the auto_save parameter does not toggle on and off
-    # The best way to get around this is to save a named test profile with
-    # Auto Save Report selected and not use the --toggle_auto_save flag.
+    # Use --enable_auto_save report instead in most cases.
     parser.add_argument("--toggle_auto_save", default=False, action="store_true",
                         help="This toggles the Auto Save Report checkbox. If your test profile was "
                              "saved with Auto Save Report selected, when the test starts, the DEFAULT test "
                              "profile will save with Auto Save Report *unselected*. The consequence is that"
                              "every time you load test profile DEFAULT, Auto Save Report will be enabled "
                              "every second time.")
+    parser.add_argument("--enable_auto_save", default=False, action="store_true",
+                        help="Enable the Auto Save Report checkbox. ");
     parser.add_argument("--click_save", default=False, action="store_true",
                         help="Show the save-report dialog as if you clicked 'Save HTML'. "
                              "Both the HTML and PDF reports are created, "
@@ -451,6 +456,8 @@ Chamber View testing script:  Load a Chamber View (CV) scenario, build it, and r
         run_cv_scenario.leave_test_open = True
     if args.toggle_auto_save:
         run_cv_scenario.toggle_autosave = True
+    if args.enable_auto_save:
+        run_cv_scenario.set_autosave = "true"
     if args.click_save:
         run_cv_scenario.click_save
     if args.test_profile is not None:
