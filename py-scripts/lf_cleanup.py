@@ -736,12 +736,13 @@ def main():
             '''
 
     args = parse_args()
-    validate_args(args)
 
     # Print help summary
     if args.help_summary:
         print(help_summary)
         exit(0)
+
+    validate_args(args)
 
     # Configure logging
     logger_config = lf_logger_config.lf_logger_config()
