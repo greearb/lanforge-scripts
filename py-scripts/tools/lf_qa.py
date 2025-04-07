@@ -4,7 +4,7 @@
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
 Usage: lf_qa.py --store --png --show --path <path to directories to traverse> --database <name of database>
 
-Usage for comparison, not both directories need to be under html-reports 
+Usage for comparison, not both directories need to be under html-reports
     lf_qa.py --path <path to directories to traverse> --path_comp <path to compare report> --store --png --database <test.db>
 
 TODO :  Add to help how to run or which parameters needed to run: on lanforge, a server that is not lanforge, At a desktop
@@ -108,7 +108,7 @@ class csv_sql:
         parent_path = os.path.dirname(_path)
         return parent_path
 
-    # TODO put a wrapper around all the LANforge pertinate information 
+    # TODO put a wrapper around all the LANforge pertinate information
     # TODO put in traceback on the exceptions.
     def get_kernel_version_from_meta(sefl, _kpi_path):
         kernel_version = "NA"
@@ -129,7 +129,7 @@ class csv_sql:
                 Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading meta get_kernel_version_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
-        return kernel_version                 
+        return kernel_version
 
     def get_radio_firmware_from_meta(sefl, _kpi_path):
         radio_firmware = "NA"
@@ -150,7 +150,7 @@ class csv_sql:
                 Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading meta get_kernel_version_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
-        return radio_firmware                 
+        return radio_firmware
 
 
     def get_gui_info_from_meta(sefl, _kpi_path):
@@ -182,13 +182,13 @@ class csv_sql:
 
                     break
             meta_data_fd.close()
-        
+
         except Exception as x:
             traceback.print_exception(
                 Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading meta get_gui_version_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
-        return gui_version, gui_build_date                 
+        return gui_version, gui_build_date
 
     def get_server_info_from_meta(sefl, _kpi_path):
         server_version = "NA"
@@ -216,7 +216,7 @@ class csv_sql:
                         meta_data_path=meta_data_path, server_version=server_version))
                     logger.info("meta_data_path: {meta_data_path} server_build_date: {server_build}".format(
                         meta_data_path=meta_data_path, server_build=server_build_date))
-                    
+
                     break
 
             meta_data_fd.close()
@@ -225,7 +225,7 @@ class csv_sql:
                 Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading meta get_gui_server_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
-        return server_version, server_build_date                
+        return server_version, server_build_date
 
     def get_test_dir_info_from_meta(sefl, _kpi_path):
         test_dir = "NA"
@@ -239,7 +239,7 @@ class csv_sql:
                     test_dir = split_line[-2]
                     logger.info("meta_data_path: {meta_data_path} test_dir: {test_dir}".format(
                         meta_data_path=meta_data_path, test_dir=test_dir))
-                    break                        
+                    break
 
             meta_data_fd.close()
         except Exception as x:
@@ -247,7 +247,7 @@ class csv_sql:
                 Exception, x, x.__traceback__, chain=True)
             logger.info("exception reading meta get_gui_server_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
-        return test_dir                
+        return test_dir
 
 
     #def get_server_from_meta(sefl, _kpi_path):
@@ -399,14 +399,14 @@ class csv_sql:
 
                     # for the chamberview tests the results is in index.html
                     # so need to move index.html to readme.html
-                    # use os.rename(source,destination) , 
+                    # use os.rename(source,destination) ,
                     # check for index
                     index_html_file = parent_path + "/index.html"
                     if os.path.exists(index_html_file):
                         readme_html_file = parent_path + "/readme.html"
                         os.rename(index_html_file,readme_html_file)
 
-                    dir_path = '../' + parent_name 
+                    dir_path = '../' + parent_name
                     pdf_path = '../' + parent_name + "/" +  pdf_base_name
                     html_path = "../" + parent_name + "/readme.html"
 
@@ -414,10 +414,10 @@ class csv_sql:
                     test_id, test_tag = self.get_test_id_test_tag(kpi_path)
                     suite_html_results += """
                     <tr style="text-align: center; margin-bottom: 0; margin-top: 0;">
-                        <td>{test_id}</td><td>{test_tag}</td><td><a href="{html_path}" target="_blank">html</a> / 
-                        <a href="{pdf_path}" target="_blank">pdf</a> / 
+                        <td>{test_id}</td><td>{test_tag}</td><td><a href="{html_path}" target="_blank">html</a> /
+                        <a href="{pdf_path}" target="_blank">pdf</a> /
                         <a href="{dir_path}" target="_blank">results_dir</a></td>
-                        <td>{parent_name}</td></tr> 
+                        <td>{parent_name}</td></tr>
                     """.format(test_id=test_id, test_tag=test_tag, html_path=html_path, pdf_path=pdf_path, dir_path=dir_path, parent_name=parent_name)
         suite_html_results += """
                     </tbody>
@@ -429,16 +429,16 @@ class csv_sql:
 
     # TODO can use alternate path passed in as a comparison directory
     # Would need to figure out how to do the relative paths
-    # Or figure out a way to 
+    # Or figure out a way to
     # os.path.relpath(path1, path2)
-    # os.path.exists 
+    # os.path.exists
     # https://docs.python.org/3.10/library/os.path.html
-    def get_kpi_chart_html_relative_compare(self):       
+    def get_kpi_chart_html_relative_compare(self):
         kpi_chart_html = """
             <table border="0">
                 <tbody>
         """
-        # this gets the path to the data used 
+        # this gets the path to the data used
         # reportes need to be relative to path
         path = Path(self.path)
         path_comp = Path(self.path_comp)
@@ -467,7 +467,7 @@ class csv_sql:
                     kpi_chart_html += """<tr>"""
                 kpi_chart_html += """
                     <td>
-                        {test_tag}  {test_id} 
+                        {test_tag}  {test_id}
                         <a href="{dir_path}" target="_blank">results_dir</a>
                     </td>
                     <td>
@@ -489,16 +489,16 @@ class csv_sql:
                         logger.debug("test_tag : {tag} test_tag_comp : {ctag} test_id : {test_id} test_id_comp : {test_id_comp}".format(
                             tag=test_tag,ctag=test_tag_comp,test_id=test_id,test_id_comp=test_id_comp
                         ) )
-                        # get relative path 
+                        # get relative path
                         kpi_chart_comp_relative = os.path.relpath(kpi_chart_comp, self.lf_qa_report_path)
                         logger.debug("kpi_chart_comp_relative: {r_chart}".format(r_chart=kpi_chart_comp_relative))
 
                         compare_results_dir = os.path.dirname(kpi_chart_comp_relative)
                         logger.debug("compare_results_dir: {dir_path}".format(dir_path=compare_results_dir))
-                        
+
                         kpi_chart_html += """
                             <td>
-                                {test_tag}  {test_id} 
+                                {test_tag}  {test_id}
                                 <a href="{dir_path}" target="_blank">compare_results_dir</a>
                             </td>
                             <td>
@@ -513,7 +513,7 @@ class csv_sql:
                         table_index += 1
                         if (table_index % 2) == 0:
                             kpi_chart_html += """</tr>"""
-                
+
                 if not kpi_chart_comp_found:
                     # even if comparison not found increase the index
                     table_index += 1
@@ -670,7 +670,7 @@ class csv_sql:
             df_kpi_tmp['radio_fw'] = self.get_radio_firmware_from_meta(_kpi_path)
             df_kpi_tmp['gui_ver'], df_kpi_tmp['gui_build_date'] = self.get_gui_info_from_meta(_kpi_path)
             df_kpi_tmp['server_ver'], df_kpi_tmp['server_build_date'] = self.get_server_info_from_meta(_kpi_path)
-            
+
             # this next line creates duplicate entries
             # df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
             self.df = self.df.append(df_kpi_tmp, ignore_index=True)
@@ -709,7 +709,7 @@ class csv_sql:
         html_path = os.path.join(
             kpi_path_list[-1], "{}_{}_{}_kpi.html".format(group, test_tag, test_rig))
         html_path = html_path.replace(' ', '')
-        
+
         # generate png image
         png_present = True
         try:
@@ -732,25 +732,26 @@ class csv_sql:
             img_kpi_html_path_relative = os.path.relpath(html_path, self.lf_qa_report_path)
             png_img_path_relative = os.path.relpath(png_path, self.lf_qa_report_path)
 
-            self.html_results += """
-            <a href={img_kpi_html_path} target="_blank">
-                <img src={png_server_img}>
-            </a>
-            """.format(img_kpi_html_path=img_kpi_html_path_relative, png_server_img=png_img_path_relative)
-
             # link to interactive results
             report_index_html_path = kpi_path_list[-1] + "readme.html"
             relative_report_index_html = os.path.relpath(report_index_html_path, self.lf_qa_report_path)
 
             self.html_results += """<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_Report </a>
             """.format(report_index_html_path=relative_report_index_html, test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
+
+            self.html_results += """
+            <a href={img_kpi_html_path} target="_blank">
+                <img src={png_server_img}>
+            </a>
+            """.format(img_kpi_html_path=img_kpi_html_path_relative, png_server_img=png_img_path_relative)
+
             self.html_results += """<br>"""
             self.html_results += """<br>"""
             self.html_results += """<br>"""
             self.html_results += """<br>"""
             self.html_results += """<br>"""
 
-    
+
     # TODO determin the subtest pass and fail graph
     # df is sorted by date oldest to newest
     # get the test_run for last run
@@ -1046,8 +1047,8 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
     parser.add_argument(
         '--path',
         help='''
-            --path top directory of the test suite directory, 
-            for example /html-reports/TEST_RUNS/TEST_SUITE  
+            --path top directory of the test suite directory,
+            for example /html-reports/TEST_RUNS/TEST_SUITE
             /home/lanforge/html-reports/ct_us/lf_check_suite
             ''',
         default='')
@@ -1056,7 +1057,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         help='''
             --path_comp , this is the directory to compare results from a previous run.
             top directory path to kpi if regererating database or png files,
-            for example /html-reports/TEST_RUNS/TEST_SUITE_COMPARE 
+            for example /html-reports/TEST_RUNS/TEST_SUITE_COMPARE
             /home/lanforge/html-reports/ct_us/lf_check_compare_suite
             default: ''
             ''',
@@ -1159,7 +1160,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
                        _output_html="lf_qa.html",
                        _output_pdf="lf_qa.pdf")
 
-    # for relative path reporting 
+    # for relative path reporting
     __lf_qa_report_path = report.get_path_date_time()
 
     csv_dash = csv_sql(
@@ -1175,7 +1176,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
 
     if args.store:
         csv_dash.store()
-        
+
     if args.store_comp:
         csv_dash.store_comp()
 
@@ -1203,7 +1204,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
             report.build_table_title()
         else:
             note = '''
-                lf_qa.py Test Rig field is empty , 
+                lf_qa.py Test Rig field is empty ,
                 for wifi_capacity consider setting Test Rig ID and Test Tag under Select Output tab
                 for dataplane and ap_auto set Test Rig ID and Test Tag under the Report Configuration tab
                 No reaults will be generated for Test Rig field empty
@@ -1218,8 +1219,8 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         pdf_file = report.get_pdf_file()
         # pdf_parent_path = os.path.dirname(pdf_link_path)
         # pdf_parent_name = os.path.basename(pdf_parent_path)
-        
-        
+
+
         pdf_url = './' + pdf_file
         report.build_pdf_link("PDF_Report", pdf_url)
 
@@ -1234,7 +1235,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)
 
 
-        # links table for tests 
+        # links table for tests
         report.set_table_title("Test Suite")
         report.build_table_title()
         suite_html = csv_dash.get_suite_html()
