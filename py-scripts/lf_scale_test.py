@@ -61,15 +61,15 @@ port_sorting: 2
 kpi_id: Scale
 get_csv_cb: 0
 auto_save: 0
-rpt_path: 
+rpt_path:
 rpt_path_make_subdir: 1
 bg: 0xE0ECF8
-dut_info_override: 
-dut_info_cmd: 
-test_rig: 
-test_tag: 
-rpt_name: 
-rpt_dir_prefix_textfield: 
+dut_info_override:
+dut_info_cmd:
+test_rig:
+test_tag:
+rpt_name:
+rpt_dir_prefix_textfield:
 show_scan: 1
 auto_helper: 1
 allow_11w: 0
@@ -134,7 +134,7 @@ sts-0-0-0-max_speed_d: 0
 sts-0-0-0-url: <Custom>
 sts-0-0-0-destination_url: /dev/null
 sts-0-0-0-destination: Any
-sts-0-0-0-urls_per_ten: 
+sts-0-0-0-urls_per_ten:
 sts-0-0-0-repeat_count: <Custom>
 sts-0-0-0-pf_metric: 950000
 sts-0-0-0-ul_dl: Download
@@ -157,14 +157,14 @@ sts-0-0-1-max_speed_d: 0
 sts-0-0-1-url: 192.168.50.247
 sts-0-0-1-destination_url: /dev/null
 sts-0-0-1-destination: Any
-sts-0-0-1-urls_per_ten: 
-sts-0-0-1-repeat_count: 
+sts-0-0-1-urls_per_ten:
+sts-0-0-1-repeat_count:
 sts-0-0-1-pf_metric: 950000
 sts-0-0-1-ul_dl: Download
 sts-0-0-1-reset_timer_max: 0
 sts-0-0-1-reset_timer_min: 0
-sts-0-0-1-max_station_reset: 
-sts-0-0-1-min_station_reset: 
+sts-0-0-1-max_station_reset:
+sts-0-0-1-min_station_reset:
 sts-0-0-2-expanded: 1
 sts-0-0-2-name: voip
 sts-0-0-2-upstream_port: 1.1.2 eth2
@@ -180,14 +180,14 @@ sts-0-0-2-max_speed_d: 0
 sts-0-0-2-url: 192.168.50.247
 sts-0-0-2-destination_url: /dev/null
 sts-0-0-2-destination: Any
-sts-0-0-2-urls_per_ten: 
-sts-0-0-2-repeat_count: 
+sts-0-0-2-urls_per_ten:
+sts-0-0-2-repeat_count:
 sts-0-0-2-pf_metric: 950000
 sts-0-0-2-ul_dl: Download
 sts-0-0-2-reset_timer_max: 0
 sts-0-0-2-reset_timer_min: 0
-sts-0-0-2-max_station_reset: 
-sts-0-0-2-min_station_reset: 
+sts-0-0-2-max_station_reset:
+sts-0-0-2-min_station_reset:
 sts-0-1-expanded: 1
 sts-0-1-name: student-5
 sts-0-1-profile: STA-AUTO
@@ -209,17 +209,17 @@ sts-0-1-0-min_speed_u: 56000
 sts-0-1-0-max_speed_u: 0
 sts-0-1-0-min_speed_d: 1544000
 sts-0-1-0-max_speed_d: 0
-sts-0-1-0-url: 
+sts-0-1-0-url:
 sts-0-1-0-destination_url: /dev/null
 sts-0-1-0-destination: Any
-sts-0-1-0-urls_per_ten: 
-sts-0-1-0-repeat_count: 
+sts-0-1-0-urls_per_ten:
+sts-0-1-0-repeat_count:
 sts-0-1-0-pf_metric: 950000
 sts-0-1-0-ul_dl: Download
 sts-0-1-0-reset_timer_max: 0
 sts-0-1-0-reset_timer_min: 0
-sts-0-1-0-max_station_reset: 
-sts-0-1-0-min_station_reset: 
+sts-0-1-0-max_station_reset:
+sts-0-1-0-min_station_reset:
 sts-0-1-1-expanded: 1
 sts-0-1-1-name: ping
 sts-0-1-1-upstream_port: 1.1.2 eth2
@@ -235,14 +235,14 @@ sts-0-1-1-max_speed_d: 0
 sts-0-1-1-url: 192.168.50.247
 sts-0-1-1-destination_url: /dev/null
 sts-0-1-1-destination: Any
-sts-0-1-1-urls_per_ten: 
-sts-0-1-1-repeat_count: 
+sts-0-1-1-urls_per_ten:
+sts-0-1-1-repeat_count:
 sts-0-1-1-pf_metric: 950000
 sts-0-1-1-ul_dl: Download
 sts-0-1-1-reset_timer_max: 0
 sts-0-1-1-reset_timer_min: 0
-sts-0-1-1-max_station_reset: 
-sts-0-1-1-min_station_reset: 
+sts-0-1-1-max_station_reset:
+sts-0-1-1-min_station_reset:
 sts-0-1-2-expanded: 1
 sts-0-1-2-name: voip
 sts-0-1-2-upstream_port: 1.1.2 eth2
@@ -258,14 +258,14 @@ sts-0-1-2-max_speed_d: 0
 sts-0-1-2-url: 192.168.50.247
 sts-0-1-2-destination_url: /dev/null
 sts-0-1-2-destination: Any
-sts-0-1-2-urls_per_ten: 
-sts-0-1-2-repeat_count: 
+sts-0-1-2-urls_per_ten:
+sts-0-1-2-repeat_count:
 sts-0-1-2-pf_metric: 950000
 sts-0-1-2-ul_dl: Download
 sts-0-1-2-reset_timer_max: 0
 sts-0-1-2-reset_timer_min: 0
-sts-0-1-2-max_station_reset: 
-sts-0-1-2-min_station_reset: 
+sts-0-1-2-max_station_reset:
+sts-0-1-2-min_station_reset:
 operator: Autobot
 start_time: 9
 show_dut_totals: 1
@@ -504,15 +504,15 @@ port_sorting: 2
 kpi_id: Scale
 get_csv_cb: 0
 auto_save: 0
-rpt_path: 
+rpt_path:
 rpt_path_make_subdir: 1
 bg: 0xE0ECF8
-dut_info_override: 
-dut_info_cmd: 
-test_rig: 
-test_tag: 
-rpt_name: 
-rpt_dir_prefix_textfield: 
+dut_info_override:
+dut_info_cmd:
+test_rig:
+test_tag:
+rpt_name:
+rpt_dir_prefix_textfield:
 show_scan: 1
 auto_helper: 1
 allow_11w: 0
@@ -577,7 +577,7 @@ sts-0-0-0-max_speed_d: 0
 sts-0-0-0-url: <Custom>
 sts-0-0-0-destination_url: /dev/null
 sts-0-0-0-destination: Any
-sts-0-0-0-urls_per_ten: 
+sts-0-0-0-urls_per_ten:
 sts-0-0-0-repeat_count: <Custom>
 sts-0-0-0-pf_metric: 950000
 sts-0-0-0-ul_dl: Download
@@ -600,14 +600,14 @@ sts-0-0-1-max_speed_d: 0
 sts-0-0-1-url: 192.168.50.247
 sts-0-0-1-destination_url: /dev/null
 sts-0-0-1-destination: Any
-sts-0-0-1-urls_per_ten: 
-sts-0-0-1-repeat_count: 
+sts-0-0-1-urls_per_ten:
+sts-0-0-1-repeat_count:
 sts-0-0-1-pf_metric: 950000
 sts-0-0-1-ul_dl: Download
 sts-0-0-1-reset_timer_max: 0
 sts-0-0-1-reset_timer_min: 0
-sts-0-0-1-max_station_reset: 
-sts-0-0-1-min_station_reset: 
+sts-0-0-1-max_station_reset:
+sts-0-0-1-min_station_reset:
 sts-0-0-2-expanded: 1
 sts-0-0-2-name: voip
 sts-0-0-2-upstream_port: 1.1.2 eth2
@@ -623,14 +623,14 @@ sts-0-0-2-max_speed_d: 0
 sts-0-0-2-url: 192.168.50.247
 sts-0-0-2-destination_url: /dev/null
 sts-0-0-2-destination: Any
-sts-0-0-2-urls_per_ten: 
-sts-0-0-2-repeat_count: 
+sts-0-0-2-urls_per_ten:
+sts-0-0-2-repeat_count:
 sts-0-0-2-pf_metric: 950000
 sts-0-0-2-ul_dl: Download
 sts-0-0-2-reset_timer_max: 0
 sts-0-0-2-reset_timer_min: 0
-sts-0-0-2-max_station_reset: 
-sts-0-0-2-min_station_reset: 
+sts-0-0-2-max_station_reset:
+sts-0-0-2-min_station_reset:
 sts-0-1-expanded: 1
 sts-0-1-name: student-5
 sts-0-1-profile: STA-AUTO
@@ -652,17 +652,17 @@ sts-0-1-0-min_speed_u: 56000
 sts-0-1-0-max_speed_u: 0
 sts-0-1-0-min_speed_d: 1544000
 sts-0-1-0-max_speed_d: 0
-sts-0-1-0-url: 
+sts-0-1-0-url:
 sts-0-1-0-destination_url: /dev/null
 sts-0-1-0-destination: Any
-sts-0-1-0-urls_per_ten: 
-sts-0-1-0-repeat_count: 
+sts-0-1-0-urls_per_ten:
+sts-0-1-0-repeat_count:
 sts-0-1-0-pf_metric: 950000
 sts-0-1-0-ul_dl: Download
 sts-0-1-0-reset_timer_max: 0
 sts-0-1-0-reset_timer_min: 0
-sts-0-1-0-max_station_reset: 
-sts-0-1-0-min_station_reset: 
+sts-0-1-0-max_station_reset:
+sts-0-1-0-min_station_reset:
 sts-0-1-1-expanded: 1
 sts-0-1-1-name: ping
 sts-0-1-1-upstream_port: 1.1.2 eth2
@@ -678,14 +678,14 @@ sts-0-1-1-max_speed_d: 0
 sts-0-1-1-url: 192.168.50.247
 sts-0-1-1-destination_url: /dev/null
 sts-0-1-1-destination: Any
-sts-0-1-1-urls_per_ten: 
-sts-0-1-1-repeat_count: 
+sts-0-1-1-urls_per_ten:
+sts-0-1-1-repeat_count:
 sts-0-1-1-pf_metric: 950000
 sts-0-1-1-ul_dl: Download
 sts-0-1-1-reset_timer_max: 0
 sts-0-1-1-reset_timer_min: 0
-sts-0-1-1-max_station_reset: 
-sts-0-1-1-min_station_reset: 
+sts-0-1-1-max_station_reset:
+sts-0-1-1-min_station_reset:
 sts-0-1-2-expanded: 1
 sts-0-1-2-name: voip
 sts-0-1-2-upstream_port: 1.1.2 eth2
@@ -701,14 +701,14 @@ sts-0-1-2-max_speed_d: 0
 sts-0-1-2-url: 192.168.50.247
 sts-0-1-2-destination_url: /dev/null
 sts-0-1-2-destination: Any
-sts-0-1-2-urls_per_ten: 
-sts-0-1-2-repeat_count: 
+sts-0-1-2-urls_per_ten:
+sts-0-1-2-repeat_count:
 sts-0-1-2-pf_metric: 950000
 sts-0-1-2-ul_dl: Download
 sts-0-1-2-reset_timer_max: 0
 sts-0-1-2-reset_timer_min: 0
-sts-0-1-2-max_station_reset: 
-sts-0-1-2-min_station_reset: 
+sts-0-1-2-max_station_reset:
+sts-0-1-2-min_station_reset:
 operator: Autobot
 start_time: 9
 show_dut_totals: 1
