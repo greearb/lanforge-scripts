@@ -102,15 +102,15 @@ port_sorting: 2
 kpi_id: Hunt
 get_csv_cb: 0
 auto_save: 0
-rpt_path: 
+rpt_path:
 rpt_path_make_subdir: 1
 bg: 0xE0ECF8
-dut_info_override: 
-dut_info_cmd: 
-test_rig: 
-test_tag: 
-rpt_name: 
-rpt_dir_prefix_textfield: 
+dut_info_override:
+dut_info_cmd:
+test_rig:
+test_tag:
+rpt_name:
+rpt_dir_prefix_textfield:
 show_scan: 1
 auto_helper: 0
 allow_11w: 0
@@ -167,7 +167,7 @@ attenuations: 0..+50..950
 attenuations2: 0..+50..950
 chamber: 0
 tt_deg: 0..+45..359
-cust_pkt_sz: 
+cust_pkt_sz:
 show_3s: 0
 show_ll_graphs: 1
 show_gp_graphs: 1
@@ -248,8 +248,7 @@ class HuntTest(cv_test):
                  graph_groups=None,
                  test_rig="",
                  test_tag="",
-                 verbosity='5'
-                 ):
+                 verbosity='5'):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
         # NOTE: Do not move these into the function definition.
@@ -476,15 +475,15 @@ port_sorting: 2
 kpi_id: Hunt
 get_csv_cb: 0
 auto_save: 0
-rpt_path: 
+rpt_path:
 rpt_path_make_subdir: 1
 bg: 0xE0ECF8
-dut_info_override: 
-dut_info_cmd: 
-test_rig: 
-test_tag: 
-rpt_name: 
-rpt_dir_prefix_textfield: 
+dut_info_override:
+dut_info_cmd:
+test_rig:
+test_tag:
+rpt_name:
+rpt_dir_prefix_textfield:
 show_scan: 1
 auto_helper: 0
 allow_11w: 0
@@ -541,7 +540,7 @@ attenuations: 0..+50..950
 attenuations2: 0..+50..950
 chamber: 0
 tt_deg: 0..+45..359
-cust_pkt_sz: 
+cust_pkt_sz:
 show_3s: 0
 show_ll_graphs: 1
 show_gp_graphs: 1
@@ -688,29 +687,29 @@ INCLUDE_IN_README: False
             handler.setFormatter(ff)
 
     CV_Test = HuntTest(lf_host=args.mgr,
-                            lf_port=args.port,
-                            lf_user=args.lf_user,
-                            lf_password=args.lf_password,
-                            instance_name=args.instance_name,
-                            config_name=args.config_name,
-                            upstream=args.upstream,
-                            pull_report=args.pull_report,
-                            local_lf_report_dir=args.local_lf_report_dir,
-                            load_old_cfg=args.load_old_cfg,
-                            download_speed=args.download_speed,
-                            upload_speed=args.upload_speed,
-                            duration=args.duration,
-                            dut=args.dut,
-                            station=args.station,
-                            enables=args.enable,
-                            disables=args.disable,
-                            raw_lines=args.raw_line,
-                            raw_lines_file=args.raw_lines_file,
-                            sets=args.set,
-                            graph_groups=args.graph_groups,
-                            test_rig=args.test_rig,
-                            verbosity=args.verbosity
-                            )
+                       lf_port=args.port,
+                       lf_user=args.lf_user,
+                       lf_password=args.lf_password,
+                       instance_name=args.instance_name,
+                       config_name=args.config_name,
+                       upstream=args.upstream,
+                       pull_report=args.pull_report,
+                       local_lf_report_dir=args.local_lf_report_dir,
+                       load_old_cfg=args.load_old_cfg,
+                       download_speed=args.download_speed,
+                       upload_speed=args.upload_speed,
+                       duration=args.duration,
+                       dut=args.dut,
+                       station=args.station,
+                       enables=args.enable,
+                       disables=args.disable,
+                       raw_lines=args.raw_line,
+                       raw_lines_file=args.raw_lines_file,
+                       sets=args.set,
+                       graph_groups=args.graph_groups,
+                       test_rig=args.test_rig,
+                       verbosity=args.verbosity
+                       )
     CV_Test.setup()
     CV_Test.run()
 
