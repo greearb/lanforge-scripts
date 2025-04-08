@@ -51,7 +51,7 @@ class lf_create_radio_frame():
         self.radio_canvas.configure(scrollregion=self.radio_canvas.bbox("all")))
 
         # 7. Add Widgets to the Content Frame
-        self.radio_label = tkinter.Label(self.radio_content_frame, text="Scrollable Content")
+        self.radio_label = tkinter.Label(self.radio_content_frame, text="Use Radio")
         self.radio_label.grid(row=1, column=0, pady=10)
 
         # 8. Create Window Resizing Configure
