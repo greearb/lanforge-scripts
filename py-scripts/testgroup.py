@@ -197,7 +197,7 @@ class TestGroup(Realm):
         self.station_profile = None
         self.cx_profile = None
         if self.sta_list and len(self.sta_list) >0:
-            self.new_station_profile()
+            self.station_profile = self.new_station_profile()
             self.cx_profile = self.new_l3_cx_profile()
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = self.ssid
@@ -238,7 +238,8 @@ class TestGroup(Realm):
         if self.sta_list and self.ssid:
             print("testgroup::build: building sta_list...")
             pprint.pprint(["sta_list:", self.sta_list])
-            raise ValueError("testgroup:build: requires ssid")
+            if not self.ssid:
+                raise ValueError("testgroup:build: requires ssid")
             self.station_profile.use_security(self.security,
                                               self.ssid,
                                               self.password)
@@ -349,7 +350,7 @@ class TestGroup(Realm):
 def main():
     help_summary = '''\
     This script is designed to create a test connection group in the LANforge GUI (Connection Group GUI tab). Test Groups,
-    also known as Connection Groups, can be created, modified, and managed using this script. You can use it to create a 
+    also known as Connection Groups, can be created, modified, and managed using this script. You can use it to create a
     new test group, add or remove layer-3 connections from the group, and start or stop the entire test connection group
     as needed. It simplifies the process of handling these tasks within the LANforge environment.
     '''
@@ -417,17 +418,17 @@ EXAMPLE:
     * Delete Selected Group:
 
         ./testgroup.py --mgr 192.168.200.93 --group_name CX_GROUP1 --del_group --use_existing
-        
-        
+
+
     * To create given number of stations and l3 cross-connections along with add them in a test-group.
-                
-         ./testgroup.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2 
+
+         ./testgroup.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2
          --radio wiphy0 --group_name group0 --add_group --upstream_port eth2 --a_min 6000 --b_min 6000
 
-    
+
     * To create given number of stations and l3 cross-connections along with add them in a test-group & Start Selected Group:
 
-        ./testgroup.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2 
+        ./testgroup.py --mgr 192.168.200.138 --num_stations 2 --ssid Netgear2g --passwd lanforge --security wpa2
         --radio wiphy0 --group_name group0 --start_group group0
 
 
@@ -531,7 +532,7 @@ INCLUDE_IN_README: False
 
     # print(f"use_existing:{args.use_existing}, list_groups:{args.list_groups} "
     #       f"sta_list{station_list}\n")
-    if not (args.list_groups or args.use_existing or args.num_stations):
+    if not (args.list_groups or args.use_existing) or args.num_stations:
         ip_var_test = TestGroup(host=args.mgr,
                                 port=args.mgr_port,
                                 number_template="0000",
