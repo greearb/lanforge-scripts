@@ -4,7 +4,7 @@ import sys
 import os
 import importlib
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -69,9 +69,17 @@ class TestGroupProfile(LFCliBase):
         test_groups = self.local_realm.json_get("/testgroups/all")
         tg_list = []
         if test_groups and "groups" in test_groups:
-            for group in test_groups["groups"]:
-                for k, v in group.items():
-                    tg_list.append(v['name'])
+            # if single test_group type == dict
+            if not isinstance(test_groups, list):
+                # be sure the list is not empty
+                if test_groups['groups']:
+                    if test_groups['groups']['name'] != '':
+                        tg_list.append(test_groups['groups']['name'])
+            # if multiple test_group type ==list
+            else:
+                for group in test_groups["groups"]:
+                    for k, v in group.items():
+                        tg_list.append(v['name'])
         return tg_list
 
     def list_cxs(self):
