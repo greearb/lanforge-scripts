@@ -162,7 +162,7 @@ class PortResetTest(cv_test):
         time.sleep(2)
         self.sync_cv()
 
-        blob_test = "port_reset-test-"
+        blob_test = "Port-Reset-Test-"
 
         # To delete old config with same name
         self.rm_text_blob(config_name=self.config_name,
