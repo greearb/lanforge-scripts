@@ -1056,10 +1056,13 @@ survey_lflogs() {
     local fsiz=0
     local fnum=0
     cd /home/lanforge
-    mapfile -d '' removable_lflogs < <( find \
-        ./vr_conf/ ./wifi/ ./l4logs/ /usr/local/lanforge/nginx/ ./l3helper/ /var/log/httpd/ \
+    local directories="./vr_conf/ ./wifi/ ./l4logs/ /usr/local/lanforge/nginx/ /var/log/httpd/"
+    if [[ -d .l3helper ]]; then
+      directories="$directories ./l3helper/"
+    fi
+    mapfile -d '' removable_lflogs < <( find $directories \
         -type f -a \( \
-                -iname 'error.log'               \
+               -iname 'error.log'                \
             -o -iname '*access.log'              \
             -o -iname '*access_log'              \
             -o -iname '*access_log-*'            \
