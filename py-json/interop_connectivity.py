@@ -155,7 +155,7 @@ class Android():
                 'shelf': 1,
                 'resource': 1,
                 'adb_id': serial,
-                #key=8  modification for adb API to add faster callback option
+                # key=8  modification for adb API to add faster callback option
                 'key': 8,
                 'adb_cmd': command
             }
@@ -188,7 +188,7 @@ class Android():
                 'shelf': 1,
                 'resource': 1,
                 'adb_id': serial,
-                #key=8  modification for adb API to add faster callback option
+                # key=8  modification for adb API to add faster callback option
                 'key': 8,
                 'adb_cmd': command
             }
@@ -217,7 +217,7 @@ class Android():
                 'shelf': 1,
                 'resource': 1,
                 'adb_id': serial,
-                #key=8  modification for adb API to add faster callback option
+                # key=8  modification for adb API to add faster callback option
                 'key': 8,
                 'adb_cmd': "reboot"
             }
@@ -310,7 +310,7 @@ class Android():
                 'shelf': 1,
                 'resource': 1,
                 'adb_id': serial,
-                #key=8  modification for adb API to add faster callback option
+                # key=8  modification for adb API to add faster callback option
                 'key': 8,
                 'adb_cmd': command
             }
@@ -336,7 +336,7 @@ class Android():
                     'shelf': 1,
                     'resource': 1,
                     'adb_id': serial,
-                    #key=8  modification for adb API to add faster callback option
+                    # key=8  modification for adb API to add faster callback option
                     'key': 8,
                     'adb_cmd': 'shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity --es auto_start 1 --es username {} --es serverip {} --es ssid {} --es password {} --es encryption {} --es eap_method {} --es eap_user {} --es eap_passwd {}'.format(
                         username, self.server_ip, curr_ssid, curr_passwd, curr_encryption, curr_eap_method,
@@ -347,7 +347,7 @@ class Android():
                     'shelf': 1,
                     'resource': 1,
                     'adb_id': serial,
-                    #key=8  modification for adb API to add faster callback option
+                    # key=8  modification for adb API to add faster callback option
                     'key': 8,
                     'adb_cmd': 'shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity --es auto_start 1 --es username {} --es serverip {} --es ssid {} --es password {} --es encryption {}'.format(
                         username, self.server_ip, curr_ssid, curr_passwd, curr_encryption)
@@ -391,7 +391,7 @@ class Android():
                     # logger.warning('Resource id is missing for the device {} therefore skipping the device from usage'.format(name))
                     shelf, resource = '', ''
 
-                if data['device-type'] != 'iOS':
+                if interop_tab_data['device-type'] != 'iOS':
                     devices_data.append([shelf, resource, serial])
 
         else:
@@ -617,41 +617,41 @@ class Laptop():
         self.mac = 'xx:xx:xx:*:*:xx'
 
     # set encoding value
-    def set_encoding(self, encryption, ieee80211u, ieee80211w, enable_pkc, bss_transition, power_save, disable_ofdma,
-                     roam_ft_ds, key_management, pairwise, private_key, ca_cert, client_cert, pk_passwd, pac_file):
+    def set_encoding(self, encryption, ieee80211u=True, ieee80211w=1, enable_pkc=True, bss_transition=True, power_save=True, disable_ofdma=True,
+                     roam_ft_ds=True, key_management='DEFAULT', pairwise='NA', private_key='NA', ca_cert='NA', client_cert='NA', pk_passwd='NA', pac_file='NA'):
         logger.info("SET ENCODING FOR LAPTOP")
         enc = 0
         if (encryption == 'open'):
             enc = 0
         elif (encryption == "owe"):
-            enc = 562949953421312 #flags.use-owe
+            enc = 562949953421312  # flags.use-owe
         elif (encryption == 'wpa_personal' or encryption == 'psk' or encryption == 'wpa'):
-            enc = 16 #flags.wpa_enable
+            enc = 16  # flags.wpa_enable
         elif (encryption == "wpa2_personal" or encryption == 'psk2' or encryption == 'wpa2'):
-            enc = 1024 #flags.wpa2_enable
+            enc = 1024  # flags.wpa2_enable
         elif (encryption == "wpa3_personal" or encryption == 'psk3' or encryption == 'wpa3'):
-            enc = 1099511627776 #flags.use-wpa3
+            enc = 1099511627776  # flags.use-wpa3
         elif (encryption == "wpa_enterprise"):
-            enc = 33554448 #flag.8021x_radius ,flag.wpa_enable
+            enc = 33554448  # flag.8021x_radius ,flag.wpa_enable
         elif (encryption == "wpa2_enterprise"):
-            enc = 33555456 #flag.8021x_radius ,flag.wpa2_enable
+            enc = 33555456  # flag.8021x_radius ,flag.wpa2_enable
         elif (encryption == "wpa3_enterprise"):
-            enc = 1099545182208 #flag.8021x_radius ,flag.use_wpa3
+            enc = 1099545182208  # flag.8021x_radius ,flag.use_wpa3
         elif (encryption == "owe_advanced"):
-            enc = 564049498603520 #flag.8021x_radius ,flag.use_wpa3 ,flag.use-owe
+            enc = 564049498603520  # flag.8021x_radius ,flag.use_wpa3 ,flag.use-owe
         if encryption == "wpa_enterprise" or encryption == "wpa2_enterprise" or encryption == "wpa3_enterprise" or encryption == "owe_advanced":
             if ieee80211u == True:
-                enc = enc + 131072 #flag.80211u_enable
+                enc = enc + 131072  # flag.80211u_enable
             if enable_pkc == True:
-                enc = enc + 67108864 #flag.80211r_pmska_cache
+                enc = enc + 67108864  # flag.80211r_pmska_cache
             if bss_transition == True:
-                enc = enc + 8796093022208 #flag.use-bss-transition
+                enc = enc + 8796093022208  # flag.use-bss-transition
             if power_save == True:
-                enc = enc + 34359738368 #flag.power_save_enable
+                enc = enc + 34359738368  # flag.power_save_enable
             if disable_ofdma == True:
-                enc = enc + 35184372088832 #flag.disable-ofdma
+                enc = enc + 35184372088832  # flag.disable-ofdma
             if roam_ft_ds == True:
-                enc = enc + 140737488355328 #flag.ft-roam-over-ds
+                enc = enc + 140737488355328  # flag.ft-roam-over-ds
 
         return enc
 
@@ -1043,7 +1043,7 @@ class Laptop():
                     'port': port,
                     'report_timer': 1,
                     'current_flags': 2147483648,
-                    'interest': 92291074,# To set the dhcp,dhcp release,IPv4 selection and station up
+                    'interest': 92291074,  # To set the dhcp,dhcp release,IPv4 selection and station up
                     'mac': self.mac
                 }
             else:
@@ -1053,7 +1053,7 @@ class Laptop():
                     'port': port,
                     'report_timer': 1,
                     'current_flags': 2147483648,
-                    'interest': 92291074,# To set the dhcp,dhcp release,IPv4 selection and station up
+                    'interest': 92291074,  # To set the dhcp,dhcp release,IPv4 selection and station up
                 }
             data_list.append(data)
 
@@ -1086,7 +1086,7 @@ class Laptop():
                     'port': 'wiphy0',
                     'report_timer': 1,
                     'current_flags': 0,
-                    'interest': 92291074,# To set the dhcp,dhcp release,IPv4 selection and station up
+                    'interest': 92291074,  # To set the dhcp,dhcp release,IPv4 selection and station up
                     'mac': self.mac
                 }
             else:
@@ -1096,7 +1096,7 @@ class Laptop():
                     'port': port,
                     'report_timer': 1,
                     'current_flags': 2147483648,
-                    'interest': 92291074,# To set the dhcp,dhcp release,IPv4 selection and station up
+                    'interest': 92291074,  # To set the dhcp,dhcp release,IPv4 selection and station up
                 }
             data_list.append(data)
 
