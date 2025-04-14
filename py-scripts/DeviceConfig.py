@@ -1682,6 +1682,36 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
+        description="""\
+
+        NAME: DeviceConfig.py
+
+        DESCRIPTION: This script allows you to interact with both Android and Laptop devices, configure them for Wi-Fi connectivity,
+        manage groups of devices, and monitor their connections. It provides various features like creating Wi-Fi profiles,
+        configuring devices, and creating or managing groups using a CSV file as the database.
+        Mainly we use these script classes in other script that uses Groups and Profiles
+
+        Pre-requisites: Real devices should be connected to the LANforge MGR
+
+        EXAMPLE1:
+        Command to Create a group
+        python3 DeviceConfig.py --lanforge_ip 192.168.214.61  --create_group --file_name grp61
+
+        EXAMPLE2:
+        Command to Create a DEVICE CSV file
+        python3 DeviceConfig.py --create_csv --lanforge_ip 192.168.214.61 --csv_name demo.csv
+        python3 DeviceConfig.py --create_csv --lanforge_ip 192.168.214.219
+
+        EXAMPLE3:
+        Command to Create SSID profile
+        python3 DeviceConfig.py --lanforge_ip 192.168.214.61 --create_profile --profile_config 'Openx=<ssid=test_wpa2><passwd lanforge><enc wpa2><server_ip 192.168.214.61>'
+        python3 DeviceConfig.py --lanforge_ip 192.168.214.61 --create_profile --profile_config 'Openy=<ssid=test_wpa3><passwd lanforge><enc wpa3><server_ip 192.168.214.61>'
+
+        EXAMPLE4:
+        Command to Connect devices in a group to a profile
+        python3 DeviceConfig.py --lanforge_ip 192.168.204.74 --connect_profile --file_name g219 --wait_time 20
+
+        """
     )
 
     parser.add_argument('--lanforge_ip', type=str, default='localhost', help='')
