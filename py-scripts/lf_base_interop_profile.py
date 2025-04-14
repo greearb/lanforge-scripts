@@ -1414,7 +1414,7 @@ class RealDevice(Realm):
         return [self.selected_devices, self.report_labels, self.selected_macs]
 
     async def configure_wifi_groups(self, select_serials, serials_input, ssid_input, passwd_input, enc_input, eap_method_input,
-                                    eap_identity_input, ieee80211, key_management, private_key, ca_cert, client_cert, pk_passwd, pac_file):
+                                    eap_identity_input, ieee80211=True, key_management='DEFAULT', private_key='NA', ca_cert='NA', client_cert='NA', pk_passwd='NA', pac_file='NA'):
         self.station_list = []
         selected_androids = []
         selected_androids_temp = []
@@ -1447,20 +1447,20 @@ class RealDevice(Realm):
                         laptop['enc'] = enc_input[idx]
                         laptop['eap_method'] = eap_method_input[idx]
                         laptop['eap_identity'] = eap_identity_input[idx]
-                        laptop['ieee80211'] = ieee80211[idx]
-                        laptop['ieee80211u'] = self.ieee80211u[idx]
-                        laptop['ieee80211w'] = self.ieee80211w[idx]
-                        laptop['enable_pkc'] = self.enable_pkc[idx]
-                        laptop['bss_transition'] = self.bss_transition[idx]
-                        laptop['power_save'] = self.power_save[idx]
-                        laptop['disable_ofdma'] = self.disable_ofdma[idx]
-                        laptop['roam_ft_ds'] = self.roam_ft_ds[idx]
-                        laptop['key_management'] = key_management[idx]
-                        laptop['private_key'] = private_key[idx]
-                        laptop['ca_cert'] = ca_cert[idx]
-                        laptop['client_cert'] = client_cert[idx]
-                        laptop['pk_passwd'] = pk_passwd[idx]
-                        laptop['pac_file'] = pac_file[idx]
+                        laptop['ieee80211'] = ieee80211
+                        laptop['ieee80211u'] = self.ieee80211u_5g
+                        laptop['ieee80211w'] = self.ieee80211w_5g
+                        laptop['enable_pkc'] = self.enable_pkc_5g
+                        laptop['bss_transition'] = self.bss_transition_5g
+                        laptop['power_save'] = self.power_save_5g
+                        laptop['disable_ofdma'] = self.disable_ofdma_5g
+                        laptop['roam_ft_ds'] = self.roam_ft_ds_5g
+                        laptop['key_management'] = key_management
+                        laptop['private_key'] = private_key
+                        laptop['ca_cert'] = ca_cert
+                        laptop['client_cert'] = client_cert
+                        laptop['pk_passwd'] = pk_passwd
+                        laptop['pac_file'] = pac_file
                         laptop['band'] = '5g'
                         selected_laptops.append(laptop)
                         break
@@ -1787,8 +1787,10 @@ class RealDevice(Realm):
         if dowebgui:
             self.selected_device_eids = device_list.split(",")
         else:
-            self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
-
+            if device_list == "":
+                self.selected_device_eids = input('Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices): ').split(',')
+            else:
+                self.selected_device_eids = device_list
         # if all is selected making the list as empty string so that it would consider all devices
         if (self.selected_device_eids == ['all']):
             self.selected_device_eids = all_devices_list
