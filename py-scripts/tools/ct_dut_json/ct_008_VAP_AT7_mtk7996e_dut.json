@@ -1,0 +1,30 @@
+
+{
+    "ct_008_VAP_AT7_mtk7996e_dut":{
+        "Notes":[
+            "This json file describes device under test run configuration used as input for --dut_json for lf_check.py"
+
+        ]
+    },
+    "test_dut":{
+        "DUT_SET_NAME": "DUT_NAME VAP_AT7_MT7996",
+        "USE_DUT_NAME": "VAP_AT7_MT7996",
+        "DUT_HW":"mtk7996e",
+        "DUT_SW":"2025032812917",
+        "DUT_MODEL":"vap_mtk7996",
+        "DUT_SERIAL":"serial_1.1",
+        "UPSTREAM_PORT":"1.2.eth1",
+        "UPSTREAM_ALIAS":"eth2",
+        "DATABASE_SQLITE":"ct_008_tp_link_db.db",
+        "wireless_network_dict":{
+
+
+                    "ssid_idx=0":{"ssid_idx":"0", "SSID_USED":"at7_2g","SSID_PW_USED":"hello123","BSSID_TO_USE":"38:f8:f6:73:4b:54","SECURITY_USED":"wpa2"},
+
+                    "ssid_idx=1":{"ssid_idx":"1", "SSID_USED":"at7_5g","SSID_PW_USED":"hello123","BSSID_TO_USE":"38:f8:f6:d9:21:5a","SECURITY_USED":"wpa2"},
+
+                    "ssid_idx=2":{"ssid_idx":"2", "SSID_USED":"at7_6g","SSID_PW_USED":"hello123","BSSID_TO_USE":"38:f8:f6:56:6a:56","SECURITY_USED":"wpa3"}
+
+        }
+    }
+}
