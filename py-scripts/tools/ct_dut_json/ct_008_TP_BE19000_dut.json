@@ -1,0 +1,30 @@
+
+{
+    "ct_008_TP_BE19000_dut":{
+        "Notes":[
+            "This json file describes device under test run configuration used as input for --dut_json for lf_check.py"
+
+        ]
+    },
+    "test_dut":{
+        "DUT_SET_NAME": "DUT_NAME TP-Link_BE19000",
+        "USE_DUT_NAME": "TP-Link_BE19000",
+        "DUT_HW":"'Archer BE800 v1.0'",
+        "DUT_SW":"1.2.1",
+        "DUT_MODEL":"'Archer BE800 v.10'",
+        "DUT_SERIAL":"serial_1.1",
+        "UPSTREAM_PORT":"1.2.eth1",
+        "UPSTREAM_ALIAS":"eth1",
+        "DATABASE_SQLITE":"ct_008_tp_link_db.db",
+        "wireless_network_dict":{
+
+
+                    "ssid_idx=0":{"ssid_idx":"0", "SSID_USED":"TP-Link_C672","SSID_PW_USED":"19719207","BSSID_TO_USE":"dc:62:79:ed:c6:74","SECURITY_USED":"wpa2"},
+
+                    "ssid_idx=1":{"ssid_idx":"1", "SSID_USED":"TP-Link_C672_5G","SSID_PW_USED":"19719207","BSSID_TO_USE":"dc:62:79:ed:c6:75","SECURITY_USED":"wpa2"},
+
+                    "ssid_idx=2":{"ssid_idx":"2", "SSID_USED":"TP-Link_C672_6G","SSID_PW_USED":"19719207","BSSID_TO_USE":"f6:62:79:ed:c6:76","SECURITY_USED":"wpa3"}
+
+        }
+    }
+}
