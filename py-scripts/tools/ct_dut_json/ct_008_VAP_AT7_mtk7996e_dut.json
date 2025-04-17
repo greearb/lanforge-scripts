@@ -15,7 +15,7 @@
         "DUT_SERIAL":"serial_1.1",
         "UPSTREAM_PORT":"1.2.eth1",
         "UPSTREAM_ALIAS":"eth2",
-        "DATABASE_SQLITE":"ct_008_tp_link_db.db",
+        "DATABASE_SQLITE":"ct_008_vap_at7_db.db",
         "wireless_network_dict":{
 
 
