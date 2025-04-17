@@ -95,7 +95,8 @@ NOTES:      This script is intended to only create and configure stations. See o
                 Path to private key used by the station in authentication. Required for TLS-based authentication.
                 Note this is the path on the LANforge system where this station will be created.
 
-EXAMPLE:    # Create a single station
+EXAMPLE:
+            # Create a single station
                ./create_station.py \
                    --mgr       <lanforge ip> \
                    --radio     1.1.wiphy1 \
@@ -111,6 +112,15 @@ EXAMPLE:    # Create a single station
                    --passwd        <password> \
                    --security      wpa2 \
                    --num_stations  10
+
+            # Create a multiple stations, all associated to specific BSSID
+               ./create_station.py \
+                   --mgr       <lanforge ip> \
+                   --radio     1.1.wiphy1 \
+                   --ssid      <ssid> \
+                   --bssid     <bssid> \
+                   --passwd    <password> \
+                   --security  wpa2
 
             # Create a multiple stations with specific numbering scheme
             # In this example, create five stations with names of the format: "sta1000", "sta1001", "sta1002", etc.
@@ -142,7 +152,7 @@ EXAMPLE:    # Create a single station
                    --mgr       <lanforge ip> \
                    --radio     1.1.wiphy1 \
                    --ssid      <ssid> \
-                   --passwd    <password>  \
+                   --passwd    <password> \
                    --security  wpa2 \
                    --mode      6
 
@@ -192,13 +202,13 @@ EXAMPLE:    # Create a single station
             #    In this example, specify a background scanning 'wpa_supplicant' command, useful for roaming.
             #    Here, the background scan is configured to a threshold of -65 dBm RSSI with a short and long interval of 50 and 300 seconds.
             #    See 'man wpa_supplicant.conf' for more information.
-                   ./create_station.py \
-                       --mgr               <lanforge ip> \
-                       --radio             1.1.wiphy1 \
-                       --ssid              <ssid> \
-                       --passwd            <password> \
-                       --security          wpa2 \
-                       --custom_wifi_cmd   'bgscan="simple:50:-65:300"'
+                ./create_station.py \
+                    --mgr               <lanforge ip> \
+                    --radio             1.1.wiphy1 \
+                    --ssid              <ssid> \
+                    --passwd            <password> \
+                    --security          wpa2 \
+                    --custom_wifi_cmd   'bgscan="simple:50:-65:300"'
 
 SCRIPT_CLASSIFICATION:
             Creation
@@ -579,12 +589,9 @@ class CreateStation(Realm):
 def parse_args():
     """Parse CLI arguments."""
     parser = LFCliBase.create_basic_argparse(  # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
-        prog='create_station.py',
+        prog="create_station.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''\
-         Create stations
-            ''',
-
+        epilog="Create stations",
         description="""\
 NAME:       create_station.py
 
@@ -681,7 +688,8 @@ NOTES:      This script is intended to only create and configure stations. See o
                 Path to private key used by the station in authentication. Required for TLS-based authentication.
                 Note this is the path on the LANforge system where this station will be created.
 
-EXAMPLE:    # Create a single station
+EXAMPLE:
+            # Create a single station
                ./create_station.py \
                    --mgr       <lanforge ip> \
                    --radio     1.1.wiphy1 \
@@ -697,6 +705,15 @@ EXAMPLE:    # Create a single station
                    --passwd        <password> \
                    --security      wpa2 \
                    --num_stations  10
+
+            # Create a multiple stations, all associated to specific BSSID
+               ./create_station.py \
+                   --mgr       <lanforge ip> \
+                   --radio     1.1.wiphy1 \
+                   --ssid      <ssid> \
+                   --bssid     <bssid> \
+                   --passwd    <password> \
+                   --security  wpa2
 
             # Create a multiple stations with specific numbering scheme
             # In this example, create five stations with names of the format: "sta1000", "sta1001", "sta1002", etc.
@@ -728,7 +745,7 @@ EXAMPLE:    # Create a single station
                    --mgr       <lanforge ip> \
                    --radio     1.1.wiphy1 \
                    --ssid      <ssid> \
-                   --passwd    <password>  \
+                   --passwd    <password> \
                    --security  wpa2 \
                    --mode      6
 
@@ -778,13 +795,13 @@ EXAMPLE:    # Create a single station
             #    In this example, specify a background scanning 'wpa_supplicant' command, useful for roaming.
             #    Here, the background scan is configured to a threshold of -65 dBm RSSI with a short and long interval of 50 and 300 seconds.
             #    See 'man wpa_supplicant.conf' for more information.
-                   ./create_station.py \
-                       --mgr               <lanforge ip> \
-                       --radio             1.1.wiphy1 \
-                       --ssid              <ssid> \
-                       --passwd            <password> \
-                       --security          wpa2 \
-                       --custom_wifi_cmd   'bgscan="simple:50:-65:300"'
+                ./create_station.py \
+                    --mgr               <lanforge ip> \
+                    --radio             1.1.wiphy1 \
+                    --ssid              <ssid> \
+                    --passwd            <password> \
+                    --security          wpa2 \
+                    --custom_wifi_cmd   'bgscan="simple:50:-65:300"'
 
 SCRIPT_CLASSIFICATION:
             Creation
