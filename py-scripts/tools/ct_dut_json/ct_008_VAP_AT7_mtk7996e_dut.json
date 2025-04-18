@@ -19,11 +19,11 @@
         "wireless_network_dict":{
 
 
-                    "ssid_idx=0":{"ssid_idx":"0", "SSID_USED":"at7_2g","SSID_PW_USED":"hello123","BSSID_TO_USE":"38:f8:f6:73:4b:54","SECURITY_USED":"wpa2"},
+                    "ssid_idx=0":{"ssid_idx":"0", "SSID_USED":"at7_2g","SSID_PW_USED":"hello123","BSSID_TO_USE":"DEFAULT","SECURITY_USED":"wpa3"},
 
-                    "ssid_idx=1":{"ssid_idx":"1", "SSID_USED":"at7_5g","SSID_PW_USED":"hello123","BSSID_TO_USE":"38:f8:f6:d9:21:5a","SECURITY_USED":"wpa2"},
+                    "ssid_idx=1":{"ssid_idx":"1", "SSID_USED":"at7_5g","SSID_PW_USED":"hello123","BSSID_TO_USE":"DEFAULT","SECURITY_USED":"wpa3"},
 
-                    "ssid_idx=2":{"ssid_idx":"2", "SSID_USED":"at7_6g","SSID_PW_USED":"hello123","BSSID_TO_USE":"38:f8:f6:56:6a:56","SECURITY_USED":"wpa3"}
+                    "ssid_idx=2":{"ssid_idx":"2", "SSID_USED":"at7_6g","SSID_PW_USED":"hello123","BSSID_TO_USE":"DEFAULT","SECURITY_USED":"wpa3"}
 
         }
     }
