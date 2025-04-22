@@ -6,7 +6,7 @@
 
     EXAMPLE-1:
     Command Line Interface to run YouTube with the specified URL and duration:
-    python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 1 --res 1080p --flask_ip 192.168.214.131
+    python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 1 --res 1080p --upstream_port 1.1.eth1
 
         CASE-1:
         If the given duration is longer than the actual video duration, the video will loop.
@@ -16,13 +16,23 @@
 
     EXAMPLE-2:
     Command Line Interface to run YouTube on multiple devices:
-    python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 2 --res 1080p --flask_ip 192.168.214.131 --resources 1.13,1.14...
+    python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 2 --res 1080p --upstream_port 1.1.eth1 --resources 1.13,1.14...
 
 
-    EXAMPLE-4:
+    EXAMPLE-3:
     Command Line Interface to run YouTube without post-cleanup of cross-connections:
     python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 2 --res 1080p
-    --flask_ip 192.168.214.131 --resources 1.13,1.14... --no_post_cleanup
+    --upstream_port 1.1.eth1 --resources 1.13,1.14... --no_post_cleanup
+
+    EXAMPLE-4:
+    Command Line Interface to run YouTube with multiple groups and profiles:
+    python3 lf_interop_youtube.py --mgr 192.168.204.74 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 1
+    --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --upstream_port 1.1.eth1
+    EXAMPLE-5:
+    Command Line Interface to run YouTube with Device Configuration:
+    python3 lf_interop_youtube.py --mgr 192.168.204.74 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 1
+    --ssid NETGEAR_2g_wpa2 --passwd Password@123 --encryp wpa2 --upstream_port 1.1.eth1 --config
+
     SCRIPT CLASSIFICATION: Test
 
     NOTES:
@@ -56,14 +66,6 @@ logger = logging.getLogger(__name__)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-
-# # Add necessary paths if not already included
-if 'py-json' not in sys.path:
-    sys.path.append('/home/lanforge/lanforge-scripts/py-json')
-
-
-if 'py-scripts' not in sys.path:
-    sys.path.append('/home/lanforge/lanforge-scripts/py-scripts')
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
@@ -123,7 +125,7 @@ class Youtube(Realm):
                  band=None,
                  base_dir=None,
                  test_name=None,
-                 flask_ip=None,
+                 upstream_port=None,
                  config=None,
                  selected_groups=None,
                  selected_profiles=None
@@ -190,7 +192,7 @@ class Youtube(Realm):
         self.mydatajson = {}
         self.final_data = None
         self.stats_api_response = {}
-        self.flask_ip = flask_ip
+        self.upstream_port = upstream_port
         self.stop_signal = False
         self.config = config
         self.selected_groups = selected_groups
@@ -224,71 +226,43 @@ class Youtube(Realm):
         self.generic_endps_profile.created_endp = []
         # Log cleanup completion
 
-    def execute_youtube_test(self, duration, do_webUI):
+    def change_port_to_ip(self, upstream_port):
         """
-        Execute the YouTube test for monitoring
+        Convert a given port name to its corresponding IP address if it's not already an IP.
+
+        This function checks whether the provided `upstream_port` is a valid IPv4 address.
+        If it's not, it attempts to extract the IP address of the port by resolving it
+        via the internal `name_to_eid()` method and then querying the IP using `json_get()`.
 
         Args:
-            duration (int): Duration of the test in minutes.
-            do_webUI (bool): Flag to determine if the test is triggered from the web UI.
+            upstream_port (str): The name or IP of the upstream port. This could be a
+                                 LANforge port name like '1.1.eth1' or an IP address.
+
+        Returns:
+            str: The resolved IP address if the port name was converted successfully,
+                otherwise returns the original input if it was already an IP or
+                if resolution fails.
+
+        Logs:
+            - A warning if the port is not Ethernet or IP resolution fails.
+            - Info logs for the resolved or passed IP.
+
         """
-        # Wait for 10 seconds before starting the test
-        self.clear_previous_data()
+        if upstream_port.count('.') != 3:
+            target_port_list = self.name_to_eid(upstream_port)
+            shelf, resource, port, _ = target_port_list
+            try:
+                target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+                upstream_port = target_port_ip
+            except BaseException:
+                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+            logging.info(f"Upstream port IP {upstream_port}")
+        else:
+            logging.info(f"Upstream port IP {upstream_port}")
 
-        self.start_generic()
-        time.sleep(5)
+        self.upstream_port = upstream_port
 
-        # Initialize variables
-        self.start_time = datetime.now()
-        self.est_end_time = self.start_time + timedelta(minutes=duration, seconds=60)
-        self.end_time_webgui = [False] * len(self.device_names)
-        self.keys = self.generic_endps_profile.created_cx
-        self.all_stop = False
-
-        # Ensure initial data is fetched
-        initial_data = self.get_data_from_api()
-        while not initial_data:
-            initial_data = self.get_data_from_api()
-            time.sleep(1)
-
-        # Monitoring loop
-        while not self.all_stop:
-            if do_webUI:
-                stop_value = self.set_webUI_stop()
-                if stop_value == "Completed":
-                    break
-
-            self._monitor_test(do_webUI)
-
-            time.sleep(1)  # Adjust sleep time as needed
-
-        logging.info("Duration ended. Stopping the test.")
-
-    def _monitor_test(self, do_webUI):
-        """
-        Monitor the YouTube test execution and handle stop conditions.
-
-        Args:
-            do_webUI (bool): Flag to determine if the test is triggered from the web UI.
-        """
-        initial_data = self.get_data_from_api()
-        if initial_data:
-            for i in range(len(self.device_names)):
-                stop_state = initial_data['result'].get(self.device_names[i], {}).get('stop', False)
-                if stop_state:
-                    self.end_time_webgui[i] = True
-                if all(self.end_time_webgui) or datetime.now() >= self.est_end_time:
-                    self.all_stop = True
-                    return
-
-            for i in range(len(self.device_names)):
-                if not self.end_time_webgui[i]:
-                    new_key = self.keys[i]
-                    if new_key.startswith("CX_"):
-                        new_key = self.keys[i][3:]
-                    response = self.json_get(f'/generic/{new_key}')
-                    if response['endpoint']['status'] in ['WAITING', 'Stopped']:
-                        self.end_time_webgui[i] = True
+        return upstream_port
 
     def check_tab_exists(self):
         """
@@ -410,15 +384,15 @@ class Youtube(Realm):
         for i in range(0, len(self.real_sta_os_types)):
             if self.real_sta_os_types[i] == 'windows':
                 # cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.lfclient_host, self.real_sta_hostname[i], self.duration,self.resolution)
-                cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.flask_ip, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_types[i] == 'linux':
                 # cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.new_port_list[i], self.url, self.lfclient_host, self.real_sta_hostname[i], self.duration,self.resolution)
-                cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.new_port_list[i], self.url, self.flask_ip, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.new_port_list[i], self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
             elif self.real_sta_os_types[i] == 'macos':
-                cmd = "sudo bash ctyt.bash --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.flask_ip, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = "sudo bash ctyt.bash --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
     def select_real_devices(self, real_devices, real_sta_list=None, base_interop_obj=None):
@@ -478,7 +452,8 @@ class Youtube(Realm):
         if len(self.real_sta_list) == 0:
             logger.error('There are no real devices in this testbed. Aborting test')
             exit(0)
-
+        real_devices.get_devices()
+        self.real_sta_list = self.filter_ios_devices(self.real_sta_list)
         for sta_name in self.real_sta_list:
             if sta_name not in real_devices.devices_data:
                 logger.error(f"Real station '{sta_name}' not in devices data, ignoring it from testing")
@@ -525,26 +500,6 @@ class Youtube(Realm):
     def stop_generic_cx(self,):
         self.generic_endps_profile.stop_cx()
         self.stop_time = datetime.now()
-
-    def set_webUI_stop(self,):
-        """
-        Sets the status of the webUI test to 'Completed' in the runtime_ping_data.json file.
-
-        Procedure Followed:
-        1. Opens the runtime_ping_data.json file located in `self.ui_report_dir` for reading.
-        2. Loads the JSON data from the file into the `data` variable.
-        3. Checks if 'status' key exists in `data` and if its value is not 'Aborted'.
-        - If conditions are met, updates 'status' to 'Completed' in `data`.
-        4. Writes the updated `data` back to the runtime_ping_data.json file with proper formatting.
-
-        Note:
-        - This method assumes `self.ui_report_dir` contains the path to the directory where runtime_ping_data.json is located.
-        """
-        file_path = self.ui_report_dir
-        file_name = '/running_status.json'
-        with open(file_path + file_name, 'r') as f:
-            data = json.load(f)
-            return data['status']
 
     def get_data_from_api(self):
         """
@@ -690,6 +645,7 @@ class Youtube(Realm):
     def stop_test_yt(self,):
         try:
             url = f"http://{self.host}:5454/update_status_yt"
+            # url = "http://localhost:5454/update_status_yt"
             headers = {
                 'Content-Type': 'application/json',
             }
@@ -706,23 +662,6 @@ class Youtube(Realm):
 
         except Exception as e:
             logging.error(f"An error occurred while updating status: {e}")
-
-    def clear_previous_data(self,):
-        try:
-            url = "http://localhost:5454/youtube_stats"
-            headers = {
-                'Content-Type': 'application/json',
-            }
-            data = {
-                'clear_data': True,
-            }
-            response = requests.post(url, json=data, headers=headers)
-            if response.status_code == 200:
-                logging.info("Successfully cleared previous test data.")
-            else:
-                logging.error(f"Failed to clear previous data. Status code: {response.status_code}")
-        except Exception as e:
-            logging.error(f"An error occurred while clearing previous data: {e}")
 
     def move_files(self, source_file, dest_dir):
         # Ensure the source file exists
@@ -1023,6 +962,80 @@ class Youtube(Realm):
         self.report.write_html()
         self.report.write_pdf()
 
+    def filter_ios_devices(self, device_list):
+        """
+        Filters out iOS devices from the given device list based on hardware and software identifiers.
+
+        This method accepts a list or comma-separated string of device identifiers and removes
+        devices identified as iOS (Apple) based on their hardware version, app ID, and kernel info
+        fetched via the `/resource/{shelf}/{resource}` API endpoint.
+
+        Supported input formats for each device:
+        - "shelf.resource"
+        - "shelf.resource.port"
+        - "resource" (assumes shelf = 1)
+
+        iOS devices are identified if:
+        - 'Apple' is found in the hardware version, and
+        - `app-id` is not empty and is either non-zero or the kernel is empty
+
+        Args:
+            device_list (Union[list[str], str]): A list or comma-separated string of devices to be filtered.
+
+        Returns:
+            Union[list[int], str]: A list of valid (non-iOS) device IDs as integers,
+                                or a comma-separated string if the input was a string.
+
+        Logs:
+            - Warnings for invalid formats or missing device data.
+            - Info when an iOS device is skipped.
+            - Exceptions if errors occur during processing.
+
+        """
+        modified_device_list = device_list
+        if isinstance(device_list, str):
+            modified_device_list = device_list.split(',')
+
+        filtered_list = []
+
+        for device in modified_device_list:
+            device = str(device).strip()
+            try:
+                if device.count('.') == 1:
+                    shelf, resource = device.split('.')
+                elif device.count('.') == 2:
+                    shelf, resource, port = device.split('.')
+                elif device.count('.') == 0:
+                    shelf, resource = 1, device
+                else:
+                    logger.warning("Invalid device format: %s", device)
+                    continue
+
+                device_data_resp = self.json_get(f'/resource/{shelf}/{resource}')
+                if not device_data_resp or 'resource' not in device_data_resp:
+                    logger.warning("Device data not found for %s", device)
+                    continue
+
+                device_data = device_data_resp['resource']
+                hw_version = device_data.get('hw version', '')
+                app_id = device_data.get('app-id', '')
+                kernel = device_data.get('kernel', '')
+
+                if 'Apple' in hw_version and app_id != '' and (app_id != '0' or kernel == ''):
+                    logger.info("%s is an iOS device. Currently, we do not support iOS devices.", device)
+                else:
+                    filtered_list.append(device)
+
+            except Exception as e:
+                logger.exception(f"Error processing device {device}: {e}")
+                continue
+
+        if isinstance(device_list, str):
+            filtered_list = ','.join(filtered_list)
+
+        self.device_list = filtered_list
+        return filtered_list
+
     def check_gen_cx(self):
         try:
 
@@ -1056,7 +1069,42 @@ def main():
             Allows user to run the youtube streaming test on a target resource for the given duration.
         ''',
             description=''
-            'youtube streaming automation '''
+            '''
+            youtube streaming automation
+
+            PURPOSE: lf_interop_youtube.py provides the available devices and allows the user to run YouTube on selected devices by specifying the video URL and duration.
+
+            EXAMPLE-1:
+            Command Line Interface to run YouTube with the specified URL and duration:
+            python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 1 --res 1080p --upstream_port 1.1.eth1
+
+                CASE-1:
+                If the given duration is longer than the actual video duration, the video will loop.
+
+                CASE-2:
+                If the given duration is shorter than the actual video duration, the video will stop after the specified duration.
+
+            EXAMPLE-2:
+            Command Line Interface to run YouTube on multiple devices:
+            python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 2 --res 1080p --upstream_port 1.1.eth1 --resources 1.13,1.14...
+
+
+            EXAMPLE-3:
+            Command Line Interface to run YouTube without post-cleanup of cross-connections:
+            python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 2 --res 1080p
+            --upstream_port 1.1.eth1 --resources 1.13,1.14... --no_post_cleanup
+
+            EXAMPLE-4:
+            Command Line Interface to run YouTube with multiple groups and profiles:
+            python3 lf_interop_youtube.py --mgr 192.168.204.74 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 1
+            --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --upstream_port 1.1.eth1
+
+            EXAMPLE-5:
+            Command Line Interface to run YouTube with Device Configuration:
+            python3 lf_interop_youtube.py --mgr 192.168.204.74 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 1
+            --ssid NETGEAR_2g_wpa2 --passwd Password@123 --encryp wpa2 --upstream_port 1.1.eth1 --config
+
+            '''
         )
 
         # Define required arguments group
@@ -1069,12 +1117,11 @@ def main():
         # Add required arguments
         required.add_argument('--mgr', type=str, help="hostname where LANforge GUI is running", required=True)
         required.add_argument('--url', type=str, help='youtube url', required=True)
-        required.add_argument('--duration', type=int, help='duration to run the test in sec', required=True)
+        required.add_argument('--duration', type=int, help='duration to run the test in min', required=True)
         required.add_argument('--ap_name', type=str, default="TIP", help="Name of the AP in which we run the test")
         required.add_argument('--sec', type=str, default="wpa2", help="security type used")
         required.add_argument('--band', type=str, default="5GHZ", help="Name of the Frequency band used")
         required.add_argument('--test_name', type=str, help="Test name while running through webgui")
-        required.add_argument('--flask_ip', type=str, help='IP for flask server', required=True)
 
         # Add optional arguments
         optional.add_argument('--resources', help='Specify the real device ports seperated by comma')
@@ -1100,31 +1147,30 @@ def main():
         parser.add_argument("--encryp", default=None, help='specify the encryption type  on which the test will be '
                             'running eg :open|psk|psk2|sae|psk2jsae')
 
-        parser.add_argument("--eap_method", type=str, default='DEFAULT')
-        parser.add_argument("--eap_identity", type=str, default='')
-        parser.add_argument("--ieee80211", action="store_true")
-        parser.add_argument("--ieee80211u", action="store_true")
-        parser.add_argument("--ieee80211w", type=int, default=1)
-        parser.add_argument("--enable_pkc", action="store_true")
-        parser.add_argument("--bss_transition", action="store_true")
-        parser.add_argument("--power_save", action="store_true")
-        parser.add_argument("--disable_ofdma", action="store_true")
-        parser.add_argument("--roam_ft_ds", action="store_true")
-        parser.add_argument("--key_management", type=str, default='DEFAULT')
-        parser.add_argument("--pairwise", type=str, default='[BLANK]')
-        parser.add_argument("--private_key", type=str, default='[BLANK]')
-        parser.add_argument("--ca_cert", type=str, default='[BLANK]')
-        parser.add_argument("--client_cert", type=str, default='[BLANK]')
-        parser.add_argument("--pk_passwd", type=str, default='[BLANK]')
-        parser.add_argument("--pac_file", type=str, default='[BLANK]')
-        parser.add_argument("--server_ip", type=str, default=None)
+        parser.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
+        parser.add_argument("--eap_identity", type=str, default='DEFAULT', help="Specify the EAP identity for authentication.")
+        parser.add_argument("--ieee80211", action="store_true", help='Enables IEEE 802.11 support.')
+        parser.add_argument("--ieee80211u", action="store_true", help='Enables IEEE 802.11u (Hotspot 2.0) support.')
+        parser.add_argument("--ieee80211w", type=int, default=1, help='Enables IEEE 802.11w (Management Frame Protection) support.')
+        parser.add_argument("--enable_pkc", action="store_true", help='Enables pkc support.')
+        parser.add_argument("--bss_transition", action="store_true", help='Enables BSS transition support.')
+        parser.add_argument("--power_save", action="store_true", help='Enables power-saving features.')
+        parser.add_argument("--disable_ofdma", action="store_true", help='Disables OFDMA support.')
+        parser.add_argument("--roam_ft_ds", action="store_true", help='Enables fast BSS transition (FT) support')
+        parser.add_argument("--key_management", type=str, default='DEFAULT', help='Specify the key management method (e.g., WPA-PSK, WPA-EAP)')
+        parser.add_argument("--pairwise", type=str, default='NA', help='Specify the pairwise cipher')
+        parser.add_argument("--private_key", type=str, default='NA', help='Specify EAP private key certificate file.')
+        parser.add_argument("--ca_cert", type=str, default='NA', help='Specify the CA certificate file name')
+        parser.add_argument("--client_cert", type=str, default='NA', help='Specify the client certificate file name')
+        parser.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
+        parser.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
+        parser.add_argument("--upstream_port", type=str, default='NA', help='Specify the Upstream Port', required=True)
         parser.add_argument('--help_summary', help='Show summary of what this script does', default=None)
         parser.add_argument("--expected_passfail_value", help="Specify the expected urlcount value for pass/fail")
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
         parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
 
         args = parser.parse_args()
-
         if args.help_summary:
             logging.info(help_summary)
             exit(0)
@@ -1224,11 +1270,12 @@ def main():
                 security=args.encryp,
                 band=args.band,
                 test_name=args.test_name,
-                flask_ip=args.flask_ip,
+                upstream_port=args.upstream_port,
                 config=args.config,
                 selected_groups=selected_groups,
                 selected_profiles=selected_profiles)
             youtube.start_flask_server()
+            args.upstream_port = youtube.change_port_to_ip(args.upstream_port)
 
             resources = []
             youtube.Devices = Devices
@@ -1239,6 +1286,8 @@ def main():
             config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.mgr, file_name=new_filename)
             if not args.expected_passfail_value and args.device_csv_name is None:
                 config_obj.device_csv_file(csv_name="device.csv")
+            # If all three values are provided: group_name, file_name, and profile_name,
+            # it means user wants to run the test based on pre-defined groups and profiles.
             if args.group_name is not None and args.file_name is not None and args.profile_name is not None:
                 selected_groups = args.group_name.split(',')
                 selected_profiles = args.profile_name.split(',')
@@ -1248,7 +1297,7 @@ def main():
 
                 config_obj.initiate_group()
 
-                asyncio.run(config_obj.connectivity(config_devices))
+                asyncio.run(config_obj.connectivity(config_devices, upstream=args.upstream_port))
 
                 adbresponse = config_obj.adb_obj.get_devices()
                 resource_manager = config_obj.laptop_obj.get_devices()
@@ -1272,29 +1321,32 @@ def main():
                                     eid_list.append(all_res[j])
                 args.resources = ",".join(id for id in eid_list)
             else:
+                # If group-based configuration isn't used, prepare SSID-related wifi config
                 config_dict = {
-                        'ssid': args.ssid,
-                        'passwd': args.passwd,
-                        'enc': args.encryp,
-                        'eap_method': args.eap_method,
-                        'eap_identity': args.eap_identity,
-                        'ieee80211': args.ieee80211,
-                        'ieee80211u': args.ieee80211u,
-                        'ieee80211w': args.ieee80211w,
-                        'enable_pkc': args.enable_pkc,
-                        'bss_transition': args.bss_transition,
-                        'power_save': args.power_save,
-                        'disable_ofdma': args.disable_ofdma,
-                        'roam_ft_ds': args.roam_ft_ds,
-                        'key_management': args.key_management,
-                        'pairwise': args.pairwise,
-                        'private_key': args.private_key,
-                        'ca_cert': args.ca_cert,
-                        'client_cert': args.client_cert,
-                        'pk_passwd': args.pk_passwd,
-                        'pac_file': args.pac_file,
-                        'server_ip': args.server_ip
+                    'ssid': args.ssid,
+                    'passwd': args.passwd,
+                    'enc': args.encryp,
+                    'eap_method': args.eap_method,
+                    'eap_identity': args.eap_identity,
+                    'ieee80211': args.ieee80211,
+                    'ieee80211u': args.ieee80211u,
+                    'ieee80211w': args.ieee80211w,
+                    'enable_pkc': args.enable_pkc,
+                    'bss_transition': args.bss_transition,
+                    'power_save': args.power_save,
+                    'disable_ofdma': args.disable_ofdma,
+                    'roam_ft_ds': args.roam_ft_ds,
+                    'key_management': args.key_management,
+                    'pairwise': args.pairwise,
+                    'private_key': args.private_key,
+                    'ca_cert': args.ca_cert,
+                    'client_cert': args.client_cert,
+                    'pk_passwd': args.pk_passwd,
+                    'pac_file': args.pac_file,
+                    'server_ip': args.upstream_port
                 }
+                # If device resources are explicitly specified (e.g., 1.10,1.11),
+                # configure only those devices
                 if args.resources:
                     all_devices = config_obj.get_all_devices()
                     if args.group_name is None and args.file_name is None and args.profile_name is None:
@@ -1302,21 +1354,23 @@ def main():
                         if args.config:
                             asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
                 else:
-                    all_devices = config_obj.get_all_devices()
-                    device_list = []
-                    for device in all_devices:
-                        if device["type"] != 'laptop':
-                            device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-                        elif device["type"] == 'laptop':
-                            device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
-
-                    print("Available devices:")
-                    for device in device_list:
-                        print(device)
-
-                    args.resources = input("Enter the desired resources to run the test:")
-                    dev1_list = args.resources.split(',')
+                    # If no device list is provided, show all available devices
+                    # and prompt the user to enter which Devices to use
                     if args.config:
+                        all_devices = config_obj.get_all_devices()
+                        device_list = []
+                        for device in all_devices:
+                            if device["type"] != 'laptop':
+                                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
+                            elif device["type"] == 'laptop':
+                                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+
+                        print("Available devices:")
+                        for device in device_list:
+                            print(device)
+
+                        args.resources = input("Enter the desired resources to run the test:")
+                        dev1_list = args.resources.split(',')
                         asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
 
             if not do_webUI:
@@ -1418,12 +1472,13 @@ def main():
         logging.error("Error occured", e)
         traceback.print_exc()
     finally:
-        youtube.stop()
-        # Stopping the Youtube test
-        if do_webUI:
-            youtube.stop_test_yt()
-        logging.info("Waiting for Cleanup of Browsers in Devices")
-        time.sleep(10)
+        if not ('--help' in sys.argv or '-h' in sys.argv):
+            youtube.stop()
+            # Stopping the Youtube test
+            if do_webUI:
+                youtube.stop_test_yt()
+            logging.info("Waiting for Cleanup of Browsers in Devices")
+            time.sleep(10)
 
 
 if __name__ == "__main__":
