@@ -20,7 +20,7 @@
         "ATTENUATOR_2":"",
         "ATTENUATOR_3":"",
         "EMAIL_LIST_TEST": "tricia.smiley@candelatech.com,chuck.rekiere@candelatech.com",
-        "EMAIL_LIST_PRODUCTION":"",
+        "EMAIL_LIST_PRODUCTION":"tricia.smiley@candelatech.com,chuck.rekiere@candelatech.com,konikofi@candelatech.com,alex.gavin@candelatech.com,dylan.eskew@candelatech.com",
         "EMAIL_TITLE_TXT": "192.168.101.137 CT-US-008 AT7 MTK7996e",
         "EMAIL_TXT": "192.168.101.137 CT-US-008 AT7 MTK7996e"
     }
