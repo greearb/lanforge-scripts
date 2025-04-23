@@ -22,4 +22,5 @@ echo "Running RVR tests against VAP"
 ./ct_tests_json/ct_us_008/ct_perf_rvr/vap_dut/ct_perf_rvr_5g_W1_TCP_rx_vap.json:ct_perf_rvr_5g_W1_TCP_rx,\
 ./ct_tests_json/ct_us_008/ct_perf_rvr/vap_dut/ct_perf_rvr_6g_W2_TCP_rx_vap.json:ct_perf_rvr_6g_W2_TCP_rx \
 --path /home/lanforge/html-reports/ct_us_008 \
---log_level debug
+--log_level debug \
+--production
