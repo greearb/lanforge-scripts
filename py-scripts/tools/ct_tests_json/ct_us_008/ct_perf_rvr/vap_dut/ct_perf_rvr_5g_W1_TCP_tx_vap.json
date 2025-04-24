@@ -10,7 +10,7 @@
     },
     "test_suites":{
 
-        "ct_perf_rvr_5g_W1_TCP_tx":{
+        "ct_perf_vap_rvr_5g_W1_TCP_tx":{
 
             "CC_DUT_mt7996e_5G_W1_TCP_tx":{
                 "enabled":"TRUE",
@@ -33,7 +33,7 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario mt7996e_5G_W1_TCP_tx ",
+                    " --create_scenario vap_mt7996e_5G_W1_TCP_tx ",
                     " --raw_line \"profile_link 1.2 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.2 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.3 uplink-nat 1 'DUT: upstream LAN 192.168.0.1/24' NA eth1,AUTO -1 NA\" ",
@@ -54,7 +54,7 @@
                 "command":"lf_rvr_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name mt7996e_5G_W1_TCP_tx",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name vap_mt7996e_5G_W1_TCP_tx",
                     " --config_name test_con --upstream UPSTREAM_PORT  --dut USE_DUT_NAME --duration 17000 --station 1.2.wlan1",
                     " --download_speed 100% --upload_speed 1% --raw_line 'pkts: Custom' ",
                     " --raw_line 'cust_pkt_sz: 64;172;256;512;768;1024;MTU' ",
@@ -62,7 +62,7 @@
                     " --raw_line 'traffic_types: TCP' ",
                     " --raw_line 'bandw_options: AUTO' ",
                     " --raw_line 'spatial_streams: AUTO' ",
-                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7996e_5G_W1_TCP_tx'",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'vap_mt7996e_5G_W1_TCP_tx'",
                     " --raw_line 'attenuator: ATTENUATOR_1'",
                     " --raw_line 'attenuations: 0..+100..700'",
                     " --raw_line 'attenuator_mod: 0xf'  ",

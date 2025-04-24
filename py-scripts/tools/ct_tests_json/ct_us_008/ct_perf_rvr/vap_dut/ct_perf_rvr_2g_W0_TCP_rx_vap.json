@@ -10,7 +10,7 @@
     },
     "test_suites":{
 
-        "ct_perf_rvr_2g_W0_TCP_rx":{
+        "ct_perf_vap_rvr_2g_W0_TCP_rx":{
 
             "CC_DUT_mt7996e_2G_W0_TCP_rx":{
                 "enabled":"TRUE",
@@ -62,7 +62,7 @@
                     " --raw_line 'traffic_types: TCP' ",
                     " --raw_line 'bandw_options: AUTO' ",
                     " --raw_line 'spatial_streams: AUTO' ",
-                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7996e_2G_W0_TCP_rx'",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'vap_mt7996e_2G_W0_TCP_rx'",
                     " --raw_line 'attenuator: ATTENUATOR_1'",
                     " --raw_line 'attenuations: 0..+100..700'",
                     " --raw_line 'attenuator_mod: 0xf'  ",
