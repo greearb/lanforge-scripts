@@ -33,6 +33,15 @@ Command Line Interface to run download scenario for Real clients with device lis
 python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.214.219 --fiveg_ssid Cisco-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret  --upstream_port eth1
 --duration 1m --bands 5G --client_type Real --file_size 2MB --device_list 1.12,1.22
 
+EXAMPLE-6:
+Command Line Interface to run download scenario for Real clients with device list and Expected Pass/Fail CSV
+python3 lf_webpage.py  --file_size 1MB --mgr 192.168.213.218 --duration 1m --client_type Real --bands 5G --upstream_port eth1 --device_list 1.11,1.95 --device_csv_name test.csv
+
+EXAMPLE-7:
+Command Line Interface to run download scenario for Real clients with device list and expected passfail value
+python3 lf_webpage.py  --file_size 1MB --mgr 192.168.204.74 --duration 1m --client_type Real --bands 5G --upstream_port eth1 --device_list 1.11,1.95 --expected_passfail_value 5
+
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -75,6 +84,7 @@ import shutil
 import json
 from lf_graph import lf_bar_graph_horizontal
 
+import csv
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -97,7 +107,7 @@ class HttpDownload(Realm):
     def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password, ap_name,
                  target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None, sixg_radio=None, _debug_on=False, _exit_on_error=False,
                  _exit_on_fail=False, client_type="", port_list=[], devices_list=[], macid_list=[], lf_username="lanforge", lf_password="lanforge", result_dir="", dowebgui=False, device_list=[], test_name=None,
-                 get_url_from_file=None, file_path=None):
+                 get_url_from_file=None, file_path=None,device_csv_name='',expected_passfail_value=None):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -145,6 +155,8 @@ class HttpDownload(Realm):
         self.radio = []
         self.get_url_from_file = get_url_from_file
         self.file_path = file_path
+        self.expected_passfail_value = expected_passfail_value
+        self.device_csv_name = device_csv_name
         self.api_url = 'http://{}:{}'.format(self.host, self.port)
         self.device_found = False
 
@@ -913,7 +925,9 @@ class HttpDownload(Realm):
 
         # To store http_datavalues.csv in report folder
         report_path_date_time = report.get_path_date_time()
-        shutil.move('http_datavalues.csv', report_path_date_time)
+        # It ensures no blocker for virtual clients
+        if self.client_type == 'Real':
+            shutil.move('http_datavalues.csv', report_path_date_time)
         if bands == "Both":
             num_stations = num_stations * 2
         report.set_title("HTTP DOWNLOAD TEST")
@@ -1098,6 +1112,8 @@ class HttpDownload(Realm):
         report.build_table()
         report.set_table_title("Overall Results")
         report.build_table_title()
+        if self.expected_passfail_value or self.device_csv_name:
+                test_input_list, pass_fail_list = self.get_pass_fail_list(dataset2)
         dataframe = {
             " Clients": self.devices,
             " MAC ": self.macid_list,
@@ -1109,6 +1125,9 @@ class HttpDownload(Realm):
             " Bytes-rd (Mega Bytes) ": dataset1,
             "Rx Rate (Mbps)": rx_rate
         }
+        if self.expected_passfail_value or self.device_csv_name:
+            dataframe[" Expected value of no of times file downloaded"] = test_input_list
+            dataframe["Status"] = pass_fail_list
         dataframe1 = pd.DataFrame(dataframe)
         report.set_table_dataframe(dataframe1)
         report.build_table()
@@ -1132,6 +1151,53 @@ class HttpDownload(Realm):
         if not os.path.exists(test_name_dir):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
+
+    def get_pass_fail_list(self, dataset2):
+        # When device csv specified for pass_fail criteria
+        if self.expected_passfail_value == '' or self.expected_passfail_value is None:
+            res_list = []
+            test_input_list = []
+            pass_fail_list = []
+
+            interop_tab_data = self.local_realm.json_get('/adb/')["devices"]
+            for client in self.devices:
+                if client.split(' ')[1] != 'android':
+                    res_list.append(client.split(' ')[2])
+                else:
+                    for dev in interop_tab_data:
+                        for item in dev.values():
+                            if item['user-name'] == client.split(' ')[2]:
+                                res_list.append(item['name'].split('.')[2])
+            with open(self.device_csv_name, mode='r') as file:
+                reader = csv.DictReader(file)
+                rows = list(reader)
+            for device in res_list:
+                found = False
+                for row in rows:
+                    if row['DeviceList'] == device and row['HTTP URLcount'].strip() != '':
+                        test_input_list.append(row['HTTP URLcount'])
+                        found = True
+                        break
+                # appending default value when not found in csv
+                if not found:
+                    logger.info(f'Pass/Fail value for device {device} not found in the CSV. Defaulting to a pass threshold of 5 URL counts.')
+                    test_input_list.append(5)
+            for i in range(len(test_input_list)):
+                if int(test_input_list[i]) <= dataset2[i]:
+                    pass_fail_list.append('PASS')
+                else:
+                    pass_fail_list.append('FAIL')
+        # When expected pass_fail value specified for pass_fail criteria
+        else:
+            test_input_list = [self.expected_passfail_value for val in range(len(self.devices))]
+            pass_fail_list = []
+            for i in range(len(test_input_list)):
+                if int(self.expected_passfail_value) <= dataset2[i]:
+                    pass_fail_list.append("PASS")
+                else:
+                    pass_fail_list.append("FAIL")
+
+        return test_input_list, pass_fail_list
 
 
 def main():
@@ -1273,6 +1339,8 @@ def main():
                                               ' or upload the URLs', default=None)
     optional.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
+    optional.add_argument("--expected_passfail_value", help="Specify the expected number of urls", default=None)
+    optional.add_argument("--device_csv_name", type=str, help='Specify the csv name to store expected url values', default=None)
     help_summary = '''\
 lf_webpage.py will verify that N clients are connected on a specified band and can download
 some amount of file data from the HTTP server while measuring the time taken by clients to download the file and number of
@@ -1309,6 +1377,10 @@ times the file is downloaded.
         args.duration = int(args.duration[0:-1]) * 60 * 60
     elif args.duration.endswith(''):
         args.duration = int(args.duration)
+    
+    if args.expected_passfail_value and args.device_csv_name:
+        logger.error("Specify either --expected_passfail_value or --device_csv_name")
+        exit(1)
 
     list6G, list6G_bytes, list6G_speed, list6G_urltimes = [], [], [], []
     list5G, list5G_bytes, list5G_speed, list5G_urltimes = [], [], [], []
@@ -1370,7 +1442,9 @@ times the file is downloaded.
                             device_list=args.device_list,
                             test_name=args.test_name,  # FOR WEBGUI
                             get_url_from_file=args.get_url_from_file,
-                            file_path=args.file_path
+                            file_path=args.file_path,
+                            expected_passfail_value=args.expected_passfail_value,
+                            device_csv_name=args.device_csv_name,
                             )
         if args.client_type == "Real":
             if not isinstance(args.device_list, list):
