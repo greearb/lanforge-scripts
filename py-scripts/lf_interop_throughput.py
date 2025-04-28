@@ -106,6 +106,7 @@ import logging
 import json
 import pandas as pd
 import shutil
+import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 
@@ -1137,6 +1138,68 @@ class Throughput(Realm):
             cx_incremental_capacity_names_lists.append(new_cx_names_list)
         return cx_incremental_capacity_names_lists, cx_incremental_capacity_lists, created_cx_lists_keys, incremental_capacity_list_values
 
+    # Ensures maximum of 60 plots in line graph
+    def build_line_graph(self, data_set, xaxis_name, yaxis_name, xaxis_categories, label, graph_image_name):
+        """
+        Creates and saves a line graph showing throughput over time.
+
+        - Plots each data point for all throughput data in dataset.
+        - Shows only up to 60 labels on the x-axis to keep it readable.
+
+        Returns:
+        The name of the saved image file.
+        """
+        figsize = (10, 5)
+        plt.figure(figsize=(figsize[0] + 5, figsize[1] + 2))
+
+        color = ['forestgreen', 'c', 'r', 'g', 'b', 'p']
+        marker = ['s', 'o', 'v']
+        xaxis_categories = xaxis_categories[:-1]
+        data_set = [data[:-1] for data in data_set]
+        # Plot each dataset
+        for i, data in enumerate(data_set):
+            plt.plot(
+                xaxis_categories,
+                data,
+                color=color[i % len(color)],  # Ensure no index error
+                label=label[i],
+                marker=marker[i % len(marker)]
+            )
+
+        plt.xlabel(xaxis_name, fontweight='bold', fontsize=15)
+        plt.ylabel(yaxis_name, fontweight='bold', fontsize=15)
+
+        # Handle x-axis ticks dynamically based on data size
+        data_size = len(xaxis_categories)
+        if data_size <= 60:
+            tick_positions = list(range(data_size))
+        else:
+            # Ensure 60 points including the first and last
+            tick_count = min(60, data_size)
+            interval = data_size / (tick_count - 1)
+            tick_positions = [round(i * interval) for i in range(tick_count)]
+            tick_positions = sorted(set(min(data_size - 1, max(0, pos)) for pos in tick_positions))
+        tick_labels = [xaxis_categories[i] for i in tick_positions]
+
+        plt.xticks(ticks=tick_positions, labels=tick_labels, rotation=90)
+
+        plt.grid(True, linestyle=':')  # Grid with dotted lines
+
+        # Legend settings
+        plt.legend(loc="best", ncol=1)
+
+        plt.suptitle("", fontsize=16)
+        plt.tight_layout()
+
+        # Save the graph as an image
+        plt.savefig(f"{graph_image_name}.png", dpi=96, bbox_inches="tight")
+        plt.close()
+
+        logger.debug("{}.png".format(graph_image_name))
+        logger.debug("{}.csv".format(graph_image_name))
+
+        return f"{graph_image_name}.png"
+
     def generate_report(self, iterations_before_test_stopped_by_user, incremental_capacity_list, data=None, data1=None, report_path='', result_dir_name='Throughput_Test_report',
                         selected_real_clients_names=None):
 
@@ -1416,7 +1479,7 @@ class Throughput(Realm):
                                 packet_size_in_table.append(self.cx_profile.side_a_min_pdu)
                             direction_in_table.append(self.direction)
 
-                data_set_in_graph, trimmed_data_set_in_graph = [], []
+                data_set_in_graph = []
 
                 # Depending on the test direction, retrieve corresponding throughput data,
                 # organize it into datasets for graphing, and calculate real-time average throughput values accordingly.
@@ -1447,24 +1510,19 @@ class Throughput(Realm):
                 if len(incremental_capacity_list) > 1:
                     report.set_custom_html(f"<h2><u>Iteration-{i+1}: Number of Devices Running : {len(devices_on_running)}</u></h2>")
                     report.build_custom()
-                logger
-                for _ in range(len(data_set_in_graph)):
-                    trimmed_data_set_in_graph.append(self.trim_data(len(data_set_in_graph[_]), data_set_in_graph[_]))
 
                 report.set_obj_html(
                     _obj_title=f"{real_time_data}",
                     _obj=" ")
                 report.build_objective()
-                graph = lf_line_graph(_data_set=trimmed_data_set_in_graph,
-                                      _xaxis_name="Time",
-                                      _yaxis_name="Throughput (Mbps)",
-                                      _xaxis_categories=self.trim_data(len(data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()),
-                                                                       data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()),
-                                      _label=label_data,
-                                      _graph_image_name=f"line_graph{i}"
-
-                                      )
-                graph_png = graph.build_line_graph()
+                graph_png = self.build_line_graph(
+                    data_set=data_set_in_graph,
+                    xaxis_name="Time",
+                    yaxis_name="Throughput (Mbps)",
+                    xaxis_categories=data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist(),
+                    label=label_data,
+                    graph_image_name=f"line_graph{i}"
+                )
                 logger.info("graph name {}".format(graph_png))
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
@@ -1715,7 +1773,7 @@ class Throughput(Realm):
 
                         direction_in_table.append(self.direction)
 
-                data_set_in_graph, trimmed_data_set_in_graph = [], []
+                data_set_in_graph = []
 
                 # Depending on the test direction, retrieve corresponding throughput data,
                 # organize it into datasets for graphing, and calculate real-time average throughput values accordingly.
@@ -1746,23 +1804,18 @@ class Throughput(Realm):
                 report.set_custom_html(f"<h2><u>{i+1}. Test On Device {', '.join(devices_on_running)}:</u></h2>")
                 report.build_custom()
 
-                for _ in range(len(data_set_in_graph)):
-                    trimmed_data_set_in_graph.append(self.trim_data(len(data_set_in_graph[_]), data_set_in_graph[_]))
-
                 report.set_obj_html(
                     _obj_title=f"{real_time_data}",
                     _obj=" ")
                 report.build_objective()
-                graph = lf_line_graph(_data_set=trimmed_data_set_in_graph,
-                                      _xaxis_name="Time",
-                                      _yaxis_name="Throughput (Mbps)",
-                                      _xaxis_categories=self.trim_data(len(data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()),
-                                                                       data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()),
-                                      _label=label_data,
-                                      _graph_image_name=f"line_graph{i}"
-
-                                      )
-                graph_png = graph.build_line_graph()
+                graph_png = self.build_line_graph(
+                    data_set=data_set_in_graph,
+                    xaxis_name="Time",
+                    yaxis_name="Throughput (Mbps)",
+                    xaxis_categories=data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist(),
+                    label=label_data,
+                    graph_image_name=f"line_graph{i}"
+                )
                 logger.info("graph name {}".format(graph_png))
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
@@ -1857,17 +1910,6 @@ class Throughput(Realm):
         report.build_footer()
         report.write_html()
         report.write_pdf(_orientation="Landscape")
-
-    def trim_data(self, array_size, to_updated_array):
-        if array_size < 6:
-            updated_array = to_updated_array
-        else:
-            middle_elements_count = 4
-            step = (array_size - 1) / (middle_elements_count + 1)
-            middle_elements = [int(i * step) for i in range(1, middle_elements_count + 1)]
-            new_array = [0] + middle_elements + [array_size - 1]
-            updated_array = [to_updated_array[index] for index in new_array]
-        return updated_array
 
     def copy_reports_to_home_dir(self):
         curr_path = self.result_dir
