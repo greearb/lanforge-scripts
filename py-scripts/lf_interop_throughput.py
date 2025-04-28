@@ -454,7 +454,7 @@ class Throughput(Realm):
 
         """
 
-        signal_list, channel_list, mode_list, link_speed_list = [], [], [], []
+        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = [], [], [], [], []
         interfaces_dict = dict()
         try:
             port_data = self.json_get('/ports/all/')['interfaces']
@@ -487,7 +487,12 @@ class Throughput(Realm):
                 link_speed_list.append(interfaces_dict[sta]['tx-rate'])
             else:
                 link_speed_list.append('-')
-        return signal_list, channel_list, mode_list, link_speed_list
+        for sta in station_names:
+            if sta in interfaces_dict:
+                rx_rate_list.append(interfaces_dict[sta]['rx-rate'])
+            else:
+                rx_rate_list.append('-')
+        return signal_list, channel_list, mode_list, link_speed_list, rx_rate_list
 
     def get_ssid_list(self, station_names):
         """
@@ -627,6 +632,53 @@ class Throughput(Realm):
     def cleanup(self):
         logger.info("cleanup done")
         self.cx_profile.cleanup()
+    
+    def get_layer3_endp_data(self):
+        """
+        Fetches Layer 3 endpoint data for all created cross connections.
+
+        Returns:
+            dict: A dictionary with  Each key corresponds to 
+            the index of a each device in the order of cx_list, and its value is a list of 5 elements:
+            [0]: RX rate (last) at the A endpoint
+            [1]: RX rate (last) at the B endpoint
+            [2]: RX drop percentage at the A endpoint
+            [3]: RX drop percentage at the B endpoint
+            [4]: Status of the Device ("Run" or "Stopped")
+        """
+        cx_list_endp = []
+        for i in self.cx_profile.created_cx.keys():
+            cx_list_endp.append(i + '-A')
+            cx_list_endp.append(i + '-B')
+        # Fetch required throughput data from Lanforge
+        try:
+            # for dynamic data, taken rx rate lasts from layer3 endp tab
+            l3_endp_data = list(self.json_get('/endp/{}/list?fields=rx rate (last),rx drop %25,name,run,name'.format(','.join(cx_list_endp)))['endpoint'])
+        except Exception as e:
+            cx_data = self.json_get('/cx/all/')
+            logger.info(cx_data)
+            logger.error(f"Endpoint not fetched from API {e}")
+        # Extracting and storing throughput data
+        cx_list = list(self.cx_profile.created_cx.keys())
+        i = 0
+        throughput = {}
+        # mapping the data based upon the cx_list order
+        for cx in cx_list:
+            throughput[i] = [0, 0, 0, 0, "Stopped"]
+            for j in l3_endp_data:
+                key, value = next(iter(j.items()))
+                endp_a = cx + '-A'
+                endp_b = cx + '-B'
+                if value['name'] == endp_a:
+                    throughput[i][0] = value['rx rate (last)']
+                    throughput[i][2] = value['rx drop %']
+                elif value['name'] == endp_b:
+                    throughput[i][1] = value['rx rate (last)']
+                    throughput[i][3] = value['rx drop %']
+                if value['name'] == endp_a or value['name'] == endp_b:
+                    throughput[i][4] = 'Run' if value['run'] else 'Stopped'
+            i += 1
+        return throughput
 
     def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time):
 
@@ -661,22 +713,9 @@ class Throughput(Realm):
         # Continuously collect data until end time is reached
         while datetime.now() < end_time:
             index += 1
-
-            signal_list, channel_list, mode_list, link_speed_list = self.get_signal_and_channel_data(self.input_devices_list)
+            signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
             signal_list = [int(i) if i != "" else 0 for i in signal_list]
-
-            # Fetch required throughput data from Lanforge
-            try:
-                response = list(
-                    self.json_get('/cx/%s?fields=%s' % (
-                        ','.join(self.cx_profile.created_cx.keys()), ",".join(['bps rx a', 'bps rx b', 'rx drop %25 a', 'rx drop %25 b', 'state']))).values())[2:]
-            except Exception as e:
-                overall_response = self.json_get('/cx/all/')
-                logger.info(overall_response)
-                logger.error(f"Endpoint not fetched from API {e}")
-            # Extracting and storing throughput data
-            throughput[index] = list(
-                map(lambda i: [x for x in i.values()], response))
+            throughput[index] = self.get_layer3_endp_data()
             if self.dowebgui:
                 individual_df_data = []
                 temp_upload, temp_download, temp_drop_a, temp_drop_b = [], [], [], []
@@ -720,7 +759,7 @@ class Throughput(Realm):
                     remaining_minutes_instrf = str(overall_time_difference).split(".")[0]
                 # Storing individual device throughput data(download, upload, Rx % drop A, Rx % drop B) to dataframe
                 for i in range(len(download_throughput)):
-                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i]])
+                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i],rx_rate_list[i]])
 
                 # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
                 individual_df_data.extend([round(sum(download_throughput),
@@ -825,7 +864,7 @@ class Throughput(Realm):
                     remaining_minutes_instrf = str(overall_time_difference).split(".")[0]
                 # Storing individual device throughput data(download, upload, Rx % drop A, Rx % drop B) to dataframe
                 for i in range(len(download_throughput)):
-                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i]])
+                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
 
                 # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
                 individual_df_data.extend([round(sum(download_throughput),
@@ -869,12 +908,12 @@ class Throughput(Realm):
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
         drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
         drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
-        signal_list, channel_list, mode_list, link_speed_list = self.get_signal_and_channel_data(self.input_devices_list)
+        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
         signal_list = [int(i) if i != "" else 0 for i in signal_list]
 
         # Storing individual device throughput data(download, upload, Rx % drop A, Rx % drop B) to dataframe after test stopped
         for i in range(len(download_throughput)):
-            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i]])
+            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
         timestamp = datetime.now().strftime("%d/%m %I:%M:%S %p")
 
         # If it's the last iteration, append final metrics and 'Stopped' status
@@ -1105,7 +1144,7 @@ class Throughput(Realm):
             result_dir_name = "Interopability_Test_report"
 
         self.ssid_list = self.get_ssid_list(self.input_devices_list)
-        self.signal_list, self.channel_list, self.mode_list, self.link_speed_list = self.get_signal_and_channel_data(self.input_devices_list)
+        self.signal_list, self.channel_list, self.mode_list, self.link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
 
         if selected_real_clients_names is not None:
             self.num_stations = selected_real_clients_names
@@ -2125,7 +2164,7 @@ Copyright 2023 Candela Technologies Inc.
 
             # Extend individual_dataframe_column with dynamically generated column names
             individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop A {clients_to_run[i]}',
-                                               f'Rx % Drop B{clients_to_run[i]}', f'RSSI {clients_to_run[i]} ', f'Link Speed {clients_to_run[i]} '])
+                                               f'Rx % Drop B{clients_to_run[i]}', f'RSSI {clients_to_run[i]} ', f'Tx-Rate {clients_to_run[i]} ',f'Rx-Rate {clients_to_run[i]} '])
 
         individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop A', 'Overall Rx % Drop B', 'Iteration',
                                            'TIMESTAMP', 'Start_time', 'End_time', 'Remaining_Time', 'Incremental_list', 'status'])
