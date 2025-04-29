@@ -148,10 +148,10 @@ class RealBrowserTest(Realm):
                  client_cert=None,
                  pk_passwd=None,
                  pac_file=None,
-                 server_ip=None, device_csv_name=None,
+                 upstream_port=None,
+                 device_csv_name=None,
                  expected_passfail_value=None,
                  wait_time=60,
-                 flask_ip=None,
                  config=None,
                  selected_groups=None,
                  selected_profiles=None):
@@ -236,11 +236,10 @@ class RealBrowserTest(Realm):
         self.client_cert = client_cert
         self.pk_passwd = pk_passwd
         self.pac_file = pac_file
-        self.server_ip = server_ip
+        self.upstream_port = upstream_port
         self.expected_passfail_value = expected_passfail_value
         self.device_csv_name = device_csv_name
         self.wait_time = wait_time
-        self.flask_ip = flask_ip
         self.config = config
         self.selected_groups = selected_groups
         self.selected_profiles = selected_profiles
@@ -322,13 +321,13 @@ class RealBrowserTest(Realm):
 
         for i in range(0, len(self.laptop_os_types)):
             if self.laptop_os_types[i] == 'windows':
-                cmd = "real_browser.bat --url %s --server %s --duration %s" % (self.url, self.flask_ip, self.duration)
+                cmd = "real_browser.bat --url %s --server %s --duration %s" % (self.url, self.upstream_port, self.duration)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.laptop_os_types[i] == 'linux':
-                cmd = "su -l lanforge  ctrb.bash %s %s %s %s" % (self.new_port_list[i], self.url, self.flask_ip, self.duration)
+                cmd = "su -l lanforge  ctrb.bash %s %s %s %s" % (self.new_port_list[i], self.url, self.upstream_port, self.duration)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.laptop_os_types[i] == 'macos':
-                cmd = "sudo bash ctrb.bash --url %s --server %s  --duration %s" % (self.url, self.flask_ip, self.duration)
+                cmd = "sudo bash ctrb.bash --url %s --server %s  --duration %s" % (self.url, self.upstream_port, self.duration)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
         if len(self.phone_data) != 0:
@@ -1549,8 +1548,7 @@ def main():
         parser.add_argument("--client_cert", type=str, default='[BLANK]')
         parser.add_argument("--pk_passwd", type=str, default='[BLANK]')
         parser.add_argument("--pac_file", type=str, default='[BLANK]')
-        parser.add_argument("--server_ip", type=str, default=None)
-        parser.add_argument("--flask_ip", type=str, default=None)
+        parser.add_argument("--upstream_port", type=str, default='NA', help='Specify the Upstream Port', required=True)
         parser.add_argument('--help_summary', help='Show summary of what this script does', default=None)
         parser.add_argument("--expected_passfail_value", help="Specify the expected urlcount value for pass/fail", default=5)
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
@@ -1666,11 +1664,10 @@ def main():
                                   client_cert=args.client_cert,
                                   pk_passwd=args.pk_passwd,
                                   pac_file=args.pac_file,
-                                  server_ip=args.server_ip,
+                                  upstream_port=args.upstream_port,
                                   expected_passfail_value=args.expected_passfail_value,
                                   device_csv_name=args.device_csv_name,
                                   wait_time=args.wait_time,
-                                  flask_ip=args.flask_ip,
                                   config=args.config,
                                   selected_groups=selected_groups,
                                   selected_profiles=selected_profiles
