@@ -1079,6 +1079,42 @@ class RealBrowserTest(Realm):
 
         except Exception as e:
             logging.error(f"An error occurred while updating status: {e}")
+    
+    def change_port_to_ip(self, upstream_port):
+        """
+        Convert a given port name to its corresponding IP address if it's not already an IP.
+
+        This function checks whether the provided `upstream_port` is a valid IPv4 address.
+        If it's not, it attempts to extract the IP address of the port by resolving it
+        via the internal `name_to_eid()` method and then querying the IP using `json_get()`.
+
+        Args:
+            upstream_port (str): The name or IP of the upstream port. This could be a
+            LANforge port name like '1.1.eth1' or an IP address.
+
+        Returns:
+            str: The resolved IP address if the port name was converted successfully,
+            otherwise returns the original input if it was already an IP or
+            if resolution fails.
+
+        Logs:
+            - A warning if the port is not Ethernet or IP resolution fails.
+            - Info logs for the resolved or passed IP.
+
+        """
+        if upstream_port.count('.') != 3:
+            target_port_list = self.name_to_eid(upstream_port)
+            shelf, resource, port, _ = target_port_list
+            try:
+                target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+                upstream_port = target_port_ip
+            except BaseException:
+                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+            logging.info(f"Upstream port IP {upstream_port}")
+        else:
+            logging.info(f"Upstream port IP {upstream_port}")
+
+        return upstream_port
 
     def create_report(self,):
         if self.dowebgui:
