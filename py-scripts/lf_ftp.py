@@ -50,6 +50,31 @@ Command Line Interface to run download scenario by setting device specific Pass/
 python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.204.74 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
  --upstream_port eth1 --device_csv_name device.csv
 
+EXAMPLE-9:
+Command Line Interface to run download scenario by Configuring Real Devices with SSID, Password, and Security
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --ssid NETGEAR_5G --passwd Password@123 --security wpa2 --config
+
+EXAMPLE-10:
+Command Line Interface to run download scenario by setting the same expected Pass/Fail value for all devices with configuration
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --ssid NETGEAR_2G --passwd Password@123 --security wpa2 --expected_passfail_value 4 --config
+
+EXAMPLE-11:
+Command Line Interface to run download scenario by setting device specific Pass/Fail values in the csv file without configuration
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --ssid NETGEAR_2G --passwd Password@123 --security wpa2 --device_csv_name device.csv
+
+EXAMPLE-12:
+Command Line Interface to run download scenario by Configuring Devices in Groups with Specific Profiles
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218  --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --file_name g219 --group_name grp1 --profile_name Open3
+
+EXAMPLE-13:
+Command Line Interface to run download scenario by Configuring Devices in Groups with Specific Profiles and expected Pass/Fail values
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --file_name g219 --group_name grp1 --profile_name Open3 --expected_passfail_value 3 --wait_time 30
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -90,6 +115,8 @@ import pandas as pd
 import logging
 import shutil
 from lf_graph import lf_bar_graph_horizontal
+from typing import List, Optional
+import asyncio
 import csv
 
 if sys.version_info[0] != 3:
@@ -104,6 +131,8 @@ lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+# Importing DeviceConfig to apply device configurations for ADB devices and laptops
+DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
@@ -114,10 +143,31 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 class FtpTest(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta=0, radio="",
                  dut_ssid=None, dut_security=None, dut_passwd=None, file_size=None, band=None, twog_radio=None,
+                 file_name=None,
+                 profile_name=None, group_name=None,
                  sixg_radio=None, fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False, ap_name="",
                  direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None,
                  lf_username="lanforge", lf_password="lanforge", clients_type="Virtual", dowebgui=False, device_list=[], test_name=None, result_dir=None,
+                 eap_method=None,
+                 eap_identity=None,
+                 ieee80211=None,
+                 ieee80211u=None,
+                 ieee80211w=None,
+                 enable_pkc=None,
+                 bss_transition=None,
+                 power_save=None,
+                 disable_ofdma=None,
+                 roam_ft_ds=None,
+                 key_management=None,
+                 pairwise=None,
+                 private_key=None,
+                 ca_cert=None,
+                 client_cert=None,
+                 wait_time=60,
+                 pk_passwd=None,
+                 pac_file=None,
                  expected_passfail_val=None,
+                 config=False,
                  csv_name=None):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         logger.info("Test is about to start")
@@ -125,6 +175,9 @@ class FtpTest(LFCliBase):
         self.host = lfclient_host
         self.port = lfclient_port
         # self.radio = radio
+        self.profile_name = profile_name
+        self.file_name = file_name
+        self.group_name = group_name
         self.ap_name = ap_name
         self.result_dir = result_dir
         self.test_name = test_name
@@ -182,8 +235,28 @@ class FtpTest(LFCliBase):
         self.channel_list = []
         self.mode_list = []
         self.cx_list = []
+        self.eap_method = eap_method
+        self.eap_identity = eap_identity
+        self.ieee80211 = ieee80211
+        self.ieee80211u = ieee80211u
+        self.ieee80211w = ieee80211w
+        self.enable_pkc = enable_pkc
+        self.bss_transition = bss_transition
+        self.power_save = power_save
+        self.disable_ofdma = disable_ofdma
+        self.roam_ft_ds = roam_ft_ds
+        self.key_management = key_management
+        self.pairwise = pairwise
+        self.private_key = private_key
+        self.ca_cert = ca_cert
+        self.client_cert = client_cert
+        self.pk_passwd = pk_passwd
+        self.pac_file = pac_file
         self.expected_passfail_val = expected_passfail_val
         self.csv_name = csv_name
+        self.wait_time = wait_time
+        self.config = config
+        self.group_device_map = {}
         self.pass_fail_list = []
         self.test_input_list = []
         self.api_url = 'http://{}:{}'.format(self.host, self.port)
@@ -191,6 +264,69 @@ class FtpTest(LFCliBase):
         logger.info("Test is Initialized")
 
     def query_realclients(self):
+        config_devices = {}
+        obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
+        upstream = self.change_port_to_ip(self.upstream)
+        config_dict = {
+            'ssid': self.ssid,
+            'passwd': self.password,
+            'enc': self.security,
+            'eap_method': self.eap_method,
+            'eap_identity': self.eap_identity,
+            'ieee80211': self.ieee80211,
+            'ieee80211u': self.ieee80211u,
+            'ieee80211w': self.ieee80211w,
+            'enable_pkc': self.enable_pkc,
+            'bss_transition': self.bss_transition,
+            'power_save': self.power_save,
+            'disable_ofdma': self.disable_ofdma,
+            'roam_ft_ds': self.roam_ft_ds,
+            'key_management': self.key_management,
+            'pairwise': self.pairwise,
+            'private_key': self.private_key,
+            'ca_cert': self.ca_cert,
+            'client_cert': self.client_cert,
+            'pk_passwd': self.pk_passwd,
+            'pac_file': self.pac_file,
+            'server_ip': upstream,
+        }
+        # Case 1: Group name, file name, and profile name are provided, but device list is empty
+        if self.group_name and self.file_name and self.device_list == [] and self.profile_name:
+            selected_groups = self.group_name.split(',')
+            selected_profiles = self.profile_name.split(',')
+            for i in range(len(selected_groups)):
+                config_devices[selected_groups[i]] = selected_profiles[i]
+            obj.initiate_group()
+            self.group_device_map = obj.get_groups_devices(data=selected_groups, groupdevmap=True)
+            # Configure devices in the selected group with the selected profile
+            self.device_list = asyncio.run(obj.connectivity(config_devices, upstream=upstream))
+        # Case 2: Device list is already provided
+        elif self.device_list != []:
+            all_devices = obj.get_all_devices()
+            # self.device_list can be a string like "dev1,dev2" or a list; convert to list if it's a string
+            if isinstance(self.device_list, str):
+                self.device_list = self.device_list.split(',')
+            # If config is false, the test will exclude all inactive devices
+            if self.config:
+                # If config is True, attempt to bring up all devices in the list and perform tests on those that become active
+                # Configure devices in the device list with the provided SSID, Password and Security
+                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=config_dict))
+        # Case 3: Device list is empty but config flag is True — prompt the user to input device details for configuration
+        elif self.device_list == [] and self.config:
+            all_devices = obj.get_all_devices()
+            device_list = []
+            for device in all_devices:
+                if device["type"] == 'laptop':
+                    device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+                else:
+                    device_list.append(device["eid"] + " " + device["serial"])
+            logger.info(f"Available devices: {device_list}")
+            self.device_list = input("Enter the desired resources to run the test:").split(',')
+            # If config is false, the test will exclude all inactive devices
+            if self.config:
+                # If config is True, attempt to bring up all devices in the list and perform tests on those that become active
+                # Configure devices entered by the user with the provided SSID, Password and Security
+                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=config_dict))
         response = self.json_get("/resource/all")
         for key, value in response.items():
             if key == "resources":
@@ -274,11 +410,16 @@ class FtpTest(LFCliBase):
                     self.user_list.append(device)
         logger.info("AVAILABLE DEVICES TO RUN TEST: %s", self.user_list)
         logging.info(self.user_list)
+        # Case 4: Config is False, no device list is provided, and no group is selected
+        if not self.config and len(self.device_list) == 0 and self.group_name is None:
+            logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(self.user_list))
+            # Prompt the user to manually input devices for running the test
+            self.device_list = input("Enter the desired resources to run the test:").split(',')
         if len(self.device_list) != 0:
             devices_list = self.device_list
             available_list = []
             not_available = []
-            for input_device in devices_list.split(','):
+            for input_device in devices_list:
                 found = False
                 for device in self.devices_available:
                     if input_device + " " in device:
@@ -310,15 +451,16 @@ class FtpTest(LFCliBase):
                 raise ValueError("No Device is available to run the test hence aborting the test")
             logging.info("device got from webui are: %s", devices_list)
         else:
-            logging.info("AVAILABLE DEVICES TO RUN TEST : %s", self.user_list)
-            devices_list = input("Enter the desired resources to run the test:")
-            logging.info("devices list %s", devices_list)
+            devices_list = ""
         # print("devices list",devices_list)
         resource_eid_list = devices_list.split(',')
         resource_eid_list2 = [eid + ' ' for eid in resource_eid_list]
         resource_eid_list1 = [resource + '.' for resource in resource_eid_list]
         # print("resource eid list",resource_eid_list)
 
+        if devices_list == "" or devices_list == ",":
+            logger.warning(f"Can't run test on the selected devices. devices_list: '{devices_list}'")
+            exit(1)
         # User desired eids are fetched ---
 
         for eid in resource_eid_list1:
@@ -336,7 +478,7 @@ class FtpTest(LFCliBase):
             for j in range(len(self.user_list)):
                 if i in self.user_list[j]:
                     self.real_client_list.append(self.user_list[j])
-                    self.real_client_list1.append((self.user_list[j])[:25])
+                    self.real_client_list1.append((self.user_list[j]))
         print("REAL CLIENT LIST", self.real_client_list)
         # print("REAL CLIENT LIST1", self.real_client_list1)
 
@@ -345,7 +487,7 @@ class FtpTest(LFCliBase):
                 if eid in i:
                     self.mac_id_list.append(i.strip(eid + ' '))
         logging.info("MAC ID LIST %s", self.mac_id_list)
-        return self.real_client_list
+        return self.real_client_list, config_devices
 
     def set_values(self):
         '''This method will set values according user input'''
@@ -368,6 +510,22 @@ class FtpTest(LFCliBase):
 
         # file size in Bytes
         self.file_size_bytes = int(self.convert_file_size_in_Bytes(self.file_size))
+
+    # Converts an upstream port name to its corresponding IP address if it's not already in IP format.
+    def change_port_to_ip(self, upstream_port):
+        if upstream_port.count('.') != 3:
+            target_port_list = LFUtils.name_to_eid(upstream_port)
+            shelf, resource, port, _ = target_port_list
+            try:
+                target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+                upstream_port = target_port_ip
+            except BaseException:
+                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+            logging.info(f"Upstream port IP {upstream_port}")
+        else:
+            logging.info(f"Upstream port IP {upstream_port}")
+
+        return upstream_port
 
     def precleanup(self):
         self.count = 0
@@ -940,6 +1098,18 @@ class FtpTest(LFCliBase):
             logger.info("No endpoint found")
             logger.info(total_data)
 
+    # Updates the status in the running.json file while running a test from the Web UI
+    def updating_webui_runningjson(self, obj):
+        data = {}
+        with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
+                  'r') as file:
+            data = json.load(file)
+            for key in obj:
+                data[key] = obj[key]
+        with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
+                  'w') as file:
+            json.dump(data, file, indent=4)
+
     def my_monitor(self):
         dataset = []
         self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd = [], [], [], [], [], [], [], []
@@ -1475,7 +1645,7 @@ class FtpTest(LFCliBase):
 
     def generate_report(self, ftp_data, date, input_setup_info, test_rig, test_tag, dut_hw_version,
                         dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
-                        csv_outfile, local_lf_report_dir, _results_dir_name='ftp_test', report_path=''):
+                        csv_outfile, local_lf_report_dir, _results_dir_name='ftp_test', report_path='', config_devices=""):
         no_of_stations = ""
         duration = ""
         x_fig_size = 18
@@ -1551,18 +1721,34 @@ class FtpTest(LFCliBase):
         else:
             no_of_stations = str(len(self.input_devices_list))
 
-        if (self.clients_type == "Real"):
-            test_setup_info = {
-                "AP Name": self.ap_name,
-                "SSID": self.ssid,
-                "Security": self.security,
-                "Device List": ", ".join(all_devices_names),
-                "No of Devices": "Total" + f"({no_of_stations})" + total_devices,
-                "File size": self.file_size,
-                "File location": "/home/lanforge",
-                "Traffic Direction": self.direction,
-                "Traffic Duration ": duration
-            }
+        if self.clients_type == "Real":
+            # Test setup information table for devices in device list
+            if config_devices == "":
+                test_setup_info = {
+                    "AP Name": self.ap_name,
+                    "SSID": self.ssid,
+                    "Security": self.security,
+                    "Device List": ", ".join(all_devices_names),
+                    "No of Devices": "Total" + f"({no_of_stations})" + total_devices,
+                    "File size": self.file_size,
+                    "File location": "/home/lanforge",
+                    "Traffic Direction": self.direction,
+                    "Traffic Duration ": duration
+                }
+            # Test setup information table for devices in groups
+            else:
+                group_names = ', '.join(config_devices.keys())
+                profile_names = ', '.join(config_devices.values())
+                configmap = "Groups:" + group_names + " -> Profiles:" + profile_names
+                test_setup_info = {
+                    "AP Name": self.ap_name,
+                    'Configuration': configmap,
+                    "No of Devices": "Total" + f"({no_of_stations})" + total_devices,
+                    "File size": self.file_size,
+                    "File location": "/home/lanforge",
+                    "Traffic Direction": self.direction,
+                    "Traffic Duration ": duration
+                }
         else:
             test_setup_info = {
                 "AP Name": self.ap_name,
@@ -1678,24 +1864,40 @@ class FtpTest(LFCliBase):
             # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
             if self.expected_passfail_val or self.csv_name:
                 self.get_pass_fail_list(client_list)
-            dataframe = {
-                " Clients": client_list,
-                " MAC ": self.mac_id_list,
-                " Channel": self.channel_list,
-                " SSID ": self.ssid_list,
-                " Mode": self.mode_list,
-                " No of times File downloaded ": self.url_data,
-                " Time Taken to Download file (ms)": self.uc_avg,
-                " Bytes-rd (Mega Bytes)": self.bytes_rd,
-                " RX RATE (Mbps) ": self.rx_rate
-            }
-            if self.expected_passfail_val or self.csv_name:
-                dataframe[" Expected output "] = self.test_input_list
-                dataframe[" Status "] = self.pass_fail_list
+            # When groups are provided a seperate table will be generated for each group using generate_dataframe
+            if self.group_name:
+                for key, val in self.group_device_map.items():
+                    if self.expected_passfail_val or self.csv_name:
+                        dataframe = self.generate_dataframe(val, client_list, self.mac_id_list, self.channel_list, self.ssid_list, self.mode_list,
+                                                            self.url_data, self.test_input_list, self.uc_avg, self.bytes_rd, self.rx_rate,self.pass_fail_list)
+                    else:
+                        dataframe = self.generate_dataframe(val, client_list, self.mac_id_list, self.channel_list, self.ssid_list, self.mode_list, self.url_data, [], self.uc_avg, self.bytes_rd, self.rx_rate,[])
 
-            dataframe1 = pd.DataFrame(dataframe)
-            self.report.set_table_dataframe(dataframe1)
-            self.report.build_table()
+                    if dataframe:
+                        self.report.set_obj_html("", "Group: {}".format(key))
+                        self.report.build_objective()
+                        dataframe1 = pd.DataFrame(dataframe)
+                        self.report.set_table_dataframe(dataframe1)
+                        self.report.build_table()
+            else:
+                dataframe = {
+                    " Clients": client_list,
+                    " MAC ": self.mac_id_list,
+                    " Channel": self.channel_list,
+                    " SSID ": self.ssid_list,
+                    " Mode": self.mode_list,
+                    " No of times File downloaded ": self.url_data,
+                    " Time Taken to Download file (ms)": self.uc_avg,
+                    " Bytes-rd (Mega Bytes)": self.bytes_rd,
+                    " RX RATE (Mbps) ": self.rx_rate
+                }
+                if self.expected_passfail_val or self.csv_name:
+                    dataframe[" Expected output "] = self.test_input_list
+                    dataframe[" Status "] = self.pass_fail_list
+
+                dataframe1 = pd.DataFrame(dataframe)
+                self.report.set_table_dataframe(dataframe1)
+                self.report.build_table()
 
         else:
             dataframe = {
@@ -1926,12 +2128,14 @@ class FtpTest(LFCliBase):
             test_input_list = []
             pass_fail_list = []
             for client in client_list:
+                # Check if the client type (second word in "1.15 android samsungmob") is 'android'
                 if client.split(' ')[1] != 'android':
                     res_list.append(client.split(' ')[2])
                 else:
                     interop_tab_data = self.json_get('/adb/')["devices"]
                     for dev in interop_tab_data:
                         for item in dev.values():
+                             # Extract the username from the client string (e.g., 'samsungmob' from "1.15 android samsungmob")
                             if item['user-name'] == client.split(' ')[2]:
                                 res_list.append(item['name'].split('.')[2])
 
@@ -1967,6 +2171,142 @@ class FtpTest(LFCliBase):
                 else:
                     pass_fail_list.append("FAIL")
             self.pass_fail_list = pass_fail_list
+
+    def generate_dataframe(self,groupdevlist: List[str],clients_list: List[str],mac: List[str],channel: List[str],ssid: List[str],mode: List[str],file_download: List[int],test_input: List[int],averagetime: List[float],bytes_read: List[float], rx_rate:List[float],status: List[str]) -> Optional[pd.DataFrame]:
+        """
+        Creates a separate DataFrame for each group of devices.
+
+        Returns:
+            DataFrame: A DataFrame for each device group.
+            Returns None if neither device in a group is configured.
+        """
+        clients = []
+        macids = []
+        channels = []
+        ssids = []
+        modes = []
+        downloadtimes = []
+        input_list = []
+        avgtimes = []
+        readbytes = []
+        statuslist = []
+        rate_rx=[]
+        interop_tab_data = self.json_get('/adb/')["devices"]
+        for i in range(len(clients_list)):
+            for j in groupdevlist:
+                # For a string like "1.360 Lin test3":
+                # - clients_list[i].split(" ")[2] gives 'test3' (device name)
+                # - clients_list[i].split(" ")[1] gives 'Lin' (OS type)
+                # This condition filters out Android clients and matches device name with j
+                if j == clients_list[i].split(" ")[2] and clients_list[i].split(" ")[1] != 'android':
+                    clients.append(clients_list[i])
+                    macids.append(mac[i])
+                    channels.append(channel[i])
+                    ssids.append(ssid[i])
+                    modes.append(mode[i])
+                    downloadtimes.append(file_download[i])
+                    avgtimes.append(averagetime[i])
+                    readbytes.append(bytes_read[i])
+                    rate_rx.append(rx_rate[i])
+                    if self.expected_passfail_val or self.csv_name:
+                        input_list.append(test_input[i])
+                        statuslist.append(status[i])
+
+                else:
+                    for dev in interop_tab_data:
+                        for item in dev.values():
+                            # For a string like 1.15 android samsungmob:
+                            # - clients_list[i].split(' ')[2] (e.g., 'samsungmob') matches item['user-name']
+                            # - The group name (e.g., 'RZCTA09CTXF') matches with item['name'].split('.')[2]
+                            if item['user-name'] == clients_list[i].split(' ')[2] and j == item['name'].split('.')[2]:
+                                clients.append(clients_list[i])
+                                macids.append(mac[i])
+                                channels.append(channel[i])
+                                ssids.append(ssid[i])
+                                modes.append(mode[i])
+                                downloadtimes.append(file_download[i])
+                                avgtimes.append(averagetime[i])
+                                readbytes.append(bytes_read[i])
+                                rate_rx.append(rx_rate[i])
+                                if self.expected_passfail_val or self.csv_name:
+                                    input_list.append(test_input[i])
+                                    statuslist.append(status[i])
+        if len(clients) != 0:
+            dataframe = {
+                " Clients": clients,
+                " MAC ": macids,
+                " Channel": channels,
+                " SSID ": ssids,
+                " Mode": modes,
+                " No of times File downloaded ": downloadtimes,
+                " Average time taken to Download file (ms)": avgtimes,
+                " Bytes-rd (Mega Bytes) ": readbytes,
+                " RX RATE (Mbps) ": rate_rx
+            }
+            if self.expected_passfail_val or self.csv_name:
+                dataframe[" Expected value of no of times file downloaded"] = input_list
+                dataframe[' Status '] = statuslist
+
+            return dataframe
+        else:
+            return None
+
+
+def validate_args(args):
+    """Validate CLI arguments."""
+    # Get group and profile values from arguments and convert comma-separated strings into lists
+    if args.group_name:
+        selected_groups = args.group_name.split(',')
+    else:
+        selected_groups = []  # Default to empty list if group name is not provided
+    if args.profile_name:
+        selected_profiles = args.profile_name.split(',')
+    else:
+        selected_profiles = []  # Default to empty list if profile name is not provided
+
+    if args.device_csv_name and args.expected_passfail_value:
+        logger.error("Enter either --device_csv_name or --expected_passfail_value")
+        exit(1)
+    if args.clients_type == 'Real' and args.config and args.group_name is None:
+        if args.ssid and args.security and args.security.lower() == 'open' and (args.passwd is None or args.passwd == ''):
+            args.passwd = '[BLANK]'
+        if args.ssid is None:
+            logger.error('Specify SSID for confiuration, Password(Optional for "open" type security) , Security')
+            exit(1)
+        elif args.ssid and args.passwd:
+            if args.security is None:
+                logger.error('Security must be provided when SSID and Password specified')
+                exit(1)
+            elif args.security.lower() == 'open' and args.passwd != '[BLANK]':
+                logger.error("For a open type security there will be no password or the password should be left blank (i.e., set to '' or [BLANK]).")
+                exit(1)
+        elif args.ssid and args.passwd == '[BLANK]' and args.security and args.security.lower() != 'open':
+            logger.error('Please provide valid passwd and security configuration')
+            exit(1)
+    if args.group_name and (args.file_name is None or args.profile_name is None):
+        logger.error("Please provide file name and profile name for group configuration")
+        exit(1)
+    elif args.file_name and (args.group_name is None or args.profile_name is None):
+        logger.error("Please provide group name and profile name for file configuration")
+        exit(1)
+    elif args.profile_name and (args.group_name is None or args.file_name is None):
+        logger.error("Please provide group name and file name for profile configuration")
+        exit(1)
+    if len(selected_groups) != len(selected_profiles):
+        logger.error("Number of groups should match number of profiles")
+        exit(1)
+    elif args.group_name and args.profile_name and args.file_name and args.device_list != []:
+        logger.error("Either group name or device list should be entered, not both")
+        exit(1)
+    elif args.ssid and args.profile_name:
+        logger.error("Either SSID or profile name should be given")
+        exit(1)
+    elif args.config and args.group_name is None and ((args.ssid is None or (args.passwd is None and args.security != 'open') or (args.passwd is None and args.security is None))):
+        logger.error("Please provide SSID, password, and security for configuration of devices")
+        exit(1)
+    elif args.config and args.device_list != [] and (args.ssid is None or args.passwd is None or args.security is None):
+        logger.error("Please provide SSID, password, and security when device list is given")
+        exit(1)
 
 
 def main():
@@ -2018,12 +2358,37 @@ python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mg
 EXAMPLE-7:
 Command Line Interface to run download scenario by setting the same expected Pass/Fail value for all devices
 python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
- --upstream_port eth1 --ssid NETGEAR_2G --passwd Password@123 --security open --expected_passfail_value 4
+ --upstream_port eth1 --expected_passfail_value 4
 
 EXAMPLE-8:
 Command Line Interface to run download scenario by setting device specific Pass/Fail values in the csv file
 python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.204.74 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
  --upstream_port eth1 --device_csv_name device.csv
+
+EXAMPLE-9:
+Command Line Interface to run download scenario by Configuring Real Devices with SSID, Password, and Security
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --ssid NETGEAR_5G --passwd Password@123 --security wpa2 --config
+
+EXAMPLE-10:
+Command Line Interface to run download scenario by setting the same expected Pass/Fail value for all devices with configuration
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --ssid NETGEAR_2G --passwd Password@123 --security wpa2 --expected_passfail_value 4 --config
+
+EXAMPLE-11:
+Command Line Interface to run download scenario by setting device specific Pass/Fail values in the csv file without configuration
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --ssid NETGEAR_2G --passwd Password@123 --security wpa2 --device_csv_name device.csv
+
+EXAMPLE-12:
+Command Line Interface to run download scenario by Configuring Devices in Groups with Specific Profiles
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218  --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --file_name g219 --group_name grp1 --profile_name Open3
+
+EXAMPLE-13:
+Command Line Interface to run download scenario by Configuring Devices in Groups with Specific Profiles and expected Pass/Fail values
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --file_name g219 --group_name grp1 --profile_name Open3 --expected_passfail_value 3 --wait_time 30
 
 SCRIPT_CLASSIFICATION : Test
 
@@ -2061,6 +2426,9 @@ INCLUDE_IN_README: False
     required.add_argument('--ssid', type=str, help='Enter ssid')
     required.add_argument('--passwd', type=str, help='Enter password for ssid provided')
     required.add_argument('--security', type=str, help='Enter the security')
+    required.add_argument('--group_name', type=str, help='Specify the groups name that contains a list of devices. Example: group1,group2')
+    required.add_argument('--profile_name', type=str, help='Specify the profile name to apply configurations to the devices.')
+    required.add_argument('--file_name', type=str, help='Specify the file name containing group details. Example:file1')
     required.add_argument('--ap_name', type=str, help='Enter the Access point or router name')
     optional.add_argument('--ap_ip', type=str, help='Enter ip of accesspoint or router')
     optional.add_argument('--twog_radio', type=str, help='specify radio for 2.4G clients [default = wiphy1]', default='wiphy1')
@@ -2093,6 +2461,8 @@ INCLUDE_IN_README: False
     optional.add_argument('--test_name', help='Specify test name to store the runtime csv results', default=None)
     optional.add_argument('--expected_passfail_value', help='Enter the expected number of urls ', default=None)
     optional.add_argument('--device_csv_name', type=str, help='Enter the csv name to store expected url values', default=None)
+    optional.add_argument('--wait_time', type=int, help='Enter the maximum wait time for configurations to apply', default=60)
+    optional.add_argument('--config', action="store_true", help='Specify for configuring the devices')
     # kpi_csv arguments
     optional.add_argument(
         "--test_rig",
@@ -2130,6 +2500,23 @@ INCLUDE_IN_README: False
         '--csv_outfile',
         help="--csv_outfile <Output file for csv data>",
         default="")
+    optional.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
+    optional.add_argument("--eap_identity", type=str, default='', help="Specify the EAP identity for authentication.")
+    optional.add_argument("--ieee8021x", action="store_true", help='Enables 802.1X enterprise authentication for test stations.')
+    optional.add_argument("--ieee80211u", action="store_true", help='Enables IEEE 802.11u (Hotspot 2.0) support.')
+    optional.add_argument("--ieee80211w", type=int, default=1, help='Enables IEEE 802.11w (Management Frame Protection) support.')
+    optional.add_argument("--enable_pkc", action="store_true", help='Enables pkc support.')
+    optional.add_argument("--bss_transition", action="store_true", help='Enables BSS transition support.')
+    optional.add_argument("--power_save", action="store_true", help='Enables power-saving features.')
+    optional.add_argument("--disable_ofdma", action="store_true", help='Disables OFDMA support.')
+    optional.add_argument("--roam_ft_ds", action="store_true", help='Enables fast BSS transition (FT) support')
+    optional.add_argument("--key_management", type=str, default='DEFAULT', help='Specify the key management method (e.g., WPA-PSK, WPA-EAP')
+    optional.add_argument("--pairwise", type=str, default='NA')
+    optional.add_argument("--private_key", type=str, default='NA', help='Specify EAP private key certificate file.')
+    optional.add_argument("--ca_cert", type=str, default='NA', help='Specifiy the CA certificate file name')
+    optional.add_argument("--client_cert", type=str, default='NA', help='Specify the client certificate file name')
+    optional.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
+    optional.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
 
     # logging configuration
     optional.add_argument(
@@ -2197,9 +2584,7 @@ some amount of file data from the FTP server while measuring the time taken by c
 
         return duration
 
-    if args.device_csv_name and args.expected_passfail_value:
-        logger.warning("Enter either --device_csv_name or --expected_passfail_value")
-        exit(1)
+    validate_args(args)
     if args.traffic_duration.endswith('s') or args.traffic_duration.endswith('S'):
         args.traffic_duration = int(args.traffic_duration[0:-1])
     elif args.traffic_duration.endswith('m') or args.traffic_duration.endswith('M'):
@@ -2219,6 +2604,9 @@ some amount of file data from the FTP server while measuring the time taken by c
                               result_dir=args.result_dir,
                               upstream=args.upstream_port,
                               dut_ssid=args.ssid,
+                              group_name=args.group_name,
+                              profile_name=args.profile_name,
+                              file_name=args.file_name,
                               dut_passwd=args.passwd,
                               dut_security=args.security,
                               num_sta=args.num_stations,
@@ -2238,8 +2626,27 @@ some amount of file data from the FTP server while measuring the time taken by c
                               dowebgui=args.dowebgui,
                               device_list=args.device_list,
                               test_name=args.test_name,
+                              eap_method=args.eap_method,
+                              eap_identity=args.eap_identity,
+                              ieee80211=args.ieee8021x,
+                              ieee80211u=args.ieee80211u,
+                              ieee80211w=args.ieee80211w,
+                              enable_pkc=args.enable_pkc,
+                              bss_transition=args.bss_transition,
+                              power_save=args.power_save,
+                              disable_ofdma=args.disable_ofdma,
+                              roam_ft_ds=args.roam_ft_ds,
+                              key_management=args.key_management,
+                              pairwise=args.pairwise,
+                              private_key=args.private_key,
+                              ca_cert=args.ca_cert,
+                              client_cert=args.client_cert,
+                              pk_passwd=args.pk_passwd,
+                              pac_file=args.pac_file,
                               expected_passfail_val=args.expected_passfail_value,
                               csv_name=args.device_csv_name,
+                              wait_time=args.wait_time,
+                              config=args.config
                               )
 
                 interation_num = interation_num + 1
@@ -2250,7 +2657,25 @@ some amount of file data from the FTP server while measuring the time taken by c
                         if len(obj.device_list) == 0:
                             logger.info("There are no devices available")
                             exit(1)
-                    obj.query_realclients()
+                    configured_device, configuration = obj.query_realclients()
+
+                if args.dowebgui and args.group_name:
+                    # If no devices are configured,update the Web UI with "Stopped" status
+                    if len(configured_device) == 0:
+                        logger.warning("No device is available to run the test")
+                        obj1 = {
+                            "status": "Stopped",
+                            "configuration_status": "configured"
+                        }
+                        obj.updating_webui_runningjson(obj1)
+                        return
+                    # If devices are configured, update the Web UI with the list of configured devices
+                    else:
+                        obj1 = {
+                            "configured_devices": configured_device,
+                            "configuration_status": "configured"
+                        }
+                        obj.updating_webui_runningjson(obj1)
                 obj.set_values()
                 obj.precleanup()
                 obj.build()
@@ -2308,12 +2733,20 @@ some amount of file data from the FTP server while measuring the time taken by c
         "Security": args.security,
         "Contact": "support@candelatech.com"
     }
-    obj.generate_report(ftp_data, date, input_setup_info, test_rig=args.test_rig,
-                        test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
-                        dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
-                        dut_serial_num=args.dut_serial_num, test_id=args.test_id,
-                        bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir)
-
+    # Report generation when groups are specified
+    if args.group_name:
+        obj.generate_report(ftp_data, date, input_setup_info, test_rig=args.test_rig,
+                            test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
+                            dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
+                            dut_serial_num=args.dut_serial_num, test_id=args.test_id,
+                            bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir, config_devices=configuration)
+    # Generating report without group-specific device configuration
+    else:
+        obj.generate_report(ftp_data, date, input_setup_info, test_rig=args.test_rig,
+                            test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
+                            dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
+                            dut_serial_num=args.dut_serial_num, test_id=args.test_id,
+                            bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir)
 # FOR WEB-UI // to fetch the last logs of the execution.
     if args.dowebgui:
         obj.data_for_webui["status"] = ["STOPPED"] * len(obj.url_data)
