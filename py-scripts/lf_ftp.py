@@ -349,7 +349,7 @@ class FtpTest(LFCliBase):
             if key == "resources":
                 for element in value:
                     for a, b in element.items():
-                        if b['phantom'] == False:
+                        if b['phantom'] is False:
                             self.working_resources_list.append(b["hw version"])
                             if "Win" in b['hw version']:
                                 self.eid_list.append(b['eid'])
@@ -426,7 +426,7 @@ class FtpTest(LFCliBase):
                         available_list.append(input_device)
                         found = True
                         break
-                if found == False:
+                if found is False:
                     not_available.append(input_device)
                     logging.warning(device + " is not available to run test")
 
@@ -925,7 +925,6 @@ class FtpTest(LFCliBase):
             for j in range(len(rx_rate_val[0])):
                 rx_rate_sum = 0
                 non_zero = 0
-                temp_store = []
                 for i in range(len(rx_rate_val)):
                     if rx_rate_val[i][j] != 0:
                         rx_rate_sum += rx_rate_val[i][j]
@@ -1018,7 +1017,6 @@ class FtpTest(LFCliBase):
         total_url_data = self.json_get("layer4/list?fields=total-urls")
         bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
         rx_rate = self.json_get("layer4/list?fields=rx rate")
-        status = self.json_get("layer4/list?fields=status")
         if 'endpoint' in uc_avg_data.keys():
             # list of layer 4 connections name
             if type(uc_avg_data['endpoint']) is dict:
@@ -1869,9 +1867,10 @@ class FtpTest(LFCliBase):
                 for key, val in self.group_device_map.items():
                     if self.expected_passfail_val or self.csv_name:
                         dataframe = self.generate_dataframe(val, client_list, self.mac_id_list, self.channel_list, self.ssid_list, self.mode_list,
-                                                            self.url_data, self.test_input_list, self.uc_avg, self.bytes_rd, self.rx_rate,self.pass_fail_list)
+                                                            self.url_data, self.test_input_list, self.uc_avg, self.bytes_rd, self.rx_rate, self.pass_fail_list)
                     else:
-                        dataframe = self.generate_dataframe(val, client_list, self.mac_id_list, self.channel_list, self.ssid_list, self.mode_list, self.url_data, [], self.uc_avg, self.bytes_rd, self.rx_rate,[])
+                        dataframe = self.generate_dataframe(val, client_list, self.mac_id_list, self.channel_list, self.ssid_list,
+                                                            self.mode_list, self.url_data, [], self.uc_avg, self.bytes_rd, self.rx_rate, [])
 
                     if dataframe:
                         self.report.set_obj_html("", "Group: {}".format(key))
@@ -2135,14 +2134,13 @@ class FtpTest(LFCliBase):
                     interop_tab_data = self.json_get('/adb/')["devices"]
                     for dev in interop_tab_data:
                         for item in dev.values():
-                             # Extract the username from the client string (e.g., 'samsungmob' from "1.15 android samsungmob")
+                            # Extract the username from the client string (e.g., 'samsungmob' from "1.15 android samsungmob")
                             if item['user-name'] == client.split(' ')[2]:
                                 res_list.append(item['name'].split('.')[2])
 
             with open(self.csv_name, mode='r') as file:
                 reader = csv.DictReader(file)
                 rows = list(reader)
-                fieldnames = reader.fieldnames
             for device in res_list:
                 found = False
                 for row in rows:
@@ -2172,7 +2170,8 @@ class FtpTest(LFCliBase):
                     pass_fail_list.append("FAIL")
             self.pass_fail_list = pass_fail_list
 
-    def generate_dataframe(self,groupdevlist: List[str],clients_list: List[str],mac: List[str],channel: List[str],ssid: List[str],mode: List[str],file_download: List[int],test_input: List[int],averagetime: List[float],bytes_read: List[float], rx_rate:List[float],status: List[str]) -> Optional[pd.DataFrame]:
+    def generate_dataframe(self, groupdevlist: List[str], clients_list: List[str], mac: List[str], channel: List[str], ssid: List[str], mode: List[str], file_download: List[int],
+                           test_input: List[int], averagetime: List[float], bytes_read: List[float], rx_rate: List[float], status: List[str]) -> Optional[pd.DataFrame]:
         """
         Creates a separate DataFrame for each group of devices.
 
@@ -2190,7 +2189,7 @@ class FtpTest(LFCliBase):
         avgtimes = []
         readbytes = []
         statuslist = []
-        rate_rx=[]
+        rate_rx = []
         interop_tab_data = self.json_get('/adb/')["devices"]
         for i in range(len(clients_list)):
             for j in groupdevlist:
