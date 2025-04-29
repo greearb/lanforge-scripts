@@ -827,6 +827,11 @@ class RealBrowserTest(Realm):
             for hostname, stats in temp_data.items():
                 self.laptop_stats[hostname] = stats
             return jsonify({"status": "success"}), 200
+        
+        # New route to check the health of the Flask server
+        @self.app.route('/check_health', methods=['GET'])
+        def check_health():
+            return jsonify({"status": "healthy"}), 200
 
         @self.app.route('/check_stop', methods=['GET'])
         def check_stop():
@@ -844,8 +849,7 @@ class RealBrowserTest(Realm):
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
         flask_thread.start()
-        # Give the Flask server some time to start
-        time.sleep(5)
+        self.wait_for_flask()
 
     def check_gen_cx(self):
         """
@@ -865,6 +869,20 @@ class RealBrowserTest(Realm):
                 return False
         # If all endpoints are in 'Stopped' or 'WAITING', return True
         return True
+    
+    def wait_for_flask(self, url="http://127.0.0.1:5003/check_health", timeout=10):
+        """Wait until the Flask server is up, but exit if it takes longer than `timeout` seconds."""
+        start_time = time.time()  # Record the start time
+        while time.time() - start_time < timeout:
+            try:
+                response = requests.get(url, timeout=1)
+                if response.status_code == 200:
+                    logging.info("✅ Flask server is up and running!")
+                    return
+            except requests.exceptions.ConnectionError:
+                time.sleep(1)
+        logging.error("❌ Flask server did not start within 10 seconds. Exiting.")
+        sys.exit(1)
 
     def get_stats(self, duration, file_path, iteration_number, resource_list_sorted, cx_order_list, i, initial_target_urls):
 
