@@ -93,7 +93,7 @@ import json
 from lf_graph import lf_bar_graph_horizontal
 
 import asyncio
-from typing import List,Optional
+from typing import List, Optional
 import csv
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -117,10 +117,10 @@ logger = logging.getLogger(__name__)
 class HttpDownload(Realm):
     def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password, ap_name,
                  target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None, sixg_radio=None, _debug_on=False, _exit_on_error=False,
-                 _exit_on_fail=False, client_type="", port_list=[], devices_list=[], macid_list=[], lf_username="lanforge", lf_password="lanforge", result_dir="", dowebgui=False, device_list=[], test_name=None,
-                 get_url_from_file=None, file_path=None,device_csv_name='',expected_passfail_value=None, file_name=None, group_name=None, profile_name=None,eap_method=None,eap_identity=None,
-                 ieee80211=None,ieee80211u=None,ieee80211w=None,enable_pkc=None,bss_transition=None,power_save=None,disable_ofdma=None,roam_ft_ds=None,key_management=None,
-                 pairwise=None,private_key=None,ca_cert=None,client_cert=None,pk_passwd=None,pac_file=None,config=False,wait_time=60):
+                 test_name=None, _exit_on_fail=False, client_type="", port_list=[], devices_list=[], macid_list=[], lf_username="lanforge", lf_password="lanforge", result_dir="", dowebgui=False,
+                 device_list=[], get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
+                 eap_identity=None, ieee80211=None, ieee80211u=None, ieee80211w=None, enable_pkc=None, bss_transition=None, power_save=None, disable_ofdma=None, roam_ft_ds=None, key_management=None,
+                 pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -200,7 +200,7 @@ class HttpDownload(Realm):
     def get_real_client_list(self):
         user_list = []
         real_client_list1 = []
-        real_client_list2 = [] 
+        real_client_list2 = []
         android_list = []
         mac_list = []
         windows_list = []
@@ -281,7 +281,7 @@ class HttpDownload(Realm):
             if key == "resources":
                 for element in value:
                     for a, b in element.items():
-                        if b['phantom'] == False:
+                        if not b['phantom']:
                             working_resources_list.append(b["hw version"])
                             if "Win" in b['hw version']:
                                 eid_list.append(b['eid'])
@@ -316,7 +316,6 @@ class HttpDownload(Realm):
 
         response_port = self.local_realm.json_get("/port/all")
         # print(response_port)
-        mac_id1_list = []
         for interface in response_port['interfaces']:
             for port, port_data in interface.items():
                 if (not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0'):
@@ -355,7 +354,7 @@ class HttpDownload(Realm):
                         available_list.append(input_device)
                         found = True
                         break
-                if found == False:
+                if not found:
                     not_available.append(input_device)
                     logger.warning(input_device + " is not available to run test")
             if len(available_list) > 0:
@@ -374,10 +373,10 @@ class HttpDownload(Realm):
             logger.error("Selected Devices are not available in the lanforge")
             exit(1)
         resource_eid_list = devices_list.split(',')
-        logger.info("devices list {}".format(devices_list, resource_eid_list))
+        logger.info("devices list {} {}".format(devices_list, resource_eid_list))
         resource_eid_list2 = [eid + ' ' for eid in resource_eid_list]
         resource_eid_list1 = [resource + '.' for resource in resource_eid_list]
-        logger.info("resource eid list {}".format(resource_eid_list1, original_port_list))
+        logger.info("resource eid list {} {}".format(resource_eid_list1, original_port_list))
 
         # User desired eids are fetched ---
 
@@ -420,7 +419,7 @@ class HttpDownload(Realm):
                 if eid + '.' in port:
                     self.windows_ports.append(port)
         if self.dowebgui == "True":
-            if device_found == False:
+            if not device_found:
                 print("No Device is available to run the test hence aborting the testllmlml")
                 df1 = pd.DataFrame([{
                     "client": [],
@@ -1313,8 +1312,9 @@ class HttpDownload(Realm):
         if not os.path.exists(test_name_dir):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
- 
-    def generate_dataframe(self,groupdevlist: List[str],clients_list: List[str],mac: List[str],channel: List[str],ssid: List[str],mode: List[str],file_download: List[int],test_input: List[int],averagetime: List[float],bytes_read: List[float],rx_rate: List[float],status: List[str]) -> Optional[pd.DataFrame]:
+
+    def generate_dataframe(self, groupdevlist: List[str], clients_list: List[str], mac: List[str], channel: List[str], ssid: List[str], mode: List[str], file_download: List[int],
+                           test_input: List[int], averagetime: List[float], bytes_read: List[float], rx_rate: List[float], status: List[str]) -> Optional[pd.DataFrame]:
         """
         Creates a separate DataFrame for each group of devices.
 
@@ -1382,7 +1382,7 @@ class HttpDownload(Realm):
                 dataframe[" Expected value of no of times file downloaded"] = input_list
                 dataframe[" Status "] = statuslist
             return dataframe
-         # if neither device in the group is configured returns 0
+        # if neither device in the group is configured returns 0
         else:
             return None
 
@@ -1720,7 +1720,6 @@ times the file is downloaded.
     list2G, list2G_bytes, list2G_speed, list2G_urltimes = [], [], [], []
     Both, Both_bytes, Both_speed, Both_urltimes = [], [], [], []
     listReal, listReal_bytes, listReal_speed, listReal_urltimes = [], [], [], []  # For real devices (not band specific)
-    real_data = []
     dict_keys = []
     dict_keys.extend(args.bands)
     # print(dict_keys)
