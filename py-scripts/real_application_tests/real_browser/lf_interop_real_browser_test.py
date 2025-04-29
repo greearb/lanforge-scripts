@@ -826,7 +826,7 @@ class RealBrowserTest(Realm):
             for hostname, stats in temp_data.items():
                 self.laptop_stats[hostname] = stats
             return jsonify({"status": "success"}), 200
-        
+
         # New route to check the health of the Flask server
         @self.app.route('/check_health', methods=['GET'])
         def check_health():
@@ -868,7 +868,7 @@ class RealBrowserTest(Realm):
                 return False
         # If all endpoints are in 'Stopped' or 'WAITING', return True
         return True
-    
+
     def wait_for_flask(self, url="http://127.0.0.1:5003/check_health", timeout=10):
         """Wait until the Flask server is up, but exit if it takes longer than `timeout` seconds."""
         start_time = time.time()  # Record the start time
@@ -1057,6 +1057,28 @@ class RealBrowserTest(Realm):
             data[key] = obj[key]
         with open(file_path, 'w') as file:
             json.dump(data, file, indent=4)
+
+    def webui_stop(self):
+        "Sends a POST request to the web UI to update the test status to 'Completed'."
+        try:
+            url = f"http://{self.host}:5454/update_status_yt"
+            # url = "http://localhost:5454/update_status_yt"
+            headers = {
+                'Content-Type': 'application/json',
+            }
+            data = {
+                'status': 'Completed',
+                'name': self.test_name
+            }
+            response = requests.post(url, json=data, headers=headers)
+            if response.status_code == 200:
+                logging.info("Successfully updated STOP status to 'Completed'")
+                pass
+            else:
+                logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
+
+        except Exception as e:
+            logging.error(f"An error occurred while updating status: {e}")
 
     def create_report(self,):
         if self.dowebgui:
@@ -1584,15 +1606,6 @@ def main():
         else:
             selected_profiles = []
 
-        if args.dowebgui:
-            url = f"http://{args.host}:5454/update_status_yt"
-            response = requests.post(url)
-
-            if response.status_code == 200:
-                logging.info('device_data has been cleared.')
-            else:
-                logging.info(f'Error: {response.status_code}')
-
         if True:
 
             if args.expected_passfail_value is not None and args.device_csv_name is not None:
@@ -2003,31 +2016,10 @@ def main():
         logging.error("Error occured", e)
         traceback.print_exc()
     finally:
-        if args.dowebgui:
-            try:
-                url = f"http://{args.host}:5454/update_status_yt"
-
-                headers = {
-                    'Content-Type': 'application/json',
-                }
-
-                data = {
-                    'status': 'Completed',
-                    'name': args.test_name
-                }
-
-                response = requests.post(url, json=data, headers=headers)
-
-                if response.status_code == 200:
-                    logging.info("Successfully updated STOP status to 'Completed'")
-                    pass
-                else:
-                    logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
-
-            except Exception as e:
-                logging.error(f"An error occurred while updating status: {e}")
-
+        if (args.dowebgui):
+                obj.webui_stop()
         obj.stop()
+        
 
         if args.postcleanup:
             obj.postcleanup()
