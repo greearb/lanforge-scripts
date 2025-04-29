@@ -40,6 +40,16 @@ Command Line Interface to run download scenario for Real clients with device lis
 python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.214.219 --traffic_duration 1m --security wpa2
 --directions Download --clients_type Real --ap_name Netgear --bands 2.4G --upstream_port eth1 --device_list 1.12,1.22
 
+EXAMPLE-7:
+Command Line Interface to run download scenario by setting the same expected Pass/Fail value for all devices
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --expected_passfail_value 4
+
+EXAMPLE-8:
+Command Line Interface to run download scenario by setting device specific Pass/Fail values in the csv file
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.204.74 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --device_csv_name device.csv
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -80,6 +90,7 @@ import pandas as pd
 import logging
 import shutil
 from lf_graph import lf_bar_graph_horizontal
+import csv
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -105,10 +116,9 @@ class FtpTest(LFCliBase):
                  dut_ssid=None, dut_security=None, dut_passwd=None, file_size=None, band=None, twog_radio=None,
                  sixg_radio=None, fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False, ap_name="",
                  direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None,
-                 lf_username="lanforge", lf_password="lanforge", clients_type="Virtual", real_client_list=[],
-                 working_resources_list=[], hw_list=[], windows_list=[], mac_list=[], linux_list=[], android_list=[],
-                 eid_list=[], mac_id_list=[], devices_available=[], mac_id1_list=[], user_list=[], input_devices_list=[],
-                 real_client_list1=[], uc_avg=[], url_data=[], channel_list=[], mode_list=[], cx_list=[], dowebgui=False, device_list=[], test_name=None, result_dir=None):
+                 lf_username="lanforge", lf_password="lanforge", clients_type="Virtual", dowebgui=False, device_list=[], test_name=None, result_dir=None,
+                 expected_passfail_val=None,
+                 csv_name=None):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         logger.info("Test is about to start")
         self.ssid_list = []
@@ -172,6 +182,10 @@ class FtpTest(LFCliBase):
         self.channel_list = []
         self.mode_list = []
         self.cx_list = []
+        self.expected_passfail_val = expected_passfail_val
+        self.csv_name = csv_name
+        self.pass_fail_list = []
+        self.test_input_list = []
         self.api_url = 'http://{}:{}'.format(self.host, self.port)
 
         logger.info("Test is Initialized")
@@ -857,7 +871,7 @@ class FtpTest(LFCliBase):
                 # reading uc-avg data in json format
                 self.url_data.append(total_url_data['endpoint']['total-urls'])
                 dataset.append(bytes_rd['endpoint']['bytes-rd'])
-                self.bytes_rd = [float(f"{(i / 1000000): .4f}") for i in dataset]
+                self.bytes_rd = [float(f"{(int(i) / 1000000): .4f}") for i in dataset]
             else:
                 for created_cx in self.cx_list:
                     for cx in uc_avg_data['endpoint']:
@@ -1524,7 +1538,8 @@ class FtpTest(LFCliBase):
 
         # To move ftp_datavalues.csv in report folder
         report_path_date_time = self.report.get_path_date_time()
-        shutil.move('ftp_datavalues.csv', report_path_date_time)
+        if self.clients_type == "Real":
+            shutil.move('ftp_datavalues.csv', report_path_date_time)
         self.report.set_title("FTP Test")
         self.report.set_date(date)
         self.report.build_banner()
@@ -1659,20 +1674,43 @@ class FtpTest(LFCliBase):
         self.report.set_table_title("Overall Results")
         self.report.build_table_title()
         # self.report.test_setup_table(value="Information", test_setup_data=input_setup_info)
-        dataframe = {
-            " Clients": client_list,
-            " MAC ": self.mac_id_list,
-            " Channel": self.channel_list,
-            " SSID ": self.ssid_list,
-            " Mode": self.mode_list,
-            " No of times File downloaded ": self.url_data,
-            " Time Taken to Download file (ms)": self.uc_avg,
-            " Bytes-rd (Mega Bytes)": self.bytes_rd,
-            "RX RATE (Mbps)": self.rx_rate
-        }
-        dataframe1 = pd.DataFrame(dataframe)
-        self.report.set_table_dataframe(dataframe1)
-        self.report.build_table()
+        if self.clients_type == 'Real':
+            # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
+            if self.expected_passfail_val or self.csv_name:
+                self.get_pass_fail_list(client_list)
+            dataframe = {
+                " Clients": client_list,
+                " MAC ": self.mac_id_list,
+                " Channel": self.channel_list,
+                " SSID ": self.ssid_list,
+                " Mode": self.mode_list,
+                " No of times File downloaded ": self.url_data,
+                " Time Taken to Download file (ms)": self.uc_avg,
+                " Bytes-rd (Mega Bytes)": self.bytes_rd,
+                " RX RATE (Mbps) ": self.rx_rate
+            }
+            if self.expected_passfail_val or self.csv_name:
+                dataframe[" Expected output "] = self.test_input_list
+                dataframe[" Status "] = self.pass_fail_list
+
+            dataframe1 = pd.DataFrame(dataframe)
+            self.report.set_table_dataframe(dataframe1)
+            self.report.build_table()
+
+        else:
+            dataframe = {
+                " Clients": client_list,
+                " MAC ": self.mac_id_list,
+                " Channel": self.channel_list,
+                " SSID ": self.ssid_list,
+                " Mode": self.mode_list,
+                " No of times File downloaded ": self.url_data,
+                " Time Taken to Download file (ms)": self.uc_avg,
+                " Bytes-rd (Mega Bytes)": self.bytes_rd,
+            }
+            dataframe1 = pd.DataFrame(dataframe)
+            self.report.set_table_dataframe(dataframe1)
+            self.report.build_table()
         self.report.build_footer()
         html_file = self.report.write_html()
         logger.info("returned file {}".format(html_file))
@@ -1880,6 +1918,56 @@ class FtpTest(LFCliBase):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
 
+    # Calculates pass/fail status for each client based on their result compared to the expected value.
+    def get_pass_fail_list(self, client_list):
+        # When csv_name is provided, for pass/fail criteria, respective values for each client will be used
+        if self.expected_passfail_val == '' or self.expected_passfail_val is None:
+            res_list = []
+            test_input_list = []
+            pass_fail_list = []
+            for client in client_list:
+                if client.split(' ')[1] != 'android':
+                    res_list.append(client.split(' ')[2])
+                else:
+                    interop_tab_data = self.json_get('/adb/')["devices"]
+                    for dev in interop_tab_data:
+                        for item in dev.values():
+                            if item['user-name'] == client.split(' ')[2]:
+                                res_list.append(item['name'].split('.')[2])
+
+            with open(self.csv_name, mode='r') as file:
+                reader = csv.DictReader(file)
+                rows = list(reader)
+                fieldnames = reader.fieldnames
+            for device in res_list:
+                found = False
+                for row in rows:
+                    if row['DeviceList'] == device and row['FTP URLcount'].strip() != '':
+                        test_input_list.append(row['FTP URLcount'])
+                        found = True
+                        break
+                # appending default value when not found in csv
+                if not found:
+                    logging.info(f"Pass/fail status for device {device} not found in CSV. Using default FTP URL count = 5")
+                    test_input_list.append(5)
+            for i in range(len(test_input_list)):
+                if float(test_input_list[i]) <= self.url_data[i]:
+                    pass_fail_list.append('PASS')
+                else:
+                    pass_fail_list.append('FAIL')
+            self.pass_fail_list = pass_fail_list
+            self.test_input_list = test_input_list
+        # When expected_passfail_val is provided, for pass/fail criteria, the same value will be used for all clients
+        else:
+            self.test_input_list = [self.expected_passfail_val for val in range(len(client_list))]
+            pass_fail_list = []
+            for i in range(len(self.test_input_list)):
+                if int(self.expected_passfail_val) <= self.url_data[i]:
+                    pass_fail_list.append("PASS")
+                else:
+                    pass_fail_list.append("FAIL")
+            self.pass_fail_list = pass_fail_list
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -1926,6 +2014,16 @@ EXAMPLE-6:
 Command Line Interface to run download scenario for Real clients with device list
 python3 lf_ftp.py --ssid Netgear-2g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.214.219 --traffic_duration 1m --security wpa2
 --directions Download --clients_type Real --ap_name Netgear --bands 2.4G --upstream_port eth1 --device_list 1.12,1.22
+
+EXAMPLE-7:
+Command Line Interface to run download scenario by setting the same expected Pass/Fail value for all devices
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --ssid NETGEAR_2G --passwd Password@123 --security open --expected_passfail_value 4
+
+EXAMPLE-8:
+Command Line Interface to run download scenario by setting device specific Pass/Fail values in the csv file
+python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.204.74 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
+ --upstream_port eth1 --device_csv_name device.csv
 
 SCRIPT_CLASSIFICATION : Test
 
@@ -1993,6 +2091,8 @@ INCLUDE_IN_README: False
     optional.add_argument('--result_dir', help='Specify the result dir to store the runtime logs', default='')
     optional.add_argument('--device_list', help='Enter the devices on which the test should be run', default=[])
     optional.add_argument('--test_name', help='Specify test name to store the runtime csv results', default=None)
+    optional.add_argument('--expected_passfail_value', help='Enter the expected number of urls ', default=None)
+    optional.add_argument('--device_csv_name', type=str, help='Enter the csv name to store expected url values', default=None)
     # kpi_csv arguments
     optional.add_argument(
         "--test_rig",
@@ -2097,6 +2197,9 @@ some amount of file data from the FTP server while measuring the time taken by c
 
         return duration
 
+    if args.device_csv_name and args.expected_passfail_value:
+        logger.warning("Enter either --device_csv_name or --expected_passfail_value")
+        exit(1)
     if args.traffic_duration.endswith('s') or args.traffic_duration.endswith('S'):
         args.traffic_duration = int(args.traffic_duration[0:-1])
     elif args.traffic_duration.endswith('m') or args.traffic_duration.endswith('M'):
@@ -2135,6 +2238,8 @@ some amount of file data from the FTP server while measuring the time taken by c
                               dowebgui=args.dowebgui,
                               device_list=args.device_list,
                               test_name=args.test_name,
+                              expected_passfail_val=args.expected_passfail_value,
+                              csv_name=args.device_csv_name,
                               )
 
                 interation_num = interation_num + 1
