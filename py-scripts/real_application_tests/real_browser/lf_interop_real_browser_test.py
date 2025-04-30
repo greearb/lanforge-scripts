@@ -5,50 +5,67 @@ Purpose: To be generic script for LANforge-Interop devices(Real clients) which r
 
 Pre-requisites: Real clients should be connected to the LANforge MGR and Interop app should be open on the real clients which are connected to Lanforge
 
+            Name: lf_interop_real_browser_test.py
 
-Example: (python3 or ./)lf_interop_real_browser_test.py --mgr 192.168.214.219 --duration 1m --url "https://google.com" --flask_ip 192.168.214.131
---server_ip 192.168.214.131  --postcleanup --expected_passfail_value 8"
+            Example-1 :
+            Command Line Interface to run url in the Browser with specified URL and duration:
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --debug --upstream_port 1.1.eth1
 
-Example-1 :
-Command Line Interface to run url in the Browser with specified URL and duration:
-python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --duration 1m --url "https://google.com" --flask_ip 192.168.214.131 --server_ip 192.168.214.131  --postcleanup --expected_passfail_value 8
+                CASE-1:
+                If not specified it takes the default url (default url is www.google.com)
 
-    CASE-1:
-    If not specified it takes the default url (default url is https://google.com)
+            Example-2:
+            Command Line Interface to run url in the Browser with specified Resources:
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --debug --upstream_port 1.1.eth1
 
-Example-2:
-Command Line Interface to run url in the Browser with specified Resources:
-python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --duration 1m --url "https://google.com" --flask_ip 192.168.214.131 --server_ip 192.168.214.131
---postcleanup --expected_passfail_value 8 --device_list 1.92,1.95,1.22
+            Example-3:
+            Command Line Interface to run url in the Browser with specified urls_per_tennm (specify the number of url you want to test in the given duration):
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --debug --upstream_port 1.1.eth1
 
-Example-3:
-Command Line Interface to run url in the Browser with specified urls_per_tennm (specify the number of url you want to test in the given duration):
-python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --duration 1m --url "https://google.com" --flask_ip 192.168.214.131 --server_ip 192.168.214.131
---postcleanup --expected_passfail_value 8 --device_list 1.92,1.95,1.22 --count 10
-
-    CASE-1:
-    If not specified it takes the default count value (default count is 1)
+                CASE-1:
+                If not specified it takes the default count value (default count is 1)
 
 
-SCRIPT CLASSIFICATION: Test
+            Example-4:
+            Command Line Interface to run url in the Browser with precleanup:
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --precleanup --debug --upstream_port 1.1.eth1
 
-SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
+            Example-5:
+            Command Line Interface to run url in the Browser with postcleanup:
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --postcleanup --debug --upstream_port 1.1.eth1
 
-NOTES:
-    1. Use './lf_interop_real_browser_test.py --help' to see command line usage and options.
-    2. Always specify the duration in minutes (for example: --duration 3m indicates a duration of 3 minutes).
-    3. If --device_list are not given after passing the CLI, a list of available devices will be displayed on the terminal.
-    4. For --url, you can specify the URL (e.g., https://google.com).
+            Example-4:
+            Command Line Interface to run the Real Browser Test with Device Configuration
+            python3 lf_interop_real_browser_test.py --mgr 192.168.204.74 --url "https://google.com" --duration 1m --debug --upstream_port 1.1.eth1
+            --ssid NETGEAR_5G_wpa2 --passwd Password@123 --encryp wpa2 --config
 
-STATUS: BETA RELEASE
+            Example-5:
+            Command Line Interface to run the Real Browser Test with groups and profiles
+            python3 lf_interop_real_browser_test.py --mgr 192.168.204.74 --url "https://google.com" --duration 1m --debug --upstream_port 1.1.eth1
+            --file_name grplaptops --group_name group1,group2 --profile_name netgear2g,netgear2g
 
-VERIFIED_ON:
-Working date - 12/02/2024
-Build version - 5.4.9
-kernel version - 6.2.16+
 
-License: Free to distribute and modify. LANforge systems must be licensed.
-Copyright 2023 Candela Technologies Inc.
+            SCRIPT CLASSIFICATION: Test
+
+            SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
+
+            NOTES:
+                1. Use './lf_interop_real_browser_test.py --help' to see command line usage and options.
+                2. Always specify the duration in minutes (for example: --duration 3 indicates a duration of 3 minutes).
+                3. If --device_list are not given after passing the CLI, a list of available devices will be displayed on the terminal.
+                4. Enter the resource numbers separated by commas (,) in the resource argument and also enclose in double quotes (e.g. : 1.10,1.12).
+                5. For --url, you can specify the URL (e.g., www.google.com).
+                6. To run the test by specifying the incremental capacity, enable the --incremental flag.
+
+            STATUS: BETA RELEASE
+
+            VERIFIED_ON:
+            Working date - 29/07/2024
+            Build version - 5.4.8
+            kernel version - 6.2.16+
+
+            License: Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2023 Candela Technologies Inc.
 
 
 
@@ -1906,41 +1923,41 @@ def main():
 
             Example-1 :
             Command Line Interface to run url in the Browser with specified URL and duration:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --debug
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --debug --upstream_port 1.1.eth1
 
                 CASE-1:
                 If not specified it takes the default url (default url is www.google.com)
 
             Example-2:
             Command Line Interface to run url in the Browser with specified Resources:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --debug
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --debug --upstream_port 1.1.eth1
 
             Example-3:
             Command Line Interface to run url in the Browser with specified urls_per_tennm (specify the number of url you want to test in the given duration):
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --debug
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --debug --upstream_port 1.1.eth1
 
                 CASE-1:
-                If not specified it takes the default count value (default count is 100)
+                If not specified it takes the default count value (default count is 1)
+
 
             Example-4:
-            Command Line Interface to run the the Real Browser test with incremental Capacity by specifying the --incremental flag
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --incremental --debug
+            Command Line Interface to run url in the Browser with precleanup:
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --precleanup --debug --upstream_port 1.1.eth1
 
             Example-5:
-            Command Line Interface to run the the Real Browser test in webGUI by specifying the --dowebgui flag
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --dowebgui --debug
-
-            Example-6:
-            Command Line Interface to run url in the Browser with precleanup:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --precleanup --debug
-
-            Example-7:
             Command Line Interface to run url in the Browser with postcleanup:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --postcleanup --debug
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --postcleanup --debug --upstream_port 1.1.eth1
 
-            Example-8:
-            Command Line Interface to run url in the Browser with incremental capacity:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --incremental_capacity 1 --debug
+            Example-4:
+            Command Line Interface to run the Real Browser Test with Device Configuration
+            python3 lf_interop_real_browser_test.py --mgr 192.168.204.74 --url "https://google.com" --duration 1m --debug --upstream_port 1.1.eth1
+            --ssid NETGEAR_5G_wpa2 --passwd Password@123 --encryp wpa2 --config
+
+            Example-5:
+            Command Line Interface to run the Real Browser Test with groups and profiles
+            python3 lf_interop_real_browser_test.py --mgr 192.168.204.74 --url "https://google.com" --duration 1m --debug --upstream_port 1.1.eth1
+            --file_name grplaptops --group_name group1,group2 --profile_name netgear2g,netgear2g
+
 
             SCRIPT CLASSIFICATION: Test
 
@@ -1996,26 +2013,27 @@ def main():
         parser.add_argument('--file_name', type=str, help='specify the file name')
         parser.add_argument('--group_name', type=str, help='specify the group name')
         parser.add_argument('--profile_name', type=str, help='specify the profile name')
-        parser.add_argument("--eap_method", type=str, default='DEFAULT')
-        parser.add_argument("--eap_identity", type=str, default='')
-        parser.add_argument("--ieee80211", action="store_true")
-        parser.add_argument("--ieee80211u", action="store_true")
-        parser.add_argument("--ieee80211w", type=int, default=1)
-        parser.add_argument("--enable_pkc", action="store_true")
-        parser.add_argument("--bss_transition", action="store_true")
-        parser.add_argument("--power_save", action="store_true")
-        parser.add_argument("--disable_ofdma", action="store_true")
-        parser.add_argument("--roam_ft_ds", action="store_true")
-        parser.add_argument("--key_management", type=str, default='DEFAULT')
-        parser.add_argument("--pairwise", type=str, default='[BLANK]')
-        parser.add_argument("--private_key", type=str, default='[BLANK]')
-        parser.add_argument("--ca_cert", type=str, default='[BLANK]')
-        parser.add_argument("--client_cert", type=str, default='[BLANK]')
-        parser.add_argument("--pk_passwd", type=str, default='[BLANK]')
-        parser.add_argument("--pac_file", type=str, default='[BLANK]')
+
+        parser.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
+        parser.add_argument("--eap_identity", type=str, default='DEFAULT', help="Specify the EAP identity for authentication.")
+        parser.add_argument("--ieee80211", action="store_true", help='Enables IEEE 802.11 support.')
+        parser.add_argument("--ieee80211u", action="store_true", help='Enables IEEE 802.11u (Hotspot 2.0) support.')
+        parser.add_argument("--ieee80211w", type=int, default=1, help='Enables IEEE 802.11w (Management Frame Protection) support.')
+        parser.add_argument("--enable_pkc", action="store_true", help='Enables pkc support.')
+        parser.add_argument("--bss_transition", action="store_true", help='Enables BSS transition support.')
+        parser.add_argument("--power_save", action="store_true", help='Enables power-saving features.')
+        parser.add_argument("--disable_ofdma", action="store_true", help='Disables OFDMA support.')
+        parser.add_argument("--roam_ft_ds", action="store_true", help='Enables fast BSS transition (FT) support')
+        parser.add_argument("--key_management", type=str, default='DEFAULT', help='Specify the key management method (e.g., WPA-PSK, WPA-EAP)')
+        parser.add_argument("--pairwise", type=str, default='NA', help="Specify the pairwise cipher")
+        parser.add_argument("--private_key", type=str, default='NA', help='Specify EAP private key certificate file.')
+        parser.add_argument("--ca_cert", type=str, default='NA', help='Specify the CA certificate file name')
+        parser.add_argument("--client_cert", type=str, default='NA', help='Specify the client certificate file name')
+        parser.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
+        parser.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
         parser.add_argument("--upstream_port", type=str, default='NA', help='Specify the Upstream Port', required=True)
         parser.add_argument('--help_summary', help='Show summary of what this script does', default=None)
-        parser.add_argument("--expected_passfail_value", help="Specify the expected urlcount value for pass/fail", default=5)
+        parser.add_argument("--expected_passfail_value", help="Specify the expected urlcount value for pass/fail")
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
         parser.add_argument("--wait_time", type=int, help="Specify the time for configuration", default=60)
         parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
@@ -2033,6 +2051,10 @@ def main():
         if args.lf_logger_config_json:
             logger_config.lf_logger_config_json = args.lf_logger_config_json
             logger_config.load_lf_logger_config()
+        if args.url.lower().startswith("www."):
+            args.url = "https://" + args.url
+        if args.url.lower().startswith("http://"):
+            args.url = "https://" + args.url.removeprefix("http://")
 
         # Initialize an instance of RealBrowserTest with various parameters
         obj = RealBrowserTest(host=args.host,
@@ -2134,14 +2156,15 @@ def main():
         logging.error("Error occured", e)
         traceback.print_exc()
     finally:
-        obj.create_report()
-        if (obj.dowebgui):
-            obj.webui_stop()
-        obj.stop()
-        
+        if not ('--help' in sys.argv or '-h' in sys.argv):
+            obj.create_report()
+            if (obj.dowebgui):
+                obj.webui_stop()
+            obj.stop()
+            
 
-        if args.postcleanup:
-            obj.postcleanup()
+            if args.postcleanup:
+                obj.postcleanup()
 
 
 if __name__ == '__main__':
