@@ -910,7 +910,7 @@ class RealBrowserTest(Realm):
                 }
                 self.updating_webui_runningjson(data_obj)
         return True
-    
+
     def process_incremental_values(self, available_resources):
         """
         Process resource IDs and incremental values if specified.
@@ -1031,13 +1031,11 @@ class RealBrowserTest(Realm):
             logging.error("Specify either expected_passfail_value or device_csv_name")
             os._exit(1)
 
-
         if len(self.selected_groups) != len(self.selected_profiles):
             logging.error("Number of groups should match number of profiles")
             os._exit(1)
 
-
-        if self.group_name and self.profile_name  and self.file_name  and self.resource_ids:
+        if self.group_name and self.profile_name and self.file_name and self.resource_ids:
             logging.error("Either group name or device list should be entered not both")
             os._exit(1)
 
@@ -1049,19 +1047,16 @@ class RealBrowserTest(Realm):
             logging.error("Please enter the correct set of arguments")
             os._exit(1)
 
-
         if self.config and ((self.ssid is None or
                             (self.passwd is None and self.encryp and self.encryp.lower() != 'open') or
                             (self.passwd is None and self.encryp is None))):
             logging.error("Please provide ssid password and security for configuration of devices")
             os._exit(1)
 
-        
         if self.file_name:
             self.file_name = self.file_name.removesuffix(".csv")
         else:
             self.file_name = None
-
 
     def process_group_profiles(self):
         """
@@ -1149,7 +1144,7 @@ class RealBrowserTest(Realm):
 
         return available_resources
 
-    def update_passfail_value(self,available_resources):
+    def update_passfail_value(self, available_resources):
         """
         If no expected_passfail_value and no device_csv_name provided, ask for expected values
         and update the device CSV.
@@ -1408,7 +1403,7 @@ class RealBrowserTest(Realm):
 
         except Exception as e:
             logging.error(f"An error occurred while updating status: {e}")
-    
+
     def change_port_to_ip(self):
         """
         Convert a given port name to its corresponding IP address if it's not already an IP.
@@ -1444,7 +1439,7 @@ class RealBrowserTest(Realm):
             logging.info(f"Upstream port IP {self.upstream_port}")
 
         return self.upstream_port
-    
+
     def filter_ios_devices(self, device_list):
         """
         Filters out iOS devices from the given device list based on hardware and software identifiers.
@@ -1519,12 +1514,12 @@ class RealBrowserTest(Realm):
 
         self.device_list = filtered_list
         return filtered_list
-    
+
     def generate_test_setup_info(self):
         """
         Generate a dictionary containing the test setup information
         based on the configuration mode or selected group/profile mapping.
-        
+
         Returns:
             dict: Test setup information.
         """
@@ -1564,9 +1559,9 @@ class RealBrowserTest(Realm):
                 'URL': self.url,
                 'Test Duration (min)': self.duration,
             }
-        
+
         return test_setup_info
-    
+
     def generate_pass_fail_list(self, device_type_data, device_names, total_urls):
         """
         Generate the pass/fail list and expected URL count list for the devices.
@@ -1776,7 +1771,7 @@ class RealBrowserTest(Realm):
             report.build_table_title()
             if self.expected_passfail_value or self.device_csv_name:
                 pass_fail_list, test_input_list = self.generate_pass_fail_list(device_type_data, device_names, total_urls)
-                
+
                 final_test_results = {
 
                     "Device Type": device_type_data,
@@ -2148,9 +2143,6 @@ def main():
         obj.handle_incremental(args, obj, available_resources, available_resources)
         obj.handle_duration()
         obj.run_test(available_resources)
-        
-
-            
 
     except Exception as e:
         logging.error("Error occured", e)
@@ -2161,7 +2153,6 @@ def main():
             if (obj.dowebgui):
                 obj.webui_stop()
             obj.stop()
-            
 
             if args.postcleanup:
                 obj.postcleanup()
