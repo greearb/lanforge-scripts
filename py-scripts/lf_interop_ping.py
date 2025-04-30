@@ -25,6 +25,16 @@
     Command Line Interface to run ping test with existing Wi-Fi configuration on the real devices
     python3 lf_interop_ping.py --mgr 192.168.200.63 --real --target 192.168.1.61 --ping_interval 5 --ping_duration 1 --passwd OpenWifi --use_default_config
 
+    EXAMPLE-5:
+    Command Line Interface to run ping test by setting device specific Pass/Fail values in the csv file 
+    python3 lf_interop_ping.py --mgr 192.168.244.97 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1 --device_csv_name device.csv
+     --use_default_config
+
+    EXAMPLE-6:
+    Command Line Interface to run ping test by setting the same expected Pass/Fail value for all devices
+    python3 lf_interop_ping.py --mgr 192.168.244.97 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1 --expected_passfail_value 3
+     --use_default_config
+
     SCRIPT_CLASSIFICATION : Test
 
     SCRIPT_CATEGORIES: Performance, Functional, Report Generation
@@ -55,7 +65,7 @@ import pandas as pd
 import importlib
 import logging
 import traceback
-
+import csv
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
@@ -96,7 +106,9 @@ class Ping(Realm):
                  virtual=None,
                  duration=1,
                  real=None,
-                 debug=False):
+                 debug=False,
+                 expected_passfail_val=None,
+                 csv_name=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -129,6 +141,12 @@ class Ping(Realm):
         self.generic_endps_profile.dest = self.target
         self.generic_endps_profile.interval = self.interval
         self.Devices = None
+        self.real = real
+        self.expected_passfail_val = expected_passfail_val
+        self.csv_name = csv_name
+        self.pass_fail_list = []
+        self.test_input_list = []
+        self.percent_pac_loss = []
 
     def change_target_to_ip(self):
 
@@ -317,6 +335,70 @@ class Ping(Realm):
 
         return (remarks)
 
+    # Calculates pass/fail status for each client based on their result compared to the expected value.
+    def get_pass_fail_list(self, os_type):
+        # When csv_name is provided, for pass/fail criteria, respective values for each client will be used
+        if not self.expected_passfail_val:
+            res_list = []
+            test_input_list = []
+            pass_fail_list = []
+            interop_tab_data = self.json_get('/adb/')["devices"]
+            for client in range(len(os_type)):
+                if os_type[client] != 'Android':
+                    res_list.append(self.device_names[client].split(' ')[0:-1][0])
+                else:
+                    for dev in interop_tab_data:
+                        for item in dev.values():
+                            if item['user-name'] == self.device_names[client].split(' ')[0:-1][0]:
+                                res_list.append(item['name'].split('.')[2])
+            with open(self.csv_name, mode='r') as file:
+                reader = csv.DictReader(file)
+                rows = list(reader)
+                # fieldnames = reader.fieldnames
+            for device in res_list:
+                found = False
+                for row in rows:
+                    if row['DeviceList'] == device and row['PingPacketLoss %'].strip() != '':
+                        test_input_list.append(row['PingPacketLoss %'])
+                        found = True
+                        break
+                if not found:
+                    logging.info(f"Ping result for device {device} not found in CSV. Using default packet loss = 10%")
+                    test_input_list.append(10)
+            self.percent_pac_loss = []
+            for i in range(len(self.packets_sent)):
+                if self.packets_sent[i] != 0:
+                    self.percent_pac_loss.append(((self.packets_sent[i] - self.packets_received[i]) / self.packets_sent[i]) * 100)
+                else:
+                    self.percent_pac_loss.append(0)
+            for i in range(len(test_input_list)):
+                if self.packets_sent[i] == 0:
+                    pass_fail_list.append('FAIL')
+                elif float(test_input_list[i]) >= self.percent_pac_loss[i]:
+                    pass_fail_list.append('PASS')
+                else:
+                    pass_fail_list.append('FAIL')
+            self.pass_fail_list = pass_fail_list
+            self.test_input_list = test_input_list
+        # When expected_passfail_val is provided, for pass/fail criteria, the same value will be used for all clients
+        else:
+            self.test_input_list = [self.expected_passfail_val for val in range(len(self.device_names))]
+            self.percent_pac_loss = []
+            for i in range(len(self.packets_sent)):
+                if self.packets_sent[i] != 0:
+                    self.percent_pac_loss.append(((self.packets_sent[i] - self.packets_received[i]) / self.packets_sent[i]) * 100)
+                else:
+                    self.percent_pac_loss.append(0)
+            pass_fail_list = []
+            for i in range(len(self.test_input_list)):
+                if self.packets_sent[i] == 0:
+                    pass_fail_list.append('FAIL')
+                elif float(self.expected_passfail_val) >= self.percent_pac_loss[i]:
+                    pass_fail_list.append("PASS")
+                else:
+                    pass_fail_list.append("FAIL")
+            self.pass_fail_list = pass_fail_list
+
     def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path=''):
         if result_json is not None:
             self.result_json = result_json
@@ -376,11 +458,14 @@ class Ping(Realm):
         self.remarks = []
         self.device_ssid = []
         # packet_count_data = {}
+        os_type = []
         for device, device_data in self.result_json.items():
+            logging.info('Device data: {} {}'.format(device, device_data))
+            os_type.append(device_data['os'])
             self.packets_sent.append(int(device_data['sent']))
             self.packets_received.append(int(device_data['recv']))
             self.packets_dropped.append(int(device_data['dropped']))
-            self.device_names.append(device_data['name'])
+            self.device_names.append(device_data['name'] + ' ' + device_data['os'])
             self.device_modes.append(device_data['mode'])
             self.device_channels.append(device_data['channel'])
             self.device_mac.append(device_data['mac'])
@@ -446,16 +531,35 @@ class Ping(Realm):
         report.move_csv_file()
         report.build_graph()
 
-        dataframe1 = pd.DataFrame({
-            'Wireless Client': self.device_names,
-            'MAC': self.device_mac,
-            'Channel': self.device_channels,
-            'SSID ': self.device_ssid,
-            'Mode': self.device_modes,
-            'Packets Sent': self.packets_sent,
-            'Packets Received': self.packets_received,
-            'Packets Loss': self.packets_dropped
-        })
+        if self.real:
+            # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
+            if self.expected_passfail_val or self.csv_name:
+                self.get_pass_fail_list(os_type)
+            dataframe1 = pd.DataFrame({
+                'Wireless Client': self.device_names,
+                'MAC': self.device_mac,
+                'Channel': self.device_channels,
+                'SSID ': self.device_ssid,
+                'Mode': self.device_modes,
+                'Packets Sent': self.packets_sent,
+                'Packets Received': self.packets_received,
+                'Packets Loss': self.packets_dropped,
+            })
+            if self.expected_passfail_val or self.csv_name:
+                dataframe1["Percentage of Packet loss %"] = self.percent_pac_loss
+                dataframe1['Expected Packet loss %'] = self.test_input_list
+                dataframe1['Status'] = self.pass_fail_list
+        else:
+            dataframe1 = pd.DataFrame({
+                'Wireless Client': self.device_names,
+                'MAC': self.device_mac,
+                'Channel': self.device_channels,
+                'SSID ': self.device_ssid,
+                'Mode': self.device_modes,
+                'Packets Sent': self.packets_sent,
+                'Packets Received': self.packets_received,
+                'Packets Loss': self.packets_dropped,
+            })
         report.set_table_dataframe(dataframe1)
         report.build_table()
 
@@ -570,6 +674,16 @@ effectively over the network and pinpoint potential issues affecting connectivit
         Command Line Interface to run ping test with existing Wi-Fi configuration on the real devices
         python3 lf_interop_ping.py --mgr 192.168.200.63 --real --target 192.168.1.61 --ping_interval 5 --ping_duration 1 --passwd OpenWifi --use_default_config
 
+        EXAMPLE-5:
+        Command Line Interface to run ping test by setting device specific Pass/Fail values in the csv file 
+        python3 lf_interop_ping.py --mgr 192.168.244.97 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1 --device_csv_name device.csv
+        --use_default_config
+
+        EXAMPLE-6:
+        Command Line Interface to run ping test by setting the same expected Pass/Fail value for all devices
+        python3 lf_interop_ping.py --mgr 192.168.244.97 --real --target 192.168.1.3 --ping_interval 1 --ping_duration 1 --expected_passfail_value 3
+        --use_default_config
+
         SCRIPT_CLASSIFICATION : Test
 
         SCRIPT_CATEGORIES: Performance, Functional, Report Generation
@@ -682,6 +796,8 @@ effectively over the network and pinpoint potential issues affecting connectivit
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
+    parser.add_argument('--expected_passfail_value', help='Enter the expected packet loss', default=None)
+    parser.add_argument('--device_csv_name', type=str, help='Enter the csv name to store expected values', default=None)
 
     args = parser.parse_args()
 
@@ -699,32 +815,9 @@ effectively over the network and pinpoint potential issues affecting connectivit
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-
-    # input sanity
-    if (args.virtual is False and args.real is False):
-        print('Atleast one of --real or --virtual is required')
-        exit(0)
-    if (args.virtual is True and args.radio is None):
-        print('--radio required')
-        exit(0)
-    if (args.virtual is True and args.ssid is None):
-        print('--ssid required for virtual stations')
-        exit(0)
-    if (args.security != 'open' and args.passwd == '[BLANK]'):
-        print('--passwd required')
-        exit(0)
-    if (args.use_default_config is False):
-        if (args.ssid is None):
-            print('--ssid required for Wi-Fi configuration')
-            exit(0)
-
-        if (args.security.lower() != 'open' and args.passwd == '[BLANK]'):
-            print('--passwd required for Wi-Fi configuration')
-            exit(0)
-
-        if (args.server_ip is None):
-            print('--server_ip or upstream ip required for Wi-fi configuration')
-            exit(0)
+    if args.device_csv_name and args.expected_passfail_value:
+        logger.warning("Enter either --device_csv_name or --expected_passfail_value")
+        exit(1)
 
     mgr_ip = args.mgr
     mgr_password = args.mgr_passwd
@@ -760,7 +853,8 @@ effectively over the network and pinpoint potential issues affecting connectivit
 
     # ping object creation
     ping = Ping(host=mgr_ip, port=mgr_port, ssid=ssid, security=security, password=password, radio=radio,
-                lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=duration, debug=debug)
+                lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=duration, debug=debug, csv_name=args.device_csv_name,
+                expected_passfail_val=args.expected_passfail_value)
 
     # changing the target from port to IP
     ping.change_target_to_ip()
@@ -1020,7 +1114,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
     logging.info(ping.result_json)
 
     # station post cleanup
-    # ping.cleanup()
+    ping.cleanup()
 
     if args.local_lf_report_dir == "":
         ping.generate_report()
