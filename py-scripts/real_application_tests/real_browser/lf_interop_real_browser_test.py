@@ -25,15 +25,6 @@ Pre-requisites: Real clients should be connected to the LANforge MGR and Interop
                 CASE-1:
                 If not specified it takes the default count value (default count is 1)
 
-
-            Example-4:
-            Command Line Interface to run url in the Browser with precleanup:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --precleanup --debug --upstream_port 1.1.eth1
-
-            Example-5:
-            Command Line Interface to run url in the Browser with postcleanup:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --postcleanup --debug --upstream_port 1.1.eth1
-
             Example-4:
             Command Line Interface to run the Real Browser Test with Device Configuration
             python3 lf_interop_real_browser_test.py --mgr 192.168.204.74 --url "https://google.com" --duration 1m --debug --upstream_port 1.1.eth1
@@ -143,8 +134,8 @@ class RealBrowserTest(Realm):
                  result_dir="",
                  test_name=None,
                  incremental=None,
-                 postcleanup=False,
-                 precleanup=False,
+                 no_postcleanup=False,
+                 no_precleanup=False,
                  file_name=None,
                  group_name=None,
                  profile_name=None,
@@ -189,8 +180,8 @@ class RealBrowserTest(Realm):
         self.result_dir = result_dir
         self.test_name = test_name
         self.incremental = incremental
-        self.postCleanUp = postcleanup
-        self.preCleanUp = precleanup
+        self.no_postcleanup = no_postcleanup
+        self.no_precleanup = no_precleanup
         self.direction = "dl"
         self.dest = "/dev/null"
 
@@ -324,13 +315,13 @@ class RealBrowserTest(Realm):
         self.max_speed = self.max_speed
         self.requests_per_ten = 100
         self.created_cx = self.http_profile.created_cx = self.convert_to_dict(self.phone_data)
-        if self.preCleanUp:
+        if not self.no_precleanup:
             self.precleanup()
         self.http_profile.created_cx.clear()
 
         self.new_port_list = [item.split('.')[2] for item in self.laptops]
 
-        if (self.generic_endps_profile.create(ports=self.laptops, sleep_time=.5, real_client_os_types=self.laptop_os_types,)):
+        if self.generic_endps_profile.create(ports=self.laptops, sleep_time=.5, real_client_os_types=self.laptop_os_types,):
 
             logging.info('Real client generic endpoint creation completed.')
         else:
@@ -919,7 +910,7 @@ class RealBrowserTest(Realm):
             incremental_capacity_list_values = self.get_incremental_capacity_list()
             if incremental_capacity_list_values[-1] != len(available_resources):
                 logger.error("Incremental capacity doesn't match available devices")
-                if self.postCleanUp:
+                if not self.no_postcleanup:
                     self.postcleanup()
                 exit(1)
 
@@ -1153,7 +1144,7 @@ class RealBrowserTest(Realm):
             logging.info("There are no devices available which are selected")
             exit()
         device_map = {}
-        if (not self.expected_passfail_value) and (self.device_csv_name is None):
+        if not self.expected_passfail_value and self.device_csv_name is None:
             expected_val = input("Enter the expected value for the following devices {} eg 8,6,2: ".format(available_resources)).split(',')
             if len(available_resources) == len(expected_val):
                 for i in range(len(available_resources)):
@@ -1180,7 +1171,7 @@ class RealBrowserTest(Realm):
                 args.webgui_incremental = str(len(available_resources))
             incremental = [int(x) for x in args.webgui_incremental.split(',')]
             # Validate length and assign incremental values
-            if (len(args.webgui_incremental) == 1 and incremental[0] != len(resource_list_sorted)) or (len(args.webgui_incremental) > 1):
+            if len(args.webgui_incremental) == 1 and incremental[0] != len(resource_list_sorted) or len(args.webgui_incremental) > 1:
                 obj.incremental = incremental
             elif len(args.webgui_incremental) == 1:
                 obj.incremental = incremental
@@ -1873,7 +1864,7 @@ class RealBrowserTest(Realm):
                         device_type_data[i] = value["device type"]
 
         # Collect port data for each eid
-        logging.info(f"Checking final eid data {final_eid_data}")
+        # logging.info(f"Checking final eid data {final_eid_data}")
         for eid in final_eid_data:
             port_data = self.local_realm.json_get("port/list?fields=ssid,mac,parent dev,signal,tx-rate,channel,down,ip")
             for interface in port_data['interfaces']:
@@ -1881,7 +1872,7 @@ class RealBrowserTest(Realm):
                     temp_eid = key.split(".")
                     comb_eid = temp_eid[0] + "." + temp_eid[1]
                     if (comb_eid == eid) and (value["parent dev"] != "") and (not value["down"]) and (value["ip"] != "0.0.0.0"):
-                        logging.info("checking whether we are able to fetch device data from port manager")
+                        # logging.info("checking whether we are able to fetch device data from port manager")
                         mac_data.append(value.get("mac", 'None'))
                         channel_data.append(value.get("channel", 'None'))
                         signal_data.append(value.get("signal", 'None'))
@@ -1934,14 +1925,6 @@ def main():
                 CASE-1:
                 If not specified it takes the default count value (default count is 1)
 
-
-            Example-4:
-            Command Line Interface to run url in the Browser with precleanup:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --precleanup --debug --upstream_port 1.1.eth1
-
-            Example-5:
-            Command Line Interface to run url in the Browser with postcleanup:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --postcleanup --debug --upstream_port 1.1.eth1
 
             Example-4:
             Command Line Interface to run the Real Browser Test with Device Configuration
@@ -2003,8 +1986,8 @@ def main():
         parser.add_argument('--webgui_incremental', '--incremental_capacity', help="Specify the incremental values <1,2,3..>", dest='webgui_incremental', type=str)
         parser.add_argument('--incremental', help="to add incremental capacity to run the test", action='store_true')
         optional.add_argument('--no_laptops', help="run the test without laptop devices", action='store_false')
-        parser.add_argument('--postcleanup', help="Cleanup the cross connections after test is stopped", action='store_true')
-        parser.add_argument('--precleanup', help="Cleanup the cross connections before test is started", action='store_true')
+        parser.add_argument('--no_postcleanup', help="Do not Cleanup the cross connections after test is stopped", action='store_true')
+        parser.add_argument('--no_precleanup', help="Do not Cleanup the cross connections before test is started", action='store_true')
         parser.add_argument('--file_name', type=str, help='specify the file name')
         parser.add_argument('--group_name', type=str, help='specify the group name')
         parser.add_argument('--profile_name', type=str, help='specify the profile name')
@@ -2065,8 +2048,8 @@ def main():
                               result_dir=args.result_dir,
                               test_name=args.test_name,
                               incremental=args.incremental,
-                              postcleanup=args.postcleanup,
-                              precleanup=args.precleanup,
+                              no_postcleanup=args.no_postcleanup,
+                              no_precleanup=args.no_precleanup,
                               file_name=args.file_name,
                               group_name=args.group_name,
                               profile_name=args.profile_name,
@@ -2148,13 +2131,13 @@ def main():
         logging.error("Error occured", e)
         traceback.print_exc()
     finally:
-        if not ('--help' in sys.argv or '-h' in sys.argv):
+        if '--help' not in sys.argv and '-h' not in sys.argv:
             obj.create_report()
-            if (obj.dowebgui):
+            if obj.dowebgui:
                 obj.webui_stop()
             obj.stop()
 
-            if args.postcleanup:
+            if not args.no_postcleanup:
                 obj.postcleanup()
 
 
