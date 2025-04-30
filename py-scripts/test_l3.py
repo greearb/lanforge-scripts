@@ -676,6 +676,7 @@ class L3VariableTime(Realm):
     query data for relevant LANforge ports and traffic pairs during
     the test, and generate reports upon completion.
     """
+
     def __init__(self,
                  endp_types,
                  args,
@@ -5851,7 +5852,7 @@ class L3VariableTime(Realm):
 
                 # For real devices appending the required data for pass fail criteria
                 if self.real:
-                    up, down, off_up, off_down = [],[], [], []
+                    up, down, off_up, off_down = [], [], [], []
                     for i in self.client_dict_A[tos]['ul_A']:
                         up.append(int(i) / 1000000)
                     for i in self.client_dict_A[tos]['dl_A']:
@@ -5862,7 +5863,7 @@ class L3VariableTime(Realm):
                         off_down.append(int(i) / 1000000)
                     # if either 'expected_passfail_value' or 'device_csv_name' is provided for pass/fail evaluation
                     if self.expected_passfail_value or self.device_csv_name:
-                        test_input_list,pass_fail_list = self.get_pass_fail_list(tos,up,down)
+                        test_input_list, pass_fail_list = self.get_pass_fail_list(tos, up, down)
 
                 if self.real:
                     # When groups and profiles specifed for configuration
@@ -6215,7 +6216,7 @@ class L3VariableTime(Realm):
 
         self.copy_reports_to_home_dir()
 
-    def get_pass_fail_list(self,tos,up,down):
+    def get_pass_fail_list(self, tos, up, down):
         res_list = []
         test_input_list = []
         pass_fail_list = []
@@ -6281,6 +6282,7 @@ def change_port_to_ip(upstream_port, lfclient_host, lfclient_port):
         logging.info(f"Upstream port IP {upstream_port}")
 
     return upstream_port
+
 
 # Only used by argparser, so safe to exit in this function
 def valid_endp_types(_endp_type):
@@ -6368,13 +6370,13 @@ def validate_args(args):
     if args.real and (args.use_existing_station_list or args.use_existing_station_list):
         logger.error("For real devices --use_existing_station_list and --use_existing_station_list are not needed")
         exit(1)
-    elif args.real and args.group_name  and args.profile_name  and args.file_name  and args.device_list :
+    elif args.real and args.group_name and args.profile_name and args.file_name and args.device_list:
         logger.error("Either --group_name or --device_list should be entered not both")
         exit(1)
-    elif args.real and args.ssid  and args.profile_name :
+    elif args.real and args.ssid and args.profile_name:
         logger.error("Either --ssid or --profile_name should be given")
         exit(1)
-    elif args.real and args.file_name  and (args.group_name is None or args.profile_name is None):
+    elif args.real and args.file_name and (args.group_name is None or args.profile_name is None):
         logger.error("Please enter the correct set of arguments")
         exit(1)
     # When configuration specified for real devices using --config
@@ -6395,11 +6397,11 @@ def validate_args(args):
         elif args.ssid and args.passwd == '[BLANK]' and args.security and args.security.lower() != 'open':
             logger.error('Please provide valid --passwd and --security configuration')
             exit(1)
-    if args.group_name :
+    if args.group_name:
         selected_groups = args.group_name.split(',')
     else:
         selected_groups = []
-    if args.profile_name :
+    if args.profile_name:
         selected_profiles = args.profile_name.split(',')
     else:
         selected_profiles = []
@@ -6407,6 +6409,7 @@ def validate_args(args):
     if len(selected_groups) != len(selected_profiles):
         logger.error("Number of groups should match number of profiles")
         exit(1)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -7444,11 +7447,11 @@ and generate a report.
     traffic_type = args.endp_type.split(',')
     endp_input_list = []
     graph_input_list = []
-    if args.group_name :
+    if args.group_name:
         selected_groups = args.group_name.split(',')
     else:
         selected_groups = []
-    if args.profile_name :
+    if args.profile_name:
         selected_profiles = args.profile_name.split(',')
     else:
         selected_profiles = []
@@ -7488,7 +7491,7 @@ and generate a report.
         if not args.expected_passfail_value and args.device_csv_name is None:
             config_obj.device_csv_file(csv_name="device.csv")
         # Configuration of devices with groups and profiles
-        if args.group_name  and args.file_name  and args.profile_name :
+        if args.group_name and args.file_name and args.profile_name:
             selected_groups = args.group_name.split(',')
             selected_profiles = args.profile_name.split(',')
             for i in range(len(selected_groups)):
@@ -7497,7 +7500,7 @@ and generate a report.
             group_device_map = config_obj.get_groups_devices(data=selected_groups, groupdevmap=True)
             # Configuration of group of devices for the corresponding profiles
             args.device_list = [','.join(i for i in asyncio.run(config_obj.connectivity(config_devices, upstream=upstream_port_ip)))]
-        elif args.device_list :
+        elif args.device_list:
             all_devices = config_obj.get_all_devices()
             if args.group_name is None and args.file_name is None and args.profile_name is None:
                 dev_list = args.device_list[0].split(',')
@@ -7523,7 +7526,7 @@ and generate a report.
         logger.info("All devices %s Device List %s", all, args.device_list)
         configdev_list = []
         configure_list = []
-        if args.dowebgui and args.group_name :
+        if args.dowebgui and args.group_name:
             configdev_list = args.device_list[0].split(',')
             for device in all:
                 for config in configdev_list:
@@ -7543,7 +7546,7 @@ and generate a report.
         devices_available = []
         linux_list = []
         mac_list = []
-        android_list = [] 
+        android_list = []
         mac_id1_list = []
         user_list = []
         response = config_obj.json_get("/resource/all")
