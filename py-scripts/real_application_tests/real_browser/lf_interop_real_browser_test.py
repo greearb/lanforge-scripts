@@ -243,6 +243,7 @@ class RealBrowserTest(Realm):
         self.config = config
         self.selected_groups = selected_groups
         self.selected_profiles = selected_profiles
+        self.config_obj = None
         # Initialize RealDevice instance
         self.devices = base_RealDevice(manager_ip=self.host, selected_bands=[])
         # Initialize local realm
@@ -869,6 +870,317 @@ class RealBrowserTest(Realm):
         # If all endpoints are in 'Stopped' or 'WAITING', return True
         return True
 
+    def update_webui_json(self):
+        """
+        Update web GUI status based on available devices.
+        Returns True if execution should continue, False if it should exit.
+        """
+        if self.dowebgui:
+            if len(self.webui_hostnames) == 0:
+                logging.info("No device is available to run the test")
+                data_obj = {
+                    "status": "Stopped",
+                    "configuration_status": "configured"
+                }
+                self.updating_webui_runningjson(data_obj)
+                return False
+            else:
+                data_obj = {
+                    "configured_devices": self.webui_hostnames,
+                    "configuration_status": "configured",
+                    "no_of_devices": self.webui_devices,
+                    "device_list": self.hostname_os_combination,
+                }
+                self.updating_webui_runningjson(data_obj)
+        return True
+    
+    def process_incremental_values(self, available_resources):
+        """
+        Process resource IDs and incremental values if specified.
+        """
+        if self.incremental or self.dowebgui:
+            incremental_capacity_list_values = self.get_incremental_capacity_list()
+            if incremental_capacity_list_values[-1] != len(available_resources):
+                logger.error("Incremental capacity doesn't match available devices")
+                if self.postCleanUp:
+                    self.postcleanup()
+                exit(1)
+
+        if self.resource_ids:
+            if self.incremental:
+                self.test_setup_info_incremental_values = ','.join(map(str, incremental_capacity_list_values))
+                if len(self.incremental) == len(available_resources):
+                    self.total_duration = self.duration
+                elif len(self.incremental) == 1 and len(available_resources) > 1:
+                    div, mod = divmod(len(available_resources), self.incremental[0])
+                    self.total_duration = self.duration * (div + (1 if mod else 0))
+                else:
+                    self.total_duration = self.duration * len(incremental_capacity_list_values)
+            elif self.dowebgui:
+                self.test_setup_info_incremental_values = ','.join(map(str, incremental_capacity_list_values))
+                self.total_duration = self.duration * len(incremental_capacity_list_values)
+            else:
+                self.test_setup_info_incremental_values = "No Incremental Value provided"
+                self.total_duration = self.duration
+
+    def handle_duration(self):
+        """
+        Convert duration string to minutes.
+        """
+        if isinstance(self.duration, str):
+            if self.duration.endswith(('s', 'S')):
+                self.duration = round(int(self.duration[:-1]) / 60, 2)
+            elif self.duration.endswith(('m', 'M')):
+                self.duration = int(self.duration[:-1])
+            elif self.duration.endswith(('h', 'H')):
+                self.duration = int(self.duration[:-1]) * 60
+            else:
+                self.duration = int(self.duration)
+
+    def run_test(self, available_resources):
+        """
+        Runs the test with calculated parameters.
+        """
+        logging.info("Initiating Test...")
+        available_resources.sort()
+        self.set_available_resources_ids(",".join(map(str, available_resources)))
+        self.build()
+        self.process_incremental_values(available_resources)
+        if not self.update_webui_json():
+            sys.exit(1)
+
+        cx_order_list = self.calculate_cx_order_list()
+
+        for i, cx_batch in enumerate(cx_order_list):
+            self.start_specific(cx_batch)
+            logging.info(f"Test started on Devices with resource Ids : {cx_batch}")
+            try:
+                self.get_stats(self.duration, "webBrowser.csv", i, available_resources, cx_batch, i, self.count)
+            except Exception as e:
+                logging.error(f"Error while monitoring stats {e}", exc_info=True)
+
+    def calculate_cx_order_list(self):
+        """
+        Calculate and manage cx_order_list (list of cross connections to run) based on incremental values.
+        """
+        cx_order_list = []
+        keys = list(self.created_cx.keys()) + self.generic_endps_profile.created_cx
+        index = 0
+
+        if self.resource_ids:
+            if not self.incremental:
+                self.incremental = [len(keys)]
+
+            if len(self.incremental) == 1 and self.incremental[0] == len(keys):
+                cx_order_list.append(keys[index:])
+            elif len(self.incremental) == 1 and len(keys) > 1:
+                incremental_value = self.incremental[0]
+                max_index = len(keys)
+                while index < max_index:
+                    next_index = min(index + incremental_value, max_index)
+                    cx_order_list.append(keys[index:next_index])
+                    index = next_index
+            else:
+                for num in self.incremental:
+                    cx_order_list.append(keys[index:num])
+                    index = num
+                if index < len(keys):
+                    cx_order_list.append(keys[index:])
+
+        return cx_order_list
+
+    def validate_and_process_args(self):
+        """
+        Processes and validates the provided arguments.
+        Returns:
+            selected_groups (list): List of groups parsed from args.group_name.
+            selected_profiles (list): List of profiles parsed from args.profile_name.
+        """
+        # Process group_name and profile_name into lists
+        if self.group_name:
+            self.group_name = self.group_name.strip()
+            self.selected_groups = self.group_name.split(',')
+        else:
+            self.selected_groups = []
+
+        if self.profile_name:
+            self.profile_name = self.profile_name.strip()
+            self.selected_profiles = self.profile_name.split(',')
+        else:
+            self.selected_profiles = []
+
+        # Validation checks
+        if self.expected_passfail_value and self.device_csv_name:
+            logging.error("Specify either expected_passfail_value or device_csv_name")
+            os._exit(1)
+
+
+        if len(self.selected_groups) != len(self.selected_profiles):
+            logging.error("Number of groups should match number of profiles")
+            os._exit(1)
+
+
+        if self.group_name and self.profile_name  and self.file_name  and self.resource_ids:
+            logging.error("Either group name or device list should be entered not both")
+            os._exit(1)
+
+        if self.ssid and self.profile_name:
+            logging.error("Either ssid or profile name should be given")
+            exit(1)
+
+        if self.file_name and (self.group_name is None or self.profile_name is None):
+            logging.error("Please enter the correct set of arguments")
+            os._exit(1)
+
+
+        if self.config and ((self.ssid is None or
+                            (self.passwd is None and self.encryp and self.encryp.lower() != 'open') or
+                            (self.passwd is None and self.encryp is None))):
+            logging.error("Please provide ssid password and security for configuration of devices")
+            os._exit(1)
+
+        
+        if self.file_name:
+            self.file_name = self.file_name.removesuffix(".csv")
+        else:
+            self.file_name = None
+
+
+    def process_group_profiles(self):
+        """
+        Process group and profile names and update the device_list in args if provided.
+        """
+        if self.group_name and self.file_name and self.profile_name:
+            config_devices = {}
+            for i in range(len(self.selected_groups)):
+                config_devices[self.selected_groups[i]] = self.selected_profiles[i]
+            self.config_obj.initiate_group()
+            config_list = asyncio.run(self.config_obj.connectivity(config_devices, upstream=self.upstream_port))
+            resource_ids = sorted(set(int(item.split('.')[1]) for item in config_list if '.' in item))
+            return resource_ids
+
+    def process_resources(self, config_dict):
+        """
+        Processes resource IDs and returns:
+            available_resources (list): List of available resource IDs (integers)
+            resource_list_sorted (list): Sorted list of resource IDs (as strings)
+            resource_ids_generated (str): Resource IDs joined as a comma-separated string
+        """
+        available_resources = []
+
+        # Web GUI Mode: Extract and sort resources from the given device list
+        if self.dowebgui and self.group_name:
+            resource_list = sorted(set(self.resource_ids.split(',')))
+            resource_ids_generated = ','.join(resource_list)
+
+            # Query additional device info using webgui
+            selected_devices, report_labels, selected_macs = self.devices.query_user(
+                dowebgui=self.dowebgui, device_list=resource_ids_generated)
+
+            self.resource_ids = ",".join(id.split(".")[1] for id in self.resource_ids.split(","))
+            available_resources = sorted(set(int(num) for num in self.resource_ids.split(',')))
+
+        else:
+            # Fetch all available devices
+            all_devices = self.config_obj.get_all_devices()
+
+            # If device_list is provided, process it
+            if self.resource_ids:
+                device_list = self.resource_ids.split(',')
+
+                # Establish connectivity if required
+                if self.config:
+                    _ = asyncio.run(self.config_obj.connectivity(device_list=device_list, wifi_config=config_dict))
+
+                # Extract resource IDs and filter them
+                self.devices = self.devices.get_devices()
+                resource_ids = sorted(set(int(item.split('.')[1]) for item in device_list if '.' in item))
+                available_resources = [res_id for res_id in resource_ids if any(
+                    int(device.split('.')[1]) == res_id for device in self.devices if '.' in device
+                )]
+
+            else:
+                # Display available devices for manual selection
+                if self.config:
+                    device_info_list = [
+                        f"{device['shelf']}.{device['resource']} {device.get('serial', device.get('hostname', 'Unknown'))}"
+                        for device in all_devices
+                    ]
+
+                    for device in device_info_list:
+                        print(device)
+
+                    # Get user input for selecting resources
+                    self.resource_ids = input("Enter the desired resources to run the test (comma-separated, e.g., 1.10,1.12): ")
+                    device_list = self.resource_ids.split(',')
+                else:
+                    self.devices.get_devices()
+                    self.resource_ids, _, _ = self.devices.query_user()
+                    device_list = self.resource_ids
+
+                # Establish connectivity if required
+                if self.config:
+                    _ = asyncio.run(self.config_obj.connectivity(device_list=device_list, wifi_config=config_dict))
+
+                self.devices = self.devices.get_devices()
+                resource_ids = sorted(set(int(item.split('.')[1]) for item in device_list if '.' in item))
+                # obj.resource_ids = ','.join(map(str, resource_ids))
+
+                available_resources = [res_id for res_id in resource_ids if any(
+                    int(device.split('.')[1]) == res_id for device in self.devices if '.' in device
+                )]
+
+        return available_resources
+
+    def update_passfail_value(self,available_resources):
+        """
+        If no expected_passfail_value and no device_csv_name provided, ask for expected values
+        and update the device CSV.
+        """
+        if len(available_resources) == 0:
+            logging.info("There are no devices available which are selected")
+            exit()
+        device_map = {}
+        if (not self.expected_passfail_value) and (self.device_csv_name is None):
+            expected_val = input("Enter the expected value for the following devices {} eg 8,6,2: ".format(available_resources)).split(',')
+            if len(available_resources) == len(expected_val):
+                for i in range(len(available_resources)):
+                    # Using the first two parts (shelf.resource) as key from android_list
+                    key = self.android_list[i].split('.')[0] + '.' + self.android_list[i].split('.')[1]
+                    device_map[key] = expected_val[i]
+                self.config_obj.update_device_csv('device.csv', 'RealBrowser URLcount', device_map)
+            else:
+                logging.error("Enter correct number of values")
+                exit(0)
+
+    def handle_incremental(self, args, obj, available_resources, resource_list_sorted):
+        """
+        Process incremental values from user input or args.
+        """
+        if args.incremental and not args.webgui_incremental:
+            if obj.resource_ids:
+                inc_input = input('Specify incremental values as 1,2,3 : ')
+                obj.incremental = [int(x) for x in inc_input.split(',')]
+            else:
+                logging.info("Incremental values are not needed as Android devices are not selected.")
+        if args.webgui_incremental:
+            if args.webgui_incremental == "no_increment":
+                args.webgui_incremental = str(len(available_resources))
+            incremental = [int(x) for x in args.webgui_incremental.split(',')]
+            # Validate length and assign incremental values
+            if (len(args.webgui_incremental) == 1 and incremental[0] != len(resource_list_sorted)) or (len(args.webgui_incremental) > 1):
+                obj.incremental = incremental
+            elif len(args.webgui_incremental) == 1:
+                obj.incremental = incremental
+        if (obj.incremental and obj.resource_ids) or args.webgui_incremental:
+            # Check if the last incremental value is valid
+            if obj.incremental[-1] > len(available_resources):
+                logging.info("Exiting the program as incremental values are greater than the resource ids provided")
+                exit()
+            elif obj.incremental[-1] < len(available_resources) and len(obj.incremental) > 1:
+                logging.info("Exiting the program as the last incremental value must be equal to selected devices")
+                exit()
+
     def wait_for_flask(self, url="http://127.0.0.1:5003/check_health", timeout=10):
         """Wait until the Flask server is up, but exit if it takes longer than `timeout` seconds."""
         start_time = time.time()  # Record the start time
@@ -1080,7 +1392,7 @@ class RealBrowserTest(Realm):
         except Exception as e:
             logging.error(f"An error occurred while updating status: {e}")
     
-    def change_port_to_ip(self, upstream_port):
+    def change_port_to_ip(self):
         """
         Convert a given port name to its corresponding IP address if it's not already an IP.
 
@@ -1102,19 +1414,19 @@ class RealBrowserTest(Realm):
             - Info logs for the resolved or passed IP.
 
         """
-        if upstream_port.count('.') != 3:
-            target_port_list = self.name_to_eid(upstream_port)
+        if self.upstream_port.count('.') != 3:
+            target_port_list = self.name_to_eid(self.upstream_port)
             shelf, resource, port, _ = target_port_list
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
-                upstream_port = target_port_ip
+                self.upstream_port = target_port_ip
             except BaseException:
-                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
-            logging.info(f"Upstream port IP {upstream_port}")
+                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {self.upstream_port}.')
+            logging.info(f"Upstream port IP {self.upstream_port}")
         else:
-            logging.info(f"Upstream port IP {upstream_port}")
+            logging.info(f"Upstream port IP {self.upstream_port}")
 
-        return upstream_port
+        return self.upstream_port
     
     def filter_ios_devices(self, device_list):
         """
@@ -1689,7 +2001,6 @@ def main():
         parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
 
         args = parser.parse_args()
-
         if args.help_summary:
             print(help_summary)
             exit(0)
@@ -1703,432 +2014,109 @@ def main():
             logger_config.lf_logger_config_json = args.lf_logger_config_json
             logger_config.load_lf_logger_config()
 
-        # TODO refactor to be logger for consistency
-        if args.expected_passfail_value is not None and args.device_csv_name is not None:
-            logging.error("Specify either expected_passfail_value or device_csv_name")
+        # Initialize an instance of RealBrowserTest with various parameters
+        obj = RealBrowserTest(host=args.host,
+                              ssid=args.ssid,
+                              passwd=args.passwd,
+                              encryp=args.encryp,
+                              suporrted_release=["7.0", "10", "11", "12"],
+                              max_speed=args.max_speed,
+                              url=args.url, count=args.count,
+                              duration=args.duration,
+                              resource_ids=args.device_list,
+                              dowebgui=args.dowebgui,
+                              result_dir=args.result_dir,
+                              test_name=args.test_name,
+                              incremental=args.incremental,
+                              postcleanup=args.postcleanup,
+                              precleanup=args.precleanup,
+                              file_name=args.file_name,
+                              group_name=args.group_name,
+                              profile_name=args.profile_name,
+                              eap_method=args.eap_method,
+                              eap_identity=args.eap_identity,
+                              ieee80211=args.ieee80211,
+                              ieee80211u=args.ieee80211u,
+                              ieee80211w=args.ieee80211w,
+                              enable_pkc=args.enable_pkc,
+                              bss_transition=args.bss_transition,
+                              power_save=args.power_save,
+                              disable_ofdma=args.disable_ofdma,
+                              roam_ft_ds=args.roam_ft_ds,
+                              key_management=args.key_management,
+                              pairwise=args.pairwise,
+                              private_key=args.private_key,
+                              ca_cert=args.ca_cert,
+                              client_cert=args.client_cert,
+                              pk_passwd=args.pk_passwd,
+                              pac_file=args.pac_file,
+                              upstream_port=args.upstream_port,
+                              expected_passfail_value=args.expected_passfail_value,
+                              device_csv_name=args.device_csv_name,
+                              wait_time=args.wait_time,
+                              config=args.config,
+                              selected_groups=args.group_name,
+                              selected_profiles=args.profile_name
+                              )
+        obj.change_port_to_ip()
+        obj.validate_and_process_args()
+        obj.config_obj = DeviceConfig.DeviceConfig(lanforge_ip=obj.host, file_name=obj.file_name, wait_time=obj.wait_time)
+        if not obj.expected_passfail_value and obj.device_csv_name is None:
+            obj.config_obj.device_csv_file(csv_name="device.csv")
+        obj.run_flask_server()
+        if obj.group_name and obj.profile_name and obj.file_name:
+            available_resources = obj.process_group_profiles()
+        else:
+            # --- Build configuration dictionary for WiFi parameters ---
+            config_dict = {
+                'ssid': args.ssid,
+                'passwd': args.passwd,
+                'enc': args.encryp,
+                'eap_method': args.eap_method,
+                'eap_identity': args.eap_identity,
+                'ieee80211': args.ieee80211,
+                'ieee80211u': args.ieee80211u,
+                'ieee80211w': args.ieee80211w,
+                'enable_pkc': args.enable_pkc,
+                'bss_transition': args.bss_transition,
+                'power_save': args.power_save,
+                'disable_ofdma': args.disable_ofdma,
+                'roam_ft_ds': args.roam_ft_ds,
+                'key_management': args.key_management,
+                'pairwise': args.pairwise,
+                'private_key': args.private_key,
+                'ca_cert': args.ca_cert,
+                'client_cert': args.client_cert,
+                'pk_passwd': args.pk_passwd,
+                'pac_file': args.pac_file,
+                'server_ip': obj.upstream_port,
+            }
+            available_resources = obj.process_resources(config_dict)
+        if len(available_resources) != 0:
+            available_resources = obj.filter_ios_devices(available_resources)
+        if len(available_resources) == 0:
+            logging.error("No devices available to run the test. Exiting...")
             exit(1)
 
-        if args.group_name is not None:
-            selected_groups = args.group_name.split(',')
-        else:
-            selected_groups = []
-        if args.profile_name is not None:
-            selected_profiles = args.profile_name.split(',')
-        else:
-            selected_profiles = []
+        # --- Print available resources ---
+        logging.info("Devices available: {}".format(available_resources))
+        if obj.expected_passfail_value or obj.device_csv_name:
+            obj.update_passfail_value(available_resources)
+        # --- Handle incremental values ---
+        obj.handle_incremental(args, obj, available_resources, available_resources)
+        obj.handle_duration()
+        obj.run_test(available_resources)
+        
 
-        if True:
-
-            if args.expected_passfail_value is not None and args.device_csv_name is not None:
-                logging.error("Specify either expected_passfail_value or device_csv_name")
-                exit(0)
-
-            if args.group_name is not None:
-                args.group_name = args.group_name.strip()
-                selected_groups = args.group_name.split(',')
-            else:
-                selected_groups = []
-
-            if args.profile_name is not None:
-                args.profile_name = args.profile_name.strip()
-                selected_profiles = args.profile_name.split(',')
-            else:
-                selected_profiles = []
-
-            if len(selected_groups) != len(selected_profiles):
-                logging.error("Number of groups should match number of profiles")
-                exit(0)
-
-            elif args.group_name is not None and args.profile_name is not None and args.file_name is not None and args.device_list is not None:
-                logging.error("Either group name or device list should be entered not both")
-                exit(0)
-            elif args.ssid is not None and args.profile_name is not None:
-                logging.error("Either ssid or profile name should be given")
-                exit(0)
-            elif args.file_name is not None and (args.group_name is None or args.profile_name is None):
-                logging.error("Please enter the correct set of arguments")
-                exit(0)
-            elif args.config and ((args.ssid is None or (args.passwd is None and args.security.lower() != 'open') or (args.passwd is None and args.security is None))):
-                logging.error("Please provide ssid password and security for configuration of devices")
-                exit(0)
-
-            # Initialize an instance of RealBrowserTest with various parameters
-            obj = RealBrowserTest(host=args.host,
-                                  ssid=args.ssid,
-                                  passwd=args.passwd,
-                                  encryp=args.encryp,
-                                  suporrted_release=["7.0", "10", "11", "12"],
-                                  max_speed=args.max_speed,
-                                  url=args.url, count=args.count,
-                                  duration=args.duration,
-                                  resource_ids=args.device_list,
-                                  dowebgui=args.dowebgui,
-                                  result_dir=args.result_dir,
-                                  test_name=args.test_name,
-                                  incremental=args.incremental,
-                                  postcleanup=args.postcleanup,
-                                  precleanup=args.precleanup,
-                                  file_name=args.file_name,
-                                  group_name=args.group_name,
-                                  profile_name=args.profile_name,
-                                  eap_method=args.eap_method,
-                                  eap_identity=args.eap_identity,
-                                  ieee80211=args.ieee80211,
-                                  ieee80211u=args.ieee80211u,
-                                  ieee80211w=args.ieee80211w,
-                                  enable_pkc=args.enable_pkc,
-                                  bss_transition=args.bss_transition,
-                                  power_save=args.power_save,
-                                  disable_ofdma=args.disable_ofdma,
-                                  roam_ft_ds=args.roam_ft_ds,
-                                  key_management=args.key_management,
-                                  pairwise=args.pairwise,
-                                  private_key=args.private_key,
-                                  ca_cert=args.ca_cert,
-                                  client_cert=args.client_cert,
-                                  pk_passwd=args.pk_passwd,
-                                  pac_file=args.pac_file,
-                                  upstream_port=args.upstream_port,
-                                  expected_passfail_value=args.expected_passfail_value,
-                                  device_csv_name=args.device_csv_name,
-                                  wait_time=args.wait_time,
-                                  config=args.config,
-                                  selected_groups=selected_groups,
-                                  selected_profiles=selected_profiles
-                                  )
-
-            obj.run_flask_server()
-            resource_ids_sm = []
-            resource_set = set()
-            resource_list = []
-            resource_ids_generated = ""
-            if args.file_name:
-                if args.dowebgui:
-                    new_filename = args.file_name[:-4]
-                else:
-                    new_filename = args.file_name
-            else:
-                new_filename = None
-            config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.host, file_name=new_filename, wait_time=args.wait_time)
-            if not args.expected_passfail_value and args.device_csv_name is None:
-                config_obj.device_csv_file(csv_name="device.csv")
-            if args.group_name is not None and args.file_name is not None and args.profile_name is not None:
-                selected_groups = args.group_name.split(',')
-                selected_profiles = args.profile_name.split(',')
-                config_devices = {}
-                for i in range(len(selected_groups)):
-                    config_devices[selected_groups[i]] = selected_profiles[i]
-
-                config_obj.initiate_group()
-                config_list = asyncio.run(config_obj.connectivity(config_devices))
-
-                args.device_list = ",".join(id for id in config_list)
-
-            #  Process resource IDs when web GUI is enabled
-            if args.dowebgui and args.group_name:
-                resource_ids_sm = args.device_list.split(',')
-                resource_set = set(resource_ids_sm)
-                resource_list = sorted(resource_set)
-                resource_ids_generated = ','.join(resource_list)
-                resource_list_sorted = resource_list
-                selected_devices, report_labels, selected_macs = obj.devices.query_user(dowebgui=args.dowebgui, device_list=resource_ids_generated)
-                obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list.split(","))
-                available_resources = [int(num) for num in obj.resource_ids.split(',')]
-            else:
-                config_dict = {
-                        'ssid': args.ssid,
-                        'passwd': args.passwd,
-                        'enc': args.encryp,
-                        'eap_method': args.eap_method,
-                        'eap_identity': args.eap_identity,
-                        'ieee80211': args.ieee80211,
-                        'ieee80211u': args.ieee80211u,
-                        'ieee80211w': args.ieee80211w,
-                        'enable_pkc': args.enable_pkc,
-                        'bss_transition': args.bss_transition,
-                        'power_save': args.power_save,
-                        'disable_ofdma': args.disable_ofdma,
-                        'roam_ft_ds': args.roam_ft_ds,
-                        'key_management': args.key_management,
-                        'pairwise': args.pairwise,
-                        'private_key': args.private_key,
-                        'ca_cert': args.ca_cert,
-                        'client_cert': args.client_cert,
-                        'pk_passwd': args.pk_passwd,
-                        'pac_file': args.pac_file,
-                        'server_ip': args.server_ip,
-
-                }
-                if args.device_list:
-                    all_devices = config_obj.get_all_devices()
-                    if args.group_name is None and args.file_name is None and args.profile_name is None:
-                        dev_list = args.device_list.split(',')
-                        if args.config:
-                            config_list = asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
-                        # args.device_list = ",".join(id for id in config_list)
-
-                    obj.android_devices = obj.devices.get_devices()
-                    eid = args.device_list.split(',')
-                    resource_ids = [int(item.split('.')[1]) for item in eid]
-
-                    available_resources = []
-                    for device in obj.android_devices:
-                        parts = device.split('.')
-                        if len(parts) >= 2:
-                            extracted_value = int(parts[1])
-
-                            if extracted_value in resource_ids:
-                                available_resources.append(extracted_value)
-                    available_resources = list(set(available_resources))
-                    resource_list_sorted = sorted(available_resources)
-
-                else:
-                    all_devices = config_obj.get_all_devices()
-                    device_list = []
-                    for device in all_devices:
-                        if device["type"] != 'laptop':
-                            device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-                        elif device["type"] == 'laptop':
-                            device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
-                    print("Available devices:")
-                    for device in device_list:
-                        print(device)
-                    args.device_list = input("Enter the desired resources to run the test:")
-                    dev1_list = args.device_list.split(',')
-                    if args.config:
-
-                        config_list = asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
-
-                    obj.android_devices = obj.devices.get_devices()
-                    temp_device_list = args.device_list.split(",")
-
-                    obj.android_list = temp_device_list
-
-                    if obj.android_list:
-                        resource_ids = ",".join([item.split(".")[1] for item in obj.android_list])
-                        num_list = list(map(int, resource_ids.split(',')))
-                        num_list.sort()
-                        sorted_string = ','.join(map(str, num_list))
-                        obj.resource_ids = sorted_string
-                        resource_ids1 = list(map(int, sorted_string.split(',')))
-                        modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
-                        if not all(x in modified_list for x in resource_ids1):
-                            logging.error("Verify Resource ids, as few are invalid...!!")
-                            exit()
-                        resource_ids_sm = obj.resource_ids
-                        resource_list = resource_ids_sm.split(',')
-                        resource_set = set(resource_list)
-                        resource_list_sorted = sorted(resource_set)
-                        resource_ids_generated = ','.join(resource_list_sorted)
-                        available_resources = list(resource_set)
-
-            logger.info("Devices available: {}".format(available_resources))
-            if len(available_resources) == 0:
-                logging.info("There no devices available which are selected")
-                exit()
-            if len(available_resources) > 0:
-                device_map = {}
-                if not args.expected_passfail_value and args.device_csv_name is None:
-                    expected_val = input("Enter the expected value for the following devices{} eg 8,6,2: ".format(available_resources)).split(',')
-                    if len(available_resources) == len(expected_val):
-                        for i in range(len(available_resources)):
-                            device_map[obj.android_list[i].split('.')[0] + '.' + obj.android_list[i].split('.')[1]] = expected_val[i]
-                        config_obj.update_device_csv('device.csv', 'RealBrowser URLcount', device_map)
-                    else:
-                        logging.error("Enter correct number of values")
-                        exit(0)
-                elif args.expected_passfail_value:
-                    pass
-            # Handle incremental values input if resource IDs are specified and in not specified case.
-            if args.incremental and not args.webgui_incremental:
-                if obj.resource_ids:
-                    obj.incremental = input('Specify incremental values as 1,2,3 : ')
-                    obj.incremental = [int(x) for x in obj.incremental.split(',')]
-                else:
-                    logging.info("incremental Values are not needed as Android devices are not selected..")
-            test_info = False
-
-            # Handle webgui_incremental argument
-            if args.webgui_incremental:
-                if args.webgui_incremental == "no_increment":
-                    args.webgui_incremental = str(len(available_resources))
-                    test_info = True
-                incremental = [int(x) for x in args.webgui_incremental.split(',')]
-                # Validate the length and assign incremental values
-                if (len(args.webgui_incremental) == 1 and incremental[0] != len(resource_list_sorted)) or (len(args.webgui_incremental) > 1):
-                    obj.incremental = incremental
-                elif len(args.webgui_incremental) == 1:
-                    obj.incremental = incremental
-
-            if (obj.incremental and obj.resource_ids) or (args.webgui_incremental):
-                # Check if the last incremental value is greater or less than resources provided
-                if obj.incremental[-1] > len(available_resources):
-                    logging.info("Exiting the program as incremental values are greater than the resource ids provided")
-                    exit()
-                elif obj.incremental[-1] < len(available_resources) and len(obj.incremental) > 1:
-                    logging.info("Exiting the program as the last incremental value must be equal to selected devices")
-                    exit()
-
-            test_time = datetime.now()
-            test_time = test_time.strftime("%b %d %H:%M:%S")
-
-            logging.info("Initiating Test...")
-            available_resources = [int(n) for n in available_resources]
-            available_resources.sort()
-            available_resources_string = ",".join([str(n) for n in available_resources])
-            obj.set_available_resources_ids(available_resources_string)
-
-            obj.build()
-
-            if args.dowebgui:
-                if len(obj.webui_hostnames) == 0:
-                    logging.info("No device is available to run the test")
-                    data_obj = {
-                        "status": "Stopped",
-                        "configuration_status": "configured"
-                    }
-                    obj.updating_webui_runningjson(data_obj)
-                    return
-                else:
-                    data_obj = {
-                        "configured_devices": obj.webui_hostnames,
-                        "configuration_status": "configured",
-                        "no_of_devices": obj.webui_devices,
-                        "device_list": obj.hostname_os_combination,
-
-                    }
-                    obj.updating_webui_runningjson(data_obj)
-
-            time.sleep(10)
-
-            keys = list(obj.http_profile.created_cx.keys())
-            generic_keys = obj.generic_endps_profile.created_cx
-            keys = keys + generic_keys
-            if len(keys) == 0:
-                logger.error("Selected Devices are not available in the lanforge")
-                exit(1)
-            cx_order_list = []
-            index = 0
-            file_path = ""
-
-            if args.duration.endswith('s') or args.duration.endswith('S'):
-                args.duration = round(int(args.duration[0:-1]) / 60, 2)
-
-            elif args.duration.endswith('m') or args.duration.endswith('M'):
-                args.duration = int(args.duration[0:-1])
-
-            elif args.duration.endswith('h') or args.duration.endswith('H'):
-                args.duration = int(args.duration[0:-1]) * 60
-
-            elif args.duration.endswith(''):
-                args.duration = int(args.duration)
-
-            if args.incremental or args.webgui_incremental:
-                incremental_capacity_list_values = obj.get_incremental_capacity_list()
-                if incremental_capacity_list_values[-1] != len(available_resources):
-                    logger.error("Incremental capacity doesnt match available devices")
-                    if args.postcleanup:
-                        obj.postcleanup()
-                    exit(1)
-
-            # Process resource IDs and incremental values if specified
-            if obj.resource_ids:
-                if obj.incremental:
-                    obj.test_setup_info_incremental_values = ','.join(map(str, incremental_capacity_list_values))
-                    if len(obj.incremental) == len(available_resources):
-                        test_setup_info_total_duration = args.duration
-                    elif len(obj.incremental) == 1 and len(available_resources) > 1:
-                        if obj.incremental[0] == len(available_resources):
-                            test_setup_info_total_duration = args.duration
-                        else:
-                            div = len(available_resources) // obj.incremental[0]
-                            mod = len(available_resources) % obj.incremental[0]
-                            if mod == 0:
-                                test_setup_info_total_duration = args.duration * (div)
-                            else:
-                                test_setup_info_total_duration = args.duration * (div + 1)
-                    else:
-                        test_setup_info_total_duration = args.duration * len(incremental_capacity_list_values)
-                    # test_setup_info_duration_per_iteration= args.duration
-                elif args.webgui_incremental:
-                    obj.test_setup_info_incremental_values = ','.join(map(str, incremental_capacity_list_values))
-                    test_setup_info_total_duration = args.duration * len(incremental_capacity_list_values)
-                else:
-                    obj.test_setup_info_incremental_values = "No Incremental Value provided"
-                    test_setup_info_total_duration = args.duration
-                obj.total_duration = test_setup_info_total_duration
-                if args.dowebgui:
-                    if test_info:
-                        obj.test_setup_info_incremental_values = "No Incremental Value provided"
-
-            # Calculate and manage cx_order_list ( list of cross connections to run ) based on incremental values
-            gave_incremental, iteration_number = True, 0
-            if obj.resource_ids:
-                if not obj.incremental:
-                    obj.incremental = [len(keys)]
-                    gave_incremental = False
-                if obj.incremental or not gave_incremental:
-                    if len(obj.incremental) == 1 and obj.incremental[0] == len(keys):
-                        cx_order_list.append(keys[index:])
-                        # user_name_list.append(obj.user_name[index:])
-                    elif len(obj.incremental) == 1 and len(keys) > 1:
-                        incremental_value = obj.incremental[0]
-                        max_index = len(keys)
-                        index = 0
-
-                        while index < max_index:
-                            next_index = min(index + incremental_value, max_index)
-                            cx_order_list.append(keys[index:next_index])
-
-                            index = next_index
-                    elif len(obj.incremental) != 1 and len(keys) > 1:
-
-                        index = 0
-                        for num in obj.incremental:
-
-                            cx_order_list.append(keys[index: num])
-
-                            index = num
-
-                        if index < len(keys):
-                            cx_order_list.append(keys[index:])
-
-                    # Update start and end times for webGUI
-                    for i in range(len(cx_order_list)):
-                        if i == 0:
-                            obj.data["start_time_webGUI"] = [datetime.now().strftime('%Y-%m-%d %H:%M:%S')] * len(keys)
-                            end_time_webGUI = (datetime.now() + timedelta(minutes=args.duration * len(cx_order_list))).strftime('%Y-%m-%d %H:%M:%S')
-                            obj.data['end_time_webGUI'] = [end_time_webGUI] * len(keys)
-
-                        obj.start_specific(cx_order_list[i])
-
-                        iteration_number += len(cx_order_list[i])
-                        if cx_order_list[i]:
-                            logging.info("Test started on Devices with resource Ids : {selected}".format(selected=cx_order_list[i]))
-                        else:
-                            logging.info("Test started on Devices with resource Ids : {selected}".format(selected=cx_order_list[i]))
-
-                        # duration = 60 * args.duration
-                        file_path = "webBrowser.csv"
-
-                        if end_time_webGUI < datetime.now().strftime('%Y-%m-%d %H:%M:%S'):
-                            obj.data['remaining_time_webGUI'] = ['0:00'] * len(keys)
-                        else:
-                            date_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                            obj.data['remaining_time_webGUI'] = [datetime.strptime(end_time_webGUI, "%Y-%m-%d %H:%M:%S") - datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S")] * len(keys)
-                        try:
-
-                            obj.get_stats(args.duration, file_path, iteration_number, resource_list_sorted, cx_order_list[i], i, args.count)
-                        except Exception as e:
-                            logging.error(f"Error while monitoring stats {e}", exc_info=True)
-            obj.create_report()
+            
 
     except Exception as e:
         logging.error("Error occured", e)
         traceback.print_exc()
     finally:
-        if (args.dowebgui):
-                obj.webui_stop()
+        obj.create_report()
+        if (obj.dowebgui):
+            obj.webui_stop()
         obj.stop()
         
 
