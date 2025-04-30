@@ -1502,66 +1502,25 @@ class RealBrowserTest(Realm):
 
         self.device_list = filtered_list
         return filtered_list
-
-    def create_report(self,):
-        if self.dowebgui:
-            report = lf_report(_output_pdf='Real_Browser_Report',
-                               _output_html='Real_Browser_Report.html',
-                               _results_dir_name="Real_Browser_Report",
-                               _path=self.result_dir)
-            self.report_path_date_time = report.get_path_date_time()
-        else:
-
-            report = lf_report(_output_pdf='Real_Browser_Report',
-                               _output_html='Real_Browser_Report.html',
-                               _results_dir_name="Real_Browser_Report",
-                               _path='')
-            self.report_path_date_time = report.get_path_date_time()
-
-        report.set_title("Web Browser Test")
-        report.build_banner()
-
-        report.set_table_title("Objective:")
-        report.build_table_title()
-        report.set_text("The Candela Web browser test is designed to measure the Access Point performance and stability by browsing multiple websites in real clients like android, Linux, windows" +
-                        "and IOS which are connected to the access point. This test allows the user to choose the options like website link," +
-                        "the number of times the page has to browse, and the Time taken to browse the page." +
-                        "The expected behavior is for the AP to be able to handle several stations(within the limitations of the AP specs) and make sure all clients can browse the page.")
-        report.build_text_simple()
-
-        report.set_table_title("Test Parameters:")
-        report.build_table_title()
-
-        final_eid_data = []
-        mac_data = []
-        channel_data = []
-        signal_data = []
-        ssid_data = []
-        tx_rate_data = []
-        device_type_data = []
-        device_names = []
-        total_urls = []
-        time_to_target_urls = []
-        uc_min_data = []
-        uc_max_data = []
-        uc_avg_data = []
-        total_err_data = []
-
-        final_eid_data, mac_data, channel_data, signal_data, ssid_data, tx_rate_data, device_names, device_type_data = self.extract_device_data('real_time_data.csv')
-
+    
+    def generate_test_setup_info(self):
+        """
+        Generate a dictionary containing the test setup information
+        based on the configuration mode or selected group/profile mapping.
+        
+        Returns:
+            dict: Test setup information.
+        """
         if self.config:
-
-            # Test setup info
             test_setup_info = {
                 'Configured Devies': self.hostname_os_combination,
                 'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac}), A({self.android})',
-                'Incremental Values': self.test_setup_info_incremental_values,
+                # 'Incremental Values': self.test_setup_info_incremental_values,
                 'Required URL Count': self.count,
                 'URL': self.url,
                 'Test Duration (min)': self.duration,
                 'SSID': self.report_ssid,
                 "Security": self.encryp
-
             }
         elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
             # Map each group with a profile
@@ -1570,150 +1529,46 @@ class RealBrowserTest(Realm):
             # Create a string by joining the mapped pairs
             gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
 
-            # Test setup info
             test_setup_info = {
                 'Configuration': gp_map,
                 'Configured Devies': self.hostname_os_combination,
                 'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac}), A({self.android})',
-                'Incremental Values': self.test_setup_info_incremental_values,
+                # 'Incremental Values': self.test_setup_info_incremental_values,
                 'Required URL Count': self.count,
                 'URL': self.url,
                 'Test Duration (min)': self.duration,
-
             }
         else:
-            # Test setup info
             test_setup_info = {
-
                 'Configured Devies': self.hostname_os_combination,
                 'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac}), A({self.android})',
-                'Incremental Values': self.test_setup_info_incremental_values,
+                # 'Incremental Values': self.test_setup_info_incremental_values,
                 'Required URL Count': self.count,
                 'URL': self.url,
                 'Test Duration (min)': self.duration,
-
             }
+        
+        return test_setup_info
+    
+    def generate_pass_fail_list(self, device_type_data, device_names, total_urls):
+        """
+        Generate the pass/fail list and expected URL count list for the devices.
 
-        report.test_setup_table(
-            test_setup_data=test_setup_info, value='Test Parameters')
+        Args:
+            device_type_data (list): List of device types (e.g., Android, Windows).
+            device_names (list): List of device names.
+            total_urls (list): List of total URLs accessed by each device.
 
-        for i in range(0, len(self.csv_file_names)):
+        Returns:
+            tuple: (pass_fail_list, test_input_list)
+        """
+        pass_fail_list = []
+        test_input_list = []
 
-            final_eid_data, mac_data, channel_data, signal_data, ssid_data, tx_rate_data, device_names, device_type_data = self.extract_device_data(self.csv_file_names[i])
-            report.set_graph_title(f"Iteration {i + 1} Successful URL's per Device")
-            report.build_graph_title()
-
-            data = pd.read_csv(self.csv_file_names[i])
-
-            # Extract device names from CSV
-            if 'total_urls' in data.columns:
-                total_urls = data['total_urls'].tolist()
-            else:
-                raise ValueError("The 'total_urls' column was not found in the CSV file.")
-
-            x_fig_size = 18
-            y_fig_size = len(device_type_data) * 1 + 4
-            bar_graph_horizontal = lf_bar_graph_horizontal(
-                _data_set=[total_urls],
-                _xaxis_name="URL",
-                _yaxis_name="Devices",
-                _yaxis_label=device_names,
-                _yaxis_categories=device_names,
-                _yaxis_step=1,
-                _yticks_font=8,
-                _bar_height=.20,
-                _show_bar_value=True,
-                _figsize=(x_fig_size, y_fig_size),
-                _graph_title="URLs",
-                _graph_image_name=f"{self.csv_file_names[i]}_urls_per_device",
-                _label=["URLs"]
-            )
-            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
-
-            report.set_graph_title(f"Iteration {i + 1} - Time Taken Vs Device For Completing {self.count} RealTime URLs")
-            report.build_graph_title()
-
-            # Extract device names from CSV
-            if 'time_to_target_urls' in data.columns:
-                time_to_target_urls = data['time_to_target_urls'].tolist()
-            else:
-                raise ValueError("The 'time_to_target_urls' column was not found in the CSV file.")
-
-            x_fig_size = 18
-            y_fig_size = len(device_type_data) * 1 + 4
-            bar_graph_horizontal = lf_bar_graph_horizontal(
-                _data_set=[time_to_target_urls],
-                _xaxis_name="Time (in Seconds)",
-                _yaxis_name="Devices",
-                _yaxis_label=device_names,
-                _yaxis_categories=device_names,
-                _yaxis_step=1,
-                _yticks_font=8,
-                _bar_height=.20,
-                _show_bar_value=True,
-                _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Time Taken",
-                _graph_image_name=f"{self.csv_file_names[i]}_time_taken_for_urls",
-                _label=["Time (in sec)"]
-            )
-            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
-
-            report.set_table_title(f"Detailed Result Table - Iteration {i + 1}")
-            report.build_table_title()
-
-            if 'uc_min' in data.columns:
-                uc_min_data = data['uc_min'].tolist()
-            else:
-                raise ValueError("The 'uc_min' column was not found in the CSV file.")
-
-            if 'uc_max' in data.columns:
-                uc_max_data = data['uc_max'].tolist()
-            else:
-                raise ValueError("The 'uc_max' column was not found in the CSV file.")
-
-            if 'uc_avg' in data.columns:
-                uc_avg_data = data['uc_avg'].tolist()
-            else:
-                raise ValueError("The 'uc_avg' column was not found in the CSV file.")
-
-            if 'total_err' in data.columns:
-                total_err_data = data['total_err'].tolist()
-            else:
-                raise ValueError("The 'total_err' column was not found in the CSV file.")
-
-            test_results = {
-
-                "Device Type": device_type_data,
-                "Hostname": device_names,
-                "SSID": ssid_data,
-                "MAC": mac_data,
-                "Channel": channel_data,
-                "UC-MIN (ms)": uc_min_data,
-                "UC-MAX (ms)": uc_max_data,
-                "UC-AVG (ms)": uc_avg_data,
-                "Total Successful URLs": total_urls,
-                "Total Erros": total_err_data,
-                "RSSI": signal_data,
-                "Link Speed": tx_rate_data
-
-            }
-            test_results_df = pd.DataFrame(test_results)
-            report.set_table_dataframe(test_results_df)
-            report.build_table()
-
-        report.set_table_title("Final Test Results")
-        report.build_table_title()
         if not self.expected_passfail_value:
             res_list = []
-            test_input_list = []
-            pass_fail_list = []
             interop_tab_data = self.json_get('/adb/')["devices"]
+
             for i in range(len(device_type_data)):
                 if device_type_data[i] != 'Android':
                     res_list.append(device_names[i])
@@ -1723,85 +1578,250 @@ class RealBrowserTest(Realm):
                             if item['user-name'] in device_names:
                                 name_to_append = item['name'].split('.')[2]
                                 if name_to_append not in res_list:
-                                    res_list.append(item['name'].split('.')[2])
+                                    res_list.append(name_to_append)
 
             if self.dowebgui:
                 os.chdir(self.original_dir)
 
             if self.device_csv_name is None:
                 self.device_csv_name = "device.csv"
-            with open(self.device_csv_name, mode='r') as file:
+
+            file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../", self.device_csv_name))
+            with open(file_path, mode='r') as file:
                 reader = csv.DictReader(file)
                 rows = list(reader)
 
-            for row in rows:
-                device = row['DeviceList']
-                if device in res_list:
-                    test_input_list.append(row['RealBrowser URLcount'])
-            for j in range(len(test_input_list)):
-                if float(test_input_list[j]) <= float(total_urls[j]):
-                    pass_fail_list.append('PASS')
+            for device in res_list:
+                found = False
+                for row in rows:
+                    if row['DeviceList'] == device and row['RealBrowser URLcount'].strip() != '':
+                        test_input_list.append(row['RealBrowser URLcount'])
+                        found = True
+                        break
+                if not found:
+                    logging.info(f"Pass Fail Value for Device {device} not found in CSV. Using default value 5")
+                    test_input_list.append(5)  # Default value
+
+            if self.dowebgui:
+                os.chdir(self.result_dir)
+
+        else:
+            test_input_list = [self.expected_passfail_value for _ in range(len(device_type_data))]
+
+        for j in range(len(test_input_list)):
+            if float(test_input_list[j]) <= float(total_urls[j]):
+                pass_fail_list.append('PASS')
+            else:
+                pass_fail_list.append('FAIL')
+
+        return pass_fail_list, test_input_list
+
+    def create_report(self):
+        try:
+            if self.dowebgui:
+                report = lf_report(_output_pdf='Real_Browser_Report',
+                                   _output_html='Real_Browser_Report.html',
+                                   _results_dir_name="Real_Browser_Report",
+                                   _path=self.result_dir)
+                self.report_path_date_time = report.get_path_date_time()
+            else:
+
+                report = lf_report(_output_pdf='Real_Browser_Report',
+                                   _output_html='Real_Browser_Report.html',
+                                   _results_dir_name="Real_Browser_Report",
+                                   _path='')
+                self.report_path_date_time = report.get_path_date_time()
+
+            report.set_title("Web Browser Test")
+            report.build_banner()
+
+            report.set_table_title("Objective:")
+            report.build_table_title()
+            report.set_text("The Candela Web browser test is designed to measure the Access Point performance and stability by browsing multiple websites in real clients" +
+                            " like android, Linux, windows" +
+                            "and IOS which are connected to the access point. This test allows the user to choose the options like website link," +
+                            "the number of times the page has to browse, and the Time taken to browse the page." +
+                            "The expected behavior is for the AP to be able to handle several stations(within the limitations of the AP specs) and make sure all clients can browse the page.")
+            report.build_text_simple()
+
+            report.set_table_title("Test Parameters:")
+            report.build_table_title()
+
+            final_eid_data = []
+            mac_data = []
+            channel_data = []
+            signal_data = []
+            ssid_data = []
+            tx_rate_data = []
+            device_type_data = []
+            device_names = []
+            total_urls = []
+            time_to_target_urls = []
+            uc_min_data = []
+            uc_max_data = []
+            uc_avg_data = []
+            total_err_data = []
+
+            final_eid_data, mac_data, channel_data, signal_data, ssid_data, tx_rate_data, device_names, device_type_data = self.extract_device_data('real_time_data.csv')
+
+            test_setup_info = self.generate_test_setup_info()
+            report.test_setup_table(
+                test_setup_data=test_setup_info, value='Test Parameters')
+
+            for i in range(0, len(self.csv_file_names)):
+
+                final_eid_data, mac_data, channel_data, signal_data, ssid_data, tx_rate_data, device_names, device_type_data = self.extract_device_data(self.csv_file_names[i])
+                report.set_graph_title("Successful URL's per Device")
+                report.build_graph_title()
+
+                data = pd.read_csv(self.csv_file_names[i])
+
+                # Extract device names from CSV
+                if 'total_urls' in data.columns:
+                    total_urls = data['total_urls'].tolist()
                 else:
-                    pass_fail_list.append('FAIL')
+                    raise ValueError("The 'total_urls' column was not found in the CSV file.")
+
+                x_fig_size = 18
+                y_fig_size = len(device_type_data) * 1 + 4
+                bar_graph_horizontal = lf_bar_graph_horizontal(
+                    _data_set=[total_urls],
+                    _xaxis_name="URL",
+                    _yaxis_name="Devices",
+                    _yaxis_label=device_names,
+                    _yaxis_categories=device_names,
+                    _yaxis_step=1,
+                    _yticks_font=8,
+                    _bar_height=.20,
+                    _show_bar_value=True,
+                    _figsize=(x_fig_size, y_fig_size),
+                    _graph_title="URLs",
+                    _graph_image_name=f"{self.csv_file_names[i]}_urls_per_device",
+                    _label=["URLs"]
+                )
+                graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+                report.set_graph_image(graph_image)
+                report.move_graph_image()
+                report.build_graph()
+
+                report.set_graph_title(f"Time Taken Vs Device For Completing {self.count} RealTime URLs")
+                report.build_graph_title()
+
+                # Extract device names from CSV
+                if 'time_to_target_urls' in data.columns:
+                    time_to_target_urls = data['time_to_target_urls'].tolist()
+                else:
+                    raise ValueError("The 'time_to_target_urls' column was not found in the CSV file.")
+
+                x_fig_size = 18
+                y_fig_size = len(device_type_data) * 1 + 4
+                bar_graph_horizontal = lf_bar_graph_horizontal(
+                    _data_set=[time_to_target_urls],
+                    _xaxis_name="Time (in Seconds)",
+                    _yaxis_name="Devices",
+                    _yaxis_label=device_names,
+                    _yaxis_categories=device_names,
+                    _yaxis_step=1,
+                    _yticks_font=8,
+                    _bar_height=.20,
+                    _show_bar_value=True,
+                    _figsize=(x_fig_size, y_fig_size),
+                    _graph_title="Time Taken",
+                    _graph_image_name=f"{self.csv_file_names[i]}_time_taken_for_urls",
+                    _label=["Time (in sec)"]
+                )
+                graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+                report.set_graph_image(graph_image)
+                report.move_graph_image()
+                report.build_graph()
+
+                if 'uc_min' in data.columns:
+                    uc_min_data = data['uc_min'].tolist()
+                else:
+                    raise ValueError("The 'uc_min' column was not found in the CSV file.")
+
+                if 'uc_max' in data.columns:
+                    uc_max_data = data['uc_max'].tolist()
+                else:
+                    raise ValueError("The 'uc_max' column was not found in the CSV file.")
+
+                if 'uc_avg' in data.columns:
+                    uc_avg_data = data['uc_avg'].tolist()
+                else:
+                    raise ValueError("The 'uc_avg' column was not found in the CSV file.")
+
+                if 'total_err' in data.columns:
+                    total_err_data = data['total_err'].tolist()
+                else:
+                    raise ValueError("The 'total_err' column was not found in the CSV file.")
+
+            report.set_table_title("Final Test Results")
+            report.build_table_title()
+            if self.expected_passfail_value or self.device_csv_name:
+                pass_fail_list, test_input_list = self.generate_pass_fail_list(device_type_data, device_names, total_urls)
+                
+                final_test_results = {
+
+                    "Device Type": device_type_data,
+                    "Hostname": device_names,
+                    "SSID": ssid_data,
+                    "MAC": mac_data,
+                    "Channel": channel_data,
+                    "UC-MIN (ms)": uc_min_data,
+                    "UC-MAX (ms)": uc_max_data,
+                    "UC-AVG (ms)": uc_avg_data,
+                    "Total Successful URLs": total_urls,
+                    "Expected URLS": test_input_list,
+                    "Total Erros": total_err_data,
+                    "RSSI": signal_data,
+                    "Link Speed": tx_rate_data,
+                    "Status ": pass_fail_list
+
+                }
+            else:
+                final_test_results = {
+
+                    "Device Type": device_type_data,
+                    "Hostname": device_names,
+                    "SSID": ssid_data,
+                    "MAC": mac_data,
+                    "Channel": channel_data,
+                    "UC-MIN (ms)": uc_min_data,
+                    "UC-MAX (ms)": uc_max_data,
+                    "UC-AVG (ms)": uc_avg_data,
+                    "Total Successful URLs": total_urls,
+                    "Total Erros": total_err_data,
+                    "RSSI": signal_data,
+                    "Link Speed": tx_rate_data,
+
+                }
+            test_results_df = pd.DataFrame(final_test_results)
+            report.set_table_dataframe(test_results_df)
+            report.build_table()
+
             if self.dowebgui:
 
-                os.chdir(self.result_dir)
-        else:
-            test_input_list = [self.expected_passfail_value for val in range(len(device_type_data))]
-            pass_fail_list = []
-            for j in range(len(test_input_list)):
-                if float(self.expected_passfail_value) <= float(total_urls[j]):
-                    pass_fail_list.append("PASS")
-                else:
-                    pass_fail_list.append("FAIL")
+                os.chdir(self.original_dir)
 
-        final_test_results = {
-
-            "Device Type": device_type_data,
-            "Hostname": device_names,
-            "SSID": ssid_data,
-            "MAC": mac_data,
-            "Channel": channel_data,
-            "UC-MIN (ms)": uc_min_data,
-            "UC-MAX (ms)": uc_max_data,
-            "UC-AVG (ms)": uc_avg_data,
-            "Total Successful URLs": total_urls,
-            "Expected URLS": test_input_list,
-            "Total Erros": total_err_data,
-            "RSSI": signal_data,
-            "Link Speed": tx_rate_data,
-            "Status ": pass_fail_list
-
-        }
-        test_results_df = pd.DataFrame(final_test_results)
-        report.set_table_dataframe(test_results_df)
-        report.build_table()
-
-        if self.dowebgui:
-
-            os.chdir(self.original_dir)
-
-        report.build_custom()
-        report.build_footer()
-        report.write_html()
-        report.write_pdf()
-
-        if not self.dowebgui:
-            source_dir = "."
-            destination_dir = self.report_path_date_time
-
-            # Stop the test execution
-            self.csv_file_names.append('real_time_data.csv')
-
-            for filename in self.csv_file_names:
-                source_path = os.path.join(source_dir, filename)
-                destination_path = os.path.join(destination_dir, filename)
-
-                if os.path.isfile(source_path):
-                    shutil.move(source_path, destination_path)
-                    logging.info(f"Moved {filename} to {destination_dir}")
-                else:
-                    logging.info(f"{filename} not found in the current directory")
+            report.build_custom()
+            report.build_footer()
+            report.write_html()
+            report.write_pdf()
+        except Exception as e:
+            logging.error(f"Error in create_report function {e}", exc_info=True)
+        finally:
+            if not self.dowebgui:
+                source_dir = "."
+                destination_dir = self.report_path_date_time
+                self.csv_file_names.append('real_time_data.csv')
+                for filename in self.csv_file_names:
+                    source_path = os.path.join(source_dir, filename)
+                    destination_path = os.path.join(destination_dir, filename)
+                    if os.path.isfile(source_path):
+                        shutil.move(source_path, destination_path)
+                        logging.info(f"Moved {filename} to {destination_dir}")
+                    else:
+                        logging.info(f"{filename} not found in the current directory")
 
     def extract_device_data(self, file_path):
         # Load the CSV file
