@@ -1,0 +1,77 @@
+{
+   "ct_scale_001_scripts":{
+       "Notes":[
+           "This json file describes tests to be run by LANforge system",
+           "When doing a create_chamberview.py --create_scenario <name> ",
+           "has no correlation to the --instance_name , instance name is used ",
+           "as a unique identifier for tha chamber-view test run"
+       ]
+   },
+   "test_suites":{
+       "ct_scale_001":{
+           "CC_SCALE_DUT_2G_5G":{
+               "enabled":"TRUE",
+               "load_db":"skip",
+               "command":"create_chamberview_dut.py",
+               "args":"",
+               "args_list":[
+                   " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                   " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                   " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                   " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+               ]
+           },
+           "CC_SCALE_2G_5G":{
+               "enabled":"TRUE",
+               "load_db":"skip",
+               "command":"create_chamberview.py",
+               "args":"",
+               "args_list":[
+                   " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                   " --create_scenario SCALE_2G_5G ",
+                   " --raw_line \"profile_link 1.1 STA-AUTO 6 'DUT: axe16000 Radio-1' NA AUTO,AUTO -1 NA\" ",
+                   " --raw_line \"profile_link 1.1 STA-AUTO 6 'DUT: axe16000 Radio-2' NA AUTO,AUTO -1 NA\" ",
+                   " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA eth2,AUTO -1 NA\" "
+               ]
+           },
+           "SCALE_2G_5G":{
+               "enabled":"TRUE",
+               "timeout":"600",
+               "iterations":"1",
+               "load_db":"skip",
+               "command":"lf_scale_test.py",
+               "args":"",
+               "args_list":[
+                  " --mgr LF_MGR_IP",
+                  " --port LF_MGR_PORT",
+                  " --lf_user lanforge",
+                  " --lf_password lanforge",
+                  " --raw_lines_file ./tools/ct_tests_json/ct_us_001/ct_scale/001_scale_cfg.txt",
+                  " --pull_report",
+                  " --local_lf_report_dir /home/lanforge/html-reports/ct_us_001",
+                  " --verbosity 11"
+               ]
+           },
+           "lf_qa":{
+               "enabled":"TRUE",
+               "timeout":"600",
+               "load_db":"skip",
+               "command":"./tools/lf_qa.py",
+               "args":"",
+               "args_list":[
+                   " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+               ]
+           },
+           "lf_inspect":{
+               "enabled":"TRUE",
+               "timeout":"600",
+               "load_db":"skip",
+               "command":"./tools/lf_inspect.py",
+               "args":"",
+               "args_list":[
+                   " --path REPORT_PATH --database DATABASE_SQLITE --db_index 0,1"
+               ]
+           }
+       }
+   }
+}
