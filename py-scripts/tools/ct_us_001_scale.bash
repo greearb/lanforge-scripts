@@ -12,5 +12,4 @@ echo "Running Dataplane Tests"
 --json_test \
 ./ct_tests_json/ct_us_001/ct_scale/ct_scale_001.json:ct_scale_001 \
 --path /home/lanforge/html-reports/ct_us_001 \
---log_level debug \
---production
+--log_level debug
