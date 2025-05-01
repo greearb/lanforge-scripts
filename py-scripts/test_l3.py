@@ -774,6 +774,10 @@ class L3VariableTime(Realm):
         self.no_cleanup = no_cleanup
         self.use_existing_station_lists = use_existing_station_lists
         self.existing_station_lists = existing_station_lists
+
+        # This is set after the 'build()' function is called, as the station
+        # names in newly-created station profiles (i.e. not existing) are only
+        # set *after creation*
         self.station_names_list = []
 
         self.wait_for_ip_sec = self.duration_time_to_seconds(wait_for_ip_sec)
@@ -1356,14 +1360,6 @@ class L3VariableTime(Realm):
                     station_profile.station_names.append(existing_station_list)
 
                 self.station_profiles.append(station_profile)
-
-            # Generate list of all stations, both created and existing
-            #
-            # Both are stored in 'self.station_profiles', but only
-            # the 'station_names' field is really valid for the existing
-            # stations profile
-            for station_profile in self.station_profiles:
-                self.station_names_list.extend(station_profile.station_names)
         else:
             # Dataplane style test
             #
@@ -1381,7 +1377,12 @@ class L3VariableTime(Realm):
         self.tcp_endps = None
 
     def _set_ports_up(self):
-        """Set all test ports up."""
+        """Set all test ports up.
+
+        NOTE: This assumes the 'build()' function has successfully completed.
+              Gathering station names requires the stations to have already been
+              created, given the design of the StationProfile logic.
+        """
         logger.info(f"Admin up upstream port and station port(s): {self.gather_port_eids()}")
 
         # Admin up upstream port
@@ -1407,6 +1408,10 @@ class L3VariableTime(Realm):
         """Check that all test ports connect to the DUT.
 
         Check includes phantom state, admin state, and IPv4 configured.
+
+        NOTE: This assumes the 'build()' function has successfully completed.
+              Gathering station names requires the stations to have already been
+              created, given the design of the StationProfile logic.
 
         Returns:
             int: 0 on success, non-zero on failure
@@ -1783,7 +1788,15 @@ class L3VariableTime(Realm):
             count += 1
             time.sleep(5)
 
-    def gather_port_eids(self):
+    def gather_port_eids(self) -> list:
+        """Query test object for list of ports used in test.
+
+        This includes the both the station(s) and the upstream.
+
+        NOTE: This assumes the 'build()' function has successfully completed.
+              Gathering station names requires the stations to have already been
+              created, given the design of the StationProfile logic.
+        """
         rv = [self.side_b]
 
         for station_profile in self.station_profiles:
@@ -1881,6 +1894,14 @@ class L3VariableTime(Realm):
                             self.cx_names.append(these_cx)
 
         self.cx_count = self.cx_profile.get_cx_count()
+
+        # Generate list of all stations, both created and existing
+        #
+        # Both are stored in 'self.station_profiles', but only
+        # the 'station_names' field is really valid for the existing
+        # stations profile
+        for station_profile in self.station_profiles:
+            self.station_names_list.extend(station_profile.station_names)
 
         if self.dataplane:
             self._pass(
