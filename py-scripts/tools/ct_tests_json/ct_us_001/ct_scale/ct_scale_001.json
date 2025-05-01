@@ -48,7 +48,7 @@
                   " --lf_password lanforge",
                   " --raw_lines_file ./tools/ct_tests_json/ct_us_001/ct_scale/001_scale_cfg.txt",
                   " --pull_report",
-                  " --local_lf_report_dir /home/lanforge/html-reports/ct_us_001",
+                  " --local_lf_report_dir REPORT_PATH",
                   " --verbosity 11"
                ]
            },
