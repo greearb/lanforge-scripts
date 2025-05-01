@@ -15,8 +15,8 @@ rpt_path_make_subdir: 1
 bg: 0xE0ECF8
 dut_info_override:
 dut_info_cmd:
-test_rig: CT-US-001
-test_tag: SCALE_001
+test_rig:
+test_tag:
 rpt_name:
 rpt_dir_prefix_textfield:
 show_scan: 1
