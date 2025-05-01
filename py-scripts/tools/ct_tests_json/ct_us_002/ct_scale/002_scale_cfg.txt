@@ -1,0 +1,228 @@
+__saved_at_ms: 1743968577359
+pre_post_anon: 0
+pre_post_inline: 0
+do_pre_post: 1
+anonymize_ap: 0
+show_events: 1
+show_log: 0
+log_stdout: 0
+port_sorting: 2
+kpi_id: Scale
+get_csv_cb: 0
+auto_save: 0
+rpt_path:
+rpt_path_make_subdir: 1
+bg: 0xE0ECF8
+dut_info_override:
+dut_info_cmd:
+test_rig:
+test_tag:
+rpt_name:
+rpt_dir_prefix_textfield:
+show_scan: 1
+auto_helper: 1
+allow_11w: 0
+use_mcs_histograms: 1
+use_mlo_histograms: 1
+disable_mlo: 0
+extra_tx_status: 0
+extra_rx_status: 0
+txs_all_status: 0
+sae_pwe: 2
+skip_ac: 0
+skip_be: 0
+skip_ax: 0
+skip_2: 0
+skip_6: 0
+skip_mlo: 0
+skip_5: 0
+skip_5b: 1
+skip_dual: 0
+skip_tri: 1
+skip_tri_5b: 1
+skip_rebuild: 0
+udp_gro: 0
+multi_cx: 1
+udp_burst: 0
+payload_pattern: 0
+sndbuf_tcp: 0
+sndbuf_udp: 0
+rcvbuf_tcp: 0
+rcvbuf_udp: 0
+show_per_loop_totals: 1
+clear_ports_too: 0
+show_log_scale: 0
+show_adv_lat_graph: 0
+realtime_per_port: 0
+realtime_per_cx: 0
+sts-0-expanded: 1
+sts-0-name: morning
+sts-0-duration: 600000
+sts-0-is_active: 1
+sts-0-0-expanded: 1
+sts-0-0-name: student-2
+sts-0-0-profile: STA-AC
+sts-0-0-amount: 15
+sts-0-0-location: Spread-Campus
+sts-0-0-ssid: axe16k-2
+sts-0-0-band: 0
+sts-0-0-radio_assignment: Unique Profile
+sts-0-0-bind_bssid: 0
+sts-0-0-0-expanded: 1
+sts-0-0-0-name: dl-tcp
+sts-0-0-0-upstream_port: 1.1.2 eth2
+sts-0-0-0-action: TCP Layer-3 Traffic
+sts-0-0-0-concurrent: 1
+sts-0-0-0-sniff_packets: 0
+sts-0-0-0-min_duration: 480000
+sts-0-0-0-max_duration: Same
+sts-0-0-0-min_speed_u: 56000
+sts-0-0-0-max_speed_u: 0
+sts-0-0-0-min_speed_d: 1544000
+sts-0-0-0-max_speed_d: 0
+sts-0-0-0-url: <Custom>
+sts-0-0-0-destination_url: /dev/null
+sts-0-0-0-destination: Any
+sts-0-0-0-urls_per_ten:
+sts-0-0-0-repeat_count: <Custom>
+sts-0-0-0-pf_metric: 950000
+sts-0-0-0-ul_dl: Download
+sts-0-0-0-reset_timer_max: 0
+sts-0-0-0-reset_timer_min: 0
+sts-0-0-0-max_station_reset: <Custom>
+sts-0-0-0-min_station_reset: <Custom>
+sts-0-0-1-expanded: 1
+sts-0-0-1-name: ping
+sts-0-0-1-upstream_port: 1.1.2 eth2
+sts-0-0-1-action: Ping a Target
+sts-0-0-1-concurrent: 1
+sts-0-0-1-sniff_packets: 0
+sts-0-0-1-min_duration: 480000
+sts-0-0-1-max_duration: Same
+sts-0-0-1-min_speed_u: 56000
+sts-0-0-1-max_speed_u: 0
+sts-0-0-1-min_speed_d: 1544000
+sts-0-0-1-max_speed_d: 0
+sts-0-0-1-url: 192.168.50.247
+sts-0-0-1-destination_url: /dev/null
+sts-0-0-1-destination: Any
+sts-0-0-1-urls_per_ten:
+sts-0-0-1-repeat_count:
+sts-0-0-1-pf_metric: 950000
+sts-0-0-1-ul_dl: Download
+sts-0-0-1-reset_timer_max: 0
+sts-0-0-1-reset_timer_min: 0
+sts-0-0-1-max_station_reset:
+sts-0-0-1-min_station_reset:
+sts-0-0-2-expanded: 1
+sts-0-0-2-name: voip
+sts-0-0-2-upstream_port: 1.1.2 eth2
+sts-0-0-2-action: VoIP Traffic
+sts-0-0-2-concurrent: 1
+sts-0-0-2-sniff_packets: 0
+sts-0-0-2-min_duration: 480000
+sts-0-0-2-max_duration: Same
+sts-0-0-2-min_speed_u: 56000
+sts-0-0-2-max_speed_u: 0
+sts-0-0-2-min_speed_d: 1544000
+sts-0-0-2-max_speed_d: 0
+sts-0-0-2-url: 192.168.50.247
+sts-0-0-2-destination_url: /dev/null
+sts-0-0-2-destination: Any
+sts-0-0-2-urls_per_ten:
+sts-0-0-2-repeat_count:
+sts-0-0-2-pf_metric: 950000
+sts-0-0-2-ul_dl: Download
+sts-0-0-2-reset_timer_max: 0
+sts-0-0-2-reset_timer_min: 0
+sts-0-0-2-max_station_reset:
+sts-0-0-2-min_station_reset:
+sts-0-1-expanded: 1
+sts-0-1-name: student-5
+sts-0-1-profile: STA-AUTO
+sts-0-1-amount: 15
+sts-0-1-location: Spread-Campus
+sts-0-1-ssid: axe16k-5-1
+sts-0-1-band: 1
+sts-0-1-radio_assignment: Unique Profile
+sts-0-1-bind_bssid: 0
+sts-0-1-0-expanded: 1
+sts-0-1-0-name: dl-tcp
+sts-0-1-0-upstream_port: 1.1.2 eth2
+sts-0-1-0-action: TCP Layer-3 Traffic
+sts-0-1-0-concurrent: 1
+sts-0-1-0-sniff_packets: 0
+sts-0-1-0-min_duration: 480000
+sts-0-1-0-max_duration: Same
+sts-0-1-0-min_speed_u: 56000
+sts-0-1-0-max_speed_u: 0
+sts-0-1-0-min_speed_d: 1544000
+sts-0-1-0-max_speed_d: 0
+sts-0-1-0-url:
+sts-0-1-0-destination_url: /dev/null
+sts-0-1-0-destination: Any
+sts-0-1-0-urls_per_ten:
+sts-0-1-0-repeat_count:
+sts-0-1-0-pf_metric: 950000
+sts-0-1-0-ul_dl: Download
+sts-0-1-0-reset_timer_max: 0
+sts-0-1-0-reset_timer_min: 0
+sts-0-1-0-max_station_reset:
+sts-0-1-0-min_station_reset:
+sts-0-1-1-expanded: 1
+sts-0-1-1-name: ping
+sts-0-1-1-upstream_port: 1.1.2 eth2
+sts-0-1-1-action: Ping a Target
+sts-0-1-1-concurrent: 1
+sts-0-1-1-sniff_packets: 0
+sts-0-1-1-min_duration: 480000
+sts-0-1-1-max_duration: Same
+sts-0-1-1-min_speed_u: 56000
+sts-0-1-1-max_speed_u: 0
+sts-0-1-1-min_speed_d: 1544000
+sts-0-1-1-max_speed_d: 0
+sts-0-1-1-url: 192.168.50.247
+sts-0-1-1-destination_url: /dev/null
+sts-0-1-1-destination: Any
+sts-0-1-1-urls_per_ten:
+sts-0-1-1-repeat_count:
+sts-0-1-1-pf_metric: 950000
+sts-0-1-1-ul_dl: Download
+sts-0-1-1-reset_timer_max: 0
+sts-0-1-1-reset_timer_min: 0
+sts-0-1-1-max_station_reset:
+sts-0-1-1-min_station_reset:
+sts-0-1-2-expanded: 1
+sts-0-1-2-name: voip
+sts-0-1-2-upstream_port: 1.1.2 eth2
+sts-0-1-2-action: VoIP Traffic
+sts-0-1-2-concurrent: 1
+sts-0-1-2-sniff_packets: 0
+sts-0-1-2-min_duration: 480000
+sts-0-1-2-max_duration: Same
+sts-0-1-2-min_speed_u: 56000
+sts-0-1-2-max_speed_u: 0
+sts-0-1-2-min_speed_d: 1544000
+sts-0-1-2-max_speed_d: 0
+sts-0-1-2-url: 192.168.50.247
+sts-0-1-2-destination_url: /dev/null
+sts-0-1-2-destination: Any
+sts-0-1-2-urls_per_ten:
+sts-0-1-2-repeat_count:
+sts-0-1-2-pf_metric: 950000
+sts-0-1-2-ul_dl: Download
+sts-0-1-2-reset_timer_max: 0
+sts-0-1-2-reset_timer_min: 0
+sts-0-1-2-max_station_reset:
+sts-0-1-2-min_station_reset:
+operator: Autobot
+start_time: 9
+show_dut_totals: 1
+num_loops: 0
+radio_freq-1.1.wiphy0: -1
+radio_freq-1.1.wiphy1: -1
+radio_freq-1.1.wiphy2: -1
+radio_freq-1.1.wiphy4: -1
+radio_freq-1.1.wiphy5: -1
+radio_freq-1.1.wiphy6: -1
+radio_freq-1.1.wiphy7: -1
