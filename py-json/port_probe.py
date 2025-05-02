@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 Note that this code should not be confused with the similarly-named
 example 'port_probe.py' script in 'py-scripts'.
