@@ -9,6 +9,9 @@ PURPOSE:    This script serves both as an example for automating LANforge using 
             the gathered details will include the port's radio information and regulatory information,
             among other items.
 
+            Note that this example script should not be confused with the similarly-named
+            'port_probe.py' in 'py-json'.
+
 EXAMPLE:    # Query the '192.168.30.12' LANforge manager for information on port 'wiphy0'
             ./port_probe.py --mgr 192.168.30.12 --port_eid 1.1.wiphy0
 
