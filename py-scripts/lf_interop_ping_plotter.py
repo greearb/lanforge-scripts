@@ -44,6 +44,31 @@
     python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m --device_csv_name device.csv
     --use_default_config                                                                                   
 
+    EXAMPLE-9:
+    Command Line Interface to run ping plotter test by configuring Real Devices with SSID, Password, and Security
+    python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --ssid NETGEAR_2G_wpa2
+     --security wpa2 --passwd Password@123 --server_ip 192.168.204.74 --wait_time 30
+
+    EXAMPLE-10:
+    Command Line Interface to run ping plotter test by setting device specific Pass/Fail values in the csv file
+    python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --ssid NETGEAR_2G_wpa2
+     --security wpa2 --passwd Password@123 --server_ip 192.168.204.74 --wait_time 30 --device_csv_name device.csv
+
+    EXAMPLE-11:
+    Command Line Interface to run ping plotter test by Configuring Devices in Groups with Specific Profiles
+    python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --group_name grp4
+     --profile_name Openz --file_name g219 --server_ip 192.168.204.74
+
+    EXAMPLE-12:
+    Command Line Interface to run ping plotter test by Configuring Devices in Groups with Specific Profiles with expected Pass/Fail values
+    python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --group_name grp4,grp5
+     --profile_name Openz,Openz --file_name g219 --expected_passfail_value 22 --server_ip 192.168.204.74
+
+    EXAMPLE-13:
+    Command Line Interface to run ping plotter test by Configuring Devices in Groups with Specific Profiles with device_csv_name
+    python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --group_name grp4,grp5
+     --profile_name Openz,Openz --file_name g219 --device_csv_name device.csv --server_ip 192.168.204.74                                                                                    
+
     SCRIPT_CLASSIFICATION : Test
 
     SCRIPT_CATEGORIES: Performance, Functional, Report Generation
@@ -92,7 +117,9 @@ from lf_graph import lf_bar_graph_horizontal
 from lf_graph import lf_bar_graph
 from lf_report import lf_report
 from station_profile import StationProfile
-import interop_connectivity
+from typing import List, Optional
+# Importing DeviceConfig to apply device configurations for ADB devices and laptops
+DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 from LANforge import LFUtils
 
 logger = logging.getLogger(__name__)
@@ -124,9 +151,13 @@ class Ping(Realm):
                  do_webUI=False,
                  ui_report_dir=None,
                  debug=False,
+                 file_name=None,
+                 profile_name=None,
+                 group_name=None,
+                 server_ip=None,
                  expected_passfail_val=None,
-                 csv_name=None
-                 ):
+                 csv_name=None,
+                 wait_time=60):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.host = host
@@ -163,9 +194,14 @@ class Ping(Realm):
         self.do_webUI = do_webUI
         self.ui_report_dir = ui_report_dir
         self.api_url = 'http://{}:{}'.format(self.host, self.port)
+        self.profile_name = profile_name
+        self.file_name = file_name
+        self.group_name = group_name
+        self.server_ip = server_ip
         self.real = real
         self.expected_passfail_val = expected_passfail_val
         self.csv_name = csv_name
+        self.wait_time = wait_time
 
     def change_target_to_ip(self):
 
@@ -261,9 +297,9 @@ class Ping(Realm):
     # Args:
     #   devices: Connected RealDevice object which has already populated tracked real device
     #            resources through call to get_devices()
-    def select_real_devices(self, real_devices, real_sta_list=None, base_interop_obj=None):
+    def select_real_devices(self, real_devices, real_sta_list=None, base_interop_obj=None, device_list=""):
         if real_sta_list is None:
-            self.real_sta_list, _, _ = real_devices.query_user()
+            self.real_sta_list, _, _ = real_devices.query_user(device_list=device_list)
         else:
             if real_sta_list == ['all']:
                 self.real_sta_list, _, _ = real_devices.query_user(dowebgui=True, device_list='all')
@@ -297,6 +333,11 @@ class Ping(Realm):
             self.windows = self.Devices.windows
             self.mac = self.Devices.mac
             self.linux = self.Devices.linux
+        d_list = []
+        for i in self.real_sta_list:
+            device = i.split('.')
+            d_list.append(device[0] + '.' + device[1])
+        return d_list
 
     def buildstation(self):
         logging.info('Creating Virtual Stations: {}'.format(self.sta_list))
@@ -725,7 +766,9 @@ class Ping(Realm):
                     pass_fail_list.append("FAIL")
         return pass_fail_list,test_input_list
                     
-    def generate_report(self, result_json=None, result_dir='Ping_Plotter_Test_Report', report_path=''):
+    def generate_report(self, result_json=None, result_dir='Ping_Plotter_Test_Report', report_path='', config_devices='', group_device_map=None):
+        if group_device_map is None:
+            group_device_map = {}
         if result_json is not None:
             self.result_json = result_json
         logging.info('Generating Report')
@@ -843,13 +886,26 @@ class Ping(Realm):
                         logging.warning('Malformed response for hw version query on resource manager.')
                 else:
                     logging.warning('Malformed response for hw version query on resource manager.')
-        test_setup_info = {
-            'SSID': [self.ssid if self.ssid else 'TEST CONFIGURED'][0],
-            'Security': [self.security if self.ssid else 'TEST CONFIGURED'][0],
-            'Website / IP': self.target,
-            'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
-            'Duration': self.duration
-        }
+        # Test setup information table for devices in device list
+        if config_devices == '':
+            test_setup_info = {
+                'SSID': [self.ssid if self.ssid else 'TEST CONFIGURED'][0],
+                'Security': [self.security if self.ssid else 'TEST CONFIGURED'][0],
+                'Website / IP': self.target,
+                'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
+                'Duration': self.duration
+            }
+        # Test setup information table for devices in groups
+        else:
+            group_names = ', '.join(config_devices.keys())
+            profile_names = ', '.join(config_devices.values())
+            configmap = "Groups:" + group_names + " -> Profiles:" + profile_names
+            test_setup_info = {
+                'Configuration': configmap,
+                'Website / IP': self.target,
+                'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
+                'Duration': self.duration
+            }
         report.test_setup_table(
             test_setup_data=test_setup_info, value='Test Setup Information')
 
@@ -888,6 +944,46 @@ class Ping(Realm):
             # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
             if self.expected_passfail_val or self.csv_name:
                 pass_fail_list,test_input_list=self.get_pass_fail_list()
+            # When groups are provided a seperate table will be generated for each group using generate_dataframe
+            if self.group_name:
+                for key, val in group_device_map.items():
+                    if self.expected_passfail_val or self.csv_name:
+                        dataframe = self.generate_dataframe(
+                            val,
+                            self.report_names,
+                            self.device_ips,
+                            self.device_mac,
+                            self.device_bssid,
+                            self.device_ssid,
+                            self.device_channels,
+                            self.packets_sent,
+                            self.packets_received,
+                            self.packet_loss_percent,
+                            test_input_list,
+                            self.device_avg,
+                            pass_fail_list)
+                    else:
+                        dataframe = self.generate_dataframe(
+                            val,
+                            self.report_names,
+                            self.device_ips,
+                            self.device_mac,
+                            self.device_bssid,
+                            self.device_ssid,
+                            self.device_channels,
+                            self.packets_sent,
+                            self.packets_received,
+                            self.packet_loss_percent,
+                            [],
+                            self.device_avg,
+                            [])
+                    if dataframe:
+                        report.set_obj_html("", "Group: {}".format(key))
+                        report.build_objective()
+                        dataframe1 = pd.DataFrame(dataframe)
+                        report.set_table_dataframe(dataframe1)
+                        report.build_table()
+            else:
                 individual_report_df = pd.DataFrame({
                     'Wireless Client': self.report_names,
                     'IP Address': self.device_ips,
@@ -1066,6 +1162,137 @@ class Ping(Realm):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
 
+    def generate_dataframe(self,groupdevlist: List[str],report_names: List[str],device_ips: List[str],device_mac: List[str],device_bssid: List[str],device_ssid: List[str],device_channels: List[str],packets_sent: List[int],packets_received: List[int],packet_loss_percent: List[float],test_input_list: List[str],device_avg: List[float],status: List[str]) -> Optional[pd.DataFrame]:
+        """
+        Creates a separate DataFrame for each group of devices.
+
+        Returns:
+            DataFrame: A DataFrame for each device group.
+            Returns None if neither device in a group is configured.
+        """
+
+        report_name = []
+        macids = []
+        device_ip = []
+        bssid = []
+        dev_ssid = []
+        dev_channels = []
+        packet_sent = []
+        packet_received = []
+        loss_percent = []
+        input_test_list = []
+        dev_avg = []
+        statuslist = []
+        interop_tab_data = self.json_get('/adb/')["devices"]
+        for i in range(len(report_names)):
+            for j in groupdevlist:
+                # For a string like "1.360 Lin test3":
+                # - report_names[i].split(" ")[2] gives 'test3' (device name)
+                # - report_names[i].split(" ")[1] gives 'Lin' (OS type)
+                # This condition filters out Android clients and matches device name with j
+                if j == report_names[i].split(" ")[2] and report_names[i].split(" ")[1] != 'android':
+                    report_name.append(report_names[i])
+                    macids.append(device_mac[i])
+                    device_ip.append(device_ips[i])
+                    bssid.append(device_bssid[i])
+                    dev_ssid.append(device_ssid[i])
+                    dev_channels.append(device_channels[i])
+                    packet_sent.append(packets_sent[i])
+                    packet_received.append(packets_received[i])
+                    loss_percent.append(packet_loss_percent[i])
+                    dev_avg.append(device_avg[i])
+                    if self.expected_passfail_val or self.csv_name:
+                        input_test_list.append(test_input_list[i])
+                        statuslist.append(status[i])
+                # For a string like 1.15 android samsungmob:
+                # - report_names[i].split(' ')[2] (e.g., 'samsungmob') matches item['user-name']
+                # - The group name (e.g., 'RZCTA09CTXF') matches with item['name'].split('.')[2]
+                else:
+                    for dev in interop_tab_data:
+                        for item in dev.values():
+                            if item['user-name'] == report_names[i].split(' ')[2] and j == item['name'].split('.')[2]:
+                                report_name.append(report_names[i])
+                                macids.append(device_mac[i])
+                                device_ip.append(device_ips[i])
+                                bssid.append(device_bssid[i])
+                                dev_ssid.append(device_ssid[i])
+                                dev_channels.append(device_channels[i])
+                                packet_sent.append(packets_sent[i])
+                                packet_received.append(packets_received[i])
+                                loss_percent.append(packet_loss_percent[i])
+                                dev_avg.append(device_avg[i])
+                                if self.expected_passfail_val or self.csv_name:
+                                    input_test_list.append(test_input_list[i])
+                                    statuslist.append(status[i])
+        if len(report_name) != 0:
+            dataframe = {
+                'Wireless Client': report_name,
+                'IP Address': macids,
+                'MAC': device_ip,
+                'BSSID': bssid,
+                'SSID': dev_ssid,
+                'Channel': dev_channels,
+                'Packets Sent': packet_sent,
+                'Packets Received': packet_received,
+                'Packet Loss %': loss_percent,
+                'AVG RTT (ms)': dev_avg,
+            }
+            if self.expected_passfail_val or self.csv_name:
+                dataframe['Expected Packet loss %'] = input_test_list
+                dataframe['Status'] = statuslist
+            return dataframe
+        else:
+            return None
+
+def validate_args(args):
+    # input sanity
+    if args.virtual is False and args.real is False:
+        logger.error('Atleast one of --real or --virtual is required')
+        exit(1)
+    if args.virtual is True and args.radio is None:
+        logger.error('--radio required')
+        exit(1)
+    if args.virtual is True and args.ssid is None:
+        logger.error('--ssid required for virtual stations')
+        exit(1)
+    if args.security != 'open' and args.passwd == '[BLANK]':
+        logger.error('--passwd required')
+        exit(1)
+
+    if args.device_csv_name and args.expected_passfail_value:
+        logger.error("Enter either --device_csv_name or --expected_passfail_value")
+        exit(1)
+    if args.ssid and args.passwd and args.group_name and args.profile_name :
+        logger.error('either --ssid,--password or --profile_name,--group_name should be given')
+        exit(1)
+    if args.use_default_config == False and args.group_name is None and args.file_name is None and args.profile_name is None:
+        if args.ssid is None:
+            logger.error('--ssid required for Wi-Fi configuration')
+            exit(1)
+
+        if args.security.lower() != 'open' and args.passwd == '[BLANK]':
+            logger.error('--passwd required for Wi-Fi configuration')
+            exit(1)
+
+        if args.server_ip is None:
+            logger.error('--server_ip or upstream ip required for Wi-fi configuration')
+            exit(1)
+    elif args.use_default_config is False and args.resources and (args.ssid is None or args.passwd is None or args.security is None):
+        logger.error("Please provide ssid password and security when device list is given")
+        exit(1)
+
+    if args.group_name:
+        selected_groups = args.group_name.split(',')
+    else:
+        selected_groups = []
+    if args.profile_name:
+        selected_profiles = args.profile_name.split(',')
+    else:
+        selected_profiles = []
+    if len(selected_groups) != len(selected_profiles):
+        logger.error("Number of groups should match number of profiles")
+        exit(1)
+
 
 def main():
 
@@ -1126,6 +1353,31 @@ connectivity problems.
         python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m --device_csv_name device.csv
         --use_default_config
 
+        EXAMPLE-9:
+        Command Line Interface to run ping plotter test by configuring Real Devices with SSID, Password, and Security
+        python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --ssid NETGEAR_2G_wpa2
+        --security wpa2 --passwd Password@123 --server_ip 192.168.204.74 --wait_time 30
+
+        EXAMPLE-10:
+        Command Line Interface to run ping plotter test by setting device specific Pass/Fail values in the csv file
+        python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --ssid NETGEAR_2G_wpa2
+        --security wpa2 --passwd Password@123 --server_ip 192.168.204.74 --wait_time 30 --device_csv_name device.csv
+
+        EXAMPLE-11:
+        Command Line Interface to run ping plotter test by Configuring Devices in Groups with Specific Profiles
+        python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --group_name grp4
+        --profile_name Openz --file_name g219 --server_ip 192.168.204.74
+
+        EXAMPLE-12:
+        Command Line Interface to run ping plotter test by Configuring Devices in Groups with Specific Profiles with expected Pass/Fail values
+        python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --group_name grp4,grp5
+        --profile_name Openz,Openz --file_name g219 --expected_passfail_value 22 --server_ip 192.168.204.74
+
+        EXAMPLE-13:
+        Command Line Interface to run ping plotter test by Configuring Devices in Groups with Specific Profiles with device_csv_name
+        python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --group_name grp4,grp5
+        --profile_name Openz,Openz --file_name g219 --device_csv_name device.csv --server_ip 192.168.204.74
+        
         SCRIPT_CLASSIFICATION : Test
 
         SCRIPT_CATEGORIES: Performance, Functional, Report Generation
@@ -1255,17 +1507,37 @@ connectivity problems.
                         help="--lf_logger_config_json <json file> , json configuration of logger")
 
     parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
+    parser.add_argument('--group_name', type=str, help='Specify the groups name that contains a list of devices. Example: group1,group2')
+    parser.add_argument('--profile_name', type=str, help='Specify the profile name to apply configurations to the devices.')
+    parser.add_argument('--file_name', type=str, help='Specify the file name containing group details. Example:file1')
+    parser.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
+    parser.add_argument("--eap_identity", type=str, default='', help="Specify the EAP identity for authentication.")
+    parser.add_argument("--ieee8021x", action="store_true", help='Enables 802.1X enterprise authentication for test stations.')
+    parser.add_argument("--ieee80211u", action="store_true", help='Enables IEEE 802.11u (Hotspot 2.0) support.')
+    parser.add_argument("--ieee80211w", type=int, default=1, help='Enables IEEE 802.11w (Management Frame Protection) support.')
+    parser.add_argument("--enable_pkc", action="store_true", help='Enables pkc support.')
+    parser.add_argument("--bss_transition", action="store_true", help='Enables BSS transition support.')
+    parser.add_argument("--power_save", action="store_true", help='Enables power-saving features.')
+    parser.add_argument("--disable_ofdma", action="store_true", help='Disables OFDMA support.')
+    parser.add_argument("--roam_ft_ds", action="store_true", help='Enables fast BSS transition (FT) support')
+    parser.add_argument("--key_management", type=str, default='DEFAULT', help='Specify the key management method (e.g., WPA-PSK, WPA-EAP')
+    parser.add_argument("--pairwise", type=str, default='[BLANK]')
+    parser.add_argument("--private_key", type=str, default='[BLANK]', help='Specify EAP private key certificate file.')
+    parser.add_argument("--ca_cert", type=str, default='[BLANK]', help='Specifiy the CA certificate file name')
+    parser.add_argument("--client_cert", type=str, default='[BLANK]', help='Specify the client certificate file name')
+    parser.add_argument("--pk_passwd", type=str, default='[BLANK]', help='Specify the password for the private key')
+    parser.add_argument("--pac_file", type=str, default='[BLANK]', help='Specify the pac file name')
     parser.add_argument('--expected_passfail_value', help='Enter the expected packet loss', default=None)
     parser.add_argument('--device_csv_name', type=str, help='Enter the csv name to store expected values', default=None)
+    parser.add_argument('--wait_time', type=int, help='Enter the maximum wait time for configurations to apply', default=60)
 
     args = parser.parse_args()
 
     if args.help_summary:
         print(help_summary)
         exit(0)
-    if args.device_csv_name and args.expected_passfail_value:
-        logger.warning("Enter either --device_csv_name or --expected_passfail_value")
-        exit(1)
+
+    validate_args(args)
     # set the logger level to debug
     logger_config = lf_logger_config.lf_logger_config()
 
@@ -1276,8 +1548,8 @@ connectivity problems.
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-
-    configure = False
+    
+    configure = not args.use_default_config
 
     mgr_ip = args.mgr
     mgr_password = args.mgr_passwd
@@ -1291,6 +1563,27 @@ connectivity problems.
     target = args.target
     interval = args.ping_interval
     duration = args.ping_duration
+    group_name = args.group_name
+    file_name = args.file_name
+    profile_name = args.profile_name
+    eap_method = args.eap_method
+    eap_identity = args.eap_identity
+    ieee8021x = args.ieee8021x
+    ieee80211u = args.ieee80211u
+    ieee80211w = args.ieee80211w
+    enable_pkc = args.enable_pkc
+    bss_transition = args.bss_transition
+    power_save = args.power_save
+    disable_ofdma = args.disable_ofdma
+    roam_ft_ds = args.roam_ft_ds
+    key_management = args.key_management
+    pairwise = args.pairwise
+    private_key = args.private_key
+    ca_cert = args.ca_cert
+    client_cert = args.client_cert
+    pk_passwd = args.pk_passwd
+    pac_file = args.pac_file
+
     if 's' in duration or 'S' in duration:
         if 's' in duration:
             duration = float(duration.replace('s', '')) / 60
@@ -1317,7 +1610,7 @@ connectivity problems.
     do_webUI = args.do_webUI
     webUI_resources = args.resources
     ui_report_dir = args.ui_report_dir
-    if do_webUI and webUI_resources is None:
+    if do_webUI and webUI_resources is None and group_name is None:
         print('--resources argument is required when --do_webUI is specified')
         exit(0)
     if do_webUI and ui_report_dir is None:
@@ -1345,7 +1638,7 @@ connectivity problems.
 
     # ping object creation
     ping = Ping(host=mgr_ip, port=mgr_port, ssid=ssid, security=security, password=password, radio=radio,
-                lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=report_duration, do_webUI=do_webUI, ui_report_dir=ui_report_dir, debug=debug, csv_name=args.device_csv_name, expected_passfail_val=args.expected_passfail_value)
+                lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=report_duration, do_webUI=do_webUI, ui_report_dir=ui_report_dir, debug=debug, csv_name=args.device_csv_name, expected_passfail_val=args.expected_passfail_value, wait_time=args.wait_time, group_name=group_name)
 
     # creating virtual stations if --virtual flag is specified
     if args.virtual:
@@ -1360,24 +1653,62 @@ connectivity problems.
 
     # selecting real clients if --real flag is specified
     if args.real:
-        # NOTE: Removed connectivity from ping plotter, adding it in mixed traffic test
-        Devices = RealDevice(manager_ip=mgr_ip,
-                             server_ip=server_ip,
-                             ssid_2g='Test Configured',
-                             passwd_2g='',
-                             encryption_2g='',
-                             ssid_5g='Test Configured',
-                             passwd_5g='',
-                             encryption_5g='',
-                             ssid_6g='Test Configured',
-                             passwd_6g='',
-                             encryption_6g='',
-                             selected_bands=['5G'])
+        Devices = RealDevice(manager_ip=mgr_ip, selected_bands=[])
+        Devices.get_devices()
+        ping.Devices = Devices
+        # If config is True, attempt to bring up all devices in the list and perform tests on those that become active
         if configure:
-            # Run the event loop
-            asyncio.run(Devices.query_all_devices_to_configure_wifi())
-            logging.info('{}'.format(*Devices.station_list))
-            ping.select_real_devices(real_devices=Devices, real_sta_list=Devices.station_list, base_interop_obj=Devices)
+            config_devices = {}
+            obj = DeviceConfig.DeviceConfig(lanforge_ip=mgr_ip, file_name=file_name, wait_time=args.wait_time)
+            # Case 1: Group name, file name, and profile name are provided
+            if group_name and file_name and profile_name:
+                selected_groups = group_name.split(',')
+                selected_profiles = profile_name.split(',')
+                for i in range(len(selected_groups)):
+                    config_devices[selected_groups[i]] = selected_profiles[i]
+                obj.initiate_group()
+                group_device_map = obj.get_groups_devices(data=selected_groups, groupdevmap=True)
+                # Configure devices in the selected group with the selected profile
+                eid_list = asyncio.run(obj.connectivity(config=config_devices, upstream=server_ip))
+                ping.select_real_devices(real_devices=Devices, device_list=eid_list)
+            # Case 2: Device list is empty but config flag is True — prompt the user to input device details for configuration
+            else:
+                all_devices = obj.get_all_devices()
+                device_list = []
+                config_dict = {
+                    'ssid': ssid,
+                    'passwd': password,
+                    'enc': security,
+                    'eap_method': eap_method,
+                    'eap_identity': eap_identity,
+                    'ieee80211': ieee8021x,
+                    'ieee80211u': ieee80211u,
+                    'ieee80211w': ieee80211w,
+                    'enable_pkc': enable_pkc,
+                    'bss_transition': bss_transition,
+                    'power_save': power_save,
+                    'disable_ofdma': disable_ofdma,
+                    'roam_ft_ds': roam_ft_ds,
+                    'key_management': key_management,
+                    'pairwise': pairwise,
+                    'private_key': private_key,
+                    'ca_cert': ca_cert,
+                    'client_cert': client_cert,
+                    'pk_passwd': pk_passwd,
+                    'pac_file': pac_file,
+                    'server_ip': server_ip,
+                }
+                for device in all_devices:
+                    if device["type"] == 'laptop':
+                        device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+                    else:
+                        device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
+
+                logger.info(f"Available devices: {device_list}")
+                dev_list = input("Enter the desired resources to run the test:").split(',')
+                dev_list = asyncio.run(obj.connectivity(device_list=dev_list, wifi_config=config_dict))
+                ping.select_real_devices(real_devices=Devices, device_list=dev_list)
+        # Case 3: Config is False, no device list is provided, and no group is selected
         else:
             Devices.get_devices()
             ping.Devices = Devices
@@ -1387,7 +1718,10 @@ connectivity problems.
                     logger.info("There are no devices available")
                     exit(0)
             if not do_webUI and webUI_resources is None:
-                ping.select_real_devices(real_devices=Devices)
+                device_list = ping.Devices.get_devices()
+                logger.info(f"Available devices: {device_list}")
+                dev_list = input("Enter the desired resources to run the test:").split(',')
+                ping.select_real_devices(real_devices=Devices, device_list=dev_list)
             else:
                 webUI_resources = webUI_resources.split(',')
                 ping.select_real_devices(real_devices=Devices, real_sta_list=webUI_resources, base_interop_obj=Devices)
@@ -1860,9 +2194,15 @@ connectivity problems.
     logging.info(ping.result_json)
 
     if args.local_lf_report_dir == "":
-        ping.generate_report()
+        if args.group_name:
+            ping.generate_report(config_devices=config_devices, group_device_map=group_device_map)
+        else:
+            ping.generate_report()
     else:
-        ping.generate_report(report_path=args.local_lf_report_dir)
+        if args.group_name:
+            ping.generate_report(config_devices=config_devices, group_device_map=group_device_map, report_path=args.local_lf_report_dir)
+        else:
+            ping.generate_report(report_path=args.local_lf_report_dir)
 
     if ping.do_webUI:
         # copying to home directory i.e home/user_name
