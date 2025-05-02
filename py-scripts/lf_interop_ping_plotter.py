@@ -42,7 +42,7 @@
     EXAMPLE-8:
     Command Line Interface to run ping plotter test by setting device specific Pass/Fail values in the csv file
     python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m --device_csv_name device.csv
-    --use_default_config                                                                                   
+    --use_default_config
 
     EXAMPLE-9:
     Command Line Interface to run ping plotter test by configuring Real Devices with SSID, Password, and Security
@@ -67,7 +67,7 @@
     EXAMPLE-13:
     Command Line Interface to run ping plotter test by Configuring Devices in Groups with Specific Profiles with device_csv_name
     python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --group_name grp4,grp5
-     --profile_name Openz,Openz --file_name g219 --device_csv_name device.csv --server_ip 192.168.204.74                                                                                    
+     --profile_name Openz,Openz --file_name g219 --device_csv_name device.csv --server_ip 192.168.204.74
 
     SCRIPT_CLASSIFICATION : Test
 
@@ -114,7 +114,6 @@ if 'py-scripts' not in sys.path:
 from lf_base_interop_profile import RealDevice
 from datetime import datetime, timedelta
 from lf_graph import lf_bar_graph_horizontal
-from lf_graph import lf_bar_graph
 from lf_report import lf_report
 from station_profile import StationProfile
 from typing import List, Optional
@@ -764,8 +763,8 @@ class Ping(Realm):
                     pass_fail_list.append("PASS")
                 else:
                     pass_fail_list.append("FAIL")
-        return pass_fail_list,test_input_list
-                    
+        return pass_fail_list, test_input_list
+
     def generate_report(self, result_json=None, result_dir='Ping_Plotter_Test_Report', report_path='', config_devices='', group_device_map=None):
         if group_device_map is None:
             group_device_map = {}
@@ -943,7 +942,7 @@ class Ping(Realm):
         if self.real:
             # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
             if self.expected_passfail_val or self.csv_name:
-                pass_fail_list,test_input_list=self.get_pass_fail_list()
+                pass_fail_list, test_input_list = self.get_pass_fail_list()
             # When groups are provided a seperate table will be generated for each group using generate_dataframe
             if self.group_name:
                 for key, val in group_device_map.items():
@@ -1162,7 +1161,9 @@ class Ping(Realm):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
 
-    def generate_dataframe(self,groupdevlist: List[str],report_names: List[str],device_ips: List[str],device_mac: List[str],device_bssid: List[str],device_ssid: List[str],device_channels: List[str],packets_sent: List[int],packets_received: List[int],packet_loss_percent: List[float],test_input_list: List[str],device_avg: List[float],status: List[str]) -> Optional[pd.DataFrame]:
+    def generate_dataframe(self, groupdevlist: List[str], report_names: List[str], device_ips: List[str], device_mac: List[str], device_bssid: List[str], device_ssid: List[str],
+                           device_channels: List[str], packets_sent: List[int], packets_received: List[int], packet_loss_percent: List[float], test_input_list: List[str],
+                           device_avg: List[float], status: List[str]) -> Optional[pd.DataFrame]:
         """
         Creates a separate DataFrame for each group of devices.
 
@@ -1244,6 +1245,7 @@ class Ping(Realm):
         else:
             return None
 
+
 def validate_args(args):
     # input sanity
     if args.virtual is False and args.real is False:
@@ -1262,10 +1264,10 @@ def validate_args(args):
     if args.device_csv_name and args.expected_passfail_value:
         logger.error("Enter either --device_csv_name or --expected_passfail_value")
         exit(1)
-    if args.ssid and args.passwd and args.group_name and args.profile_name :
+    if args.ssid and args.passwd and args.group_name and args.profile_name:
         logger.error('either --ssid,--password or --profile_name,--group_name should be given')
         exit(1)
-    if args.use_default_config == False and args.group_name is None and args.file_name is None and args.profile_name is None:
+    if args.use_default_config is False and args.group_name is None and args.file_name is None and args.profile_name is None:
         if args.ssid is None:
             logger.error('--ssid required for Wi-Fi configuration')
             exit(1)
@@ -1377,7 +1379,7 @@ connectivity problems.
         Command Line Interface to run ping plotter test by Configuring Devices in Groups with Specific Profiles with device_csv_name
         python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --group_name grp4,grp5
         --profile_name Openz,Openz --file_name g219 --device_csv_name device.csv --server_ip 192.168.204.74
-        
+
         SCRIPT_CLASSIFICATION : Test
 
         SCRIPT_CATEGORIES: Performance, Functional, Report Generation
@@ -1548,7 +1550,7 @@ connectivity problems.
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-    
+
     configure = not args.use_default_config
 
     mgr_ip = args.mgr
@@ -1638,7 +1640,8 @@ connectivity problems.
 
     # ping object creation
     ping = Ping(host=mgr_ip, port=mgr_port, ssid=ssid, security=security, password=password, radio=radio,
-                lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=report_duration, do_webUI=do_webUI, ui_report_dir=ui_report_dir, debug=debug, csv_name=args.device_csv_name, expected_passfail_val=args.expected_passfail_value, wait_time=args.wait_time, group_name=group_name)
+                lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=report_duration, do_webUI=do_webUI, debug=debug,
+                ui_report_dir=ui_report_dir, csv_name=args.device_csv_name, expected_passfail_val=args.expected_passfail_value, wait_time=args.wait_time, group_name=group_name)
 
     # creating virtual stations if --virtual flag is specified
     if args.virtual:
