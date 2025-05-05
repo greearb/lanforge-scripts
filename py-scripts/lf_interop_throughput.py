@@ -682,7 +682,7 @@ class Throughput(Realm):
         return throughput
 
     def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time):
-
+        individual_df_for_webui = individual_df.copy()  # for webui
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
         drop_a, drop_a_per, drop_b, drop_b_per, state, state_of_device = [], [], [], [], [], []
         test_stopped_by_user = False
@@ -710,14 +710,17 @@ class Throughput(Realm):
         # If using web GUI, set runtime directory
         if self.dowebgui:
             runtime_dir = self.result_dir
-
+        previous_time = datetime.now()
+        time_break = 0
         # Continuously collect data until end time is reached
         while datetime.now() < end_time:
             index += 1
+            current_time = datetime.now()
             signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
             signal_list = [int(i) if i != "" else 0 for i in signal_list]
             throughput[index] = self.get_layer3_endp_data()
             if self.dowebgui:
+                time.sleep(1)  # for each second data in csv while ensuring webgui
                 individual_df_data = []
                 temp_upload, temp_download, temp_drop_a, temp_drop_b = [], [], [], []
 
@@ -776,10 +779,14 @@ class Throughput(Realm):
                                            remaining_minutes_instrf,
                                            ', '.join(str(n) for n in incremental_capacity_list),
                                            'Running'])
+                # Appending the data according to the time gap (for webgui)
+                if (current_time - previous_time).total_seconds() >= time_break:
+                    individual_df_for_webui.loc[len(individual_df_for_webui)] = individual_df_data
+                    individual_df_for_webui.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
+                    previous_time = current_time
 
                 # Append data to individual_df and save to CSV
                 individual_df.loc[len(individual_df)] = individual_df_data
-                individual_df.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
 
                 # Check if test was stopped by the user
                 with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
@@ -790,39 +797,39 @@ class Throughput(Realm):
                         test_stopped_by_user = True
                         break
 
-                # Adjust sleep time based on elapsed time since start
+                # Adjust time_gap based on elapsed time since start (for webui)
                 d = datetime.now()
                 if d - start_time <= timedelta(hours=1):
-                    time.sleep(5)
+                    time_break = 5
                 elif d - start_time > timedelta(hours=1) or d - start_time <= timedelta(
                         hours=6):
                     if end_time - d < timedelta(seconds=10):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(10)
+                        time_break = 10
                 elif d - start_time > timedelta(hours=6) or d - start_time <= timedelta(
                         hours=12):
                     if end_time - d < timedelta(seconds=30):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(30)
+                        time_break = 30
                 elif d - start_time > timedelta(hours=12) or d - start_time <= timedelta(
                         hours=24):
                     if end_time - d < timedelta(seconds=60):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(60)
+                        time_break = 60
                 elif d - start_time > timedelta(hours=24) or d - start_time <= timedelta(
                         hours=48):
                     if end_time - d < timedelta(seconds=60):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(90)
+                        time_break = 90
                 elif d - start_time > timedelta(hours=48):
                     if end_time - d < timedelta(seconds=120):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(120)
+                        time_break = 120
             else:
 
                 # If not using web GUI, sleep based on report timer
@@ -945,10 +952,12 @@ class Throughput(Realm):
                                        ', '.join(str(n) for n in incremental_capacity_list),
                                        'Stopped'])
         individual_df.loc[len(individual_df)] = individual_df_data
+        if self.dowebgui:
+            individual_df_for_webui.loc[len(individual_df_for_webui)] = individual_df_data
 
         # Save individual_df to CSV based on web GUI status
         if self.dowebgui:
-            individual_df.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
+            individual_df_for_webui.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
             individual_df.to_csv('throughput_data.csv', index=False)
         else:
             individual_df.to_csv('throughput_data.csv', index=False)
