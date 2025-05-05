@@ -49,6 +49,17 @@
         Command Line Interface to run the test with incremental_capacity by raising incremental flag
         python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080  --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp --incremental
 
+        EXAMPLE-10:
+        Command Line Interface to run the test with expected pass/fail value
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp 
+        --device_list 1.11,1.12,1.360,1.400 --expected_passfail_value 5
+
+        EXAMPLE-11: 
+        Command Line Interface to run the test with expected pass/fail csv for individual device
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp 
+        --device_list 1.11,1.12,1.360,1.400 --device_csv_name clab.csv
+
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -67,6 +78,16 @@
         EXAMPLE-4:
         Command Line Interface to run the test with postcleanup
         python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080  --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp --do_interopability --postcleanup
+
+        EXAMPLE-5:
+        Command Line Interface to run the test with expected pass/fail value
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp 
+        --device_list 1.11,1.12,1.360,1.400 --expected_passfail_value 5 --do_interopability
+
+        EXAMPLE-6: 
+        Command Line Interface to run the test with expected pass/fail csv for individual device
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp 
+        --device_list 1.11,1.12,1.360,1.400 --device_csv_name clab.csv --do_interopability
 
     SCRIPT_CLASSIFICATION :  Test
 
@@ -106,6 +127,7 @@ import logging
 import json
 import pandas as pd
 import shutil
+import csv
 import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
@@ -164,6 +186,9 @@ class Throughput(Realm):
                  precleanup=False,
                  do_interopability=False,
                  ip="localhost",
+                 csv_direction='',
+                 device_csv_name=None,
+                 expected_passfail_value=None,
                  user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None):
@@ -241,6 +266,9 @@ class Throughput(Realm):
         self.gave_incremental = False
         self.incremental = incremental
         self.precleanup = precleanup
+        self.csv_direction = csv_direction
+        self.expected_passfail_value = expected_passfail_value
+        self.device_csv_name = device_csv_name
 
     def os_type(self):
         """
@@ -1590,6 +1618,8 @@ class Throughput(Realm):
                     _obj="The below tables provides detailed information for the throughput test on each device.")
                 report.build_objective()
                 self.mac_id_list = [item.split()[-1] if ' ' in item else item for item in self.mac_id_list]
+                if self.expected_passfail_value or self.device_csv_name:
+                    test_input_list, pass_fail_list = self.get_pass_fail_list(device_type, incremental_capacity_list[i], devices_on_running, download_data, upload_data)
                 bk_dataframe = {
                     " Device Type ": device_type[0:int(incremental_capacity_list[i])],
                     " Username": devices_on_running[0:int(incremental_capacity_list[i])],
@@ -1618,6 +1648,9 @@ class Throughput(Realm):
                     bk_dataframe[" Average Rx Drop B% "] = upload_drop
                     # adding rx drop while downloading as 0
                     bk_dataframe[" Average Rx Drop A% "] = [0.0] * len(upload_drop)
+                if self.expected_passfail_value or self.device_csv_name:
+                    bk_dataframe[" Expected " + self.direction + " rate "] = [str(n) + " Mbps" for n in test_input_list]
+                    bk_dataframe[" Status "] = pass_fail_list
                 dataframe1 = pd.DataFrame(bk_dataframe)
                 report.set_table_dataframe(dataframe1)
                 report.build_table()
@@ -1883,6 +1916,8 @@ class Throughput(Realm):
                     _obj="The below tables provides detailed information for the throughput test on each device.")
                 report.build_objective()
                 self.mac_id_list = [item.split()[-1] if ' ' in item else item for item in self.mac_id_list]
+                if self.expected_passfail_value or self.device_csv_name:
+                    test_input_list, pass_fail_list = self.get_pass_fail_list(device_type, incremental_capacity_list[i], devices_on_running, download_data, upload_data)
                 bk_dataframe = {
                     " Device Type ": device_type[int(incremental_capacity_list[i]) - 1],
                     " Username": devices_on_running[-1],
@@ -1908,6 +1943,10 @@ class Throughput(Realm):
                 else:
                     bk_dataframe[" Average Rx Drop B% "] = upload_drop
                     bk_dataframe[" Average Rx Drop A% "] = [0.0] * len(upload_drop)
+                # When pass fail criteria is specified
+                if self.expected_passfail_value or self.device_csv_name:
+                    bk_dataframe[" Expected " + self.direction + " rate "] = test_input_list
+                    bk_dataframe[" Status "] = pass_fail_list
                 dataframe1 = pd.DataFrame(bk_dataframe)
                 report.set_table_dataframe(dataframe1)
                 report.build_table()
@@ -1919,6 +1958,108 @@ class Throughput(Realm):
         report.build_footer()
         report.write_html()
         report.write_pdf(_orientation="Landscape")
+
+    def get_pass_fail_list(self, device_type, curr_incremental_capacity, devices_on_running, download_data, upload_data):
+        test_input_list = []
+        pass_fail_list = []
+        if not self.do_interopability:
+            # When pass_fail csv specified
+            if self.expected_passfail_value == '' or self.expected_passfail_value is None:
+                res_list = []
+                interop_tab_data = self.json_get('/adb/')["devices"]
+                for j in range(len(device_type[0:int(curr_incremental_capacity)])):
+                    if device_type[0:int(curr_incremental_capacity)][j] != 'Android':
+                        res_list.append(devices_on_running[0:int(curr_incremental_capacity)][j])
+                    else:
+                        for dev in interop_tab_data:
+                            for item in dev.values():
+                                if item['user-name'] == devices_on_running[0:int(curr_incremental_capacity)][j]:
+                                    res_list.append(item['name'].split('.')[2])
+
+                with open(self.device_csv_name, mode='r') as file:
+                    reader = csv.DictReader(file)
+                    rows = list(reader)
+                for device in res_list:
+                    found = False
+                    for row in rows:
+                        if row['DeviceList'] == device and row[self.csv_direction + ' Mbps'].strip() != '':
+                            test_input_list.append(row[self.csv_direction + ' Mbps'])
+                            found = True
+                            break
+                    if not found:
+                        logger.info(f'Pass/Fail threshold for device {device} not found in the CSV. Using default threshold of 5 Mbps.')
+                        test_input_list.append(5)
+            # When expected_pass_fail value specified
+            else:
+                test_input_list = [self.expected_passfail_value for val in range(len(devices_on_running[0:int(curr_incremental_capacity)]))]
+
+            for k in range(len(test_input_list)):
+                if self.csv_direction.split('_')[2] == 'BiDi':
+                    if float(test_input_list[k]) <= (float([n for n in upload_data[0:int(curr_incremental_capacity)]][k]) + float([n for n in download_data[0:int(curr_incremental_capacity)]][k])):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+                elif self.csv_direction.split('_')[2] == 'UL':
+                    if float(test_input_list[k]) <= float([n for n in upload_data[0:int(curr_incremental_capacity)]][k]):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+                else:
+
+                    if float(test_input_list[k]) <= float([n for n in download_data[0:int(curr_incremental_capacity)]][k]):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+        else:
+            if self.expected_passfail_value == '' or self.expected_passfail_value is None:
+                res_list = []
+                interop_tab_data = self.json_get('/adb/')["devices"]
+                if device_type[int(curr_incremental_capacity) - 1] != 'Android':
+                    res_list.append(devices_on_running[-1])
+                else:
+                    for dev in interop_tab_data:
+                        for item in dev.values():
+                            if item['user-name'] == devices_on_running[-1]:
+                                res_list.append(item['name'].split('.')[2])
+                                break
+
+                with open(self.device_csv_name, mode='r') as file:
+                    reader = csv.DictReader(file)
+                    rows = list(reader)
+
+                for device in res_list:
+                    found = False
+                    for row in rows:
+                        if row['DeviceList'] == device and row[self.csv_direction + ' Mbps'].strip() != '':
+                            test_input_list.append(row[self.csv_direction + ' Mbps'])
+                            found = True
+                            break
+                    if not found:
+                        logger.info(f'Pass/Fail threshold for device {device} not found in the CSV. Using default threshold of 5 Mbps.')
+                        test_input_list.append(5)
+            # when expected_pass_fail value specified
+            else:
+                for val in [devices_on_running[-1]]:
+                    test_input_list.append(self.expected_passfail_value)
+            for k in range(len(test_input_list)):
+                if self.csv_direction.split('_')[2] == 'BiDi':
+                    if float(test_input_list[k]) <= (float([n for n in [(upload_data[-1])]][k]) + float([n for n in [(download_data[-1])]][k])):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+                elif self.csv_direction.split('_')[2] == 'UL':
+                    if float(test_input_list[k]) <= float([n for n in [(upload_data[-1])]][k]):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+                else:
+
+                    if float(test_input_list[k]) <= float([n for n in [(download_data[-1])]][k]):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+
+        return test_input_list, pass_fail_list
 
     def copy_reports_to_home_dir(self):
         curr_path = self.result_dir
@@ -2071,7 +2212,7 @@ Copyright 2023 Candela Technologies Inc.
                           help='Specify the incremental values for network load testing as a comma-separated list (e.g., 10,20,30). This defines the increments in bandwidth to evaluate performance under varying load conditions.',
                           default=[])
     required.add_argument('--load_type', help="Determine the type of load: < wc_intended_load | wc_per_client_load >", default="wc_per_client_load")
-    required.add_argument('--do_interopability', action='store_true')
+    required.add_argument('--do_interopability', action='store_true', help='Ensures test on devices run sequentially, capturing each device’s data individually for plotting in the final report.')
 
     # optional.add_argument('--no_postcleanup', help="Cleanup the cross connections after test is stopped", action = 'store_true')
     # optional.add_argument('--no_precleanup', help="Cleanup the cross connections before test is started", action = 'store_true')
@@ -2081,7 +2222,8 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default="open")
     optional.add_argument('--test_name', help='Specify test name to store the runtime csv results', default=None)
     optional.add_argument('--result_dir', help='Specify the result dir to store the runtime logs', default='')
-
+    optional.add_argument("--expected_passfail_value", help="Specify the expected number of urls", default=None)
+    optional.add_argument("--device_csv_name", type=str, help='Specify the csv name to store expected url values', default=None)
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
 
     args = parser.parse_args()
@@ -2117,6 +2259,16 @@ Copyright 2023 Candela Technologies Inc.
                 loads['download'].append(2560)
             loads_data = loads["upload"]
 
+    if args.download != '2560' and args.download != '0' and args.upload != '0' and args.upload != '2560':
+        csv_direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_BiDi'
+    elif args.upload != '2560' and args.upload != '0':
+        csv_direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_UL'
+    else:
+        csv_direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_DL'
+
+    if args.expected_passfail_value and args.device_csv_name:
+        logger.error("Specify either expected_passfail_value or device_csv_name")
+        exit(1)
     if args.incremental_capacity == 'no_increment' and args.dowebgui:
         args.incremental_capacity = str(len(args.device_list.split(",")))
         gave_incremental = True
@@ -2182,7 +2334,10 @@ Copyright 2023 Candela Technologies Inc.
                                 load_type=args.load_type,
                                 do_interopability=args.do_interopability,
                                 incremental=args.incremental,
-                                precleanup=args.precleanup
+                                precleanup=args.precleanup,
+                                csv_direction=csv_direction,
+                                expected_passfail_value=args.expected_passfail_value,
+                                device_csv_name=args.device_csv_name
                                 )
 
         if gave_incremental:
