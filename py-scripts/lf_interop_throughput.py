@@ -51,24 +51,24 @@
 
         EXAMPLE-10:
         Command Line Interface to run the test with expected pass/fail value
-        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp 
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
         --device_list 1.11,1.12,1.360,1.400 --expected_passfail_value 5
 
-        EXAMPLE-11: 
+        EXAMPLE-11:
         Command Line Interface to run the test with expected pass/fail csv for individual device
-        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp 
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
         --device_list 1.11,1.12,1.360,1.400 --device_csv_name clab.csv
 
         EXAMPLE-12:
         Command Line Interface to run download scenario for Real clients with Groups and Profiles
-        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 100000000 --upload 100000000 
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 100000000 --upload 100000000
         --traffic_type lf_udp --report_timer 1s --device_csv clab.csv --file_name gr204 --group_name g3,g4 --profile_name n1,n1
 
         EXAMPLE-13:
         Command Line Interface to run download scenario for Real clients with device list and config
-        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000
         --traffic_type lf_udp --ssid NETGEAR_2G_wpa2 --passwd Password@123 --security wpa2 --config --device_list 1.10,1.11,1.12
-    
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -90,22 +90,22 @@
 
         EXAMPLE-5:
         Command Line Interface to run the test with expected pass/fail value
-        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp 
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
         --device_list 1.11,1.12,1.360,1.400 --expected_passfail_value 5 --do_interopability
 
-        EXAMPLE-6: 
+        EXAMPLE-6:
         Command Line Interface to run the test with expected pass/fail csv for individual device
-        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp 
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
         --device_list 1.11,1.12,1.360,1.400 --device_csv_name clab.csv --do_interopability
 
         EXAMPLE-7:
         Command Line Interface to run download scenario for Real clients with Groups and Profiles
-        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 100000000 --upload 100000000 
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 100000000 --upload 100000000
         --traffic_type lf_udp --report_timer 1s --device_csv clab.csv --file_name gr204 --group_name g3,g4 --profile_name n1,n1 --do_interopability
 
         EXAMPLE-8:
         Command Line Interface to run download scenario for Real clients with device list and config
-        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp 
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
         --ssid NETGEAR_2G_wpa2 --passwd Password@123 --security wpa2 --config --device_list 1.10,1.11,1.12 --do_interopability
 
     SCRIPT_CLASSIFICATION :  Test
@@ -513,7 +513,6 @@ class Throughput(Realm):
                 if eid in device:
                     self.user_list.append(device)
 
-      
         configure_list = []
         if len(self.device_list) == 0 and self.config == False and self.group_name is None:
             logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(self.user_list))
@@ -820,13 +819,13 @@ class Throughput(Realm):
     def cleanup(self):
         logger.info("cleanup done")
         self.cx_profile.cleanup()
-    
+
     def get_layer3_endp_data(self):
         """
         Fetches Layer 3 endpoint data for all created cross connections.
 
         Returns:
-            dict: A dictionary with  Each key corresponds to 
+            dict: A dictionary with  Each key corresponds to
             the index of a each device in the order of cx_list, and its value is a list of 5 elements:
             [0]: RX rate (last) at the A endpoint
             [1]: RX rate (last) at the B endpoint
@@ -950,7 +949,7 @@ class Throughput(Realm):
                     remaining_minutes_instrf = str(overall_time_difference).split(".")[0]
                 # Storing individual device throughput data(download, upload, Rx % drop A, Rx % drop B) to dataframe
                 for i in range(len(download_throughput)):
-                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i],rx_rate_list[i]])
+                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
 
                 # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
                 individual_df_data.extend([round(sum(download_throughput),
@@ -1111,7 +1110,7 @@ class Throughput(Realm):
 
         # Storing individual device throughput data(download, upload, Rx % drop A, Rx % drop B) to dataframe after test stopped
         for i in range(len(download_throughput)):
-            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i],rx_rate_list[i]])
+            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
         timestamp = datetime.now().strftime("%d/%m %I:%M:%S %p")
 
         # If it's the last iteration, append final metrics and 'Stopped' status
@@ -1160,9 +1159,9 @@ class Throughput(Realm):
         keys = list(connections_download.keys())
 
         for i in range(len(download_throughput)):
-            connections_download.update({keys[i]: float(f"{(download_throughput[i] ):.2f}")})
+            connections_download.update({keys[i]: float(f"{(download_throughput[i]):.2f}")})
         for i in range(len(upload_throughput)):
-            connections_upload.update({keys[i]: float(f"{(upload_throughput[i] ):.2f}")})
+            connections_upload.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
 
         logger.info("connections download {}".format(connections_download))
         logger.info("connections upload {}".format(connections_upload))
@@ -1717,24 +1716,27 @@ class Throughput(Realm):
                     devices_data_to_create_bar_graph.append(download_data)
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data = ['Download', 'Upload']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))),2)} Mbps, Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data = (
+                        f"Real Time Throughput: Achieved Throughput: Download: {round(sum(download_data[0:int(incremental_capacity_list[i])]), 2)} Mbps, "
+                        f"Upload: {round(sum(upload_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
+                    )
 
                 elif self.direction == 'Download':
                     download_values_list = data['Overall Download'][data['Iteration'] == i + 1].values.tolist()
                     data_set_in_graph.append(download_values_list)
                     devices_data_to_create_bar_graph.append(download_data)
                     label_data = ['Download']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))),2)} Mbps"
+                    real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))), 2)} Mbps"
 
                 elif self.direction == 'Upload':
                     upload_values_list = data['Overall Upload'][data['Iteration'] == i + 1].values.tolist()
                     data_set_in_graph.append(upload_values_list)
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data = ['Upload']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data = f"Real Time Throughput: Achieved Throughput: Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])), 2)} Mbps"
 
                 if len(incremental_capacity_list) > 1:
-                    report.set_custom_html(f"<h2><u>Iteration-{i+1}: Number of Devices Running : {len(devices_on_running)}</u></h2>")
+                    report.set_custom_html(f"<h2><u>Iteration-{i + 1}: Number of Devices Running : {len(devices_on_running)}</u></h2>")
                     report.build_custom()
 
                 report.set_obj_html(
@@ -2072,23 +2074,33 @@ class Throughput(Realm):
                     devices_data_to_create_bar_graph.append(download_data)
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data = ['Download', 'Upload']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))/len(download_data[0:int(incremental_capacity_list[i])])),2)} Mbps, Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])/len(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data = (
+                        f"Real Time Throughput: Achieved Throughput: Download: "
+                        f"{round(sum(download_data[0:int(incremental_capacity_list[i])]) / len(download_data[0:int(incremental_capacity_list[i])]), 2)} Mbps, "
+                        f"Upload: {round(sum(upload_data[0:int(incremental_capacity_list[i])]) / len(upload_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
+                    )
 
                 elif self.direction == 'Download':
                     download_values_list = data['Overall Download'][data['Iteration'] == i + 1].values.tolist()
                     data_set_in_graph.append(download_values_list)
                     devices_data_to_create_bar_graph.append(download_data)
                     label_data = ['Download']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))/len(download_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data = (
+                        f"Real Time Throughput: Achieved Throughput: Download: "
+                        f"{round(sum(download_data[0:int(incremental_capacity_list[i])]) / len(download_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
+                    )
 
                 elif self.direction == 'Upload':
                     upload_values_list = data['Overall Upload'][data['Iteration'] == i + 1].values.tolist()
                     data_set_in_graph.append(upload_values_list)
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data = ['Upload']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])/len(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data = (
+                        f"Real Time Throughput: Achieved Throughput: Upload: "
+                        f"{round(sum(upload_data[0:int(incremental_capacity_list[i])]) / len(upload_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
+                    )
 
-                report.set_custom_html(f"<h2><u>{i+1}. Test On Device {', '.join(devices_on_running)}:</u></h2>")
+                report.set_custom_html(f"<h2><u>{i + 1}. Test On Device {', '.join(devices_on_running)}:</u></h2>")
                 report.build_custom()
 
                 report.set_obj_html(
@@ -2220,8 +2232,8 @@ class Throughput(Realm):
         report.build_footer()
         report.write_html()
         report.write_pdf(_orientation="Landscape")
-    # Creates a separate DataFrame for each group of devices.
 
+    # Creates a separate DataFrame for each group of devices.
     def generate_dataframe(self, groupdevlist, typeofdevice, devusername, devssid, devmac, devchannel, devmode, devdirection, devofdownload, devobsdownload,
                            devoffupload, devobsupload, devrssi, devExpected, devlinkspeed, devpacketsize, devstatus, upload_drop, download_drop):
         """
@@ -2881,7 +2893,7 @@ Copyright 2023 Candela Technologies Inc.
 
             # Extend individual_dataframe_column with dynamically generated column names
             individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop A {clients_to_run[i]}',
-                                               f'Rx % Drop B{clients_to_run[i]}', f'RSSI {clients_to_run[i]} ', f'Tx-Rate {clients_to_run[i]} ',f'Rx-Rate {clients_to_run[i]} '])
+                                               f'Rx % Drop B{clients_to_run[i]}', f'RSSI {clients_to_run[i]} ', f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]} '])
 
         individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop A', 'Overall Rx % Drop B', 'Iteration',
                                            'TIMESTAMP', 'Start_time', 'End_time', 'Remaining_Time', 'Incremental_list', 'status'])
