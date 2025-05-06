@@ -508,6 +508,7 @@ INCLUDE_IN_README: False
                         default="")
 
     parser.add_argument("-u", "--upstream",
+                        dest="upstream",
                         type=str,
                         default="",
                         help="Upstream port used in test. For example, \'1.1.eth2\'")
@@ -519,10 +520,12 @@ INCLUDE_IN_README: False
                         default="",
                         help="Name of DUT used in test. Assumes DUT is already configured in LANforge. Example: \'linksys-8450\'")
 
-    parser.add_argument("--download_speed",
+    parser.add_argument("--download_rate", "--download_speed",
+                        dest="download_speed",
                         default="",
                         help="Requested download speed used in test. Percentage of theoretical is also supported. Default: 85%%.")
-    parser.add_argument("--upload_speed",
+    parser.add_argument("--upload_rate", "--upload_speed",
+                        dest="upload_speed",
                         default="",
                         help="Requested upload speed used in test. Percentage of theoretical is also supported. Default: 0")
 
