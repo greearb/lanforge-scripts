@@ -212,17 +212,6 @@ class DataplaneTest(cv_test):
                  **kwargs):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
-        # NOTE: Do not move these into the function definition.
-        #       Otherwise, they will become immutable lists
-        if enables is None:
-            enables = []
-        if disables is None:
-            disables = []
-        if raw_lines is None:
-            raw_lines = []
-        if sets is None:
-            sets = []
-
         self.lf_host = lf_host
         self.lf_port = lf_port
         self.lf_user = lf_user
