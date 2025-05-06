@@ -104,6 +104,16 @@ EXAMPLE:
                    --passwd    <password> \
                    --security  wpa2
 
+            # Create multiple stations with initial band preference 5G
+               ./create_station.py \
+                   --mgr       <lanforge ip> \
+                   --radio     1.1.wiphy1 \
+                   --ssid      <ssid> \
+                   --passwd    <password> \
+                   --security  wpa2 \
+                   --num_stations 10 \
+                   --initial_band_pref 5G
+
             # Create multiple stations
                ./create_station.py \
                    --mgr           <lanforge ip> \
@@ -354,6 +364,7 @@ class CreateStation(Realm):
                  groupwise_cipher,
                  set_txo_data,
                  custom_wifi_cmd,
+                 initial_band_pref,
                  **kwargs):
         super().__init__(mgr,
                          mgr_port)
@@ -374,6 +385,7 @@ class CreateStation(Realm):
         self.radio = radio
         self.timeout = 120
         self.security = security
+        self.initial_band_pref = initial_band_pref
         self.password = password
 
         # Translate from options displayed in the GUI to options
@@ -446,7 +458,12 @@ class CreateStation(Realm):
 
         logger.info("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-
+        if self.initial_band_pref.upper() not in ["2.4G", "2G", "5G", "6G"]:
+            logger.info("Initial band preference should be either 2G or 5G or 6G. Aborting...")
+            exit(1)
+        else:
+            band_pref = int(self.initial_band_pref[0])
+            self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
         if not self.eap_method:
             # Not 802.1X, but user may have specified other parameters
             #
@@ -652,6 +669,9 @@ NOTES:      This script is intended to only create and configure stations. See o
             --cleanup
                 Add this flag to clean up stations after creation
 
+            --initial_band_pref
+                Add this argument to set initial band preference to be either 2G or 5G or 6G.
+
             --eap_method <eap_method>
                 EAP method used by station in authentication.
                 See the 'set_wifi_extra' command's 'eap' option in the CLI documentation for available options.
@@ -696,6 +716,16 @@ EXAMPLE:
                    --ssid      <ssid> \
                    --passwd    <password> \
                    --security  wpa2
+
+            # Create multiple stations with initial band preference 5G
+               ./create_station.py \
+                   --mgr       <lanforge ip> \
+                   --radio     1.1.wiphy1 \
+                   --ssid      <ssid> \
+                   --passwd    <password> \
+                   --security  wpa2 \
+                   --num_stations 10 \
+                   --initial_band_pref 5G
 
             # Create multiple stations
                ./create_station.py \
@@ -952,6 +982,11 @@ INCLUDE_IN_README:
                           action='store_true')
     optional.add_argument("--custom_wifi_cmd",
                           help="Mention the custom wifi command.")
+    optional.add_argument("--initial_band_pref",
+                          type=str,
+                          default="0",
+                          help="Specify the initial band preference for created stations: '2G' for 2.4GHz,\n"
+                          "'5G' for 5GHz, or '6G' for 6GHz.")
 
     return parser.parse_args()
 
