@@ -23,7 +23,7 @@ class StationProfile:
     def __init__(self, lfclient_url, local_realm,
                  ssid="NA",
                  ssid_pass="NA",
-                 bssid='DEFAULT',  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
+                 bssid='DEFAULT', # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
                  security="open",
                  number_template_="00000",
                  mode=0,  # shouldn't this be -1 or AUTO?
