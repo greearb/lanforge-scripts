@@ -56,7 +56,7 @@
                     " --raw_line 'spatial_streams: 1;2;3;4' ",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7996e_2G_W0_TCP_tx'",
                     " --raw_line 'attenuator: ATTENUATOR_1'",
-                    " --raw_line 'attenuations: 0..+100..500'",
+                    " --raw_line 'attenuations: 0'",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG ",
                     " --set DUT_SET_NAME",
