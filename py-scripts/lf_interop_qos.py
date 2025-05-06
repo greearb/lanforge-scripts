@@ -299,7 +299,7 @@ class ThroughputQOS(Realm):
     def phantom_check(self):
         obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
         config_devices = {}
-        upstream=self.change_port_to_ip(self.upstream)
+        upstream = self.change_port_to_ip(self.upstream)
         config_dict = {
             'ssid': self.ssid,
             'passwd': self.password,
@@ -332,7 +332,7 @@ class ThroughputQOS(Realm):
             obj.initiate_group()
             self.group_device_map = obj.get_groups_devices(data=selected_groups, groupdevmap=True)
             # Configure devices in the selected group with the selected profile
-            self.device_list = asyncio.run(obj.connectivity(config=config_devices,upstream=upstream))
+            self.device_list = asyncio.run(obj.connectivity(config=config_devices, upstream=upstream))
         # Case 2: Device list is already provided
         elif self.device_list != []:
             all_devices = obj.get_all_devices()
@@ -363,7 +363,7 @@ class ThroughputQOS(Realm):
             if key == "resources":
                 for element in value:
                     for a, b in element.items():
-                        if b['phantom'] == False:
+                        if b['phantom'] is False:
                             self.working_resources_list.append(b["hw version"])
                             if "Win" in b['hw version']:
                                 self.eid_list.append(b['eid'])
@@ -392,8 +392,7 @@ class ThroughputQOS(Realm):
         # All the available resources are fetched from resource mgr tab ----
 
         response_port = self.json_get("/port/all")
-
-        mac_id1_list = []
+     
         for interface in response_port['interfaces']:
             for port, port_data in interface.items():
                 if (not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0'):
@@ -418,10 +417,10 @@ class ThroughputQOS(Realm):
                     if device not in self.user_list:
                         self.user_list.append(device)
         # checking for the availability of selected devices to run test
-        adbresponse = obj.adb_obj.get_devices()
+        obj.adb_obj.get_devices()
         logging.info(self.user_list)
         # Case 4: Config is False, no device list is provided, and no group is selected
-        if self.config == False and len(self.device_list) == 0 and self.group_name is None:
+        if self.config is False and len(self.device_list) == 0 and self.group_name is None:
             logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(self.user_list))
             # Prompt the user to manually input devices for running the test
             self.device_list = input("Enter the desired resources to run the test:").split(',')
@@ -439,7 +438,7 @@ class ThroughputQOS(Realm):
                         available_list.append(input_device)
                         found = True
                         break
-                if found == False:
+                if found is False:
                     not_available.append(input_device)
                     logger.warning(input_device + " is not available to run test")
 
@@ -653,7 +652,7 @@ class ThroughputQOS(Realm):
         previous_time = datetime.now()
         time_break = 0
         # Added background_run to allow the test to continue running, bypassing the duration limit for nile requirement.
-        rates_data=defaultdict(list)
+        rates_data = defaultdict(list)
         while datetime.now() < end_time or getattr(self, "background_run", None):
             index += 1
             current_time = datetime.now()
@@ -668,13 +667,13 @@ class ThroughputQOS(Realm):
                 for value in port_mgr_data:
                     for port, port_data in value.items():
                         if port_data['parent dev'] == "wiphy0" and port in self.input_devices_list:
-                            rates_data['.'.join(port.split('.')[:2])+' rx_rate'].append(port_data['rx-rate'])
-                            rates_data['.'.join(port.split('.')[:2])+' tx_rate'].append(port_data['tx-rate'])
-                            rates_data['.'.join(port.split('.')[:2])+' RSSI'].append(port_data['signal'])
+                            rates_data['.'.join(port.split('.')[:2]) + ' rx_rate'].append(port_data['rx-rate'])
+                            rates_data['.'.join(port.split('.')[:2]) + ' tx_rate'].append(port_data['tx-rate'])
+                            rates_data['.'.join(port.split('.')[:2]) + ' RSSI'].append(port_data['signal'])
                 cx_list = list(self.cx_profile.created_cx.keys())
-                # t_response data order - [rx rate(last)_A,rx rate(last)_B,rx drop % A,rx drop %B] A or B will considered based upon the name in L3 Endps tab 
+                # t_response data order - [rx rate(last)_A,rx rate(last)_B,rx drop % A,rx drop %B] A or B will considered based upon the name in L3 Endps tab
                 for cx in cx_list:
-                    t_response[cx] = [0,0,0.0,0.0]
+                    t_response[cx] = [0, 0, 0.0, 0.0]
                 for cx in cx_list:
                     for i in l3_endp_data:
                         key, cx_data = next(iter(i.items()))
@@ -682,7 +681,7 @@ class ThroughputQOS(Realm):
                         if cx == cx_name:
                             traffic_tos = key.split('_')[-1].split('-')[0]
                             endp = key[-1]
-                            
+
                             if endp == 'A':
                                 self.real_time_data[cx_name][traffic_tos]['bps rx a'].append(cx_data['rx rate (last)'] / 1000000)
                                 t_response[cx_name][0] = cx_data['rx rate (last)']
@@ -750,14 +749,14 @@ class ThroughputQOS(Realm):
                         'status': 'Running'
                     })
                     # Appending latest rx_rate, tx_rate, and signal (RSSI) values to the most recent self.overall entry
-                    for col_keys,col_values in rates_data.items():
+                    for col_keys, col_values in rates_data.items():
                         self.overall[-1].update({
-                            col_keys:col_values[-1]})
+                            col_keys: col_values[-1]})
                     # Appending the data according to the time gap (for webgui)
                     if self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
                         self.df_for_webui.append(self.overall[-1])
                         previous_time = current_time
-                        
+
                 elif self.direction == "Upload":
                     self.overall.append({
                         "BE_dl": 0,
@@ -777,9 +776,9 @@ class ThroughputQOS(Realm):
                         'status': 'Running'
                     })
                     # Appending latest rx_rate, tx_rate, and signal (RSSI) values to the most recent self.overall entry
-                    for col_keys,col_values in rates_data.items():
+                    for col_keys, col_values in rates_data.items():
                         self.overall[-1].update({
-                            col_keys:col_values[-1]})
+                            col_keys: col_values[-1]})
                     # Appending the data according to the time gap (for webgui)
                     if self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
                         self.df_for_webui.append(self.overall[-1])
@@ -803,9 +802,9 @@ class ThroughputQOS(Realm):
                         'status': 'Running'
                     })
                     # Appending latest rx_rate, tx_rate, and signal (RSSI) values to the most recent self.overall entry
-                    for col_keys,col_values in rates_data.items():
+                    for col_keys, col_values in rates_data.items():
                         self.overall[-1].update({
-                            col_keys:col_values[-1]})
+                            col_keys: col_values[-1]})
                     # Appending the data according to the time gap (for webgui)
                     if self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
                         self.df_for_webui.append(self.overall[-1])
@@ -1318,9 +1317,9 @@ class ThroughputQOS(Realm):
             else:
                 if self.direction == "Upload":
                     bk_dataframe[" Observed Upload Drop (%)"] = individual_b_drop
-                    bk_dataframe[" Observed Download Drop (%)"] = [0.0]*len(individual_b_drop)
+                    bk_dataframe[" Observed Download Drop (%)"] = [0.0] * len(individual_b_drop)
                 elif self.direction == "Download":
-                    bk_dataframe[" Observed Upload Drop (%)"] = [0.0]*len(individual_a_drop)
+                    bk_dataframe[" Observed Upload Drop (%)"] = [0.0] * len(individual_a_drop)
                     bk_dataframe[" Observed Download Drop (%)"] = individual_a_drop
 
             if self.expected_passfail_val or self.csv_name:
@@ -1450,7 +1449,7 @@ class ThroughputQOS(Realm):
                 logger.info(data_set)
                 # If a CSV filename is provided, retrieve the expected values for each device from the CSV file
                 if not self.expected_passfail_val and self.csv_name:
-                    test_input_list=self.get_csv_expected_val()
+                    test_input_list = self.get_csv_expected_val()
                 if "BK" in self.tos:
                     if self.direction == "Bi-direction":
                         individual_set = list1[2]
@@ -1512,7 +1511,7 @@ class ThroughputQOS(Realm):
                         test_input_list = [self.expected_passfail_val for val in range(len(self.real_client_list))]
                     # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
                     if self.expected_passfail_val or self.csv_name:
-                        pass_fail_list=self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
+                        pass_fail_list = self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
 
                     if self.group_name:
                         for key, val in self.group_device_map.items():
@@ -1635,7 +1634,7 @@ class ThroughputQOS(Realm):
                         test_input_list = [self.expected_passfail_val for val in range(len(self.real_client_list))]
                     # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
                     if self.expected_passfail_val or self.csv_name:
-                        pass_fail_list=self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
+                        pass_fail_list = self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
                     if self.group_name:
                         for key, val in self.group_device_map.items():
                             if self.expected_passfail_val or self.csv_name:
@@ -1756,7 +1755,7 @@ class ThroughputQOS(Realm):
                         test_input_list = [self.expected_passfail_val for val in range(len(self.real_client_list))]
                     # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
                     if self.expected_passfail_val or self.csv_name:
-                        pass_fail_list=self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
+                        pass_fail_list = self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
                     if self.group_name:
                         for key, val in self.group_device_map.items():
                             if self.expected_passfail_val or self.csv_name:
@@ -1878,7 +1877,7 @@ class ThroughputQOS(Realm):
                         test_input_list = [self.expected_passfail_val for val in range(len(self.real_client_list))]
                     # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
                     if self.expected_passfail_val or self.csv_name:
-                        pass_fail_list=self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
+                        pass_fail_list = self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
                     if self.group_name:
                         for key, val in self.group_device_map.items():
                             if self.expected_passfail_val or self.csv_name:
@@ -1950,7 +1949,7 @@ class ThroughputQOS(Realm):
                     cx_df = pd.DataFrame(self.real_time_data[cx][tos])
                     cx_df.to_csv('{}/{}_{}_realtime_data.csv'.format(report.path_date_time, cx, tos), index=False)
 
-    def get_pass_fail_list(self,test_input_list, individual_avgupload_list, individual_avgdownload_list):
+    def get_pass_fail_list(self, test_input_list, individual_avgupload_list, individual_avgdownload_list):
         pass_fail_list = []
         for i in range(len(test_input_list)):
             if self.csv_direction.split('_')[2] == 'BiDi':
@@ -1969,7 +1968,7 @@ class ThroughputQOS(Realm):
                 else:
                     pass_fail_list.append('FAIL')
         return pass_fail_list
-    
+
     def get_csv_expected_val(self):
         res_list = []
         test_input_list = []
@@ -2013,6 +2012,7 @@ class ThroughputQOS(Realm):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
 
+
 def validate_args(args):
     if args.group_name:
         selected_groups = args.group_name.split(',')
@@ -2026,7 +2026,7 @@ def validate_args(args):
         if args.ssid is None:
             logger.error('Specify SSID for confiuration, Password(Optional for "open" type security) , Security')
             exit(1)
-        elif args.ssid and args.passwd=='[BLANK]' and args.security.lower() != 'open':
+        elif args.ssid and args.passwd == '[BLANK]' and args.security.lower() != 'open':
             logger.error('Please provide valid passwd and security configuration')
             exit(1)
         elif args.ssid and args.passwd:
@@ -2060,6 +2060,7 @@ def validate_args(args):
     elif args.config and args.group_name is None and (args.ssid is None or (args.passwd is None and args.security is None) or (args.passwd is None and args.security.lower() != 'open')):
         logger.error("Please provide ssid password and security for configuring devices")
         exit(1)
+
 
 def main():
     help_summary = '''\
@@ -2276,7 +2277,7 @@ def main():
         direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_UL'
     else:
         direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_DL'
-    
+
     validate_args(args)
     if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
         args.test_duration = int(args.test_duration[0:-1])
