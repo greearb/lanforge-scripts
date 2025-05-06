@@ -31,6 +31,18 @@
     --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 1000000
     --traffic_type lf_udp --tos "VI,VO"
 
+    EXAMPLE-5:
+    Command Line Interface to run upload scenario by setting the same expected Pass/Fail value for all devices
+    python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+    --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+    --security wpa2 --expected_passfail_value 0.3
+
+    EXAMPLE-6:
+    Command Line Interface to run upload scenario by setting device specific Pass/Fail values in the csv file
+    python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+    --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+    --security wpa2 --device_csv_name device_config.csv
+
     SCRIPT_CLASSIFICATION :  Test
 
     SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
@@ -67,6 +79,7 @@ import logging
 import json
 import pandas as pd
 import shutil
+import csv
 logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
@@ -119,7 +132,7 @@ class ThroughputQOS(Realm):
                  ip="localhost",
                  user_list=[], real_client_list=[], real_client_list1=[], hw_list=[], laptop_list=[], android_list=[], mac_list=[], windows_list=[], linux_list=[],
                  total_resources_list=[], working_resources_list=[], hostname_list=[], username_list=[], eid_list=[],
-                 devices_available=[], input_devices_list=[], mac_id1_list=[], mac_id_list=[]):
+                 devices_available=[], input_devices_list=[], mac_id1_list=[], mac_id_list=[], csv_direction=None, expected_passfail_val=None, csv_name=None,):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
         self.ssid_list = []
@@ -178,6 +191,9 @@ class ThroughputQOS(Realm):
         self.dowebgui = dowebgui
         self.ip = ip
         self.device_found = False
+        self.csv_direction = csv_direction
+        self.expected_passfail_val = expected_passfail_val
+        self.csv_name = csv_name
 
     def os_type(self):
         response = self.json_get("/resource/all")
@@ -1147,6 +1163,9 @@ class ThroughputQOS(Realm):
                 logger.info(res)
                 logger.info(load)
                 logger.info(data_set)
+                # If a CSV filename is provided, retrieve the expected values for each device from the CSV file
+                if not self.expected_passfail_val and self.csv_name:
+                    test_input_list=self.get_csv_expected_val()
                 if "BK" in self.tos:
                     if self.direction == "Bi-direction":
                         individual_set = list[2]
@@ -1204,6 +1223,11 @@ class ThroughputQOS(Realm):
                         individual_avgupload_list.append(str(str(individual_upload_list[i]) + ' ' + 'Mbps'))
                     for j in range(len(individual_download_list)):
                         individual_avgdownload_list.append(str(str(individual_download_list[j]) + ' ' + 'Mbps'))
+                    if self.expected_passfail_val:
+                        test_input_list = [self.expected_passfail_val for val in range(len(self.real_client_list))]
+                    # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
+                    if self.expected_passfail_val or self.csv_name:
+                        pass_fail_list=self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
                     bk_dataframe = {
                         " Client Name ": self.real_client_list,
                         " MAC ": self.mac_id_list,
@@ -1216,16 +1240,11 @@ class ThroughputQOS(Realm):
                         " Observed average upload rate ": individual_avgupload_list,
                         " Observed average download rate": individual_avgdownload_list
                     }
-                    if self.direction == "Bi-direction":
-                        bk_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                        bk_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
-                    else:
-                        if self.direction == "Upload":
-                            bk_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                            bk_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
-                        elif self.direction == "Download":
-                            bk_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                            bk_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    bk_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                    bk_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    if self.expected_passfail_val or self.csv_name:
+                        bk_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
+                        bk_dataframe[" Status "] = pass_fail_list
                     dataframe1 = pd.DataFrame(bk_dataframe)
                     report.set_table_dataframe(dataframe1)
                     report.build_table()
@@ -1288,6 +1307,11 @@ class ThroughputQOS(Realm):
                         individual_avgupload_list.append(str(str(individual_upload_list[i]) + ' ' + 'Mbps'))
                     for j in range(len(individual_download_list)):
                         individual_avgdownload_list.append(str(str(individual_download_list[j]) + ' ' + 'Mbps'))
+                    if self.expected_passfail_val:
+                        test_input_list = [self.expected_passfail_val for val in range(len(self.real_client_list))]
+                    # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
+                    if self.expected_passfail_val or self.csv_name:
+                        pass_fail_list=self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
                     be_dataframe = {
                         " Client Name ": self.real_client_list,
                         " MAC ": self.mac_id_list,
@@ -1300,16 +1324,11 @@ class ThroughputQOS(Realm):
                         " Observed average upload rate ": individual_avgupload_list,
                         " Observed average download rate": individual_avgdownload_list
                     }
-                    if self.direction == "Bi-direction":
-                        be_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                        be_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
-                    else:
-                        if self.direction == "Upload":
-                            be_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                            be_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
-                        elif self.direction == "Download":
-                            be_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                            be_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    be_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                    be_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    if self.expected_passfail_val or self.csv_name:
+                        be_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
+                        be_dataframe[" Status "] = pass_fail_list
                     dataframe2 = pd.DataFrame(be_dataframe)
                     report.set_table_dataframe(dataframe2)
                     report.build_table()
@@ -1372,6 +1391,11 @@ class ThroughputQOS(Realm):
                         individual_avgupload_list.append(str(str(individual_upload_list[i]) + ' ' + 'Mbps'))
                     for j in range(len(individual_download_list)):
                         individual_avgdownload_list.append(str(str(individual_download_list[j]) + ' ' + 'Mbps'))
+                    if self.expected_passfail_val:
+                        test_input_list = [self.expected_passfail_val for val in range(len(self.real_client_list))]
+                    # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
+                    if self.expected_passfail_val or self.csv_name:
+                        pass_fail_list=self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
                     vi_dataframe = {
                         " Client Name ": self.real_client_list,
                         " MAC ": self.mac_id_list,
@@ -1384,17 +1408,11 @@ class ThroughputQOS(Realm):
                         " Observed average upload rate ": individual_avgupload_list,
                         " Observed average download rate": individual_avgdownload_list
                     }
-                    if self.direction == "Bi-direction":
-                        vi_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                        vi_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
-                    else:
-                        if self.direction == "Upload":
-                            vi_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                            vi_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
-                        elif self.direction == "Download":
-                            vi_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                            vi_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
-                    print("Df", vi_dataframe)
+                    vi_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                    vi_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    if self.expected_passfail_val or self.csv_name:
+                        vi_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
+                        vi_dataframe[" Status "] = pass_fail_list
                     dataframe3 = pd.DataFrame(vi_dataframe)
                     report.set_table_dataframe(dataframe3)
                     report.build_table()
@@ -1457,6 +1475,12 @@ class ThroughputQOS(Realm):
                         individual_avgupload_list.append(str(str(individual_upload_list[i]) + ' ' + 'Mbps'))
                     for j in range(len(individual_download_list)):
                         individual_avgdownload_list.append(str(str(individual_download_list[j]) + ' ' + 'Mbps'))
+                    if self.expected_passfail_val:
+                        pass_fail_list = []
+                        test_input_list = [self.expected_passfail_val for val in range(len(self.real_client_list))]
+                    # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
+                    if self.expected_passfail_val or self.csv_name:
+                        pass_fail_list=self.get_pass_fail_list(test_input_list, individual_avgupload_list, individual_avgdownload_list)
                     vo_dataframe = {
                         " Client Name ": self.real_client_list,
                         " MAC ": self.mac_id_list,
@@ -1469,17 +1493,11 @@ class ThroughputQOS(Realm):
                         " Observed average upload rate ": individual_avgupload_list,
                         " Observed average download rate": individual_avgdownload_list
                     }
-                    if self.direction == "Bi-direction":
-                        vo_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                        vo_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
-                    else:
-                        if self.direction == "Upload":
-                            vo_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                            vo_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
-                        elif self.direction == "Download":
-                            vo_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                            vo_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
-                    print("Df", vo_dataframe)
+                    vo_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
+                    vo_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                    if self.expected_passfail_val or self.csv_name:
+                        vo_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
+                        vo_dataframe[" Status "] = pass_fail_list
                     dataframe4 = pd.DataFrame(vo_dataframe)
                     report.set_table_dataframe(dataframe4)
                     report.build_table()
@@ -1496,6 +1514,54 @@ class ThroughputQOS(Realm):
                 if tos in self.tos and len(self.real_time_data[cx][tos]['time']) != 0:
                     cx_df = pd.DataFrame(self.real_time_data[cx][tos])
                     cx_df.to_csv('{}/{}_{}_realtime_data.csv'.format(report.path_date_time, cx, tos), index=False)
+
+    def get_pass_fail_list(self,test_input_list, individual_avgupload_list, individual_avgdownload_list):
+        pass_fail_list = []
+        for i in range(len(test_input_list)):
+            if self.csv_direction.split('_')[2] == 'BiDi':
+                if float(test_input_list[i]) <= float(individual_avgupload_list[i].split(' ')[0]) + float(individual_avgdownload_list[i].split(' ')[0]):
+                    pass_fail_list.append('PASS')
+                else:
+                    pass_fail_list.append('FAIL')
+            elif self.csv_direction.split('_')[2] == 'UL':
+                if float(test_input_list[i]) <= float(individual_avgupload_list[i].split(' ')[0]):
+                    pass_fail_list.append('PASS')
+                else:
+                    pass_fail_list.append('FAIL')
+            else:
+                if float(test_input_list[i]) <= float(individual_avgdownload_list[i].split(' ')[0]):
+                    pass_fail_list.append('PASS')
+                else:
+                    pass_fail_list.append('FAIL')
+        return pass_fail_list
+    
+    def get_csv_expected_val(self):
+        res_list = []
+        test_input_list = []
+        interop_tab_data = self.json_get('/adb/')["devices"]
+        for client in self.real_client_list:
+            if client.split(' ')[1] != 'android':
+                res_list.append(client.split(' ')[2])
+            else:
+                for dev in interop_tab_data:
+                    for item in dev.values():
+                        if item['user-name'] == client.split(' ')[2]:
+                            res_list.append(item['name'].split('.')[2])
+
+        with open(self.csv_name, mode='r') as file:
+            reader = csv.DictReader(file)
+            rows = list(reader)
+        for device in res_list:
+            found = False
+            for row in rows:
+                if row['DeviceList'] == device and row[self.csv_direction + ' Mbps'].strip() != '':
+                    test_input_list.append(row[self.csv_direction + ' Mbps'])
+                    found = True
+                    break
+            if not found:
+                logging.error(f"{self.csv_direction} value for Device {device} not found in CSV. Using default value 0.3")
+                test_input_list.append(0.3)
+        return test_input_list
 
     def copy_reports_to_home_dir(self):
         curr_path = self.result_dir
@@ -1560,6 +1626,18 @@ def main():
         python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
         --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 1000000
         --traffic_type lf_udp --tos "VI,VO"
+
+        EXAMPLE-5:
+        Command Line Interface to run upload scenario by setting the same expected Pass/Fail value for all devices
+        python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+        --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+        --security wpa2 --expected_passfail_value 0.3
+
+        EXAMPLE-6:
+        Command Line Interface to run upload scenario by setting device specific Pass/Fail values in the csv file
+        python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+        --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+        --security wpa2 --device_csv_name device_config.csv
 
         SCRIPT_CLASSIFICATION :  Test
 
@@ -1631,7 +1709,8 @@ def main():
                           help='Enable debugging')
     parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
                         action="store_true")
-
+    optional.add_argument('--expected_passfail_value', help='Enter the expected throughput ', default=None)
+    optional.add_argument('--device_csv_name', type=str, help='Enter the csv name to store expected values', default=None)
     args = parser.parse_args()
 
     # help summary
@@ -1650,6 +1729,10 @@ def main():
     station_list = []
     data = {}
 
+    if args.device_csv_name and args.expected_passfail_value:
+        logger.warning("Enter either --device_csv_name or --expected_passfail_value")
+        exit(1)
+
     if args.download and args.upload:
         loads = {'upload': str(args.upload).split(","), 'download': str(args.download).split(",")}
         loads_data = loads["download"]
@@ -1664,7 +1747,13 @@ def main():
             for i in range(len(args.upload)):
                 loads['download'].append(0)
             loads_data = loads["upload"]
-    print(loads)
+    if args.download and args.upload:
+        direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_BiDi'
+    elif args.upload:
+        direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_UL'
+    else:
+        direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_DL'
+    
     if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
         args.test_duration = int(args.test_duration[0:-1])
     elif args.test_duration.endswith('m') or args.test_duration.endswith('M'):
@@ -1691,11 +1780,14 @@ def main():
                                        side_b_min_rate=int(loads['download'][index]),
                                        traffic_type=args.traffic_type,
                                        tos=args.tos,
+                                       csv_direction=direction,
                                        dowebgui=args.dowebgui,
                                        test_name=args.test_name,
                                        result_dir=args.result_dir,
                                        device_list=args.device_list,
-                                       _debug_on=args.debug)
+                                       _debug_on=args.debug,
+                                       expected_passfail_val=args.expected_passfail_value,
+                                       csv_name=args.device_csv_name)
         throughput_qos.os_type()
         throughput_qos.phantom_check()
         # checking if we have atleast one device available for running test
