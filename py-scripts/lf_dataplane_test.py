@@ -502,9 +502,11 @@ INCLUDE_IN_README: False
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
+    # Test configuration
     parser.add_argument('--json',
                         help="Path to JSON configuration file for test. When specified, JSON takes precedence over command line args.",
                         default="")
+
     parser.add_argument("-u", "--upstream",
                         type=str,
                         default="",
@@ -516,12 +518,14 @@ INCLUDE_IN_README: False
     parser.add_argument("--dut",
                         default="",
                         help="Name of DUT used in test. Assumes DUT is already configured in LANforge. Example: \'linksys-8450\'")
+
     parser.add_argument("--download_speed",
                         default="",
                         help="Requested download speed used in test. Percentage of theoretical is also supported. Default: 85%%.")
     parser.add_argument("--upload_speed",
                         default="",
                         help="Requested upload speed used in test. Percentage of theoretical is also supported. Default: 0")
+
     parser.add_argument("--duration",
                         default="",
                         help="Duration of each traffic run")
@@ -529,6 +533,8 @@ INCLUDE_IN_README: False
                         default="5",
                         help="Verbosity of the report specified as single value in 1 - 11 range (whole numbers).\n"
                              "The larger the number, the more verbose. Default: 5")
+
+    # Report generation
     parser.add_argument("--graph_groups",
                         help="Path to file to save graph_groups to on local system",
                         default=None)
@@ -536,16 +542,18 @@ INCLUDE_IN_README: False
                         help="Path to directory to pull remote report data to on local system",
                         default="")
 
+    # Logging configuration
     parser.add_argument("--lf_logger_config_json",
                         help="Path to logger JSON configuration")
-    parser.add_argument('--help_summary',
-                        default=None,
-                        action="store_true",
-                        help='Show summary of what this script does')
     parser.add_argument('--logger_no_file',
                         default=None,
                         action="store_true",
                         help='Show loggingout without the trailing file name and line')
+
+    parser.add_argument('--help_summary',
+                        default=None,
+                        action="store_true",
+                        help='Show summary of what this script does')
 
     return parser.parse_args()
 
