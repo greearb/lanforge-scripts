@@ -85,6 +85,7 @@ from lf_report import lf_report
 from lf_graph import lf_bar_graph
 from lf_graph import lf_bar_graph_horizontal
 from datetime import datetime, timedelta
+from collections import defaultdict
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
@@ -461,6 +462,7 @@ class ThroughputQOS(Realm):
                 }
             )
         # Added background_run to allow the test to continue running, bypassing the duration limit for nile requirement.
+        rates_data=defaultdict(list)
         while datetime.now() < end_time or getattr(self, "background_run", None):
             index += 1
             # removed the fields query from endp so that the cx names will be given in the reponse as keys instead of cx_ids
@@ -468,27 +470,44 @@ class ThroughputQOS(Realm):
             overallresponse = self.json_get('/cx/all')
 
             try:
-                response = self.json_get('/cx/%s?' % (
-                    ','.join(self.cx_profile.created_cx.keys())))
-                del response['handler'], response['uri']
-                for item in response.items():
-                    cx_name, cx_data = item
-                    t_response[cx_name] = []
-                    for key in cx_data.keys():
-                        if key in ['bps rx a', 'bps rx b', 'rx drop % a', 'rx drop % b']:
-                            t_response[cx_name].append(cx_data[key])
-                        traffic_tos = cx_name.split('_')[-1].split('-')[0]
-                        self.real_time_data[cx_name][traffic_tos]['time'].append(datetime.now().strftime('%H:%M:%S'))
-                        self.real_time_data[cx_name][traffic_tos]['bps rx a'].append(cx_data['bps rx a'] / 1000000)
-                        self.real_time_data[cx_name][traffic_tos]['bps rx b'].append(cx_data['bps rx b'] / 1000000)
-                        self.real_time_data[cx_name][traffic_tos]['rx drop % a'].append(cx_data['rx drop % a'])
-                        self.real_time_data[cx_name][traffic_tos]['rx drop % b'].append(cx_data['rx drop % b'])
+                # for dynamic data, taken rx rate (last) from layer3 endp tab
+                l3_endp_data = list(self.json_get('/endp/list?fields=rx rate (last),rx drop %25,name')['endpoint'])
+                port_mgr_data = self.json_get('/ports/all/')['interfaces']
+                for value in port_mgr_data:
+                    for port, port_data in value.items():
+                        if port_data['parent dev'] == "wiphy0" and port in self.input_devices_list:
+                            rates_data['.'.join(port.split('.')[:2])+' rx_rate'].append(port_data['rx-rate'])
+                            rates_data['.'.join(port.split('.')[:2])+' tx_rate'].append(port_data['tx-rate'])
+                            rates_data['.'.join(port.split('.')[:2])+' RSSI'].append(port_data['signal'])
+                cx_list = list(self.cx_profile.created_cx.keys())
+                # t_response data order - [rx rate(last)_A,rx rate(last)_B,rx drop % A,rx drop %B] A or B will considered based upon the name in L3 Endps tab 
+                for cx in cx_list:
+                    t_response[cx] = [0,0,0.0,0.0]
+                for cx in cx_list:
+                    for i in l3_endp_data:
+                        key, cx_data = next(iter(i.items()))
+                        cx_name = key[0:-2]
+                        if cx == cx_name:
+                            traffic_tos = key.split('_')[-1].split('-')[0]
+                            endp = key[-1]
+                            
+                            if endp == 'A':
+                                self.real_time_data[cx_name][traffic_tos]['bps rx a'].append(cx_data['rx rate (last)'] / 1000000)
+                                t_response[cx_name][0] = cx_data['rx rate (last)']
+                                self.real_time_data[cx_name][traffic_tos]['rx drop % a'].append(cx_data['rx drop %'])
+                                t_response[cx_name][2] = cx_data['rx drop %']
+                            elif endp == 'B':
+                                self.real_time_data[cx_name][traffic_tos]['bps rx b'].append(cx_data['rx rate (last)'] / 1000000)
+                                t_response[cx_name][1] = cx_data['rx rate (last)']
+                                self.real_time_data[cx_name][traffic_tos]['rx drop % b'].append(cx_data['rx drop %'])
+                                t_response[cx_name][3] = cx_data['rx drop %']
+                                self.real_time_data[cx_name][traffic_tos]['time'].append(datetime.now().strftime('%H:%M:%S'))
             except Exception as e:
                 logger.info(overallresponse)
                 logger.error(f"None type response{e}")
-            response = t_response
-            response_values = list(response.values())
-            for value_index in range(len(response.values())):
+            response1 = t_response
+            response_values = list(response1.values())
+            for value_index in range(len(response1.values())):
                 throughput[value_index] = response_values[value_index]
             temp_upload = []
             temp_download = []
@@ -538,6 +557,10 @@ class ThroughputQOS(Realm):
                                 total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
                         'status': 'Running'
                     })
+                    # Appending latest rx_rate, tx_rate, and signal (RSSI) values to the most recent self.overall entry
+                    for col_keys,col_values in rates_data.items():
+                        self.overall[-1].update({
+                            col_keys:col_values[-1]})
                 elif self.direction == "Upload":
                     self.overall.append({
                         "BE_dl": 0,
@@ -556,6 +579,10 @@ class ThroughputQOS(Realm):
                                 total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
                         'status': 'Running'
                     })
+                    # Appending latest rx_rate, tx_rate, and signal (RSSI) values to the most recent self.overall entry
+                    for col_keys,col_values in rates_data.items():
+                        self.overall[-1].update({
+                            col_keys:col_values[-1]})
                 else:
                     self.overall.append({
                         "BE_dl": real_time_qos[0][key1]["beQOS"],
@@ -574,6 +601,10 @@ class ThroughputQOS(Realm):
                                 total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0],
                         'status': 'Running'
                     })
+                    # Appending latest rx_rate, tx_rate, and signal (RSSI) values to the most recent self.overall entry
+                    for col_keys,col_values in rates_data.items():
+                        self.overall[-1].update({
+                            col_keys:col_values[-1]})
             if self.dowebgui == "True":
                 df1 = pd.DataFrame(self.overall)
                 df1.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
