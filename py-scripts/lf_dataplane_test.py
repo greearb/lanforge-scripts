@@ -637,6 +637,7 @@ def main():
 
     CV_Test = DataplaneTest(lf_host=args.mgr,
                             lf_port=args.port,
+                            ssh_port=args.lf_ssh_port,
                             enables=args.enable,
                             disables=args.disable,
                             sets=args.set,
