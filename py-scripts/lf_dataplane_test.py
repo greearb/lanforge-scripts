@@ -554,6 +554,25 @@ INCLUDE_IN_README: False
     return parser.parse_args()
 
 
+def configure_logging(args):
+    """
+    Configure logging for execution of this script.
+
+    Any specified JSON configuration takes precedence.
+    """
+    logger_config = lf_logger_config.lf_logger_config()
+
+    if args.lf_logger_config_json:
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
+    if args.logger_no_file:
+        f = '%(created)f %(levelname)-8s %(message)s'
+        ff = logging.Formatter(fmt=f)
+        for handler in logging.getLogger().handlers:
+            handler.setFormatter(ff)
+
+
 def main():
     args = parse_args()
 
@@ -572,13 +591,7 @@ def main():
         print(help_summary)
         exit(0)
 
-    # set up logger
-    logger_config = lf_logger_config.lf_logger_config()
-
-    # lf_logger_config_json will take presidence to changing debug levels
-    if args.lf_logger_config_json:
-        logger_config.lf_logger_config_json = args.lf_logger_config_json
-        logger_config.load_lf_logger_config()
+    configure_logging(args)
 
     # use json config file
     if args.json:
@@ -621,12 +634,6 @@ def main():
             args.raw_line = json_data_tmp
 
     cv_base_adjust_parser(args)
-
-    if args.logger_no_file:
-        f = '%(created)f %(levelname)-8s %(message)s'
-        ff = logging.Formatter(fmt=f)
-        for handler in logging.getLogger().handlers:
-            handler.setFormatter(ff)
 
     CV_Test = DataplaneTest(lf_host=args.mgr,
                             lf_port=args.port,
