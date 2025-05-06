@@ -458,6 +458,7 @@ class CreateStation(Realm):
 
         logger.info("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+
         if self.initial_band_pref.upper() not in ["2.4G", "2G", "5G", "6G"]:
             logger.info("Initial band preference should be either 2G or 5G or 6G. Aborting...")
             exit(1)
