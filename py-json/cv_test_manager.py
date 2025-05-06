@@ -56,6 +56,10 @@ def cv_add_base_parser(parser):
                         type=str,
                         default="lanforge",
                         help="LANforge system password used to SSH in and pull reports")
+    parser.add_argument("--lf_ssh_port",
+                        type=int,
+                        default=22,
+                        help="LANforge system SSH port used to SSH in and pull reports")
 
     parser.add_argument("-i", "--instance_name",
                         dest="instance_name",
