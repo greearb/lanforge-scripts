@@ -208,8 +208,8 @@ class DataplaneTest(cv_test):
                  graph_groups=None,
                  test_rig="",
                  test_tag="",
-                 verbosity='5'
-                 ):
+                 verbosity='5',
+                 **kwargs):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
         # NOTE: Do not move these into the function definition.
@@ -626,28 +626,11 @@ INCLUDE_IN_README: False
 
     CV_Test = DataplaneTest(lf_host=args.mgr,
                             lf_port=args.port,
-                            lf_user=args.lf_user,
-                            lf_password=args.lf_password,
-                            instance_name=args.instance_name,
-                            config_name=args.config_name,
-                            upstream=args.upstream,
-                            pull_report=args.pull_report,
-                            local_lf_report_dir=args.local_lf_report_dir,
-                            load_old_cfg=args.load_old_cfg,
-                            download_speed=args.download_speed,
-                            upload_speed=args.upload_speed,
-                            duration=args.duration,
-                            dut=args.dut,
-                            station=args.station,
                             enables=args.enable,
                             disables=args.disable,
-                            raw_lines=args.raw_line,
-                            raw_lines_file=args.raw_lines_file,
                             sets=args.set,
-                            graph_groups=args.graph_groups,
-                            test_rig=args.test_rig,
-                            verbosity=args.verbosity
-                            )
+                            raw_lines=args.raw_line,
+                            **vars(args))
     CV_Test.setup()
     CV_Test.run()
 
