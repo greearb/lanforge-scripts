@@ -573,6 +573,55 @@ def configure_logging(args):
             handler.setFormatter(ff)
 
 
+def apply_json_overrides(args):
+    """
+    Apply JSON configuration, if specified.
+
+    JSON configuration takes precedent over arguments specified on the command line.
+    """
+    if not args.json:
+        return
+
+    if os.path.exists(args.json):
+        with open(args.json, 'r') as json_config:
+            json_data = json.load(json_config)
+    else:
+        logger.error(f"Error reading JSON configuration file '{args.json}'")
+        exit(1)
+
+    if "mgr" in json_data:
+        args.mgr = json_data["mgr"]
+    if "port" in json_data:
+        args.port = json_data["port"]
+    if "lf_user" in json_data:
+        args.lf_user = json_data["lf_user"]
+    if "lf_password" in json_data:
+        args.lf_password = json_data["lf_password"]
+    if "instance_name" in json_data:
+        args.instance_name = json_data["instance_name"]
+    if "config_name" in json_data:
+        args.config_name = json_data["config_name"]
+    if "upstream" in json_data:
+        args.upstream = json_data["upstream"]
+    if "dut" in json_data:
+        args.dut = json_data["dut"]
+    if "duration" in json_data:
+        args.duration = json_data["duration"]
+    if "station" in json_data:
+        args.station = json_data["station"]
+    if "download_speed" in json_data:
+        args.download_speed = json_data["download_speed"]
+    if "upload_speed" in json_data:
+        args.upload_speed = json_data["upload_speed"]
+    if "pull_report" in json_data:
+        args.pull_report = json_data["pull_report"]
+    if "raw_line" in json_data:
+        # the json_data is a list , need to make into a list of lists, to match command line raw_line paramaters
+        # https://www.tutorialspoint.com/convert-list-into-list-of-lists-in-python
+        json_data_tmp = [[x] for x in json_data["raw_line"]]
+        args.raw_line = json_data_tmp
+
+
 def main():
     args = parse_args()
 
@@ -592,48 +641,9 @@ def main():
         exit(0)
 
     configure_logging(args)
-
-    # use json config file
-    if args.json:
-        if os.path.exists(args.json):
-            with open(args.json, 'r') as json_config:
-                json_data = json.load(json_config)
-        else:
-            return FileNotFoundError("Error reading {}".format(args.json))
-        # json configuation takes presidence to command line
-        if "mgr" in json_data:
-            args.mgr = json_data["mgr"]
-        if "port" in json_data:
-            args.port = json_data["port"]
-        if "lf_user" in json_data:
-            args.lf_user = json_data["lf_user"]
-        if "lf_password" in json_data:
-            args.lf_password = json_data["lf_password"]
-        if "instance_name" in json_data:
-            args.instance_name = json_data["instance_name"]
-        if "config_name" in json_data:
-            args.config_name = json_data["config_name"]
-        if "upstream" in json_data:
-            args.upstream = json_data["upstream"]
-        if "dut" in json_data:
-            args.dut = json_data["dut"]
-        if "duration" in json_data:
-            args.duration = json_data["duration"]
-        if "station" in json_data:
-            args.station = json_data["station"]
-        if "download_speed" in json_data:
-            args.download_speed = json_data["download_speed"]
-        if "upload_speed" in json_data:
-            args.upload_speed = json_data["upload_speed"]
-        if "pull_report" in json_data:
-            args.pull_report = json_data["pull_report"]
-        if "raw_line" in json_data:
-            # the json_data is a list , need to make into a list of lists, to match command line raw_line paramaters
-            # https://www.tutorialspoint.com/convert-list-into-list-of-lists-in-python
-            json_data_tmp = [[x] for x in json_data["raw_line"]]
-            args.raw_line = json_data_tmp
-
     cv_base_adjust_parser(args)
+
+    apply_json_overrides(args)
 
     CV_Test = DataplaneTest(lf_host=args.mgr,
                             lf_port=args.port,
