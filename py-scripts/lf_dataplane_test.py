@@ -324,19 +324,8 @@ class DataplaneTest(cv_test):
                           blob_test_name=blob_test)
 
 
-def main():
-    help_summary = "The Candela Tech WiFi data plane test is designed to conduct an automatic testing of " \
-                   "all combinations of station types, MIMO types, Channel Bandwidths, Traffic types, " \
-                   "Traffic direction, Frame sizes etc… It will run a quick throughput test at every " \
-                   "combination of these test variables and plot all the results in a set of charts to " \
-                   "compare performance. The user is allowed to define an intended load as a percentage " \
-                   "of the max theoretical PHY rate for every test combination. The expected behavior " \
-                   "is that for every test combination the achieved throughput should be at least 70%% " \
-                   "of the theoretical max PHY rate under ideal test conditions. This test provides " \
-                   "a way to go through hundreds of combinations in a fully automated fashion and " \
-                   "very easily find patterns and problem areas which can be further " \
-                   "debugged using more specific testing."
-
+def parse_args():
+    """Parse test script arguments."""
     parser = argparse.ArgumentParser(
         prog='lf_dataplane_test',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -558,12 +547,23 @@ INCLUDE_IN_README: False
                         action="store_true",
                         help='Show loggingout without the trailing file name and line')
 
-    # TODO:  Add debug and log-level support, and propagate as needed.
-    # TODO:  Add ability to pull from a machine that is not running the
-    #   GUI, for instance when GUI is running locally against a remote LANforge system.
+    return parser.parse_args()
 
-    args = parser.parse_args()
 
+def main():
+    args = parse_args()
+
+    help_summary = "The Candela Tech WiFi data plane test is designed to conduct an automatic testing of " \
+                   "all combinations of station types, MIMO types, Channel Bandwidths, Traffic types, " \
+                   "Traffic direction, Frame sizes etc… It will run a quick throughput test at every " \
+                   "combination of these test variables and plot all the results in a set of charts to " \
+                   "compare performance. The user is allowed to define an intended load as a percentage " \
+                   "of the max theoretical PHY rate for every test combination. The expected behavior " \
+                   "is that for every test combination the achieved throughput should be at least 70%% " \
+                   "of the theoretical max PHY rate under ideal test conditions. This test provides " \
+                   "a way to go through hundreds of combinations in a fully automated fashion and " \
+                   "very easily find patterns and problem areas which can be further " \
+                   "debugged using more specific testing."
     if args.help_summary:
         print(help_summary)
         exit(0)
