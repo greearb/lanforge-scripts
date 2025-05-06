@@ -1,170 +1,161 @@
 #!/usr/bin/env python3
 """
-NAME: lf_dataplane_test.py
+NAME:       lf_dataplane_test.py
 
-PURPOSE: This script is designed to run dataplane tests under various scenarios.
+PURPOSE:    This script is designed to run dataplane tests under various scenarios.
 
-EXAMPLE:
-        # Sample cli to test Dataplane Test :
-
-        ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-        --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth1 --dut LISP_VAP_DUT
-        --duration 30s --station 1.1.wlan0 --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60'
-        --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP'
-        --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2' --raw_line 'modes: 802.11bgn-AX' --pull_report
-
-
-Example 2:
-
-        # Sample cli to test Dataplane Test with <_dp_cli_config_>.json :
-
-        ./lf_dataplane_test.py --json <name>.json
-
-        The Example/Sample json file should be :
-
-            "lf_dataplane_config.json"
-
-            Sample <name>.json between using eth1 and eth2
-            {
-                "mgr":"192.168.0.101",
-                "port":"8080",
-                "lf_user":"lanforge",
-                "lf_password":"lanforge",
-                "instance_name":"dataplane-instance",
-                "config_name":"test_con",
-                "upstream":"1.1.eth1",
-                "dut":"asus_5g",
-                "duration":"15s",
-                "station":"1.1.eth2",
-                "download_speed":"85%",
-                "upload_speed":"0",
-                "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit",
-                "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
-            }
-
-            Sample <name>.json between using eth1 and station 1.1.sta0002
-            {
-                "mgr":"192.168.0.101",
-                "port":"8080",
-                "lf_user":"lanforge",
-                "lf_password":"lanforge",
-                "instance_name":"dataplane-instance",
-                "config_name":"test_con",
-                "upstream":"1.1.eth1",
-                "dut":"asus_5g",
-                "duration":"15s",
-                "station":"1.1.sta0002",
-                "download_speed":"85%",
-                "upload_speed":"0",
-                "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit",
-                "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
-            }
-
-SCRIPT_CLASSIFICATION:  Test
-
-SCRIPT_CATEGORIES:   Performance,  Functional,  KPI Generation,  Report Generation
-
-NOTES:
-        This script is used to automate running Dataplane tests.  You may need to view a Dataplane test
-        configured through the GUI to understand the options and how best to input data.
-
-        Note :
-                To Run this script gui should be opened with
-
-                path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
-                        pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
-                        ./lfclient.bash -cli-socket 3990
-
-        ---> lf_dataplane_test.py is designed to run dataplane tests under various scenarios.
+EXAMPLE:    # Sample cli to test Dataplane Test :
 
             ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-            --instance_name <instance name> --config_name test_con --upstream <upstream port> --dut <dut name>
-            --duration <test duration> --station <staion name> --download_speed <download rate> --upload_speed <Opposit rate>
-            --raw_line 'pkts: 60' --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit'
-            --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2'
-            --raw_line 'modes: 802.11bgn-AX' --pull_report
+            --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth1 --dut LISP_VAP_DUT
+            --duration 30s --station 1.1.wlan0 --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60'
+            --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP'
+            --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2' --raw_line 'modes: 802.11bgn-AX' --pull_report
 
-            *   --raw_line : 'line contents' will add any setting to the test config.  This is useful way to support
-                        any options not specifically enabled by the command options.
+Example 2:  # Sample cli to test Dataplane Test with <_dp_cli_config_>.json :
 
-            *  --set modifications will be applied after the other config has happened, so it can be used to
-                        override any other config.
+            ./lf_dataplane_test.py --json <name>.json
 
-    Example of raw text config for Dataplane, to show other possible options:
+            The Example/Sample json file should be :
 
-    show_events: 1
-    show_log: 0
-    port_sorting: 0
-    kpi_id: Dataplane Pkt-Size
-    notes0: ec5211 in bridge mode, wpa2 auth.
-    bg: 0xE0ECF8
-    test_rig:
-    show_scan: 1
-    auto_helper: 0
-    skip_2: 0
-    skip_5: 0
-    skip_5b: 1
-    skip_dual: 0
-    skip_tri: 1
-    selected_dut: ea8300
-    duration: 15000
-    traffic_port: 1.1.157 sta01500
-    upstream_port: 1.1.2 eth2
-    path_loss: 10
-    speed: 85%
-    speed2: 0Kbps
-    min_rssi_bound: -150
-    max_rssi_bound: 0
-    channels: AUTO
-    modes: Auto
-    pkts: Custom;60;142;256;512;1024;MTU
-    spatial_streams: AUTO
-    security_options: AUTO
-    bandw_options: AUTO
-    traffic_types: UDP;TCP
-    directions: DUT Transmit;DUT Receive
-    txo_preamble: OFDM
-    txo_mcs: 0 CCK, OFDM, HT, VHT
-    txo_retries: No Retry
-    txo_sgi: OFF
-    txo_txpower: 15
-    attenuator: 0
-    attenuator2: 0
-    attenuator_mod: 255
-    attenuator_mod2: 255
-    attenuations: 0..+50..950
-    attenuations2: 0..+50..950
-    chamber: 0
-    tt_deg: 0..+45..359
-    cust_pkt_sz: 88 1200
-    show_bar_labels: 1
-    show_prcnt_tput: 0
-    show_3s: 0
-    show_ll_graphs: 0
-    show_gp_graphs: 1
-    show_1m: 1
-    pause_iter: 0
-    outer_loop_atten: 0
-    show_realtime: 1
-    operator:
-    mconn: 1
-    mpkt: 1000
-    tos: 0
-    loop_iterations: 1
+                "lf_dataplane_config.json"
 
+                Sample <name>.json between using eth1 and eth2
+                {
+                    "mgr":"192.168.0.101",
+                    "port":"8080",
+                    "lf_user":"lanforge",
+                    "lf_password":"lanforge",
+                    "instance_name":"dataplane-instance",
+                    "config_name":"test_con",
+                    "upstream":"1.1.eth1",
+                    "dut":"asus_5g",
+                    "duration":"15s",
+                    "station":"1.1.eth2",
+                    "download_speed":"85%",
+                    "upload_speed":"0",
+                    "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit",
+                    "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
+                }
 
-STATUS: Functional
+                Sample <name>.json between using eth1 and station 1.1.sta0002
+                {
+                    "mgr":"192.168.0.101",
+                    "port":"8080",
+                    "lf_user":"lanforge",
+                    "lf_password":"lanforge",
+                    "instance_name":"dataplane-instance",
+                    "config_name":"test_con",
+                    "upstream":"1.1.eth1",
+                    "dut":"asus_5g",
+                    "duration":"15s",
+                    "station":"1.1.sta0002",
+                    "download_speed":"85%",
+                    "upload_speed":"0",
+                    "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit",
+                    "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
+                }
 
-VERIFIED_ON:   11-MAY-2023,
-             GUI Version:  5.4.6
-             Kernel Version: 6.2.14+
+SCRIPT_CLASSIFICATION:
+            Test
 
-LICENSE:
-          Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
+SCRIPT_CATEGORIES:
+            Performance,  Functional,  KPI Generation,  Report Generation
 
-INCLUDE_IN_README: False
+NOTES:      This script is used to automate running Dataplane tests.  You may need to view a Dataplane test
+            configured through the GUI to understand the options and how best to input data.
 
+            Note :
+                    To Run this script gui should be opened with
+
+                    path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
+                            pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
+                            ./lfclient.bash -cli-socket 3990
+
+            ---> lf_dataplane_test.py is designed to run dataplane tests under various scenarios.
+
+                ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
+                --instance_name <instance name> --config_name test_con --upstream <upstream port> --dut <dut name>
+                --duration <test duration> --station <staion name> --download_speed <download rate> --upload_speed <Opposit rate>
+                --raw_line 'pkts: 60' --raw_line 'cust_pkt_sz: 88 1200' --raw_line 'directions: DUT Transmit'
+                --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20' --raw_line 'spatial_streams: 2'
+                --raw_line 'modes: 802.11bgn-AX' --pull_report
+
+                *   --raw_line : 'line contents' will add any setting to the test config.  This is useful way to support
+                            any options not specifically enabled by the command options.
+
+                *  --set modifications will be applied after the other config has happened, so it can be used to
+                            override any other config.
+
+            Example of raw text config for Dataplane, to show other possible options:
+
+            show_events: 1
+            show_log: 0
+            port_sorting: 0
+            kpi_id: Dataplane Pkt-Size
+            notes0: ec5211 in bridge mode, wpa2 auth.
+            bg: 0xE0ECF8
+            test_rig:
+            show_scan: 1
+            auto_helper: 0
+            skip_2: 0
+            skip_5: 0
+            skip_5b: 1
+            skip_dual: 0
+            skip_tri: 1
+            selected_dut: ea8300
+            duration: 15000
+            traffic_port: 1.1.157 sta01500
+            upstream_port: 1.1.2 eth2
+            path_loss: 10
+            speed: 85%
+            speed2: 0Kbps
+            min_rssi_bound: -150
+            max_rssi_bound: 0
+            channels: AUTO
+            modes: Auto
+            pkts: Custom;60;142;256;512;1024;MTU
+            spatial_streams: AUTO
+            security_options: AUTO
+            bandw_options: AUTO
+            traffic_types: UDP;TCP
+            directions: DUT Transmit;DUT Receive
+            txo_preamble: OFDM
+            txo_mcs: 0 CCK, OFDM, HT, VHT
+            txo_retries: No Retry
+            txo_sgi: OFF
+            txo_txpower: 15
+            attenuator: 0
+            attenuator2: 0
+            attenuator_mod: 255
+            attenuator_mod2: 255
+            attenuations: 0..+50..950
+            attenuations2: 0..+50..950
+            chamber: 0
+            tt_deg: 0..+45..359
+            cust_pkt_sz: 88 1200
+            show_bar_labels: 1
+            show_prcnt_tput: 0
+            show_3s: 0
+            show_ll_graphs: 0
+            show_gp_graphs: 1
+            show_1m: 1
+            pause_iter: 0
+            outer_loop_atten: 0
+            show_realtime: 1
+            operator:
+            mconn: 1
+            mpkt: 1000
+            tos: 0
+            loop_iterations: 1
+
+STATUS:     Functional
+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc.
+
+INCLUDE_IN_README:
+            False
 """
 import sys
 import os
