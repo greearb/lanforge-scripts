@@ -410,6 +410,7 @@ class ThroughputQOS(Realm):
         print("Monitoring cx and endpoints")
         end_time = start_time + timedelta(seconds=int(self.test_duration))
         self.overall = []
+        self.df_for_webui = []
         index = -1
         connections_upload = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
         connections_download = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
@@ -461,10 +462,13 @@ class ThroughputQOS(Realm):
                     }
                 }
             )
+        previous_time = datetime.now()
+        time_break = 0
         # Added background_run to allow the test to continue running, bypassing the duration limit for nile requirement.
         rates_data=defaultdict(list)
         while datetime.now() < end_time or getattr(self, "background_run", None):
             index += 1
+            current_time = datetime.now()
             # removed the fields query from endp so that the cx names will be given in the reponse as keys instead of cx_ids
             t_response = {}
             overallresponse = self.json_get('/cx/all')
@@ -561,6 +565,11 @@ class ThroughputQOS(Realm):
                     for col_keys,col_values in rates_data.items():
                         self.overall[-1].update({
                             col_keys:col_values[-1]})
+                    # Appending the data according to the time gap (for webgui)
+                    if self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
+                        self.df_for_webui.append(self.overall[-1])
+                        previous_time = current_time
+                        
                 elif self.direction == "Upload":
                     self.overall.append({
                         "BE_dl": 0,
@@ -583,6 +592,10 @@ class ThroughputQOS(Realm):
                     for col_keys,col_values in rates_data.items():
                         self.overall[-1].update({
                             col_keys:col_values[-1]})
+                    # Appending the data according to the time gap (for webgui)
+                    if self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
+                        self.df_for_webui.append(self.overall[-1])
+                        previous_time = current_time
                 else:
                     self.overall.append({
                         "BE_dl": real_time_qos[0][key1]["beQOS"],
@@ -605,8 +618,12 @@ class ThroughputQOS(Realm):
                     for col_keys,col_values in rates_data.items():
                         self.overall[-1].update({
                             col_keys:col_values[-1]})
+                    # Appending the data according to the time gap (for webgui)
+                    if self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
+                        self.df_for_webui.append(self.overall[-1])
+                        previous_time = current_time
             if self.dowebgui == "True":
-                df1 = pd.DataFrame(self.overall)
+                df1 = pd.DataFrame(self.df_for_webui)
                 df1.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
 
                 with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name), 'r') as file:
@@ -614,40 +631,41 @@ class ThroughputQOS(Realm):
                     if data["status"] != "Running":
                         logger.warning('Test is stopped by the user')
                         break
+                # Adjust time_gap based on elapsed time since start (for webui)
                 d = datetime.now()
                 if d - start_time <= timedelta(hours=1):
-                    time.sleep(5)
+                    time_break = 5
                 elif d - start_time > timedelta(hours=1) or d - start_time <= timedelta(
                         hours=6):
                     if end_time - d < timedelta(seconds=10):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(10)
+                        time_break = 10
                 elif d - start_time > timedelta(hours=6) or d - start_time <= timedelta(
                         hours=12):
                     if end_time - d < timedelta(seconds=30):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(30)
+                        time_break = 30
                 elif d - start_time > timedelta(hours=12) or d - start_time <= timedelta(
                         hours=24):
                     if end_time - d < timedelta(seconds=60):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(60)
+                        time_break = 60
                 elif d - start_time > timedelta(hours=24) or d - start_time <= timedelta(
                         hours=48):
                     if end_time - d < timedelta(seconds=60):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(90)
+                        time_break = 90
                 elif d - start_time > timedelta(hours=48):
                     if end_time - d < timedelta(seconds=120):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(120)
+                        time_break = 120
             else:
-                time.sleep(1)
+                time_break = 1
             # average upload download and drop is calculated
             for ind, k in enumerate(throughput):
                 avg_upload[ind].append(throughput[ind][1])
@@ -1731,10 +1749,10 @@ def main():
         last_entry["timestamp"] = datetime.now().strftime("%d/%m %I:%M:%S %p")
         last_entry["remaining_time"] = "0"
         last_entry["end_time"] = last_entry["timestamp"]
-        throughput_qos.overall.append(
+        throughput_qos.df_for_webui.append(
             last_entry
         )
-        df1 = pd.DataFrame(throughput_qos.overall)
+        df1 = pd.DataFrame(throughput_qos.df_for_webui)
         df1.to_csv('{}/overall_throughput.csv'.format(args.result_dir, ), index=False)
 
         # copying to home directory i.e home/user_name
