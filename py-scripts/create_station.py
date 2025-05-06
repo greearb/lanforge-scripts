@@ -459,12 +459,8 @@ class CreateStation(Realm):
         logger.info("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
 
-        if self.initial_band_pref.upper() not in ["2.4G", "2G", "5G", "6G"]:
-            logger.info("Initial band preference should be either 2G or 5G or 6G. Aborting...")
-            exit(1)
-        else:
-            band_pref = int(self.initial_band_pref[0])
-            self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
+        band_pref = {"2.4GHz": 2, "5GHz": 5, "6GHz": 6}.get(self.initial_band_pref, 0)
+        self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
         if not self.eap_method:
             # Not 802.1X, but user may have specified other parameters
             #
@@ -985,9 +981,8 @@ INCLUDE_IN_README:
                           help="Mention the custom wifi command.")
     optional.add_argument("--initial_band_pref",
                           type=str,
-                          default="0",
-                          help="Specify the initial band preference for created stations: '2G' for 2.4GHz,\n"
-                          "'5G' for 5GHz, or '6G' for 6GHz.")
+                          choices=["2.4GHz", "5GHz", "6GHz"],
+                          help="Specify the initial band preference for created stations 2.4GHz, 5GHz or 6GHz")
 
     return parser.parse_args()
 
