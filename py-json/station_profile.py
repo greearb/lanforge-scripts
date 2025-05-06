@@ -23,7 +23,7 @@ class StationProfile:
     def __init__(self, lfclient_url, local_realm,
                  ssid="NA",
                  ssid_pass="NA",
-                 bssid='DEFAULT', # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
+                 bssid='DEFAULT',  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
                  security="open",
                  number_template_="00000",
                  mode=0,  # shouldn't this be -1 or AUTO?
@@ -99,6 +99,22 @@ class StationProfile:
             "password": None,
             "realm": None,
             "domain": None
+        }
+        self.wifi_extra2_data_modified = False
+        self.wifi_extra2_data = {
+            "shelf": 1,
+            "resource": 1,
+            "port": None,
+            "req_flush": None,
+            "ignore_probe": None,
+            "ignore_auth": None,
+            "ignore_assoc": None,
+            "ignore_reassoc": None,
+            "post_ifup_script": None,
+            "ocsp": 0,
+            "venue_id": None,
+            "initial_band_pref": 0,
+            "bss_color": None
         }
         self.wifi_txo_data_modified = False
         self.wifi_txo_data = {
@@ -211,6 +227,41 @@ class StationProfile:
         self.wifi_extra_data["network_auth_type"] = network_auth_type
         self.wifi_extra_data["anqp_3gpp_cell_net"] = anqp_3gpp_cell_net
 
+    def set_wifi_extra2(self, req_flush="[BLANK]",
+                        ignore_probe="[BLANK]",
+                        ignore_auth="[BLANK]",
+                        ignore_assoc="[BLANK]",
+                        ignore_ressoc="[BLANK]",
+                        corrupt_gtk_rekey_mic="[BLANK]",
+                        radius_ip="[BLANK]",
+                        radius_port="[BLANK]",
+                        freq_24="[BLANK]",
+                        freq_5="[BLANK]",
+                        post_ifup_script="[BLANK]",
+                        ocsp="[BLANK]",
+                        venue_id="[BLANK]",
+                        sae_pwe="[BLANK]",
+                        initial_band_pref=0,
+                        bss_color="[BLANK]"
+                        ):
+        self.wifi_extra2_data_modified = True
+        self.wifi_extra2_data["req_flush"] = req_flush
+        self.wifi_extra2_data["ignore_probe"] = ignore_probe
+        self.wifi_extra2_data["ignore_auth"] = ignore_auth
+        self.wifi_extra2_data["ignore_assoc"] = ignore_assoc
+        self.wifi_extra2_data["ignore_reassoc"] = ignore_ressoc
+        self.wifi_extra2_data["corrupt_gtk_rekey_mic"] = corrupt_gtk_rekey_mic
+        self.wifi_extra2_data["radius_ip"] = radius_ip
+        self.wifi_extra2_data["radius_port"] = radius_port
+        self.wifi_extra2_data["freq_24"] = freq_24
+        self.wifi_extra2_data["freq_5"] = freq_5
+        self.wifi_extra2_data["post_ifup_script"] = post_ifup_script
+        self.wifi_extra2_data["ocsp"] = ocsp
+        self.wifi_extra2_data["venue_id"] = venue_id
+        self.wifi_extra2_data["sae_pwe"] = sae_pwe
+        self.wifi_extra2_data["initial_band_pref"] = initial_band_pref
+        self.wifi_extra2_data["bss_color"] = bss_color
+
     def set_reset_extra(self, reset_port_enable=False, test_duration=0, reset_port_min_time=0, reset_port_max_time=0):
         self.reset_port_extra_data["reset_port_enable"] = reset_port_enable
         self.reset_port_extra_data["test_duration"] = test_duration
@@ -229,12 +280,12 @@ class StationProfile:
     #   - 'wpa3'
     def use_security(self, security_type, ssid=None, passwd=None):
         SECURITY_TYPES = {
-            "open":    "[BLANK]",
-            "owe":     "use-owe",
-            "wep":     "wep_enable",
-            "wpa":     "wpa_enable",
-            "wpa2":    "wpa2_enable",
-            "wpa3":    "use-wpa3"
+            "open": "[BLANK]",
+            "owe": "use-owe",
+            "wep": "wep_enable",
+            "wpa": "wpa_enable",
+            "wpa2": "wpa2_enable",
+            "wpa3": "use-wpa3"
         }
 
         # This logic assumes security type must be all lowercase,
@@ -487,6 +538,8 @@ class StationProfile:
                                                               set_port.set_port_interest_flags)
         self.wifi_extra_data["resource"] = radio_resource
         self.wifi_extra_data["shelf"] = radio_shelf
+        self.wifi_extra2_data["resource"] = radio_resource
+        self.wifi_extra2_data["shelf"] = radio_shelf
         self.wifi_txo_data["resource"] = radio_resource
         self.wifi_txo_data["shelf"] = radio_shelf
         self.reset_port_extra_data["resource"] = radio_resource
@@ -497,6 +550,7 @@ class StationProfile:
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta", debug_=debug)
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port", debug_=debug)
         wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra", debug_=debug)
+        wifi_extra2_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra2", debug_=debug)
         wifi_txo_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_txo", debug_=debug)
         # add radio here
         if num_stations and not sta_names_:
@@ -586,11 +640,16 @@ class StationProfile:
 
             self.wifi_extra_data["resource"] = radio_resource
             self.wifi_extra_data["port"] = name
+            self.wifi_extra2_data["resource"] = radio_resource
+            self.wifi_extra2_data["port"] = name
             self.wifi_txo_data["resource"] = radio_resource
             self.wifi_txo_data["port"] = name
             if self.wifi_extra_data_modified:
                 wifi_extra_r.addPostData(self.wifi_extra_data)
                 wifi_extra_r.jsonPost(debug)
+            if self.wifi_extra2_data_modified:
+                wifi_extra2_r.addPostData(self.wifi_extra2_data)
+                wifi_extra2_r.jsonPost(debug)
             if self.wifi_txo_data_modified:
                 wifi_txo_r.addPostData(self.wifi_txo_data)
                 wifi_txo_r.jsonPost(debug)
