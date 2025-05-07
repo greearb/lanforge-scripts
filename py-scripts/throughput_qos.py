@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
-
 """
 NAME:       throughput_qos.py
 
