@@ -2,70 +2,67 @@
 # flake8: noqa
 
 """
-NAME: throughput_qos.py
+NAME:       throughput_qos.py
 
-PURPOSE: throughput_qos.py will create stations, layer3 cross connections and allows user to run the qos traffic
-with particular tos on 2.4GHz and 5GHz bands in upload, download directions.
+PURPOSE:    Configure WiFi throughput tests with varying ToS, rate, direction and more.
+            Includes support for creating basic stations (open and personal authentication).
 
-EXAMPLE-1:
-Command Line Interface to run download scenario with tos : Voice , bands : 2.4GHz
-python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
---ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m
---download 1000000 --upload 0 --traffic_type lf_udp --tos "VO" --create_sta
+NOTES:      Desired TOS must be specified with abbreviated name in all capital letters,
+            for example '--tos "BK,VI,BE,VO"'
 
-EXAMPLE-2:
-Command Line Interface to run download scenario with tos : Voice and Video , bands : 5GHz
-python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1
---ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m
---download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+            Stations will not be created unless the '--create_sta' argument is specified.
 
-EXAMPLE-3:
-Command Line Interface to run download scenario with tos : Voice and Video , bands : 6GHz
-python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
---ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
---download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+            For running the test in dual-band and tri-band configurations, --bands dualband,
+            the number of stations used on each band will be split across the number of utilized bands.
+            For example, if '--num_stations 64' is specified, then 32 2.4GHz and 32 5GHz stations will be used.
 
-EXAMPLE-4:
-Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz
-python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
---ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123
---security_5g wpa2 --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
---traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+EXAMPLES:   # Run download scenario with Voice TOS in 2.4GHz band
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
+                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m
+                --download 1000000 --upload 0 --traffic_type lf_udp --tos "VO" --create_sta
 
-EXAMPLE-5:
-Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz , security : open
-python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
---ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK]
---security_5g open --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
---traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Run download scenario with Voice and Video TOS in 5GHz band
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1
+                --ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m
+                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
 
-EXAMPLE-6:
-Command Line Interface to run bi-directional scenario with tos : Video and Voice , bands : 6GHz
-python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
---ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
---download 1000000 --upload 10000000 --traffic_type lf_udp --tos "VO,VI" --create_sta
+            # Run download scenario with Voice and Video TOS in 6GHz band
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
+                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
+                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
 
-SCRIPT_CLASSIFICATION :  Test
+            # Run upload scenario with Background, Best Effort, Video, and Voice TOS in 2.4GHz and 5GHz bands
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
+                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123
+                --security_5g wpa2 --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
 
-SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
+            # Run upload scenario with Background, Best Effort, Video and Voice TOS in 2.4GHz and 5GHz bands with 'Open' security
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
+                --ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK]
+                --security_5g open --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
 
-NOTES:
-1.Use './throughput_qos.py --help' to see command line usage and options
-2.Please pass tos in CAPITALS as shown :"BK,VI,BE,VO" Eg : --tos "BK,BE,VO,VI"
-3.Please enter the download or upload intended rate in bps
-4.For running the test with --bands dualband, the number of stations created on each band will be based on entered --num_stations
-Eg: if --num_stations 64 is given then 32 stations will be created on 2.4GHz and 32 stations will be created on 5GHz band.
+            # Run bi-directional scenario with Video and Voice TOS in 6GHz band
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
+                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
+                --download 1000000 --upload 10000000 --traffic_type lf_udp --tos "VO,VI" --create_sta
 
-STATUS: BETA RELEASE
+SCRIPT_CLASSIFICATION:
+            Test
+
+SCRIPT_CATEGORIES:
+            Performance,  Functional, Report Generation
+
+STATUS:     Beta Release
 
 VERIFIED_ON:
-Working date - 03/08/2023
-Build version - 5.4.6
-kernel version - 6.2.16+
+            Working date:   03/08/2023
+            Build version:  5.4.6
+            kernel version: 6.2.16+
 
-License: Free to distribute and modify. LANforge systems must be licensed.
-Copyright 2023 Candela Technologies Inc.
-
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
 """
 
 from datetime import datetime, timedelta
@@ -366,7 +363,7 @@ class ThroughputQOS(Realm):
                     self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
                     self.station_profile.create(radio=self.radio_6g, sta_names_=self.sta_list[split_2:], debug=self.debug)
 
-    # Bring all stations up
+                # Bring all stations up
                 self.station_profile.admin_up()
                 # check here if upstream port got IP
                 temp_stations = self.station_profile.station_names.copy()
@@ -1338,76 +1335,67 @@ def main():
             Create stations and endpoints and runs L3 traffic with various IP type of service(BK |  BE | Video | Voice)
             ''',
         description='''\
+NAME:       throughput_qos.py
 
-        NAME: throughput_qos.py
+PURPOSE:    Configure WiFi throughput tests with varying ToS, rate, direction and more.
+            Includes support for creating basic stations (open and personal authentication).
 
-        PURPOSE: throughput_qos.py will create stations, layer3 cross connections and allows user to run the qos traffic
-        with particular tos on 2.4GHz, 5GHz and 6GHz bands in upload, download directions.
+NOTES:      Desired TOS must be specified with abbreviated name in all capital letters,
+            for example '--tos "BK,VI,BE,VO"'
 
-        EXAMPLE-1:
-        Command Line Interface to run download scenario with tos : Voice , bands : 2.4GHz
-        python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
-        --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m
-        --download 1000000 --upload 0 --traffic_type lf_udp --tos "VO" --create_sta
+            Stations will not be created unless the '--create_sta' argument is specified.
 
-        EXAMPLE-2:
-        Command Line Interface to run download scenario with tos : Voice and Video , bands : 5GHz
-        python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1
-        --ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m
-        --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+            For running the test in dual-band and tri-band configurations, --bands dualband,
+            the number of stations used on each band will be split across the number of utilized bands.
+            For example, if '--num_stations 64' is specified, then 32 2.4GHz and 32 5GHz stations will be used.
 
-        EXAMPLE-3:
-        Command Line Interface to run download scenario with tos : Voice and Video , bands : 6GHz
-        python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
-        --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
-        --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+EXAMPLES:   # Run download scenario with Voice TOS in 2.4GHz band
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
+                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m
+                --download 1000000 --upload 0 --traffic_type lf_udp --tos "VO" --create_sta
 
-        EXAMPLE-4:
-        Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz
-        python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
-        --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123
-        --security_5g wpa2 --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-        --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Run download scenario with Voice and Video TOS in 5GHz band
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1
+                --ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m
+                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
 
-        python3 throughput_qos.py --ap_name ASUS --mgr 192.168.206.70 --mgr_port 8080 --num_stations 4 --radio_2g wiphy1
-        --ssid_2g ASUS_2.4G --passwd_2g Password@123 --security_2g wpa2 --radio_5g wiphy2 --ssid_5g ASUS_5G --passwd_5g Password@123
-        --security_5g wpa2 --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-        --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Run download scenario with Voice and Video TOS in 6GHz band
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
+                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
+                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
 
-        EXAMPLE-5:
-        Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice , bands : 2.4GHz and 5GHz , security : open
-        python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
-        --ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK]
-        --security_5g open --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-        --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Run upload scenario with Background, Best Effort, Video, and Voice TOS in 2.4GHz and 5GHz bands
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
+                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123
+                --security_5g wpa2 --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
 
-        EXAMPLE-6:
-        Command Line Interface to run bi-directional scenario with tos : Video and Voice , bands : 6GHz
-        python3 throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
-        --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
-        --download 1000000 --upload 10000000 --traffic_type lf_udp --tos "VO,VI" --create_sta
+            # Run upload scenario with Background, Best Effort, Video and Voice TOS in 2.4GHz and 5GHz bands with 'Open' security
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
+                --ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK]
+                --security_5g open --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
 
-        SCRIPT_CLASSIFICATION :  Test
+            # Run bi-directional scenario with Video and Voice TOS in 6GHz band
+            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
+                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
+                --download 1000000 --upload 10000000 --traffic_type lf_udp --tos "VO,VI" --create_sta
 
-        SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
+SCRIPT_CLASSIFICATION:
+            Test
 
-        NOTES:
-        1.Use './throughput_qos.py --help' to see command line usage and options
-        2.Please pass tos in CAPITALS as shown :"BK,VI,BE,VO" Eg : --tos "BK,BE,VO,VI"
-        3.Please enter the download or upload intended rate in bps
-        4.For running the test with --bands dualband, the number of stations created on each band will be based on entered --num_stations
-        Eg: if --num_stations 64 is given then 32 stations will be created on 2.4GHz and 32 stations will be created on 5GHz band.
+SCRIPT_CATEGORIES:
+            Performance,  Functional, Report Generation
 
-        STATUS: BETA RELEASE
+STATUS:     Beta Release
 
-        VERIFIED_ON:
-        Working date - 03/08/2023
-        Build version - 5.4.6
-        kernel version - 6.2.16+
+VERIFIED_ON:
+            Working date:   03/08/2023
+            Build version:  5.4.6
+            kernel version: 6.2.16+
 
-        License: Free to distribute and modify. LANforge systems must be licensed.
-        Copyright 2023 Candela Technologies Inc.
-
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
 ''')
     parser.add_argument('--mode', help='Used to force mode of stations', default="0")
     parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=False)
