@@ -1,78 +1,73 @@
 #!/usr/bin/env python3
+r"""
+NAME:       lf_create_vap_cv.py
 
-"""
-NAME: lf_create_vap_cv.py
+PURPOSE:    Create a VAP (virtual access point) using LANforge Chamber View
 
-PURPOSE:
-    This script will create a vap using chamberview based upon a user defined frequency.
+EXAMPLE:    Use './lf_create_vap_cv.py --help' to see command line usage and options
 
-EXAMPLE:
-    Use './lf_create_vap_cv.py --help' to see command line usage and options
+            # Configure a basic 2.4GHz vAP with default DHCP server capabilities
+            ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
+                --delete_old_scenario --scenario_name Automation --vap_radio wiphy0 --set_upstream True
+                --vap_freq 2437 --vap_ssid routed-AP --vap_passwd something --vap_security wpa2 --vap_bw 20
 
-    ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-        --delete_old_scenario --scenario_name Automation --vap_radio wiphy0 --set_upstream True
-        --vap_freq 2437 --vap_ssid routed-AP --vap_passwd something --vap_security wpa2 --vap_bw 20
+            # Configure a 2.4GHz vAP with adjusted DHCP server capabilities (namely larger subnet mask and lease range)
+            ./lf_create_vap_cv.py --mgr 192.168.200.138 --port 8080 --delete_old_scenario --scenario_name hello
+            --vap_radio 1.1.wiphy0 --vap_freq 2437 --vap_ssid testings --vap_passwd Password@123 --vap_security wpa2 --num_vaps 2
+            --vap_bw 20 --vap_ip 192.168.0.16 --vap_ip_mask 255.255.0.0 --dhcp_min_range 192.168.0.5 --dhcp_max_range 192.168.0.200
 
-    # For modify the net-smith dhcp min and max range
-    python3 ./lf_create_vap_cv.py --mgr 192.168.200.138 --port 8080 --delete_old_scenario --scenario_name hello
-    --vap_radio 1.1.wiphy0 --vap_freq 2437 --vap_ssid testings --vap_passwd Password@123 --vap_security wpa2 --num_vaps 2
-    --vap_bw 20 --vap_ip 192.168.0.16 --vap_ip_mask 255.255.0.0 --dhcp_min_range 192.168.0.5 --dhcp_max_range 192.168.0.200
+            # Load an existing Chamber View scenario
+            ./lf_create_vap_cv.py --mgr 192.168.200.222 --port 8080 --load_existing_scenario --old_scenario_name hello --instance_name oldscenario
 
-    vs_code launch.json example:
-    "args": ["--mgr","localhost",
-             "--port","8080",
-             "--lf_user","lanforge",
-             "--lf_password","lanforge",
-             "--vap_radio","wiphy0",
-             "--vap_freq","36",
-             "--vap_ssid","test_vap",
-             "--vap_passwd","password",
-             "--vap_security","wpa2",
-             "--vap_upstream_port","1.1.eth1"
+            # Basic 2.4GHz vAP configuration using VSCode launch JSON
+            "args": ["--mgr","localhost",
+                "--port", "8080",
+                "--lf_user", "lanforge",
+                "--lf_password", "lanforge",
+                "--vap_radio", "wiphy0",
+                "--vap_freq", "36",
+                "--vap_ssid", "test_vap",
+                "--vap_passwd", "password",
+                "--vap_security", "wpa2",
+                "--vap_upstream_port", "1.1.eth1"
             ]
 
+            # Basic 5GHz vAP configuration using VSCode launch JSON
             "args": ["--mgr","192.168.0.104",
-            "--port","8080",
-            "--lf_user","lanforge",
-            "--lf_password","lanforge",
-            "--delete_old_scenario",
-            "--scenario_name","dfs",
-            "--vap_radio","wiphy3",
-            "--vap_freq","5660",
-            "--vap_ssid","mtk7915_5g",
-            "--vap_passwd","lf_mtk7915_5g",
-            "--vap_security","wpa2",
-            "--vap_bw","20",
-            "--vap_upstream_port","1.1.eth2"
+                "--port", "8080",
+                "--lf_user", "lanforge",
+                "--lf_password", "lanforge",
+                "--delete_old_scenario",
+                "--scenario_name", "dfs",
+                "--vap_radio", "wiphy3",
+                "--vap_freq", "5660",
+                "--vap_ssid", "mtk7915_5g",
+                "--vap_passwd", "lf_mtk7915_5g",
+                "--vap_security", "wpa2",
+                "--vap_bw", "20",
+                "--vap_upstream_port", "1.1.eth2"
             ]
 
-    # for loading existing scenario use
-    python3 ./lf_create_vap_cv.py --mgr 192.168.200.222 --port 8080  --load_existing_scenario --old_scenario_name hello --instance_name oldscenario
+SCRIPT_CLASSIFICATION:
+            Creation
 
-SCRIPT_CLASSIFICATION:  Creation
+SCRIPT_CATEGORIES:
+            Functional
 
-SCRIPT_CATEGORIES: Functional
+NOTES:      This script leverages LANforge Chamber View automation, including profiles
+            and Chamber View Scenarios in order to create and configure the desired vAP.
 
-
-NOTES:
-
-This script creates
-1. Chamber view scenario for vap
-2. Vap profile with given parameters
-
-STATUS:   BETA RELEASE
+STATUS:     BETA RELEASE
 
 VERIFIED_ON:
-Working date : 05-July-2023
-Build version: 5.4.6
-Kernel version: 6.2.16+
+            Working date:   05-July-2023
+            Build version:  5.4.6
+            Kernel version: 6.2.16+
 
-LICENSE:
-    Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2023 Candela Technologies Inc
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
 
 INCLUDE_IN_README: False
-
 """
 import sys
 import os
@@ -301,77 +296,75 @@ def main():
     parser = argparse.ArgumentParser(
         prog="lf_create_vap_cv.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        description="""
+        description=r"""
+NAME:       lf_create_vap_cv.py
 
-NAME: lf_create_vap_cv.py
+PURPOSE:    Create a VAP (virtual access point) using LANforge Chamber View
 
-PURPOSE:
-    This script will create a vap using chamberview based upon a user defined frequency.
+EXAMPLE:    Use './lf_create_vap_cv.py --help' to see command line usage and options
 
-EXAMPLE:
-    Use './lf_create_vap_cv.py --help' to see command line usage and options
+            # Configure a basic 2.4GHz vAP with default DHCP server capabilities
+            ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
+                --delete_old_scenario --scenario_name Automation --vap_radio wiphy0 --set_upstream True
+                --vap_freq 2437 --vap_ssid routed-AP --vap_passwd something --vap_security wpa2 --vap_bw 20
 
-    ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-        --delete_old_scenario --scenario_name Automation --vap_radio wiphy0 --set_upstream True
-        --vap_freq 2437 --vap_ssid routed-AP --vap_passwd something --vap_security wpa2 --vap_bw 20
+            # Configure a 2.4GHz vAP with adjusted DHCP server capabilities (namely larger subnet mask and lease range)
+            ./lf_create_vap_cv.py --mgr 192.168.200.138 --port 8080 --delete_old_scenario --scenario_name hello
+            --vap_radio 1.1.wiphy0 --vap_freq 2437 --vap_ssid testings --vap_passwd Password@123 --vap_security wpa2 --num_vaps 2
+            --vap_bw 20 --vap_ip 192.168.0.16 --vap_ip_mask 255.255.0.0 --dhcp_min_range 192.168.0.5 --dhcp_max_range 192.168.0.200
 
-    # For modify the net-smith dhcp min and max range
-    python3 ./lf_create_vap_cv.py --mgr 192.168.200.138 --port 8080 --delete_old_scenario --scenario_name hello
-    --vap_radio 1.1.wiphy0 --vap_freq 2437 --vap_ssid testings --vap_passwd Password@123 --vap_security wpa2 --num_vaps 2
-    --vap_bw 20 --vap_ip 192.168.0.16 --vap_ip_mask 255.255.0.0 --dhcp_min_range 192.168.0.5 --dhcp_max_range 192.168.0.200
+            # Load an existing Chamber View scenario
+            ./lf_create_vap_cv.py --mgr 192.168.200.222 --port 8080 --load_existing_scenario --old_scenario_name hello --instance_name oldscenario
 
-    vs_code launch.json example:
-    "args": ["--mgr","localhost",
-             "--port","8080",
-             "--lf_user","lanforge",
-             "--lf_password","lanforge",
-             "--vap_radio","wiphy0",
-             "--vap_freq","36",
-             "--vap_ssid","test_vap",
-             "--vap_passwd","password",
-             "--vap_security","wpa2",
-             "--vap_upstream_port","1.1.eth1"
+            # Basic 2.4GHz vAP configuration using VSCode launch JSON
+            "args": ["--mgr","localhost",
+                "--port", "8080",
+                "--lf_user", "lanforge",
+                "--lf_password", "lanforge",
+                "--vap_radio", "wiphy0",
+                "--vap_freq", "36",
+                "--vap_ssid", "test_vap",
+                "--vap_passwd", "password",
+                "--vap_security", "wpa2",
+                "--vap_upstream_port", "1.1.eth1"
             ]
 
+            # Basic 5GHz vAP configuration using VSCode launch JSON
             "args": ["--mgr","192.168.0.104",
-            "--port","8080",
-            "--lf_user","lanforge",
-            "--lf_password","lanforge",
-            "--delete_old_scenario",
-            "--scenario_name","dfs",
-            "--vap_radio","wiphy3",
-            "--vap_freq","5660",
-            "--vap_ssid","mtk7915_5g",
-            "--vap_passwd","lf_mtk7915_5g",
-            "--vap_security","wpa2",
-            "--vap_bw","20",
-            "--vap_upstream_port","1.1.eth2"
+                "--port", "8080",
+                "--lf_user", "lanforge",
+                "--lf_password", "lanforge",
+                "--delete_old_scenario",
+                "--scenario_name", "dfs",
+                "--vap_radio", "wiphy3",
+                "--vap_freq", "5660",
+                "--vap_ssid", "mtk7915_5g",
+                "--vap_passwd", "lf_mtk7915_5g",
+                "--vap_security", "wpa2",
+                "--vap_bw", "20",
+                "--vap_upstream_port", "1.1.eth2"
             ]
 
-SCRIPT_CLASSIFICATION:  Creation
+SCRIPT_CLASSIFICATION:
+            Creation
 
-SCRIPT_CATEGORIES: Functional
+SCRIPT_CATEGORIES:
+            Functional
 
+NOTES:      This script leverages LANforge Chamber View automation, including profiles
+            and Chamber View Scenarios in order to create and configure the desired vAP.
 
-NOTES:
-
-This script creates
-1. Chamber view scenario for vap
-2. Vap profile with given parameters
-
-STATUS:   BETA RELEASE
+STATUS:     BETA RELEASE
 
 VERIFIED_ON:
-Working date : 05-July-2023
-Build version: 5.4.6
-Kernel version: 6.2.16+
+            Working date:   05-July-2023
+            Build version:  5.4.6
+            Kernel version: 6.2.16+
 
-LICENSE:
-    Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2023 Candela Technologies Inc
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
 
 INCLUDE_IN_README: False
-
         """)
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
