@@ -256,14 +256,10 @@ class VideoStreamingTest(Realm):
         upload_name = self.phone_data[-1].split('.')[-1]
         self.created_cx = self.http_profile.created_cx = self.convert_to_dict(self.phone_data)
         if self.preCleanUp:
-            # self.created_cx=self.http_profile.created_cx=self.convert_to_dict(self.phone_data)
             self.precleanup()
         logging.info("Creating Layer-4 endpoints from the user inputs as test parameters")
         time.sleep(5)
         self.http_profile.created_cx.clear()
-        # self.create(ports=self.phone_data, sleep_time=.5,upload_name=upload_name,
-        #                          suppress_related_commands_=None, http=True,
-        #                          http_ip=self.url, interop=True, proxy_auth_type=74240,media_source=self.media_source,media_quality=self.media_quality,timeout=1000)
 
         if 'https' in self.url:
             self.url = self.url.replace("http://", "").replace("https://", "")
@@ -283,8 +279,6 @@ class VideoStreamingTest(Realm):
         time.sleep(5)
 
     def start(self):
-        # Starts the layer 4-7 traffic for created CX end points
-        # print("Test Started")
         logging.info("Setting Cx State to Runnning")
         self.http_profile.start_cx()
         try:
@@ -295,9 +289,6 @@ class VideoStreamingTest(Realm):
             logger.info(f"Exception Occured {e}")
 
     def start_specific(self, cx_start_list):
-        # Starts the layer 4-7 traffic for created CX end points
-        # print("Test Started")
-        # self.http_profile.start_cx_specific(cx_start_list)
         logging.info("Setting Cx State to Runnning")
         for cx_name in cx_start_list:
             self.json_post("/cli-json/set_cx_state", {
@@ -313,64 +304,6 @@ class VideoStreamingTest(Realm):
         except Exception as e:
             logger.info(f"Exception occured: {e}")
         logging.info("Test started at : {0} ".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-    # def create_generic_endp(self,query_resources,os_types_dict):
-    #     ports_list = []
-    #     eid = ""
-    #     resource_ip = ""
-    #     user_resources = ['.'.join(item.split('.')[:2]) for item in query_resources]
-    #     exit_loop = False
-    #     response = self.json_get("/resource/all")
-    #     for key, value in response.items():
-    #         if key == "resources" and user_resources:
-    #             for element in value:
-    #                 if user_resources:
-    #                     for resource_key, resource_values in element.items():
-    #                         if resource_key in user_resources:
-    #                             eid = resource_values["eid"]
-    #                             resource_ip = resource_values['ctrl-ip']
-    #                             ports_list.append({'eid': eid, 'ctrl-ip': resource_ip})
-    #                             resource_key_index = user_resources.index(resource_key)
-    #                             del user_resources[resource_key_index]
-    #                 else:
-    #                     exit_loop = True
-    #                     break
-    #         if exit_loop:
-    #             break
-
-    #     gen_ports_list = []
-
-    #     response_port = self.json_get("/port/all")
-    #     if "interfaces" not in response_port.keys():
-    #         logger.error("Error: 'interfaces' key not found in port data")
-    #         exit(1)
-
-    #     for interface in response_port['interfaces']:
-    #         for port, port_data in interface.items():
-    #             result = '.'.join(port.split('.')[:2])
-
-    #             # Check if the result exists in ports_list
-    #             matching_entry = next((entry for entry in ports_list if entry['eid'] == result), None)
-
-    #             if matching_entry:
-    #                 port_ip = port_data['ip']
-    #                 if port_ip == matching_entry['ctrl-ip']:
-    #                     gen_ports_list.append(port.split('.')[-1])
-    #                     break
-
-    #     gen_ports_list = ",".join(gen_ports_list)
-
-    #     real_sta_os_types = [os_types_dict[resource_id] for resource_id in os_types_dict if os_types_dict[resource_id] != 'android']
-
-    #     # if (self.generic_endps_profile.create(ports=self.other_list, sleep_time=.5, real_client_os_types=real_sta_os_types, url = self.url, gen_port = gen_ports_list)):
-    #     if (self.generic_endps_profile.create(ports=self.other_list, sleep_time=.5, real_client_os_types=real_sta_os_types, gen_port = gen_ports_list, from_script = "videostream")):
-    #         logging.info('Real client generic endpoint creation completed.')
-    #     else:
-    #         logging.error('Real client generic endpoint creation failed.')
-    #         exit(0)
-
-    #     # setting endpoint report time to ping packet interval
-    #     for endpoint in self.generic_endps_profile.created_endp:
-    #         self.generic_endps_profile.set_report_timer(endp_name=endpoint, timer=250)
 
     def map_sta_ips_real(self, sta_list=None):
         if sta_list is None:
@@ -378,14 +311,7 @@ class VideoStreamingTest(Realm):
         for sta_eid in sta_list:
             eid = self.name_to_eid(sta_eid)
             sta_list = self.json_get("/port/%s/%s/%s?fields=alias,ip" % (eid[0], eid[1], eid[2]))
-            # print("map_sta_ips - sta_list:{sta_list}".format(sta_list=sta_list))
-            '''
-            sta_list_tmp = self.json_get("/port/%s/%s/%s?fields=ip" % (eid[0], eid[1], eid[2]))
-            print("map_sta_ips - sta_list_tmp:{sta_list_tmp}".format(sta_list_tmp=sta_list_tmp))
-            '''
             if sta_list['interface'] is not None:
-                # print("map_sta_ips - sta_list_2:{sta_list_2}".format(sta_list_2=sta_list['interface']))
-                # self.ip_map[sta_list['interface']['alias']] = sta_list['interface']['ip']
                 eid_key = "{eid0}.{eid1}.{eid2}".format(eid0=eid[0], eid1=eid[1], eid2=eid[2])
                 self.ip_map[eid_key] = sta_list['interface']['ip']
 
@@ -395,11 +321,8 @@ class VideoStreamingTest(Realm):
         if ports is None:
             ports = []
         cx_post_data = []
-        # print("http_profile - ports:{ports}".format(ports=ports))
         self.map_sta_ips_real(ports)
         logger.info("Create HTTP CXs..." + __name__)
-        # print("http_profile - self.ip_map:{ip_map}".format(ip_map=self.ip_map))
-
         for i in range(len(list(self.ip_map))):
             url = None
             if i != len(list(self.ip_map)) - 1:
@@ -416,20 +339,10 @@ class VideoStreamingTest(Realm):
                     self.dest = 'NUL'
                 if list(self.ip_map)[i] not in windows_list:
                     self.dest = '/dev/null'
-
-            # print("http_profile - port_name:{port_name}".format(port_name=port_name))
             rv = self.local_realm.name_to_eid(port_name)
-            # print("http_profile - rv:{rv}".format(rv=rv))
-            '''
-            shelf = self.local_realm.name_to_eid(port_name)[0]
-            resource = self.local_realm.name_to_eid(port_name)[1]
-            name = self.local_realm.name_to_eid(port_name)[2]
-            '''
             shelf = rv[0]
             resource = rv[1]
             name = rv[2]
-            # eid_port = "{shelf}.{resource}.{name}".format(shelf=rv[0], resource=rv[1], name=rv[2])
-
             if upload_name is not None:
                 name = upload_name
 
@@ -636,19 +549,6 @@ class VideoStreamingTest(Realm):
     def postcleanup(self):
         # Cleans the layer 4-7 traffic for created CX end points
         self.http_profile.cleanup()
-
-    # def cleanup(self,os_types_dict):
-    #     for station in os_types_dict:
-    #         if any(item.startswith(station) for item in self.other_os_list):
-    #             self.generic_endps_profile.created_cx.append(
-    #                 'CX_yt-{}'.format(station))
-    #             self.generic_endps_profile.created_endp.append(
-    #                 'yt-{}'.format(station))
-    #     logging.info('Cleaning up generic endpoints if exists')
-    #     self.generic_endps_profile.cleanup()
-    #     self.generic_endps_profile.created_cx = []
-    #     self.generic_endps_profile.created_endp = []
-    #     logging.info('Cleanup Successful')
 
     def my_monitor_runtime(self):
         try:
@@ -859,11 +759,6 @@ class VideoStreamingTest(Realm):
             endtime = endtime.isoformat()[0:19]
             endtime_check = datetime.strptime(endtime, "%Y-%m-%dT%H:%M:%S")
             self.data['status'] = self.my_monitor('status')
-
-            # # self.data['required_count'] = [self.urls_per_tenm] * len(self.data['name'])
-            # self.data['duration'] = [duration] * len(self.data['name'])
-            # self.data['url'] = [self.url] * len(self.data['name'])
-
             device_type = []
             username = []
             ssid = []
@@ -883,7 +778,6 @@ class VideoStreamingTest(Realm):
 
             for alias in eid_data["interfaces"]:
                 for i in alias:
-                    # alias[i]['mac'] alias[i]['ssid'] alias[i]['mode'] resource_hw_data['resource']['user']
                     if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
                         resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
                         hw_version = resource_hw_data['resource']['hw version']
@@ -931,8 +825,6 @@ class VideoStreamingTest(Realm):
                 self.my_monitor_runtime()
 
                 overall_video_rate = []
-
-                # print(self.data)
                 # Iterate through the total wait time data
                 for i in range(len(self.data["total_wait_time"])):
                     # If the status is 'Stopped', append 0 to the video rate dictionary and overall video rate
@@ -1166,7 +1058,6 @@ class VideoStreamingTest(Realm):
         for alias in eid_data["interfaces"]:
             for i in alias:
                 # Check interface index and alias
-                # alias[i]['mac'] alias[i]['ssid'] alias[i]['mode'] resource_hw_data['resource']['user']
                 if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
 
                     # Get resource data for specific interface
@@ -1358,7 +1249,7 @@ class VideoStreamingTest(Realm):
             report.move_graph_image()
             report.build_graph()
 
-        # Table 1
+            # Table 1
             report.set_obj_html("Overall - Detailed Result Table", "The below tables provides detailed information for the web browsing test.")
             report.build_objective()
 
@@ -1400,13 +1291,6 @@ class VideoStreamingTest(Realm):
         report.write_html()
         report.write_pdf()
 
-        # if self.dowebgui == True:
-        #     for i in range(len(self.data["end_time"])):
-        #         if self.data["status"][i] == "Run":
-        #             self.data["status"][i] = "Completed"
-        #     df = pd.DataFrame(self.data)
-        #     if self.dowebgui == True:
-        #         df.to_csv('{}/rb_datavalues.csv'.format(self.result_dir), index=False)
     def copy_reports_to_home_dir(self):
         curr_path = self.result_dir
         home_dir = os.path.expanduser("~")  # it returns the home directory [ base : home/username]
@@ -1521,8 +1405,6 @@ def main():
     parser.add_argument('--test_name',  help='Name of the Test')
     parser.add_argument('--dowebgui', help="If true will execute script for webgui", default=False, type=bool)
     parser.add_argument('--result_dir', help="Specify the result dir to store the runtime logs <Do not use in CLI, --used by webui>", default='')
-    # parser.add_argument('--incremental',help="Specify the incremental values <1,2,3..>", required = True, type=str)
-
     parser.add_argument("--lf_logger_config_json", help="[log configuration] --lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument("--log_level", help="[log configuration] --log_level  debug info warning error critical")
     parser.add_argument("--debug", help="[log configuration] --debug store_true , used by lanforge client ", action='store_true')
@@ -1555,7 +1437,7 @@ def main():
         'smooth_streaming': '2',
         'hls': '3',
         'progressive': '4',
-                       'rtsp': '5'
+        'rtsp': '5'
     }
     media_quality_dict = {
         '4k': '0',
@@ -1585,8 +1467,6 @@ def main():
         logger_config.load_lf_logger_config()
 
     logger = logging.getLogger(__name__)
-
-    # url = args.url.replace("http://", "").replace("https://", "")
 
     obj = VideoStreamingTest(host=args.host, ssid=args.ssid, passwd=args.passwd, encryp=args.encryp,
                              suporrted_release=["7.0", "10", "11", "12"], max_speed=args.max_speed,
@@ -1621,20 +1501,6 @@ def main():
         # Retrieve all Android devices if no_laptops flag is True
         obj.android_devices = obj.devices.get_devices(only_androids=True)
 
-        # else:
-        #     # Retrieve all devices and their OS types if no_laptops flag is False
-        #     devices,os_types_dict = obj.devices.get_devices(androids=True,laptops = True)
-
-        #     # Extract prefixes from device interfaces
-        #     device_prefixes = ['.'.join(interface.split('.')[:2]) for interface in devices]
-        #     # Categorize devices into Android and other OS types based on prefixes
-        #     for index, prefix in enumerate(device_prefixes):
-        #         os_type = os_types_dict.get(prefix)
-        #         if os_type == 'android':
-        #             obj.android_devices.append(devices[index])
-        #         else:
-        #             obj.other_os_list.append(devices[index])
-
         # Process resource IDs if provided
         if args.device_list:
             # Extract second part of resource IDs and sort them
@@ -1661,30 +1527,6 @@ def main():
 
             # Verify if all resource IDs are valid for Android devices
             resource_ids = [int(x) for x in sorted_string.split(',')]
-            # if not args.no_laptops:
-            #     new_list_android = [item.split('.')[0] + '.' + item.split('.')[1] for item in obj.android_devices]
-            #     new_list_other = [item.split('.')[0] + '.' + item.split('.')[1] for item in obj.other_os_list]
-            #     resources_list = args.device_list.split(",")
-            #     # Filter Android devices based on resource IDs
-            #     for element in resources_list:
-            #         if element in new_list_android:
-            #             for ele in obj.android_devices:
-            #                 if ele.startswith(element):
-            #                     obj.android_list.append(ele)
-            #         else:
-            #             for ele in obj.other_os_list:
-            #                 if ele.startswith(element):
-            #                     obj.other_list.append(ele)
-            #     new_android = [int(item.split('.')[1]) for item in obj.android_list]
-
-            #     resource_ids = sorted(new_android)
-            #     resource_list = sorted(new_android)
-            #     obj.resource_ids = ','.join(str(num) for num in sorted(new_android))
-            #     resource_set = set(resource_list)
-            #     resource_list_sorted = sorted(resource_set)
-
-            # else:
-
             # Process Android devices when no_laptops flag is True
             new_list_android = [item.split('.')[0] + '.' + item.split('.')[1] for item in obj.android_devices]
 
@@ -1709,20 +1551,8 @@ def main():
             if not selected_devices:
                 logging.info("devices donot exist..!!")
                 return
-            # Categorize selected devices into Android and other OS types if no_laptops flag is False
-            # if not args.no_laptops:
-            #     for device in selected_devices:
-            #         if device in obj.android_devices:
-            #             obj.android_list.append(device)
-            #         else:
-            #             obj.other_list.append(device)
-            # else:
-                # Assign all selected devices as Android devices if no_laptops flag is True
 
             obj.android_list = selected_devices
-
-            # if args.incremental and  (not obj.android_list):
-            #     logging.info("Incremental Values are not needed as no android devices are selected")
 
             # Verify if all resource IDs are valid for Android devices
             if obj.android_list:
@@ -1771,10 +1601,6 @@ def main():
         if (len(args.webgui_incremental) == 1 and incremental[0] != len(resource_list_sorted)) or (len(args.webgui_incremental) > 1):
             obj.incremental = incremental
 
-    # if obj.incremental and (not obj.resource_ids):
-    #     logging.info("incremental values are not needed as Android devices are not selected.")
-    #     exit()
-
     if obj.incremental and obj.resource_ids:
         if obj.incremental[-1] > len(available_resources):
             logging.info("Exiting the program as incremental values are greater than the resource ids provided")
@@ -1798,10 +1624,6 @@ def main():
     individual_dataframe_columns = []
 
     keys = list(obj.http_profile.created_cx.keys())
-
-    # TODO : To create cx for laptop devices
-    # if (not args.no_laptops) and obj.other_list:
-    #     obj.create_generic_endp(obj.other_list,os_types_dict)
 
     # Extend individual_dataframe_column with dynamically generated column names
     for i in range(len(keys)):
@@ -1866,8 +1688,6 @@ def main():
                         test_setup_info_total_duration = args.duration * (div + 1)
             else:
                 test_setup_info_total_duration = args.duration * len(incremental_capacity_list_values)
-            # if incremental_capacity_list_values[-1] != len(available_resources):
-            #     test_setup_info_duration_per_iteration= args.duration
         else:
             test_setup_info_total_duration = args.duration
 
@@ -1928,13 +1748,7 @@ def main():
                     logging.info("Test started on Devices with resource Ids : {selected}".format(selected=cx_order_list[i]))
                 else:
                     logging.info("Test started on Devices with resource Ids : {selected}".format(selected=cx_order_list[i]))
-
-                # duration = 60 * args.duration
                 file_path = "video_streaming_realtime_data.csv"
-
-                # start_time = time.time()
-                # df = pd.DataFrame(obj.data)
-
                 if end_time_webGUI < datetime.now().strftime('%Y-%m-%d %H:%M:%S'):
                     obj.data['remaining_time_webGUI'] = ['0:00']
                 else:
@@ -1951,7 +1765,6 @@ def main():
                     test_stopped_by_user = obj.monitor_for_runtime_csv(args.duration, file_path, individual_df, i, actual_start_time, resource_list_sorted, cx_order_list[i])
                 else:
                     test_stopped_by_user = obj.monitor_for_runtime_csv(args.duration, file_path, individual_df, i, actual_start_time, resource_list_sorted, cx_order_list[i])
-                    # time.sleep(duration)
                 if not test_stopped_by_user:
                     # Append current iteration index to iterations_before_test_stopped_by_user
                     iterations_before_test_stopped_by_user.append(i)
@@ -1992,9 +1805,6 @@ def main():
             "Media Source": media_source.upper(),
             "Media Quality": media_quality
         }
-        # if obj.incremental:
-        #     if len(incremental_capacity_list_values) != len(available_resources):
-        #         test_setup_info['Duration per Iteration (min)']= str(test_setup_info_duration_per_iteration)
         test_setup_info['Incremental Values'] = test_setup_info_incremental_values
         test_setup_info['Total Duration (min)'] = str(test_setup_info_total_duration)
 
@@ -2012,10 +1822,6 @@ def main():
 
     if args.dowebgui:
         obj.copy_reports_to_home_dir()
-
-    # Clean up resources based on operating system types
-    # if args.postcleanup==True:
-    #     obj.cleanup(os_types_dict)
 
 
 if __name__ == '__main__':
