@@ -44,4 +44,4 @@ jobs:
       - name: Run help check
         run: |
           cd py-scripts
-          bash lf_help_check.bash
+          python tools/lf_help_check.py
