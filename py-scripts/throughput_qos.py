@@ -69,10 +69,6 @@ Copyright 2023 Candela Technologies Inc.
 """
 
 from datetime import datetime, timedelta
-from lf_graph import lf_bar_graph
-from lf_graph import lf_bar_graph_horizontal
-from lf_report import lf_report
-from LANforge import LFUtils
 import argparse
 import time
 import sys
@@ -87,6 +83,11 @@ if sys.version_info[0] != 3:
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+
+from lf_graph import lf_bar_graph
+from lf_graph import lf_bar_graph_horizontal
+from lf_report import lf_report
+from LANforge import LFUtils
 
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
