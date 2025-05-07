@@ -1,76 +1,66 @@
 #!/usr/bin/env python3
+r"""
+NAME:       lf_cli_to_testjson.py
 
-"""
-NAME: lf_cli_to_testjson.py
+PURPOSE:    Convert cli command into test.json format
 
-PURPOSE: To convert cli command into test.json format
+EXAMPLE:    Use './lf_cli_to_testjson.py --help' to see command line usage and options
 
-EXAMPLE:
-    Use './lf_cli_to_testjson.py --help' to see command line usage and options
+SCRIPT_CLASSIFICATION:
+            Tool
 
-    ./lf_cli_to_testjson.py --cli
+SCRIPT_CATEGORIES:
+            Creation
 
-SCRIPT_CLASSIFICATION: Tool
+NOTES:      Enter the cli of the script as an input to the script.  --cli "<cli of particular script>"
 
-SCRIPT_CATEGORIES: Creation
+            ./lf_cli_to_testjson.py \
+            --cli "--lfmgr 192.168.100.116\
+            --local_lf_report_dir /home/lanforge/html-reports/ct-us-001/2023-05-21-03-00-06_lf_check_suite_wc_dp_nightly\
+            --test_duration 15s\
+            --polling_interval 5s\
+            --upstream_port 1.1.eth2\
+            --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+            --radio 'radio==wiphy5,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+            --radio 'radio==wiphy6,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+            --radio 'radio==wiphy7,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+            --endp_type lf_udp\
+            --rates_are_totals\
+            --side_a_min_bps=20000\
+            --side_b_min_bps=300000000\
+            --test_rig CT-US-001\
+            --test_tag 'test_l3'\
+            --dut_model_num  ASUSRT-AX88U\
+            --dut_sw_version 3.0.0.4.386_44266\
+            --dut_hw_version 1.0 --dut_serial_num 12345678"
 
-NOTES:
-Enter the cli of the script as an input to the script.  --cli "<cli of particular script>"
-Example:
-./lf_cli_to_testjson.py \
- --cli "--lfmgr 192.168.100.116\
- --local_lf_report_dir /home/lanforge/html-reports/ct-us-001/2023-05-21-03-00-06_lf_check_suite_wc_dp_nightly\
- --test_duration 15s\
- --polling_interval 5s\
- --upstream_port 1.1.eth2\
- --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
- --radio 'radio==wiphy5,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
- --radio 'radio==wiphy6,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
- --radio 'radio==wiphy7,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
- --endp_type lf_udp\
- --rates_are_totals\
- --side_a_min_bps=20000\
- --side_b_min_bps=300000000\
- --test_rig CT-US-001\
- --test_tag 'test_l3'\
- --dut_model_num  ASUSRT-AX88U\
- --dut_sw_version 3.0.0.4.386_44266\
- --dut_hw_version 1.0 --dut_serial_num 12345678"
+            ./lf_cli_to_testjson.py \
+            --cli "--lfmgr 192.168.0.31\
+            --local_lf_report_dir /home/lanforge/html-reports/ct-us-001/2023-05-21-03-00-06_lf_check_suite_wc_dp_nightly\
+            --test_duration 15s\
+            --polling_interval 5s\
+            --upstream_port 1.1.eth2\
+            --radio 'radio==wiphy4,stations==1,ssid==ax1800_5g,ssid_pw==lf_ax1800_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\\ # noqa: E501
+            --endp_type lf_udp\
+            --rates_are_totals\
+            --side_a_min_bps=20000\
+            --side_b_min_bps=300000000\
+            --test_rig CT-US-001\
+            --test_tag 'test_l3'\
+            --dut_model_num  ASUSRT-AX88U\
+            --dut_sw_version 3.0.0.4.386_44266\
+            --dut_hw_version 1.0 --dut_serial_num 12345678"
 
-./lf_cli_to_testjson.py \
- --cli "--lfmgr 192.168.0.31\
- --local_lf_report_dir /home/lanforge/html-reports/ct-us-001/2023-05-21-03-00-06_lf_check_suite_wc_dp_nightly\
- --test_duration 15s\
- --polling_interval 5s\
- --upstream_port 1.1.eth2\
- --radio 'radio==wiphy4,stations==1,ssid==ax1800_5g,ssid_pw==lf_ax1800_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\\ # noqa: E501
- --endp_type lf_udp\
- --rates_are_totals\
- --side_a_min_bps=20000\
- --side_b_min_bps=300000000\
- --test_rig CT-US-001\
- --test_tag 'test_l3'\
- --dut_model_num  ASUSRT-AX88U\
- --dut_sw_version 3.0.0.4.386_44266\
- --dut_hw_version 1.0 --dut_serial_num 12345678"
-
-
-
-
-STATUS: Functional
+STATUS:     Functional
 
 VERIFIED_ON:
-Working date : 12/07/2023
-Build version: 5.4.6
-Kernel version: 6.2.16+
+            Working date:   12/07/2023
+            Build version:  5.4.6
+            Kernel version: 6.2.16+
 
-LICENSE:
-    Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2023 Candela Technologies Inc
-
-INCLUDE_IN_README: False
-
-     """
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
+"""
 
 import sys
 import os
@@ -138,80 +128,68 @@ def main():
     parser = argparse.ArgumentParser(
         prog='lf_cli_to_testjson.py',
         formatter_class=argparse.RawTextHelpFormatter,
-        description="""
+        description=r"""
+NAME:       lf_cli_to_testjson.py
 
-NAME: lf_cli_to_testjson.py
+PURPOSE:    Convert cli command into test.json format
 
-PURPOSE: To convert cli command into test.json format
+EXAMPLE:    Use './lf_cli_to_testjson.py --help' to see command line usage and options
 
-EXAMPLE:
-    Use './lf_cli_to_testjson.py --help' to see command line usage and options
+SCRIPT_CLASSIFICATION:
+            Tool
 
-    ./lf_cli_to_testjson.py --cli
+SCRIPT_CATEGORIES:
+            Creation
 
-SCRIPT_CLASSIFICATION: Tool
+NOTES:      Enter the cli of the script as an input to the script.  --cli "<cli of particular script>"
 
-SCRIPT_CATEGORIES: Creation
+            ./lf_cli_to_testjson.py \
+            --cli "--lfmgr 192.168.100.116\
+            --local_lf_report_dir /home/lanforge/html-reports/ct-us-001/2023-05-21-03-00-06_lf_check_suite_wc_dp_nightly\
+            --test_duration 15s\
+            --polling_interval 5s\
+            --upstream_port 1.1.eth2\
+            --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+            --radio 'radio==wiphy5,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+            --radio 'radio==wiphy6,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+            --radio 'radio==wiphy7,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
+            --endp_type lf_udp\
+            --rates_are_totals\
+            --side_a_min_bps=20000\
+            --side_b_min_bps=300000000\
+            --test_rig CT-US-001\
+            --test_tag 'test_l3'\
+            --dut_model_num  ASUSRT-AX88U\
+            --dut_sw_version 3.0.0.4.386_44266\
+            --dut_hw_version 1.0 --dut_serial_num 12345678"
 
-NOTES:
-Enter the cli of the script as an input to the script. --cli "<cli of particular script>"
-Example:
+            ./lf_cli_to_testjson.py \
+            --cli "--lfmgr 192.168.0.31\
+            --local_lf_report_dir /home/lanforge/html-reports/ct-us-001/2023-05-21-03-00-06_lf_check_suite_wc_dp_nightly\
+            --test_duration 15s\
+            --polling_interval 5s\
+            --upstream_port 1.1.eth2\
+            --radio 'radio==wiphy4,stations==1,ssid==ax1800_5g,ssid_pw==lf_ax1800_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down)'\\ # noqa: E501
+            --endp_type lf_udp\
+            --rates_are_totals\
+            --side_a_min_bps=20000\
+            --side_b_min_bps=300000000\
+            --test_rig CT-US-001\
+            --test_tag 'test_l3'\
+            --dut_model_num  ASUSRT-AX88U\
+            --dut_sw_version 3.0.0.4.386_44266\
+            --dut_hw_version 1.0 --dut_serial_num 12345678"
 
-./lf_cli_to_testjson.py \
- --cli "--lfmgr 192.168.100.116\
- --local_lf_report_dir /home/lanforge/html-reports/ct-us-001/2023-05-21-03-00-06_lf_check_suite_wc_dp_nightly\
- --test_duration 15s\
- --polling_interval 5s\
- --upstream_port 1.1.eth2\
- --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
- --radio 'radio==wiphy5,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
- --radio 'radio==wiphy6,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
- --radio 'radio==wiphy7,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable)'\
- --endp_type lf_udp\
- --rates_are_totals\
- --side_a_min_bps=20000\
- --side_b_min_bps=300000000\
- --test_rig CT-US-001\
- --test_tag 'test_l3'\
- --dut_model_num  ASUSRT-AX88U\
- --dut_sw_version 3.0.0.4.386_44266\
- --dut_hw_version 1.0 --dut_serial_num 12345678"
-
-./lf_cli_to_testjson.py \
- --cli "--lfmgr 192.168.0.31\
- --local_lf_report_dir /home/lanforge/html-reports/ct-us-001/2023-05-21-03-00-06_lf_check_suite_wc_dp_nightly\
- --test_duration 15s\
- --polling_interval 5s\
- --upstream_port 1.1.eth2\
- --radio 'radio==wiphy4,stations==1,ssid==ax1800_5g,ssid_pw==lf_ax1800_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable'\
- --endp_type lf_udp\
- --rates_are_totals\
- --side_a_min_bps=20000\
- --side_b_min_bps=300000000\
- --test_rig CT-US-001\
- --test_tag 'test_l3'\
- --dut_model_num  ASUSRT-AX88U\
- --dut_sw_version 3.0.0.4.386_44266\
- --dut_hw_version 1.0 --dut_serial_num 12345678"
-
-
-
-
-STATUS: Functional
+STATUS:     Functional
 
 VERIFIED_ON:
-Working date : 12/07/2023
-Build version: 5.4.6
-Kernel version: 6.2.16+
+            Working date:   12/07/2023
+            Build version:  5.4.6
+            Kernel version: 6.2.16+
 
-LICENSE:
-    Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2023 Candela Technologies Inc
-
-INCLUDE_IN_README: False
-
-     """
-    )
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
+    """)
 
     parser.add_argument("--cli", type=str, help="--cli '<command in quotes>'", required=True)
 
