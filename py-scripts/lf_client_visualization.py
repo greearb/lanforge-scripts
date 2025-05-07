@@ -317,7 +317,7 @@ class Client_Visualization(cv_test):
                                      self.config_name, self.sets,
                                      self.pull_report, self.lfclient_host, self.lf_user, self.lf_password,
                                      cv_cmds, ssh_port=self.ssh_port, graph_groups_file=self.graph_groups, local_lf_report_dir=self.local_lf_report_dir)
-        except:  # noqa: E722
+        except:  # noqa: E722, B001
             logger.info("There is already an instance of 'Client Visualization' present in GUI. "
                         "To delete the existing window, use --delete_existing_instance")
             logger.info("Before deleting, make sure to save the report of running instance if needed.")
