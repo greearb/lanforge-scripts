@@ -165,7 +165,7 @@ class create_vap_cv(cv_test):
         profile_data = requests.get(url="http://{}:{}/profile/all".format(self.lfclient_host, self.lf_port))
         data = profile_data.json()
         for profile in data['profiles']:
-            for key, value in profile.items():
+            for _, value in profile.items():
                 if scenario_name in value['name']:
                     requests.post(url=post_url, json=post_data)
                 else:
