@@ -1213,7 +1213,7 @@ class L3VariableTime(Realm):
         # if side_a is None then side_a is radios
         if not self.dataplane:
             for (
-                    radio_,
+                    _radio_,
                     ssid_,
                     ssid_password_,
                     ssid_security_,
@@ -2012,7 +2012,7 @@ class L3VariableTime(Realm):
 
                 for atten_val in self.atten_vals:
                     if atten_val != -1:
-                        for atten_idx in self.attenuators:
+                        for _ in self.attenuators:
                             atten_mod_test = lf_attenuator.CreateAttenuator(
                                 host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
                             atten_mod_test.build()
@@ -5618,13 +5618,13 @@ class L3VariableTime(Realm):
         for (
                 radio_,
                 ssid_,
-                ssid_password_,  # do not print password
+                _ssid_password_,  # do not print password
                 ssid_security_,
                 mode_,
                 wifi_enable_flags_list_,
-                reset_port_enable_,
-                reset_port_time_min_,
-                reset_port_time_max_) in zip(
+                _reset_port_enable_,
+                _reset_port_time_min_,
+                _reset_port_time_max_) in zip(
                 self.radio_name_list,
                 self.ssid_list,
                 self.ssid_password_list,
