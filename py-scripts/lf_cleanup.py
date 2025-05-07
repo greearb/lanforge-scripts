@@ -92,8 +92,8 @@ class lf_clean(Realm):
                  clean_sta=None,
                  clean_port_mgr=None,
                  clean_misc=None):
-        super().__init__(lfclient_host=host,
-                         lfclient_port=port),
+        super().__init__(lfclient_host=host, lfclient_port=port)
+
         self.host = host
         self.port = port
         self.resource = resource
