@@ -1,66 +1,68 @@
 #!/usr/bin/env python3
-"""
-NAME: lf_cleanup.py
+r"""
+NAME:       lf_cleanup.py
 
-PURPOSE:
-    clean up stations, cross connects and endpoints
+PURPOSE:    Remove present test configuration, resetting system(s) to a reproducible base state.
 
 EXAMPLE:
-    clear all stations:
-        ./lf_cleanup.py --mgr localhost --resource 1 --sta
+            # Remove all stations with CLI
+            ./lf_cleanup.py --sta
 
-    This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI tabs:
-        ./lf_cleanup.py --mgr localhost --resource 1 --sanitize
+            # Remove all stations with CLI for a specific resource
+            ./lf_cleanup.py --sta --resource 2
 
-    clear all cxs and enps:
-        ./lf_cleanup.py --mgr localhost --resource 1 --cxs
+            # Full cleanup (ports, L3 CXs/endpoints, L4-7 endpoints with CLI
+            ./lf_cleanup.py --sanitize
 
-    clear all endps:
-        ./lf_cleanup.py --mgr localhost --resource 1 --endp
+            # Remove all CXs and endpoints with CLI
+            ./lf_cleanup.py --cxs
 
-    clear all bridges:
-        ./lf_cleanup.py --mgr localhost --resource 1 --br
+            # Remove all endpoints with CLI
+            ./lf_cleanup.py --endp
 
-    clear sta with names phy (not wiphy) and 1.1.eth stations:
-        ./lf_cleanup.py --mgr localhost --resource 1 --misc
+            # Remove all bridge with CLI
+            ./lf_cleanup.py --br
 
-JSON EXAMPLE:
-    clear all stations:
-        "args": ["--mgr","192.168.30.12","--resource","1","--sta"]
+            # Remove all STAs with unexpected names with CLI (often from misuse of or bugs in automation)
+            # This includes names 'phy' (not 'wiphy') and '1.1.eth'
+            ./lf_cleanup.py --misc
 
-    This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI tabs:
-        "args": ["--mgr","192.168.30.12","--resource","1","--sanitize"]
+            # Remove all stations with JSON
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--sta"]
 
-    clear all cxs and enps:
-        "args": ["--mgr","192.168.30.12","--resource","1","--cxs"]
+            # Full cleanup (ports, L3 CXs/endpoints, L4-7 endpoints with JSON
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--sanitize"]
 
-    clear all endps:
-        "args": ["--mgr","192.168.30.12","--resource","1","--endp"]
+            # Remove all CXs and endpoints with JSON
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--cxs"]
 
-    clear all bridges:
-        "args": ["--mgr","192.168.30.12","--resource","1","--br"]
+            # Remove all endpoints with JSON
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--endp"]
 
-    clear sta with names phy (not wiphy) and 1.1.eth stations:
-        "args": ["--mgr","192.168.30.12","--resource","1","--misc"]
+            # Remove all bridge with JSON
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--br"]
 
-SCRIPT_CLASSIFICATION:  Deletion
+            # Remove all STAs with unexpected names with CLI (often from misuse of or bugs in automation)
+            # This includes names 'phy' (not 'wiphy') and '1.1.eth'
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--misc"]
 
-SCRIPT_CATEGORIES:  Functional
+SCRIPT_CLASSIFICATION:
+            Deletion
 
-NOTES:
+SCRIPT_CATEGORIES:
+            Functional
 
-    The default port is 8080
-    The script will only cleanup what is present in the GUI,
-     so it will need to iterate multiple times with script
+NOTES:      The script will only cleanup what is present in the GUI. If object creation (e.g. port or CX)
+            is in process but the object is not yet present in the GUI, then this script may need to be run
+            multiple times for deletion to take effect.
 
 VERIFIED_ON:
-    Tested on 03/17/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
+            Working date:   03/17/2023
+            Build version:  5.4.6
+            Kernel version: 5.19.17+
 
-LICENSE:
-          Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
 """
 import sys
 import os
@@ -579,69 +581,71 @@ def parse_args():
         epilog='''\
             Clean up cxs and endpoints
             ''',
-        description='''\
-NAME: lf_cleanup.py
+        description=r'''
+NAME:       lf_cleanup.py
 
-PURPOSE:
-    clean up stations, cross connects and endpoints
+PURPOSE:    Remove present test configuration, resetting system(s) to
+            a reproducible base state.
 
 EXAMPLE:
-    clear all stations:
-        ./lf_cleanup.py --mgr localhost --resource 1 --sta
+            # Remove all stations with CLI
+            ./lf_cleanup.py --sta
 
-    This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI tabs:
-        ./lf_cleanup.py --mgr localhost --resource 1 --sanitize
+            # Remove all stations with CLI for a specific resource
+            ./lf_cleanup.py --sta --resource 2
 
-    clear all cxs and enps:
-        ./lf_cleanup.py --mgr localhost --resource 1 --cxs
+            # Full cleanup (ports, L3 CXs/endpoints, L4-7 endpoints with CLI
+            ./lf_cleanup.py --sanitize
 
-    clear all endps:
-        ./lf_cleanup.py --mgr localhost --resource 1 --endp
+            # Remove all CXs and endpoints with CLI
+            ./lf_cleanup.py --cxs
 
-    clear all bridges:
-        ./lf_cleanup.py --mgr localhost --resource 1 --br
+            # Remove all endpoints with CLI
+            ./lf_cleanup.py --endp
 
-    clear sta with names phy (not wiphy) and 1.1.eth stations:
-        ./lf_cleanup.py --mgr localhost --resource 1 --misc
+            # Remove all bridge with CLI
+            ./lf_cleanup.py --br
 
-JSON EXAMPLE:
-    clear all stations:
-        "args": ["--mgr","192.168.30.12","--resource","1","--sta"]
+            # Remove all STAs with unexpected names with CLI (often from misuse of or bugs in automation)
+            # This includes names 'phy' (not 'wiphy') and '1.1.eth'
+            ./lf_cleanup.py --misc
 
-    This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI tabs:
-        "args": ["--mgr","192.168.30.12","--resource","1","--sanitize"]
+            # Remove all stations with JSON
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--sta"]
 
-    clear all cxs and enps:
-        "args": ["--mgr","192.168.30.12","--resource","1","--cxs"]
+            # Full cleanup (ports, L3 CXs/endpoints, L4-7 endpoints with JSON
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--sanitize"]
 
-    clear all endps:
-        "args": ["--mgr","192.168.30.12","--resource","1","--endp"]
+            # Remove all CXs and endpoints with JSON
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--cxs"]
 
-    clear all bridges:
-        "args": ["--mgr","192.168.30.12","--resource","1","--br"]
+            # Remove all endpoints with JSON
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--endp"]
 
-    clear sta with names phy (not wiphy) and 1.1.eth stations:
-        "args": ["--mgr","192.168.30.12","--resource","1","--misc"]
+            # Remove all bridge with JSON
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--br"]
 
-SCRIPT_CLASSIFICATION:  Deletion
+            # Remove all STAs with unexpected names with CLI (often from misuse of or bugs in automation)
+            # This includes names 'phy' (not 'wiphy') and '1.1.eth'
+            "args": ["--mgr", "192.168.30.12", "--resource", "1", "--misc"]
 
-SCRIPT_CATEGORIES:  Functional
+SCRIPT_CLASSIFICATION:
+            Deletion
 
-NOTES:
+SCRIPT_CATEGORIES:
+            Functional
 
-    The default port is 8080
-    The script will only cleanup what is present in the GUI,
-     so it will need to iterate multiple times with script
+NOTES:      The script will only cleanup what is present in the GUI. If object creation (e.g. port or CX)
+            is in process but the object is not yet present in the GUI, then this script may need to be run
+            multiple times for deletion to take effect.
 
 VERIFIED_ON:
-    Tested on 03/17/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
+            Working date:   03/17/2023
+            Build version:  5.4.6
+            Kernel version: 5.19.17+
 
-LICENSE:
-          Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
-
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
             ''')
     # Base options
     parser.add_argument('--mgr',
