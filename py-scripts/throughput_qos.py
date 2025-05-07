@@ -1430,15 +1430,13 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 def main():
     args = parse_args()
 
-    help_summary = '''\
-    The Throughput QoS test is designed to measure performance of an Access Point
-    while running traffic with different types of services like voice, video, best effort, background.
-    The test allows the user to run layer3 traffic for different ToS in upload, download and bi-direction scenarios between AP and virtual devices.
-    Throughputs for all the ToS are reported for individual clients along with the overall throughput for each ToS.
-    The expected behavior is for the AP to be able to prioritize the ToS in an order of voice,video,best effort and background.
-
-    The test will create stations, create CX traffic between upstream port and stations, run traffic and generate a report.
-    '''
+    help_summary = "The Throughput QoS test is designed to measure performance of an Access Point " \
+                   "while running traffic with different types of services like voice, video, best effort, background. " \
+                   "The test allows the user to run layer3 traffic for different ToS in upload, download and bi-direction " \
+                   "scenarios between AP and virtual devices. Throughputs for all the ToS are reported for individual clients " \
+                   "along with the overall throughput for each ToS. The expected behavior is for the AP to be able to prioritize " \
+                   "the ToS in an order of voice, video, best effort and background. The test will create stations, create CX " \
+                   "traffic between upstream port and stations, run traffic and generate a report."
     if args.help_summary:
         print(help_summary)
         exit(0)
