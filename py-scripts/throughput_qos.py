@@ -111,7 +111,7 @@ class ThroughputQOS(Realm):
                  num_stations_2g=1,
                  num_stations_5g=0,
                  num_stations_6g=0,
-                 sta_list=[],
+                 sta_list=None,
                  radio_2g="wiphy0",
                  radio_5g="wiphy1",
                  radio_6g="wiphy2",
@@ -127,15 +127,25 @@ class ThroughputQOS(Realm):
                  number_template="00000",
                  test_duration="2m",
                  bands="2.4G, 5G, DUALBAND, TRIBAND",
-                 test_case={},
-                 channel_list=[],
-                 mac_list=[],
+                 test_case=None,
+                 channel_list=None,
+                 mac_list=None,
                  use_ht160=False,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(lfclient_host=host,
-                         lfclient_port=port),
+        super().__init__(lfclient_host=host, lfclient_port=port)
+
+        # https://docs.python-guide.org/writing/gotchas/#mutable-default-arguments
+        if not sta_list:
+            sta_list = []
+        if not test_case:
+            test_case = {}
+        if not channel_list:
+            channel_list = []
+        if not mac_list:
+            mac_list = []
+
         self.ssid_list = []
         self.upstream = upstream
         self.host = host
@@ -378,13 +388,13 @@ class ThroughputQOS(Realm):
         response_port = self.json_get("/port/all")
         for interface in response_port['interfaces']:
             for port, port_data in interface.items():
-                if(port in self.sta_list):
+                if port in self.sta_list:
                     self.mac_list.append(port_data['mac'])
                     self.channel_list.append(port_data['channel'])
 
     def create_cx(self):
         direction = ''
-        if (int(self.cx_profile.side_b_min_bps)) != 0 and (int(self.cx_profile.side_a_min_bps)) != 0:
+        if int(self.cx_profile.side_b_min_bps) != 0 and int(self.cx_profile.side_a_min_bps) != 0:
             self.direction = "Bi-direction"
             direction = 'Bi-di'
         elif int(self.cx_profile.side_b_min_bps) != 0:
@@ -397,7 +407,7 @@ class ThroughputQOS(Realm):
         print("direction", self.direction)
         traffic_type = (self.traffic_type.strip("lf_")).upper()
         traffic_direction_list, cx_list, traffic_type_list = [], [], []
-        for client in range(len(self.sta_list)):
+        for _ in range(len(self.sta_list)):
             traffic_direction_list.append(direction)
             traffic_type_list.append(traffic_type)
         print("tos: {}".format(self.tos))
@@ -426,7 +436,7 @@ class ThroughputQOS(Realm):
     def monitor(self):
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
         drop_a, drop_a_per, drop_b, drop_b_per = [], [], [], []
-        if (int(self.cx_profile.side_b_min_bps)) != 0 and (int(self.cx_profile.side_a_min_bps)) != 0:
+        if int(self.cx_profile.side_b_min_bps) != 0 and int(self.cx_profile.side_a_min_bps) != 0:
             self.direction = "Bi-direction"
         elif int(self.cx_profile.side_b_min_bps) != 0:
             self.direction = "Download"
@@ -434,7 +444,7 @@ class ThroughputQOS(Realm):
             if int(self.cx_profile.side_a_min_bps) != 0:
                 self.direction = "Upload"
         print("direction", self.direction)
-        if (self.test_duration is None) or (int(self.test_duration) <= 1):
+        if self.test_duration is None or int(self.test_duration) <= 1:
             raise ValueError("Monitor test duration should be > 1 second")
         if self.cx_profile.created_cx is None:
             raise ValueError("Monitor needs a list of Layer 3 connections")
@@ -456,7 +466,7 @@ class ThroughputQOS(Realm):
             time.sleep(1)
         print("throughput", throughput)
         # # rx_rate list is calculated
-        for index, key in enumerate(throughput):
+        for _, key in enumerate(throughput):
             for i in range(len(throughput[key])):
                 upload[i].append(throughput[key][i][1])
                 download[i].append(throughput[key][i][0])
@@ -733,7 +743,7 @@ class ThroughputQOS(Realm):
                     split_1 = len(self.sta_list) // 3
                     num_stations.append("{} + {} + {}".format(str(split_1), str(split_1), str(len(self.sta_list) - 2 * split_1)))
                     mode.append("bgn-AX + an-AX + AX-BE")
-                for key in res[case]['test_results'][0][1]:
+                for _ in res[case]['test_results'][0][1]:
                     if int(self.cx_profile.side_a_min_bps) != 0:
                         print(res[case]['test_results'][0][1])
                         upload_throughput.append(
@@ -762,7 +772,7 @@ class ThroughputQOS(Realm):
                         res_copy = copy.copy(res)
                         res_copy.update({"throughput_table_df": table_df})
                         res_copy.update({"graph_df": graph_df})
-                for key in res[case]['test_results'][0][0]:
+                for _ in res[case]['test_results'][0][0]:
                     if int(self.cx_profile.side_b_min_bps) != 0:
                         print(res[case]['test_results'][0][0])
                         download_throughput.append(
@@ -945,13 +955,13 @@ class ThroughputQOS(Realm):
             if self.direction == 'Upload':
                 load = rate_up
                 data_set = res[case]['test_results'][0][1]
-                for sta in range(len(self.sta_list)):
+                for _ in range(len(self.sta_list)):
                     individual_download_list.append('0')
             else:
                 if self.direction == "Download":
                     load = rate_down
                     data_set = res[case]['test_results'][0][0]
-                    for sta in range(len(self.sta_list)):
+                    for _ in range(len(self.sta_list)):
                         individual_upload_list.append('0')
             print("data set", data_set)
             tos_type = ['Background', 'Besteffort', 'Video', 'Voice']
@@ -1447,12 +1457,12 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 
     elif args.download:
         loads = {'upload': [], 'download': str(args.download).split(",")}
-        for i in range(len(args.download)):
+        for _ in range(len(args.download)):
             loads['upload'].append(0)
     else:
         if args.upload:
             loads = {'upload': str(args.upload).split(","), 'download': []}
-            for i in range(len(args.upload)):
+            for _ in range(len(args.upload)):
                 loads['download'].append(0)
     print(loads)
 
