@@ -1439,15 +1439,14 @@ def main():
 
     The test will create stations, create CX traffic between upstream port and stations, run traffic and generate a report.
     '''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     if args.num_stations_2g == 0 and args.num_stations_5g == 0 and args.num_stations_6g == 0:
         print('NUMBER OF STATIONS CANNOT BE EMPTY')
         exit(1)
 
-    # help summary
-    if args.help_summary:
-        print(help_summary)
-        exit(0)
     print("--------------------------------------------")
     print(args)
     print("--------------------------------------------")
