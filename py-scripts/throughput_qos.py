@@ -1326,16 +1326,8 @@ class ThroughputQOS(Realm):
                 print("No individual graph to generate.")
 
 
-def main():
-    help_summary = '''\
-    The Throughput QoS test is designed to measure performance of an Access Point
-    while running traffic with different types of services like voice, video, best effort, background.
-    The test allows the user to run layer3 traffic for different ToS in upload, download and bi-direction scenarios between AP and virtual devices.
-    Throughputs for all the ToS are reported for individual clients along with the overall throughput for each ToS.
-    The expected behavior is for the AP to be able to prioritize the ToS in an order of voice,video,best effort and background.
-
-    The test will create stations, create CX traffic between upstream port and stations, run traffic and generate a report.
-    '''
+def parse_args():
+    """Parse CLI arguments."""
     parser = Realm.create_basic_argparse(
         prog='throughput_QOS.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -1431,11 +1423,27 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
     parser.add_argument('--radio_5g', help="radio which supports 5G bandwidth", default="wiphy1")
     parser.add_argument('--radio_6g', help="radio which supports 6G bandwidth", default="wiphy2")
     parser.add_argument('--initial_band_pref', help="if given,2G clients would have only 2G band preference, so on for 5G and 6G", required=False, action='store_true', default=False)
-    args = parser.parse_args()
+
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+
+    help_summary = '''\
+    The Throughput QoS test is designed to measure performance of an Access Point
+    while running traffic with different types of services like voice, video, best effort, background.
+    The test allows the user to run layer3 traffic for different ToS in upload, download and bi-direction scenarios between AP and virtual devices.
+    Throughputs for all the ToS are reported for individual clients along with the overall throughput for each ToS.
+    The expected behavior is for the AP to be able to prioritize the ToS in an order of voice,video,best effort and background.
+
+    The test will create stations, create CX traffic between upstream port and stations, run traffic and generate a report.
+    '''
 
     if args.num_stations_2g == 0 and args.num_stations_5g == 0 and args.num_stations_6g == 0:
         print('NUMBER OF STATIONS CANNOT BE EMPTY')
         exit(1)
+
     # help summary
     if args.help_summary:
         print(help_summary)
