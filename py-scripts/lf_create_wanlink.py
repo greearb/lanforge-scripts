@@ -238,7 +238,7 @@ class lf_create_wanlink():
                                        errors_warnings=ewarn_list,
                                        debug=self.debug)
             logger.debug(pformat(result))
-        except BaseException:
+        except BaseException:  # noqa: B036
             logger.warning(pformat(ewarn_list))
         return result
 
@@ -479,7 +479,7 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
                                       requested_col_names=("name", "eid"),
                                       debug=args.debug,
                                       _errors_warnings=ewarns)
-    except BaseException:
+    except BaseException:  # noqa: B036
         logger.warning(ewarns)
     wl_exists = (False, True)[result is not None]
     if wl_exists:
@@ -492,7 +492,7 @@ ip-address must be assigned to the wanlink endpoints in the LANforge gui for sce
                                           cx_state='STOPPED',
                                           test_mgr='all',
                                           debug=args.debug)
-        for n in range(1, 60):
+        for _ in range(1, 60):
             result = wanlink.query.get_wl(eid_list=args.wl_name,
                                           requested_col_names=("name", "eid", "running"),
                                           debug=False)
