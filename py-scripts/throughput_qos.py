@@ -1398,7 +1398,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             Copyright 2025 Candela Technologies Inc
 ''')
     parser.add_argument('--mode', help='Used to force mode of stations', default="0")
-    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=False)
+    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=False, choices=["lf_udp", "lf_tcp"])
     parser.add_argument('--download', help='--download traffic load per connection (download rate)', default="0")
     parser.add_argument('--upload', help='--upload traffic load per connection (upload rate)', default="0")
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
@@ -1427,6 +1427,23 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
     return parser.parse_args()
 
 
+def validate_args(args):
+    """Ensure arguments specified for program are valid."""
+    if args.num_stations_2g == 0 and args.num_stations_5g == 0 and args.num_stations_6g == 0:
+        print("Must specify one or more number stations for the test (e.g. '--num_stations_2g 1')")
+        exit(1)
+
+    if not args.traffic_type:
+        print("No traffic type specified")
+        exit(1)
+
+    # This checks defaults as configured in the argument parser
+    # These arguments are parsed as comma-separated strings
+    if args.upload == "0" and args.download == "0":
+        print("Neither upload or download rate specified")
+        exit(1)
+
+
 def main():
     args = parse_args()
 
@@ -1441,9 +1458,8 @@ def main():
         print(help_summary)
         exit(0)
 
-    if args.num_stations_2g == 0 and args.num_stations_5g == 0 and args.num_stations_6g == 0:
-        print('NUMBER OF STATIONS CANNOT BE EMPTY')
-        exit(1)
+    # This must come after help summary check
+    validate_args(args)
 
     print("--------------------------------------------")
     print(args)
