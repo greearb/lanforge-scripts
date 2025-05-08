@@ -44,6 +44,21 @@
     python3 lf_interop_video_streaming.py --mgr 192.168.214.219 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls
     --media_quality 1080P --duration 1m --device_list 1.10,1.11 --incremental_capacity 1,2 --debug --test_name video_streaming_test
 
+    Example-8:
+    Command Line Interface to run the Video Streaming test with wifi interface configuration to particular ssid
+    python3 lf_interop_video_streaming.py --mgr 192.168.213.218 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls
+    --media_quality 1080P --duration 1m  --debug --test_name video_streaming_test --ssid VINTROP_wpa2 --passwd lanforge --encryp wpa2 --upstream_port 1.1.eth1 --config
+
+    Example-9:
+    Command Line Interface to run the Video Streaming with particular group of devices configured to particular ssid profile
+    python3 lf_interop_video_streaming.py --mgr 192.168.213.218 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls
+    --media_quality 1080P --duration 1m  --debug --test_name video_streaming_test --upstream_port 1.1.eth1 --file_name laxmi_csv --group_name group1 --profile_name Openwpa2
+    
+    Example-10:
+    Command Line Interface to run the Video Streaming with expected pass fail value
+    python3 lf_interop_video_streaming.py --mgr 192.168.214.219 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls
+    --media_quality 1080P --duration 1m --device_list 1.10,1.12 --debug --test_name video_streaming_test --expected_passfail_value 5
+
 
 
     SCRIPT CLASSIFICATION: Test
@@ -1653,6 +1668,21 @@ def main():
         Command Line Interface to run the Video Streaming test with incremental Capacity
         python3 lf_interop_video_streaming.py --mgr 192.168.214.219 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls
         --media_quality 1080P --duration 1m --device_list 1.10,1.11 --incremental_capacity 1,2 --debug --test_name video_streaming_test
+
+        Example-8:
+        Command Line Interface to run the Video Streaming test with wifi interface configuration to particular ssid
+        python3 lf_interop_video_streaming.py --mgr 192.168.213.218 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls
+        --media_quality 1080P --duration 1m  --debug --test_name video_streaming_test --ssid VINTROP_wpa2 --passwd lanforge --encryp wpa2 --upstream_port 1.1.eth1 --config
+
+        Example-9:
+        Command Line Interface to run the Video Streaming with particular group of devices configured to particular ssid profile
+        python3 lf_interop_video_streaming.py --mgr 192.168.213.218 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls
+        --media_quality 1080P --duration 1m  --debug --test_name video_streaming_test --upstream_port 1.1.eth1 --file_name laxmi_csv --group_name group1 --profile_name Openwpa2
+
+        Example-10:
+        Command Line Interface to run the Video Streaming with expected pass fail value
+        python3 lf_interop_video_streaming.py --mgr 192.168.214.219 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls
+        --media_quality 1080P --duration 1m --device_list 1.10,1.12 --debug --test_name video_streaming_test --expected_passfail_value 5
 
         SCRIPT CLASSIFICATION: Test
 
