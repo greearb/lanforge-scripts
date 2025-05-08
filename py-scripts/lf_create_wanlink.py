@@ -1,28 +1,35 @@
 #!/usr/bin/env python3
+r"""
+NAME:       lf_create_wanlink.py
 
-"""
-NAME: lf_create_wanlink.py
+PURPOSE:    Create and configure a LANforge WANLink used for network impairment.
 
-PURPOSE: This script creates a wanlink using the lanforge api.
+NOTES:      Underlying port IP addresses must be configured in order for wanlink endpoints
+            to become active
 
-EXAMPLE:
-Both port_A and port_B have the same configuraiton
-$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
-    --speed 1024000 --wl_name wanlink --latency 24 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-    --log_level debug --debug
+EXAMPLE:    # Duplicate configuration for both ends of the WANLink
+            ./lf_create_wanlink.py \
+                --wl_name       wanlink \
+                --port_A        eth1 \
+                --port_B        eth2 \
+                --speed         1024000 \
+                --latency       24 \
+                --max_jitter    50 \
+                --jitter_freq   6 \
+                --drop_freq     12
 
-Mixed configuration for port_A and port_B
-$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
-    --speed_A 1024000 --speed_B 2048000 --wl_name wanlink --latency_A 24 --latency_B 32 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-    --log_level debug --debug
-
-
-
-NOTES:
-ip-address must be assigned to the wanlink endpoints in the LANforge gui for scenario to run.
-
-TO DO NOTES:
-
+            # Mixed configuration, each end of WANLink has specific config
+            ./lf_create_wanlink.py \
+                --wl_name       wanlink \
+                --port_A        eth1 \
+                --port_B        eth2 \
+                --speed_A       1024000 \
+                --speed_B       2048000 \
+                --latency_A     24 \
+                --latency_B     32 \
+                --max_jitter    50 \
+                --jitter_freq   6 \
+                --drop_freq     12
 """
 import sys
 import time
@@ -269,26 +276,37 @@ def main():
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
-        description='''\
-NAME: lf_create_wanlink.py
+        description=r'''\
+NAME:       lf_create_wanlink.py
 
-PURPOSE: creates a wanlink using the lanforge api.
+PURPOSE:    Create and configure a LANforge WANLink used for network impairment.
 
-EXAMPLE:
-Both port_A and port_B have the same configuraiton
-$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
-    --speed 1024000 --wl_name wanlink --latency 24 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-    --log_level debug --debug
+NOTES:      Underlying port IP addresses must be configured in order for wanlink endpoints
+            to become active
 
-Mixed configuration for port_A and port_B
-$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
-    --speed_A 1024000 --speed_B 2048000 --wl_name wanlink --latency_A 24 --latency_B 32 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-    --log_level debug --debug
+EXAMPLE:    # Duplicate configuration for both ends of the WANLink
+            ./lf_create_wanlink.py \
+                --wl_name       wanlink \
+                --port_A        eth1 \
+                --port_B        eth2 \
+                --speed         1024000 \
+                --latency       24 \
+                --max_jitter    50 \
+                --jitter_freq   6 \
+                --drop_freq     12
 
-
-NOTES:
-ip-address must be assigned to the wanlink endpoints in the LANforge gui for scenario to run.
-
+            # Mixed configuration, each end of WANLink has specific config
+            ./lf_create_wanlink.py \
+                --wl_name       wanlink \
+                --port_A        eth1 \
+                --port_B        eth2 \
+                --speed_A       1024000 \
+                --speed_B       2048000 \
+                --latency_A     24 \
+                --latency_B     32 \
+                --max_jitter    50 \
+                --jitter_freq   6 \
+                --drop_freq     12
             ''')
     # http://www.candelatech.com/lfcli_ug.php#add_wl_endp
     parser.add_argument("--host", "--mgr", dest='mgr', help='specify the GUI to connect to')
