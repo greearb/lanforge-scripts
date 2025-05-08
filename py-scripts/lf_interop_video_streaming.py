@@ -1050,6 +1050,120 @@ class VideoStreamingTest(Realm):
         else:
             non_zero_values = [item for item in lst if item != 0]
             return min(non_zero_values)
+    
+    def handle_passfail_criteria(self, data: dict):
+        iter = data["iter"]
+        ci = data["created_incremental_values"][iter]
+
+        device_type = data["device_type"]
+        username = data["username"]
+        ssid = data["ssid"]
+        mac = data["mac"]
+        channel = data["channel"]
+        mode = data["mode"]
+        total_buffer = data["total_buffer"]
+        wait_time_data = data["wait_time_data"]
+        min_video_rate = data["min_video_rate"]
+        avg_video_rate = data["avg_video_rate"]
+        max_video_rate = data["max_video_rate"]
+        total_urls = data["total_urls"]
+        total_err = data["total_err"]
+        rssi_data = data["rssi_data"]
+        tx_rate = data["tx_rate"]
+        max_bytes_rd_list = data["max_bytes_rd_list"]
+        avg_rx_rate_list = data["avg_rx_rate_list"]
+
+        test_input_list = []
+        pass_fail_list = []
+
+        if self.expected_passfail_val or self.csv_name:
+            if not self.expected_passfail_val:
+                res_list = []
+                interop_tab_data = self.json_get('/adb/')["devices"]
+                for client in range(len(device_type[:ci])):
+                    if device_type[client] != 'Android':
+                        res_list.append(username[:ci][client])
+                    else:
+                        for dev in interop_tab_data:
+                            for item in dev.values():
+                                if item['user-name'] == username[:ci][client]:
+                                    res_list.append(item['name'].split('.')[2])
+
+                if self.csv_name is None:
+                    self.csv_name = "device.csv"
+                try:
+                    with open(self.csv_name, mode='r') as file:
+                        reader = csv.DictReader(file)
+                        rows = list(reader)
+                except Exception as e:
+                    logger.error(f"An error occurred while reading the CSV file: {e}")
+                    return
+
+                for device in res_list:
+                    found = False
+                    for row in rows:
+                        if row['DeviceList'] == device and row['Videostreaming URLcount'].strip() != '':
+                            test_input_list.append(row['Videostreaming URLcount'])
+                            found = True
+                            break
+                    if not found:
+                        logging.info(f"Pass Fail Value for Device {device} not found in CSV. Using default value 5")
+                        test_input_list.append(5)
+
+                for i in range(len(test_input_list)):
+                    if float(test_input_list[i]) <= total_urls[:ci][i]:
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+            else:
+                test_input_list = [self.expected_passfail_val for _ in range(len(username[:ci]))]
+                for i in range(len(test_input_list)):
+                    if int(self.expected_passfail_val) <= total_urls[:ci][i]:
+                        pass_fail_list.append("PASS")
+                    else:
+                        pass_fail_list.append("FAIL")
+
+            return {
+                " DEVICE TYPE ": device_type[:ci],
+                " Username ": username[:ci],
+                " SSID ": ssid[:ci],
+                " MAC ": mac[:ci],
+                " Channel ": channel[:ci],
+                " Mode ": mode[:ci],
+                " Buffers": total_buffer[:ci],
+                " Wait-Time(Sec)": wait_time_data,
+                " Min Video Rate(Mbps) ": min_video_rate[:ci],
+                " Avg Video Rate(Mbps) ": avg_video_rate[:ci],
+                " Max Video Rate(Mbps) ": max_video_rate[:ci],
+                " Total URLs ": total_urls[:ci],
+                " Expected URLs ": test_input_list,
+                " Total Errors ": total_err[:ci],
+                " RSSI (dbm)": ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[:ci]],
+                " Link Speed ": tx_rate[:ci],
+                " Status ": pass_fail_list,
+                "Bytes Read (bytes)": max_bytes_rd_list,
+                'Average Rx Rate (Mbps)': avg_rx_rate_list
+            }
+
+        return {
+            " DEVICE TYPE ": device_type[:ci],
+            " Username ": username[:ci],
+            " SSID ": ssid[:ci],
+            " MAC ": mac[:ci],
+            " Channel ": channel[:ci],
+            " Mode ": mode[:ci],
+            " Buffers": total_buffer[:ci],
+            " Wait-Time(Sec)": wait_time_data,
+            " Min Video Rate(Mbps) ": min_video_rate[:ci],
+            " Avg Video Rate(Mbps) ": avg_video_rate[:ci],
+            " Max Video Rate(Mbps) ": max_video_rate[:ci],
+            " Total URLs ": total_urls[:ci],
+            " Total Errors ": total_err[:ci],
+            " RSSI (dbm)": ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[:ci]],
+            " Link Speed ": tx_rate[:ci],
+            "Bytes Read (bytes)": max_bytes_rd_list,
+            'Average Rx Rate (Mbps)': avg_rx_rate_list
+        }
 
     def generate_report(self, date, iterations_before_test_stopped_by_user, test_setup_info, realtime_dataset, report_path='', cx_order_list=[]):
         logging.info("Creating Reports")
@@ -1083,6 +1197,16 @@ class VideoStreamingTest(Realm):
         report.build_objective()
         report.set_table_title("Input Parameters")
         report.build_table_title()
+        if self.config:
+            test_setup_info["SSID"] = self.report_ssid
+            test_setup_info["Password"] = self.passwd
+            test_setup_info["ENCRYPTION"] = self.encryp
+        elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
+            # Map each group with a profile
+            gp_pairs = zip(self.selected_groups, self.selected_profiles)
+            # Create a string by joining the mapped pairs
+            gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
+            test_setup_info["Configuration"] = gp_map
 
         report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
@@ -1298,29 +1422,32 @@ class VideoStreamingTest(Realm):
             report.build_graph()
 
             # Table 1
-            report.set_obj_html("Overall - Detailed Result Table", "The below tables provides detailed information for the web browsing test.")
+            report.set_obj_html("Overall - Detailed Result Table", "The below tables provides detailed information for the Video Streaming test.")
             report.build_objective()
-
-            # Create a dataframe for the detailed result table and append it to the report
-            dataframe = {
-                " DEVICE TYPE ": device_type[:created_incremental_values[iter]],
-                " Username ": username[:created_incremental_values[iter]],
-                " SSID ": ssid[:created_incremental_values[iter]],
-                " MAC ": mac[:created_incremental_values[iter]],
-                " Channel ": channel[:created_incremental_values[iter]],
-                " Mode ": mode[:created_incremental_values[iter]],
-                " Buffers": total_buffer[:created_incremental_values[iter]],
-                " Wait-Time(Sec)": wait_time_data,
-                " Min Video Rate(Mbps) ": min_video_rate[:created_incremental_values[iter]],
-                " Avg Video Rate(Mbps) ": avg_video_rate[:created_incremental_values[iter]],
-                " Max Video Rate(Mbps) ": max_video_rate[:created_incremental_values[iter]],
-                " Total URLs ": total_urls[:created_incremental_values[iter]],
-                " Total Errors ": total_err[:created_incremental_values[iter]],
-                " RSSI (dbm)": ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[:created_incremental_values[iter]]],
-                " Link Speed ": tx_rate[:created_incremental_values[iter]],
-                "Bytes Read (bytes)": max_bytes_rd_list,  # Added here
-                'Average Rx Rate (Mbps)': avg_rx_rate_list
+            test_data = {
+                "iter": iter,
+                "created_incremental_values": created_incremental_values,
+                "device_type": device_type,
+                "username": username,
+                "ssid": ssid,
+                "mac": mac,
+                "channel": channel,
+                "mode": mode,
+                "total_buffer": total_buffer,
+                "wait_time_data": wait_time_data,
+                "min_video_rate": min_video_rate,
+                "avg_video_rate": avg_video_rate,
+                "max_video_rate": max_video_rate,
+                "total_urls": total_urls,
+                "total_err": total_err,
+                "rssi_data": rssi_data,
+                "tx_rate": tx_rate,
+                "max_bytes_rd_list": max_bytes_rd_list,
+                "avg_rx_rate_list": avg_rx_rate_list
             }
+
+            dataframe = self.handle_passfail_criteria(test_data)
+
             dataframe1 = pd.DataFrame(dataframe)
             report.set_table_dataframe(dataframe1)
             report.build_table()
