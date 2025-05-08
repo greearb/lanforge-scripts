@@ -195,8 +195,8 @@ class DataplaneTest(cv_test):
                  upstream="1.1.eth2",
                  pull_report=False,
                  load_old_cfg=False,
-                 upload_speed="0",
-                 download_speed="85%",
+                 opposite_speed="0",
+                 speed="85%",
                  duration="15s",
                  station="1.1.sta01500",
                  dut="NA",
@@ -236,8 +236,8 @@ class DataplaneTest(cv_test):
         self.upstream = upstream
         self.station = station
         self.dut = dut
-        self.upload_speed = upload_speed
-        self.download_speed = download_speed
+        self.opposite_speed = opposite_speed
+        self.speed = speed
         self.duration = duration
         self.verbosity = verbosity
         self.graph_groups = graph_groups
@@ -275,10 +275,10 @@ class DataplaneTest(cv_test):
             cfg_options.append("upstream_port: " + self.upstream)
         if self.station != "":
             cfg_options.append("traffic_port: " + self.station)
-        if self.download_speed != "":
-            cfg_options.append("speed: " + self.download_speed)
-        if self.upload_speed != "":
-            cfg_options.append("speed2: " + self.upload_speed)
+        if self.speed != "":
+            cfg_options.append("speed: " + self.speed)
+        if self.opposite_speed != "":
+            cfg_options.append("speed2: " + self.opposite_speed)
         if self.duration != "":
             cfg_options.append("duration: " + self.duration)
         if self.dut != "":
@@ -513,14 +513,28 @@ INCLUDE_IN_README: False
                         default="",
                         help="Name of DUT used in test. Assumes DUT is already configured in LANforge. Example: \'linksys-8450\'")
 
-    parser.add_argument("--download_rate", "--download_speed",
-                        dest="download_speed",
+    # Traffic configuration
+    #
+    # Previous implementation used '--download_rate' and '--upload_rate'. However, the
+    # actual GUI parameters are labeled 'Rate' and 'Opposite Rate' and configure the
+    # test based on the traffic direction. Thus, in a DUT TX test, the 'Rate' refers
+    # to download rate. However in a DUT RX test, the 'Rate' refers to the upload rate.
+    parser.add_argument("--speed",
+                        "--rate",
+                        "--download_speed",
+                        "--download_rate",
+                        dest="speed",
                         default="",
-                        help="Requested download speed used in test. Percentage of theoretical is also supported. Default: 85%%.")
-    parser.add_argument("--upload_rate", "--upload_speed",
-                        dest="upload_speed",
+                        help="Requested traffic rate used in test for selected traffic direction(s). "
+                             "Percentage of theoretical is also supported. Default: 85%%.")
+    parser.add_argument("--opposite_speed",
+                        "--opposite_rate",
+                        "--upload_speed",
+                        "--upload_rate",
+                        dest="opposite_speed",
                         default="",
-                        help="Requested upload speed used in test. Percentage of theoretical is also supported. Default: 0")
+                        help="Requested opposite traffic rate used in test for selected traffic direction(s). "
+                             "Percentage of theoretical is also supported. Default: 0")
 
     parser.add_argument("--duration",
                         default="",
@@ -609,10 +623,15 @@ def apply_json_overrides(args):
         args.duration = json_data["duration"]
     if "station" in json_data:
         args.station = json_data["station"]
-    if "download_speed" in json_data:
-        args.download_speed = json_data["download_speed"]
-    if "upload_speed" in json_data:
-        args.upload_speed = json_data["upload_speed"]
+
+    for key in ["speed", "rate", "download_speed", "download_rate"]:
+        if key in json_data:
+            args.speed = json_data[key]
+
+    for key in ["opposite_speed", "opposite_rate", "upload_speed", "upload_rate"]:
+        if key in json_data:
+            args.opposite_speed = json_data[key]
+
     if "pull_report" in json_data:
         args.pull_report = json_data["pull_report"]
     if "raw_line" in json_data:
