@@ -272,7 +272,7 @@ class lf_create_wanlink():
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 
 
-def main():
+def parse_args():
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -389,7 +389,11 @@ EXAMPLE:    # Duplicate configuration for both ends of the WANLink
     # Help Summary
     parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
 
     help_summary = "This script creates a wanlink using the lanforge api."
     if args.help_summary:
