@@ -53,7 +53,7 @@
     Command Line Interface to run the Video Streaming with particular group of devices configured to particular ssid profile
     python3 lf_interop_video_streaming.py --mgr 192.168.213.218 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls
     --media_quality 1080P --duration 1m  --debug --test_name video_streaming_test --upstream_port 1.1.eth1 --file_name laxmi_csv --group_name group1 --profile_name Openwpa2
-    
+
     Example-10:
     Command Line Interface to run the Video Streaming with expected pass fail value
     python3 lf_interop_video_streaming.py --mgr 192.168.214.219 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls
@@ -1065,7 +1065,7 @@ class VideoStreamingTest(Realm):
         else:
             non_zero_values = [item for item in lst if item != 0]
             return min(non_zero_values)
-    
+
     def handle_passfail_criteria(self, data: dict):
         iter = data["iter"]
         ci = data["created_incremental_values"][iter]
@@ -1213,7 +1213,7 @@ class VideoStreamingTest(Realm):
         report.set_table_title("Input Parameters")
         report.build_table_title()
         if self.config:
-            test_setup_info["SSID"] = self.report_ssid
+            test_setup_info["SSID"] = self.ssid
             test_setup_info["Password"] = self.passwd
             test_setup_info["ENCRYPTION"] = self.encryp
         elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
@@ -1495,7 +1495,7 @@ class VideoStreamingTest(Realm):
         if not os.path.exists(test_name_dir):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
-    
+
     def filter_ios_devices(self, device_list):
         """
         Filters out iOS devices from the given device list based on hardware and software identifiers.
@@ -1569,7 +1569,7 @@ class VideoStreamingTest(Realm):
 
         self.device_list = filtered_list
         return filtered_list
-    
+
     def validate_args(self):
         if self.expected_passfail_val and self.csv_name:
             logging.error("Specify either expected_passfail_value or device_csv_name")
@@ -1718,7 +1718,7 @@ def main():
     parser.add_argument("--urls_per_tenm", type=int, default=100, help='specify the number of url you want to test on '
                         'per minute')
     parser.add_argument('--duration', type=str, help='time to run traffic')
-    parser.add_argument('--test_name',  help='Name of the Test')
+    parser.add_argument('--test_name', help='Name of the Test')
     parser.add_argument('--dowebgui', help="If true will execute script for webgui", default=False, type=bool)
     parser.add_argument('--result_dir', help="Specify the result dir to store the runtime logs <Do not use in CLI, --used by webui>", default='')
     parser.add_argument("--lf_logger_config_json", help="[log configuration] --lf_logger_config_json <json file> , json configuration of logger")
@@ -1826,7 +1826,7 @@ def main():
                              groups=args.group_name,
                              profiles=args.profile_name,
                              config=args.config,
-                             file_name = args.file_name
+                             file_name=args.file_name
                              )
     args.upstream_port = obj.change_port_to_ip(args.upstream_port)
     obj.validate_args()
