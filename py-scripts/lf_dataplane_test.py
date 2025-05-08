@@ -183,6 +183,19 @@ logger = logging.getLogger(__name__)
 
 
 class DataplaneTest(cv_test):
+    SPATIAL_STREAMS_MAP = {
+        "AUTO": "AUTO",
+        "auto": "AUTO",
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "1x1": "1",
+        "2x2": "2",
+        "3x3": "3",
+        "4x4": "4",
+    }
+
     TRAFFIC_DIRECTION_MAP = {
         "DUT-TX": "DUT Transmit",
         "dut-tx": "DUT Transmit",
@@ -213,6 +226,7 @@ class DataplaneTest(cv_test):
                  upstream="1.1.eth2",
                  pull_report=False,
                  load_old_cfg=False,
+                 spatial_streams=None,
                  traffic_directions=None,
                  traffic_types=None,
                  opposite_speed="0",
@@ -262,6 +276,8 @@ class DataplaneTest(cv_test):
         self.verbosity = verbosity
         self.graph_groups = graph_groups
         self.local_lf_report_dir = local_lf_report_dir
+
+        self.spatial_streams = DataplaneTest._prepare_as_rawline(spatial_streams, self.SPATIAL_STREAMS_MAP)
 
         self.traffic_directions = DataplaneTest._prepare_as_rawline(traffic_directions, self.TRAFFIC_DIRECTION_MAP)
         self.traffic_types = DataplaneTest._prepare_as_rawline(traffic_types, self.TRAFFIC_TYPE_MAP)
@@ -326,6 +342,8 @@ class DataplaneTest(cv_test):
             cfg_options.append("upstream_port: " + self.upstream)
         if self.station != "":
             cfg_options.append("traffic_port: " + self.station)
+        if self.spatial_streams:
+            cfg_options.append("spatial_streams: " + self.spatial_streams)
         if self.traffic_directions:
             cfg_options.append("directions: " + self.traffic_directions)
         if self.traffic_types:
@@ -568,6 +586,15 @@ INCLUDE_IN_README: False
                         default="",
                         help="Name of DUT used in test. Assumes DUT is already configured in LANforge. Example: \'linksys-8450\'")
 
+    # WiFi Configuration
+    parser.add_argument("--nss",
+                        "--spatial_streams",
+                        dest="spatial_streams",
+                        default=None,
+                        type=str,
+                        help="WiFi MIMO type. For WiFi Access point testing, this configures the LANforge station. "
+                             "For WiFi station testing, this configures the LANforge access point.")
+
     # Traffic configuration
     #
     # Previous implementation used '--download_rate' and '--upload_rate'. However, the
@@ -672,6 +699,23 @@ def validate_args(args):
             logger.error("Unexpected number of traffic types. Expected two, UDP and/or TCP.")
             exit(1)
 
+    if args.spatial_streams:
+        spatial_streams = args.spatial_streams.split(",")
+
+        for spatial_stream in spatial_streams:
+            if spatial_stream not in DataplaneTest.SPATIAL_STREAMS_MAP:
+                logger.error(f"Unexpected spatial streams configuration {spatial_stream}, supported are: {DataplaneTest.SPATIAL_STREAMS_MAP.keys()}.")
+                exit(1)
+
+        if len(spatial_streams) > 4:
+            logger.error("Unexpected number of traffic types. Expected two, UDP and/or TCP.")
+            exit(1)
+        elif len(spatial_streams) > 1 and "AUTO" in spatial_streams or "auto" in spatial_streams:
+            # GUI won't prevent you from doing this, but likely doesn't make sense. Check here to prevent potential confusion
+            logger.error("Cannot specify automatic spatial stream configuration with other spatial streams "
+                         "configuration selected.")
+            exit(1)
+
 
 def configure_logging(args):
     """
@@ -761,6 +805,18 @@ def apply_json_overrides(args):
                          f"found '{type(traffic_types_data)}'")
             exit(1)
         args.traffic_types = traffic_types_data
+
+    spatial_streams_data = None
+    for key in ["nss", "spatial_streams"]:
+        if key in json_data:
+            spatial_streams_data = json_data[key]
+
+    if spatial_streams_data:
+        if not isinstance(spatial_streams_data, str):
+            logger.error("Unexpected spatial streams format in JSON data. Expected comma separated string, "
+                         f"found '{type(spatial_streams_data)}'")
+            exit(1)
+        args.spatial_streams = spatial_streams_data
 
     if "pull_report" in json_data:
         args.pull_report = json_data["pull_report"]
