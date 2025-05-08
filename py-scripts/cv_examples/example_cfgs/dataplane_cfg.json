@@ -10,11 +10,7 @@
 	"duration":"15s",
 	"station":"1.1.eth2",
 	"download_speed":"85%",
-	"upload_speed":"0",	
+	"upload_speed":"0",
 	"pull_report": true,
-	"raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit", "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
+	"raw_line":["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit", "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
 }
-			
-	
-		
-	
