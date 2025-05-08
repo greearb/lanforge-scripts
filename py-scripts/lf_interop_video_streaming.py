@@ -76,6 +76,8 @@ import pandas as pd
 import logging
 import json
 import shutil
+import asyncio
+import csv
 from datetime import datetime, timedelta
 from lf_graph import lf_bar_graph_horizontal
 from lf_graph import lf_line_graph
@@ -94,15 +96,21 @@ base_RealDevice = base.RealDevice
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_report_pdf = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s'
+)
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
+DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 
 
 class VideoStreamingTest(Realm):
     def __init__(self, host, ssid, passwd, encryp, media_source, media_quality, suporrted_release=None, max_speed=None, url=None,
-                 urls_per_tenm=None, duration=None, resource_ids=None, dowebgui=False, result_dir="", test_name=None, incremental=None, postcleanup=False, precleanup=False):
+                 urls_per_tenm=None, duration=None, resource_ids=None, dowebgui=False, result_dir="", test_name=None, incremental=None, postcleanup=False, precleanup=False,
+                 pass_fail_val=None, csv_name=None, groups=None, profiles=None, config=None, file_name=None):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         self.adb_device_list = None
         self.host = host
@@ -154,6 +162,12 @@ class VideoStreamingTest(Realm):
         self.generic_endps_profile.name_prefix = "yt"
         self.background_run = None
         self.stop_test = False
+        self.expected_passfail_val = pass_fail_val
+        self.csv_name = csv_name
+        self.selected_groups = groups
+        self.selected_profiles = profiles
+        self.config = config
+        self.file_name = file_name
 
     @property
     def run(self):
@@ -1305,6 +1319,43 @@ class VideoStreamingTest(Realm):
         if not os.path.exists(test_name_dir):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
+    
+    def validate_args(self):
+        if self.expected_passfail_val and self.csv_name:
+            logging.error("Specify either expected_passfail_value or device_csv_name")
+            exit(1)
+
+        if self.selected_groups:
+            self.selected_groups = self.selected_groups.strip()
+            self.selected_groups = self.selected_groups.split(',')
+        else:
+            self.selected_groups = []
+
+        if self.selected_profiles:
+            self.selected_profiles = self.selected_profiles.strip()
+            self.selected_profiles = self.selected_profiles.split(',')
+        else:
+            self.selected_profiles = []
+
+        if len(self.selected_groups) != len(self.selected_profiles):
+            logging.error("Number of groups should match number of profiles")
+            exit(1)
+        # Either use group_name/profile_name or device_list, not both
+        elif self.selected_groups and self.selected_profiles and self.file_name and self.resource_ids:
+            logging.error("Either group name or device list should be entered not both")
+            exit(1)
+        # Ensure that either `ssid` or `profile_name` is specified, but not both
+        elif self.ssid and self.selected_profiles:
+            logging.error("Either ssid or profile name should be given")
+            exit(1)
+        # Validate that when a file is specified, both group and profile names must also be provided
+        elif self.file_name and (self.selected_groups is None or self.selected_profiles is None):
+            logging.error("Please enter the correct set of arguments")
+            exit(1)
+        # For configuration mode, check that SSID, password, and security type are appropriately provided
+        elif self.config and ((self.ssid is None or (self.passwd is None and self.encryp.lower() != 'open') or (self.passwd is None and self.encryp is None))):
+            logging.error("Please provide ssid password and security for configuration of devices")
+            exit(1)
 
 
 def main():
@@ -1392,7 +1443,7 @@ def main():
 
     parser.add_argument("--host", "--mgr", help='specify the GUI to connect to, assumes port '
                         '8080')
-    parser.add_argument("--ssid", default="ssid_wpa_2g", help='specify ssid on which the test will be running')
+    parser.add_argument("--ssid", help='specify ssid on which the test will be running')
     parser.add_argument("--passwd", default="something", help='specify encryption password  on which the test will '
                         'be running')
     parser.add_argument("--encryp", default="psk", help='specify the encryption type  on which the test will be '
@@ -1418,6 +1469,34 @@ def main():
     parser.add_argument('--postcleanup', help="Cleanup the cross connections after test is stopped", action='store_true')
     parser.add_argument('--precleanup', help="Cleanup the cross connections before test is started", action='store_true')
     parser.add_argument('--help_summary', help='Show summary of what this script does', action='store_true')
+
+    # Arguments related to groups and profile and pass fail values configuration
+    parser.add_argument('--group_name', type=str, help='Enter group name')
+    parser.add_argument('--profile_name', type=str, help='Enter profile name')
+    parser.add_argument('--file_name', type=str, help='Enter file name')
+    parser.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
+    parser.add_argument("--eap_identity", type=str, default='DEFAULT', help="Specify the EAP identity for authentication.")
+    parser.add_argument("--ieee8021x", action="store_true", help='Enables 802.1X enterprise authentication')
+    parser.add_argument("--ieee80211u", action="store_true", help='Enables IEEE 802.11u (Hotspot 2.0) support.')
+    parser.add_argument("--ieee80211w", type=int, default=1, help='Enables IEEE 802.11w (Management Frame Protection) support.')
+    parser.add_argument("--enable_pkc", action="store_true", help='Enables pkc support.')
+    parser.add_argument("--bss_transition", action="store_true", help='Enables BSS transition support.')
+    parser.add_argument("--power_save", action="store_true", help='Enables power-saving features.')
+    parser.add_argument("--disable_ofdma", action="store_true", help='Disables OFDMA support.')
+    parser.add_argument("--roam_ft_ds", action="store_true", help='Enables fast BSS transition (FT) support')
+    parser.add_argument("--key_management", type=str, default='DEFAULT', help='Specify the key management method (e.g., WPA-PSK, WPA-EAP)')
+    parser.add_argument("--pairwise", type=str, default='NA', help='Specify the pairwise cipher')
+    parser.add_argument("--private_key", type=str, default='NA', help='Specify EAP private key certificate file.')
+    parser.add_argument("--ca_cert", type=str, default='NA', help='Specify the CA certificate file name')
+    parser.add_argument("--client_cert", type=str, default='NA', help='Specify the client certificate file name')
+    parser.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
+    parser.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
+    parser.add_argument("--upstream_port", type=str, default='NA', help='Specify the Upstream Port')
+    parser.add_argument('--expected_passfail_value', help='Enter the expected number of urls ', default=None)
+    parser.add_argument('--csv_name', type=str, help='Enter the csv name to store expected values', default=None)
+    parser.add_argument("--wait_time", type=int, help="Specify the time for configuration", default=60)
+    parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
+    parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
     args = parser.parse_args()
 
     if args.help_summary:
@@ -1447,6 +1526,9 @@ def main():
         '360p': '4'
     }
 
+    if args.file_name:
+        args.file_name = args.file_name.removesuffix('.csv')
+
     media_source, media_quality = args.media_source.capitalize(), args.media_quality
     args.media_source = args.media_source.lower()
     args.media_quality = args.media_quality.lower()
@@ -1473,118 +1555,165 @@ def main():
                              url=args.url, urls_per_tenm=args.urls_per_tenm, duration=args.duration,
                              resource_ids=args.device_list, dowebgui=args.dowebgui, media_quality=args.media_quality, media_source=args.media_source,
                              result_dir=args.result_dir, test_name=args.test_name, incremental=args.incremental, postcleanup=args.postcleanup,
-                             precleanup=args.precleanup)
+                             precleanup=args.precleanup,
+                             pass_fail_val=args.expected_passfail_value,
+                             csv_name=args.device_csv_name,
+                             groups=args.group_name,
+                             profiles=args.profile_name,
+                             config=args.config,
+                             file_name = args.file_name
+                             )
+    obj.validate_args()
+    config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.host, file_name=args.file_name)
+    if not args.expected_passfail_value and args.device_csv_name is None:
+        config_obj.device_csv_file(csv_name="device.csv")
 
     resource_ids_sm = []
     resource_set = set()
     resource_list = []
     resource_ids_generated = ""
 
+    if args.group_name and args.file_name and args.profile_name:
+        selected_groups = args.group_name.split(',')
+        selected_profiles = args.profile_name.split(',')
+        config_devices = {}
+        for i in range(len(selected_groups)):
+            config_devices[selected_groups[i]] = selected_profiles[i]
+        config_obj.initiate_group()
+        asyncio.run(config_obj.connectivity(config_devices, upstream=args.upstream_port))
+
+        adbresponse = config_obj.adb_obj.get_devices()
+        resource_manager = config_obj.laptop_obj.get_devices()
+        all_res = {}
+        df1 = config_obj.display_groups(config_obj.groups)
+        groups_list = df1.to_dict(orient='list')
+        group_devices = {}
+        for adb in adbresponse:
+            group_devices[adb['serial']] = adb['eid']
+        for res in resource_manager:
+            all_res[res['hostname']] = res['shelf'] + '.' + res['resource']
+        eid_list = []
+        for grp_name in groups_list.keys():
+            for g_name in selected_groups:
+                if grp_name == g_name:
+                    for j in groups_list[grp_name]:
+                        if j in group_devices.keys():
+                            eid_list.append(group_devices[j])
+                        elif j in all_res.keys():
+                            eid_list.append(all_res[j])
+        args.device_list = ",".join(id for id in eid_list)
+    else:
+        # When group/profile are not provided
+        config_dict = {
+            'ssid': args.ssid,
+            'passwd': args.passwd,
+            'enc': args.encryp,
+            'eap_method': args.eap_method,
+            'eap_identity': args.eap_identity,
+            'ieee80211': args.ieee8021x,
+            'ieee80211u': args.ieee80211u,
+            'ieee80211w': args.ieee80211w,
+            'enable_pkc': args.enable_pkc,
+            'bss_transition': args.bss_transition,
+            'power_save': args.power_save,
+            'disable_ofdma': args.disable_ofdma,
+            'roam_ft_ds': args.roam_ft_ds,
+            'key_management': args.key_management,
+            'pairwise': args.pairwise,
+            'private_key': args.private_key,
+            'ca_cert': args.ca_cert,
+            'client_cert': args.client_cert,
+            'pk_passwd': args.pk_passwd,
+            'pac_file': args.pac_file,
+            'server_ip': args.upstream_port
+        }
+        if args.device_list:
+            all_devices = config_obj.get_all_devices()
+            if args.group_name is None and args.file_name is None and args.profile_name is None:
+                dev_list = args.device_list.split(',')
+                if args.config:
+                    asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
+        else:
+            if args.config:
+                all_devices = config_obj.get_all_devices()
+                device_list = []
+                for device in all_devices:
+                    if device["type"] != 'laptop':
+                        device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
+                    elif device["type"] == 'laptop':
+                        device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+                print("Available devices:")
+                for device in device_list:
+                    print(device)
+                args.device_list = input("Enter the desired resources to run the test:")
+                dev1_list = args.device_list.split(',')
+                asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
+            else:
+                obj.android_devices = obj.devices.get_devices(only_androids=True)
+                selected_devices, report_labels, selected_macs = obj.devices.query_user()
+                if not selected_devices:
+                    logging.info("devices donot exist..!!")
+                    return
+
+                obj.android_list = selected_devices
+                # Verify if all resource IDs are valid for Android devices
+                if obj.android_list:
+                    resource_ids = ",".join([item.split(".")[1] for item in obj.android_list])
+
+                    num_list = list(map(int, resource_ids.split(',')))
+
+                    # Sort the list
+                    num_list.sort()
+
+                    # Join the sorted list back into a string
+                    sorted_string = ','.join(map(str, num_list))
+
+                    obj.resource_ids = sorted_string
+                    resource_ids1 = list(map(int, sorted_string.split(',')))
+                    modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
+                    if not all(x in modified_list for x in resource_ids1):
+                        logging.info("Verify Resource ids, as few are invalid...!!")
+                        exit()
+                    resource_ids_sm = obj.resource_ids
+                    resource_list = resource_ids_sm.split(',')
+                    resource_set = set(resource_list)
+                    resource_list_sorted = sorted(resource_set)
+                    resource_ids_generated = ','.join(resource_list_sorted)
+                    available_resources = list(resource_set)
+
     if args.dowebgui:
-        # Split resource IDs from args into a list
         resource_ids_sm = args.device_list.split(',')
-        # Convert list to set to remove duplicates
         resource_set = set(resource_ids_sm)
-        # Sort the set to maintain order
         resource_list = sorted(resource_set)
-        # Generate a comma-separated string of sorted resource IDs
         resource_ids_generated = ','.join(resource_list)
         resource_list_sorted = resource_list
-        # Query devices based on the generated resource IDs
         selected_devices, report_labels, selected_macs = obj.devices.query_user(dowebgui=args.dowebgui, device_list=resource_ids_generated)
-        # Modify obj.resource_ids to include only the second part of each ID (after '.')
         obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list.split(","))
         available_resources = [int(num) for num in obj.resource_ids.split(',')]
     else:
-        # Case where args.no_laptops flag is set
-        # if args.no_laptops:
-        # Retrieve all Android devices if no_laptops flag is True
         obj.android_devices = obj.devices.get_devices(only_androids=True)
-
-        # Process resource IDs if provided
         if args.device_list:
-            # Extract second part of resource IDs and sort them
-            obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list.split(","))
-            resource_ids_sm = obj.resource_ids
-            resource_list = resource_ids_sm.split(',')
-            resource_set = set(resource_list)
-            resource_list_sorted = sorted(resource_set)
-            resource_ids_generated = ','.join(resource_list_sorted)
+            device_list = args.device_list.split(',')
+            # Extract resource IDs (after the dot), remove duplicates, and sort them
+            resource_ids = sorted(set(int(item.split('.')[1]) for item in device_list if '.' in item))
+            resource_list_sorted = resource_ids
+            obj.resource_ids = ','.join(map(str, resource_ids))
+            # Create a set of Android device IDs (e.g., "resource.123")
+            android_device_ids = set(obj.android_devices)
+            android_device_short_ids = {device.split('.')[0] + '.' + device.split('.')[1] for device in android_device_ids}
+            obj.android_list = [dev for dev in android_device_short_ids if dev in device_list]
+            # Log any devices in the list that are not available
+            for dev in device_list:
+                if dev not in android_device_short_ids:
+                    logger.info(f"{dev} device is not available")
+            # Final list of available Android resource IDs
+            available_resources = sorted(set(int(dev.split('.')[1]) for dev in obj.android_list))
+            logger.info(f"Available devices: {available_resources}")
 
-            # Convert resource IDs into a list of integers
-            num_list = list(map(int, obj.resource_ids.split(',')))
-
-            # Sort the list
-            num_list.sort()
-
-            # Join the sorted list back into a string
-            sorted_string = ','.join(map(str, num_list))
-            obj.resource_ids = sorted_string
-
-            # Extract the second part of each Android device ID and convert to integers
-            modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
-            # modified_other_os_list = list(map(lambda item: int(item.split('.')[1]), obj.other_os_list))
-
-            # Verify if all resource IDs are valid for Android devices
-            resource_ids = [int(x) for x in sorted_string.split(',')]
-            # Process Android devices when no_laptops flag is True
-            new_list_android = [item.split('.')[0] + '.' + item.split('.')[1] for item in obj.android_devices]
-
-            resources_list = args.device_list.split(",")
-            for element in resources_list:
-                if element in new_list_android:
-                    for ele in obj.android_devices:
-                        if ele.startswith(element):
-                            obj.android_list.append(ele)
-                else:
-                    logger.info("{} device is not available".format(element))
-            new_android = [int(item.split('.')[1]) for item in obj.android_list]
-
-            resource_ids = sorted(new_android)
-            available_resources = list(set(resource_ids))
-
-        else:
-            # Query user to select devices if no resource IDs are provided
-            selected_devices, report_labels, selected_macs = obj.devices.query_user()
-            # Handle cases where no devices are selected
-
-            if not selected_devices:
-                logging.info("devices donot exist..!!")
-                return
-
-            obj.android_list = selected_devices
-
-            # Verify if all resource IDs are valid for Android devices
-            if obj.android_list:
-                resource_ids = ",".join([item.split(".")[1] for item in obj.android_list])
-
-                num_list = list(map(int, resource_ids.split(',')))
-
-                # Sort the list
-                num_list.sort()
-
-                # Join the sorted list back into a string
-                sorted_string = ','.join(map(str, num_list))
-
-                obj.resource_ids = sorted_string
-                resource_ids1 = list(map(int, sorted_string.split(',')))
-                modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
-                if not all(x in modified_list for x in resource_ids1):
-                    logging.info("Verify Resource ids, as few are invalid...!!")
-                    exit()
-                resource_ids_sm = obj.resource_ids
-                resource_list = resource_ids_sm.split(',')
-                resource_set = set(resource_list)
-                resource_list_sorted = sorted(resource_set)
-                resource_ids_generated = ','.join(resource_list_sorted)
-                available_resources = list(resource_set)
     if len(available_resources) == 0:
         logger.info("No devices which are selected are available in the lanforge")
         exit()
     gave_incremental = False
-    if len(resource_list_sorted) == 0:
-        logger.error("Selected Devices are not available in the lanforge")
-        exit(1)
     if args.incremental and not args.webgui_incremental:
         if obj.resource_ids:
             logging.info("The total available devices are {}".format(len(available_resources)))
