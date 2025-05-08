@@ -183,6 +183,15 @@ logger = logging.getLogger(__name__)
 
 
 class DataplaneTest(cv_test):
+    TRAFFIC_DIRECTION_MAP = {
+        "DUT-TX": "DUT Transmit",
+        "dut-tx": "DUT Transmit",
+        "transmit": "DUT Transmit",
+        "DUT-RX": "DUT Receive",
+        "dut-rx": "DUT Receive",
+        "receive": "DUT Receive",
+    }
+
     def __init__(self,
                  lf_host="localhost",
                  lf_port=8080,
@@ -195,6 +204,7 @@ class DataplaneTest(cv_test):
                  upstream="1.1.eth2",
                  pull_report=False,
                  load_old_cfg=False,
+                 traffic_directions=None,
                  opposite_speed="0",
                  speed="85%",
                  duration="15s",
@@ -243,6 +253,15 @@ class DataplaneTest(cv_test):
         self.graph_groups = graph_groups
         self.local_lf_report_dir = local_lf_report_dir
 
+        # Convert from script execution-friendly traffic direction to values expected by the GUI
+        #
+        # Format of traffic direction parsed by the GUI is: "directions: DUT Transmit;DUT Receive"
+        # Format specified in CLI is: "DUT-TX,DUT-RX"
+        self.traffic_directions = None
+        if traffic_directions:
+            translated_traffic_dirs = [self.TRAFFIC_DIRECTION_MAP[dir] for dir in traffic_directions.split(",")]
+            self.traffic_directions = ";".join(translated_traffic_dirs)
+
     def setup(self):
         # Nothing to do at this time.
         return
@@ -270,11 +289,17 @@ class DataplaneTest(cv_test):
                                raw_lines=self.raw_lines,
                                raw_lines_file=self.raw_lines_file)
 
-        # cmd line args take precedence and so come last in the cfg array.
+        # NOTE: Exercise caution when adding new arguments here,
+        #       as it is very easy to break previous functionality
+        #
+        # Command line args take precedence over enables, disables, and raw lines,
+        # so adjust here after config options were applied
         if self.upstream != "":
             cfg_options.append("upstream_port: " + self.upstream)
         if self.station != "":
             cfg_options.append("traffic_port: " + self.station)
+        if self.traffic_directions:
+            cfg_options.append("directions: " + self.traffic_directions)
         if self.speed != "":
             cfg_options.append("speed: " + self.speed)
         if self.opposite_speed != "":
@@ -519,6 +544,15 @@ INCLUDE_IN_README: False
     # actual GUI parameters are labeled 'Rate' and 'Opposite Rate' and configure the
     # test based on the traffic direction. Thus, in a DUT TX test, the 'Rate' refers
     # to download rate. However in a DUT RX test, the 'Rate' refers to the upload rate.
+    parser.add_argument("--direction",
+                        "--directions",
+                        "--traffic_direction",
+                        "--traffic_directions",
+                        dest="traffic_directions",
+                        default=None,
+                        type=str,
+                        help="Direction(s) of generated traffic, relative to DUT. Bi-directional traffic may be "
+                             "achieved by setting the opposite.")
     parser.add_argument("--speed",
                         "--rate",
                         "--download_speed",
@@ -566,6 +600,25 @@ INCLUDE_IN_README: False
                         help='Show summary of what this script does')
 
     return parser.parse_args()
+
+
+def validate_args(args):
+    """
+    Sanity check specified script arguments.
+
+    This should be run after JSON overrides are applied.
+    """
+    if args.traffic_directions:
+        traffic_directions = args.traffic_directions.split(",")
+
+        if len(traffic_directions) > 2:
+            logger.error("Only two traffic directions are possible, DUT transmit and DUT receive")
+            exit(1)
+
+        for direction in traffic_directions:
+            if direction not in DataplaneTest.TRAFFIC_DIRECTION_MAP:
+                logger.error(f"Unexpected traffic direction {direction}, supported are: {DataplaneTest.TRAFFIC_DIRECTION_MAP.keys()}")
+                exit(1)
 
 
 def configure_logging(args):
@@ -624,6 +677,7 @@ def apply_json_overrides(args):
     if "station" in json_data:
         args.station = json_data["station"]
 
+    # Traffic configuration
     for key in ["speed", "rate", "download_speed", "download_rate"]:
         if key in json_data:
             args.speed = json_data[key]
@@ -631,6 +685,18 @@ def apply_json_overrides(args):
     for key in ["opposite_speed", "opposite_rate", "upload_speed", "upload_rate"]:
         if key in json_data:
             args.opposite_speed = json_data[key]
+
+    traffic_directions_data = None
+    for key in ["direction", "directions", "traffic_direction", "traffic_directions"]:
+        if key in json_data:
+            traffic_directions_data = json_data[key]
+
+    if traffic_directions_data:
+        if not isinstance(traffic_directions_data, str):
+            logger.error("Unexpected traffic direction format in JSON data. Expected comma separate string, "
+                         f"found '{type(traffic_directions_data)}'")
+            exit(1)
+        args.traffic_directions = traffic_directions_data
 
     if "pull_report" in json_data:
         args.pull_report = json_data["pull_report"]
@@ -663,6 +729,7 @@ def main():
     cv_base_adjust_parser(args)
 
     apply_json_overrides(args)
+    validate_args(args)
 
     CV_Test = DataplaneTest(lf_host=args.mgr,
                             lf_port=args.port,
