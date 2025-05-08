@@ -196,6 +196,23 @@ class DataplaneTest(cv_test):
         "4x4": "4",
     }
 
+    BANDWIDTH_MAP = {
+        "No-Change": "No-Change",
+        "no-change": "no-change",
+        "AUTO": "AUTO",
+        "auto": "AUTO",
+        "20": "20",
+        "40": "40",
+        "80": "80",
+        "160": "160",
+        "320": "320",
+        "20MHz": "20",
+        "40MHz": "40",
+        "80MHz": "80",
+        "160MHz": "160",
+        "320MHz": "320",
+    }
+
     TRAFFIC_DIRECTION_MAP = {
         "DUT-TX": "DUT Transmit",
         "dut-tx": "DUT Transmit",
@@ -227,6 +244,7 @@ class DataplaneTest(cv_test):
                  pull_report=False,
                  load_old_cfg=False,
                  spatial_streams=None,
+                 bandwidths=None,
                  traffic_directions=None,
                  traffic_types=None,
                  opposite_speed="0",
@@ -278,6 +296,7 @@ class DataplaneTest(cv_test):
         self.local_lf_report_dir = local_lf_report_dir
 
         self.spatial_streams = DataplaneTest._prepare_as_rawline(spatial_streams, self.SPATIAL_STREAMS_MAP)
+        self.bandwidths = DataplaneTest._prepare_as_rawline(bandwidths, self.BANDWIDTH_MAP)
 
         self.traffic_directions = DataplaneTest._prepare_as_rawline(traffic_directions, self.TRAFFIC_DIRECTION_MAP)
         self.traffic_types = DataplaneTest._prepare_as_rawline(traffic_types, self.TRAFFIC_TYPE_MAP)
@@ -344,6 +363,8 @@ class DataplaneTest(cv_test):
             cfg_options.append("traffic_port: " + self.station)
         if self.spatial_streams:
             cfg_options.append("spatial_streams: " + self.spatial_streams)
+        if self.bandwidths:
+            cfg_options.append("bandw_options: " + self.bandwidths)
         if self.traffic_directions:
             cfg_options.append("directions: " + self.traffic_directions)
         if self.traffic_types:
@@ -594,6 +615,15 @@ INCLUDE_IN_README: False
                         type=str,
                         help="WiFi MIMO type. For WiFi Access point testing, this configures the LANforge station. "
                              "For WiFi station testing, this configures the LANforge access point.")
+    parser.add_argument("--bandwidth",
+                        "--bandwidths",
+                        dest="bandwidths",
+                        default=None,
+                        type=str,
+                        help="Maximum WiFi bandwidth. For WiFi Access point testing, this configures the LANforge station. "
+                             "For WiFi station testing, this configures the LANforge access point. "
+                             "Note stations configured for 802.11ac or newer mandate minimum 80MHz support, "
+                             "save a few specific configurations.")
 
     # Traffic configuration
     #
@@ -673,6 +703,7 @@ def validate_args(args):
 
     This should be run after JSON overrides are applied.
     """
+    # TODO: Can properly move some of this code to a helper, specifically mapping checks
     if args.traffic_directions:
         traffic_directions = args.traffic_directions.split(",")
 
@@ -715,6 +746,14 @@ def validate_args(args):
             logger.error("Cannot specify automatic spatial stream configuration with other spatial streams "
                          "configuration selected.")
             exit(1)
+
+    if args.bandwidths:
+        bandwidths = args.bandwidths.split(",")
+
+        for bandwidth in bandwidths:
+            if bandwidth not in DataplaneTest.BANDWIDTH_MAP:
+                logger.error(f"Unexpected bandwidths configuration {bandwidth}, supported are: {DataplaneTest.BANDWIDTH_MAP.keys()}.")
+                exit(1)
 
 
 def configure_logging(args):
@@ -817,6 +856,18 @@ def apply_json_overrides(args):
                          f"found '{type(spatial_streams_data)}'")
             exit(1)
         args.spatial_streams = spatial_streams_data
+
+    bandiwdths_data = None
+    for key in ["bandwidth", "bandwidths"]:
+        if key in json_data:
+            bandiwdths_data = json_data[key]
+
+    if bandiwdths_data:
+        if not isinstance(bandiwdths_data, str):
+            logger.error("Unexpected bandwidths format in JSON data. Expected comma separated string, "
+                         f"found '{type(bandiwdths_data)}'")
+            exit(1)
+        args.bandwidths = bandiwdths_data
 
     if "pull_report" in json_data:
         args.pull_report = json_data["pull_report"]
