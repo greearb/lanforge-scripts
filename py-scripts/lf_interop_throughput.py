@@ -49,6 +49,26 @@
         Command Line Interface to run the test with incremental_capacity by raising incremental flag
         python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080  --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp --incremental
 
+        EXAMPLE-10:
+        Command Line Interface to run the test with expected pass/fail value
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --device_list 1.11,1.12,1.360,1.400 --expected_passfail_value 5
+
+        EXAMPLE-11:
+        Command Line Interface to run the test with expected pass/fail csv for individual device
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --device_list 1.11,1.12,1.360,1.400 --device_csv_name clab.csv
+
+        EXAMPLE-12:
+        Command Line Interface to run download scenario for Real clients with Groups and Profiles
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 100000000 --upload 100000000
+        --traffic_type lf_udp --report_timer 1s --device_csv clab.csv --file_name gr204 --group_name g3,g4 --profile_name n1,n1
+
+        EXAMPLE-13:
+        Command Line Interface to run download scenario for Real clients with device list and config
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000
+        --traffic_type lf_udp --ssid NETGEAR_2G_wpa2 --passwd Password@123 --security wpa2 --config --device_list 1.10,1.11,1.12
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -67,6 +87,26 @@
         EXAMPLE-4:
         Command Line Interface to run the test with postcleanup
         python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080  --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp --do_interopability --postcleanup
+
+        EXAMPLE-5:
+        Command Line Interface to run the test with expected pass/fail value
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --device_list 1.11,1.12,1.360,1.400 --expected_passfail_value 5 --do_interopability
+
+        EXAMPLE-6:
+        Command Line Interface to run the test with expected pass/fail csv for individual device
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --device_list 1.11,1.12,1.360,1.400 --device_csv_name clab.csv --do_interopability
+
+        EXAMPLE-7:
+        Command Line Interface to run download scenario for Real clients with Groups and Profiles
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 100000000 --upload 100000000
+        --traffic_type lf_udp --report_timer 1s --device_csv clab.csv --file_name gr204 --group_name g3,g4 --profile_name n1,n1 --do_interopability
+
+        EXAMPLE-8:
+        Command Line Interface to run download scenario for Real clients with device list and config
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --ssid NETGEAR_2G_wpa2 --passwd Password@123 --security wpa2 --config --device_list 1.10,1.11,1.12 --do_interopability
 
     SCRIPT_CLASSIFICATION :  Test
 
@@ -106,6 +146,9 @@ import logging
 import json
 import pandas as pd
 import shutil
+import asyncio
+import csv
+import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +170,7 @@ from lf_graph import lf_line_graph
 
 from datetime import datetime, timedelta
 
+DeviceConfig=importlib.import_module("py-scripts.DeviceConfig")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
@@ -163,6 +207,29 @@ class Throughput(Realm):
                  precleanup=False,
                  do_interopability=False,
                  ip="localhost",
+                 csv_direction='',
+                 device_csv_name=None,
+                 expected_passfail_value=None,
+                 file_name=None, group_name=None, profile_name=None,
+                 eap_method=None,
+                 eap_identity=None,
+                 ieee80211=None,
+                 ieee80211u=None,
+                 ieee80211w=None,
+                 enable_pkc=None,
+                 bss_transition=None,
+                 power_save=None,
+                 disable_ofdma=None,
+                 roam_ft_ds=None,
+                 key_management=None,
+                 pairwise=None,
+                 private_key=None,
+                 ca_cert=None,
+                 client_cert=None,
+                 pk_passwd=None,
+                 pac_file=None,
+                 wait_time=60,
+                 config=False,
                  user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None):
@@ -240,6 +307,34 @@ class Throughput(Realm):
         self.gave_incremental = False
         self.incremental = incremental
         self.precleanup = precleanup
+        self.csv_direction = csv_direction
+        self.expected_passfail_value = expected_passfail_value
+        self.device_csv_name = device_csv_name
+        self.file_name = file_name
+        self.group_name = group_name
+        self.profile_name = profile_name
+        # for advanced config
+        self.eap_method = eap_method
+        self.eap_identity = eap_identity
+        self.ieee80211 = ieee80211
+        self.ieee80211u = ieee80211u
+        self.ieee80211w = ieee80211w
+        self.enable_pkc = enable_pkc
+        self.bss_transition = bss_transition
+        self.power_save = power_save
+        self.disable_ofdma = disable_ofdma
+        self.roam_ft_ds = roam_ft_ds
+        self.key_management = key_management
+        self.pairwise = pairwise
+        self.private_key = private_key
+        self.ca_cert = ca_cert
+        self.client_cert = client_cert
+        self.pk_passwd = pk_passwd
+        self.pac_file = pac_file
+        self.wait_time = wait_time
+        self.config = config
+        self.configdevices = {}
+        self.group_device_map = {}
 
     def os_type(self):
         """
@@ -283,6 +378,64 @@ class Throughput(Realm):
 
         """
         port_eid_list, same_eid_list, original_port_list = [], [], []
+        obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
+        upstream_port_ip = self.change_port_to_ip(self.upstream)
+        config_devices = {}
+        config_dict = {
+            'ssid': self.ssid,
+            'passwd': self.password,
+            'enc': self.security,
+            'eap_method': self.eap_method,
+            'eap_identity': self.eap_identity,
+            'ieee80211': self.ieee80211,
+            'ieee80211u': self.ieee80211u,
+            'ieee80211w': self.ieee80211w,
+            'enable_pkc': self.enable_pkc,
+            'bss_transition': self.bss_transition,
+            'power_save': self.power_save,
+            'disable_ofdma': self.disable_ofdma,
+            'roam_ft_ds': self.roam_ft_ds,
+            'key_management': self.key_management,
+            'pairwise': self.pairwise,
+            'private_key': self.private_key,
+            'ca_cert': self.ca_cert,
+            'client_cert': self.client_cert,
+            'pk_passwd': self.pk_passwd,
+            'pac_file': self.pac_file,
+            'server_ip': upstream_port_ip
+        }
+        # When groups and profiles specified for configuration
+        if self.group_name and self.file_name and self.device_list == [] and self.profile_name:
+            selected_groups = self.group_name.split(',')
+            selected_profiles = self.profile_name.split(',')
+            for i in range(len(selected_groups)):
+                config_devices[selected_groups[i]] = selected_profiles[i]
+            self.configdevices = config_devices
+            obj.initiate_group()
+            self.group_device_map = obj.get_groups_devices(data=selected_groups, groupdevmap=True)
+            # Configuration of group of devices for the corresponding profiles
+            self.device_list = asyncio.run(obj.connectivity(config_devices, upstream=upstream_port_ip))
+        # Configuration of devices with SSID,Password and Security when device list is specified
+        elif self.device_list != []:
+
+            all_devices = obj.get_all_devices()
+
+            self.device_list = self.device_list.split(',')
+            if self.config:
+                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=config_dict))
+        # Configuration of devices with SSID , Password and Security when the device list is not specified
+        elif self.device_list == [] and self.config:
+            all_devices = obj.get_all_devices()
+            device_list = []
+            for device in all_devices:
+                if device["type"] == 'laptop':
+                    device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+                else:
+                    device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
+            logger.info("AVAILABLE RESOURCES", device_list)
+            self.device_list = input("Enter the desired resources to run the test:").split(',')
+            if self.config:
+                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=config_dict))
 
         # Retrieve all resources from the LANforge
         response = self.json_get("/resource/all")
@@ -360,6 +513,10 @@ class Throughput(Realm):
                 if eid in device:
                     self.user_list.append(device)
 
+        configure_list = []
+        if len(self.device_list) == 0 and self.config == False and self.group_name is None:
+            logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(self.user_list))
+            self.device_list = input("Enter the desired resources to run the test:").split(',')
         # If self.device_list is provided, check availability against devices_available
         if len(self.device_list) != 0:
             devices_list = self.device_list
@@ -367,7 +524,7 @@ class Throughput(Realm):
             not_available = []
 
             # Iterate over each input device in devices_list
-            for input_device in devices_list.split(','):
+            for input_device in devices_list:
                 found = False
 
                 # Check if input_device exists in devices_available
@@ -381,6 +538,11 @@ class Throughput(Realm):
                     if self.device_list != "all":
                         logger.warning(input_device + " is not available to run the test")
 
+            for dev in available_list:
+                for user in self.user_list:
+                    if dev == user.split(" ")[0]:
+                        if user not in configure_list:
+                            configure_list.append(user)
             # If available_list is not empty, log info and set self.device_found to True
             if len(available_list) > 0:
                 logger.info("Test is intiated on these devices {}".format(available_list))
@@ -394,10 +556,7 @@ class Throughput(Realm):
                     exit(1)
 
         else:
-
-            # If self.device_list is not provided, prompt user to select devices from user_list
-            logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(self.user_list))
-            devices_list = input("Select the devices to run the test(e.g. 1.10,1.11 or all to run the test on all devices: ")
+            devices_list = ","
 
         # If no devices are selected or only comma is entered, log an error and return False
         if devices_list == "all":
@@ -439,6 +598,22 @@ class Throughput(Realm):
             for i in self.mac_id1_list:
                 if eid in i:
                     self.mac_id_list.append(i.strip(eid + ' '))
+        # Runtime data for webui for configuration
+        if self.dowebgui:
+            if len(configure_list) == 0:
+                logger.info("No device is available to run the test")
+                obj = {
+                    "status": "Stopped",
+                    "configuration_status": "configured"
+                }
+                self.updating_webui_runningjson(obj)
+                return
+            else:
+                obj = {
+                    "configured_devices": configure_list,
+                    "configuration_status": "configured"
+                }
+                self.updating_webui_runningjson(obj)
 
         # Check if incremental_capacity is provided and ensure selected devices are sufficient
         if (len(self.incremental_capacity) > 0 and int(self.incremental_capacity.split(',')[-1]) > len(self.mac_id_list)):
@@ -448,13 +623,25 @@ class Throughput(Realm):
         else:
             return True, self.real_client_list
 
+    # Updates the status in the running.json file while running a test from the Web UI
+    def updating_webui_runningjson(self, obj):
+        data = {}
+        with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
+                  'r') as file:
+            data = json.load(file)
+            for key in obj:
+                data[key] = obj[key]
+        with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
+                  'w') as file:
+            json.dump(data, file, indent=4)
+
     def get_signal_and_channel_data(self, station_names):
         """
         Retrieves signal strength, channel, mode, and link speed data for the specified stations.
 
         """
 
-        signal_list, channel_list, mode_list, link_speed_list = [], [], [], []
+        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = [], [], [], [], []
         interfaces_dict = dict()
         try:
             port_data = self.json_get('/ports/all/')['interfaces']
@@ -487,7 +674,12 @@ class Throughput(Realm):
                 link_speed_list.append(interfaces_dict[sta]['tx-rate'])
             else:
                 link_speed_list.append('-')
-        return signal_list, channel_list, mode_list, link_speed_list
+        for sta in station_names:
+            if sta in interfaces_dict:
+                rx_rate_list.append(interfaces_dict[sta]['rx-rate'])
+            else:
+                rx_rate_list.append('-')
+        return signal_list, channel_list, mode_list, link_speed_list, rx_rate_list
 
     def get_ssid_list(self, station_names):
         """
@@ -628,8 +820,55 @@ class Throughput(Realm):
         logger.info("cleanup done")
         self.cx_profile.cleanup()
 
-    def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time):
+    def get_layer3_endp_data(self):
+        """
+        Fetches Layer 3 endpoint data for all created cross connections.
 
+        Returns:
+            dict: A dictionary with  Each key corresponds to
+            the index of a each device in the order of cx_list, and its value is a list of 5 elements:
+            [0]: RX rate (last) at the A endpoint
+            [1]: RX rate (last) at the B endpoint
+            [2]: RX drop percentage at the A endpoint
+            [3]: RX drop percentage at the B endpoint
+            [4]: Status of the Device ("Run" or "Stopped")
+        """
+        cx_list_endp = []
+        for i in self.cx_profile.created_cx.keys():
+            cx_list_endp.append(i + '-A')
+            cx_list_endp.append(i + '-B')
+        # Fetch required throughput data from Lanforge
+        try:
+            # for dynamic data, taken rx rate lasts from layer3 endp tab
+            l3_endp_data = list(self.json_get('/endp/{}/list?fields=rx rate (last),rx drop %25,name,run,name'.format(','.join(cx_list_endp)))['endpoint'])
+        except Exception as e:
+            cx_data = self.json_get('/cx/all/')
+            logger.info(cx_data)
+            logger.error(f"Endpoint not fetched from API {e}")
+        # Extracting and storing throughput data
+        cx_list = list(self.cx_profile.created_cx.keys())
+        i = 0
+        throughput = {}
+        # mapping the data based upon the cx_list order
+        for cx in cx_list:
+            throughput[i] = [0, 0, 0, 0, "Stopped"]
+            for j in l3_endp_data:
+                key, value = next(iter(j.items()))
+                endp_a = cx + '-A'
+                endp_b = cx + '-B'
+                if value['name'] == endp_a:
+                    throughput[i][0] = value['rx rate (last)']
+                    throughput[i][2] = value['rx drop %']
+                elif value['name'] == endp_b:
+                    throughput[i][1] = value['rx rate (last)']
+                    throughput[i][3] = value['rx drop %']
+                if value['name'] == endp_a or value['name'] == endp_b:
+                    throughput[i][4] = 'Run' if value['run'] else 'Stopped'
+            i += 1
+        return throughput
+
+    def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time):
+        individual_df_for_webui = individual_df.copy()  # for webui
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
         drop_a, drop_a_per, drop_b, drop_b_per, state, state_of_device = [], [], [], [], [], []
         test_stopped_by_user = False
@@ -657,27 +896,17 @@ class Throughput(Realm):
         # If using web GUI, set runtime directory
         if self.dowebgui:
             runtime_dir = self.result_dir
-
+        previous_time = datetime.now()
+        time_break = 0
         # Continuously collect data until end time is reached
         while datetime.now() < end_time:
             index += 1
-
-            signal_list, channel_list, mode_list, link_speed_list = self.get_signal_and_channel_data(self.input_devices_list)
+            current_time = datetime.now()
+            signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
             signal_list = [int(i) if i != "" else 0 for i in signal_list]
-
-            # Fetch required throughput data from Lanforge
-            try:
-                response = list(
-                    self.json_get('/cx/%s?fields=%s' % (
-                        ','.join(self.cx_profile.created_cx.keys()), ",".join(['bps rx a', 'bps rx b', 'rx drop %25 a', 'rx drop %25 b', 'state']))).values())[2:]
-            except Exception as e:
-                overall_response = self.json_get('/cx/all/')
-                logger.info(overall_response)
-                logger.error(f"Endpoint not fetched from API {e}")
-            # Extracting and storing throughput data
-            throughput[index] = list(
-                map(lambda i: [x for x in i.values()], response))
+            throughput[index] = self.get_layer3_endp_data()
             if self.dowebgui:
+                time.sleep(1)  # for each second data in csv while ensuring webgui
                 individual_df_data = []
                 temp_upload, temp_download, temp_drop_a, temp_drop_b = [], [], [], []
 
@@ -720,7 +949,7 @@ class Throughput(Realm):
                     remaining_minutes_instrf = str(overall_time_difference).split(".")[0]
                 # Storing individual device throughput data(download, upload, Rx % drop A, Rx % drop B) to dataframe
                 for i in range(len(download_throughput)):
-                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i]])
+                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
 
                 # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
                 individual_df_data.extend([round(sum(download_throughput),
@@ -736,10 +965,17 @@ class Throughput(Realm):
                                            remaining_minutes_instrf,
                                            ', '.join(str(n) for n in incremental_capacity_list),
                                            'Running'])
+                # Appending the data according to the time gap (for webgui)
+                if (current_time - previous_time).total_seconds() >= time_break:
+                    individual_df_for_webui.loc[len(individual_df_for_webui)] = individual_df_data
+                    if self.group_name is None:
+                        individual_df_for_webui.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
+                    else:
+                        individual_df_for_webui.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
+                    previous_time = current_time
 
                 # Append data to individual_df and save to CSV
                 individual_df.loc[len(individual_df)] = individual_df_data
-                individual_df.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
 
                 # Check if test was stopped by the user
                 with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
@@ -750,39 +986,39 @@ class Throughput(Realm):
                         test_stopped_by_user = True
                         break
 
-                # Adjust sleep time based on elapsed time since start
+                # Adjust time_gap based on elapsed time since start (for webui)
                 d = datetime.now()
                 if d - start_time <= timedelta(hours=1):
-                    time.sleep(5)
+                    time_break = 5
                 elif d - start_time > timedelta(hours=1) or d - start_time <= timedelta(
                         hours=6):
                     if end_time - d < timedelta(seconds=10):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(10)
+                        time_break = 10
                 elif d - start_time > timedelta(hours=6) or d - start_time <= timedelta(
                         hours=12):
                     if end_time - d < timedelta(seconds=30):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(30)
+                        time_break = 30
                 elif d - start_time > timedelta(hours=12) or d - start_time <= timedelta(
                         hours=24):
                     if end_time - d < timedelta(seconds=60):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(60)
+                        time_break = 60
                 elif d - start_time > timedelta(hours=24) or d - start_time <= timedelta(
                         hours=48):
                     if end_time - d < timedelta(seconds=60):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(90)
+                        time_break = 90
                 elif d - start_time > timedelta(hours=48):
                     if end_time - d < timedelta(seconds=120):
-                        time.sleep(5)
+                        time_break = 5
                     else:
-                        time.sleep(120)
+                        time_break = 120
             else:
 
                 # If not using web GUI, sleep based on report timer
@@ -825,7 +1061,7 @@ class Throughput(Realm):
                     remaining_minutes_instrf = str(overall_time_difference).split(".")[0]
                 # Storing individual device throughput data(download, upload, Rx % drop A, Rx % drop B) to dataframe
                 for i in range(len(download_throughput)):
-                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i]])
+                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
 
                 # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
                 individual_df_data.extend([round(sum(download_throughput),
@@ -869,12 +1105,12 @@ class Throughput(Realm):
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
         drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
         drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
-        signal_list, channel_list, mode_list, link_speed_list = self.get_signal_and_channel_data(self.input_devices_list)
+        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
         signal_list = [int(i) if i != "" else 0 for i in signal_list]
 
         # Storing individual device throughput data(download, upload, Rx % drop A, Rx % drop B) to dataframe after test stopped
         for i in range(len(download_throughput)):
-            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i]])
+            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
         timestamp = datetime.now().strftime("%d/%m %I:%M:%S %p")
 
         # If it's the last iteration, append final metrics and 'Stopped' status
@@ -905,11 +1141,17 @@ class Throughput(Realm):
                                        ', '.join(str(n) for n in incremental_capacity_list),
                                        'Stopped'])
         individual_df.loc[len(individual_df)] = individual_df_data
+        if self.dowebgui:
+            individual_df_for_webui.loc[len(individual_df_for_webui)] = individual_df_data
 
         # Save individual_df to CSV based on web GUI status
         if self.dowebgui:
-            individual_df.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
-            individual_df.to_csv('throughput_data.csv', index=False)
+            if self.group_name:
+                individual_df_for_webui.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
+                individual_df.to_csv('overall_throughput.csv', index=False)
+            else:
+                individual_df_for_webui.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
+                individual_df.to_csv('throughput_data.csv', index=False)
         else:
             individual_df.to_csv('throughput_data.csv', index=False)
 
@@ -917,9 +1159,9 @@ class Throughput(Realm):
         keys = list(connections_download.keys())
 
         for i in range(len(download_throughput)):
-            connections_download.update({keys[i]: float(f"{(download_throughput[i] ):.2f}")})
+            connections_download.update({keys[i]: float(f"{(download_throughput[i]):.2f}")})
         for i in range(len(upload_throughput)):
-            connections_upload.update({keys[i]: float(f"{(upload_throughput[i] ):.2f}")})
+            connections_upload.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
 
         logger.info("connections download {}".format(connections_download))
         logger.info("connections upload {}".format(connections_upload))
@@ -1098,6 +1340,68 @@ class Throughput(Realm):
             cx_incremental_capacity_names_lists.append(new_cx_names_list)
         return cx_incremental_capacity_names_lists, cx_incremental_capacity_lists, created_cx_lists_keys, incremental_capacity_list_values
 
+    # Ensures maximum of 60 plots in line graph
+    def build_line_graph(self, data_set, xaxis_name, yaxis_name, xaxis_categories, label, graph_image_name):
+        """
+        Creates and saves a line graph showing throughput over time.
+
+        - Plots each data point for all throughput data in dataset.
+        - Shows only up to 60 labels on the x-axis to keep it readable.
+
+        Returns:
+        The name of the saved image file.
+        """
+        figsize = (10, 5)
+        plt.figure(figsize=(figsize[0] + 5, figsize[1] + 2))
+
+        color = ['forestgreen', 'c', 'r', 'g', 'b', 'p']
+        marker = ['s', 'o', 'v']
+        xaxis_categories = xaxis_categories[:-1]
+        data_set = [data[:-1] for data in data_set]
+        # Plot each dataset
+        for i, data in enumerate(data_set):
+            plt.plot(
+                xaxis_categories,
+                data,
+                color=color[i % len(color)],  # Ensure no index error
+                label=label[i],
+                marker=marker[i % len(marker)]
+            )
+
+        plt.xlabel(xaxis_name, fontweight='bold', fontsize=15)
+        plt.ylabel(yaxis_name, fontweight='bold', fontsize=15)
+
+        # Handle x-axis ticks dynamically based on data size
+        data_size = len(xaxis_categories)
+        if data_size <= 60:
+            tick_positions = list(range(data_size))
+        else:
+            # Ensure 60 points including the first and last
+            tick_count = min(60, data_size)
+            interval = data_size / (tick_count - 1)
+            tick_positions = [round(i * interval) for i in range(tick_count)]
+            tick_positions = sorted(set(min(data_size - 1, max(0, pos)) for pos in tick_positions))
+        tick_labels = [xaxis_categories[i] for i in tick_positions]
+
+        plt.xticks(ticks=tick_positions, labels=tick_labels, rotation=90)
+
+        plt.grid(True, linestyle=':')  # Grid with dotted lines
+
+        # Legend settings
+        plt.legend(loc="best", ncol=1)
+
+        plt.suptitle("", fontsize=16)
+        plt.tight_layout()
+
+        # Save the graph as an image
+        plt.savefig(f"{graph_image_name}.png", dpi=96, bbox_inches="tight")
+        plt.close()
+
+        logger.debug("{}.png".format(graph_image_name))
+        logger.debug("{}.csv".format(graph_image_name))
+
+        return f"{graph_image_name}.png"
+
     def generate_report(self, iterations_before_test_stopped_by_user, incremental_capacity_list, data=None, data1=None, report_path='', result_dir_name='Throughput_Test_report',
                         selected_real_clients_names=None):
 
@@ -1105,7 +1409,7 @@ class Throughput(Realm):
             result_dir_name = "Interopability_Test_report"
 
         self.ssid_list = self.get_ssid_list(self.input_devices_list)
-        self.signal_list, self.channel_list, self.mode_list, self.link_speed_list = self.get_signal_and_channel_data(self.input_devices_list)
+        self.signal_list, self.channel_list, self.mode_list, self.link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
 
         if selected_real_clients_names is not None:
             self.num_stations = selected_real_clients_names
@@ -1117,7 +1421,11 @@ class Throughput(Realm):
             report_path = report.get_path()
             report_path_date_time = report.get_path_date_time()
             # df.to_csv(os.path.join(report_path_date_time, 'throughput_data.csv'))
-            shutil.move('throughput_data.csv', report_path_date_time)
+            # For groups and profiles configuration through webgui
+            if self.dowebgui == True and self.group_name:
+                shutil.move('overall_throughput.csv', report_path_date_time)
+            else:
+                shutil.move('throughput_data.csv', report_path_date_time)
             logger.info("path: {}".format(report_path))
             logger.info("path_date_time: {}".format(report_path_date_time))
             report.set_title("Throughput Test")
@@ -1201,19 +1509,38 @@ class Throughput(Realm):
                 incremental_capacity_data = "None"
 
             # Construct test_setup_info dictionary for test setup table
-            test_setup_info = {
-                "Test name": self.test_name,
-                "Device List": ", ".join(all_devices_names),
-                "No of Devices": "Total" + f"({str(self.num_stations)})" + total_devices,
-                "Increment": incremental_capacity_data,
-                "Traffic Duration in minutes": round(int(self.test_duration) * len(incremental_capacity_list) / 60, 2),
-                "Traffic Type": (self.traffic_type.strip("lf_")).upper(),
-                "Traffic Direction": self.direction,
-                "Upload Rate(Mbps)": str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps",
-                "Download Rate(Mbps)": str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps",
-                "Load Type": load_type_name,
-                "Packet Size": packet_size_text
-            }
+            if self.group_name:
+                group_names = ', '.join(self.configdevices.keys())
+                profile_names = ', '.join(self.configdevices.values())
+                configmap = "Groups:" + group_names + " -> Profiles:" + profile_names
+                test_setup_info = {
+                    "Test name": self.test_name,
+                    "Configuration": configmap,
+                    "Configured Devices": ", ".join(all_devices_names),
+                    "No of Devices": "Total" + f"({str(self.num_stations)})" + total_devices,
+                    "Increment": incremental_capacity_data,
+                    "Traffic Duration in minutes": round(int(self.test_duration) * len(incremental_capacity_list) / 60, 2),
+                    "Traffic Type": (self.traffic_type.strip("lf_")).upper(),
+                    "Traffic Direction": self.direction,
+                    "Upload Rate(Mbps)": str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps",
+                    "Download Rate(Mbps)": str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps",
+                    "Load Type": load_type_name,
+                    "Packet Size": packet_size_text
+                }
+            else:
+                test_setup_info = {
+                    "Test name": self.test_name,
+                    "Device List": ", ".join(all_devices_names),
+                    "No of Devices": "Total" + f"({str(self.num_stations)})" + total_devices,
+                    "Increment": incremental_capacity_data,
+                    "Traffic Duration in minutes": round(int(self.test_duration) * len(incremental_capacity_list) / 60, 2),
+                    "Traffic Type": (self.traffic_type.strip("lf_")).upper(),
+                    "Traffic Direction": self.direction,
+                    "Upload Rate(Mbps)": str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps",
+                    "Download Rate(Mbps)": str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps",
+                    "Load Type": load_type_name,
+                    "Packet Size": packet_size_text
+                }
             report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
 
             # Loop through iterations and build graphs, tables for each iteration
@@ -1377,7 +1704,7 @@ class Throughput(Realm):
                                 packet_size_in_table.append(self.cx_profile.side_a_min_pdu)
                             direction_in_table.append(self.direction)
 
-                data_set_in_graph, trimmed_data_set_in_graph = [], []
+                data_set_in_graph = []
 
                 # Depending on the test direction, retrieve corresponding throughput data,
                 # organize it into datasets for graphing, and calculate real-time average throughput values accordingly.
@@ -1389,43 +1716,41 @@ class Throughput(Realm):
                     devices_data_to_create_bar_graph.append(download_data)
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data = ['Download', 'Upload']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))),2)} Mbps, Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data = (
+                        f"Real Time Throughput: Achieved Throughput: Download: {round(sum(download_data[0:int(incremental_capacity_list[i])]), 2)} Mbps, "
+                        f"Upload: {round(sum(upload_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
+                    )
 
                 elif self.direction == 'Download':
                     download_values_list = data['Overall Download'][data['Iteration'] == i + 1].values.tolist()
                     data_set_in_graph.append(download_values_list)
                     devices_data_to_create_bar_graph.append(download_data)
                     label_data = ['Download']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))),2)} Mbps"
+                    real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))), 2)} Mbps"
 
                 elif self.direction == 'Upload':
                     upload_values_list = data['Overall Upload'][data['Iteration'] == i + 1].values.tolist()
                     data_set_in_graph.append(upload_values_list)
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data = ['Upload']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data = f"Real Time Throughput: Achieved Throughput: Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])), 2)} Mbps"
 
                 if len(incremental_capacity_list) > 1:
-                    report.set_custom_html(f"<h2><u>Iteration-{i+1}: Number of Devices Running : {len(devices_on_running)}</u></h2>")
+                    report.set_custom_html(f"<h2><u>Iteration-{i + 1}: Number of Devices Running : {len(devices_on_running)}</u></h2>")
                     report.build_custom()
-                logger
-                for _ in range(len(data_set_in_graph)):
-                    trimmed_data_set_in_graph.append(self.trim_data(len(data_set_in_graph[_]), data_set_in_graph[_]))
 
                 report.set_obj_html(
                     _obj_title=f"{real_time_data}",
                     _obj=" ")
                 report.build_objective()
-                graph = lf_line_graph(_data_set=trimmed_data_set_in_graph,
-                                      _xaxis_name="Time",
-                                      _yaxis_name="Throughput (Mbps)",
-                                      _xaxis_categories=self.trim_data(len(data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()),
-                                                                       data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()),
-                                      _label=label_data,
-                                      _graph_image_name=f"line_graph{i}"
-
-                                      )
-                graph_png = graph.build_line_graph()
+                graph_png = self.build_line_graph(
+                    data_set=data_set_in_graph,
+                    xaxis_name="Time",
+                    yaxis_name="Throughput (Mbps)",
+                    xaxis_categories=data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist(),
+                    label=label_data,
+                    graph_image_name=f"line_graph{i}"
+                )
                 logger.info("graph name {}".format(graph_png))
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
@@ -1478,43 +1803,104 @@ class Throughput(Realm):
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
                 report.build_graph()
+                if self.group_name:
+                    report.set_obj_html(
+                        _obj_title="Detailed Result Table For Groups ",
+                        _obj="The below tables provides detailed information for the throughput test on each group.")
+                else:
 
-                report.set_obj_html(
-                    _obj_title="Detailed Result Table ",
-                    _obj="The below tables provides detailed information for the throughput test on each device.")
+                    report.set_obj_html(
+                        _obj_title="Detailed Result Table ",
+                        _obj="The below tables provides detailed information for the throughput test on each device.")
                 report.build_objective()
                 self.mac_id_list = [item.split()[-1] if ' ' in item else item for item in self.mac_id_list]
-                bk_dataframe = {
-                    " Device Type ": device_type[0:int(incremental_capacity_list[i])],
-                    " Username": devices_on_running[0:int(incremental_capacity_list[i])],
-                    " SSID ": self.ssid_list[0:int(incremental_capacity_list[i])],
-                    " MAC ": self.mac_id_list[0:int(incremental_capacity_list[i])],
-                    " Channel ": self.channel_list[0:int(incremental_capacity_list[i])],
-                    " Mode": self.mode_list[0:int(incremental_capacity_list[i])],
-                    # " Direction":direction_in_table[0:int(incremental_capacity_list[i])],
-                    " Offered download rate ": download_list[0:int(incremental_capacity_list[i])],
-                    " Observed Average download rate ": [str(n) + " Mbps" for n in download_data[0:int(incremental_capacity_list[i])]],
-                    " Offered upload rate ": upload_list[0:int(incremental_capacity_list[i])],
-                    " Observed Average upload rate ": [str(n) + " Mbps" for n in upload_data[0:int(incremental_capacity_list[i])]],
-                    " RSSI ": ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[0:int(incremental_capacity_list[i])]],
-                    # " Link Speed ":self.link_speed_list[0:int(incremental_capacity_list[i])],
-                    " Packet Size(Bytes) ": [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]]
-                }
-                if self.direction == "Bi-direction":
-                    bk_dataframe[" Average Rx Drop B% "] = upload_drop
-                    bk_dataframe[" Average Rx Drop A% "] = download_drop
-                elif self.direction == 'Download':
-                    bk_dataframe[" Average Rx Drop A% "] = download_drop
-                    # adding rx drop while uploading as 0
-                    bk_dataframe[" Average Rx Drop B% "] = [0.0] * len(download_drop)
-
+                if self.expected_passfail_value or self.device_csv_name:
+                    test_input_list, pass_fail_list = self.get_pass_fail_list(device_type, incremental_capacity_list[i], devices_on_running, download_data, upload_data)
+                if self.group_name:
+                    for key, val in self.group_device_map.items():
+                        if self.expected_passfail_value or self.device_csv_name:
+                            # Generating Dataframe when Groups with their profiles and pass_fail case is specified
+                            dataframe = self.generate_dataframe(val,
+                                                                device_type[0:int(incremental_capacity_list[i])],
+                                                                devices_on_running[0:int(incremental_capacity_list[i])],
+                                                                self.ssid_list[0:int(incremental_capacity_list[i])],
+                                                                self.mac_id_list[0:int(incremental_capacity_list[i])],
+                                                                self.channel_list[0:int(incremental_capacity_list[i])],
+                                                                self.mode_list[0:int(incremental_capacity_list[i])],
+                                                                direction_in_table[0:int(incremental_capacity_list[i])],
+                                                                download_list[0:int(incremental_capacity_list[i])],
+                                                                [str(n) + " Mbps" for n in download_data[0:int(incremental_capacity_list[i])]],
+                                                                upload_list[0:int(incremental_capacity_list[i])],
+                                                                [str(n) + " Mbps" for n in upload_data[0:int(incremental_capacity_list[i])]],
+                                                                ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[0:int(incremental_capacity_list[i])]],
+                                                                test_input_list,
+                                                                self.link_speed_list[0:int(incremental_capacity_list[i])],
+                                                                [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
+                                                                pass_fail_list,
+                                                                upload_drop,
+                                                                download_drop)
+                        # Generating Dataframe for groups when pass_fail case is not specified
+                        else:
+                            dataframe = self.generate_dataframe(val,
+                                                                device_type[0:int(incremental_capacity_list[i])],
+                                                                devices_on_running[0:int(incremental_capacity_list[i])],
+                                                                self.ssid_list[0:int(incremental_capacity_list[i])],
+                                                                self.mac_id_list[0:int(incremental_capacity_list[i])],
+                                                                self.channel_list[0:int(incremental_capacity_list[i])],
+                                                                self.mode_list[0:int(incremental_capacity_list[i])],
+                                                                direction_in_table[0:int(incremental_capacity_list[i])],
+                                                                download_list[0:int(incremental_capacity_list[i])],
+                                                                [str(n) + " Mbps" for n in download_data[0:int(incremental_capacity_list[i])]],
+                                                                upload_list[0:int(incremental_capacity_list[i])],
+                                                                [str(n) + " Mbps" for n in upload_data[0:int(incremental_capacity_list[i])]],
+                                                                ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[0:int(incremental_capacity_list[i])]],
+                                                                [],
+                                                                self.link_speed_list[0:int(incremental_capacity_list[i])],
+                                                                [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
+                                                                [],
+                                                                upload_drop,
+                                                                download_drop)
+                        if dataframe:
+                            report.set_obj_html("", "Group: {}".format(key))
+                            report.build_objective()
+                            dataframe1 = pd.DataFrame(dataframe)
+                            report.set_table_dataframe(dataframe1)
+                            report.build_table()
                 else:
-                    bk_dataframe[" Average Rx Drop B% "] = upload_drop
-                    # adding rx drop while downloading as 0
-                    bk_dataframe[" Average Rx Drop A% "] = [0.0] * len(upload_drop)
-                dataframe1 = pd.DataFrame(bk_dataframe)
-                report.set_table_dataframe(dataframe1)
-                report.build_table()
+                    bk_dataframe = {
+                        " Device Type ": device_type[0:int(incremental_capacity_list[i])],
+                        " Username": devices_on_running[0:int(incremental_capacity_list[i])],
+                        " SSID ": self.ssid_list[0:int(incremental_capacity_list[i])],
+                        " MAC ": self.mac_id_list[0:int(incremental_capacity_list[i])],
+                        " Channel ": self.channel_list[0:int(incremental_capacity_list[i])],
+                        " Mode": self.mode_list[0:int(incremental_capacity_list[i])],
+                        # " Direction":direction_in_table[0:int(incremental_capacity_list[i])],
+                        " Offered download rate ": download_list[0:int(incremental_capacity_list[i])],
+                        " Observed Average download rate ": [str(n) + " Mbps" for n in download_data[0:int(incremental_capacity_list[i])]],
+                        " Offered upload rate ": upload_list[0:int(incremental_capacity_list[i])],
+                        " Observed Average upload rate ": [str(n) + " Mbps" for n in upload_data[0:int(incremental_capacity_list[i])]],
+                        " RSSI ": ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[0:int(incremental_capacity_list[i])]],
+                        # " Link Speed ":self.link_speed_list[0:int(incremental_capacity_list[i])],
+                        " Packet Size(Bytes) ": [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
+                    }
+                    if self.direction == "Bi-direction":
+                        bk_dataframe[" Average Rx Drop B% "] = upload_drop
+                        bk_dataframe[" Average Rx Drop A% "] = download_drop
+                    elif self.direction == 'Download':
+                        bk_dataframe[" Average Rx Drop A% "] = download_drop
+                        # adding rx drop while uploading as 0
+                        bk_dataframe[" Average Rx Drop B% "] = [0.0] * len(download_drop)
+
+                    else:
+                        bk_dataframe[" Average Rx Drop B% "] = upload_drop
+                        # adding rx drop while downloading as 0
+                        bk_dataframe[" Average Rx Drop A% "] = [0.0] * len(upload_drop)
+                    if self.expected_passfail_value or self.device_csv_name:
+                        bk_dataframe[" Expected " + self.direction + " rate "] = [str(n) + " Mbps" for n in test_input_list]
+                        bk_dataframe[" Status "] = pass_fail_list
+                    dataframe1 = pd.DataFrame(bk_dataframe)
+                    report.set_table_dataframe(dataframe1)
+                    report.build_table()
 
                 report.set_custom_html('<hr>')
                 report.build_custom()
@@ -1676,7 +2062,7 @@ class Throughput(Realm):
 
                         direction_in_table.append(self.direction)
 
-                data_set_in_graph, trimmed_data_set_in_graph = [], []
+                data_set_in_graph = []
 
                 # Depending on the test direction, retrieve corresponding throughput data,
                 # organize it into datasets for graphing, and calculate real-time average throughput values accordingly.
@@ -1688,42 +2074,47 @@ class Throughput(Realm):
                     devices_data_to_create_bar_graph.append(download_data)
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data = ['Download', 'Upload']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))/len(download_data[0:int(incremental_capacity_list[i])])),2)} Mbps, Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])/len(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data = (
+                        f"Real Time Throughput: Achieved Throughput: Download: "
+                        f"{round(sum(download_data[0:int(incremental_capacity_list[i])]) / len(download_data[0:int(incremental_capacity_list[i])]), 2)} Mbps, "
+                        f"Upload: {round(sum(upload_data[0:int(incremental_capacity_list[i])]) / len(upload_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
+                    )
 
                 elif self.direction == 'Download':
                     download_values_list = data['Overall Download'][data['Iteration'] == i + 1].values.tolist()
                     data_set_in_graph.append(download_values_list)
                     devices_data_to_create_bar_graph.append(download_data)
                     label_data = ['Download']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))/len(download_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data = (
+                        f"Real Time Throughput: Achieved Throughput: Download: "
+                        f"{round(sum(download_data[0:int(incremental_capacity_list[i])]) / len(download_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
+                    )
 
                 elif self.direction == 'Upload':
                     upload_values_list = data['Overall Upload'][data['Iteration'] == i + 1].values.tolist()
                     data_set_in_graph.append(upload_values_list)
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data = ['Upload']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])/len(upload_data[0:int(incremental_capacity_list[i])])),2)} Mbps"
+                    real_time_data = (
+                        f"Real Time Throughput: Achieved Throughput: Upload: "
+                        f"{round(sum(upload_data[0:int(incremental_capacity_list[i])]) / len(upload_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
+                    )
 
-                report.set_custom_html(f"<h2><u>{i+1}. Test On Device {', '.join(devices_on_running)}:</u></h2>")
+                report.set_custom_html(f"<h2><u>{i + 1}. Test On Device {', '.join(devices_on_running)}:</u></h2>")
                 report.build_custom()
-
-                for _ in range(len(data_set_in_graph)):
-                    trimmed_data_set_in_graph.append(self.trim_data(len(data_set_in_graph[_]), data_set_in_graph[_]))
 
                 report.set_obj_html(
                     _obj_title=f"{real_time_data}",
                     _obj=" ")
                 report.build_objective()
-                graph = lf_line_graph(_data_set=trimmed_data_set_in_graph,
-                                      _xaxis_name="Time",
-                                      _yaxis_name="Throughput (Mbps)",
-                                      _xaxis_categories=self.trim_data(len(data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()),
-                                                                       data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()),
-                                      _label=label_data,
-                                      _graph_image_name=f"line_graph{i}"
-
-                                      )
-                graph_png = graph.build_line_graph()
+                graph_png = self.build_line_graph(
+                    data_set=data_set_in_graph,
+                    xaxis_name="Time",
+                    yaxis_name="Throughput (Mbps)",
+                    xaxis_categories=data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist(),
+                    label=label_data,
+                    graph_image_name=f"line_graph{i}"
+                )
                 logger.info("graph name {}".format(graph_png))
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
@@ -1782,22 +2173,41 @@ class Throughput(Realm):
                     _obj="The below tables provides detailed information for the throughput test on each device.")
                 report.build_objective()
                 self.mac_id_list = [item.split()[-1] if ' ' in item else item for item in self.mac_id_list]
-                bk_dataframe = {
-                    " Device Type ": device_type[int(incremental_capacity_list[i]) - 1],
-                    " Username": devices_on_running[-1],
-                    " SSID ": self.ssid_list[int(incremental_capacity_list[i]) - 1],
-                    " MAC ": self.mac_id_list[int(incremental_capacity_list[i]) - 1],
-                    " Channel ": self.channel_list[int(incremental_capacity_list[i]) - 1],
-                    " Mode": self.mode_list[int(incremental_capacity_list[i]) - 1],
-                    # " Direction":direction_in_table[-1],
-                    " Offered download rate ": download_list[-1],
-                    " Observed Average download rate ": [str(download_data[-1]) + " Mbps"],
-                    " Offered upload rate ": upload_list[-1],
-                    " Observed Average upload rate ": [str(upload_data[-1]) + " Mbps"],
-                    " RSSI ": ['' if rssi_data[-1] == 0 else '-' + str(rssi_data[-1]) + " dbm"],
-                    # " Link Speed ":self.link_speed_list[int(incremental_capacity_list[i])-1],
-                    # " Packet Size(Bytes) ":[str(n)+" Bytes" for n in packet_size_in_table[0:int(incremental_capacity_list[i])]]
-                }
+                if self.expected_passfail_value or self.device_csv_name:
+                    test_input_list, pass_fail_list = self.get_pass_fail_list(device_type, incremental_capacity_list[i], devices_on_running, download_data, upload_data)
+                bk_dataframe = {}
+
+                # Dataframe changes with respect to groups and profiles in case of interopability
+                if self.group_name:
+                    interop_tab_data = self.json_get('/adb/')["devices"]
+                    res_list = []
+                    grp_name = []
+                    if device_type[int(incremental_capacity_list[i]) - 1] != 'Android':
+                        res_list.append(devices_on_running[-1])
+                    else:
+                        for dev in interop_tab_data:
+                            for item in dev.values():
+                                if item['user-name'] == devices_on_running[-1]:
+                                    res_list.append(item['name'].split('.')[2])
+                                    break
+                    for key, value in self.group_device_map.items():
+                        if res_list[-1] in value:
+                            grp_name.append(key)
+                            break
+                    bk_dataframe["Group Name"] = grp_name[-1]
+
+                bk_dataframe[" Device Type "] = device_type[int(incremental_capacity_list[i]) - 1]
+                bk_dataframe[" Username"] = devices_on_running[-1]
+                bk_dataframe[" SSID "] = self.ssid_list[int(incremental_capacity_list[i]) - 1]
+                bk_dataframe[" MAC "] = self.mac_id_list[int(incremental_capacity_list[i]) - 1]
+                bk_dataframe[" Channel "] = self.channel_list[int(incremental_capacity_list[i]) - 1]
+                bk_dataframe[" Mode"] = self.mode_list[int(incremental_capacity_list[i]) - 1]
+                bk_dataframe[" Offered download rate "] = download_list[-1]
+                bk_dataframe[" Observed Average download rate "] = [str(download_data[-1]) + " Mbps"]
+                bk_dataframe[" Offered upload rate "] = upload_list[-1]
+                bk_dataframe[" Observed Average upload rate "] = [str(upload_data[-1]) + " Mbps"]
+                bk_dataframe[" RSSI "] = ['' if rssi_data[-1] == 0 else '-' + str(rssi_data[-1]) + " dbm"]
+
                 if self.direction == "Bi-direction":
                     bk_dataframe[" Average Rx Drop B% "] = upload_drop
                     bk_dataframe[" Average Rx Drop A% "] = download_drop
@@ -1807,6 +2217,10 @@ class Throughput(Realm):
                 else:
                     bk_dataframe[" Average Rx Drop B% "] = upload_drop
                     bk_dataframe[" Average Rx Drop A% "] = [0.0] * len(upload_drop)
+                # When pass fail criteria is specified
+                if self.expected_passfail_value or self.device_csv_name:
+                    bk_dataframe[" Expected " + self.direction + " rate "] = test_input_list
+                    bk_dataframe[" Status "] = pass_fail_list
                 dataframe1 = pd.DataFrame(bk_dataframe)
                 report.set_table_dataframe(dataframe1)
                 report.build_table()
@@ -1819,16 +2233,263 @@ class Throughput(Realm):
         report.write_html()
         report.write_pdf(_orientation="Landscape")
 
-    def trim_data(self, array_size, to_updated_array):
-        if array_size < 6:
-            updated_array = to_updated_array
+    # Creates a separate DataFrame for each group of devices.
+    def generate_dataframe(self, groupdevlist, typeofdevice, devusername, devssid, devmac, devchannel, devmode, devdirection, devofdownload, devobsdownload,
+                           devoffupload, devobsupload, devrssi, devExpected, devlinkspeed, devpacketsize, devstatus, upload_drop, download_drop):
+        """
+        Creates a separate DataFrame for each group of devices.
+
+        Returns:
+            DataFrame: A DataFrame for each device group.
+            Returns None if neither device in a group is configured.
+        """
+
+        device_type = []
+        username = []
+        ssid = []
+        mac = []
+        channel = []
+        mode = []
+        direction = []
+        offdownload = []
+        obsdownload = []
+        offupload = []
+        obsupload = []
+        rssi = []
+        input_list = []
+        linkspeed = []
+        packetsize = []
+        statuslist = []
+        avg_updrop = []
+        avg_dndrop = []
+        interop_tab_data = self.json_get('/adb/')["devices"]
+        for i in range(len(typeofdevice)):
+            for j in groupdevlist:
+                if j == devusername[i] and typeofdevice[i] != 'Android':
+                    device_type.append(typeofdevice[i])
+                    username.append(devusername[i])
+                    ssid.append(devssid[i])
+                    mac.append(devmac[i])
+                    channel.append(devchannel[i])
+                    mode.append(devmode[i])
+                    direction.append(devdirection[i])
+                    offdownload.append(devofdownload[i])
+                    obsdownload.append(devobsdownload[i])
+                    offupload.append(devoffupload[i])
+                    obsupload.append(devobsupload[i])
+                    rssi.append(devrssi[i])
+                    linkspeed.append(devlinkspeed[i])
+                    if len(upload_drop) != 0:
+                        avg_updrop.append(upload_drop[i])
+                    if len(download_drop) != 0:
+                        avg_dndrop.append(download_drop[i])
+                    if devpacketsize != []:
+                        packetsize.append(devpacketsize[i])
+                    if self.expected_passfail_value or self.device_csv_name:
+                        statuslist.append(devstatus[i])
+                        input_list.append(devExpected[i])
+
+                else:
+                    for dev in interop_tab_data:
+                        for item in dev.values():
+                            if item['user-name'] == devusername[i] and j == item['name'].split('.')[2]:
+                                device_type.append(typeofdevice[i])
+                                username.append(devusername[i])
+                                ssid.append(devssid[i])
+                                mac.append(devmac[i])
+                                channel.append(devchannel[i])
+                                mode.append(devmode[i])
+                                direction.append(devdirection[i])
+                                offdownload.append(devofdownload[i])
+                                obsdownload.append(devobsdownload[i])
+                                offupload.append(devoffupload[i])
+                                obsupload.append(devobsupload[i])
+                                rssi.append(devrssi[i])
+
+                                linkspeed.append(devlinkspeed[i])
+                                if len(upload_drop) != 0:
+                                    avg_updrop.append(upload_drop[i])
+                                if len(download_drop) != 0:
+                                    avg_dndrop.append(download_drop[i])
+                                if devpacketsize != []:
+                                    packetsize.append(devpacketsize[i])
+                                if self.expected_passfail_value or self.device_csv_name:
+                                    statuslist.append(devstatus[i])
+                                    input_list.append(devExpected[i])
+        if devpacketsize != []:
+            if len(username) != 0:
+                dataframe = {
+                    " Device Type ": device_type,
+                    " Username": username,
+                    " SSID ": ssid,
+                    " MAC ": mac,
+                    " Channel ": channel,
+                    " Mode": mode,
+                    " Direction": direction,
+                    " Offered download rate ": offdownload,
+                    " Observed download rate ": obsdownload,
+                    " Offered upload rate ": offupload,
+                    " Observed upload rate ": obsupload,
+                    " RSSI ": rssi,
+                    " Link Speed ": linkspeed,
+                    " Packet Size(Bytes) ": packetsize,
+                }
+
+                if self.direction == "Bi-direction":
+                    dataframe[" Average Rx Drop B% "] = avg_updrop
+                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                elif self.direction == 'Download':
+                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                    # adding rx drop while uploading as 0
+                    dataframe[" Average Rx Drop B% "] = [0.0] * len(avg_dndrop)
+
+                else:
+                    dataframe[" Average Rx Drop B% "] = avg_updrop
+
+                    # adding rx drop while downloading as 0
+                    dataframe[" Average Rx Drop A% "] = [0.0] * len(avg_updrop)
+                if self.expected_passfail_value or self.device_csv_name:
+                    dataframe[" Expected " + self.direction + " rate "] = input_list
+                    dataframe[" Status "] = statuslist
+                return dataframe
         else:
-            middle_elements_count = 4
-            step = (array_size - 1) / (middle_elements_count + 1)
-            middle_elements = [int(i * step) for i in range(1, middle_elements_count + 1)]
-            new_array = [0] + middle_elements + [array_size - 1]
-            updated_array = [to_updated_array[index] for index in new_array]
-        return updated_array
+            if len(username) != 0:
+                dataframe = {
+                    " Device Type ": device_type,
+                    " Username": username,
+                    " SSID ": ssid,
+                    " MAC ": mac,
+                    " Channel ": channel,
+                    " Mode": mode,
+                    " Direction": direction,
+                    " Offered download rate ": offdownload,
+                    " Observed download rate ": obsdownload,
+                    " Offered upload rate ": offupload,
+                    " Observed upload rate ": obsupload,
+                    " RSSI ": rssi,
+                    " Link Speed ": linkspeed,
+                }
+                if self.direction == "Bi-direction":
+                    dataframe[" Average Rx Drop B% "] = avg_updrop
+                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                elif self.direction == 'Download':
+                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                    # adding rx drop while uploading as 0
+                    dataframe[" Average Rx Drop B% "] = [0.0] * len(avg_dndrop)
+
+                else:
+                    dataframe[" Average Rx Drop B% "] = avg_updrop
+
+                    # adding rx drop while downloading as 0
+                    dataframe[" Average Rx Drop A% "] = [0.0] * len(avg_updrop)
+                if self.expected_passfail_value or self.device_csv_name:
+                    dataframe[" Expected " + self.direction + " rate "] = input_list
+                    dataframe[" Status "] = statuslist
+                return dataframe
+
+        return None
+
+    def get_pass_fail_list(self, device_type, curr_incremental_capacity, devices_on_running, download_data, upload_data):
+        test_input_list = []
+        pass_fail_list = []
+        if not self.do_interopability:
+            # When pass_fail csv specified
+            if self.expected_passfail_value == '' or self.expected_passfail_value is None:
+                res_list = []
+                interop_tab_data = self.json_get('/adb/')["devices"]
+                for j in range(len(device_type[0:int(curr_incremental_capacity)])):
+                    if device_type[0:int(curr_incremental_capacity)][j] != 'Android':
+                        res_list.append(devices_on_running[0:int(curr_incremental_capacity)][j])
+                    else:
+                        for dev in interop_tab_data:
+                            for item in dev.values():
+                                if item['user-name'] == devices_on_running[0:int(curr_incremental_capacity)][j]:
+                                    res_list.append(item['name'].split('.')[2])
+
+                with open(self.device_csv_name, mode='r') as file:
+                    reader = csv.DictReader(file)
+                    rows = list(reader)
+                for device in res_list:
+                    found = False
+                    for row in rows:
+                        if row['DeviceList'] == device and row[self.csv_direction + ' Mbps'].strip() != '':
+                            test_input_list.append(row[self.csv_direction + ' Mbps'])
+                            found = True
+                            break
+                    if not found:
+                        logger.info(f'Pass/Fail threshold for device {device} not found in the CSV. Using default threshold of 5 Mbps.')
+                        test_input_list.append(5)
+            # When expected_pass_fail value specified
+            else:
+                test_input_list = [self.expected_passfail_value for val in range(len(devices_on_running[0:int(curr_incremental_capacity)]))]
+
+            for k in range(len(test_input_list)):
+                if self.csv_direction.split('_')[2] == 'BiDi':
+                    if float(test_input_list[k]) <= (float([n for n in upload_data[0:int(curr_incremental_capacity)]][k]) + float([n for n in download_data[0:int(curr_incremental_capacity)]][k])):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+                elif self.csv_direction.split('_')[2] == 'UL':
+                    if float(test_input_list[k]) <= float([n for n in upload_data[0:int(curr_incremental_capacity)]][k]):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+                else:
+
+                    if float(test_input_list[k]) <= float([n for n in download_data[0:int(curr_incremental_capacity)]][k]):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+        else:
+            if self.expected_passfail_value == '' or self.expected_passfail_value is None:
+                res_list = []
+                interop_tab_data = self.json_get('/adb/')["devices"]
+                if device_type[int(curr_incremental_capacity) - 1] != 'Android':
+                    res_list.append(devices_on_running[-1])
+                else:
+                    for dev in interop_tab_data:
+                        for item in dev.values():
+                            if item['user-name'] == devices_on_running[-1]:
+                                res_list.append(item['name'].split('.')[2])
+                                break
+
+                with open(self.device_csv_name, mode='r') as file:
+                    reader = csv.DictReader(file)
+                    rows = list(reader)
+
+                for device in res_list:
+                    found = False
+                    for row in rows:
+                        if row['DeviceList'] == device and row[self.csv_direction + ' Mbps'].strip() != '':
+                            test_input_list.append(row[self.csv_direction + ' Mbps'])
+                            found = True
+                            break
+                    if not found:
+                        logger.info(f'Pass/Fail threshold for device {device} not found in the CSV. Using default threshold of 5 Mbps.')
+                        test_input_list.append(5)
+            # when expected_pass_fail value specified
+            else:
+                for val in [devices_on_running[-1]]:
+                    test_input_list.append(self.expected_passfail_value)
+            for k in range(len(test_input_list)):
+                if self.csv_direction.split('_')[2] == 'BiDi':
+                    if float(test_input_list[k]) <= (float([n for n in [(upload_data[-1])]][k]) + float([n for n in [(download_data[-1])]][k])):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+                elif self.csv_direction.split('_')[2] == 'UL':
+                    if float(test_input_list[k]) <= float([n for n in [(upload_data[-1])]][k]):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+                else:
+
+                    if float(test_input_list[k]) <= float([n for n in [(download_data[-1])]][k]):
+                        pass_fail_list.append('PASS')
+                    else:
+                        pass_fail_list.append('FAIL')
+
+        return test_input_list, pass_fail_list
 
     def copy_reports_to_home_dir(self):
         curr_path = self.result_dir
@@ -1844,6 +2505,57 @@ class Throughput(Realm):
         if not os.path.exists(test_name_dir):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
+
+    # Converting the upstream_port to IP address for configuration purposes
+    def change_port_to_ip(self, upstream_port):
+        if upstream_port.count('.') != 3:
+            target_port_list = self.name_to_eid(upstream_port)
+            shelf, resource, port, _ = target_port_list
+            try:
+                target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+                upstream_port = target_port_ip
+            except BaseException:
+                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+            logging.info(f"Upstream port IP {upstream_port}")
+        else:
+            logging.info(f"Upstream port IP {upstream_port}")
+
+        return upstream_port
+
+
+# To validate the input args
+def validate_args(args):
+    if args.group_name:
+        selected_groups = args.group_name.split(',')
+    else:
+        selected_groups = []
+    if args.profile_name:
+        selected_profiles = args.profile_name.split(',')
+    else:
+        selected_profiles = []
+    if args.expected_passfail_value and args.device_csv_name:
+        logger.error("Specify either expected_passfail_value or device_csv_name")
+        exit(1)
+    if len(selected_groups) != len(selected_profiles):
+        logger.error("Number of groups should match number of profiles")
+        exit(1)
+    elif args.group_name and args.profile_name and args.file_name and args.device_list != []:
+        logger.error("Either group name or device list should be entered not both")
+        exit(1)
+    elif args.ssid and args.profile_name:
+        logger.error("Either ssid or profile name should be given")
+        exit(1)
+    elif args.file_name and (args.group_name is None or args.profile_name is None):
+        logger.error("Please enter the correct set of groups and profiles")
+        exit(1)
+    if args.config and args.group_name is None:
+        if args.ssid is None:
+            logger.error('For configuration need to Specify SSID , Password(Optional for "open" type security) and Security')
+            exit(1)
+        else:
+            if args.passwd == '[BLANK]' and args.security.lower() != 'open' or args.passwd != '[BLANK]' and args.security.lower() == 'open':
+                logger.error('Please provide valid passwd and security configuration')
+                exit(1)
 
 
 def main():
@@ -1981,7 +2693,7 @@ Copyright 2023 Candela Technologies Inc.
                           help='Specify the incremental values for network load testing as a comma-separated list (e.g., 10,20,30). This defines the increments in bandwidth to evaluate performance under varying load conditions.',
                           default=[])
     required.add_argument('--load_type', help="Determine the type of load: < wc_intended_load | wc_per_client_load >", default="wc_per_client_load")
-    required.add_argument('--do_interopability', action='store_true')
+    required.add_argument('--do_interopability', action='store_true', help='Ensures test on devices run sequentially, capturing each device’s data individually for plotting in the final report.')
 
     # optional.add_argument('--no_postcleanup', help="Cleanup the cross connections after test is stopped", action = 'store_true')
     # optional.add_argument('--no_precleanup', help="Cleanup the cross connections before test is started", action = 'store_true')
@@ -1991,7 +2703,30 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default="open")
     optional.add_argument('--test_name', help='Specify test name to store the runtime csv results', default=None)
     optional.add_argument('--result_dir', help='Specify the result dir to store the runtime logs', default='')
-
+    optional.add_argument("--expected_passfail_value", help="Specify the expected number of urls", default=None)
+    optional.add_argument("--device_csv_name", type=str, help='Specify the csv name to store expected url values', default=None)
+    optional.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
+    optional.add_argument("--eap_identity", type=str, default='', help="Specify the EAP identity for authentication.")
+    optional.add_argument("--ieee8021x", action="store_true", help='Enables 802.1X enterprise authentication for test stations.')
+    optional.add_argument("--ieee80211u", action="store_true", help='Enables IEEE 802.11u (Hotspot 2.0) support.')
+    optional.add_argument("--ieee80211w", type=int, default=1, help='Enables IEEE 802.11w (Management Frame Protection) support.')
+    optional.add_argument("--enable_pkc", action="store_true", help='Enables pkc support.')
+    optional.add_argument("--bss_transition", action="store_true", help='Enables BSS transition support.')
+    optional.add_argument("--power_save", action="store_true", help='Enables power-saving features.')
+    optional.add_argument("--disable_ofdma", action="store_true", help='Disables OFDMA support.')
+    optional.add_argument("--roam_ft_ds", action="store_true", help='Enables fast BSS transition (FT) support')
+    optional.add_argument("--key_management", type=str, default='DEFAULT', help='Specify the key management method (e.g., WPA-PSK, WPA-EAP')
+    optional.add_argument("--pairwise", type=str, default='NA')
+    optional.add_argument("--private_key", type=str, default='NA', help='Specify EAP private key certificate file.')
+    optional.add_argument("--ca_cert", type=str, default='NA', help='Specifiy the CA certificate file name')
+    optional.add_argument("--client_cert", type=str, default='NA', help='Specify the client certificate file name')
+    optional.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
+    optional.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
+    optional.add_argument('--file_name', type=str, help='Specify the file name containing group details. Example:file1')
+    optional.add_argument('--group_name', type=str, help='Specify the groups name that contains a list of devices. Example: group1,group2')
+    optional.add_argument('--profile_name', type=str, help='Specify the profile name to apply configurations to the devices.')
+    optional.add_argument("--wait_time", type=int, help='Specify the maximum time to wait for Configuration', default=60)
+    optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
 
     args = parser.parse_args()
@@ -2027,6 +2762,14 @@ Copyright 2023 Candela Technologies Inc.
                 loads['download'].append(2560)
             loads_data = loads["upload"]
 
+    if args.download != '2560' and args.download != '0' and args.upload != '0' and args.upload != '2560':
+        csv_direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_BiDi'
+    elif args.upload != '2560' and args.upload != '0':
+        csv_direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_UL'
+    else:
+        csv_direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_DL'
+
+    validate_args(args)
     if args.incremental_capacity == 'no_increment' and args.dowebgui:
         args.incremental_capacity = str(len(args.device_list.split(",")))
         gave_incremental = True
@@ -2092,7 +2835,32 @@ Copyright 2023 Candela Technologies Inc.
                                 load_type=args.load_type,
                                 do_interopability=args.do_interopability,
                                 incremental=args.incremental,
-                                precleanup=args.precleanup
+                                precleanup=args.precleanup,
+                                csv_direction=csv_direction,
+                                expected_passfail_value=args.expected_passfail_value,
+                                device_csv_name=args.device_csv_name,
+                                file_name=args.file_name,
+                                group_name=args.group_name,
+                                profile_name=args.profile_name,
+                                eap_method=args.eap_method,
+                                eap_identity=args.eap_identity,
+                                ieee80211=args.ieee8021x,
+                                ieee80211u=args.ieee80211u,
+                                ieee80211w=args.ieee80211w,
+                                enable_pkc=args.enable_pkc,
+                                bss_transition=args.bss_transition,
+                                power_save=args.power_save,
+                                disable_ofdma=args.disable_ofdma,
+                                roam_ft_ds=args.roam_ft_ds,
+                                key_management=args.key_management,
+                                pairwise=args.pairwise,
+                                private_key=args.private_key,
+                                ca_cert=args.ca_cert,
+                                client_cert=args.client_cert,
+                                pk_passwd=args.pk_passwd,
+                                pac_file=args.pac_file,
+                                wait_time=args.wait_time,
+                                config=args.config
                                 )
 
         if gave_incremental:
@@ -2125,7 +2893,7 @@ Copyright 2023 Candela Technologies Inc.
 
             # Extend individual_dataframe_column with dynamically generated column names
             individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop A {clients_to_run[i]}',
-                                               f'Rx % Drop B{clients_to_run[i]}', f'RSSI {clients_to_run[i]} ', f'Link Speed {clients_to_run[i]} '])
+                                               f'Rx % Drop B{clients_to_run[i]}', f'RSSI {clients_to_run[i]} ', f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]} '])
 
         individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop A', 'Overall Rx % Drop B', 'Iteration',
                                            'TIMESTAMP', 'Start_time', 'End_time', 'Remaining_Time', 'Incremental_list', 'status'])
