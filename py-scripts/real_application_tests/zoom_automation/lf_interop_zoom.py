@@ -5,16 +5,24 @@
 
     EXAMPLE-1:
     Command Line Interface to run Zoom with specified duration:
-    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --server_ip 192.168.214.123
+    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 1.1.eth1
 
-
+    In above CLI whatever Device we given first will be taken as host for the test
 
     EXAMPLE-2:
     Command Line Interface to run Zoom on multiple devices:
     python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
-      --resources 1.400,1.375 --zoom_host 1.95 --server_ip 192.168.214.123
+    --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 1.1.eth1
 
+    Example-3:
+    Command Line Interface to run Zoom on multiple devices with Device Configuration
+    python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+    --upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
 
+    Example-4:
+    Command Line Interface to run Zoom on multiple devices with Groups and Profiles
+    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+    --wait_time 30  --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
 
     NOTES:
     1. Use './lf_interop_zoom.py --help' to see command line usage and options.
@@ -78,17 +86,15 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class ZoomAutomation(Realm):
-    def __init__(self, ssid="SSID", band="5G", security="wpa2", apname="AP Name", audio=True, video=True, lanforge_ip="localhost",
-                 server_ip='0.0.0.0', wait_time=30, devices=None, testname=None, config=None, selected_groups=None, selected_profiles=None):
+    def __init__(self, ssid="SSID", band="5G", security="wpa2", apname="AP Name", audio=True, video=True, lanforge_ip=None,
+                 upstream_port='0.0.0.0', wait_time=30, devices=None, testname=None, config=None, selected_groups=None, selected_profiles=None):
 
         super().__init__(lfclient_host=lanforge_ip)
-        self.flask_ip = server_ip
+        self.upstream_port = upstream_port
         self.mgr_ip = lanforge_ip
-        # self.flask_ip = '10.253.8.108'
         self.app = Flask(__name__)
         self.redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
         self.redis_client.set('login_completed', 0)
-        # self.ALLOWED_HOSTS = []
         self.secret_key = secrets.token_hex(32)
         self.app.config['SECRET_KEY'] = self.secret_key
         CORS(self.app)
@@ -353,13 +359,44 @@ class ZoomAutomation(Realm):
         logging.error("❌ Flask server did not start within 10 seconds. Exiting.")
         sys.exit(1)
 
-    def run(self, duration, server_ip, signin_email, signin_passwd, participants):
-        # Store the email and password in the instance
+    def run(self, duration, upstream_port, signin_email, signin_passwd, participants):
+        """
+        Executes the Zoom Conference Call automation test by initiating a Flask server, configuring real client endpoints,
+        and triggering the Zoom application commands across different operating systems.
+
+        This method performs the following:
+        1. Initializes test parameters (duration, upstream port, email/password for Zoom sign-in, and participant count).
+        2. Starts a background Flask server thread
+        3. Queries LANforge to gather EIDs and IPs for selected test devices.
+        4. Retrieves real device port details and prepares port lists.
+        5. Gathers MAC, RSSI, link rate, and SSID details from ports.
+        6. Creates a generic endpoint for the host device and assigns a platform-specific command to start the host test.
+        7. Waits for the host login process to complete using Redis status key `login_completed`.
+        8. Once the host is ready, configures remaining devices as Zoom clients and assigns platform-specific commands.
+        9. Waits for the test to be officially started by checking a `test_start` flag.
+        10. Begins monitoring the test duration.
+
+        Args:
+            duration (int): Duration of the test in minutes.
+            upstream_port (str): Port name or IP address used for initiating the Zoom test (e.g., '1.1.eth1' or '10.0.0.1').
+            signin_email (str): Email address used for logging into the Zoom host session.
+            signin_passwd (str): Corresponding password for the Zoom account.
+            participants (int): Number of Zoom client participants expected to join the session.
+
+        Raises:
+            SystemExit: If generic endpoint creation fails or the host Zoom process fails to start.
+
+        Logs:
+            - Host/client command execution.
+            - Device discovery and connection creation.
+            - Login and test start progress.
+            - Warnings or errors in test setup or process failures.
+        """
         self.signin_email = signin_email
         self.signin_passwd = signin_passwd
         self.duration = duration
-        self.flask_ip = server_ip
-        # self.flask_ip = '10.253.8.108'
+        self.upstream_port = upstream_port
+        # self.upstream_port = '10.253.8.108'
         self.participants_req = participants
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
@@ -370,14 +407,10 @@ class ZoomAutomation(Realm):
         resource_ip = ""
         user_resources = ['.'.join(item.split('.')[:2]) for item in self.real_sta_list]
 
-        # Step 1: Retrieve information about all resources
         response = self.json_get("/resource/all")
 
-        # Step 2: Match user-specified resources with available resources sequentially
         if user_resources:
-            # Iterate through user_resources sequentially, processing each value only once
             for user_resource in user_resources:
-                # Break loop if no more user_resources left to process
                 if not user_resources:
                     break
 
@@ -385,7 +418,6 @@ class ZoomAutomation(Realm):
                     if key == "resources":
                         for element in value:
                             for resource_key, resource_values in element.items():
-                                # Match the current user_resource
                                 if resource_key == user_resource:
                                     eid = resource_values["eid"]
                                     resource_ip = resource_values['ctrl-ip']
@@ -393,9 +425,7 @@ class ZoomAutomation(Realm):
                                     ports_list.append({'eid': eid, 'ctrl-ip': resource_ip})
                                     break
                             else:
-                                # Continue outer loop only if no break occurred
                                 continue
-                            # Break if a match was found and processed
                             break
 
         gen_ports_list = []
@@ -404,21 +434,15 @@ class ZoomAutomation(Realm):
         self.link_rate_list = []
         self.ssid_list = []
 
-        # Step 3: Retrieve port information
         response_port = self.json_get("/port/all")
 
-        # Step 4: Match ports associated with retrieved resources in the order of ports_list
         for port_entry in ports_list:
-            # Extract the eid and ctrl-ip from the current ports_list entry
             expected_eid = port_entry['eid']
 
-            # Iterate over the port interfaces to find a matching port
             for interface in response_port['interfaces']:
                 for port, port_data in interface.items():
-                    # Extract the first two segments of the port identifier to match with expected_eid
                     result = '.'.join(port.split('.')[:2])
 
-                    # Check if the result matches the current expected eid from ports_list
                     if result == expected_eid:
                         gen_ports_list.append(port.split('.')[-1])
                         break
@@ -427,16 +451,12 @@ class ZoomAutomation(Realm):
                 break
 
         for port_entry in ports_list:
-            # Extract the eid and ctrl-ip from the current ports_list entry
             expected_eid = port_entry['eid']
 
-            # Iterate over the port interfaces to find a matching port
             for interface in response_port['interfaces']:
                 for port, port_data in interface.items():
-                    # Extract the first two segments of the port identifier to match with expected_eid
                     result = '.'.join(port.split('.')[:2])
 
-                    # Check if the result matches the current expected eid from ports_list
                     if result == expected_eid and port_data["parent dev"] == 'wiphy0':
                         self.mac_list.append(port_data["mac"])
                         self.rssi_list.append(port_data["signal"])
@@ -456,16 +476,16 @@ class ZoomAutomation(Realm):
             exit(0)
 
         if self.real_sta_os_type[0] == "windows":
-            cmd = f"py zoom_host.py --ip {self.flask_ip}"
-            # cmd = "zoom_test.bat --ip %s --type %s" % (self.flask_ip,"host")
+            cmd = f"py zoom_host.py --ip {self.upstream_port}"
+            # cmd = "zoom_test.bat --ip %s --type %s" % (self.upstream_port,"host")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_type[0] == 'linux':
 
-            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[0], self.flask_ip, "host")
+            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[0], self.upstream_port, "host")
 
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_type[0] == 'macos':
-            cmd = "sudo bash ctzoom.bash %s %s" % (self.flask_ip, "host")
+            cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "host")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         self.generic_endps_profile.start_cx()
         time.sleep(5)
@@ -493,15 +513,15 @@ class ZoomAutomation(Realm):
         for i in range(1, len(self.real_sta_os_type)):
 
             if self.real_sta_os_type[i] == "windows":
-                cmd = f"py zoom_client.py --ip {self.flask_ip}"
-                # cmd = "zoom_test.bat --ip %s --type %s" % (self.flask_ip,"client")
+                cmd = f"py zoom_client.py --ip {self.upstream_port}"
+                # cmd = "zoom_test.bat --ip %s --type %s" % (self.upstream_port,"client")
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_type[i] == 'linux':
-                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[i], self.flask_ip, "client")
+                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[i], self.upstream_port, "client")
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_type[i] == 'macos':
-                # cmd = f"sudo bash zoom_test.bash %s %s" % ( self.flask_ip, "client")
-                cmd = "sudo bash ctzoom.bash %s %s" % (self.flask_ip, "client")
+                # cmd = f"sudo bash zoom_test.bash %s %s" % ( self.upstream_port, "client")
+                cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "client")
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
         self.generic_endps_profile.start_cx()
@@ -569,6 +589,7 @@ class ZoomAutomation(Realm):
             exit(0)
 
         # # Add real station data to `self.real_sta_data_dict`
+        self.real_sta_list = self.filter_ios_devices(self.real_sta_list)
         for sta_name in self.real_sta_list:
             if sta_name not in real_device_obj.devices_data:
                 self.real_sta_list.remove(sta_name)
@@ -595,6 +616,7 @@ class ZoomAutomation(Realm):
                 self.linux = self.linux + 1
 
         # Return the sorted list of selected real station names
+
         return self.real_sta_list
 
     def check_tab_exists(self):
@@ -655,6 +677,116 @@ class ZoomAutomation(Realm):
 
         with open(file_path, 'w') as file:
             json.dump(data, file, indent=4)
+
+    def change_port_to_ip(self, upstream_port):
+        """
+        Convert a given port name to its corresponding IP address if it's not already an IP.
+
+        This function checks whether the provided `upstream_port` is a valid IPv4 address.
+        If it's not, it attempts to extract the IP address of the port by resolving it
+        via the internal `name_to_eid()` method and then querying the IP using `json_get()`.
+
+        Args:
+            upstream_port (str): The name or IP of the upstream port. This could be a
+                                 LANforge port name like '1.1.eth1' or an IP address.
+
+        Returns:
+            str: The resolved IP address if the port name was converted successfully,
+                otherwise returns the original input if it was already an IP or
+                if resolution fails.
+
+        Logs:
+            - A warning if the port is not Ethernet or IP resolution fails.
+            - Info logs for the resolved or passed IP.
+
+        """
+        if upstream_port.count('.') != 3:
+            target_port_list = self.name_to_eid(upstream_port)
+            shelf, resource, port, _ = target_port_list
+            try:
+                target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+                upstream_port = target_port_ip
+            except BaseException:
+                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+            logging.info(f"Upstream port IP {upstream_port}")
+        else:
+            logging.info(f"Upstream port IP {upstream_port}")
+
+        return upstream_port
+
+    def filter_ios_devices(self, device_list):
+        """
+        Filters out iOS devices from the given device list based on hardware and software identifiers.
+
+        This method accepts a list or comma-separated string of device identifiers and removes
+        devices identified as iOS (Apple) based on their hardware version, app ID, and kernel info
+        fetched via the `/resource/{shelf}/{resource}` API endpoint.
+
+        Supported input formats for each device:
+        - "shelf.resource"
+        - "shelf.resource.port"
+        - "resource" (assumes shelf = 1)
+
+        iOS devices are identified if:
+        - 'Apple' is found in the hardware version, and
+        - `app-id` is not empty and is either non-zero or the kernel is empty
+
+        Args:
+            device_list (Union[list[str], str]): A list or comma-separated string of devices to be filtered.
+
+        Returns:
+            Union[list[int], str]: A list of valid (non-iOS) device IDs as integers,
+                                or a comma-separated string if the input was a string.
+
+        Logs:
+            - Warnings for invalid formats or missing device data.
+            - Info when an iOS device is skipped.
+            - Exceptions if errors occur during processing.
+
+        """
+        modified_device_list = device_list
+        if isinstance(device_list, str):
+            modified_device_list = device_list.split(',')
+
+        filtered_list = []
+
+        for device in modified_device_list:
+            device = str(device).strip()
+            try:
+                if device.count('.') == 1:
+                    shelf, resource = device.split('.')
+                elif device.count('.') == 2:
+                    shelf, resource, port = device.split('.')
+                elif device.count('.') == 0:
+                    shelf, resource = 1, device
+                else:
+                    logger.warning("Invalid device format: %s", device)
+                    continue
+
+                device_data_resp = self.json_get(f'/resource/{shelf}/{resource}')
+                if not device_data_resp or 'resource' not in device_data_resp:
+                    logger.warning("Device data not found for %s", device)
+                    continue
+
+                device_data = device_data_resp['resource']
+                hw_version = device_data.get('hw version', '')
+                app_id = device_data.get('app-id', '')
+                kernel = device_data.get('kernel', '')
+
+                if 'Apple' in hw_version and app_id != '' and (app_id != '0' or kernel == ''):
+                    logger.info("%s is an iOS device. Currently, we do not support iOS devices.", device)
+                else:
+                    filtered_list.append(device)
+
+            except Exception as e:
+                logger.exception(f"Error processing device {device}: {e}")
+                continue
+
+        if isinstance(device_list, str):
+            filtered_list = ','.join(filtered_list)
+
+        self.device_list = filtered_list
+        return filtered_list
 
     def generate_report(self):
         report = lf_report(_output_pdf='zoom_call_report.pdf',
@@ -926,7 +1058,7 @@ class ZoomAutomation(Realm):
                                     "%", "")) > 0 else temp_min_video_pktloss_r)
 
             except Exception as e:
-                logging.error(f"Error in reading data in client {self.device_names[i]}", e)
+                logging.error(f"Error in reading data in client {self.device_names[i]}: {e}")
                 no_csv_client.append(self.device_names[i])
                 rejected_clients.append(self.device_names[i])
             if self.device_names[i] not in no_csv_client:
@@ -963,7 +1095,6 @@ class ZoomAutomation(Realm):
 
         report.set_table_title("Test Devices:")
         report.build_table_title()
-
         device_details = pd.DataFrame({
             'Hostname': self.real_sta_hostname,
             'OS Type': self.real_sta_os_type,
@@ -1189,7 +1320,37 @@ class ZoomAutomation(Realm):
 
 def main():
     try:
-        parser = argparse.ArgumentParser(description="Zoom Automation Script")
+        parser = argparse.ArgumentParser(
+            prog=__file__,
+            formatter_class=argparse.RawTextHelpFormatter,
+            description='''
+            Zoom Automation Script
+            PURPOSE: lf_interop_zoom.py provides the available devices and allows the user to start Zoom call conference meeting for the user-specified duration
+
+            EXAMPLE-1:
+            Command Line Interface to run Zoom with specified duration:
+            python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3
+            --audio --video --upstream_port 1.1.eth1
+
+            NOTE : In above CLI whatever Device we given first will be taken as host for the test
+
+
+            EXAMPLE-2:
+            Command Line Interface to run Zoom on multiple devices:
+            python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
+            --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 1.1.eth1
+
+            Example-3:
+            Command Line Interface to run Zoom on multiple devices with Device Configuration
+            python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+            --upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
+
+            Example-4:
+            Command Line Interface to run Zoom on multiple devices with Groups and Profiles
+            python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+            --wait_time 30  --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
+
+            ''')
         parser.add_argument('--duration', type=int, required=True, help="Duration of the Zoom meeting in minutes")
         parser.add_argument('--lanforge_ip', type=str, required=True, help="LANforge IP address")
         parser.add_argument('--signin_email', type=str, required=True, help="Sign-in email")
@@ -1218,24 +1379,24 @@ def main():
         parser.add_argument("--encryp", default=None, help='specify the encryption type  on which the test will be '
                             'running eg :open|psk|psk2|sae|psk2jsae')
 
-        parser.add_argument("--eap_method", type=str, default='DEFAULT')
-        parser.add_argument("--eap_identity", type=str, default='')
-        parser.add_argument("--ieee80211", action="store_true")
-        parser.add_argument("--ieee80211u", action="store_true")
-        parser.add_argument("--ieee80211w", type=int, default=1)
-        parser.add_argument("--enable_pkc", action="store_true")
-        parser.add_argument("--bss_transition", action="store_true")
-        parser.add_argument("--power_save", action="store_true")
-        parser.add_argument("--disable_ofdma", action="store_true")
-        parser.add_argument("--roam_ft_ds", action="store_true")
-        parser.add_argument("--key_management", type=str, default='DEFAULT')
-        parser.add_argument("--pairwise", type=str, default='[BLANK]')
-        parser.add_argument("--private_key", type=str, default='[BLANK]')
-        parser.add_argument("--ca_cert", type=str, default='[BLANK]')
-        parser.add_argument("--client_cert", type=str, default='[BLANK]')
-        parser.add_argument("--pk_passwd", type=str, default='[BLANK]')
-        parser.add_argument("--pac_file", type=str, default='[BLANK]')
-        parser.add_argument("--server_ip", type=str, default=None)
+        parser.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
+        parser.add_argument("--eap_identity", type=str, default='DEFAULT', help="Specify the EAP identity for authentication.")
+        parser.add_argument("--ieee80211", action="store_true", help='Enables IEEE 802.11 support.')
+        parser.add_argument("--ieee80211u", action="store_true", help='Enables IEEE 802.11u (Hotspot 2.0) support.')
+        parser.add_argument("--ieee80211w", type=int, default=1, help='Enables IEEE 802.11w (Management Frame Protection) support.')
+        parser.add_argument("--enable_pkc", action="store_true", help='Enables pkc support.')
+        parser.add_argument("--bss_transition", action="store_true", help='Enables BSS transition support.')
+        parser.add_argument("--power_save", action="store_true", help='Enables power-saving features.')
+        parser.add_argument("--disable_ofdma", action="store_true", help='Disables OFDMA support.')
+        parser.add_argument("--roam_ft_ds", action="store_true", help='Enables fast BSS transition (FT) support')
+        parser.add_argument("--key_management", type=str, default='DEFAULT', help='Specify the key management method (e.g., WPA-PSK, WPA-EAP)')
+        parser.add_argument("--pairwise", type=str, default='NA', help='Specify the pairwise cipher')
+        parser.add_argument("--private_key", type=str, default='NA', help='Specify EAP private key certificate file.')
+        parser.add_argument("--ca_cert", type=str, default='NA', help='Specify the CA certificate file name')
+        parser.add_argument("--client_cert", type=str, default='NA', help='Specify the client certificate file name')
+        parser.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
+        parser.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
+        parser.add_argument("--upstream_port", type=str, default='NA', help='Specify the upstream port', required=True)
         parser.add_argument('--help_summary', help='Show summary of what this script does', default=None)
         parser.add_argument("--expected_passfail_value", help="Specify the expected urlcount value for pass/fail")
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
@@ -1287,7 +1448,8 @@ def main():
                 exit(0)
 
             zoom_automation = ZoomAutomation(audio=args.audio, video=args.video, lanforge_ip=args.lanforge_ip, wait_time=args.wait_time, testname=args.testname,
-                                             server_ip=args.server_ip, config=args.config, selected_groups=selected_groups, selected_profiles=selected_profiles)
+                                             upstream_port=args.upstream_port, config=args.config, selected_groups=selected_groups, selected_profiles=selected_profiles)
+            args.upstream_port = zoom_automation.change_port_to_ip(args.upstream_port)
 
             realdevice = RealDevice(manager_ip=args.lanforge_ip,
                                     server_ip="192.168.1.61",
@@ -1303,14 +1465,15 @@ def main():
                                     selected_bands=['5G'])
             laptops = realdevice.get_devices()
 
-            if args.file_name and args.do_webUI:
-                new_filename = args.removesuffix(".csv")
+            if args.file_name:
+                new_filename = args.file_name.removesuffix(".csv")
             else:
-                new_filename = args.file_name
+                new_filename = None
             config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.lanforge_ip, file_name=new_filename)
 
             if not args.expected_passfail_value and args.device_csv_name is None:
                 config_obj.device_csv_file(csv_name="device.csv")
+            # If group, file, and profile names are provided, configure devices based on predefined group-profile mapping
             if args.group_name is not None and args.file_name is not None and args.profile_name is not None:
                 selected_groups = args.group_name.split(',')
                 selected_profiles = args.profile_name.split(',')
@@ -1319,7 +1482,7 @@ def main():
                     config_devices[selected_groups[i]] = selected_profiles[i]
 
                 config_obj.initiate_group()
-                asyncio.run(config_obj.connectivity(config_devices))
+                asyncio.run(config_obj.connectivity(config_devices, upstream=args.upstream_port))
 
                 adbresponse = config_obj.adb_obj.get_devices()
                 resource_manager = config_obj.laptop_obj.get_devices()
@@ -1349,30 +1512,32 @@ def main():
 
                 args.resources = ",".join(id for id in eid_list)
             else:
+                # If group/profile info is not provided, manually configure devices using SSID and encryption details
                 config_dict = {
-                        'ssid': args.ssid,
-                        'passwd': args.passwd,
-                        'enc': args.encryp,
-                        'eap_method': args.eap_method,
-                        'eap_identity': args.eap_identity,
-                        'ieee80211': args.ieee80211,
-                        'ieee80211u': args.ieee80211u,
-                        'ieee80211w': args.ieee80211w,
-                        'enable_pkc': args.enable_pkc,
-                        'bss_transition': args.bss_transition,
-                        'power_save': args.power_save,
-                        'disable_ofdma': args.disable_ofdma,
-                        'roam_ft_ds': args.roam_ft_ds,
-                        'key_management': args.key_management,
-                        'pairwise': args.pairwise,
-                        'private_key': args.private_key,
-                        'ca_cert': args.ca_cert,
-                        'client_cert': args.client_cert,
-                        'pk_passwd': args.pk_passwd,
-                        'pac_file': args.pac_file,
-                        'server_ip': args.server_ip,
+                    'ssid': args.ssid,
+                    'passwd': args.passwd,
+                    'enc': args.encryp,
+                    'eap_method': args.eap_method,
+                    'eap_identity': args.eap_identity,
+                    'ieee80211': args.ieee80211,
+                    'ieee80211u': args.ieee80211u,
+                    'ieee80211w': args.ieee80211w,
+                    'enable_pkc': args.enable_pkc,
+                    'bss_transition': args.bss_transition,
+                    'power_save': args.power_save,
+                    'disable_ofdma': args.disable_ofdma,
+                    'roam_ft_ds': args.roam_ft_ds,
+                    'key_management': args.key_management,
+                    'pairwise': args.pairwise,
+                    'private_key': args.private_key,
+                    'ca_cert': args.ca_cert,
+                    'client_cert': args.client_cert,
+                    'pk_passwd': args.pk_passwd,
+                    'pac_file': args.pac_file,
+                    'server_ip': args.upstream_port,
 
                 }
+                # If device resource IDs are already provided
                 if args.resources:
                     all_devices = config_obj.get_all_devices()
                     if args.group_name is None and args.file_name is None and args.profile_name is None:
@@ -1386,22 +1551,23 @@ def main():
                             asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
                         args.resources = ",".join(id for id in dev_list)
                 else:
-                    all_devices = config_obj.get_all_devices()
-                    device_list = []
-                    for device in all_devices:
-                        if device["type"] != 'laptop':
-                            device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-                        elif device["type"] == 'laptop':
-                            device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
-                    print("Available Devices For Testing")
-                    for device in device_list:
-                        print(device)
-                    zm_host = input("Enter Host Resource for the Test : ")
-                    zm_host = zm_host.strip()
-                    args.resources = input("Enter client Resources to run the test :")
-                    args.resources = zm_host + "," + args.resources
-                    dev1_list = args.resources.split(',')
+                    # If no resources provided, prompt user to select devices manually
                     if args.config:
+                        all_devices = config_obj.get_all_devices()
+                        device_list = []
+                        for device in all_devices:
+                            if device["type"] != 'laptop':
+                                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
+                            elif device["type"] == 'laptop':
+                                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+                        print("Available Devices For Testing")
+                        for device in device_list:
+                            print(device)
+                        zm_host = input("Enter Host Resource for the Test : ")
+                        zm_host = zm_host.strip()
+                        args.resources = input("Enter client Resources to run the test :")
+                        args.resources = zm_host + "," + args.resources
+                        dev1_list = args.resources.split(',')
                         asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
 
             result_list = []
@@ -1456,7 +1622,7 @@ def main():
                 logging.error('Generic Tab is not available.\nAborting the test.')
                 exit(0)
 
-            zoom_automation.run(args.duration, args.server_ip, args.signin_email, args.signin_passwd, args.participants)
+            zoom_automation.run(args.duration, args.upstream_port, args.signin_email, args.signin_passwd, args.participants)
             zoom_automation.data_store.clear()
             zoom_automation.generate_report()
             logging.info("Test Completed Sucessfully")
@@ -1464,38 +1630,37 @@ def main():
         logging.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
         traceback.print_exc()
     finally:
-        if args.do_webUI:
-            try:
-                url = f"http://{args.lanforge_ip}:5454/update_status_yt"
-                # url = f"http://localhost:5454/update_status_yt"
-                # url = f"http://10.253.8.108:8000/update_status_yt"
+        if not ('--help' in sys.argv or '-h' in sys.argv):
+            if args.do_webUI:
+                try:
+                    url = f"http://{args.lanforge_ip}:5454/update_status_yt"
+                    # url = "http://localhost:5454/update_status_yt"
+                    headers = {
+                        'Content-Type': 'application/json',
+                    }
 
-                headers = {
-                    'Content-Type': 'application/json',
-                }
+                    data = {
+                        'status': 'Completed',
+                        'name': args.testname
+                    }
 
-                data = {
-                    'status': 'Completed',
-                    'name': args.testname
-                }
+                    response = requests.post(url, json=data, headers=headers)
 
-                response = requests.post(url, json=data, headers=headers)
+                    if response.status_code == 200:
+                        logging.info("Successfully updated STOP status to 'Completed'")
+                        pass
+                    else:
+                        logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
 
-                if response.status_code == 200:
-                    logging.info("Successfully updated STOP status to 'Completed'")
-                    pass
-                else:
-                    logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
+                except Exception as e:
+                    # Print an error message if an exception occurs during the request
+                    logging.error(f"An error occurred while updating status: {e}")
 
-            except Exception as e:
-                # Print an error message if an exception occurs during the request
-                logging.error(f"An error occurred while updating status: {e}")
-
-        zoom_automation.redis_client.set('login_completed', 0)
-        zoom_automation.stop_signal = True
-        logging.info("Waiting for Browser Cleanup in Laptops")
-        time.sleep(10)
-        zoom_automation.generic_endps_profile.cleanup()
+            zoom_automation.redis_client.set('login_completed', 0)
+            zoom_automation.stop_signal = True
+            logging.info("Waiting for Browser Cleanup in Laptops")
+            time.sleep(10)
+            zoom_automation.generic_endps_profile.cleanup()
 
 
 if __name__ == "__main__":
