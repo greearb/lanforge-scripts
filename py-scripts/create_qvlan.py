@@ -132,7 +132,7 @@ def parse_args():
     parser = LFCliBase.create_bare_argparse(
         prog='create_qvlan.py',
         formatter_class=argparse.RawTextHelpFormatter,
-        description="""
+        description=r"""
 NAME:       create_qvlan.py
 
 PURPOSE:    Create and configure one or more QVLAN port using the specified parent port.
