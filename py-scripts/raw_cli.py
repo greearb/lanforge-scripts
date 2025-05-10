@@ -63,14 +63,12 @@ import pprint
 sys.path.insert(1, "../")
 
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFJsonCommand  # noqa E402
+from lanforge_client.lanforge_api import LFJsonQuery  # noqa E402
 
 logger = logging.getLogger(__name__)
 
-# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
-#   M A I N
-# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
+
 def main():
     help_summary = """Utility script intended to be used from shell scripts in order to send commands
         to a LANforge system through the REST API. This script can send a one-line preformatted command
@@ -108,17 +106,15 @@ def main():
                                      exit_on_error=True)
     command: LFJsonCommand
     command = session.get_command()
-    query: LFJsonQuery
-    query = session.get_query()
 
     txt_cmd = args.cmd
     if args.raw:
         if args.arg:
-            raise ValueError("do not use --args with --raw");
+            raise ValueError("do not use --args with --raw")
         if not (" " in args.raw):
             logging.info("Unlikely use of --raw argument without spaces")
         txt_cmd = args.raw
-        data={
+        data = {
             "cmd": txt_cmd
         }
 
@@ -140,10 +136,10 @@ def main():
     # print( f"typeof args.arg:{type(args.arg)}")
     response_json_list = []
     errors_warnings = []
-    cli_data_params : dict = {}
+    cli_data_params: dict = {}
 
     for parameter in args.arg:
-        k_v : list = []
+        k_v: list = []
         if isinstance(parameter[0], list):
             k_v = (parameter)
         elif isinstance(parameter[0], str):
@@ -170,6 +166,7 @@ def main():
                suppress_related_commands=False)
     if len(errors_warnings) > 0:
         pprint.pprint(["errors and warnings:", errors_warnings])
+
 
 if __name__ == "__main__":
     main()
