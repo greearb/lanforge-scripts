@@ -205,8 +205,7 @@ def parse_args():
         epilog='''\
          Create bridges
             ''',
-
-        description='''
+        description=r'''
 NAME:       create_bridge.py
 
 PURPOSE:    Create and configure a single bridge port using the specified child ports.
