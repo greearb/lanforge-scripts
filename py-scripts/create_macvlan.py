@@ -168,7 +168,7 @@ def parse_args():
         epilog='''\
             Creates MACVLAN endpoints.''',
 
-        description='''\
+        description=r'''\
 NAME:       create_macvlan.py
 
 PURPOSE:    Create and configure one or more MACVLAN ports using the specified parent port.
