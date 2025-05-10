@@ -4,7 +4,7 @@
 set -x
 echo "Running Wifi Capacity Tests"
 ./lf_check.py \
---db_override ./tools/CT_001_WC_PERF_START_AUG_2023.db \
+--db_override ./tools/CT_001_WC_PERF_START_MAY_2025.db \
 --json_rig ./ct_rig_json/ct_us_001_rig.json \
 --json_dut ./ct_dut_json/ct_001_AXE16000_dut.json \
 --json_test \
