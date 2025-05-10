@@ -1,40 +1,70 @@
 #!/usr/bin/env python3
-
-r'''
+"""
 NAME:       lf_create_wanpath.py
 
-PURPOSE:    Create a wanpath using the lanforge api given an existing wanlink endpoint
+PURPOSE:    Create a WanPath using using a given, pre-existing WanLink
 
-EXAMPLE:    # Create a single wanpath on endpoint A:
-            $ ./lf_create_wanpath.py --mgr 192.168.102.158 --mgr_port 8080\
-                --wp_name test_wp-A --wl_endp test_wl-A\
-                --speed 102400 --latency 25 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-                --log_level debug --debug
+EXAMPLE:    # Create a single WanPath on WanLink endpoint A:
+                ./lf_create_wanpath.py \
+                    --wp_name       test_wp-A \
+                    --wl_endp       test_wl-A \
+                    --speed         102400 \
+                    --latency       25 \
+                    --max_jitter    50 \
+                    --jitter_freq   6 \
+                    --drop_freq     12
 
-            # Create a single wanpath on endpoint B:
-            $ ./lf_create_wanpath.py --mgr 192.168.102.158 --mgr_port 8080\
-                --wp_name test_wp-B --wl_endp test_wl-B\
-                --speed 102400 --latency 25 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-                --log_level debug --debug
+            # Create a single WanPath on WanLink endpoint B:
+                ./lf_create_wanpath.py \
+                    --wp_name       test_wp-B \
+                    --wl_endp       test_wl-B \
+                    --speed         102400 \
+                    --latency       25 \
+                    --max_jitter    50 \
+                    --jitter_freq   6 \
+                    --drop_freq     12
 
-            # Create a single wanpath on endpoint A and test all text fields:
-            $ ./lf_create_wanpath.py --mgr 192.168.102.158 --mgr_port 8080\
-                --wp_name test_wp-C --wl_endp test_wl-A\
-                --source_ip 1.1.1.1 --source_ip_mask 2.2.2.2 --dest_ip 3.3.3.3 --dest_ip_mask 4.4.4.4\
-                --drop_freq 5 --dup_freq 6 --extra_buffer 7 --jitter_freq 8 --latency 9 --max_drop_amt 10\
-                --max_jitter 11 --max_lateness 12 --max_reorder_amt 13 --min_drop_amt 14 --min_reorder_amt 15\
-                --reorder_freq 16 --speed 17 --test_mgr default_tm\
-                --log_level debug --debug
+            # Create single WanPath on endpoint A setting all possible fields:
+                ./lf_create_wanpath.py \
+                    --wp_name           test_wp-C \
+                    --wl_endp           test_wl-A \
+                    --source_ip         1.1.1.1 \
+                    --source_ip_mask    2.2.2.2 \
+                    --dest_ip           3.3.3.3 \
+                    --dest_ip_mask      4.4.4.4 \
+                    --drop_freq         5 \
+                    --dup_freq          6 \
+                    --extra_buffer      7 \
+                    --jitter_freq       8 \
+                    --latency           9 \
+                    --max_drop_amt      10 \
+                    --max_jitter        11 \
+                    --max_lateness      12 \
+                    --max_reorder_amt   13 \
+                    --min_drop_amt      14 \
+                    --min_reorder_amt   15 \
+                    --reorder_freq      16 \
+                    --speed             17 \
+                    --test_mgr          default_tm
 
-NOTES:
-            # Wanlink must already exist - can be created with lf_create_wanlink.py:
-                $ ./lf_create_wanlink.py --mgr 192.168.102.158 --mgr_port 8080 --port_A eth1 --port_B eth2\
-                    --speed_A 1024000 --speed_B 2048000 --wl_name test_wl --latency_A 24 --latency_B 32\
-                    --max_jitter_A 50 --max_jitter_B 20 --jitter_freq 6 --drop_freq 12\
-                    --log_level debug --debug
+NOTES:      # WanPaths require a pre-existing WanLink. These can be created and configured with
+            # the 'lf_create_wanlink.py' script. For example:
+                ./lf_create_wanlink.py \
+                    --wl_name       test_wl \
+                    --port_A        eth1 \
+                    --port_B        eth2 \
+                    --speed_A       1024000 \
+                    --speed_B       2048000 \
+                    --latency_A     24 \
+                    --latency_B     32 \
+                    --max_jitter_A  50 \
+                    --max_jitter_B  20 \
+                    --jitter_freq   6 \
+                    --drop_freq     12
 
-            # Lanforge api expects 'wanlink' but it is really looking for the endpoint name
-                ie. wanlink test_wl has endpoints test_wl-A and test_wl-B.
+            # LANforge API specifies a 'wanlink', but it really means an endpoint name,
+            # e.g. Wanlink 'test_wl' will have endpoints with names 'test_wl-A' and 'test_wl-B',
+            # unless set otherwise
 
 SCRIPT_CLASSIFICATION:
             Creation
@@ -45,16 +75,16 @@ SCRIPT_CATEGORIES:
 STATUS:     Functional
 
 VERIFIED_ON:
-            14-Jan-2024
-            GUI Version: 5.4.9
+            Tested on:      14-Jan-2024
+            GUI Version:    5.4.9
             Kernel Version: 6.11.11+
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2024 Candela Technologies Inc.
+            Copyright 2025 Candela Technologies Inc.
 
 INCLUDE_IN_README:
             False
-'''
+"""
 
 import sys
 import importlib
@@ -247,61 +277,90 @@ def parse_args():
             Create Wanpaths
             ''',
         description=r'''\
-            NAME:       lf_create_wanpath.py
+NAME:       lf_create_wanpath.py
 
-            PURPOSE:    Create a wanpath using the lanforge api given an existing wanlink endpoint
+PURPOSE:    Create a WanPath using using a given, pre-existing WanLink
 
-            EXAMPLE:    # Create a single wanpath on endpoint A:
-                        $ ./lf_create_wanpath.py --mgr 192.168.102.158 --mgr_port 8080\
-                            --wp_name test_wp-A --wl_endp test_wl-A\
-                            --speed 102400 --latency 25 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-                            --log_level debug --debug
+EXAMPLE:    # Create a single WanPath on WanLink endpoint A:
+                ./lf_create_wanpath.py \
+                    --wp_name       test_wp-A \
+                    --wl_endp       test_wl-A \
+                    --speed         102400 \
+                    --latency       25 \
+                    --max_jitter    50 \
+                    --jitter_freq   6 \
+                    --drop_freq     12
 
-                        # Create a single wanpath on endpoint B:
-                        $ ./lf_create_wanpath.py --mgr 192.168.102.158 --mgr_port 8080\
-                            --wp_name test_wp-B --wl_endp test_wl-B\
-                            --speed 102400 --latency 25 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-                            --log_level debug --debug
+            # Create a single WanPath on WanLink endpoint B:
+                ./lf_create_wanpath.py \
+                    --wp_name       test_wp-B \
+                    --wl_endp       test_wl-B \
+                    --speed         102400 \
+                    --latency       25 \
+                    --max_jitter    50 \
+                    --jitter_freq   6 \
+                    --drop_freq     12
 
-                        # Create a single wanpath on endpoint A and test all text fields:
-                        $ ./lf_create_wanpath.py --mgr 192.168.102.158 --mgr_port 8080\
-                            --wp_name test_wp-C --wl_endp test_wl-A\
-                            --source_ip 1.1.1.1 --source_ip_mask 2.2.2.2 --dest_ip 3.3.3.3 --dest_ip_mask 4.4.4.4\
-                            --drop_freq 5 --dup_freq 6 --extra_buffer 7 --jitter_freq 8 --latency 9 --max_drop_amt 10\
-                            --max_jitter 11 --max_lateness 12 --max_reorder_amt 13 --min_drop_amt 14 --min_reorder_amt 15\
-                            --reorder_freq 16 --speed 17 --test_mgr default_tm\
-                            --log_level debug --debug
+            # Create single WanPath on endpoint A setting all possible fields:
+                ./lf_create_wanpath.py \
+                    --wp_name           test_wp-C \
+                    --wl_endp           test_wl-A \
+                    --source_ip         1.1.1.1 \
+                    --source_ip_mask    2.2.2.2 \
+                    --dest_ip           3.3.3.3 \
+                    --dest_ip_mask      4.4.4.4 \
+                    --drop_freq         5 \
+                    --dup_freq          6 \
+                    --extra_buffer      7 \
+                    --jitter_freq       8 \
+                    --latency           9 \
+                    --max_drop_amt      10 \
+                    --max_jitter        11 \
+                    --max_lateness      12 \
+                    --max_reorder_amt   13 \
+                    --min_drop_amt      14 \
+                    --min_reorder_amt   15 \
+                    --reorder_freq      16 \
+                    --speed             17 \
+                    --test_mgr          default_tm
 
-            NOTES:
-                        # Wanlink must already exist - can be created with lf_create_wanlink.py:
-                            $ ./lf_create_wanlink.py --mgr 192.168.102.158 --mgr_port 8080 --port_A eth1 --port_B eth2\
-                                --speed_A 1024000 --speed_B 2048000 --wl_name test_wl --latency_A 24 --latency_B 32\
-                                --max_jitter_A 50 --max_jitter_B 20 --jitter_freq 6 --drop_freq 12\
-                                --log_level debug --debug
+NOTES:      # WanPaths require a pre-existing WanLink. These can be created and configured with
+            # the 'lf_create_wanlink.py' script. For example:
+                ./lf_create_wanlink.py \
+                    --wl_name       test_wl \
+                    --port_A        eth1 \
+                    --port_B        eth2 \
+                    --speed_A       1024000 \
+                    --speed_B       2048000 \
+                    --latency_A     24 \
+                    --latency_B     32 \
+                    --max_jitter_A  50 \
+                    --max_jitter_B  20 \
+                    --jitter_freq   6 \
+                    --drop_freq     12
 
-                        # Lanforge api expects 'wanlink' but it is really looking for the endpoint name
-                            ie. wanlink test_wl has endpoints test_wl-A and test_wl-B.
+            # LANforge API specifies a 'wanlink', but it really means an endpoint name,
+            # e.g. Wanlink 'test_wl' will have endpoints with names 'test_wl-A' and 'test_wl-B',
+            # unless set otherwise
 
-                        # Note: endp_A is associated with _tx_endp and endp_B is associated with _rx_endp
+SCRIPT_CLASSIFICATION:
+            Creation
 
-            SCRIPT_CLASSIFICATION:
-                        Creation
+SCRIPT_CATEGORIES:
+            Functional
 
-            SCRIPT_CATEGORIES:
-                        Functional
+STATUS:     Functional
 
-            STATUS:     Functional
+VERIFIED_ON:
+            Tested on:      14-Jan-2024
+            GUI Version:    5.4.9
+            Kernel Version: 6.11.11+
 
-            VERIFIED_ON:
-                        14-Jan-2024
-                        GUI Version: 5.4.9
-                        Kernel Version: 6.11.11+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc.
 
-            LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-                        Copyright 2024 Candela Technologies Inc.
-
-            INCLUDE_IN_README:
-                        False
+INCLUDE_IN_README:
+            False
             '''
     )
 
