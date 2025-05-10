@@ -606,7 +606,7 @@ def parse_args():
         prog="create_station.py",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog="Create stations",
-        description="""\
+        description=r"""\
 NAME:       create_station.py
 
 PURPOSE:    Create and configure one or more of WiFi stations ports using the
