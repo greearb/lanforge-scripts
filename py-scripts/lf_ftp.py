@@ -235,6 +235,10 @@ class FtpTest(LFCliBase):
         self.channel_list = []
         self.mode_list = []
         self.cx_list = []
+        self.rssi_list = []
+        self.tx_rate = []
+        self.port_rx_rate = []
+        self.individual_device_csv_names = []
         self.eap_method = eap_method
         self.eap_identity = eap_identity
         self.ieee80211 = ieee80211
@@ -900,6 +904,10 @@ class FtpTest(LFCliBase):
         temp_data = {}
         max_bytes_rd = []
         rx_rate_val = []
+        individual_device_data = {}
+        for port in self.input_devices_list:
+            columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI']
+            individual_device_data[port] = pd.DataFrame(columns=columns)
         while (current_time < endtime):
 
             # data in json format
@@ -921,6 +929,9 @@ class FtpTest(LFCliBase):
             self.data['UC-MAX'] = self.uc_max
 
             rx_rate_val.append(list(self.rx_rate))
+            for i, port in enumerate(self.input_devices_list):
+                row_data = [current_time, self.bytes_rd[i], self.url_data[i], self.rx_rate[i], self.port_rx_rate[i], self.tx_rate[i], self.rssi_list[i]]
+                individual_device_data[port].loc[len(individual_device_data[port])] = row_data
             # calculating average for rx_rate
             for j in range(len(rx_rate_val[0])):
                 rx_rate_sum = 0
@@ -994,6 +1005,11 @@ class FtpTest(LFCliBase):
                         break
 
             current_time = datetime.now().isoformat()[0:19]
+        individual_device_csv_names = []
+        for port, df in individual_device_data.items():
+            df.to_csv(f"{endtime}-ftp-{port}.csv", index=False)
+            individual_device_csv_names.append(f'{endtime}-ftp-{port}')
+        self.individual_device_csv_names = individual_device_csv_names
 
     # Created a function to get uc-avg,uc,min,uc-max,ssid and all other details of the devices
 
@@ -1001,14 +1017,7 @@ class FtpTest(LFCliBase):
         dataset = []
         self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd, self.rx_rate = [], [], [], [], [], [], [], [], []
         if self.clients_type == "Real":
-            response_port = self.json_get("/port/all")
-            for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if port in self.input_devices_list:
-                        self.channel_list.append(str(port_data['channel']))
-                        self.mode_list.append(str(port_data['mode']))
-                        self.ssid_list.append(str(port_data['ssid']))
-
+            self.get_port_data()
         # data in json format
         # data = self.json_get("layer4/list?fields=bytes-rd")
         uc_avg_data = self.json_get("layer4/list?fields=uc-avg")
@@ -1095,6 +1104,56 @@ class FtpTest(LFCliBase):
             total_data = self.json_get("layer4/all")
             logger.info("No endpoint found")
             logger.info(total_data)
+
+    def get_port_data(self):
+        """
+        Retrieves signal strength, rx rate, link speed(tx-rate), mode, ssid data for the specified devices from port.
+
+        """
+        station_names = self.input_devices_list
+        interfaces_dict = dict()
+        try:
+            port_data = self.local_realm.json_get('/ports/all/')['interfaces']
+        except KeyError:
+            logger.error("Error: 'interfaces' key not found in port data")
+            exit(1)
+
+        for port in port_data:
+            interfaces_dict.update(port)
+
+        for sta in station_names:
+            if sta in interfaces_dict:
+                if "dBm" in interfaces_dict[sta]['signal']:
+                    self.rssi_list.append(interfaces_dict[sta]['signal'].split(" ")[0])
+                else:
+                    self.rssi_list.append(interfaces_dict[sta]['signal'])
+            else:
+                self.rssi_list.append('-')
+        for sta in station_names:
+            if sta in interfaces_dict:
+                self.tx_rate.append(interfaces_dict[sta]['tx-rate'])
+            else:
+                self.tx_rate.append('-')
+        for sta in station_names:
+            if sta in interfaces_dict:
+                self.port_rx_rate.append(interfaces_dict[sta]['rx-rate'])
+            else:
+                self.port_rx_rate.append('-')
+        for sta in station_names:
+            if sta in interfaces_dict:
+                self.channel_list.append(interfaces_dict[sta]['channel'])
+            else:
+                self.channel_list.append('-')
+        for sta in station_names:
+            if sta in interfaces_dict:
+                self.mode_list.append(interfaces_dict[sta]['mode'])
+            else:
+                self.mode_list.append('-')
+        for sta in station_names:
+            if sta in interfaces_dict:
+                self.ssid_list.append(interfaces_dict[sta]['ssid'])
+            else:
+                self.ssid_list.append('-')
 
     # Updates the status in the running.json file while running a test from the Web UI
     def updating_webui_runningjson(self, obj):
@@ -1708,6 +1767,8 @@ class FtpTest(LFCliBase):
         report_path_date_time = self.report.get_path_date_time()
         if self.clients_type == "Real":
             shutil.move('ftp_datavalues.csv', report_path_date_time)
+            for csv_name in self.individual_device_csv_names:
+                shutil.move(f"{csv_name}.csv", report_path_date_time)
         self.report.set_title("FTP Test")
         self.report.set_date(date)
         self.report.build_banner()
