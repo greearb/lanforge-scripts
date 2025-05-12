@@ -934,7 +934,7 @@ class FtpTest(LFCliBase):
             dataset = self.rx_rate
             dataset = [round(x / 1000000, 4) for x in dataset]  # converting bps to mbps
             self.rx_rate = dataset
-            self.data['Rx Rate'] = self.rx_rate
+            self.data['Rx Rate(1m)'] = self.rx_rate
             # calculating max in bytes rd
             if len(max_bytes_rd) == 0:
                 max_bytes_rd = list(self.bytes_rd)
@@ -1016,14 +1016,14 @@ class FtpTest(LFCliBase):
         uc_min_data = self.json_get("layer4/list?fields=uc-min")
         total_url_data = self.json_get("layer4/list?fields=total-urls")
         bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
-        rx_rate = self.json_get("layer4/list?fields=rx rate")
+        rx_rate = self.json_get("layer4/list?fields=rx rate (1m)")
         if 'endpoint' in uc_avg_data.keys():
             # list of layer 4 connections name
             if type(uc_avg_data['endpoint']) is dict:
                 self.uc_avg.append(uc_avg_data['endpoint']['uc-avg'])
                 self.uc_max.append(uc_max_data['endpoint']['uc-max'])
                 self.uc_min.append(uc_min_data['endpoint']['uc-min'])
-                self.rx_rate.append(rx_rate['endpoint']['rx rate'])
+                self.rx_rate.append(rx_rate['endpoint']['rx rate (1m)'])
                 # reading uc-avg data in json format
                 self.url_data.append(total_url_data['endpoint']['total-urls'])
                 dataset.append(bytes_rd['endpoint']['bytes-rd'])
@@ -1057,7 +1057,7 @@ class FtpTest(LFCliBase):
 
                     for cx in rx_rate['endpoint']:
                         if created_cx in cx:
-                            self.rx_rate.append(cx[created_cx]['rx rate'])
+                            self.rx_rate.append(cx[created_cx]['rx rate (1m)'])
                             break
                 self.bytes_rd = [float(f"{(i / 1000000): .4f}") for i in dataset]
                 # for cx in uc_avg_data['endpoint']:
