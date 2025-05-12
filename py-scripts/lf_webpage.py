@@ -195,6 +195,7 @@ class HttpDownload(Realm):
         self.config = config
         self.api_url = 'http://{}:{}'.format(self.host, self.port)
         self.group_device_map = {}
+        self.individual_device_csv_names = []
 
 # The 'phantom_check' will be handled within the 'get_real_client_list' function
     def get_real_client_list(self):
@@ -646,6 +647,11 @@ class HttpDownload(Realm):
         self.get_device_port_details()
         max_bytes_rd = []
         rx_rate_val = []
+        individual_device_data = {}
+        # Creating individual Dataframe for each device
+        for port in self.port_list:
+            columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI']
+            individual_device_data[port] = pd.DataFrame(columns=columns)
         while (current_time < endtime):
 
             # data in json format
@@ -665,6 +671,12 @@ class HttpDownload(Realm):
             self.data["SSID"] = self.ssid_list
             self.data["Channel"] = self.channel_list
             self.data["Mode"] = self.mode_list
+            rssi_list, tx_rate_list, rx_rate_list = self.get_signal_and_link_speed_data()  # these data collected from port manager
+            individual_rx_data = []
+            individual_rx_data.extend([current_time])
+            for i, port in enumerate(self.port_list):
+                row_data = [current_time, bytes_rd[i], url_times[i], rx_rate[i], rx_rate_list[i], tx_rate_list[i], rssi_list[i]]
+                individual_device_data[port].loc[len(individual_device_data[port])] = row_data
 
             if len(max_bytes_rd) == 0:
                 max_bytes_rd = list(bytes_rd)
@@ -727,6 +739,12 @@ class HttpDownload(Realm):
                         break
 
             current_time = datetime.now().isoformat()[0:19]
+        individual_device_csv_names = []  # To store individial device csv names
+        # Iterate over each port and its corresponding DataFrame in the dictionary Saving the DataFrame to CSV
+        for port, df in individual_device_data.items():
+            df.to_csv(f"{endtime}-http-{port}.csv", index=False)
+            individual_device_csv_names.append(f'{endtime}-http-{port}')
+        self.individual_device_csv_names = individual_device_csv_names
 
     def my_monitor(self, data_mon):
         # data in json format
@@ -1041,6 +1059,9 @@ class HttpDownload(Realm):
         # It ensures no blocker for virtual clients
         if self.client_type == 'Real':
             shutil.move('http_datavalues.csv', report_path_date_time)
+            # Moving indiviudal csv's to report directory
+            for csv_name in self.individual_device_csv_names:
+                shutil.move(f"{csv_name}.csv", report_path_date_time)
         if bands == "Both":
             num_stations = num_stations * 2
         report.set_title("HTTP DOWNLOAD TEST")
@@ -1462,6 +1483,44 @@ class HttpDownload(Realm):
                     pass_fail_list.append("FAIL")
 
         return test_input_list, pass_fail_list
+
+    def get_signal_and_link_speed_data(self):
+        """
+        Retrieves signal strength, rx rate and link speed data for the specified stations from port.
+
+        """
+        station_names = self.port_list
+        signal_list = []
+        link_speed_list = []
+        rx_rate_list = []
+        interfaces_dict = dict()
+        try:
+            port_data = self.local_realm.json_get('/ports/all/')['interfaces']
+        except KeyError:
+            logger.error("Error: 'interfaces' key not found in port data")
+            exit(1)
+
+        for port in port_data:
+            interfaces_dict.update(port)
+        for sta in station_names:
+            if sta in interfaces_dict:
+                if "dBm" in interfaces_dict[sta]['signal']:
+                    signal_list.append(interfaces_dict[sta]['signal'].split(" ")[0])
+                else:
+                    signal_list.append(interfaces_dict[sta]['signal'])
+            else:
+                signal_list.append('-')
+        for sta in station_names:
+            if sta in interfaces_dict:
+                link_speed_list.append(interfaces_dict[sta]['tx-rate'])
+            else:
+                link_speed_list.append('-')
+        for sta in station_names:
+            if sta in interfaces_dict:
+                rx_rate_list.append(interfaces_dict[sta]['rx-rate'])
+            else:
+                rx_rate_list.append('-')
+        return signal_list, link_speed_list, rx_rate_list
 
 
 def validate_args(args):
