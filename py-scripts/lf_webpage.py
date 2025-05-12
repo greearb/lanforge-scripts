@@ -659,7 +659,7 @@ class HttpDownload(Realm):
             uc_max_data = self.my_monitor('uc-max')
             uc_min_data = self.my_monitor('uc-min')
             url_times = self.my_monitor('total-urls')
-            rx_rate = self.my_monitor('rx rate')
+            rx_rate = self.my_monitor('rx rate (1m)')
             bytes_rd = self.my_monitor('bytes-rd')
             self.data["MAC"] = self.macid_list
             self.data["SSID"] = self.ssid_list
@@ -693,7 +693,7 @@ class HttpDownload(Realm):
                 self.data["uc_max"] = uc_max_data
                 self.data["uc_avg"] = uc_avg_data
                 self.data["bytes_rd"] = bytes_rd
-                self.data["rx_rate"] = rx_rate
+                self.data["rx rate (1m)"] = rx_rate
             else:
                 self.data["status"] = ["RUNNING"] * len(self.devices_list)
                 self.data["url_data"] = [0] * len(self.devices_list)
@@ -701,7 +701,7 @@ class HttpDownload(Realm):
                 self.data["uc_max"] = [0] * len(self.devices_list)
                 self.data["uc_min"] = [0] * len(self.devices_list)
                 self.data["bytes_rd"] = [0] * len(self.devices_list)
-                self.data["rx_rate"] = [0] * len(self.devices_list)
+                self.data["rx rate (1m)"] = [0] * len(self.devices_list)
             time_difference = abs(end_time - datetime.now())
             total_hours = time_difference.total_seconds() / 3600
             remaining_minutes = (total_hours % 1) * 60
@@ -1889,7 +1889,7 @@ times the file is downloaded.
             uc_avg_val = http.data['uc_avg']
             url_times = http.data['url_data']
             rx_bytes_val = http.data['bytes_rd']
-            rx_rate_val = http.data['rx_rate']
+            rx_rate_val = http.data['rx rate (1m)']
         else:
             uc_avg_val = http.my_monitor('uc-avg')
             url_times = http.my_monitor('total-urls')
