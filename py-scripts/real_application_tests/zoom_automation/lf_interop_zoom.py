@@ -1227,7 +1227,7 @@ class ZoomAutomation(Realm):
             logging.info(f"Upstream port IP {upstream_port}")
 
         return upstream_port
-    
+
     def filter_ios_devices(self, device_list):
         """
         Filters out iOS devices from the given device list based on hardware and software identifiers.
@@ -1314,19 +1314,23 @@ def main():
 
                 EXAMPLE-1:
                 Command Line Interface to run Zoom with specified duration:
-                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 1.1.eth1
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
+                --upstream_port 1.1.eth1
 
                 EXAMPLE-2:
                 Command Line Interface to run Zoom on multiple devices:
-                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 1.1.eth1
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
+                --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 1.1.eth1
 
                 EXAMPLE-3:
                 Command Line Interface to run Zoom on multiple devices with Device Configuration:
-                python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video --upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
+                python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+                --upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
 
                 EXAMPLE-4:
                 Command Line Interface to run Zoom with Groups and Profiles:
-                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video --wait_time 30 --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+                --wait_time 30 --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
             ''')
         )
         parser.add_argument('--duration', type=int, required=True, help="Duration of the Zoom meeting in minutes")
@@ -1442,8 +1446,8 @@ def main():
                                     selected_bands=['5G'])
             laptops = realdevice.get_devices()
 
-            if args.file_name and args.do_webUI:
-                new_filename = args.removesuffix(".csv")
+            if args.file_name:
+                new_filename = args.file_name.removesuffix(".csv")
             else:
                 new_filename = args.file_name
             config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.lanforge_ip, file_name=new_filename)
@@ -1489,27 +1493,27 @@ def main():
                 args.resources = ",".join(id for id in eid_list)
             else:
                 config_dict = {
-                        'ssid': args.ssid,
-                        'passwd': args.passwd,
-                        'enc': args.encryp,
-                        'eap_method': args.eap_method,
-                        'eap_identity': args.eap_identity,
-                        'ieee80211': args.ieee8021x,
-                        'ieee80211u': args.ieee80211u,
-                        'ieee80211w': args.ieee80211w,
-                        'enable_pkc': args.enable_pkc,
-                        'bss_transition': args.bss_transition,
-                        'power_save': args.power_save,
-                        'disable_ofdma': args.disable_ofdma,
-                        'roam_ft_ds': args.roam_ft_ds,
-                        'key_management': args.key_management,
-                        'pairwise': args.pairwise,
-                        'private_key': args.private_key,
-                        'ca_cert': args.ca_cert,
-                        'client_cert': args.client_cert,
-                        'pk_passwd': args.pk_passwd,
-                        'pac_file': args.pac_file,
-                        'server_ip': args.upstream_port,
+                    'ssid': args.ssid,
+                    'passwd': args.passwd,
+                    'enc': args.encryp,
+                    'eap_method': args.eap_method,
+                    'eap_identity': args.eap_identity,
+                    'ieee80211': args.ieee8021x,
+                    'ieee80211u': args.ieee80211u,
+                    'ieee80211w': args.ieee80211w,
+                    'enable_pkc': args.enable_pkc,
+                    'bss_transition': args.bss_transition,
+                    'power_save': args.power_save,
+                    'disable_ofdma': args.disable_ofdma,
+                    'roam_ft_ds': args.roam_ft_ds,
+                    'key_management': args.key_management,
+                    'pairwise': args.pairwise,
+                    'private_key': args.private_key,
+                    'ca_cert': args.ca_cert,
+                    'client_cert': args.client_cert,
+                    'pk_passwd': args.pk_passwd,
+                    'pac_file': args.pac_file,
+                    'server_ip': args.upstream_port,
 
                 }
                 if args.resources:
