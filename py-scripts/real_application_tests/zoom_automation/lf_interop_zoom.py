@@ -14,6 +14,16 @@
     python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
       --resources 1.400,1.375 --zoom_host 1.95 --server_ip 192.168.214.123
 
+    Example-3:
+    Command Line Interface to run Zoom on multiple devices with Device Configuration
+    python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+    --upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
+
+    Example-4:
+    Command Line Interface to run Zoom on multiple devices with Groups and Profiles
+    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+    --wait_time 30  --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
+
 
 
     NOTES:
@@ -43,6 +53,7 @@ from flask_cors import CORS
 import redis
 import sys
 import traceback
+import textwrap
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
@@ -1294,7 +1305,30 @@ class ZoomAutomation(Realm):
 
 def main():
     try:
-        parser = argparse.ArgumentParser(description="Zoom Automation Script")
+        parser = argparse.ArgumentParser(
+            prog=__file__,
+            formatter_class=argparse.RawTextHelpFormatter,
+            description=textwrap.dedent('''
+                Zoom Automation Script
+                PURPOSE: lf_interop_zoom.py provides the available devices and allows the user to start Zoom call conference meeting for the user-specified duration
+
+                EXAMPLE-1:
+                Command Line Interface to run Zoom with specified duration:
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 1.1.eth1
+
+                EXAMPLE-2:
+                Command Line Interface to run Zoom on multiple devices:
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 1.1.eth1
+
+                EXAMPLE-3:
+                Command Line Interface to run Zoom on multiple devices with Device Configuration:
+                python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video --upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
+
+                EXAMPLE-4:
+                Command Line Interface to run Zoom with Groups and Profiles:
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video --wait_time 30 --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
+            ''')
+        )
         parser.add_argument('--duration', type=int, required=True, help="Duration of the Zoom meeting in minutes")
         parser.add_argument('--lanforge_ip', type=str, required=True, help="LANforge IP address")
         parser.add_argument('--signin_email', type=str, required=True, help="Sign-in email")
@@ -1323,24 +1357,24 @@ def main():
         parser.add_argument("--encryp", default=None, help='specify the encryption type  on which the test will be '
                             'running eg :open|psk|psk2|sae|psk2jsae')
 
-        parser.add_argument("--eap_method", type=str, default='DEFAULT')
-        parser.add_argument("--eap_identity", type=str, default='')
-        parser.add_argument("--ieee80211", action="store_true")
-        parser.add_argument("--ieee80211u", action="store_true")
-        parser.add_argument("--ieee80211w", type=int, default=1)
-        parser.add_argument("--enable_pkc", action="store_true")
-        parser.add_argument("--bss_transition", action="store_true")
-        parser.add_argument("--power_save", action="store_true")
-        parser.add_argument("--disable_ofdma", action="store_true")
-        parser.add_argument("--roam_ft_ds", action="store_true")
-        parser.add_argument("--key_management", type=str, default='DEFAULT')
-        parser.add_argument("--pairwise", type=str, default='[BLANK]')
-        parser.add_argument("--private_key", type=str, default='[BLANK]')
-        parser.add_argument("--ca_cert", type=str, default='[BLANK]')
-        parser.add_argument("--client_cert", type=str, default='[BLANK]')
-        parser.add_argument("--pk_passwd", type=str, default='[BLANK]')
-        parser.add_argument("--pac_file", type=str, default='[BLANK]')
-        parser.add_argument("--upstream_port", type=str, default=None)
+        parser.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
+        parser.add_argument("--eap_identity", type=str, default='DEFAULT', help="Specify the EAP identity for authentication.")
+        parser.add_argument("--ieee8021x", action="store_true", help='Enables IEEE 802.1x support.')
+        parser.add_argument("--ieee80211u", action="store_true", help='Enables IEEE 802.11u (Hotspot 2.0) support.')
+        parser.add_argument("--ieee80211w", type=int, default=1, help='Enables IEEE 802.11w (Management Frame Protection) support.')
+        parser.add_argument("--enable_pkc", action="store_true", help='Enables pkc support.')
+        parser.add_argument("--bss_transition", action="store_true", help='Enables BSS transition support.')
+        parser.add_argument("--power_save", action="store_true", help='Enables power-saving features.')
+        parser.add_argument("--disable_ofdma", action="store_true", help='Disables OFDMA support.')
+        parser.add_argument("--roam_ft_ds", action="store_true", help='Enables fast BSS transition (FT) support')
+        parser.add_argument("--key_management", type=str, default='DEFAULT', help='Specify the key management method (e.g., WPA-PSK, WPA-EAP)')
+        parser.add_argument("--pairwise", type=str, default='NA', help='Specify the pairwise cipher')
+        parser.add_argument("--private_key", type=str, default='NA', help='Specify EAP private key certificate file.')
+        parser.add_argument("--ca_cert", type=str, default='NA', help='Specify the CA certificate file name')
+        parser.add_argument("--client_cert", type=str, default='NA', help='Specify the client certificate file name')
+        parser.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
+        parser.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
+        parser.add_argument("--upstream_port", type=str, default='NA', help='Specify the upstream port', required=True)
         parser.add_argument('--help_summary', help='Show summary of what this script does', default=None)
         parser.add_argument("--expected_passfail_value", help="Specify the expected urlcount value for pass/fail")
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
@@ -1460,7 +1494,7 @@ def main():
                         'enc': args.encryp,
                         'eap_method': args.eap_method,
                         'eap_identity': args.eap_identity,
-                        'ieee80211': args.ieee80211,
+                        'ieee80211': args.ieee8021x,
                         'ieee80211u': args.ieee80211u,
                         'ieee80211w': args.ieee80211w,
                         'enable_pkc': args.enable_pkc,
@@ -1570,35 +1604,36 @@ def main():
         logging.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
         traceback.print_exc()
     finally:
-        if args.do_webUI:
-            try:
-                url = f"http://{args.lanforge_ip}:5454/update_status_yt"
-                headers = {
-                    'Content-Type': 'application/json',
-                }
+        if not ('--help' in sys.argv or '-h' in sys.argv):
+            if args.do_webUI:
+                try:
+                    url = f"http://{args.lanforge_ip}:5454/update_status_yt"
+                    headers = {
+                        'Content-Type': 'application/json',
+                    }
 
-                data = {
-                    'status': 'Completed',
-                    'name': args.testname
-                }
+                    data = {
+                        'status': 'Completed',
+                        'name': args.testname
+                    }
 
-                response = requests.post(url, json=data, headers=headers)
+                    response = requests.post(url, json=data, headers=headers)
 
-                if response.status_code == 200:
-                    logging.info("Successfully updated STOP status to 'Completed'")
-                    pass
-                else:
-                    logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
+                    if response.status_code == 200:
+                        logging.info("Successfully updated STOP status to 'Completed'")
+                        pass
+                    else:
+                        logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
 
-            except Exception as e:
-                # Print an error message if an exception occurs during the request
-                logging.error(f"An error occurred while updating status: {e}")
+                except Exception as e:
+                    # Print an error message if an exception occurs during the request
+                    logging.error(f"An error occurred while updating status: {e}")
 
-        zoom_automation.redis_client.set('login_completed', 0)
-        zoom_automation.stop_signal = True
-        logging.info("Waiting for Browser Cleanup in Laptops")
-        time.sleep(10)
-        zoom_automation.generic_endps_profile.cleanup()
+            zoom_automation.redis_client.set('login_completed', 0)
+            zoom_automation.stop_signal = True
+            logging.info("Waiting for Browser Cleanup in Laptops")
+            time.sleep(10)
+            zoom_automation.generic_endps_profile.cleanup()
 
 
 if __name__ == "__main__":
