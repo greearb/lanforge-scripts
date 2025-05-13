@@ -1179,6 +1179,42 @@ class ZoomAutomation(Realm):
         for client in accepted_clients:
             file_to_move_path = os.path.join(self.path, f'{client}.csv')
             self.move_files(file_to_move_path, report_path_date_time)
+    
+    def change_port_to_ip(self, upstream_port):
+        """
+        Convert a given port name to its corresponding IP address if it's not already an IP.
+
+        This function checks whether the provided `upstream_port` is a valid IPv4 address.
+        If it's not, it attempts to extract the IP address of the port by resolving it
+        via the internal `name_to_eid()` method and then querying the IP using `json_get()`.
+
+        Args:
+            upstream_port (str): The name or IP of the upstream port. This could be a
+                                 LANforge port name like '1.1.eth1' or an IP address.
+
+        Returns:
+            str: The resolved IP address if the port name was converted successfully,
+                otherwise returns the original input if it was already an IP or
+                if resolution fails.
+
+        Logs:
+            - A warning if the port is not Ethernet or IP resolution fails.
+            - Info logs for the resolved or passed IP.
+
+        """
+        if upstream_port.count('.') != 3:
+            target_port_list = self.name_to_eid(upstream_port)
+            shelf, resource, port, _ = target_port_list
+            try:
+                target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+                upstream_port = target_port_ip
+            except BaseException:
+                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+            logging.info(f"Upstream port IP {upstream_port}")
+        else:
+            logging.info(f"Upstream port IP {upstream_port}")
+
+        return upstream_port
 
 
 def main():
@@ -1282,7 +1318,7 @@ def main():
 
             zoom_automation = ZoomAutomation(audio=args.audio, video=args.video, lanforge_ip=args.lanforge_ip, wait_time=args.wait_time, testname=args.testname,
                                              upstream_port=args.upstream_port, config=args.config, selected_groups=selected_groups, selected_profiles=selected_profiles)
-
+            args.upstream_port = zoom_automation.change_port_to_ip(args.upstream_port)
             realdevice = RealDevice(manager_ip=args.lanforge_ip,
                                     server_ip="192.168.1.61",
                                     ssid_2g='Test Configured',
@@ -1380,22 +1416,23 @@ def main():
                             asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
                         args.resources = ",".join(id for id in dev_list)
                 else:
-                    all_devices = config_obj.get_all_devices()
-                    device_list = []
-                    for device in all_devices:
-                        if device["type"] != 'laptop':
-                            device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-                        elif device["type"] == 'laptop':
-                            device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
-                    print("Available Devices For Testing")
-                    for device in device_list:
-                        print(device)
-                    zm_host = input("Enter Host Resource for the Test : ")
-                    zm_host = zm_host.strip()
-                    args.resources = input("Enter client Resources to run the test :")
-                    args.resources = zm_host + "," + args.resources
-                    dev1_list = args.resources.split(',')
+                    # If no resources provided, prompt user to select devices manually
                     if args.config:
+                        all_devices = config_obj.get_all_devices()
+                        device_list = []
+                        for device in all_devices:
+                            if device["type"] != 'laptop':
+                                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
+                            elif device["type"] == 'laptop':
+                                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+                        print("Available Devices For Testing")
+                        for device in device_list:
+                            print(device)
+                        zm_host = input("Enter Host Resource for the Test : ")
+                        zm_host = zm_host.strip()
+                        args.resources = input("Enter client Resources to run the test :")
+                        args.resources = zm_host + "," + args.resources
+                        dev1_list = args.resources.split(',')
                         asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
 
             result_list = []
