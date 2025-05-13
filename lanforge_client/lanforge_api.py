@@ -1766,6 +1766,7 @@ class LFJsonCommand(JsonCommand):
                      adb_product: str = None,                  # Android device product ID
                      app_identifier: str = None,               # Identifier that App and adb can both query (mac of wlan0)
                      bt_ctrl_dev: str = None,                  # Filepath of device's assigned BT adapter
+                     bt_mac: str = None,                       # Device's BT MAC address
                      device_type: str = None,                  # Interop device type
                      lf_username: str = None,                  # LANforge Interop app user-name
                      resource: int = None,                     # Resource number. [W]
@@ -1796,6 +1797,8 @@ class LFJsonCommand(JsonCommand):
             data["app_identifier"] = app_identifier
         if bt_ctrl_dev is not None:
             data["bt_ctrl_dev"] = bt_ctrl_dev
+        if bt_mac is not None:
+            data["bt_mac"] = bt_mac
         if device_type is not None:
             data["device_type"] = device_type
         if lf_username is not None:
@@ -1834,6 +1837,7 @@ class LFJsonCommand(JsonCommand):
                           adb_product=param_map.get("adb_product"),
                           app_identifier=param_map.get("app_identifier"),
                           bt_ctrl_dev=param_map.get("bt_ctrl_dev"),
+                          bt_mac=param_map.get("bt_mac"),
                           device_type=param_map.get("device_type"),
                           lf_username=param_map.get("lf_username"),
                           resource=param_map.get("resource"),
@@ -4879,6 +4883,8 @@ class LFJsonCommand(JsonCommand):
                      radio: str = None,                        # Name of the physical radio interface, for example: wiphy0
                      rate: str = None,                         # Max rate, see help above.
                      resource: int = None,                     # Resource number. [W]
+                     rsn_override: str = None,                 # Check for RSN Override IEs: 0: disabled, 1: Enable if
+                     # supported, 2: Force enabled.
                      shelf: int = 1,                           # Shelf number. [R][D:1]
                      ssid: str = None,                         # SSID for this Virtual STA. Use [BLANK] for empty SSID.
                      # Start with <tt>0x</tt> for HEX interpretation.
@@ -4929,6 +4935,8 @@ class LFJsonCommand(JsonCommand):
             data["rate"] = rate
         if resource is not None:
             data["resource"] = resource
+        if rsn_override is not None:
+            data["rsn_override"] = rsn_override
         if shelf is not None:
             data["shelf"] = shelf
         if ssid is not None:
@@ -4979,6 +4987,7 @@ class LFJsonCommand(JsonCommand):
                           radio=param_map.get("radio"),
                           rate=param_map.get("rate"),
                           resource=param_map.get("resource"),
+                          rsn_override=param_map.get("rsn_override"),
                           shelf=param_map.get("shelf"),
                           ssid=param_map.get("ssid"),
                           sta_br_ip=param_map.get("sta_br_ip"),
@@ -12382,8 +12391,12 @@ class LFJsonCommand(JsonCommand):
                             atten_count: str = None,                  # For cases where we are creating/setting a phantom
                             # attenuator.
                             atten_idx: str = None,                    # Attenuator index, or 'all'. [W]
+                            chassis_ver: str = None,                  # Chassis version, or type of attenuator to make.
+                            # Usually inferred, rather than given here.
                             ip_addr: str = None,                      # IP address, in case this Attenuator is to be managed
-                            # over TCP.
+                            # over TCP. If chassis_ver > 127, this instead is any
+                            # arbitrary metadata to pass to an attenuator
+                            # management script.
                             mode: str = None,                         # 0 == normal attenuator, 1 == pulse mode (API Tech
                             # 4205A modules directly connected via USB only)
                             pulse_count: str = None,                  # Number of pulses (0-255)
@@ -12396,6 +12409,7 @@ class LFJsonCommand(JsonCommand):
                             serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
                             # [W]
                             shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
+                            user_notes: str = None,                   # Up to 127 characters of user notes.
                             val: str = None,                          # Requested attenution in 1/10ths of dB (ddB). START,
                             # STOP will operate an attenuator script
                             response_json_list: list = None,
@@ -12414,6 +12428,8 @@ class LFJsonCommand(JsonCommand):
             data["atten_count"] = atten_count
         if atten_idx is not None:
             data["atten_idx"] = atten_idx
+        if chassis_ver is not None:
+            data["chassis_ver"] = chassis_ver
         if ip_addr is not None:
             data["ip_addr"] = ip_addr
         if mode is not None:
@@ -12432,6 +12448,8 @@ class LFJsonCommand(JsonCommand):
             data["serno"] = serno
         if shelf is not None:
             data["shelf"] = shelf
+        if user_notes is not None:
+            data["user_notes"] = user_notes
         if val is not None:
             data["val"] = val
         if len(data) < 1:
@@ -12456,6 +12474,7 @@ class LFJsonCommand(JsonCommand):
         TODO: fix comma counting
         self.post_set_attenuator(atten_count=param_map.get("atten_count"),
                                  atten_idx=param_map.get("atten_idx"),
+                                 chassis_ver=param_map.get("chassis_ver"),
                                  ip_addr=param_map.get("ip_addr"),
                                  mode=param_map.get("mode"),
                                  pulse_count=param_map.get("pulse_count"),
@@ -12465,6 +12484,7 @@ class LFJsonCommand(JsonCommand):
                                  resource=param_map.get("resource"),
                                  serno=param_map.get("serno"),
                                  shelf=param_map.get("shelf"),
+                                 user_notes=param_map.get("user_notes"),
                                  val=param_map.get("val"),
                                  )
         """
@@ -15457,6 +15477,7 @@ class LFJsonCommand(JsonCommand):
                            aq_audio_band: str = None,                # Audio band for AQ scoring. 0: narrow-band, 1:
                            # super-wide-band, 2: full-band. Default is 0.
                            aq_call_report_count: str = None,         # Number of AQ Call Report. Default is 0.
+                           aq_internal_delay_ms: str = None,         # Configure the internal delay to AQ test reporting
                            codec: str = None,                        # Codec to use for the voice stream, supported values:
                            # G711U, G711A, SPEEX, g726-16, g726-24, g726-32,
                            # g726-40, g729a.
@@ -15499,6 +15520,8 @@ class LFJsonCommand(JsonCommand):
             data["aq_audio_band"] = aq_audio_band
         if aq_call_report_count is not None:
             data["aq_call_report_count"] = aq_call_report_count
+        if aq_internal_delay_ms is not None:
+            data["aq_internal_delay_ms"] = aq_internal_delay_ms
         if codec is not None:
             data["codec"] = codec
         if first_call_delay is not None:
@@ -15557,6 +15580,7 @@ class LFJsonCommand(JsonCommand):
         TODO: fix comma counting
         self.post_set_voip_info(aq_audio_band=param_map.get("aq_audio_band"),
                                 aq_call_report_count=param_map.get("aq_call_report_count"),
+                                aq_internal_delay_ms=param_map.get("aq_internal_delay_ms"),
                                 codec=param_map.get("codec"),
                                 first_call_delay=param_map.get("first_call_delay"),
                                 jitter_buffer_sz=param_map.get("jitter_buffer_sz"),
@@ -20968,7 +20992,7 @@ class LFJsonQuery(JsonQuery):
 
     When requesting specific column names, they need to be URL encoded:
         entity+id, module+1, module+2, module+3, module+4, module+5, module+6, module+7, 
-        module+8, name, script, state, temperature
+        module+8, name, notes, script, state, temperature
     Example URL: /attenuator?fields=entity+id,module+1
 
     Example py-json call (it knows the URL):
@@ -20988,6 +21012,7 @@ class LFJsonQuery(JsonQuery):
         'module 7':    # Reported attenuator dB settings.
         'module 8':    # Reported attenuator dB settings.
         'name':        # Attenuator module identifier (shelf . resource . serial-num).
+        'notes':       # User specified notes for this attenuator.
         'script':      # Attenuator script state.
         'state':       # Attenuator state.
         'temperature': # Temperature in degres Farenheight reported in Attenuator unit.
@@ -21339,8 +21364,77 @@ class LFJsonQuery(JsonQuery):
         if response is None:
             return None
         return self.extract_values(response=response,
-                                   singular_key="",
-                                   plural_key="")
+                                   singular_key="cx",
+                                   plural_key="cxs")
+    #
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <DATABASE> type requests
+
+    If you need to call the URL directly,
+    request one of these URLs:
+        /database/
+        /databases/
+
+    
+    Example py-json call (it knows the URL):
+        record = LFJsonGet.get_database(eid_list=['1.234', '1.344'],
+                                        debug=True)
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    def get_database(self, 
+                     eid_list: list = None,
+                     requested_col_names: list = None,
+                     wait_sec: float = 0.01,
+                     timeout_sec: float = 5.0,
+                     errors_warnings: list = None,
+                     debug: bool = False):
+        """
+        :param eid_list: list of entity IDs to query for
+        :param requested_col_names: list of column names to return
+        :param wait_sec: duration to wait between retries if no response or response is HTTP 404
+        :param timeout_sec: duration in which to keep querying before returning
+        :param errors_warnings: optional list to extend with errors and warnings from response
+        :param debug: print diagnostic info if true
+        :return: dictionary of results
+        """
+        debug |= self.debug_on
+        url = "/database"
+        if (eid_list is None) or (len(eid_list) < 1):
+            raise ValueError("no entity id in request")
+        trimmed_fields = []
+        if isinstance(requested_col_names, str):
+            if not requested_col_names.strip():
+                raise ValueError("column name cannot be blank")
+            trimmed_fields.append(requested_col_names.strip())
+        if isinstance(requested_col_names, list):
+            for field in requested_col_names:
+                if not field.strip():
+                    raise ValueError("column names cannot be blank")
+                field = field.strip()
+                if field.find(" ") > -1:
+                    raise ValueError("field should be URL encoded: [%s]" % field)
+                trimmed_fields.append(field)
+        if isinstance(eid_list, str):
+            url += f"/{eid_list}"
+        elif isinstance(eid_list, list):
+            url += f"/{ ','.join(eid_list)}"
+        else:
+            raise ValueError('eid_list is neither a string or list')
+
+        if len(trimmed_fields) > 0:
+            url += "?fields=%s" % (",".join(trimmed_fields))
+
+        response = self.json_get(url=url,
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=timeout_sec,
+                                 max_timeout_sec=timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if response is None:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="database",
+                                   plural_key="databases")
     #
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <DUT> type requests
@@ -21537,22 +21631,24 @@ class LFJsonQuery(JsonQuery):
         'entity id':            # Entity ID
         'jitter':               # Exponential decaying average jitter calculated per RFC3393(old_jitter *
                                 # 15/16 + new_jitter * 1/16)
-        'max pdu':              # The maximum write size.For Ethernet protocols, this is the entire
-                                # Ethernet frame. For UDP, it is the UDP payload size, and for TCP, it
-                                # just means the maximum amount of data that is written per socket
-                                # write.In all cases, the packets on the wire will not exceed theport's
-                                # MTU + Ethernet-Header-Size (typically 1514 for Ethernet)Note that large
-                                # maximum write sizes put memory pressure on theLANforge system and can
-                                # degrade performance.
-        'max rate':             # Maximum desired transmit rate, in bits per second (bps).
-        'mcast rx':             # Indicates if endpoint is configured as a multicast receiver.
-        'min pdu':              # The minimum write size.For Ethernet protocols, this is the entire
-                                # Ethernet frame. For UDP, it is the UDP payload size, and for TCP, it
-                                # just means the maximum amount of data that is written per socket
-                                # write.In all cases, the packets on the wire will not exceed theport's
+        'max pdu':              # The maximum write size for generated traffic.For UDP, this is the UDP
+                                # payload size. For TCP, this is themaximum amount of data that is written
+                                # per socket write.For Ethernet protocols, this is the entire Ethernet
+                                # frame.In all cases, the packets on the wire will not exceed theport's
                                 # MTU + Ethernet-Header-Size (typically 1514 for Ethernet)Note that large
                                 # minimum write sizes put memory pressure on theLANforge system and can
-                                # degrade performance.
+                                # degrade performance.For TCP, setting MSS is a better way to force the
+                                # on-the-wire packet size.
+        'max rate':             # Maximum desired transmit rate, in bits per second (bps).
+        'mcast rx':             # Indicates if endpoint is configured as a multicast receiver.
+        'min pdu':              # The minimum write size for generated traffic.For UDP, this is the UDP
+                                # payload size. For TCP, this is themaximum amount of data that is written
+                                # per socket write.For Ethernet protocols, this is the entire Ethernet
+                                # frame.In all cases, the packets on the wire will not exceed theport's
+                                # MTU + Ethernet-Header-Size (typically 1514 for Ethernet)Note that large
+                                # minimum write sizes put memory pressure on theLANforge system and can
+                                # degrade performance.For TCP, setting MSS is a better way to force the
+                                # on-the-wire packet size.
         'min rate':             # Minimum desired transmit rate, in bits per second (bps).
         'mng':                  # Is the Endpoint managed or not?
         'name':                 # Endpoint's Name.
@@ -21602,9 +21698,9 @@ class LFJsonQuery(JsonQuery):
         'script':               # Endpoint script state.
         'send buf':             # Configured/Actual values for sending buffer size (bytes).
         'source addr':          # Source Address (MAC, ip/port, VoIP source).
-        'tcp mss':              # Sender's TCP-MSS (max segment size) setting.This cooresponds to the
-                                # TCP_MAXSEGS socket option,and TCP-MSS plus 54 is the maximum packet size
-                                # on the wirefor Ethernet frames.This is a good option to efficiently
+        'tcp mss':              # Sending Endpoint's TCP-MSS (max segment size) setting.This corresponds
+                                # to the TCP_MAXSEGS socket option.TCP-MSS plus 54 is the maximum packet
+                                # size on the wirefor Ethernet frames.This is a good option to efficiently
                                 # limit TCP packet size.
         'tcp rtx':              # Total packets retransmitted by the TCP stack for this connection.These
                                 # were likely dropped or corrupted in transit.
@@ -21980,8 +22076,11 @@ class LFJsonQuery(JsonQuery):
         bps+rx, bps+tx, command, delay, dropped, eid, elapsed, entity+id, jitter, 
         last+results, lr+bps+rx, lr+bps+tx, lr+delay, lr+dropped, lr+jitter, lr+pdu%2Fs+rx, 
         lr+pdu%2Fs+tx, lr+rx+bytes, lr+rx+pkts, lr+tx+bytes, lr+tx+pkts, name, pdu%2Fs+rx, 
-        pdu%2Fs+tx, rpt+timer, rpt%23, rx+bytes, rx+pkts, status, tx+bytes, tx+pkts, 
-        type
+        pdu%2Fs+tx, rpt+timer, rpt%23, rx+audio+delay, rx+audio+jitter, rx+audio+pkt+drop+%25, 
+        rx+bytes, rx+pkts, rx+video+delay, rx+video+fps, rx+video+jitter, rx+video+pkt+drop+%25, 
+        status, tx+audio+delay, tx+audio+jitter, tx+audio+pkt+drop+%25, tx+bytes, tx+pkts, 
+        tx+video+delay, tx+video+fps, tx+video+jitter, tx+video+pkt+drop+%25, type, 
+      
     Example URL: /generic?fields=bps+rx,bps+tx
 
     Example py-json call (it knows the URL):
@@ -21991,51 +22090,65 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        'bps rx':       # Receive rate reported by this endpoint.
-        'bps tx':       # Transmit rate reported by this endpoint.
-        'command':      # The command that this endpoint executes.
-        'delay':        # Last Round-Trip-Time (latency) for this endpoint (microseconds).
-        'dropped':      # Dropped PDUs reported by this endpoint.
-        'eid':          # Entity ID
-        'elapsed':      # Amount of time (seconds) this endpoint has been running (or ran.)
-        'entity id':    # Entity ID
-        'jitter':       # Jitter reported by this endpoint.
-        'last results': # Latest output from the Generic Endpoint.
-        'lr bps rx':    # Last Reported Transmit rate reported by this endpoint. IPERF only.
-        'lr bps tx':    # Last Reported Receive rate reported by this endpoint. IPERF only.
-        'lr delay':     # Last Reported Round-Trip-Time (latency) for this endpoint
-                        # (microseconds). IPERF only.
-        'lr dropped':   # Last Reported Dropped PDUs reported by this endpoint. IPERF only.
-        'lr jitter':    # Last Reported Jitter reported by this endpoint.
-        'lr pdu/s rx':  # Last Reported Received packets-per-second reported by this endpoint.
-                        # IPERF only.
-        'lr pdu/s tx':  # Last Reported Transmitted packets-per-second reported by this endpoint.
-                        # IPERF only.
-        'lr rx bytes':  # Last Reported Received bytes reported by this endpoint. IPERF only.
-        'lr rx pkts':   # Last Reported Received PDUs reported by this endpoint. IPERF only.
-        'lr tx bytes':  # Last Reported Transmitted bytes reported by this endpoint. IPERF only.
-        'lr tx pkts':   # Last Reported Transmitted PDUs reported by this endpoint. IPERF only.
-        'name':         # Endpoint's Name.
-        'pdu/s rx':     # Received packets-per-second reported by this endpoint.
-        'pdu/s tx':     # Transmitted packets-per-second reported by this endpoint.
-        'rpt timer':    # Report Timer (milliseconds).This is how often the GUI will ask for
-                        # updates from the LANforge processes.If the GUI is sluggish, increasing
-                        # the report timers may help.
-        'rpt#':         # The N_th report that we have received. (Some cmds will produce only one
-                        # report, others will produce continuous reports.)
-        'rx bytes':     # Received bytes reported by this endpoint.
-        'rx pkts':      # Received PDUs reported by this endpoint.
-        'status':       # Current State of the connection.UninitializedHas not yet been
-                        # started/stopped.InitializingBeing set up.StartingStarting the
-                        # test.RunningTest is actively running.StoppedTest has been
-                        # stopped.QuiesceTest will gracefully stop soon.HW-BYPASSTest is in
-                        # hardware-bypass mode (WanLinks only)FTM_WAITTest wants to run, but is
-                        # phantom, probably due to non-existent interface or resource.WAITINGWill
-                        # restart as soon as resources are available.PHANTOMTest is stopped, and
-                        # is phantom, probably due to non-existent interface or resource.
-        'tx bytes':     # Transmitted bytes reported by this endpoint.
-        'tx pkts':      # Transmitted PDUs reported by this endpoint.
-        'type':         # The specific type of this Generic Endpoint.
+        'bps rx':              # Receive rate reported by this endpoint.
+        'bps tx':              # Transmit rate reported by this endpoint.
+        'command':             # The command that this endpoint executes.
+        'delay':               # Last Round-Trip-Time (latency) for this endpoint (microseconds).
+        'dropped':             # Dropped PDUs reported by this endpoint.
+        'eid':                 # Entity ID
+        'elapsed':             # Amount of time (seconds) this endpoint has been running (or ran.)
+        'entity id':           # Entity ID
+        'jitter':              # Jitter reported by this endpoint.
+        'last results':        # Latest output from the Generic Endpoint.
+        'lr bps rx':           # Last Reported Transmit rate reported by this endpoint. IPERF only.
+        'lr bps tx':           # Last Reported Receive rate reported by this endpoint. IPERF only.
+        'lr delay':            # Last Reported Round-Trip-Time (latency) for this endpoint
+                               # (microseconds). IPERF only.
+        'lr dropped':          # Last Reported Dropped PDUs reported by this endpoint. IPERF only.
+        'lr jitter':           # Last Reported Jitter reported by this endpoint.
+        'lr pdu/s rx':         # Last Reported Received packets-per-second reported by this endpoint.
+                               # IPERF only.
+        'lr pdu/s tx':         # Last Reported Transmitted packets-per-second reported by this endpoint.
+                               # IPERF only.
+        'lr rx bytes':         # Last Reported Received bytes reported by this endpoint. IPERF only.
+        'lr rx pkts':          # Last Reported Received PDUs reported by this endpoint. IPERF only.
+        'lr tx bytes':         # Last Reported Transmitted bytes reported by this endpoint. IPERF only.
+        'lr tx pkts':          # Last Reported Transmitted PDUs reported by this endpoint. IPERF only.
+        'name':                # Endpoint's Name.
+        'pdu/s rx':            # Received packets-per-second reported by this endpoint.
+        'pdu/s tx':            # Transmitted packets-per-second reported by this endpoint.
+        'rpt timer':           # Report Timer (milliseconds).This is how often the GUI will ask for
+                               # updates from the LANforge processes.If the GUI is sluggish, increasing
+                               # the report timers may help.
+        'rpt#':                # The N_th report that we have received. (Some cmds will produce only one
+                               # report, others will produce continuous reports.)
+        'rx audio delay':      # Audio Receive Delay (milliseconds). Conference Call endpoints only.
+        'rx audio jitter':     # Audio Receive Jitter (milliseconds). Conference Call endpoints only.
+        'rx audio pkt drop %': # Audio Receive Pakcets Dropped %. Conference Call endpoints only.
+        'rx bytes':            # Received bytes reported by this endpoint.
+        'rx pkts':             # Received PDUs reported by this endpoint.
+        'rx video delay':      # Video Receive Delay (milliseconds). Conference Call endpoints only.
+        'rx video fps':        # Video Receive Frames per Second. Conference Call endpoints only.
+        'rx video jitter':     # Video Receive Jitter (milliseconds). Conference Call endpoints only.
+        'rx video pkt drop %': # Video Receive Packets Dropped %. Conference Call endpoints only.
+        'status':              # Current State of the connection.UninitializedHas not yet been
+                               # started/stopped.InitializingBeing set up.StartingStarting the
+                               # test.RunningTest is actively running.StoppedTest has been
+                               # stopped.QuiesceTest will gracefully stop soon.HW-BYPASSTest is in
+                               # hardware-bypass mode (WanLinks only)FTM_WAITTest wants to run, but is
+                               # phantom, probably due to non-existent interface or resource.WAITINGWill
+                               # restart as soon as resources are available.PHANTOMTest is stopped, and
+                               # is phantom, probably due to non-existent interface or resource.
+        'tx audio delay':      # Audio Transmit Delay (milliseconds). Conference Call endpoints only.
+        'tx audio jitter':     # Audio Transmit Jitter (milliseconds). Conference Call endpoints only.
+        'tx audio pkt drop %': # Audio Transmit Packets Dropped %. Conference Call endpoints only.
+        'tx bytes':            # Transmitted bytes reported by this endpoint.
+        'tx pkts':             # Transmitted PDUs reported by this endpoint.
+        'tx video delay':      # Video Transmit Delay (milliseconds). Conference Call endpoints only.
+        'tx video fps':        # Video Transmit Frames per Second. Conference Call endpoints only.
+        'tx video jitter':     # Video Transmit Jitter (milliseconds). Conference Call endpoints only.
+        'tx video pkt drop %': # Video Transmit Packets Dropped %. Conference Call endpoints only.
+        'type':                # The specific type of this Generic Endpoint.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -22328,6 +22441,121 @@ class LFJsonQuery(JsonQuery):
                                    plural_key="endpoint")
     #
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <MLO> type requests
+
+    If you need to call the URL directly,
+    request one of these URLs:
+        /mlo/
+        /mlo/$shelf_id
+        /mlo/$shelf_id/$resource_id
+        /mlo/$shelf_id/$resource_id/$port_id
+
+    When requesting specific column names, they need to be URL encoded:
+        active, activity, avg+chain+rssi, beacon+signal, chain+rssi, channel, disabled+reason, 
+        dormant, dup+pkts, eid, entity+id, esr+active, last+exit, noise, parent+dev, 
+        retry+failed, rx+bytes, rx+drop, rx+pkts, rx+rate, rx+rate+%281m%29, rx+signal, 
+        rx-rate, time-stamp, tx+bytes, tx+pkts, tx+rate, tx+rate+%281%C2%A0min%29, tx-rate, 
+        wifi+retries        # hidden columns:
+        resource
+    Example URL: /mlo?fields=active,activity
+
+    Example py-json call (it knows the URL):
+        record = LFJsonGet.get_mlo(eid_list=['1.234', '1.344'],
+                                   requested_col_names=['entity id'], 
+                                   debug=True)
+
+    The record returned will have these members: 
+    {
+        'active':               # lc_key > lc_col_nameMLO Link is currently active.
+        'activity':             # Percent of the channel that is utilized over the last minute.This
+                                # includes locally generated traffic as well as anyother systems active on
+                                # this channel.This is a per-radio value.
+        'avg chain rssi':       # Wireless signal Average per-chain RSSI.
+        'beacon signal':        # Wireless signal strength (RSSI) for received beacons.
+        'chain rssi':           # Wireless signal per-chain RSSI.
+        'channel':              # Channel at the MLO link is currently using, if known.
+        'disabled reason':      # Reasons that ESR MLO may be disabled by the driver.
+        'dormant':              # MLO Link is currently dormant.
+        'dup pkts':             # Number of duplicated wifi packets received by this MLO Link.
+        'eid':                  # 
+        'entity id':            # 
+        'esr active':           # MLO Link is currently active.
+        'last exit':            # Reasons that ESR MLO mode was last exited by the driver.
+        'noise':                # Wireless noise level.
+        'parent dev':           # 
+        'retry failed':         # Number of Wireless packets that the MLO Link failed to send due to
+                                # excessive retries.
+        'rx bytes':             # Number of bytes received by this MLO Link.
+        'rx drop':              # Number of packets dropped in the receive path by this MLO Link.
+        'rx pkts':              # Number of packets received by this MLO Link.
+        'rx rate':              # Average bits per second received since last stats clear.
+        'rx rate (1m)':         # Average bits per second received over the last 60 seconds.
+        'rx signal':            # Wireless signal strength (RSSI).
+        'rx-rate':              # Reported network device RX link speed.
+        'time-stamp':           # Time at which this event was created.This uses the clock on the source
+                                # machine.
+        'tx bytes':             # Number of bytes transmitted by this MLO Link.
+        'tx pkts':              # Number of bytes transmitted by this MLO Link.
+        'tx rate':              # Average bits per second transmitted since last stats clear.
+        'tx rate (1&nbsp;min)': # Average bits per second transmitted over the last 60 seconds.
+        'tx-rate':              # Reported network device TX link speed.
+        'wifi retries':         # Number of Wireless packets that the MLO Link wifi radio retried.One
+                                # packet may be tried multiple times and each try would be counted in this
+                                # stat.Not all radios can properly report this statistic.
+    }
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    def get_mlo(self, 
+                eid_list: list = None,
+                requested_col_names: list = None,
+                wait_sec: float = 0.01,
+                timeout_sec: float = 5.0,
+                errors_warnings: list = None,
+                debug: bool = False):
+        """
+        :param eid_list: list of entity IDs to query for
+        :param requested_col_names: list of column names to return
+        :param wait_sec: duration to wait between retries if no response or response is HTTP 404
+        :param timeout_sec: duration in which to keep querying before returning
+        :param errors_warnings: optional list to extend with errors and warnings from response
+        :param debug: print diagnostic info if true
+        :return: dictionary of results
+        """
+        debug |= self.debug_on
+        url = "/mlo"
+        if (eid_list is None) or (len(eid_list) < 1):
+            raise ValueError("no entity id in request")
+        trimmed_fields = []
+        if isinstance(requested_col_names, str):
+            if not requested_col_names.strip():
+                raise ValueError("column name cannot be blank")
+            trimmed_fields.append(requested_col_names.strip())
+        if isinstance(requested_col_names, list):
+            for field in requested_col_names:
+                if not field.strip():
+                    raise ValueError("column names cannot be blank")
+                field = field.strip()
+                if field.find(" ") > -1:
+                    raise ValueError("field should be URL encoded: [%s]" % field)
+                trimmed_fields.append(field)
+        url += self.create_port_eid_url(eid_list=eid_list)
+
+        if len(trimmed_fields) > 0:
+            url += "?fields=%s" % (",".join(trimmed_fields))
+
+        response = self.json_get(url=url,
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=timeout_sec,
+                                 max_timeout_sec=timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if response is None:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="mlo_link",
+                                   plural_key="mlo_links")
+    #
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <NEWSESSION> type requests
 
     If you need to call the URL directly,
@@ -22414,14 +22642,15 @@ class LFJsonQuery(JsonQuery):
     When requesting specific column names, they need to be URL encoded:
         4way+time+%28us%29, activity, aid, alias, anqp+time+%28us%29, ap, avg+chain+rssi, 
         beacon, bps+rx, bps+rx+ll, bps+tx, bps+tx+ll, bss+color, bytes+rx+ll, bytes+tx+ll, 
-        chain+rssi, channel, collisions, connections, crypt, cx+ago, cx+time+%28us%29, 
-        device, dhcp+%28ms%29, down, entity+id, gateway+ip, hardware, ip, ipv6+address, 
-        ipv6+gateway, key%2Fphrase, login-fail, login-ok, logout-fail, logout-ok, mac, 
-        mask, misc, mode, mtu, no+cx+%28us%29, noise, parent+dev, phantom, port, port+type, 
-        pps+rx, pps+tx, qlen, reset, retry+failed, rf+loss, rx+bytes, rx+crc, rx+drop, 
-        rx+errors, rx+fifo, rx+frame, rx+length, rx+miss, rx+over, rx+pkts, rx-rate, 
-        sec, signal, ssid, status, time-stamp, tx+abort, tx+bytes, tx+crr, tx+errors, 
-        tx+fifo, tx+hb, tx+pkts, tx+wind, tx-failed+%25, tx-rate, wifi+retries        # hidden columns:
+        centerfrequency, chain+rssi, channel, collisions, connections, crypt, cx+ago, 
+        cx+time+%28us%29, device, dhcp+%28ms%29, down, entity+id, gateway+ip, hardware, ip, 
+        ipv6+address, ipv6+gateway, key%2Fphrase, login-fail, login-ok, logout-fail, 
+        logout-ok, mac, mask, misc, mode, mtu, no+cx+%28us%29, noise, parent+dev, phantom, 
+        port, port+type, pps+rx, pps+tx, qlen, reset, retry+failed, rf+loss, rx+bytes, 
+        rx+crc, rx+drop, rx+errors, rx+fifo, rx+frame, rx+length, rx+miss, rx+over, 
+        rx+pkts, rx-rate, sec, security, signal, ssid, status, time-stamp, tx+abort, 
+        tx+bytes, tx+crr, tx+errors, tx+fifo, tx+hb, tx+pkts, tx+wind, tx-failed+%25, 
+        tx-rate, wifi+retries        # hidden columns:
         antenna_count, beacon_rx_signal, port_cur_flags_h, port_cur_flags_l, port_supported_flags_h, 
         port_supported_flags_l, resource, rx_multicast, tx_dropped
     Example URL: /port?fields=4way+time+%28us%29,activity
@@ -22433,117 +22662,119 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        '4way time (us)': # TIme (in micro-seconds) it took to complete the last WiFi 4-way
-                          # authentication.
-        'activity':       # Percent of the channel that is utilized over the last minute.This
-                          # includes locally generated traffic as well as anyother systems active on
-                          # this channel.This is a per-radio value.
-        'aid':            # Reported STA association ID (AID)
-        'alias':          # User-specified alias for this Port.
-        'anqp time (us)': # Time (in micro-seconds) it took to complete the last WiFi ANQP
-                          # request/response session.
-        'ap':             # BSSID of AP for connected stations.
-        'avg chain rssi': # Wireless signal Average per-chain RSSI.
-        'beacon':         # Number of Wireless beacons from Cell or AP that have been missed.
-        'bps rx':         # Average bits per second received for the last 30 seconds.
-        'bps rx ll':      # Bits per second received, including low-level framing (Ethernet Only).
-        'bps tx':         # Average bits per second transmitted for the last 30 seconds.
-        'bps tx ll':      # Bits per second transmitted, including low-level framing (Ethernet
-                          # Only).
-        'bss color':      # Reported Wireless BSS Color
-        'bytes rx ll':    # Bytes received, including low-level framing (Ethernet Only).
-        'bytes tx ll':    # Bytes transmitted, including low-level framing (Ethernet Only).
-        'chain rssi':     # Wireless signal per-chain RSSI.
-        'channel':        # Channel at the device is currently on, if known.
-        'collisions':     # Total number of collisions reported by this Interface.For WiFi devices,
-                          # this is number of re-transmit attempts.
-        'connections':    # Number of wireless connections completed.
-        'crypt':          # Number of Wireless packets dropped due to inability to decrypt.
-        'cx ago':         # How long ago was the last WiFi connection attempt started?This relates
-                          # only to the network interface, not any higher level protocol traffic
-                          # upon it.
-        'cx time (us)':   # Time (in micro-seconds) it took to completethe last WiFi connection to
-                          # the AP.If the connection is encrypted, this measurement includesthe
-                          # value of 4way time (us)
-        'device':         # Ethernet device name, as seen by the kernel.
-        'dhcp (ms)':      # Time (in milliseconds) it took to acquire DHCP lease,or to time out
-                          # while trying to acquire lease.
-        'down':           # The interface is configured DOWN.  It must be configured UP to be in
-                          # active use.
-        'entity id':      # Entity ID
-        'gateway ip':     # Default Router/Gateway IP for the Interface.
-        'hardware':       # Port hardware type.
-        'ip':             # IP Address of the Interface.
-        'ipv6 address':   # IPv6 Address for this interface.  If global-scope address exists, it
-                          # will be displayed,otherwise link-local will be displayed.
-        'ipv6 gateway':   # IPv6 default gateway.
-        'key/phrase':     # WEP Key or WPA Phrase (if enabled).
-        'login-fail':     # The 'ifup-post' script reported failure.  This is usually used for WiFi
-                          # portallogins, but may be customized by the user for other needs.
-        'login-ok':       # The 'ifup-post' script reported OK.  This is usually used for WiFi
-                          # portallogins, but may be customized by the user for other needs.
-        'logout-fail':    # The 'ifup-post --logout' script reported failure.  This is usually used
-                          # for WiFi portallogouts, but may be customized by the user for other
-                          # needs.
-        'logout-ok':      # The 'ifup-post --logout' script reported OK.  This is usually used for
-                          # WiFi portallogouts, but may be customized by the user for other needs.
-        'mac':            # Ethernet MAC address of the Interface.
-        'mask':           # IP Mask of the Interface.
-        'misc':           # Number of Wireless packets dropped on receive due to unspecified
-                          # reasons.
-        'mode':           # Wireless radio mode (802.11a/b/g).
-        'mtu':            # MTU (Maximum Transmit Unit) size, in bytes.
-        'no cx (us)':     # How long was the WiFi disconnect duration for the last disconnection?
-        'noise':          # Wireless noise level.
-        'parent dev':     # Parent device or port of this port. Blank if this device is not a child
-                          # of another device or port.
-        'phantom':        # Is the port PHANTOM (no hardware found) or not.
-        'port':           # Entity ID
-        'port type':      # Ports can be Ethernet, Radio, vAP, vSTA, Redirect, or Bridges
-        'pps rx':         # Average packets per second received for the last 30 seconds.
-        'pps tx':         # Average packets per second transmitted for the last 30 seconds.
-        'qlen':           # "Transmit Queue Length for this Interface.
-        'reset':          # Current Reset-State.
-        'retry failed':   # Number of Wireless packets that the interface failed to send due to
-                          # excessive retries.
-        'rf loss':        # Amount of RX/RX RF Loss in 1/2 dB from SMA port to the internal
-                          # Radio.Some radios can report this, and it can be used in calibration
-                          # toincrease calibration accuracy.
-        'rx bytes':       # Total number of bytes received by this Interface.
-        'rx crc':         # Total number of packets dropped because of a bad CRC/FCS.
-        'rx drop':        # Total number of dropped packets on recieve.  Usually means driver/kernel
-                          # is being over-worked.
-        'rx errors':      # Total number of all types of Receive Errors.
-        'rx fifo':        # Total number of packets dropped because driver/kernel queues are full.
-        'rx frame':       # Total number of packets dropped because of framing errors at the
-                          # physical layer.
-        'rx length':      # Total number of packets dropped because their length was invalid.
-        'rx miss':        # Total number of packets dropped because of a missed interrupt.
-        'rx over':        # Total number of packets dropped because of framing errors at the
-                          # physical layer.
-        'rx pkts':        # Total number of packets received by this Interface.
-        'rx-rate':        # Reported network device RX link speed.
-        'sec':            # Number of secondary IP addresses configured or detected.
-        'signal':         # Wireless signal strength (RSSI).
-        'ssid':           # WiFi SSID identifier.Use [BLANK] for empty SSID, which means use any
-                          # available SSID when associating.
-        'status':         # Wireless link status.
-        'time-stamp':     # Time-Stamp
-        'tx abort':       # Total packets dropped on transmit because of driver abort.
-        'tx bytes':       # Total number of bytes sent by this Interface.
-        'tx crr':         # Total packets dropped on transmit because of carrier error.
-        'tx errors':      # Total number of all types of Transmit Errors.
-        'tx fifo':        # Total packets dropped on transmit because outgoing queue was full.
-        'tx hb':          # Total packets dropped on transmit because of transceiver heartbeat
-                          # errors.
-        'tx pkts':        # Total number of packets sent by this Interface.
-        'tx wind':        # Total number dropped on transmit because of Out-of-Window collision.
-        'tx-failed %':    # Percentage of transmitted Wireless packets that were not ACKed.They
-                          # might have succeeded on retry.
-        'tx-rate':        # Reported network device TX link speed.
-        'wifi retries':   # Number of Wireless packets that the wifi radio retried.One packet may be
-                          # tried multiple times and each try would be counted in this stat.Not all
-                          # radios can properly report this statistic.
+        '4way time (us)':  # TIme (in micro-seconds) it took to complete the last WiFi 4-way
+                           # authentication.
+        'activity':        # Percent of the channel that is utilized over the last minute.This
+                           # includes locally generated traffic as well as anyother systems active on
+                           # this channel.This is a per-radio value.
+        'aid':             # Reported STA association ID (AID)
+        'alias':           # User-specified alias for this Port.
+        'anqp time (us)':  # Time (in micro-seconds) it took to complete the last WiFi ANQP
+                           # request/response session.
+        'ap':              # BSSID of AP for connected stations.
+        'avg chain rssi':  # Wireless signal Average per-chain RSSI.
+        'beacon':          # Number of Wireless beacons from Cell or AP that have been missed.
+        'bps rx':          # Average bits per second received for the last 30 seconds.
+        'bps rx ll':       # Bits per second received, including low-level framing (Ethernet Only).
+        'bps tx':          # Average bits per second transmitted for the last 30 seconds.
+        'bps tx ll':       # Bits per second transmitted, including low-level framing (Ethernet
+                           # Only).
+        'bss color':       # Reported Wireless BSS Color
+        'bytes rx ll':     # Bytes received, including low-level framing (Ethernet Only).
+        'bytes tx ll':     # Bytes transmitted, including low-level framing (Ethernet Only).
+        'centerfrequency': # Center channel which the devices is communicating on.
+        'chain rssi':      # Wireless signal per-chain RSSI.
+        'channel':         # Channel at the device is currently on, if known.
+        'collisions':      # Total number of collisions reported by this Interface.For WiFi devices,
+                           # this is number of re-transmit attempts.
+        'connections':     # Number of wireless connections completed.
+        'crypt':           # Number of Wireless packets dropped due to inability to decrypt.
+        'cx ago':          # How long ago was the last WiFi connection attempt started?This relates
+                           # only to the network interface, not any higher level protocol traffic
+                           # upon it.
+        'cx time (us)':    # Time (in micro-seconds) it took to completethe last WiFi connection to
+                           # the AP.If the connection is encrypted, this measurement includesthe
+                           # value of 4way time (us)
+        'device':          # Ethernet device name, as seen by the kernel.
+        'dhcp (ms)':       # Time (in milliseconds) it took to acquire DHCP lease,or to time out
+                           # while trying to acquire lease.
+        'down':            # The interface is configured DOWN.  It must be configured UP to be in
+                           # active use.
+        'entity id':       # Entity ID
+        'gateway ip':      # Default Router/Gateway IP for the Interface.
+        'hardware':        # Port hardware type.
+        'ip':              # IP Address of the Interface.
+        'ipv6 address':    # IPv6 Address for this interface.  If global-scope address exists, it
+                           # will be displayed,otherwise link-local will be displayed.
+        'ipv6 gateway':    # IPv6 default gateway.
+        'key/phrase':      # WEP Key or WPA Phrase (if enabled).
+        'login-fail':      # The 'ifup-post' script reported failure.  This is usually used for WiFi
+                           # portallogins, but may be customized by the user for other needs.
+        'login-ok':        # The 'ifup-post' script reported OK.  This is usually used for WiFi
+                           # portallogins, but may be customized by the user for other needs.
+        'logout-fail':     # The 'ifup-post --logout' script reported failure.  This is usually used
+                           # for WiFi portallogouts, but may be customized by the user for other
+                           # needs.
+        'logout-ok':       # The 'ifup-post --logout' script reported OK.  This is usually used for
+                           # WiFi portallogouts, but may be customized by the user for other needs.
+        'mac':             # Ethernet MAC address of the Interface.
+        'mask':            # IP Mask of the Interface.
+        'misc':            # Number of Wireless packets dropped on receive due to unspecified
+                           # reasons.
+        'mode':            # Wireless radio mode (802.11a/b/g).
+        'mtu':             # MTU (Maximum Transmit Unit) size, in bytes.
+        'no cx (us)':      # How long was the WiFi disconnect duration for the last disconnection?
+        'noise':           # Wireless noise level.
+        'parent dev':      # Parent device or port of this port. Blank if this device is not a child
+                           # of another device or port.
+        'phantom':         # Is the port PHANTOM (no hardware found) or not.
+        'port':            # Entity ID
+        'port type':       # Ports can be Ethernet, Radio, vAP, vSTA, Redirect, or Bridges
+        'pps rx':          # Average packets per second received for the last 30 seconds.
+        'pps tx':          # Average packets per second transmitted for the last 30 seconds.
+        'qlen':            # "Transmit Queue Length for this Interface.
+        'reset':           # Current Reset-State.
+        'retry failed':    # Number of Wireless packets that the interface failed to send due to
+                           # excessive retries.
+        'rf loss':         # Amount of RX/RX RF Loss in 1/2 dB from SMA port to the internal
+                           # Radio.Some radios can report this, and it can be used in calibration
+                           # toincrease calibration accuracy.
+        'rx bytes':        # Total number of bytes received by this Interface.
+        'rx crc':          # Total number of packets dropped because of a bad CRC/FCS.
+        'rx drop':         # Total number of dropped packets on recieve.  Usually means driver/kernel
+                           # is being over-worked.
+        'rx errors':       # Total number of all types of Receive Errors.
+        'rx fifo':         # Total number of packets dropped because driver/kernel queues are full.
+        'rx frame':        # Total number of packets dropped because of framing errors at the
+                           # physical layer.
+        'rx length':       # Total number of packets dropped because their length was invalid.
+        'rx miss':         # Total number of packets dropped because of a missed interrupt.
+        'rx over':         # Total number of packets dropped because of framing errors at the
+                           # physical layer.
+        'rx pkts':         # Total number of packets received by this Interface.
+        'rx-rate':         # Reported network device RX link speed.
+        'sec':             # Number of secondary IP addresses configured or detected.
+        'security':        # WiFi Security Protocol Configured
+        'signal':          # Wireless signal strength (RSSI).
+        'ssid':            # WiFi SSID identifier.Use [BLANK] for empty SSID, which means use any
+                           # available SSID when associating.
+        'status':          # Wireless link status.
+        'time-stamp':      # Time-Stamp
+        'tx abort':        # Total packets dropped on transmit because of driver abort.
+        'tx bytes':        # Total number of bytes sent by this Interface.
+        'tx crr':          # Total packets dropped on transmit because of carrier error.
+        'tx errors':       # Total number of all types of Transmit Errors.
+        'tx fifo':         # Total packets dropped on transmit because outgoing queue was full.
+        'tx hb':           # Total packets dropped on transmit because of transceiver heartbeat
+                           # errors.
+        'tx pkts':         # Total number of packets sent by this Interface.
+        'tx wind':         # Total number dropped on transmit because of Out-of-Window collision.
+        'tx-failed %':     # Percentage of transmitted Wireless packets that were not ACKed.They
+                           # might have succeeded on retry.
+        'tx-rate':         # Reported network device TX link speed.
+        'wifi retries':    # Number of Wireless packets that the wifi radio retried.One packet may be
+                           # tried multiple times and each try would be counted in this stat.Not all
+                           # radios can properly report this statistic.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -23893,13 +24124,13 @@ class LFJsonQuery(JsonQuery):
         /voip-endp/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
-        attenuation, audio+band, avg+delay, calls+answered, calls+attempted, calls+completed, 
-        calls+failed, cf+404, cf+408, cf+busy, cf+canceled, channel, delay, destination+addr, 
-        device+type, dropped, dup+pkts, eid, elapsed, entity+id, jb+cur, jb+over, 
-        jb+silence, jb+under, jitter, mng, mobile+bt+mac, mos-lqo, mos-lqo%23, name, 
-        ooo+pkts, phone+%23, pingpong, reg+state, rst, rtp+rtt, run, rx+bytes, rx+pkts, 
-        scoring+bklg, snr+deg, snr+ref, state, tx+bytes, tx+file, tx+pkts, vad+pkts, 
-      
+        attenuation, audio+band, audio+length, avg+delay, calls+answered, calls+attempted, 
+        calls+completed, calls+failed, cf+404, cf+408, cf+busy, cf+canceled, channel, 
+        delay, destination+addr, device+type, dropped, dup+pkts, eid, elapsed, entity+id, 
+        jb+cur, jb+over, jb+silence, jb+under, jitter, mng, mobile+bt+mac, mos-lqo, 
+        mos-lqo%23, name, ooo+pkts, phone+%23, pingpong, reg+state, rst, rtp+rtt, run, 
+        rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, state, tx+bytes, tx+file, 
+        tx+pkts, vad+pkts
     Example URL: /voip-endp?fields=attenuation,audio+band
 
     Example py-json call (it knows the URL):
@@ -23913,6 +24144,7 @@ class LFJsonQuery(JsonQuery):
                             # (unit: dB)
         'audio band':       # Select POLQA audio band for AQ listening conditions such as Narrow Band
                             # (NB) or Super Wide Band (SWB).VoIP testing supports only NB for now.
+        'audio length':     # Length of the recorded/degraded audio file. Unit: sec
         'avg delay':        # Average delay values between reference and degraded/test audio file from
                             # POLQA/PESQ report (unit: ms)
         'calls answered':   # Number of calls that where the remote answered
@@ -25252,6 +25484,7 @@ class LFSession(BaseSession):
                 "/chamber": self.query_instance.get_chamber,
                 "/control": self.query_instance.get_control,
                 "/cx": self.query_instance.get_cx,
+                "/database": self.query_instance.get_database,
                 "/dut": self.query_instance.get_dut,
                 "/endp": self.query_instance.get_endp,
                 "/endsession": self.query_instance.get_endsession,
@@ -25260,6 +25493,7 @@ class LFSession(BaseSession):
                 "/generic": self.query_instance.get_generic,
                 "/gui-cli": self.query_instance.get_gui_cli,
                 "/layer4": self.query_instance.get_layer4,
+                "/mlo": self.query_instance.get_mlo,
                 "/newsession": self.query_instance.get_newsession,
                 "/port": self.query_instance.get_port,
                 "/probe": self.query_instance.get_probe,
