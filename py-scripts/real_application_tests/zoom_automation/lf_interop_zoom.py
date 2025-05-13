@@ -78,17 +78,15 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class ZoomAutomation(Realm):
-    def __init__(self, ssid="SSID", band="5G", security="wpa2", apname="AP Name", audio=True, video=True, lanforge_ip="localhost",
-                 server_ip='0.0.0.0', wait_time=30, devices=None, testname=None, config=None, selected_groups=None, selected_profiles=None):
+    def __init__(self, ssid="SSID", band="5G", security="wpa2", apname="AP Name", audio=True, video=True, lanforge_ip=None,
+                 upstream_port='0.0.0.0', wait_time=30, devices=None, testname=None, config=None, selected_groups=None, selected_profiles=None):
 
         super().__init__(lfclient_host=lanforge_ip)
-        self.flask_ip = server_ip
+        self.upstream_port = upstream_port
         self.mgr_ip = lanforge_ip
-        # self.flask_ip = '10.253.8.108'
         self.app = Flask(__name__)
         self.redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
         self.redis_client.set('login_completed', 0)
-        # self.ALLOWED_HOSTS = []
         self.secret_key = secrets.token_hex(32)
         self.app.config['SECRET_KEY'] = self.secret_key
         CORS(self.app)
@@ -353,13 +351,12 @@ class ZoomAutomation(Realm):
         logging.error("❌ Flask server did not start within 10 seconds. Exiting.")
         sys.exit(1)
 
-    def run(self, duration, server_ip, signin_email, signin_passwd, participants):
+    def run(self, duration, upstream_port, signin_email, signin_passwd, participants):
         # Store the email and password in the instance
         self.signin_email = signin_email
         self.signin_passwd = signin_passwd
         self.duration = duration
-        self.flask_ip = server_ip
-        # self.flask_ip = '10.253.8.108'
+        self.upstream_port = upstream_port
         self.participants_req = participants
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
@@ -456,16 +453,15 @@ class ZoomAutomation(Realm):
             exit(0)
 
         if self.real_sta_os_type[0] == "windows":
-            cmd = f"py zoom_host.py --ip {self.flask_ip}"
-            # cmd = "zoom_test.bat --ip %s --type %s" % (self.flask_ip,"host")
+            cmd = f"py zoom_host.py --ip {self.upstream_port}"
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_type[0] == 'linux':
 
-            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[0], self.flask_ip, "host")
+            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[0], self.upstream_port, "host")
 
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_type[0] == 'macos':
-            cmd = "sudo bash ctzoom.bash %s %s" % (self.flask_ip, "host")
+            cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "host")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         self.generic_endps_profile.start_cx()
         time.sleep(5)
@@ -493,15 +489,13 @@ class ZoomAutomation(Realm):
         for i in range(1, len(self.real_sta_os_type)):
 
             if self.real_sta_os_type[i] == "windows":
-                cmd = f"py zoom_client.py --ip {self.flask_ip}"
-                # cmd = "zoom_test.bat --ip %s --type %s" % (self.flask_ip,"client")
+                cmd = f"py zoom_client.py --ip {self.upstream_port}"
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_type[i] == 'linux':
-                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[i], self.flask_ip, "client")
+                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[i], self.upstream_port, "client")
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_type[i] == 'macos':
-                # cmd = f"sudo bash zoom_test.bash %s %s" % ( self.flask_ip, "client")
-                cmd = "sudo bash ctzoom.bash %s %s" % (self.flask_ip, "client")
+                cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "client")
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
         self.generic_endps_profile.start_cx()
@@ -1235,7 +1229,7 @@ def main():
         parser.add_argument("--client_cert", type=str, default='[BLANK]')
         parser.add_argument("--pk_passwd", type=str, default='[BLANK]')
         parser.add_argument("--pac_file", type=str, default='[BLANK]')
-        parser.add_argument("--server_ip", type=str, default=None)
+        parser.add_argument("--upstream_port", type=str, default=None)
         parser.add_argument('--help_summary', help='Show summary of what this script does', default=None)
         parser.add_argument("--expected_passfail_value", help="Specify the expected urlcount value for pass/fail")
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
@@ -1287,7 +1281,7 @@ def main():
                 exit(0)
 
             zoom_automation = ZoomAutomation(audio=args.audio, video=args.video, lanforge_ip=args.lanforge_ip, wait_time=args.wait_time, testname=args.testname,
-                                             server_ip=args.server_ip, config=args.config, selected_groups=selected_groups, selected_profiles=selected_profiles)
+                                             upstream_port=args.upstream_port, config=args.config, selected_groups=selected_groups, selected_profiles=selected_profiles)
 
             realdevice = RealDevice(manager_ip=args.lanforge_ip,
                                     server_ip="192.168.1.61",
@@ -1370,7 +1364,7 @@ def main():
                         'client_cert': args.client_cert,
                         'pk_passwd': args.pk_passwd,
                         'pac_file': args.pac_file,
-                        'server_ip': args.server_ip,
+                        'server_ip': args.upstream_port,
 
                 }
                 if args.resources:
@@ -1456,7 +1450,7 @@ def main():
                 logging.error('Generic Tab is not available.\nAborting the test.')
                 exit(0)
 
-            zoom_automation.run(args.duration, args.server_ip, args.signin_email, args.signin_passwd, args.participants)
+            zoom_automation.run(args.duration, args.upstream_port, args.signin_email, args.signin_passwd, args.participants)
             zoom_automation.data_store.clear()
             zoom_automation.generate_report()
             logging.info("Test Completed Sucessfully")
@@ -1467,9 +1461,6 @@ def main():
         if args.do_webUI:
             try:
                 url = f"http://{args.lanforge_ip}:5454/update_status_yt"
-                # url = f"http://localhost:5454/update_status_yt"
-                # url = f"http://10.253.8.108:8000/update_status_yt"
-
                 headers = {
                     'Content-Type': 'application/json',
                 }
