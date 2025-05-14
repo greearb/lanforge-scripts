@@ -313,7 +313,7 @@ class DataplaneTest(cv_test):
 
         Args:
             value (str): Comma-separated string to convert
-            map (dict): Mapping of strings to strings, where the mapped value
+            map (dict): Optional mapping of strings to strings, where the mapped value
                         corresponds to that expected by the GUI (e.g. 'lf_udp' -> 'UDP').
 
         Returns:
@@ -322,7 +322,7 @@ class DataplaneTest(cv_test):
         ret = None
 
         if value:
-            if map == None:
+            if map is None:
                 ret = ";".join(value.split(","))
             else:
                 converted_values = [map[key] for key in value.split(",")]
@@ -769,8 +769,6 @@ def validate_args(args):
                 logger.error(f"Unexpected bandwidths configuration {bandwidth}, supported are: {DataplaneTest.BANDWIDTH_MAP.keys()}.")
                 exit(1)
 
-    if args.channels:
-        channels = args.channels.split(",")
 
 def configure_logging(args):
     """
