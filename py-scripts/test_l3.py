@@ -223,6 +223,70 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --dut_serial_num 12345678
              --log_level debug
 
+        # Example : Wifi 7 2G 802.11bgn-ETH
+            ./test_l3.py\
+             --lfmgr 192.168.101.137\
+             --test_duration 2m\
+             --polling_interval 5s\
+             --upstream_port 1.1.eth2\
+             --radio 'radio==1.2.wiphy0,stations==19,ssid==TPink_C672,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==17,enable_flags==(wpa2_enable&&80211u_enable)'\
+             --endp_type lf_udp\
+             --rates_are_totals\
+             --side_a_min_bps=200000000\
+             --side_b_min_bps=300000000\
+             --test_rig CT-US-008\
+             --test_tag 'test_l3_a7'\
+             --dut_model_num TP-link\
+             --dut_sw_version 3.0.0.4.386_44266\
+             --dut_hw_version 1.0\
+             --dut_serial_num 12345678\
+             --log_level debug\
+             --debug\
+             --no_cleanup
+
+        # Example : Wifi 7 5G 802.11bgn-ETH
+            ./test_l3.py\
+             --lfmgr 192.168.101.137\
+             --test_duration 2m\
+             --polling_interval 5s\
+             --upstream_port 1.1.eth2\
+             --radio 'radio==1.2.wiphy1,stations==19,ssid==TPink_C672_5G,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==18,enable_flags==(wpa2_enable&&80211u_enable)'\
+             --endp_type lf_udp\
+             --rates_are_totals\
+             --side_a_min_bps=200000000\
+             --side_b_min_bps=300000000\
+             --test_rig CT-US-008\
+             --test_tag 'test_l3_a7'\
+             --dut_model_num TP-link\
+             --dut_sw_version 3.0.0.4.386_44266\
+             --dut_hw_version 1.0\
+             --dut_serial_num 12345678\
+             --log_level debug\
+             --debug\
+             --no_cleanup
+
+        # Example : Wifi 7 6G 802.11bgn-ETH
+            ./test_l3.py\
+             --lfmgr 192.168.101.137\
+             --test_duration 2m\
+             --polling_interval 5s\
+             --upstream_port 1.1.eth2\
+             --radio 'radio==1.2.wiphy2,stations==19,ssid==TPink_C672_6G,ssid_pw==19719207,security==wpa3,wifi_settings==wifi_settings,wifi_mode==19,enable_flags==(use-wpa3&&80211u_enable)'\
+             --endp_type lf_udp\
+             --rates_are_totals\
+             --side_a_min_bps=200000000\
+             --side_b_min_bps=300000000\
+             --test_rig CT-US-008\
+             --test_tag 'test_l3_a7'\
+             --dut_model_num TP-link\
+             --dut_sw_version 3.0.0.4.386_44266\
+             --dut_hw_version 1.0\
+             --dut_serial_num 12345678\
+             --log_level debug\
+             --debug\
+             --no_cleanup
+
+
 SCRIPT_CLASSIFICATION:  Creation & Runs Traffic
 
 SCRIPT_CATEGORIES:  Performance, Functional,  KPI Generation,  Report Generation
@@ -6235,7 +6299,69 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --dut_serial_num 12345678
              --log_level debug
 
-        # Example : Wifi 7  6G LAN-4069
+        # Example : Wifi 7 2G 802.11bgn-ETH
+            ./test_l3.py\
+             --lfmgr 192.168.101.137\
+             --test_duration 2m\
+             --polling_interval 5s\
+             --upstream_port 1.1.eth2\
+             --radio 'radio==1.2.wiphy0,stations==19,ssid==TPink_C672,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==17,enable_flags==(wpa2_enable&&80211u_enable)'\
+             --endp_type lf_udp\
+             --rates_are_totals\
+             --side_a_min_bps=200000000\
+             --side_b_min_bps=300000000\
+             --test_rig CT-US-008\
+             --test_tag 'test_l3_a7'\
+             --dut_model_num TP-link\
+             --dut_sw_version 3.0.0.4.386_44266\
+             --dut_hw_version 1.0\
+             --dut_serial_num 12345678\
+             --log_level debug\
+             --debug\
+             --no_cleanup
+
+        # Example : Wifi 7 5G 802.11bgn-ETH
+            ./test_l3.py\
+             --lfmgr 192.168.101.137\
+             --test_duration 2m\
+             --polling_interval 5s\
+             --upstream_port 1.1.eth2\
+             --radio 'radio==1.2.wiphy1,stations==19,ssid==TPink_C672_5G,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==18,enable_flags==(wpa2_enable&&80211u_enable)'\
+             --endp_type lf_udp\
+             --rates_are_totals\
+             --side_a_min_bps=200000000\
+             --side_b_min_bps=300000000\
+             --test_rig CT-US-008\
+             --test_tag 'test_l3_a7'\
+             --dut_model_num TP-link\
+             --dut_sw_version 3.0.0.4.386_44266\
+             --dut_hw_version 1.0\
+             --dut_serial_num 12345678\
+             --log_level debug\
+             --debug\
+             --no_cleanup
+
+        # Example : Wifi 7 6G 802.11bgn-ETH
+            ./test_l3.py\
+             --lfmgr 192.168.101.137\
+             --test_duration 2m\
+             --polling_interval 5s\
+             --upstream_port 1.1.eth2\
+             --radio 'radio==1.2.wiphy2,stations==19,ssid==TPink_C672_6G,ssid_pw==19719207,security==wpa3,wifi_settings==wifi_settings,wifi_mode==19,enable_flags==(use-wpa3&&80211u_enable)'\
+             --endp_type lf_udp\
+             --rates_are_totals\
+             --side_a_min_bps=200000000\
+             --side_b_min_bps=300000000\
+             --test_rig CT-US-008\
+             --test_tag 'test_l3_a7'\
+             --dut_model_num TP-link\
+             --dut_sw_version 3.0.0.4.386_44266\
+             --dut_hw_version 1.0\
+             --dut_serial_num 12345678\
+             --log_level debug\
+             --debug\
+             --no_cleanup
+
 
 SCRIPT_CLASSIFICATION:  Creation & Runs Traffic
 
