@@ -245,6 +245,7 @@ class DataplaneTest(cv_test):
                  load_old_cfg=False,
                  spatial_streams=None,
                  bandwidths=None,
+                 channels=None,
                  traffic_directions=None,
                  traffic_types=None,
                  opposite_speed="0",
@@ -297,6 +298,7 @@ class DataplaneTest(cv_test):
 
         self.spatial_streams = DataplaneTest._prepare_as_rawline(spatial_streams, self.SPATIAL_STREAMS_MAP)
         self.bandwidths = DataplaneTest._prepare_as_rawline(bandwidths, self.BANDWIDTH_MAP)
+        self.channels = DataplaneTest._prepare_as_rawline(channels, None)
 
         self.traffic_directions = DataplaneTest._prepare_as_rawline(traffic_directions, self.TRAFFIC_DIRECTION_MAP)
         self.traffic_types = DataplaneTest._prepare_as_rawline(traffic_types, self.TRAFFIC_TYPE_MAP)
@@ -320,8 +322,11 @@ class DataplaneTest(cv_test):
         ret = None
 
         if value:
-            converted_values = [map[key] for key in value.split(",")]
-            ret = ";".join(converted_values)
+            if map == None:
+                ret = ";".join(value.split(","))
+            else:
+                converted_values = [map[key] for key in value.split(",")]
+                ret = ";".join(converted_values)
 
         return ret
 
@@ -365,6 +370,8 @@ class DataplaneTest(cv_test):
             cfg_options.append("spatial_streams: " + self.spatial_streams)
         if self.bandwidths:
             cfg_options.append("bandw_options: " + self.bandwidths)
+        if self.channels:
+            cfg_options.append("channels: " + self.channels)
         if self.traffic_directions:
             cfg_options.append("directions: " + self.traffic_directions)
         if self.traffic_types:
@@ -620,10 +627,17 @@ INCLUDE_IN_README: False
                         dest="bandwidths",
                         default=None,
                         type=str,
-                        help="Maximum WiFi bandwidth. For WiFi Access point testing, this configures the LANforge station. "
+                        help="Maximum WiFi bandwidth. For WiFi Access point testing, this configures the LANforge station."
                              "For WiFi station testing, this configures the LANforge access point. "
                              "Note stations configured for 802.11ac or newer mandate minimum 80MHz support, "
-                             "save a few specific configurations.")
+                             "save a few specific configurations.  Example:  20,40,80")
+
+    parser.add_argument("--channel",
+                        "--channels",
+                        dest="channels",
+                        default=None,
+                        type=str,
+                        help="Specify channel(s) to use, Example: 6,36")
 
     # Traffic configuration
     #
@@ -755,6 +769,8 @@ def validate_args(args):
                 logger.error(f"Unexpected bandwidths configuration {bandwidth}, supported are: {DataplaneTest.BANDWIDTH_MAP.keys()}.")
                 exit(1)
 
+    if args.channels:
+        channels = args.channels.split(",")
 
 def configure_logging(args):
     """
@@ -857,17 +873,29 @@ def apply_json_overrides(args):
             exit(1)
         args.spatial_streams = spatial_streams_data
 
-    bandiwdths_data = None
+    bandwidths_data = None
     for key in ["bandwidth", "bandwidths"]:
         if key in json_data:
-            bandiwdths_data = json_data[key]
+            bandwidths_data = json_data[key]
 
-    if bandiwdths_data:
-        if not isinstance(bandiwdths_data, str):
+    if bandwidths_data:
+        if not isinstance(bandwidths_data, str):
             logger.error("Unexpected bandwidths format in JSON data. Expected comma separated string, "
-                         f"found '{type(bandiwdths_data)}'")
+                         f"found '{type(bandwidths_data)}'")
             exit(1)
-        args.bandwidths = bandiwdths_data
+        args.bandwidths = bandwidths_data
+
+    channels_data = None
+    for key in ["channel", "channels"]:
+        if key in json_data:
+            channels_data = json_data[key]
+
+    if channels_data:
+        if not isinstance(channels_data, str):
+            logger.error("Unexpected channels format in JSON data. Expected comma separated string, "
+                         f"found '{type(channels_data)}'")
+            exit(1)
+        args.channels = channels_data
 
     if "pull_report" in json_data:
         args.pull_report = json_data["pull_report"]
