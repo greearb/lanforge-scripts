@@ -4441,22 +4441,22 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_802_11a = "802.11a"        # 802.11a
         AUTO = "AUTO"                # Best Available
-        a7 = "a7"                    # 802.11a-EHT (6E disables /n and /ac)
+        a7 = "a7"                    # 802.11a-BE (a-EHT: 6E disables /n and /ac)
         aAX = "aAX"                  # 802.11a-AX (6E disables /n and /ac)
         abg = "abg"                  # 802.11abg
         abgn = "abgn"                # 802.11abgn
-        abgn7 = "abgn7"              # 802.11abgn-EHT
+        abgn7 = "abgn7"              # 802.11abgn-BE (abgn-EHT)
         abgnAC = "abgnAC"            # 802.11abgn-AC
         abgnAX = "abgnAX"            # 802.11abgn-AX
         an = "an"                    # 802.11an
-        an7 = "an7"                  # 802.11an-EHT
+        an7 = "an7"                  # 802.11an-BE (an-EHT)
         anAC = "anAC"                # 802.11an-AC
         anAX = "anAX"                # 802.11an-AX
         as_is = "as_is"              # Make no changes to current configuration
         b = "b"                      # 802.11b
         bg = "bg"                    # 802.11bg
         bgn = "bgn"                  # 802.11bgn
-        bgn7 = "bgn7"                # 802.11bgn-EHT
+        bgn7 = "bgn7"                # 802.11bgn-BE (bgn-EHT)
         bgnAC = "bgnAC"              # 802.11bgn-AC
         bgnAX = "bgnAX"              # 802.11bgn-AX
         bond = "bond"                # Bonded pair of Ethernet ports.
