@@ -269,9 +269,11 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
              is automatically sent to this Queue.
 
 <wifi_mode>:
-    Input       : Enum Val  : Shown by nc_show_ports
+    Input       : Enum Val  : for list ,  telnet <mgr> 4001  , help add_profile
 
-    AUTO        |  0        #  802.11
+    Wifi_Mode
+    <pre options='wifi_mode'>
+    AUTO        |  0        #  Best Available
     802.11a     |  1        #  802.11a
     b           |  2        #  802.11b
     g           |  3        #  802.11g
@@ -288,6 +290,12 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
     bgnAX       | 13        #  802.11bgn-AX
     anAX        | 14        #  802.11an-AX
     aAX         | 15        #  802.11a-AX (6E disables /n and /ac)
+    abgn7       | 16        #  802.11abgn-EHT
+                            #     a/b/g/n/AC/AX/EHT (dual-band AX) support
+    bgn7        | 17        #  802.11bgn-EHT
+    an7         | 18        #  802.11an-EHT
+    a7          | 19        #  802.11a-EHT (6E disables /n and /ac)
+
 
 wifi_settings flags are currently defined as:
     wpa_enable           | 0x10         # Enable WPA
@@ -5612,7 +5620,11 @@ class L3VariableTime(Realm):
             #     a/b/g/n/AC/AX (dual-band AX) support
             13: '802.11bgnAX',  # 802.11bgn-AX
             14: '802.11anAX',  # 802.11an-AX
-            15: '802.11aAX'  # 802.11a-AX (6E disables /n and /ac)
+            15: '802.11aAX',  # 802.11a-AX (6E disables /n and /ac)
+            16: '802.11abgnEHT',  # 802.11abgn-EHT  a/b/g/n/AC/AX/EHT (dual-band AX) support
+            17: '802.11bgnEHT',  # 802.11bgn-EHT
+            18: '802.11anEHT',  # 802.11an-ETH
+            19: '802.11aBE',  # 802.11a-EHT (6E disables /n and /ac)
         }
 
         for (
@@ -6223,6 +6235,8 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --dut_serial_num 12345678
              --log_level debug
 
+        # Example : Wifi 7  6G LAN-4069
+
 SCRIPT_CLASSIFICATION:  Creation & Runs Traffic
 
 SCRIPT_CATEGORIES:  Performance, Functional,  KPI Generation,  Report Generation
@@ -6269,9 +6283,12 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
              is automatically sent to this Queue.
 
 <wifi_mode>:
-    Input       : Enum Val  : Shown by nc_show_ports
+    Input       : Enum Val  : for list ,  telnet <mgr> 4001  , help add_profile
 
-    AUTO        |  0        #  802.11
+    Wifi_Mode
+    Input       : Enum Val  : Shown by nc_show_ports
+    <pre options='wifi_mode'>
+    AUTO        |  0        #  Best Available
     802.11a     |  1        #  802.11a
     b           |  2        #  802.11b
     g           |  3        #  802.11g
@@ -6288,6 +6305,13 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
     bgnAX       | 13        #  802.11bgn-AX
     anAX        | 14        #  802.11an-AX
     aAX         | 15        #  802.11a-AX (6E disables /n and /ac)
+    abgn7       | 16        #  802.11abgn-EHT
+                            #     a/b/g/n/AC/AX/EHT (dual-band AX) support
+    bgn7        | 17        #  802.11bgn-EHT
+    an7         | 18        #  802.11an-EHT
+    a7          | 19        #  802.11a-EHT (6E disables /n and /ac)
+
+
 
 wifi_settings flags are currently defined as:
     wpa_enable           | 0x10         # Enable WPA
