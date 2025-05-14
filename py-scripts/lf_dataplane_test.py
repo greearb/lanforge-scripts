@@ -253,6 +253,10 @@ class DataplaneTest(cv_test):
                  duration="15s",
                  station="1.1.sta01500",
                  dut="NA",
+                 attenuator=None,
+                 attenuator2=None,
+                 attenuations=None,
+                 attenuations2=None,
                  enables=None,
                  disables=None,
                  raw_lines=None,
@@ -302,6 +306,11 @@ class DataplaneTest(cv_test):
 
         self.traffic_directions = DataplaneTest._prepare_as_rawline(traffic_directions, self.TRAFFIC_DIRECTION_MAP)
         self.traffic_types = DataplaneTest._prepare_as_rawline(traffic_types, self.TRAFFIC_TYPE_MAP)
+
+        self.attenuator = attenuator
+        self.attenuator2 = attenuator2
+        self.attenuations = attenuations
+        self.attenuations2 = attenuations2
 
     def _prepare_as_rawline(value: str, map: dict) -> str:
         """Convert from script execution-friendly configuration to that expected by the GUI.
@@ -384,6 +393,14 @@ class DataplaneTest(cv_test):
             cfg_options.append("duration: " + self.duration)
         if self.dut != "":
             cfg_options.append("selected_dut: " + self.dut)
+        if self.attenuator:
+            cfg_options.append("attenuator: " + self.attenuator)
+        if self.attenuator2:
+            cfg_options.append("attenuator2: " + self.attenuator2)
+        if self.attenuations:
+            cfg_options.append("attenuations: " + self.attenuations)
+        if self.attenuations2:
+            cfg_options.append("attenuations2: " + self.attenuations2)
         if self.test_rig != "":
             cfg_options.append("test_rig: " + self.test_rig)
         if self.test_tag != "":
@@ -687,6 +704,33 @@ INCLUDE_IN_README: False
                         help="Verbosity of the report specified as single value in 1 - 11 range (whole numbers).\n"
                              "The larger the number, the more verbose. Default: 5")
 
+    # Attenuators configuration
+    # TODO: Identify if attenuators are adjusted together or separately
+    parser.add_argument("--attenuator",
+                        "--attenuator1",
+                        dest="attenuator",
+                        default=None,
+                        help="EID of first attenuator for use in test. See the 'Name' column in the 'Attenuators' "
+                             "tab of the LANforge GUI. Example: '1.1.3384'")
+    parser.add_argument("--attenuator2",
+                        dest="attenuator2",
+                        default=None,
+                        help="EID of second attenuator for use in test. See '--attenuator'")
+
+    # TODO: Attenuator modules in use. Support as CSV list of module numbers then translate to bitflags
+
+    parser.add_argument("--attenuations",
+                        "--attenuations1",
+                        dest="attenuations",
+                        default=None,
+                        help="Attenuations in ddB (tenth's of dB) for the first attenuator in test. Can be specified "
+                             "as distinct values or a range with step size. Range specified in format: 'START..STEP..STOP'. "
+                             "Valid step operators are: '+', '-', 'x', '*', and '/'. Example: 0..+100..955")
+    parser.add_argument("--attenuations2",
+                        dest="attenuations2",
+                        default=None,
+                        help="Attenuations in ddB (tenth's of dB) for the second test attenuator. See '--attenuations'")
+
     # Report generation
     parser.add_argument("--graph_groups",
                         help="Path to file to save graph_groups to on local system",
@@ -863,6 +907,22 @@ def apply_json_configuration(args):
         keys=["channel", "channels"]
     )
 
+    # Attenuators configuration
+    for key in ["attenuator", "attenuator1"]:
+        if key in json_data:
+            args.attenuator = json_data[key]
+
+    if "attenuator2" in json_data:
+        args.attenuator2 = json_data["attenuator2"]
+
+    for key in ["attenuations", "attenuations1"]:
+        if key in json_data:
+            args.attenuations = json_data[key]
+
+    if "attenuations2" in json_data:
+        args.attenuations2 = json_data["attenuations2"]
+
+    # Other
     if "pull_report" in json_data:
         args.pull_report = json_data["pull_report"]
     if "raw_line" in json_data:
