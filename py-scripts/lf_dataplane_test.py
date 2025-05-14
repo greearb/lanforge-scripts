@@ -789,7 +789,7 @@ def configure_logging(args):
             handler.setFormatter(ff)
 
 
-def apply_json_overrides(args):
+def apply_json_configuration(args):
     """
     Apply JSON configuration, if specified.
 
@@ -835,65 +835,33 @@ def apply_json_overrides(args):
         if key in json_data:
             args.opposite_speed = json_data[key]
 
-    traffic_directions_data = None
-    for key in ["direction", "directions", "traffic_direction", "traffic_directions"]:
-        if key in json_data:
-            traffic_directions_data = json_data[key]
+    args.traffic_directions = __apply_csv_json(
+        json_data=json_data,
+        arg_value=args.traffic_directions,
+        keys=["direction", "directions", "traffic_direction", "traffic_directions"]
+    )
+    args.traffic_types = __apply_csv_json(
+        json_data=json_data,
+        arg_value=args.traffic_types,
+        keys=["type", "types", "traffic_type", "traffic_types"]
+    )
 
-    if traffic_directions_data:
-        if not isinstance(traffic_directions_data, str):
-            logger.error("Unexpected traffic direction format in JSON data. Expected comma separate string, "
-                         f"found '{type(traffic_directions_data)}'")
-            exit(1)
-        args.traffic_directions = traffic_directions_data
-
-    traffic_types_data = None
-    for key in ["type", "types", "traffic_type", "traffic_types"]:
-        if key in json_data:
-            traffic_types_data = json_data[key]
-
-    if traffic_types_data:
-        if not isinstance(traffic_types_data, str):
-            logger.error("Unexpected traffic type format in JSON data. Expected comma separated string, "
-                         f"found '{type(traffic_types_data)}'")
-            exit(1)
-        args.traffic_types = traffic_types_data
-
-    spatial_streams_data = None
-    for key in ["nss", "spatial_streams"]:
-        if key in json_data:
-            spatial_streams_data = json_data[key]
-
-    if spatial_streams_data:
-        if not isinstance(spatial_streams_data, str):
-            logger.error("Unexpected spatial streams format in JSON data. Expected comma separated string, "
-                         f"found '{type(spatial_streams_data)}'")
-            exit(1)
-        args.spatial_streams = spatial_streams_data
-
-    bandwidths_data = None
-    for key in ["bandwidth", "bandwidths"]:
-        if key in json_data:
-            bandwidths_data = json_data[key]
-
-    if bandwidths_data:
-        if not isinstance(bandwidths_data, str):
-            logger.error("Unexpected bandwidths format in JSON data. Expected comma separated string, "
-                         f"found '{type(bandwidths_data)}'")
-            exit(1)
-        args.bandwidths = bandwidths_data
-
-    channels_data = None
-    for key in ["channel", "channels"]:
-        if key in json_data:
-            channels_data = json_data[key]
-
-    if channels_data:
-        if not isinstance(channels_data, str):
-            logger.error("Unexpected channels format in JSON data. Expected comma separated string, "
-                         f"found '{type(channels_data)}'")
-            exit(1)
-        args.channels = channels_data
+    # WiFi configuration
+    args.spatial_streams = __apply_csv_json(
+        json_data=json_data,
+        arg_value=args.spatial_streams,
+        keys=["nss", "spatial_streams"]
+    )
+    args.bandwidths = __apply_csv_json(
+        json_data=json_data,
+        arg_value=args.bandwidths,
+        keys=["bandwidth", "bandwidths"]
+    )
+    args.channels = __apply_csv_json(
+        json_data=json_data,
+        arg_value=args.channels,
+        keys=["channel", "channels"]
+    )
 
     if "pull_report" in json_data:
         args.pull_report = json_data["pull_report"]
@@ -902,6 +870,36 @@ def apply_json_overrides(args):
         # https://www.tutorialspoint.com/convert-list-into-list-of-lists-in-python
         json_data_tmp = [[x] for x in json_data["raw_line"]]
         args.raw_line = json_data_tmp
+
+
+def __apply_csv_json(arg_value: str, json_data: dict, keys: list) -> str:
+    """Check and apply JSON for specified argument, overriding as necessary
+
+    In case that user specifies an argument value and JSON value, JSON value
+    takes precedence. However, same logic used when no CLI value passed and
+    argument takes default value.
+
+    Args:
+        arg_value (str): CLI arguments value to be overriden by JSON
+        json_data (dict): Full JSON data containing test settings/overrides
+        keys (list): Possible keys for configuration item, matching CLI
+
+    Returns:
+        str: Configuration item value, overriden by JSON if present
+    """
+    json_item_data = None
+    for key in keys:
+        if key in json_data:
+            json_item_data = json_data[key]
+
+    if json_item_data:
+        if not isinstance(json_item_data, str):
+            logger.error("Unexpected data format in JSON data. Expected comma separated string "
+                         f"found '{type(json_item_data)}'")
+            exit(1)
+        return json_item_data
+    else:
+        return arg_value
 
 
 def main():
@@ -925,7 +923,7 @@ def main():
     configure_logging(args)
     cv_base_adjust_parser(args)
 
-    apply_json_overrides(args)
+    apply_json_configuration(args)
     validate_args(args)
 
     CV_Test = DataplaneTest(lf_host=args.mgr,
