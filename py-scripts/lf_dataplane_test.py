@@ -302,16 +302,24 @@ class DataplaneTest(cv_test):
         #
         # Command line args take precedence over enables, disables, and raw lines,
         # so adjust here after config options were applied
+        #
+        # General test configuration
         if self.upstream != "":
             cfg_options.append("upstream_port: " + self.upstream)
         if self.station != "":
             cfg_options.append("traffic_port: " + self.station)
+        if self.duration != "":
+            cfg_options.append("duration: " + self.duration)
+
+        # WiFi configuration
         if self.spatial_streams:
             cfg_options.append("spatial_streams: " + self.spatial_streams)
         if self.bandwidths:
             cfg_options.append("bandw_options: " + self.bandwidths)
         if self.channels:
             cfg_options.append("channels: " + self.channels)
+
+        # Traffic configuration
         if self.traffic_directions:
             cfg_options.append("directions: " + self.traffic_directions)
         if self.traffic_types:
@@ -320,10 +328,8 @@ class DataplaneTest(cv_test):
             cfg_options.append("speed: " + self.speed)
         if self.opposite_speed != "":
             cfg_options.append("speed2: " + self.opposite_speed)
-        if self.duration != "":
-            cfg_options.append("duration: " + self.duration)
-        if self.dut != "":
-            cfg_options.append("selected_dut: " + self.dut)
+
+        # Attenuator configuration
         if self.attenuator:
             cfg_options.append("attenuator: " + self.attenuator)
         if self.attenuator2:
@@ -332,13 +338,16 @@ class DataplaneTest(cv_test):
             cfg_options.append("attenuations: " + self.attenuations)
         if self.attenuations2:
             cfg_options.append("attenuations2: " + self.attenuations2)
+
+        # Reporting configuration
+        if self.dut != "":
+            cfg_options.append("selected_dut: " + self.dut)
         if self.test_rig != "":
             cfg_options.append("test_rig: " + self.test_rig)
         if self.test_tag != "":
             cfg_options.append("test_tag: " + self.test_tag)
 
         # We deleted the scenario earlier, now re-build new one line at a time.
-
         self.build_cfg(config_name=self.config_name,
                        blob_test=blob_test,
                        cfg_options=cfg_options)
