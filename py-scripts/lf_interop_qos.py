@@ -391,7 +391,7 @@ class ThroughputQOS(Realm):
         # All the available resources are fetched from resource mgr tab ----
 
         response_port = self.json_get("/port/all")
-     
+
         for interface in response_port['interfaces']:
             for port, port_data in interface.items():
                 if (not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0'):
@@ -455,10 +455,10 @@ class ThroughputQOS(Realm):
             logger.error("Selected Devices are not available in the lanforge. devices_list: '%s'", devices_list)
             exit(1)
         resource_eid_list = devices_list.split(',')
-        logger.info("devices list {}".format(devices_list, resource_eid_list))
+        logger.info(f"devices list {devices_list}")
         resource_eid_list2 = [eid + ' ' for eid in resource_eid_list]
         resource_eid_list1 = [resource + '.' for resource in resource_eid_list]
-        logger.info("resource eid list {}".format(resource_eid_list1, original_port_list))
+        logger.info(f"resource eid list {resource_eid_list}")
 
         # User desired eids are fetched ---
 
@@ -581,7 +581,8 @@ class ThroughputQOS(Realm):
             logger.info("cross connections with TOS type created.")
 
     def monitor(self):
-        throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download, avg_upload, avg_download, avg_upload_throughput, avg_download_throughput, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b, dropa_connections, dropb_connections = {
+        # TODO: Fix this. This is poor style
+        throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download, avg_upload, avg_download, avg_upload_throughput, avg_download_throughput, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b, dropa_connections, dropb_connections = {  # noqa: E501
         }, [], [], [], [], {}, {}, [], [], [], [], {}, {}, [], [], {}, {}
         # Initialized seperate variables for average values for report changes
         drop_a, drop_a_per, drop_b, drop_b_per, avg_drop_b_per, avg_drop_a_per = [], [], [], [], [], []
@@ -2247,13 +2248,12 @@ def main():
     print("--------------------------------------------")
     print(args)
     print("--------------------------------------------")
-    # set up logger
-    logger_config = lf_logger_config.lf_logger_config()
+    # TODO: set up logger
+    # logger_config = lf_logger_config.lf_logger_config()
 
     test_results = {'test_results': []}
 
     loads = {}
-    station_list = []
     data = {}
 
     if args.download and args.upload:
@@ -2354,7 +2354,7 @@ def main():
                 throughput_qos.updating_webui_runningjson(obj1)
         # checking if we have atleast one device available for running test
         if throughput_qos.dowebgui == "True":
-            if throughput_qos.device_found == False:
+            if throughput_qos.device_found is False:
                 logger.warning("No Device is available to run the test hence aborting the test")
                 df1 = pd.DataFrame([{
                     "BE_dl": 0,
@@ -2406,7 +2406,8 @@ def main():
             connections_download_avg=connections_download_avg,
             avg_drop_a=avg_drop_a,
             avg_drop_b=avg_drop_b)
-   # updating webgui running json with latest entry and test status completed
+
+    # Update webgui running json with latest entry and test status completed
     if throughput_qos.dowebgui == "True":
         last_entry = throughput_qos.overall[len(throughput_qos.overall) - 1]
         last_entry["status"] = "Stopped"
