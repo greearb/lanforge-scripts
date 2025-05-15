@@ -2311,6 +2311,67 @@ class FtpTest(LFCliBase):
         else:
             return None
 
+    def monitor_cx(self):
+        """
+        This function waits for upto 20 iterations to allow all CXs (connections) to be created.
+
+        If some CXs are still not created after 20 iterations, then the CXs related to that device are removed,
+        along with their associated client and MAC entries from all relevant lists.
+        """
+        max_retry = 20
+        current_retry = 0
+        failed_cx = []
+        flag = 0
+        idx_list = []
+        del_device_list = []
+        del_mac_list = []
+        del_input_devices_list = []
+        del_device_list1 = []
+        del_real_client_list = []
+        while current_retry < max_retry:
+            failed_cx.clear()
+            idx_list.clear()
+            del_device_list.clear()
+            del_mac_list.clear()
+            del_input_devices_list.clear()
+            del_device_list1.clear()
+            del_real_client_list.clear()
+            created_cx_list = list(self.cx_list)
+            for i, created_cxs in enumerate(created_cx_list):
+                try:
+                    _ = self.local_realm.json_get("layer4/%s/list?fields=%s" %
+                                                  (created_cxs, 'status'))['endpoint']['status']
+                except BaseException:
+                    logger.error(f'cx not created for {self.input_devices_list[i]}')
+                    failed_cx.append(created_cxs)
+                    del_device_list.append(self.device_list[i])
+                    del_mac_list.append(self.mac_id_list[i])
+                    del_input_devices_list.append(self.input_devices_list[i])
+                    del_device_list1.append(self.real_client_list1[i])
+                    del_real_client_list.append(self.real_client_list[i])
+            if len(failed_cx) == 0:
+                flag = 1
+                break
+            logger.info(f'Try {current_retry} out of 20: Waiting for the cross-connections to be created.')
+            time.sleep(2)
+            current_retry += 1
+
+        if flag:
+            logger.info('cross connections found for all devices')
+            return
+        for cx in failed_cx:
+            self.cx_list.remove(cx)
+        for i in range(len(del_input_devices_list)):
+            logger.info(f'Cross connection not created for {self.input_devices_list[i]}')
+            self.input_devices_list.remove(del_input_devices_list[i])
+            self.mac_id_list.remove(del_mac_list[i])
+            self.device_list.remove(del_device_list[i])
+            self.real_client_list1.remove(del_device_list1[i])
+            self.real_client_list.remove(del_real_client_list[i])
+        if len(self.input_devices_list) == 0:
+            logger.error('No cross connections created, aborting test')
+            exit(1)
+
 
 def validate_args(args):
     """Validate CLI arguments."""
@@ -2743,6 +2804,9 @@ some amount of file data from the FTP server while measuring the time taken by c
                     logger.info(obj.get_fail_message())
                     exit(1)
 
+                if obj.clients_type == 'Real':
+                    obj.monitor_cx()
+                    logger.info(f'Test started on the devices : {obj.input_devices_list}')
                 # First time stamp
                 time1 = datetime.now()
                 logger.info("Traffic started running at %s", time1)
