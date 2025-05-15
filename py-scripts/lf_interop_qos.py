@@ -93,6 +93,8 @@
 
 """
 
+import time
+import argparse
 import sys
 import os
 import pandas as pd
@@ -100,11 +102,11 @@ import importlib
 import copy
 import logging
 import json
-import pandas as pd
 import shutil
 import asyncio
 import csv
-logger = logging.getLogger(__name__)
+from datetime import datetime, timedelta
+from collections import defaultdict
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -113,17 +115,14 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
-import time
-import argparse
-from LANforge import LFUtils
+# For whatever reason this import is required to run....but isn't directly used
+from LANforge import LFUtils  # noqa: F401
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-from lf_report import lf_report
-from lf_graph import lf_bar_graph
-from lf_graph import lf_bar_graph_horizontal
-from datetime import datetime, timedelta
-from collections import defaultdict
+from lf_report import lf_report  # noqa: E402
+from lf_graph import lf_bar_graph, lf_bar_graph_horizontal  # noqa: E402
 
+logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 # Importing DeviceConfig to apply device configurations for ADB devices and laptops
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
