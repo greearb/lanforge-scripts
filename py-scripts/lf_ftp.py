@@ -1861,7 +1861,7 @@ class FtpTest(LFCliBase):
                                         _color_name=['orange'],
                                         _show_bar_value=True,
                                         _enable_csv=True,
-                                        _graph_image_name="Total-url", _color_edge=['black'],
+                                        _graph_image_name="Total-url_ftp", _color_edge=['black'],
                                         _color=['orange'],
                                         _label=[self.direction])
         graph_png = graph.build_bar_graph_horizontal()
@@ -1894,7 +1894,7 @@ class FtpTest(LFCliBase):
                                         _color_name=['steelblue'],
                                         _show_bar_value=True,
                                         _enable_csv=True,
-                                        _graph_image_name="ucg-avg", _color_edge=['black'],
+                                        _graph_image_name="ucg-avg_ftp", _color_edge=['black'],
                                         _color=['steelblue'],
                                         _label=[self.direction])
         graph_png = graph.build_bar_graph_horizontal()
