@@ -42,48 +42,48 @@ Example running traffic with two radios
 
         # Interopt example Creating stations
             Interopt testing creating stations
-            ./test_l3.py --lfmgr 192.168.50.104\
-             --test_duration 60s\
-            --polling_interval 5s\
-            --upstream_port 1.1.eth2\
-            --radio radio==wiphy1,stations==2,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable\
-            --endp_type lf_udp,lf_tcp,mc_udp\
-            --rates_are_totals\
-            --side_a_min_bps=2000000\
-            --side_b_min_bps=3000000\
-            --test_rig CT-ID-004\
-            --test_tag test_l3\
-            --dut_model_num AXE11000\
-            --dut_sw_version 3.0.0.4.386_44266\
-            --dut_hw_version 1.0\
-            --dut_serial_num 123456\
-            --tos BX,BE,VI,VO\
-            --log_level info\
-            --no_cleanup\
+            ./test_l3.py --lfmgr 192.168.50.104
+             --test_duration 60s
+            --polling_interval 5s
+            --upstream_port 1.1.eth2
+            --radio radio==wiphy1,stations==2,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==0,wifi_settings==wifi_settings,enable_flags==ht160_enable&&wpa2_enable
+            --endp_type lf_udp,lf_tcp,mc_udp
+            --rates_are_totals
+            --side_a_min_bps=2000000
+            --side_b_min_bps=3000000
+            --test_rig CT-ID-004
+            --test_tag test_l3
+            --dut_model_num AXE11000
+            --dut_sw_version 3.0.0.4.386_44266
+            --dut_hw_version 1.0
+            --dut_serial_num 123456
+            --tos BX,BE,VI,VO
+            --log_level info
+            --no_cleanup
             --cleanup_cx
 
 
         # Interopt using existing stations
             Interopt testing creating stations
-            ./test_l3.py --lfmgr 192.168.91.50\
-             --test_duration 60s\
-            --polling_interval 5s\
-            --upstream_port 1.50.eth2\
-            --endp_type lf_udp,lf_tcp,mc_udp\
-            --rates_are_totals\
-            --side_a_min_bps=2000000\
-            --side_b_min_bps=3000000\
-            --test_rig CT-ID-004\
-            --test_tag test_l3\
-            --dut_model_num AXE11000\
-            --dut_sw_version 3.0.0.4.386_44266\
-            --dut_hw_version 1.0\
-            --dut_serial_num 123456\
-            --tos BX,BE,VI,VO\
-            --use_existing_station_list\
-            --existing_station_list 1.83.en1,1.84.en1\
-            --log_level info\
-            --no_cleanup\
+            ./test_l3.py --lfmgr 192.168.91.50
+             --test_duration 60s
+            --polling_interval 5s
+            --upstream_port 1.50.eth2
+            --endp_type lf_udp,lf_tcp,mc_udp
+            --rates_are_totals
+            --side_a_min_bps=2000000
+            --side_b_min_bps=3000000
+            --test_rig CT-ID-004
+            --test_tag test_l3
+            --dut_model_num AXE11000
+            --dut_sw_version 3.0.0.4.386_44266
+            --dut_hw_version 1.0
+            --dut_serial_num 123456
+            --tos BX,BE,VI,VO
+            --use_existing_station_list
+            --existing_station_list 1.83.en1,1.84.en1
+            --log_level info
+            --no_cleanup
             --cleanup_cx
 
            * UDP and TCP bi-directional test, no use of controller.
@@ -142,25 +142,25 @@ wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enab
             --test_tag 'test_l3'
 
          # Example : LAN-1927  WPA2-TLS-Configuration
-            ./test_l3.py\
-             --lfmgr 192.168.50.104\
-             --test_duration 20s\
-             --polling_interval 5s\
-             --upstream_port 1.1.eth2\
-             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==lf_ax88u_5g,security==wpa2\
-,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,\
-wifi_extra==key_mgmt&&WPA-EAP!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!\
-ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Disabled'\
-             --endp_type lf_udp\
-             --rates_are_totals\
-             --side_a_min_bps=256000\
-             --side_b_min_bps=300000000\
-             --test_rig ID_003\
-             --test_tag 'test_l3'\
-             --dut_model_num GT-AXE11000\
-             --dut_sw_version 3.0.0.4.386_44266\
-             --dut_hw_version 1.0\
-             --dut_serial_num 12345678\
+            ./test_l3.py
+             --lfmgr 192.168.50.104
+             --test_duration 20s
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==lf_ax88u_5g,security==wpa2
+,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,
+wifi_extra==key_mgmt&&WPA-EAP!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!
+ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Disabled'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=256000
+             --side_b_min_bps=300000000
+             --test_rig ID_003
+             --test_tag 'test_l3'
+             --dut_model_num GT-AXE11000
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
              --log_level debug
 
         # Example : LAN-1927  WPA2-TTLS-Configuration
@@ -210,7 +210,7 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra=
              --test_duration 20s
              --polling_interval 5s
              --upstream_port 1.1.eth2
-             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,\
+             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,
 wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Required'
              --endp_type lf_udp
              --rates_are_totals
@@ -224,70 +224,91 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --dut_serial_num 12345678
              --log_level debug
 
+./test_l3.py
+             --lfmgr 192.168.101.137
+             --test_duration 2m
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --radio 'radio==1.2.wiphy0,stations==1,ssid==TP-Link_C672,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==17,enable_flags==(wpa2_enable&&80211u_enable)'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=200000000
+             --side_b_min_bps=300000000
+             --test_rig CT-US-008
+             --test_tag test_l3_a7
+             --dut_model_num TP-link
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+             --debug
+             --no_cleanup
+
+
         # Example : Wifi 7 2G 802.11bgn-ETH
-            ./test_l3.py\
-             --lfmgr 192.168.101.137\
-             --test_duration 2m\
-             --polling_interval 5s\
-             --upstream_port 1.1.eth2\
-             --tos BX,BE,VI,VO\
-             --radio 'radio==1.2.wiphy0,stations==19,ssid==TPink_C672,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==17,enable_flags==(wpa2_enable&&80211u_enable)'\
-             --endp_type lf_udp\
-             --rates_are_totals\
-             --side_a_min_bps=200000000\
-             --side_b_min_bps=300000000\
-             --test_rig CT-US-008\
-             --test_tag 'test_l3_a7'\
-             --dut_model_num TP-link\
-             --dut_sw_version 3.0.0.4.386_44266\
-             --dut_hw_version 1.0\
-             --dut_serial_num 12345678\
-             --log_level debug\
-             --debug\
+            ./test_l3.py
+             --lfmgr 192.168.101.137
+             --test_duration 2m
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --tos BX,BE,VI,VO
+             --radio 'radio==1.2.wiphy0,stations==19,ssid==TPink_C672,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==17,enable_flags==(wpa2_enable&&80211u_enable)'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=200000000
+             --side_b_min_bps=300000000
+             --test_rig CT-US-008
+             --test_tag 'test_l3_a7'
+             --dut_model_num TP-link
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+             --debug
              --no_cleanup
 
         # Example : Wifi 7 5G 802.11bgn-ETH
-            ./test_l3.py\
-             --lfmgr 192.168.101.137\
-             --test_duration 2m\
-             --polling_interval 5s\
-             --upstream_port 1.1.eth2\
-             --tos BX,BE,VI,VO\
-             --radio 'radio==1.2.wiphy1,stations==19,ssid==TPink_C672_5G,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==18,enable_flags==(wpa2_enable&&80211u_enable)'\
-             --endp_type lf_udp\
-             --rates_are_totals\
-             --side_a_min_bps=200000000\
-             --side_b_min_bps=300000000\
-             --test_rig CT-US-008\
-             --test_tag 'test_l3_a7'\
-             --dut_model_num TP-link\
-             --dut_sw_version 3.0.0.4.386_44266\
-             --dut_hw_version 1.0\
-             --dut_serial_num 12345678\
-             --log_level debug\
-             --debug\
+            ./test_l3.py
+             --lfmgr 192.168.101.137
+             --test_duration 2m
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --tos BX,BE,VI,VO
+             --radio 'radio==1.2.wiphy1,stations==19,ssid==TPink_C672_5G,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==18,enable_flags==(wpa2_enable&&80211u_enable)'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=200000000
+             --side_b_min_bps=300000000
+             --test_rig CT-US-008
+             --test_tag 'test_l3_a7'
+             --dut_model_num TP-link
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+             --debug
              --no_cleanup
 
         # Example : Wifi 7 6G 802.11bgn-ETH
-            ./test_l3.py\
-             --lfmgr 192.168.101.137\
-             --test_duration 2m\
-             --polling_interval 5s\
-             --upstream_port 1.1.eth2\
-             --tos BX,BE,VI,VO\
-             --radio 'radio==1.2.wiphy2,stations==19,ssid==TPink_C672_6G,ssid_pw==19719207,security==wpa3,wifi_settings==wifi_settings,wifi_mode==19,enable_flags==(use-wpa3&&80211u_enable)'\
-             --endp_type lf_udp\
-             --rates_are_totals\
-             --side_a_min_bps=200000000\
-             --side_b_min_bps=300000000\
-             --test_rig CT-US-008\
-             --test_tag 'test_l3_a7'\
-             --dut_model_num TP-link\
-             --dut_sw_version 3.0.0.4.386_44266\
-             --dut_hw_version 1.0\
-             --dut_serial_num 12345678\
-             --log_level debug\
-             --debug\
+            ./test_l3.py
+             --lfmgr 192.168.101.137
+             --test_duration 2m
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --tos BX,BE,VI,VO
+             --radio 'radio==1.2.wiphy2,stations==19,ssid==TPink_C672_6G,ssid_pw==19719207,security==wpa3,wifi_settings==wifi_settings,wifi_mode==19,enable_flags==(use-wpa3&&80211u_enable)'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=200000000
+             --side_b_min_bps=300000000
+             --test_rig CT-US-008
+             --test_tag 'test_l3_a7'
+             --dut_model_num TP-link
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+             --debug
              --no_cleanup
 
 
@@ -6314,69 +6335,69 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --log_level debug
 
         # Example : Wifi 7 2G 802.11bgn-ETH
-            ./test_l3.py\
-             --lfmgr 192.168.101.137\
-             --test_duration 2m\
-             --polling_interval 5s\
-             --upstream_port 1.1.eth2\
-             --tos BX,BE,VI,VO\
-             --radio 'radio==1.2.wiphy0,stations==19,ssid==TPink_C672,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==17,enable_flags==(wpa2_enable&&80211u_enable)'\
-             --endp_type lf_udp\
-             --rates_are_totals\
-             --side_a_min_bps=200000000\
-             --side_b_min_bps=300000000\
-             --test_rig CT-US-008\
-             --test_tag 'test_l3_a7'\
-             --dut_model_num TP-link\
-             --dut_sw_version 3.0.0.4.386_44266\
-             --dut_hw_version 1.0\
-             --dut_serial_num 12345678\
-             --log_level debug\
-             --debug\
+            ./test_l3.py
+             --lfmgr 192.168.101.137
+             --test_duration 2m
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --tos BX,BE,VI,VO
+             --radio 'radio==1.2.wiphy0,stations==19,ssid==TPink_C672,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==17,enable_flags==(wpa2_enable&&80211u_enable)'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=200000000
+             --side_b_min_bps=300000000
+             --test_rig CT-US-008
+             --test_tag 'test_l3_a7'
+             --dut_model_num TP-link
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+             --debug
              --no_cleanup
 
         # Example : Wifi 7 5G 802.11bgn-ETH
-            ./test_l3.py\
-             --lfmgr 192.168.101.137\
-             --test_duration 2m\
-             --polling_interval 5s\
-             --upstream_port 1.1.eth2\
-             --tos BX,BE,VI,VO\
-             --radio 'radio==1.2.wiphy1,stations==19,ssid==TPink_C672_5G,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==18,enable_flags==(wpa2_enable&&80211u_enable)'\
-             --endp_type lf_udp\
-             --rates_are_totals\
-             --side_a_min_bps=200000000\
-             --side_b_min_bps=300000000\
-             --test_rig CT-US-008\
-             --test_tag 'test_l3_a7'\
-             --dut_model_num TP-link\
-             --dut_sw_version 3.0.0.4.386_44266\
-             --dut_hw_version 1.0\
-             --dut_serial_num 12345678\
-             --log_level debug\
-             --debug\
+            ./test_l3.py
+             --lfmgr 192.168.101.137
+             --test_duration 2m
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --tos BX,BE,VI,VO
+             --radio 'radio==1.2.wiphy1,stations==19,ssid==TPink_C672_5G,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==18,enable_flags==(wpa2_enable&&80211u_enable)'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=200000000
+             --side_b_min_bps=300000000
+             --test_rig CT-US-008
+             --test_tag 'test_l3_a7'
+             --dut_model_num TP-link
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+             --debug
              --no_cleanup
 
         # Example : Wifi 7 6G 802.11bgn-ETH
-            ./test_l3.py\
-             --lfmgr 192.168.101.137\
-             --test_duration 2m\
-             --polling_interval 5s\
-             --upstream_port 1.1.eth2\
-             --tos BX,BE,VI,VO\
-             --radio 'radio==1.2.wiphy2,stations==19,ssid==TPink_C672_6G,ssid_pw==19719207,security==wpa3,wifi_settings==wifi_settings,wifi_mode==19,enable_flags==(use-wpa3&&80211u_enable)'\
-             --endp_type lf_udp\
-             --rates_are_totals\
-             --side_a_min_bps=200000000\
-             --side_b_min_bps=300000000\
-             --test_rig CT-US-008\
-             --test_tag 'test_l3_a7'\
-             --dut_model_num TP-link\
-             --dut_sw_version 3.0.0.4.386_44266\
-             --dut_hw_version 1.0\
-             --dut_serial_num 12345678\
-             --log_level debug\
-             --debug\
+            ./test_l3.py
+             --lfmgr 192.168.101.137
+             --test_duration 2m
+             --polling_interval 5s
+             --upstream_port 1.1.eth2
+             --tos BX,BE,VI,VO
+             --radio 'radio==1.2.wiphy2,stations==19,ssid==TPink_C672_6G,ssid_pw==19719207,security==wpa3,wifi_settings==wifi_settings,wifi_mode==19,enable_flags==(use-wpa3&&80211u_enable)'
+             --endp_type lf_udp
+             --rates_are_totals
+             --side_a_min_bps=200000000
+             --side_b_min_bps=300000000
+             --test_rig CT-US-008
+             --test_tag 'test_l3_a7'
+             --dut_model_num TP-link
+             --dut_sw_version 3.0.0.4.386_44266
+             --dut_hw_version 1.0
+             --dut_serial_num 12345678
+             --log_level debug
+             --debug
              --no_cleanup
 
 
