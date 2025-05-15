@@ -582,7 +582,7 @@ class ThroughputQOS(Realm):
         while current_retry < max_retry:
             not_running_cx = []
             overallresponse = self.json_get('/cx/all')  # Get all current CXs from the layer-3 tab
-            created_cx_list= list(self.cx_profile.created_cx.keys())
+            created_cx_list = list(self.cx_profile.created_cx.keys())
             l3_existing_cx = list(overallresponse.keys())
             count_of_cx = 0
             for created_cxs in created_cx_list:
@@ -599,34 +599,34 @@ class ThroughputQOS(Realm):
             current_retry += 1
         cxs_to_remove = []
 
-        # Collect all CXs related to the failed device (from `not_running_cx`), 
+        # Collect all CXs related to the failed device (from `not_running_cx`),
         # including those created for other TOS types, and add them to `cxs_to_remove`.
         for cx in self.cx_profile.created_cx:
             for not_created_cx in not_running_cx:
                 if not_created_cx in cx:
                     cxs_to_remove.append(cx)
-        
+
         # Remove each failed CX and delete it from the created CX tracking dictionary.
         for cx in cxs_to_remove:
             logger.info(f"Removing failed CX: {cx}")
             super().rm_cx(cx)
             del self.cx_profile.created_cx[cx]
-        
+
         devices_to_be_removed = []
         for item in not_running_cx:
             match = re.match(r'^[0-9.]+', item)
             if match:
                 devices_to_be_removed.append(match.group())
 
-        # If there are devices to remove, filter them out from all related client and MAC lists 
+        # If there are devices to remove, filter them out from all related client and MAC lists
         # to keep the lists consistent with the currently considered devices.
         if len(devices_to_be_removed) != 0:
             self.real_client_list1 = [item for item in self.real_client_list1 if item.split()[0] not in devices_to_be_removed]
-            self.input_devices_list = [item for item in self.input_devices_list if item.split('.')[0]+'.'+item.split('.')[1] not in devices_to_be_removed]
+            self.input_devices_list = [item for item in self.input_devices_list if item.split('.')[0] + '.' + item.split('.')[1] not in devices_to_be_removed]
             filtered = [(dev, mac) for dev, mac in zip(self.real_client_list, self.mac_id_list) if dev.split()[0] not in devices_to_be_removed]
             self.real_client_list, self.mac_id_list = zip(*filtered) if filtered else ([], [])
-            self.real_client_list=list(self.real_client_list)
-            self.mac_id_list=list(self.mac_id_list)
+            self.real_client_list = list(self.real_client_list)
+            self.mac_id_list = list(self.mac_id_list)
             self.num_stations = len(self.real_client_list)
 
     def monitor(self):
@@ -986,7 +986,7 @@ class ThroughputQOS(Realm):
                         temp = sta.rsplit('-', 1)
                         current_tos = temp[0].split('_')[-1]  # slicing TOS from CX name
                         temp = int(temp[1])
-                        counter=0
+                        counter = 0
                         if int(self.cx_profile.side_b_min_bps) != 0:
                             tos_download[current_tos].append(connections_download[sta])
                             tos_drop_dict['rx_drop_a'][current_tos].append(drop_a_per[counter])
@@ -997,7 +997,7 @@ class ThroughputQOS(Realm):
                             tos_drop_dict['rx_drop_a'][current_tos].append(float(0))
                             tx_b_download[current_tos].append(int(0))
                             rx_a_download[current_tos].append(int(0))
-                        counter+=1
+                        counter += 1
                     tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
                     tos_download.update({"beQOS": float(f"{sum(tos_download['BE']):.2f}")})
                     tos_download.update({"videoQOS": float(f"{sum(tos_download['VI']):.2f}")})
@@ -1019,7 +1019,7 @@ class ThroughputQOS(Realm):
                         temp = sta.rsplit('-', 1)
                         current_tos = temp[0].split('_')[-1]
                         temp = int(temp[1])
-                        counter=0
+                        counter = 0
                         if int(self.cx_profile.side_a_min_bps) != 0:
                             tos_upload[current_tos].append(connections_upload[sta])
                             tos_drop_dict['rx_drop_b'][current_tos].append(drop_b_per[counter])
@@ -1030,7 +1030,7 @@ class ThroughputQOS(Realm):
                             tos_drop_dict['rx_drop_b'][current_tos].append(float(0))
                             tx_b_upload[current_tos].append(int(0))
                             rx_a_upload[current_tos].append(int(0))
-                        counter+=1
+                        counter += 1
                     tos_upload.update({"bkQOS": float(f"{sum(tos_upload['BK']):.2f}")})
                     tos_upload.update({"beQOS": float(f"{sum(tos_upload['BE']):.2f}")})
                     tos_upload.update({"videoQOS": float(f"{sum(tos_upload['VI']):.2f}")})
