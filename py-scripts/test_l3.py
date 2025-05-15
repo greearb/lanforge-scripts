@@ -12,6 +12,7 @@ PURPOSE: The Layer 3 Traffic Generation Test is designed to test the performance
          * Supports creating user-specified amount stations on multiple radios
          * Supports configuring upload and download requested rates and PDU sizes.
          * Supports generating connections with different ToS values.
+         * Supports generating KPI data
          * Supports generating tcp and/or UDP traffic types.
          * Supports iterating over different PDU sizes
          * Supports iterating over different requested tx rates (configurable as total or per-connection value)
@@ -229,6 +230,7 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --test_duration 2m\
              --polling_interval 5s\
              --upstream_port 1.1.eth2\
+             --tos BX,BE,VI,VO\
              --radio 'radio==1.2.wiphy0,stations==19,ssid==TPink_C672,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==17,enable_flags==(wpa2_enable&&80211u_enable)'\
              --endp_type lf_udp\
              --rates_are_totals\
@@ -250,6 +252,7 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --test_duration 2m\
              --polling_interval 5s\
              --upstream_port 1.1.eth2\
+             --tos BX,BE,VI,VO\
              --radio 'radio==1.2.wiphy1,stations==19,ssid==TPink_C672_5G,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==18,enable_flags==(wpa2_enable&&80211u_enable)'\
              --endp_type lf_udp\
              --rates_are_totals\
@@ -271,6 +274,7 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --test_duration 2m\
              --polling_interval 5s\
              --upstream_port 1.1.eth2\
+             --tos BX,BE,VI,VO\
              --radio 'radio==1.2.wiphy2,stations==19,ssid==TPink_C672_6G,ssid_pw==19719207,security==wpa3,wifi_settings==wifi_settings,wifi_mode==19,enable_flags==(use-wpa3&&80211u_enable)'\
              --endp_type lf_udp\
              --rates_are_totals\
@@ -361,7 +365,7 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
     a7          | 19        #  802.11a-EHT (6E disables /n and /ac)
 
 
-wifi_settings flags are currently defined as:
+wifi_settings flags are currently defined as: for list ,  telnet <mgr> 4001  , help add_sta
     wpa_enable           | 0x10         # Enable WPA
     custom_conf          | 0x20         # Use Custom wpa_supplicant config file.
     wep_enable           | 0x200        # Use wpa_supplicant configured for WEP encryption.
@@ -397,6 +401,15 @@ wifi_settings flags are currently defined as:
     use-wpa3             | 0x10000000000 # Enable WPA-3 (SAE Personal) mode.
     use-bss-transition   | 0x80000000000 # Enable BSS transition.
     disable-twt          | 0x100000000000 # Disable TWT mode
+    disable-ofdma        | 0x200000000000 # Disable OFDMA mode
+    disable-obss-scan    | 0x400000000000 # Disable OBSS SCAN feature in supplicant.
+    ft-roam-over-ds      | 0x800000000000 # Roam over DS when AP supports it.
+    rrm-ignore-beacon-req | 0x1000000000000 # Ignore (reject) RRM Beacon measurement request.
+    use-owe               | 0x2000000000000 # Enable OWE
+    be320-enable          | 0x4000000000000 # Enable 320Mhz mode.
+    disable-mlo           | 0x8000000000000 # Disable OFDMA
+    ignore-edca           | 0x20000000000000 # Request station to ignore EDCA settings
+
 
 For wifi_extra_keys syntax :
     telnet <lanforge ip> 4001
@@ -583,13 +596,13 @@ Multicast traffic :
 
 STATUS: Functional
 
-VERIFIED_ON:   18-JULY-2023,
-             GUI Version:  5.4.6
-             Kernel Version: 5.19.17+
+VERIFIED_ON: MAY 2025,
+             GUI Version:  5.5.1
+             Kernel Version: 6.11.12+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
+          Copyright 2025 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 
@@ -6053,6 +6066,7 @@ PURPOSE: The Layer 3 Traffic Generation Test is designed to test the performance
          * Supports creating user-specified amount stations on multiple radios
          * Supports configuring upload and download requested rates and PDU sizes.
          * Supports generating connections with different ToS values.
+         * Supports generating KPI data
          * Supports generating tcp and/or UDP traffic types.
          * Supports iterating over different PDU sizes
          * Supports iterating over different requested tx rates (configurable as total or per-connection value)
@@ -6305,6 +6319,7 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --test_duration 2m\
              --polling_interval 5s\
              --upstream_port 1.1.eth2\
+             --tos BX,BE,VI,VO\
              --radio 'radio==1.2.wiphy0,stations==19,ssid==TPink_C672,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==17,enable_flags==(wpa2_enable&&80211u_enable)'\
              --endp_type lf_udp\
              --rates_are_totals\
@@ -6326,6 +6341,7 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --test_duration 2m\
              --polling_interval 5s\
              --upstream_port 1.1.eth2\
+             --tos BX,BE,VI,VO\
              --radio 'radio==1.2.wiphy1,stations==19,ssid==TPink_C672_5G,ssid_pw==19719207,security==wpa2,wifi_settings==wifi_settings,wifi_mode==18,enable_flags==(wpa2_enable&&80211u_enable)'\
              --endp_type lf_udp\
              --rates_are_totals\
@@ -6347,6 +6363,7 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --test_duration 2m\
              --polling_interval 5s\
              --upstream_port 1.1.eth2\
+             --tos BX,BE,VI,VO\
              --radio 'radio==1.2.wiphy2,stations==19,ssid==TPink_C672_6G,ssid_pw==19719207,security==wpa3,wifi_settings==wifi_settings,wifi_mode==19,enable_flags==(use-wpa3&&80211u_enable)'\
              --endp_type lf_udp\
              --rates_are_totals\
@@ -6439,67 +6456,50 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
 
 
 
-wifi_settings flags are currently defined as:
+wifi_settings flags are currently defined as: for list ,  telnet <mgr> 4001  , help add_sta
     wpa_enable           | 0x10         # Enable WPA
-    # Use Custom wpa_supplicant config file.
-    custom_conf          | 0x20
-    # Use wpa_supplicant configured for WEP encryption.
-    wep_enable           | 0x200
-    # Use wpa_supplicant configured for WPA2 encryption.
-    wpa2_enable          | 0x400
-    # Disable HT-40 even if hardware and AP support it.
-    ht40_disable         | 0x800
-    # Enable SCAN-SSID flag in wpa_supplicant.
-    scan_ssid            | 0x1000
-    # Use passive scanning (don't send probe requests).
-    passive_scan         | 0x2000
+    custom_conf          | 0x20         # Use Custom wpa_supplicant config file.
+    wep_enable           | 0x200        # Use wpa_supplicant configured for WEP encryption.
+    wpa2_enable          | 0x400        # Use wpa_supplicant configured for WPA2 encryption.
+    ht40_disable         | 0x800        # Disable HT-40 even if hardware and AP support it.
+    scan_ssid            | 0x1000       # Enable SCAN-SSID flag in wpa_supplicant.
+    passive_scan         | 0x2000       # Use passive scanning (don't send probe requests).
     disable_sgi          | 0x4000       # Disable SGI (Short Guard Interval).
-    # OK-To-Migrate (Allow station migration between LANforge radios)
-    lf_sta_migrate       | 0x8000
-    # Verbose-Debug:  Increase debug info in wpa-supplicant and hostapd logs.
-    verbose              | 0x10000
-    # Enable 802.11u (Interworking) feature.
-    80211u_enable        | 0x20000
-    # Enable 802.11u (Interworking) Auto-internetworking feature.  Always enabled currently.
-    80211u_auto          | 0x40000
-    # AP Provides access to internet (802.11u Interworking)
-    80211u_gw            | 0x80000
-    # AP requires additional step for access (802.11u Interworking)
-    80211u_additional    | 0x100000
-    # AP claims emergency services reachable (802.11u Interworking)
-    80211u_e911          | 0x200000
-    # AP provides Unauthenticated emergency services (802.11u Interworking)
-    80211u_e911_unauth   | 0x400000
-    # Enable Hotspot 2.0 (HS20) feature.  Requires WPA-2.
-    hs20_enable          | 0x800000
-    # AP:  Disable DGAF (used by HotSpot 2.0).
-    disable_gdaf         | 0x1000000
+    lf_sta_migrate       | 0x8000       # OK-To-Migrate (Allow station migration between LANforge radios)
+    verbose              | 0x10000      # Verbose-Debug:  Increase debug info in wpa-supplicant and hostapd logs.
+    80211u_enable        | 0x20000      # Enable 802.11u (Interworking) feature.
+    80211u_auto          | 0x40000      # Enable 802.11u (Interworking) Auto-internetworking feature.  Always enabled currently.
+    80211u_gw            | 0x80000      # AP Provides access to internet (802.11u Interworking)
+    80211u_additional    | 0x100000     # AP requires additional step for access (802.11u Interworking)
+    80211u_e911          | 0x200000     # AP claims emergency services reachable (802.11u Interworking)
+    80211u_e911_unauth   | 0x400000     # AP provides Unauthenticated emergency services (802.11u Interworking)
+    hs20_enable          | 0x800000     # Enable Hotspot 2.0 (HS20) feature.  Requires WPA-2.
+    disable_gdaf         | 0x1000000    # AP:  Disable DGAF (used by HotSpot 2.0).
     8021x_radius         | 0x2000000    # Use 802.1x (RADIUS for AP).
-    # Enable oportunistic PMSKA caching for WPA2 (Related to 802.11r).
-    80211r_pmska_cache   | 0x4000000
-    # Disable HT80 (for AC chipset NICs only)
-    disable_ht80         | 0x8000000
+    80211r_pmska_cache   | 0x4000000    # Enable oportunistic PMSKA caching for WPA2 (Related to 802.11r).
+    disable_ht80         | 0x8000000    # Disable HT80 (for AC chipset NICs only)
     ibss_mode            | 0x20000000   # Station should be in IBSS mode.
-    # Enable OSEN protocol (OSU Server-only Authentication)
-    osen_enable          | 0x40000000
-    # Disable automatic station roaming based on scan results.
-    disable_roam         | 0x80000000
+    osen_enable          | 0x40000000   # Enable OSEN protocol (OSU Server-only Authentication)
+    disable_roam         | 0x80000000   # Disable automatic station roaming based on scan results.
     ht160_enable         | 0x100000000  # Enable HT160 mode.
-    # Disable fast_reauth option for virtual stations.
-    disable_fast_reauth  | 0x200000000
+    disable_fast_reauth  | 0x200000000  # Disable fast_reauth option for virtual stations.
     mesh_mode            | 0x400000000  # Station should be in MESH mode.
-    # Station should enable power-save.  May not work in all drivers/configurations.
-    power_save_enable    | 0x800000000
+    power_save_enable    | 0x800000000  # Station should enable power-save.  May not work in all drivers/configurations.
     create_admin_down    | 0x1000000000 # Station should be created admin-down.
-    # WDS station (sort of like a lame mesh), not supported on ath10k
-    wds-mode             | 0x2000000000
-    # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
-    no-supp-op-class-ie  | 0x4000000000
-    # Enable/disable tx-offloads, typically managed by set_wifi_txo command
-    txo-enable           | 0x8000000000
+    wds-mode             | 0x2000000000 # WDS station (sort of like a lame mesh), not supported on ath10k
+    no-supp-op-class-ie  | 0x4000000000 # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
+    txo-enable           | 0x8000000000 # Enable/disable tx-offloads, typically managed by set_wifi_txo command
     use-wpa3             | 0x10000000000 # Enable WPA-3 (SAE Personal) mode.
     use-bss-transition   | 0x80000000000 # Enable BSS transition.
     disable-twt          | 0x100000000000 # Disable TWT mode
+    disable-ofdma        | 0x200000000000 # Disable OFDMA mode
+    disable-obss-scan    | 0x400000000000 # Disable OBSS SCAN feature in supplicant.
+    ft-roam-over-ds      | 0x800000000000 # Roam over DS when AP supports it.
+    rrm-ignore-beacon-req | 0x1000000000000 # Ignore (reject) RRM Beacon measurement request.
+    use-owe               | 0x2000000000000 # Enable OWE
+    be320-enable          | 0x4000000000000 # Enable 320Mhz mode.
+    disable-mlo           | 0x8000000000000 # Disable OFDMA
+    ignore-edca           | 0x20000000000000 # Request station to ignore EDCA settings
 
 For wifi_extra_keys syntax :
     telnet <lanforge ip> 4001
@@ -6686,13 +6686,13 @@ Multicast traffic :
 
 STATUS: Functional
 
-VERIFIED_ON:   18-JULY-2023,
-             GUI Version:  5.4.6
-             Kernel Version: 5.19.17+
+VERIFIED_ON: MAY 2025,
+             GUI Version:  5.5.1
+             Kernel Version: 6.11.12+
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
+          Copyright 2025 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 
