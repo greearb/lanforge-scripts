@@ -54,7 +54,19 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
                 --nss               1,2,3,4 \
                 --bandwidth         80,160,320
 
-            # Run test with differing attenuation using multiple attenuators
+            # Run test with differing attenuation using single attenuator using simplified CLI
+            # The values specified are *parsed as dB*
+            ./lf_dataplane_test.py \
+                --upstream          1.1.eth1 \
+                --station           1.1.wlan0 \
+                --rate              100Mbps \
+                --attenuator        "1.1.3273" \
+                --atten_min         10 \
+                --atten_step        10 \
+                --atten_max         95
+
+            # Run test with differing attenuation using multiple attenuators using direct CLI
+            # This format is the same as configured in GUI and is *parsed as ddB not dB*.
             # Ensure attenuation values are separated by two periods, otherwise test will not parse properly
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
@@ -186,6 +198,12 @@ class DataplaneTest(cv_test):
                  dut="NA",
                  attenuator=None,
                  attenuator2=None,
+                 atten_min=None,
+                 atten_step=None,
+                 atten_max=None,
+                 atten2_min=None,
+                 atten2_step=None,
+                 atten2_max=None,
                  attenuations=None,
                  attenuations2=None,
                  enables=None,
@@ -231,17 +249,31 @@ class DataplaneTest(cv_test):
         self.graph_groups = graph_groups
         self.local_lf_report_dir = local_lf_report_dir
 
+        # WiFi configuration
         self.spatial_streams = DataplaneTest._prepare_as_rawline(spatial_streams, self.SPATIAL_STREAMS_MAP)
         self.bandwidths = DataplaneTest._prepare_as_rawline(bandwidths, self.BANDWIDTH_MAP)
         self.channels = DataplaneTest._prepare_as_rawline(channels, None)
 
+        # Traffic configuration
         self.traffic_directions = DataplaneTest._prepare_as_rawline(traffic_directions, self.TRAFFIC_DIRECTION_MAP)
         self.traffic_types = DataplaneTest._prepare_as_rawline(traffic_types, self.TRAFFIC_TYPE_MAP)
 
+        # Attenuator configuration
         self.attenuator = attenuator
         self.attenuator2 = attenuator2
+
+        self.atten_min = atten_min
+        self.atten2_min = atten2_min
+
+        self.atten_step = atten_step
+        self.atten2_step = atten2_step
+
+        self.atten_max = atten_max
+        self.atten2_max = atten2_max
+
         self.attenuations = attenuations
         self.attenuations2 = attenuations2
+        self._apply_simplified_atten_cli()
 
     def _prepare_as_rawline(value: str, map: dict) -> str:
         """Convert from script execution-friendly configuration to that expected by the GUI.
@@ -269,6 +301,16 @@ class DataplaneTest(cv_test):
                 ret = ";".join(converted_values)
 
         return ret
+
+    def _apply_simplified_atten_cli(self):
+        """If specified, configure test attenuations using simplified CLI."""
+        if not self.attenuations:
+            # Multiply as value is in dB but GUI expectes ddB
+            self.attenuations = f"{10*self.atten_min}..+{10*self.atten_step}..{10*self.atten_max}"
+
+        if not self.attenuations2:
+            # Multiply as value is in dB but GUI expectes ddB
+            self.attenuations2 = f"{10*self.atten2_min}..+{10*self.atten2_step}..{10*self.atten2_max}"
 
     def setup(self):
         # Nothing to do at this time.
@@ -568,6 +610,7 @@ INCLUDE_IN_README:
 
     # Attenuators configuration
     # TODO: Identify if attenuators are adjusted together or separately
+    # TODO: Attenuator modules in use. Support as CSV list of module numbers then translate to bitflags
     parser.add_argument("--attenuator",
                         "--attenuator1",
                         dest="attenuator",
@@ -579,7 +622,46 @@ INCLUDE_IN_README:
                         default=None,
                         help="EID of second attenuator for use in test. See '--attenuator'")
 
-    # TODO: Attenuator modules in use. Support as CSV list of module numbers then translate to bitflags
+    parser.add_argument("--atten_min",
+                        "--atten1_min",
+                        dest="atten_min",
+                        default=None,
+                        type=int,
+                        help="Minimum attenuation used at start of test in dB. "
+                             "When specified, this takes priority over the '--attenuations' argument.")
+    parser.add_argument("--atten_step",
+                        "--atten1_step",
+                        dest="atten_step",
+                        default=None,
+                        type=int,
+                        help="Attenuation increment in dB. "
+                             "When specified, this takes priority over the '--attenuations' argument.")
+    parser.add_argument("--atten_max",
+                        "--atten1_max",
+                        dest="atten_max",
+                        default=None,
+                        type=int,
+                        help="Maximum attenuation used for test in dB. "
+                             "When specified, this takes priority over the '--attenuations' argument.")
+
+    parser.add_argument("--atten2_min",
+                        dest="atten2_min",
+                        default=None,
+                        type=int,
+                        help="Minimum attenuation used for second attenuator at start of test in dB. "
+                             "When specified, this takes priority over the '--attenuations2' argument.")
+    parser.add_argument("--atten2_step",
+                        dest="atten2_step",
+                        default=None,
+                        type=int,
+                        help="Attenuation increment in dB for second attenuator. "
+                             "When specified, this takes priority over the '--attenuations2' argument.")
+    parser.add_argument("--atten2_max",
+                        dest="atten2_max",
+                        default=None,
+                        type=int,
+                        help="Maximum attenuation used for test for second attenuator in dB. "
+                             "When specified, this takes priority over the '--attenuations2' argument.")
 
     parser.add_argument("--attenuations",
                         "--attenuations1",
@@ -624,6 +706,7 @@ def validate_args(args):
     This should be run after JSON overrides are applied.
     """
     # TODO: Can properly move some of this code to a helper, specifically mapping checks
+    # Traffic configuration
     if args.traffic_directions:
         traffic_directions = args.traffic_directions.split(",")
 
@@ -650,6 +733,7 @@ def validate_args(args):
             logger.error("Unexpected number of traffic types. Expected two, UDP and/or TCP.")
             exit(1)
 
+    # WiFi configuration
     if args.spatial_streams:
         spatial_streams = args.spatial_streams.split(",")
 
