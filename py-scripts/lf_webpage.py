@@ -618,7 +618,8 @@ class HttpDownload(Realm):
             for i in self.http_profile.created_cx.keys():
                 while self.local_realm.json_get("/cx/" + i).get(i).get('state') != 'Run':
                     continue
-        except Exception as e:
+        except Exception:
+            # TODO: Handle exception
             pass
 
     def stop(self):
@@ -896,7 +897,6 @@ class HttpDownload(Realm):
         self.result_data = result_data
 
         avg_dl_time = []
-        html_struct = dict.fromkeys(list(result_data.keys()))
         for fcc in list(result_data.keys()):
             fcc_type = result_data[fcc]["avg"]
             for i in fcc_type:
@@ -1570,8 +1570,8 @@ def validate_args(args):
 
 
 def main():
-    # set up logger
-    logger_config = lf_logger_config.lf_logger_config()
+    # TODO: set up logger
+    # logger_config = lf_logger_config.lf_logger_config()
     parser = argparse.ArgumentParser(
         prog="lf_webpage.py",
         formatter_class=argparse.RawTextHelpFormatter,
