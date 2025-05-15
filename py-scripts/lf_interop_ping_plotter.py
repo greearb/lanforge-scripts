@@ -490,7 +490,6 @@ class Ping(Realm):
         colors = [['red' if rtt == 0 else 'green' for rtt in rtt_values[seq]] for seq in sequence_numbers]
 
         # Create a stacked horizontal bar graph
-        bar_width = 1
         fig, ax = plt.subplots(figsize=(20, len(device_names) * .5 + 10))
         # y_positions = np.arange(len(device_names)) * (bar_width + 1)  # Adjust the 0.1 to control the gap
         for i, device_name in enumerate(self.report_names):
@@ -1402,7 +1401,6 @@ connectivity problems.
         Copyright 2023 Candela Technologies Inc.
         '''
     )
-    required = parser.add_argument_group('Required arguments')
     optional = parser.add_argument_group('Optional arguments')
     webUI_args = parser.add_argument_group('webUI arguments')\
 
@@ -1755,7 +1753,6 @@ connectivity problems.
 
     # start generate endpoint
     ping.start_generic()
-    time_counter = 0
     ports_data_dict = ping.json_get('/ports/all/')['interfaces']
     ports_data = {}
     for ports in ports_data_dict:
