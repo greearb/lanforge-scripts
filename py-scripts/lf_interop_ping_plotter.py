@@ -119,7 +119,7 @@ from station_profile import StationProfile
 from typing import List, Optional
 # Importing DeviceConfig to apply device configurations for ADB devices and laptops
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
-from LANforge import LFUtils
+from LANforge import LFUtils  # noqa: E402
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -1806,9 +1806,6 @@ connectivity problems.
                                 'sent': result_data['tx pkts'],
                                 'recv': result_data['rx pkts'],
                                 'dropped': result_data['dropped'],
-                                # 'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
-                                # 'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
-                                # 'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                                 'mac': current_device_data['mac'],
                                 'ip': current_device_data['ip'],
                                 'bssid': current_device_data['ap'],
@@ -1891,9 +1888,6 @@ connectivity problems.
                                     'sent': ping_data['tx pkts'],
                                     'recv': ping_data['rx pkts'],
                                     'dropped': ping_data['dropped'],
-                                    # 'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
-                                    # 'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
-                                    # 'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                                     'mac': current_device_data['mac'],
                                     'ip': current_device_data['ip'],
                                     'bssid': current_device_data['ap'],
@@ -1978,14 +1972,22 @@ connectivity problems.
                                 last_result = result[-1]
                         else:
                             last_result = ""
+
+                        hw_version = current_device_data['hw version']
+                        if "Win" in hw_version:
+                            os = "Windows"
+                        elif "Linux" in hw_version:
+                            os = "Linux"
+                        elif "Apple" in hw_version:
+                            os = "Mac"
+                        else:
+                            os = "Android"
+
                         ping.result_json[station] = {
                             'command': result_data['command'],
                             'sent': result_data['tx pkts'],
                             'recv': result_data['rx pkts'],
                             'dropped': result_data['dropped'],
-                            # 'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
-                            # 'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
-                            # 'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'] else '0'][0],
                             'mac': current_device_data['mac'],
                             'ip': current_device_data['ip'],
                             'bssid': current_device_data['ap'],
@@ -1993,7 +1995,7 @@ connectivity problems.
                             'channel': current_device_data['channel'],
                             'mode': current_device_data['mode'],
                             'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
-                            'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
+                            'os': os,
                             'remarks': [],
                             'last_result': [last_result][0]
                         }
@@ -2089,14 +2091,21 @@ connectivity problems.
                             else:
                                 last_result = ""
 
+                            hw_version = current_device_data['hw version']
+                            if "Win" in hw_version:
+                                os = "Windows"
+                            elif "Linux" in hw_version:
+                                os = "Linux"
+                            elif "Apple" in hw_version:
+                                os = "Mac"
+                            else:
+                                os = "Android"
+
                             ping.result_json[station] = {
                                 'command': ping_data['command'],
                                 'sent': ping_data['tx pkts'],
                                 'recv': ping_data['rx pkts'],
                                 'dropped': ping_data['dropped'],
-                                # 'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
-                                # 'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
-                                # 'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'] else '0'][0],
                                 'mac': current_device_data['mac'],
                                 'ip': current_device_data['ip'],
                                 'bssid': current_device_data['ap'],
@@ -2104,7 +2113,7 @@ connectivity problems.
                                 'channel': current_device_data['channel'],
                                 'mode': current_device_data['mode'],
                                 'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
-                                'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
+                                'os': os,
                                 'remarks': [],
                                 'last_result': [last_result][0]
                             }
