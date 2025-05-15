@@ -60,10 +60,10 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
                 --upstream          1.1.eth1 \
                 --station           1.1.wlan0 \
                 --rate              100Mbps \
-                --attenuator        "1.1.3273" \
-                --atten_min         10 \
-                --atten_step        10 \
-                --atten_max         95
+                --attenuator1       "1.1.3273" \
+                --atten1_min        10 \
+                --atten1_step       10 \
+                --atten1_max        95
 
             # Run test with differing attenuation using multiple attenuators using direct CLI
             # This format is the same as configured in GUI and is *parsed as ddB not dB*.
@@ -72,8 +72,8 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
                 --upstream          1.1.eth1 \
                 --station           1.1.wlan0 \
                 --rate              100Mbps \
-                --attenuator        "1.1.3273" \
-                --attenuations      "0..+100..955" \
+                --attenuator1       "1.1.3273" \
+                --attenuations1     "0..+100..955" \
                 --attenuator2       "1.1.3281" \
                 --attenuations2     "0..+100..955"
 
@@ -304,13 +304,35 @@ class DataplaneTest(cv_test):
 
     def _apply_simplified_atten_cli(self):
         """If specified, configure test attenuations using simplified CLI."""
-        if not self.attenuations:
-            # Multiply as value is in dB but GUI expectes ddB
-            self.attenuations = f"{10*self.atten_min}..+{10*self.atten_step}..{10*self.atten_max}"
+        if self.atten_min or self.atten_step or self.atten_max:
+            # Something is specified, set defaults, then apply what is specified.
+            amin = 0
+            astep = 50
+            amax = 950
+            if self.atten_min:
+                amin = int(self.atten_min * 10)
+            if self.atten_step:
+                astep = int(self.atten_step * 10)
+            if self.atten_max:
+                amax = int(self.atten_max * 10)
 
-        if not self.attenuations2:
             # Multiply as value is in dB but GUI expectes ddB
-            self.attenuations2 = f"{10*self.atten2_min}..+{10*self.atten2_step}..{10*self.atten2_max}"
+            self.attenuations = f"{amin}..+{astep}..{amax}"
+
+        if self.atten2_min or self.atten2_step or self.atten2_max:
+            # Something is specified, set defaults, then apply what is specified.
+            amin = 0
+            astep = 50
+            amax = 950
+            if self.atten2_min:
+                amin = int(self.atten2_min * 10)
+            if self.atten2_step:
+                astep = int(self.atten2_step * 10)
+            if self.atten2_max:
+                amax = int(self.atten2_max * 10)
+
+            # Multiply as value is in dB but GUI expectes ddB
+            self.attenuations2 = f"{amin}..+{astep}..{amax}"
 
     def setup(self):
         # Nothing to do at this time.
@@ -486,8 +508,8 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
                 --upstream          1.1.eth1 \
                 --station           1.1.wlan0 \
                 --rate              100Mbps \
-                --attenuator        "1.1.3273" \
-                --attenuations      "0..+100..955" \
+                --attenuator1       "1.1.3273" \
+                --attenuations1     "0..+100..955" \
                 --attenuator2       "1.1.3281" \
                 --attenuations2     "0..+100..955"
 
