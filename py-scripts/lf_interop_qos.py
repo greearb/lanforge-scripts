@@ -1,94 +1,84 @@
 #!/usr/bin/env python3
 """
-    NAME: lf_interop_qos.py
+NAME:       lf_interop_qos.py
 
-    PURPOSE: lf_interop_qos.py will provide the available devices and allows user to run the qos traffic
-    with particular tos on particular devices in upload, download directions.
+PURPOSE:    lf_interop_qos.py will provide the available devices and allows user to run the qos traffic
+            with particular tos on particular devices in upload, download directions.
 
-    EXAMPLE-1:
-    Command Line Interface to run download scenario with tos : Voice
-    python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
-    --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0
-    --traffic_type lf_udp --tos "VO"
+NOTES:      1. Use './lf_interop_qos.py --help' to see command line usage and options
+            2. Please pass tos in CAPITALS as shown :"BK,VI,BE,VO"
+            3. Please enter the download or upload rate in bps
+            4. After passing cli, a list will be displayed on terminal which contains available resources to run test.
+            The following sentence will be displayed
+            Enter the desired resources to run the test:
+            Please enter the port numbers seperated by commas ','.
+            Example:
+            Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.303
 
-    EXAMPLE-2:
-    Command Line Interface to run download scenario with tos : Voice and Video
-    python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
-    --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0
-    --traffic_type lf_udp --tos "VO,VI"
+EXAMPLES:   # Command Line Interface to run download scenario with tos : Voice
+            ./lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
+                --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0
+                --traffic_type lf_udp --tos "VO"
 
-    EXAMPLE-3:
-    Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice
-    python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
-    --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-    --traffic_type lf_udp --tos "BK,BE,VI,VO"
+            # Command Line Interface to run download scenario with tos : Voice and Video
+            ./lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
+                --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0
+                --traffic_type lf_udp --tos "VO,VI"
 
-    EXAMPLE-4:
-    Command Line Interface to run bi-directional scenario with tos : Video and Voice
-    python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
-    --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 1000000
-    --traffic_type lf_udp --tos "VI,VO"
+            # Load scenario with tos : Background, Besteffort, Video and Voice
+            ./lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
+                --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+                --traffic_type lf_udp --tos "BK,BE,VI,VO"
 
-    EXAMPLE-5:
-    Command Line Interface to run upload scenario by setting the same expected Pass/Fail value for all devices
-    python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-    --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
-    --security wpa2 --expected_passfail_value 0.3
+            # Command Line Interface to run bi-directional scenario with tos : Video and Voice
+            ./lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
+                --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 1000000
+                --traffic_type lf_udp --tos "VI,VO"
 
-    EXAMPLE-6:
-    Command Line Interface to run upload scenario by setting device specific Pass/Fail values in the csv file
-    python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-    --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
-    --security wpa2 --device_csv_name device_config.csv
+            # Command Line Interface to run upload scenario by setting the same expected Pass/Fail value for all devices
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+                --security wpa2 --expected_passfail_value 0.3
 
-    EXAMPLE-7:
-    Command Line Interface to run upload scenario by Configuring Real Devices with SSID, Password, and Security
-    python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-    --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
-    --security wpa2 --config
+            # Command Line Interface to run upload scenario by setting device specific Pass/Fail values in the csv file
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+                --security wpa2 --device_csv_name device_config.csv
 
-    EXAMPLE-8:
-    Command Line Interface to run upload scenario by setting the same expected Pass/Fail value for all devices with configuration
-    python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-    --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
-    --security wpa2 --config --expected_passfail_value 0.3
+            # Command Line Interface to run upload scenario by Configuring Real Devices with SSID, Password, and Security
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+                --security wpa2 --config
 
-    EXAMPLE-9:
-    Command Line Interface to run upload scenario by Configuring Devices in Groups with Specific Profiles
-    python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-    --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --file_name g219 --group_name grp1 --profile_name Open3
+            # Command Line Interface to run upload scenario by setting the same expected Pass/Fail value for all devices with configuration
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+                --security wpa2 --config --expected_passfail_value 0.3
 
-    EXAMPLE-10:
-    Command Line Interface to run upload scenario by Configuring Devices in Groups with Specific Profiles with expected Pass/Fail values
-    python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-    --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --file_name g219 --group_name grp1 --profile_name Open3
-    --expected_passfail_value 0.3 --wait_time 30
+            # Command Line Interface to run upload scenario by Configuring Devices in Groups with Specific Profiles
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --file_name g219 --group_name grp1 --profile_name Open3
 
-    SCRIPT_CLASSIFICATION :  Test
+            # Command Line Interface to run upload scenario by Configuring Devices in Groups with Specific Profiles with expected Pass/Fail values
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --file_name g219 --group_name grp1 --profile_name Open3
+                --expected_passfail_value 0.3 --wait_time 30
 
-    SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
+SCRIPT_CLASSIFICATION:
+            Test
 
-    NOTES:
-    1.Use './lf_interop_qos.py --help' to see command line usage and options
-    2.Please pass tos in CAPITALS as shown :"BK,VI,BE,VO"
-    3.Please enter the download or upload rate in bps
-    4.After passing cli, a list will be displayed on terminal which contains available resources to run test.
-    The following sentence will be displayed
-    Enter the desired resources to run the test:
-    Please enter the port numbers seperated by commas ','.
-    Example:
-    Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.303
+SCRIPT_CATEGORIES:
+            Performance,  Functional, Report Generation
 
-    STATUS: BETA RELEASE
+STATUS:     BETA RELEASE
 
-    VERIFIED_ON:
-    Working date - 26/07/2023
-    Build version - 5.4.8
-    kernel version - 6.2.16+
+VERIFIED_ON:
+            Working date:   26/07/2023
+            Build version:  5.4.8
+            Kernel version: 6.2.16+
 
-    License: Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2023 Candela Technologies Inc.
-
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
 """
 
 import time
@@ -2077,97 +2067,86 @@ def main():
             Provides the available devices list and allows user to run the qos traffic
             with particular tos on particular devices in upload, download directions.
             ''',
-        description='''\
+        description=r'''\
+NAME:       lf_interop_qos.py
 
-        NAME: lf_interop_qos.py
+PURPOSE:    lf_interop_qos.py will provide the available devices and allows user to run the qos traffic
+            with particular tos on particular devices in upload, download directions.
 
-        PURPOSE: lf_interop_qos.py will provide the available devices and allows user to run the qos traffic
-        with particular tos on particular devices in upload, download directions.
+NOTES:      1. Use './lf_interop_qos.py --help' to see command line usage and options
+            2. Please pass tos in CAPITALS as shown :"BK,VI,BE,VO"
+            3. Please enter the download or upload rate in bps
+            4. After passing cli, a list will be displayed on terminal which contains available resources to run test.
+            The following sentence will be displayed
+            Enter the desired resources to run the test:
+            Please enter the port numbers seperated by commas ','.
+            Example:
+            Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.303
 
-        EXAMPLE-1:
-        Command Line Interface to run download scenario with tos : Voice
-        python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
-        --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0
-        --traffic_type lf_udp --tos "VO"
+EXAMPLES:   # Command Line Interface to run download scenario with tos : Voice
+            ./lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
+                --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0
+                --traffic_type lf_udp --tos "VO"
 
-        EXAMPLE-2:
-        Command Line Interface to run download scenario with tos : Voice and Video
-        python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
-        --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0
-        --traffic_type lf_udp --tos "VO,VI"
+            # Command Line Interface to run download scenario with tos : Voice and Video
+            ./lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
+                --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 0
+                --traffic_type lf_udp --tos "VO,VI"
 
-        EXAMPLE-3:
-        Command Line Interface to run upload scenario with tos : Background, Besteffort, Video and Voice
-        python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
-        --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-        --traffic_type lf_udp --tos "BK,BE,VI,VO"
+            # Load scenario with tos : Background, Besteffort, Video and Voice
+            ./lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
+                --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 0 --upload 1000000
+                --traffic_type lf_udp --tos "BK,BE,VI,VO"
 
-        EXAMPLE-4:
-        Command Line Interface to run bi-directional scenario with tos : Video and Voice
-        python3 lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
-        --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 1000000
-        --traffic_type lf_udp --tos "VI,VO"
+            # Command Line Interface to run bi-directional scenario with tos : Video and Voice
+            ./lf_interop_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --ssid Cisco
+                --passwd cisco@123 --security wpa2 --upstream eth1 --test_duration 1m --download 1000000 --upload 1000000
+                --traffic_type lf_udp --tos "VI,VO"
 
-        EXAMPLE-5:
-        Command Line Interface to run upload scenario by setting the same expected Pass/Fail value for all devices
-        python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-        --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
-        --security wpa2 --expected_passfail_value 0.3
+            # Command Line Interface to run upload scenario by setting the same expected Pass/Fail value for all devices
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+                --security wpa2 --expected_passfail_value 0.3
 
-        EXAMPLE-6:
-        Command Line Interface to run upload scenario by setting device specific Pass/Fail values in the csv file
-        python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-        --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
-        --security wpa2 --device_csv_name device_config.csv
+            # Command Line Interface to run upload scenario by setting device specific Pass/Fail values in the csv file
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+                --security wpa2 --device_csv_name device_config.csv
 
-        EXAMPLE-7:
-        Command Line Interface to run upload scenario by Configuring Real Devices with SSID, Password, and Security
-        python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-        --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
-        --security wpa2 --config
+            # Command Line Interface to run upload scenario by Configuring Real Devices with SSID, Password, and Security
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+                --security wpa2 --config
 
-        EXAMPLE-8:
-        Command Line Interface to run upload scenario by setting the same expected Pass/Fail value for all devices with configuration
-        python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-        --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
-        --security wpa2 --config --expected_passfail_value 0.3
+            # Command Line Interface to run upload scenario by setting the same expected Pass/Fail value for all devices with configuration
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123
+                --security wpa2 --config --expected_passfail_value 0.3
 
-        EXAMPLE-9:
-        Command Line Interface to run upload scenario by Configuring Devices in Groups with Specific Profiles
-        python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-        --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --file_name g219 --group_name grp1 --profile_name Open3
+            # Command Line Interface to run upload scenario by Configuring Devices in Groups with Specific Profiles
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --file_name g219 --group_name grp1 --profile_name Open3
 
-        EXAMPLE-10:
-        Command Line Interface to run upload scenario by Configuring Devices in Groups with Specific Profiles with expected Pass/Fail values
-        python3 lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
-        --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --file_name g219 --group_name grp1 --profile_name Open3
-        --expected_passfail_value 0.3 --wait_time 30
+            # Command Line Interface to run upload scenario by Configuring Devices in Groups with Specific Profiles with expected Pass/Fail values
+            ./lf_interop_qos.py  --ap_name Cisco --mgr 192.168.244.97 --test_duration 1m --upstream_port eth1 --upload 1000000
+                --mgr_port 8080 --traffic_type lf_udp --tos "VI,VO,BE,BK" --file_name g219 --group_name grp1 --profile_name Open3
+                --expected_passfail_value 0.3 --wait_time 30
 
-        SCRIPT_CLASSIFICATION :  Test
+SCRIPT_CLASSIFICATION:
+            Test
 
-        SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
+SCRIPT_CATEGORIES:
+            Performance,  Functional, Report Generation
 
-        NOTES:
-        1.Use './lf_interop_qos.py --help' to see command line usage and options
-        2.Please pass tos in CAPITALS as shown :"BK,VI,BE,VO"
-        3.Please enter the download or upload rate in bps
-        4.After passing cli, a list will be displayed on terminal which contains available resources to run test.
-        The following sentence will be displayed
-        Enter the desired resources to run the test:
-        Please enter the port numbers seperated by commas ','.
-        Example:
-        Enter the desired resources to run the test:1.10,1.11,1.12,1.13,1.202,1.203,1.303
+STATUS:     BETA RELEASE
 
-        STATUS: BETA RELEASE
+VERIFIED_ON:
+            Working date:   26/07/2023
+            Build version:  5.4.8
+            Kernel version: 6.2.16+
 
-        VERIFIED_ON:
-        Working date - 26/07/2023
-        Build version - 5.4.8
-        kernel version - 6.2.16+
-
-        License: Free to distribute and modify. LANforge systems must be licensed.
-        Copyright 2023 Candela Technologies Inc.
-
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
 ''')
 
     required = parser.add_argument_group('Required arguments to run lf_interop_qos.py')
