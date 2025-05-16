@@ -115,7 +115,7 @@ class Youtube(Realm):
                  band=None,
                  base_dir=None,
                  test_name=None,
-                 flask_ip=None,
+                 upstream_port=None,
                  config=None,
                  selected_groups=None,
                  selected_profiles=None
@@ -181,7 +181,7 @@ class Youtube(Realm):
         self.mydatajson = {}
         self.final_data = None
         self.stats_api_response = {}
-        self.flask_ip = flask_ip
+        self.upstream_port = upstream_port
         self.stop_signal = False
         self.config = config
         self.selected_groups = selected_groups
@@ -400,14 +400,14 @@ class Youtube(Realm):
 
         for i in range(0, len(self.real_sta_os_types)):
             if self.real_sta_os_types[i] == 'windows':
-                cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.flask_ip, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_types[i] == 'linux':
-                cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.new_port_list[i], self.url, self.flask_ip, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.new_port_list[i], self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
             elif self.real_sta_os_types[i] == 'macos':
-                cmd = "sudo bash ctyt.bash --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.flask_ip, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = "sudo bash ctyt.bash --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
     def select_real_devices(self, real_devices, real_sta_list=None, base_interop_obj=None):
@@ -1028,7 +1028,7 @@ def main():
         required.add_argument('--sec', type=str, default="wpa2", help="security type used")
         required.add_argument('--band', type=str, default="5GHZ", help="Name of the Frequency band used")
         required.add_argument('--test_name', type=str, help="Test name while running through webgui")
-        required.add_argument('--flask_ip', type=str, help='IP for flask server', required=True)
+        required.add_argument('--upstream_port', type=str, help='Specify The Upstream Port name or IP address', required=True)
 
         # Add optional arguments
         optional.add_argument('--resources', help='Specify the real device ports seperated by comma')
@@ -1178,7 +1178,7 @@ def main():
                 security=args.encryp,
                 band=args.band,
                 test_name=args.test_name,
-                flask_ip=args.flask_ip,
+                upstream_port=args.upstream_port,
                 config=args.config,
                 selected_groups=selected_groups,
                 selected_profiles=selected_profiles)
@@ -1202,7 +1202,7 @@ def main():
 
                 config_obj.initiate_group()
 
-                asyncio.run(config_obj.connectivity(config_devices))
+                asyncio.run(config_obj.connectivity(config_devices, upstream_port=args.upstream_port))
 
                 adbresponse = config_obj.adb_obj.get_devices()
                 resource_manager = config_obj.laptop_obj.get_devices()
@@ -1247,7 +1247,7 @@ def main():
                         'client_cert': args.client_cert,
                         'pk_passwd': args.pk_passwd,
                         'pac_file': args.pac_file,
-                        'server_ip': args.server_ip
+                        'server_ip': args.upstream_port,
                 }
                 if args.resources:
                     all_devices = config_obj.get_all_devices()
@@ -1369,7 +1369,7 @@ def main():
             if not args.no_post_cleanup:
                 youtube.generic_endps_profile.cleanup()
     except Exception as e:
-        logging.error("Error occured", e)
+        logging.error(f"Error occured {e}")
         traceback.print_exc()
     finally:
         youtube.stop()
