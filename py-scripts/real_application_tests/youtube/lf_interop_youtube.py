@@ -57,13 +57,6 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 
-# # Add necessary paths if not already included
-if 'py-json' not in sys.path:
-    sys.path.append('/home/lanforge/lanforge-scripts/py-json')
-
-
-if 'py-scripts' not in sys.path:
-    sys.path.append('/home/lanforge/lanforge-scripts/py-scripts')
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
@@ -109,7 +102,6 @@ class Youtube(Realm):
                  port=None,
                  url=None,
                  duration=0,
-                 # resources = None,
                  lanforge_password='lanforge',
                  sta_list=None,
                  do_webUI=False,
@@ -151,7 +143,6 @@ class Youtube(Realm):
         self.port = port
         self.url = url
         self.duration = duration
-        # self.resources = resources
         self.lfclient_host = host
         self.lfclient_port = port
         self.debug = debug
@@ -409,11 +400,9 @@ class Youtube(Realm):
 
         for i in range(0, len(self.real_sta_os_types)):
             if self.real_sta_os_types[i] == 'windows':
-                # cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.lfclient_host, self.real_sta_hostname[i], self.duration,self.resolution)
                 cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.flask_ip, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_types[i] == 'linux':
-                # cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.new_port_list[i], self.url, self.lfclient_host, self.real_sta_hostname[i], self.duration,self.resolution)
                 cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.new_port_list[i], self.url, self.flask_ip, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
@@ -526,25 +515,6 @@ class Youtube(Realm):
         self.generic_endps_profile.stop_cx()
         self.stop_time = datetime.now()
 
-    def set_webUI_stop(self,):
-        """
-        Sets the status of the webUI test to 'Completed' in the runtime_ping_data.json file.
-
-        Procedure Followed:
-        1. Opens the runtime_ping_data.json file located in `self.ui_report_dir` for reading.
-        2. Loads the JSON data from the file into the `data` variable.
-        3. Checks if 'status' key exists in `data` and if its value is not 'Aborted'.
-        - If conditions are met, updates 'status' to 'Completed' in `data`.
-        4. Writes the updated `data` back to the runtime_ping_data.json file with proper formatting.
-
-        Note:
-        - This method assumes `self.ui_report_dir` contains the path to the directory where runtime_ping_data.json is located.
-        """
-        file_path = self.ui_report_dir
-        file_name = '/running_status.json'
-        with open(file_path + file_name, 'r') as f:
-            data = json.load(f)
-            return data['status']
 
     def get_data_from_api(self):
         """
@@ -707,22 +677,6 @@ class Youtube(Realm):
         except Exception as e:
             logging.error(f"An error occurred while updating status: {e}")
 
-    def clear_previous_data(self,):
-        try:
-            url = "http://localhost:5454/youtube_stats"
-            headers = {
-                'Content-Type': 'application/json',
-            }
-            data = {
-                'clear_data': True,
-            }
-            response = requests.post(url, json=data, headers=headers)
-            if response.status_code == 200:
-                logging.info("Successfully cleared previous test data.")
-            else:
-                logging.error(f"Failed to clear previous data. Status code: {response.status_code}")
-        except Exception as e:
-            logging.error(f"An error occurred while clearing previous data: {e}")
 
     def move_files(self, source_file, dest_dir):
         # Ensure the source file exists
