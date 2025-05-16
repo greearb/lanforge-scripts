@@ -69,7 +69,6 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 
-
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
@@ -479,7 +478,7 @@ class Youtube(Realm):
         if len(self.real_sta_list) == 0:
             logger.error('There are no real devices in this testbed. Aborting test')
             exit(0)
-        
+
         real_devices.get_devices()
         self.real_sta_list = self.filter_ios_devices(self.real_sta_list)
 
@@ -533,7 +532,6 @@ class Youtube(Realm):
     def stop_generic_cx(self,):
         self.generic_endps_profile.stop_cx()
         self.stop_time = datetime.now()
-
 
     def get_data_from_api(self):
         """
@@ -695,7 +693,6 @@ class Youtube(Realm):
 
         except Exception as e:
             logging.error(f"An error occurred while updating status: {e}")
-
 
     def move_files(self, source_file, dest_dir):
         # Ensure the source file exists
@@ -1015,7 +1012,7 @@ class Youtube(Realm):
         except Exception as e:
             logging.error(f"Error in check_gen_cx funtion {e}", exc_info=True)
             logging.info(f"Generic endpoint data {generic_endpoint}")
-    
+
     def change_port_to_ip(self, upstream_port):
         """
         Convert a given port name to its corresponding IP address if it's not already an IP.
@@ -1053,7 +1050,7 @@ class Youtube(Realm):
         self.upstream_port = upstream_port
 
         return upstream_port
-    
+
     def filter_ios_devices(self, device_list):
         """
         Filters out iOS devices from the given device list based on hardware and software identifiers.
@@ -1140,8 +1137,7 @@ def main():
             epilog='''
             Allows user to run the youtube streaming test on a target resource for the given duration.
         ''',
-            description=
-"""
+            description="""
 NAME: lf_interop_youtube.py
 
 PURPOSE: lf_interop_youtube.py provides the available devices and allows the user to run YouTube on selected devices by specifying the video URL and duration.
@@ -1363,9 +1359,9 @@ NOTES:
             resources = []
             youtube.Devices = Devices
             if args.file_name:
-                new_filename = args.file_name[:-4]
+                new_filename = args.file_name.removesuffix(".csv")
             else:
-                new_filename = None
+                new_filename = args.file_name
             config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.mgr, file_name=new_filename)
             if not args.expected_passfail_value and args.device_csv_name is None:
                 config_obj.device_csv_file(csv_name="device.csv")
@@ -1378,7 +1374,7 @@ NOTES:
 
                 config_obj.initiate_group()
 
-                asyncio.run(config_obj.connectivity(config_devices, upstream_port=args.upstream_port))
+                asyncio.run(config_obj.connectivity(config_devices))
 
                 adbresponse = config_obj.adb_obj.get_devices()
                 resource_manager = config_obj.laptop_obj.get_devices()
@@ -1403,27 +1399,27 @@ NOTES:
                 args.resources = ",".join(id for id in eid_list)
             else:
                 config_dict = {
-                        'ssid': args.ssid,
-                        'passwd': args.passwd,
-                        'enc': args.encryp,
-                        'eap_method': args.eap_method,
-                        'eap_identity': args.eap_identity,
-                        'ieee80211': args.ieee8021x,
-                        'ieee80211u': args.ieee80211u,
-                        'ieee80211w': args.ieee80211w,
-                        'enable_pkc': args.enable_pkc,
-                        'bss_transition': args.bss_transition,
-                        'power_save': args.power_save,
-                        'disable_ofdma': args.disable_ofdma,
-                        'roam_ft_ds': args.roam_ft_ds,
-                        'key_management': args.key_management,
-                        'pairwise': args.pairwise,
-                        'private_key': args.private_key,
-                        'ca_cert': args.ca_cert,
-                        'client_cert': args.client_cert,
-                        'pk_passwd': args.pk_passwd,
-                        'pac_file': args.pac_file,
-                        'server_ip': args.upstream_port,
+                    'ssid': args.ssid,
+                    'passwd': args.passwd,
+                    'enc': args.encryp,
+                    'eap_method': args.eap_method,
+                    'eap_identity': args.eap_identity,
+                    'ieee80211': args.ieee8021x,
+                    'ieee80211u': args.ieee80211u,
+                    'ieee80211w': args.ieee80211w,
+                    'enable_pkc': args.enable_pkc,
+                    'bss_transition': args.bss_transition,
+                    'power_save': args.power_save,
+                    'disable_ofdma': args.disable_ofdma,
+                    'roam_ft_ds': args.roam_ft_ds,
+                    'key_management': args.key_management,
+                    'pairwise': args.pairwise,
+                    'private_key': args.private_key,
+                    'ca_cert': args.ca_cert,
+                    'client_cert': args.client_cert,
+                    'pk_passwd': args.pk_passwd,
+                    'pac_file': args.pac_file,
+                    'server_ip': args.upstream_port,
                 }
                 if args.resources:
                     all_devices = config_obj.get_all_devices()
