@@ -40,7 +40,7 @@
                 ]
             },
             "lf_qa":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "timeout":"600",
                 "load_db":"skip",
                 "command":"./tools/lf_qa.py",
@@ -50,7 +50,7 @@
                 ]
             },
             "lf_inspect":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "timeout":"600",
                 "load_db":"skip",
                 "command":"./tools/lf_inspect.py",
