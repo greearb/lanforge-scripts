@@ -1,0 +1,99 @@
+sel_port-0: 1.1.sta0000
+sel_port-1: 1.1.sta0001
+sel_port-2: 1.1.sta0002
+sel_port-3: 1.1.sta0003
+sel_port-4: 1.1.sta0004
+sel_port-5: 1.1.sta0005
+sel_port-6: 1.1.sta0006
+sel_port-7: 1.1.sta0007
+sel_port-8: 1.1.sta0008
+sel_port-9: 1.1.sta0009
+sel_port-10: 1.1.sta0010
+sel_port-11: 1.1.sta0011
+sel_port-12: 1.1.sta0012
+sel_port-13: 1.1.sta0013
+sel_port-14: 1.1.sta0014
+sel_port-15: 1.1.sta0015
+sel_port-16: 1.1.sta0016
+sel_port-17: 1.1.sta0017
+sel_port-18: 1.1.sta0018
+sel_port-19: 1.1.sta0019
+sel_port-20: 1.1.sta0020
+sel_port-21: 1.1.sta0021
+sel_port-22: 1.1.sta0022
+sel_port-23: 1.1.sta0023
+sel_port-24: 1.1.sta0024
+sel_port-25: 1.1.sta0025
+sel_port-26: 1.1.sta0026
+sel_port-27: 1.1.sta0027
+sel_port-28: 1.1.sta0028
+__saved_at_ms: 1744136278512
+pre_post_anon: 0
+pre_post_inline: 0
+do_pre_post: 1
+anonymize_ap: 0
+show_events: 1
+show_log: 0
+log_stdout: 0
+port_sorting: 2
+kpi_id: Port-Reset
+get_csv_cb: 0
+auto_save: 0
+rpt_path:
+rpt_path_make_subdir: 1
+bg: 0xE0ECF8
+dut_info_override:
+dut_info_cmd:
+test_rig:
+test_tag:
+rpt_name:
+rpt_dir_prefix_textfield:
+show_scan: 1
+auto_helper: 1
+allow_11w: 0
+use_mcs_histograms: 1
+use_mlo_histograms: 1
+disable_mlo: 0
+extra_tx_status: 0
+extra_rx_status: 0
+txs_all_status: 0
+sae_pwe: 2
+skip_ac: 0
+skip_be: 0
+skip_ax: 0
+skip_2: 0
+skip_6: 0
+skip_mlo: 0
+skip_5: 0
+skip_5b: 1
+skip_dual: 0
+skip_tri: 1
+skip_tri_5b: 1
+skip_rebuild: 0
+udp_gro: 0
+multi_cx: <Custom>
+udp_burst: 0
+payload_pattern:
+sndbuf_tcp: <Custom>
+sndbuf_udp: <Custom>
+rcvbuf_tcp: <Custom>
+rcvbuf_udp: <Custom>
+show_per_loop_totals: 1
+clear_ports_too: 0
+show_log_scale: 0
+show_adv_lat_graph: 0
+realtime_per_port: 0
+realtime_per_cx: 0
+batch_size: 2
+duration: 300000
+duration_min: 10000
+duration_max: 20000
+downtime: 0
+random_sel: 0
+change_mac: 0
+no_deauth: 0
+run_traffic: 1
+upstream_port: 1.1.2 eth2
+traffic_type: TCP
+dl_rate: 1544000
+ul_rate: 9600
