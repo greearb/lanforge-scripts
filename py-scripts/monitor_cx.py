@@ -387,6 +387,7 @@ def main():
         print(e)
     finally:
         cx_monitor.close()
+        print()  # Whitespace to break any previous status output from summary printout
         print(f"Wrote {cx_monitor.lines_written} lines to {cx_monitor.csvfile}")
     exit(0)
 
