@@ -305,7 +305,7 @@ class CxMonitor:
                 pass
 
 
-def main():
+def parse_args():
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -331,8 +331,11 @@ def main():
         '--help_summary', action="store_true", help='Show summary of what this script does'
     )
 
+    return parser.parse_args()
 
-    args = parser.parse_args()
+
+def main():
+    args = parse_args()
 
     help_summary='''\
  The Monitor CX script is for collecting CSV data from running Layer 3 connections. It reports data for each
