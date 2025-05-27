@@ -1403,14 +1403,14 @@ class LFJsonCommand(JsonCommand):
                          debug=debug,
                          exit_on_error=exit_on_error)
 
-    # Auto generated methods follow: 
+    # Auto generated methods follow:
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADB> type requests
 
         https://www.candelatech.com/lfcli_ug.php#adb
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_adb(self, 
+    def post_adb(self,
                  adb_cmd: str = None,                      # All remaining text after adb_id will be sent to the adb
                  # command. <tt escapearg='false'>Unescaped Value</tt>
                  adb_id: str = None,                       # Android device identifier, use NA if it should not be
@@ -1425,7 +1425,7 @@ class LFJsonCommand(JsonCommand):
                  errors_warnings: list = None,
                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_adb(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -1458,7 +1458,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -1475,7 +1475,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#adb_bt
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_adb_bt(self, 
+    def post_adb_bt(self,
                     adb_id: str = None,                       # Android device identifier, use NA if it should not be
                     # used/specified. [W]
                     keystrokes: str = None,                   # All remaining text after adb_bt will be sent as keystrokes.
@@ -1488,7 +1488,7 @@ class LFJsonCommand(JsonCommand):
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_adb_bt(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -1519,7 +1519,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -1539,7 +1539,7 @@ class LFJsonCommand(JsonCommand):
     class AdbGuiFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AdbGuiFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -1557,7 +1557,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AdbGuiFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_adb_gui(self, 
+    def post_adb_gui(self,
                      adb_id: str = None,                       # Android device identifier.
                      display: str = None,                      # The DISPLAY option, for example: 192.168.1.5:0.0. Will
                      # guess if left blank.
@@ -1572,7 +1572,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_adb_gui(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -1609,7 +1609,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -1628,7 +1628,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#adb_timeout
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_adb_timeout(self, 
+    def post_adb_timeout(self,
                          adb_cmd: str = None,                      # All remaining text after adb_id will be sent to the adb
                          # command. <tt escapearg='false'>Unescaped Value</tt>
                          adb_id: str = None,                       # Android device identifier, use NA if it should not be
@@ -1645,7 +1645,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_adb_timeout(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -1680,7 +1680,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -1698,7 +1698,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#adb_wifi_event
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_adb_wifi_event(self, 
+    def post_adb_wifi_event(self,
                             device: str = None,                       # ADB device name. [R]
                             event: str = None,                        # What happened. [R]
                             msg: str = None,                          # Entire event in human readable form.
@@ -1709,7 +1709,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_adb_wifi_event(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -1742,7 +1742,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -1759,7 +1759,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_adb
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_adb(self, 
+    def post_add_adb(self,
                      adb_device: str = None,                   # Android device device ID
                      adb_id: str = None,                       # Android device identifier (serial number).
                      adb_model: str = None,                    # Android device model ID
@@ -1778,7 +1778,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_adb(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -1827,7 +1827,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -1852,7 +1852,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_arm_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_arm_endp(self, 
+    def post_add_arm_endp(self,
                           alias: str = None,                        # Name of endpoint. [R]
                           cpu_id: str = None,                       # Preferred CPU ID on which this endpoint should run.
                           mx_pkt_sz: str = None,                    # Maximum packet size, including all Ethernet headers.
@@ -1869,7 +1869,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_arm_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -1912,7 +1912,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -1938,7 +1938,7 @@ class LFJsonCommand(JsonCommand):
     class AddBgpPeerFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddBgpPeerFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -1957,7 +1957,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AddBgpPeerFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_add_bgp_peer(self, 
+    def post_add_bgp_peer(self,
                           p_as: str = None,                         # BGP Peer Autonomous System number, 0-65535
                           delay_open_time: str = None,              # BGP Peer delay open time.
                           flags: str = None,                        # Virtual router BGP Peer flags, see above for
@@ -1976,7 +1976,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_bgp_peer(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2023,7 +2023,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2047,7 +2047,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_bond
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_bond(self, 
+    def post_add_bond(self,
                       network_devs: str = None,                 # Comma-separated list of network devices: eth1,eth2,eth3...
                       # [W]
                       port: str = None,                         # Name of the bond device. [W]
@@ -2058,7 +2058,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_bond(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2089,7 +2089,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2108,12 +2108,12 @@ class LFJsonCommand(JsonCommand):
 
     class AddBrBrFlags(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         none = 0             # no features
         stp_enabled = 1      # Enable Spanning Tree Protocol (STP)
 
-    def post_add_br(self, 
+    def post_add_br(self,
                     br_aging_time: str = None,                # MAC aging time, in seconds, 32-bit number.
                     br_flags: str = None,                     # Bridge flags, see above.
                     br_forwarding_delay: str = None,          # How long to wait until the bridge will start forwarding
@@ -2130,7 +2130,7 @@ class LFJsonCommand(JsonCommand):
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_br(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2173,7 +2173,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2198,12 +2198,12 @@ class LFJsonCommand(JsonCommand):
 
     class AddCdFlags(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         ERR = 2          # Set to kernel mode.
         RUNNING = 1      # Set to running state.
 
-    def post_add_cd(self, 
+    def post_add_cd(self,
                     alias: str = None,                        # Name of Collision Domain. [W]
                     bps: str = None,                          # Maximum speed at which this collision domain can run.
                     flags: str = None,                        # See above. Leave blank or use 'NA' for no default values.
@@ -2219,7 +2219,7 @@ class LFJsonCommand(JsonCommand):
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_cd(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2258,7 +2258,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2278,7 +2278,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_cd_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_cd_endp(self, 
+    def post_add_cd_endp(self,
                          cd: str = None,                           # Name of Collision Domain. [R]
                          endp: str = None,                         # Endpoint name/id. [R]
                          response_json_list: list = None,
@@ -2286,7 +2286,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_cd_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2313,7 +2313,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2327,7 +2327,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_cd_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_cd_vr(self, 
+    def post_add_cd_vr(self,
                        cd: str = None,                           # Name of Collision Domain. [R]
                        vr: str = None,                           # Virtual-Router name/ID. [R]
                        response_json_list: list = None,
@@ -2335,7 +2335,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_cd_vr(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2362,7 +2362,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2376,7 +2376,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_cell_emulator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_cell_emulator(self, 
+    def post_add_cell_emulator(self,
                                cur_profile: str = None,                  # Profile that should be running
                                device_type: str = None,                  # Device type
                                ipaddr: str = None,                       # IPv4 address for the Cell Emulator
@@ -2389,7 +2389,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_cell_emulator(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2426,7 +2426,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2449,7 +2449,7 @@ class LFJsonCommand(JsonCommand):
     class AddChamberChamberFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddChamberChamberFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -2472,7 +2472,7 @@ class LFJsonCommand(JsonCommand):
     class AddChamberTurntableType(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddChamberTurntableType, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -2490,7 +2490,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AddChamberTurntableType has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_add_chamber(self, 
+    def post_add_chamber(self,
                          chamber_type: str = None,                 # Chamber type, see above. Use 1 for Medium if uncertain.
                          dut_name1: str = None,                    # Name of first DUT in this chamber or NA
                          dut_name2: str = None,                    # Name of second DUT in this chamber or NA
@@ -2518,7 +2518,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_chamber(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2581,7 +2581,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2616,13 +2616,13 @@ class LFJsonCommand(JsonCommand):
 
     class AddChamberCxChamberCxFlags(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         CONNECTED = 1       # (1) Connected to something. If flag is not set, connection is open to the air
         # +(maybe with antenna)
         TERMINATED = 2      # (2) Connection is terminated, signal shall not pass!
 
-    def post_add_chamber_cx(self, 
+    def post_add_chamber_cx(self,
                             a_id: str = None,                         # EidAntenna in string format for A side connection.
                             atten_id: str = None,                     # EID for the Attenuator module if one is inline on
                             # this connection.
@@ -2648,7 +2648,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_chamber_cx(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2693,7 +2693,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2716,7 +2716,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_chamber_path
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_chamber_path(self, 
+    def post_add_chamber_path(self,
                               chamber: str = None,                      # Chamber Name. [R]
                               content: str = None,                      # <tt>[BLANK]</tt> will erase all content, any other
                               # text will be appended to existing text. <tt
@@ -2727,7 +2727,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_chamber_path(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2756,7 +2756,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2774,7 +2774,7 @@ class LFJsonCommand(JsonCommand):
 
     class AddChannelGroupTypes(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         clear = "clear"          # Channel(s) are bundled into a single span. No conversion or
         e_m = "e&amp;m"          # Channel(s) are signalled using E&amp;M signalling (specific
@@ -2790,7 +2790,7 @@ class LFJsonCommand(JsonCommand):
         rawhdlc = "rawhdlc"      # The zaptel driver performs HDLC encoding and decoding on the
         unused = "unused"        # No signalling is performed, each channel in the list remains idle
 
-    def post_add_channel_group(self, 
+    def post_add_channel_group(self,
                                alias: str = None,                        # Name for this Channel Group. [R]
                                channels: str = None,                     # List of channels to add to this group.
                                idle_flag: str = None,                    # Idle flag (byte) for this channel group, for
@@ -2808,7 +2808,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_channel_group(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2847,7 +2847,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2867,7 +2867,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_cx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_cx(self, 
+    def post_add_cx(self,
                     alias: str = None,                        # Name of the Cross Connect to create. [R]
                     rx_endp: str = None,                      # Name of Receiving endpoint. [W]
                     test_mgr: str = None,                     # Name of test-manager to create the CX on. [W][D:default_tm]
@@ -2877,7 +2877,7 @@ class LFJsonCommand(JsonCommand):
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_cx(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -2908,7 +2908,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -2928,7 +2928,7 @@ class LFJsonCommand(JsonCommand):
     class AddDutDutFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddDutDutFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -2956,7 +2956,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AddDutDutFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_add_dut(self, 
+    def post_add_dut(self,
                      antenna_count1: str = None,               # Antenna count for first radio.
                      antenna_count2: str = None,               # Antenna count for second radio.
                      antenna_count3: str = None,               # Antenna count for third radio.
@@ -2992,7 +2992,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_dut(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -3071,7 +3071,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -3111,7 +3111,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_dut_notes
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_dut_notes(self, 
+    def post_add_dut_notes(self,
                            dut: str = None,                          # DUT Name. [R]
                            text: str = None,                         # [BLANK] will erase all, any other text will be
                            # appended to existing text. <tt
@@ -3121,7 +3121,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_dut_notes(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -3148,7 +3148,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -3166,7 +3166,7 @@ class LFJsonCommand(JsonCommand):
     class AddDutSsidDutFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddDutSsidDutFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -3188,7 +3188,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AddDutSsidDutFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_add_dut_ssid(self, 
+    def post_add_dut_ssid(self,
                           bssid: str = None,                        # BSSID for cooresponding SSID.
                           name: str = None,                         # Name of DUT, cannot contain '.' [R]
                           passwd: str = None,                       # WiFi Password that can be used to connect to DUT
@@ -3201,7 +3201,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_dut_ssid(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -3238,7 +3238,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -3260,7 +3260,7 @@ class LFJsonCommand(JsonCommand):
 
     class AddEndpPayloadPattern(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         PRBS_11_8_10 = "PRBS_11_8_10"    # PRBS (see above)
         PRBS_15_0_14 = "PRBS_15_0_14"    # PRBS (see above)
@@ -3276,7 +3276,7 @@ class LFJsonCommand(JsonCommand):
 
     class AddEndpType(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         custom_ether = "custom_ether"      # LF frames with custom options, use with playback
         custom_mc_udp = "custom_mc_udp"    # LF Multicast UDP IPv4
@@ -3291,7 +3291,7 @@ class LFJsonCommand(JsonCommand):
         lf_udp6 = "lf_udp6"                # UDP IPv6 connection
         mc_udp = "mc_udp"                  # LF Multicast IPv4
 
-    def post_add_endp(self, 
+    def post_add_endp(self,
                       alias: str = None,                        # Name of endpoint. [R]
                       ip_port: str = None,                      # IP Port: IP port for layer three endpoints. Use -1 to let
                       # the LANforge server automatically configure the ip_port.
@@ -3322,7 +3322,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -3379,7 +3379,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -3408,7 +3408,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_event
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_event(self, 
+    def post_add_event(self,
                        details: str = None,                      # Event text description. Cannot include double-quote
                        # characters.
                        event_id: str = None,                     # Numeric ID for the event to modify, or 'new' if creating
@@ -3420,7 +3420,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_event(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -3451,7 +3451,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -3471,7 +3471,7 @@ class LFJsonCommand(JsonCommand):
     class AddFileEndpFioFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddFileEndpFioFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -3506,7 +3506,7 @@ class LFJsonCommand(JsonCommand):
 
     class AddFileEndpPayloadPattern(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         PRBS_11_8_10 = "PRBS_11_8_10"    # PRBS (see above)
         PRBS_15_0_14 = "PRBS_15_0_14"    # PRBS (see above)
@@ -3522,7 +3522,7 @@ class LFJsonCommand(JsonCommand):
 
     class AddFileEndpType(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         fe_cifs = "fe_cifs"              # Does a CIFS (Samba) mount
         fe_cifs_ip6 = "fe_cifs/ip6"      # Does an IPv6 CIFS mount
@@ -3539,7 +3539,7 @@ class LFJsonCommand(JsonCommand):
         fe_smb30 = "fe_smb30"            # Does a SMB v3.0 mount
         fe_smb30_ip6 = "fe_smb30/ip6"    # Does a SMB v3.0 IPv6 mount
 
-    def post_add_file_endp(self, 
+    def post_add_file_endp(self,
                            alias: str = None,                        # Name of endpoint. [R]
                            directory: str = None,                    # The directory to read/write in. Absolute path
                            # suggested.
@@ -3568,7 +3568,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_file_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -3627,7 +3627,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -3657,7 +3657,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_gen_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_gen_endp(self, 
+    def post_add_gen_endp(self,
                           alias: str = None,                        # Name of endpoint. [R]
                           gen_flags: str = None,                    # Flags for configuring a generic endpoint. [D:0]
                           group: str = None,                        # Group ID for {gen_zoom, gen_teams, gen_meet} endpoints
@@ -3673,7 +3673,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_gen_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -3712,7 +3712,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -3732,7 +3732,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_gre
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_gre(self, 
+    def post_add_gre(self,
                      local_dev: str = None,                    # Specify local network device to transport the GRE traffic.
                      local_lower_ip: str = None,               # The local lower-level IP to use.
                      port: str = None,                         # Name of the GRE to create, suggested to start with 'gre'
@@ -3747,7 +3747,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_gre(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -3784,7 +3784,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -3807,7 +3807,7 @@ class LFJsonCommand(JsonCommand):
     class AddGroupFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddGroupFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -3823,7 +3823,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AddGroupFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_add_group(self, 
+    def post_add_group(self,
                        flags: str = None,                        # Flags for this group, see above.
                        flags_mask: str = None,                   # Mask for flags that we care about, use 0xFFFFFFFF or
                        # leave blank for all.
@@ -3834,7 +3834,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_group(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -3863,7 +3863,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -3882,7 +3882,7 @@ class LFJsonCommand(JsonCommand):
     class AddL4EndpHttpAuthType(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddL4EndpHttpAuthType, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -3904,7 +3904,7 @@ class LFJsonCommand(JsonCommand):
     class AddL4EndpProxyAuthType(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddL4EndpProxyAuthType, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -3939,7 +3939,7 @@ class LFJsonCommand(JsonCommand):
     class AddL4EndpType(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddL4EndpType, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -3955,7 +3955,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AddL4EndpType has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_add_l4_endp(self, 
+    def post_add_l4_endp(self,
                          alias: str = None,                        # Name of endpoint. [R]
                          block_size: str = None,                   # TFTP Block size, in bytes.
                          dns_cache_timeout: str = None,            # In seconds, how long to cache DNS lookups. 0 means no
@@ -3990,7 +3990,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_l4_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -4057,7 +4057,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -4095,7 +4095,7 @@ class LFJsonCommand(JsonCommand):
     class AddMonitorFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddMonitorFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -4114,7 +4114,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AddMonitorFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_add_monitor(self, 
+    def post_add_monitor(self,
                          aid: str = None,                          # AID, may be used when sniffing on /AX radios.
                          ap_name: str = None,                      # Name for this Monitor interface, for example: moni0 [W]
                          bssid: str = None,                        # BSSID to use when sniffing on /AX radios, optional.
@@ -4129,7 +4129,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_monitor(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -4168,7 +4168,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -4188,7 +4188,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_mvlan
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_mvlan(self, 
+    def post_add_mvlan(self,
                        flags: str = None,                        # 0x1: Create admin-down.
                        index: str = None,                        # Optional: The index of the VLAN, (the <b>4</b> in
                        # <tt>eth0#4</tt>)
@@ -4206,7 +4206,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_mvlan(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -4245,7 +4245,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -4265,7 +4265,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_ppp_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_ppp_link(self, 
+    def post_add_ppp_link(self,
                           auth: str = None,                         # YES if you want to authenticate. Default is NO.
                           channel_groups: str = None,               # List of channel groups, see above.
                           p_debug: bool = False,                    # YES for debug, otherwise debugging for the ppp
@@ -4301,7 +4301,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_ppp_link(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -4366,7 +4366,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -4403,7 +4403,7 @@ class LFJsonCommand(JsonCommand):
     class AddProfileProfileFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddProfileProfileFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -4437,7 +4437,7 @@ class LFJsonCommand(JsonCommand):
 
     class AddProfileWifiMode(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_802_11a = "802.11a"        # 802.11a
         AUTO = "AUTO"                # Best Available
@@ -4476,7 +4476,7 @@ class LFJsonCommand(JsonCommand):
         upstream = "upstream"        # Upstream server device. The EIDs may specify which ports to use.
         vlan = "vlan"                # 802.1q VLAN. Specify VID with the 'freq' option.
 
-    def post_add_profile(self, 
+    def post_add_profile(self,
                          alias_prefix: str = None,                 # Port alias prefix, aka hostname prefix.
                          antenna: str = None,                      # Antenna count for this profile.
                          bandwidth: str = None,                    # 0 (auto), 20, 40, 80, 160 or 320
@@ -4500,7 +4500,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_profile(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -4555,7 +4555,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -4583,7 +4583,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_profile_notes
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_profile_notes(self, 
+    def post_add_profile_notes(self,
                                dut: str = None,                          # Profile Name. [R]
                                text: str = None,                         # [BLANK] will erase all, any other text will be
                                # appended to existing text. <tt
@@ -4593,7 +4593,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_profile_notes(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -4620,7 +4620,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -4634,7 +4634,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_rdd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_rdd(self, 
+    def post_add_rdd(self,
                      peer_ifname: str = None,                  # The peer (other) RedirectDevice in this pair.
                      port: str = None,                         # Name of the Redirect Device to create. [W]
                      report_timer: int = None,                 # Report timer for this port, leave blank or use NA for
@@ -4646,7 +4646,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_rdd(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -4679,7 +4679,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -4696,7 +4696,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_sec_ip
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_sec_ip(self, 
+    def post_add_sec_ip(self,
                         ip_list: str = None,                      # IP1/prefix,IP2/prefix,...IPZ/prefix. [W]
                         port: str = None,                         # Name of network device (Port) to which these IPs will be
                         # added. [W]
@@ -4707,7 +4707,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_sec_ip(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -4738,7 +4738,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -4758,7 +4758,7 @@ class LFJsonCommand(JsonCommand):
     class AddStaFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddStaFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -4829,7 +4829,7 @@ class LFJsonCommand(JsonCommand):
 
     class AddStaMode(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_802_11a = 1      # 802.11a
         AUTO = 0           # 802.11g
@@ -4854,7 +4854,7 @@ class LFJsonCommand(JsonCommand):
 
     class AddStaRate(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_a_g = "/a/g"            # 6 Mbps, 9 Mbps, 12 Mbps, 18 Mbps, 24 Mbps, 36 Mbps, 48 Mbps, 54 Mbps
         p_b = "/b"                # 1Mbps, 2Mbps, 5.5 Mbps, 11 Mbps
@@ -4862,7 +4862,7 @@ class LFJsonCommand(JsonCommand):
         MCS0_76 = "MCS0-76"       # /n rates
         p_bitmap_ = "[bitmap]"    # <b>'0xff 00 ...'</b> to directly specify the MCS bitmap.
 
-    def post_add_sta(self, 
+    def post_add_sta(self,
                      ampdu_density: str = None,                # 0-7, or 0xFF to not set.
                      ampdu_factor: str = None,                 # 0-3, or 0xFF to not set.
                      ap: str = None,                           # The Access Point BSSID this Virtual STA should be
@@ -4900,7 +4900,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_sta(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -4969,7 +4969,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -5007,7 +5007,7 @@ class LFJsonCommand(JsonCommand):
 
     class AddT1SpanBuildout(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_15db = 6        # -15db (CSU)
         p_22_5db = 7      # -22.5db (CSU)
@@ -5021,13 +5021,13 @@ class LFJsonCommand(JsonCommand):
 
     class AddT1SpanType(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         Digium_T1 = "Digium_T1"      #
         Sangoma_E1 = "Sangoma_E1"    #
         Sangoma_T1 = "Sangoma_T1"    #
 
-    def post_add_t1_span(self, 
+    def post_add_t1_span(self,
                          buildout: str = None,                     # Buildout, Integer, see above.
                          coding: str = None,                       # Coding: T1: ami or b8zs. E1: ami or hdb3
                          cpu_id: str = None,                       # CPU identifier (A, B, etc) for multiport Sangoma
@@ -5048,7 +5048,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_t1_span(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -5097,7 +5097,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -5122,7 +5122,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_text_blob
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_text_blob(self, 
+    def post_add_text_blob(self,
                            name: str = None,                         # Text name, for instance '2-AP-test-case' [R]
                            text: str = None,                         # [BLANK] will erase all, any other text will be
                            # appended to existing text. <tt
@@ -5134,7 +5134,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_text_blob(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -5163,7 +5163,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -5178,7 +5178,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_tgcx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_tgcx(self, 
+    def post_add_tgcx(self,
                       cxname: str = None,                       # The name of the CX. [R]
                       tgname: str = None,                       # The name of the connection group. [R]
                       response_json_list: list = None,
@@ -5186,7 +5186,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_tgcx(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -5213,7 +5213,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -5230,14 +5230,14 @@ class LFJsonCommand(JsonCommand):
 
     class AddThresholdThreshId(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         Delete_Marked = -3      # Delete any marked.
         Mark_All = -2           # Mark all
 
     class AddThresholdThreshType(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         NO_RX_SINCE = 6              # Have not received any bytes/packets in specified time.
         RX_BPS_RATE_OOR_1m = 5       # rx-bps over last 1 minute is out of range.
@@ -5249,7 +5249,7 @@ class LFJsonCommand(JsonCommand):
         TX_BPS_RATE_OOR_30S = 2      # tx-bps over last 30 seconds is out of range.
         TX_BPS_RATE_OOR_3S = 0       # tx-bps over last 3 seconds is out of range.
 
-    def post_add_threshold(self, 
+    def post_add_threshold(self,
                            endp: str = None,                         # Endpoint name or ID. [R]
                            thresh_id: str = None,                    # Threshold ID. If adding new threshold, use -1,
                            # otherwise use correct ID. [W]
@@ -5261,7 +5261,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_threshold(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -5294,7 +5294,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -5311,7 +5311,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_tm
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_tm(self, 
+    def post_add_tm(self,
                     name: str = None,                         # The name of the test manager. Must be unique across test
                     # managers. [R]
                     response_json_list: list = None,
@@ -5319,7 +5319,7 @@ class LFJsonCommand(JsonCommand):
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_tm(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -5344,7 +5344,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -5361,7 +5361,7 @@ class LFJsonCommand(JsonCommand):
     class AddTrafficProfileTrafficProfileFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddTrafficProfileTrafficProfileFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -5381,7 +5381,7 @@ class LFJsonCommand(JsonCommand):
 
     class AddTrafficProfileWifiMode(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         Iperf3_Client = "Iperf3-Client"    # iperf3 client
         Iperf3_Server = "Iperf3-Server"    # iperf3 server
@@ -5391,7 +5391,7 @@ class LFJsonCommand(JsonCommand):
         tcp = "tcp"                        #
         udp = "udp"                        #
 
-    def post_add_traffic_profile(self, 
+    def post_add_traffic_profile(self,
                                  instance_count: str = None,               # Number of connections per device
                                  max_pdu: str = None,                      # Minimum PDU size
                                  max_speed: str = None,                    # Opposite-Direction Speed in bps.
@@ -5408,7 +5408,7 @@ class LFJsonCommand(JsonCommand):
                                  errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_traffic_profile(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -5451,7 +5451,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -5473,7 +5473,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_traffic_profile_notes
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_traffic_profile_notes(self, 
+    def post_add_traffic_profile_notes(self,
                                        dut: str = None,                          # Profile Name. [R]
                                        text: str = None,                         # [BLANK] will erase all, any other text
                                        # will be appended to existing text. <tt
@@ -5483,7 +5483,7 @@ class LFJsonCommand(JsonCommand):
                                        errors_warnings: list = None,
                                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_traffic_profile_notes(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -5510,7 +5510,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -5528,7 +5528,7 @@ class LFJsonCommand(JsonCommand):
     class AddVapFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddVapFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -5582,7 +5582,7 @@ class LFJsonCommand(JsonCommand):
 
     class AddVapMode(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_802_11a = 1      # 802.11a
         AUTO = 0           # 802.11g
@@ -5605,7 +5605,7 @@ class LFJsonCommand(JsonCommand):
         bgnAX = 13         # 802.11bgn-AX
         g = 3              # 802.11g
 
-    def post_add_vap(self, 
+    def post_add_vap(self,
                      ap_name: str = None,                      # Name for this Virtual AP, for example: vap0
                      beacon: str = None,                       # The beacon interval, in 1kus (1.024 ms), default 100,
                      # range: 15..65535
@@ -5639,7 +5639,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_vap(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -5702,7 +5702,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -5738,7 +5738,7 @@ class LFJsonCommand(JsonCommand):
     class AddVenueFreq24(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddVenueFreq24, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -5760,7 +5760,7 @@ class LFJsonCommand(JsonCommand):
     class AddVenueFreq5(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddVenueFreq5, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -5802,7 +5802,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AddVenueFreq5 has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_add_venue(self, 
+    def post_add_venue(self,
                        description: str = None,                  # User-supplied description, ie: <tt>Big City Ball
                        # Park</tt>; 47-characters max.
                        freq_24: str = None,                      # Frequency list for 2.4Ghz band, see above.
@@ -5820,7 +5820,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_venue(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -5863,7 +5863,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -5885,7 +5885,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_vlan
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_vlan(self, 
+    def post_add_vlan(self,
                       old_name: str = None,                     # The temporary name, used for configuring un-discovered
                       # hardware.
                       port: str = None,                         # Port number of an existing Ethernet interface. [W]
@@ -5899,7 +5899,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_vlan(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -5934,7 +5934,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -5952,7 +5952,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_voip_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_voip_endp(self, 
+    def post_add_voip_endp(self,
                            alias: str = None,                        # Name of endpoint. [R]
                            auth_user_name: str = None,               # Use this field for authentication user name. AUTO or
                            # blank mean use phone number.
@@ -5987,7 +5987,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_voip_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -6046,7 +6046,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -6080,7 +6080,7 @@ class LFJsonCommand(JsonCommand):
     class AddVrFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddVrFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -6108,7 +6108,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AddVrFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_add_vr(self, 
+    def post_add_vr(self,
                     alias: str = None,                        # Name of virtual router. [R]
                     flags: str = None,                        # Virtual router flags, see above for definitions.
                     height: str = None,                       # Height to be used when drawn in the LANforge-GUI.
@@ -6126,7 +6126,7 @@ class LFJsonCommand(JsonCommand):
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_vr(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -6169,7 +6169,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -6195,7 +6195,7 @@ class LFJsonCommand(JsonCommand):
     class AddVrBgpFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddVrBgpFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -6215,7 +6215,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AddVrBgpFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_add_vr_bgp(self, 
+    def post_add_vr_bgp(self,
                         bgp_id: str = None,                       # BGP Identifier: IPv4 Address
                         cluster_id: str = None,                   # Cluster ID, IPv4 Address. Use NA if not clustering.
                         confed_id: str = None,                    # Confederation ID 1-65535. Use NA if not in a
@@ -6235,7 +6235,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_vr_bgp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -6282,7 +6282,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -6310,7 +6310,7 @@ class LFJsonCommand(JsonCommand):
     class AddVrcxFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(AddVrcxFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -6339,7 +6339,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("AddVrcxFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_add_vrcx(self, 
+    def post_add_vrcx(self,
                       dhcp_dns: str = None,                     # IP Address of DNS server.
                       dhcp_dns6: str = None,                    # IPv6 Address of DNS server.
                       dhcp_domain: str = None,                  # DHCP Domain name to serve.
@@ -6382,7 +6382,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_vrcx(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -6467,7 +6467,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -6510,7 +6510,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_vrcx2
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_vrcx2(self, 
+    def post_add_vrcx2(self,
                        dhcp_ignore1: str = None,                 # MAC address and per 65535 chance MAC should be ignored by
                        # DHCPd, format: MAC-prcnt, example:
                        # 00:11:22:33:44:55-65535
@@ -6537,7 +6537,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_vrcx2(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -6580,7 +6580,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -6602,7 +6602,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_wanpath
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_wanpath(self, 
+    def post_add_wanpath(self,
                          alias: str = None,                        # Name of WanPath. [R]
                          dest_ip: str = None,                      # Selection filter: Destination IP.
                          dest_ip_mask: str = None,                 # Selection filter: Destination IP MASK.
@@ -6661,7 +6661,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_wanpath(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -6746,7 +6746,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -6789,7 +6789,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_wg
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_add_wg(self, 
+    def post_add_wg(self,
                     allowed_ips: str = None,                  # Specify the allowed IPs for this Wireguard interface.
                     endpoint: str = None,                     # The wireguard Endpoint config text.
                     local_dev: str = None,                    # Specify local network device to transport the Wireguard
@@ -6809,7 +6809,7 @@ class LFJsonCommand(JsonCommand):
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_wg(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -6852,7 +6852,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -6877,11 +6877,11 @@ class LFJsonCommand(JsonCommand):
 
     class AddWlEndpWleFlags(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         SHOW_WP = 1      # Show WanPaths in wanlink endpoint table in GUI
 
-    def post_add_wl_endp(self, 
+    def post_add_wl_endp(self,
                          alias: str = None,                        # Name of endpoint. [R]
                          cpu_id: str = None,                       # The CPU/thread that this process should run on
                          # (kernel-mode only).
@@ -6899,7 +6899,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_add_wl_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -6940,7 +6940,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -6961,7 +6961,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#admin
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_admin(self, 
+    def post_admin(self,
                    arg1: str = None,                         # Argument 1: xorp-port | scan-rslts-file | iface-name |
                    # iface-eid | rfgen-message | id | log_file_name
                    arg2: str = None,                         # Argument 2: scan key | message | angle | dest-radio |
@@ -6977,7 +6977,7 @@ class LFJsonCommand(JsonCommand):
                    errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_admin(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7012,7 +7012,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7030,7 +7030,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#apply_vr_cfg
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_apply_vr_cfg(self, 
+    def post_apply_vr_cfg(self,
                           resource: int = None,                     # The number of the resource in question, or 'ALL'. [W]
                           shelf: int = 1,                           # The number of the shelf in question, or 'ALL'.
                           # [R][D:ALL]
@@ -7039,7 +7039,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_apply_vr_cfg(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7066,7 +7066,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7080,7 +7080,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#blink_attenuator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_blink_attenuator(self, 
+    def post_blink_attenuator(self,
                               resource: int = None,                     # Resource number. [W]
                               serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
                               # [W]
@@ -7090,7 +7090,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_blink_attenuator(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7119,7 +7119,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7138,7 +7138,7 @@ class LFJsonCommand(JsonCommand):
     class CShowPortsProbeFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(CShowPortsProbeFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -7160,7 +7160,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("CShowPortsProbeFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_c_show_ports(self, 
+    def post_c_show_ports(self,
                           port: str = None,                         # Port number, or 'all'. [W]
                           probe_flags: str = None,                  # See above, add them together for multiple probings.
                           # Leave blank if you want stats only.
@@ -7171,7 +7171,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_c_show_ports(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7202,7 +7202,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7218,7 +7218,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#cancel_vr_cfg
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_cancel_vr_cfg(self, 
+    def post_cancel_vr_cfg(self,
                            resource: int = None,                     # The number of the resource in question, or 'ALL'. [W]
                            shelf: int = 1,                           # The number of the shelf in question, or 'ALL'.
                            # [R][D:ALL]
@@ -7227,7 +7227,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_cancel_vr_cfg(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7254,7 +7254,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7268,7 +7268,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#clear_cd_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_clear_cd_counters(self, 
+    def post_clear_cd_counters(self,
                                cd_name: str = None,                      # Name of Collision Domain, or 'all'. Null argument
                                # is same as 'all'. [W][D:all]
                                response_json_list: list = None,
@@ -7276,7 +7276,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_clear_cd_counters(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7301,7 +7301,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7318,7 +7318,7 @@ class LFJsonCommand(JsonCommand):
     class ClearCxCountersClearFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(ClearCxCountersClearFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -7336,7 +7336,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("ClearCxCountersClearFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_clear_cx_counters(self, 
+    def post_clear_cx_counters(self,
                                clear_flags: str = None,                  # Optional argument to control clear logic.
                                cx_name: str = None,                      # Name of Cross Connect, or 'all'. Null argument is
                                # same as 'all'. [W][D:all]
@@ -7345,7 +7345,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_clear_cx_counters(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7372,7 +7372,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7390,7 +7390,7 @@ class LFJsonCommand(JsonCommand):
     class ClearEndpCountersClearFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(ClearEndpCountersClearFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -7408,7 +7408,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("ClearEndpCountersClearFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_clear_endp_counters(self, 
+    def post_clear_endp_counters(self,
                                  clear_flags: str = None,                  # Optional argument to control clear logic.
                                  # Ignored if just_latency is specified.
                                  endp_name: str = None,                    # Name of Endpoint, or 'all'. Null argument is
@@ -7422,7 +7422,7 @@ class LFJsonCommand(JsonCommand):
                                  errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_clear_endp_counters(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7453,7 +7453,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7472,19 +7472,19 @@ class LFJsonCommand(JsonCommand):
 
     class ClearGroupClearFlags(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         PORTS_TOO = 1       # Clear this endpoint's port counters as well.
         SEND_EVENT = 2      # Send event when clearing counters.
 
-    def post_clear_group(self, 
+    def post_clear_group(self,
                          name: str = None,                         # The name of the connection group. [W]
                          response_json_list: list = None,
                          debug: bool = False,
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_clear_group(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7509,7 +7509,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7525,14 +7525,14 @@ class LFJsonCommand(JsonCommand):
 
     class ClearPortCountersExtra(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         dhcp4_lease = "dhcp4_lease"    # Remove dhcp lease files for IPv4 DHCP
         dhcp6_lease = "dhcp6_lease"    # Remove dhcp lease files for IPv6 DHCP
         dhcp_leases = "dhcp_leases"    # Remove dhcp lease files for IPv4 and IPv6 DHCP
         mlo_links = "mlo_links"        # Clear (just) the MLO link stats.
 
-    def post_clear_port_counters(self, 
+    def post_clear_port_counters(self,
                                  extra: str = None,                        # Clear something else instead: dhcp4_lease |
                                  # dhcp6_lease | dhcp_leases | mlo_links
                                  port: str = None,                         # The number of the port in question, or 'ALL'.
@@ -7546,7 +7546,7 @@ class LFJsonCommand(JsonCommand):
                                  errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_clear_port_counters(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7577,7 +7577,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7593,7 +7593,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#clear_resource_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_clear_resource_counters(self, 
+    def post_clear_resource_counters(self,
                                      resource: int = None,                     # The number of the resource in question, or
                                      # 'ALL'. [W]
                                      shelf: int = 1,                           # The number of the shelf in question, or
@@ -7603,7 +7603,7 @@ class LFJsonCommand(JsonCommand):
                                      errors_warnings: list = None,
                                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_clear_resource_counters(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7630,7 +7630,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7644,7 +7644,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#clear_wifi_profiles
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_clear_wifi_profiles(self, 
+    def post_clear_wifi_profiles(self,
                                  except_ssid: str = None,                  # Do not delete profiles that reference this
                                  # SSID, NA deletes all.
                                  p_id: str = None,                         # Object identifier: adb-id, or ALL.
@@ -7656,7 +7656,7 @@ class LFJsonCommand(JsonCommand):
                                  errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_clear_wifi_profiles(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7689,7 +7689,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7706,7 +7706,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#clear_wp_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_clear_wp_counters(self, 
+    def post_clear_wp_counters(self,
                                endp_name: str = None,                    # Name of WanLink Endpoint. [W]
                                wp_name: str = None,                      # Name of WanPath to clear.
                                response_json_list: list = None,
@@ -7714,7 +7714,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_clear_wp_counters(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7741,7 +7741,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7755,7 +7755,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#create_client
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_create_client(self, 
+    def post_create_client(self,
                            name: str = None,                         # A single name with no white-spaces (15 characters or
                            # less) [W]
                            password: str = None,                     # Can be blank or 'NA' if no password is set, otherwise
@@ -7767,7 +7767,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_create_client(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7796,7 +7796,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7814,7 +7814,7 @@ class LFJsonCommand(JsonCommand):
 
     class DiagType(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         NA = "NA"                  # everything (default)
         alerts = "alerts"          # alert messages
@@ -7826,7 +7826,7 @@ class LFJsonCommand(JsonCommand):
         license = "license"        # license contents
         shelf = "shelf"            #
 
-    def post_diag(self, 
+    def post_diag(self,
                   arg1: str = None,                         # Optional: Endpoint name to diag.
                   p_type: str = None,                       # Default (blank) is everything, options: alerts, license,
                   # counters, fds, clients, endpoints, shelf, iobuffer.
@@ -7835,7 +7835,7 @@ class LFJsonCommand(JsonCommand):
                   errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_diag(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7862,7 +7862,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7876,7 +7876,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#discover
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_discover(self, 
+    def post_discover(self,
                       option: str = None,                       # See above.
                       resource: int = None,                     # Resource ID. Use if discovering Attenuators or ADB
                       # devices. [W]
@@ -7886,7 +7886,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_discover(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7915,7 +7915,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7930,7 +7930,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#do_pesq
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_do_pesq(self, 
+    def post_do_pesq(self,
                      endp_name: str = None,                    # Name of Endpoint. [W]
                      result_file_name: str = None,             # The name of the file received by the endpoint. [W]
                      response_json_list: list = None,
@@ -7938,7 +7938,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_do_pesq(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -7965,7 +7965,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -7982,11 +7982,11 @@ class LFJsonCommand(JsonCommand):
 
     class FileFileFlags(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         UNLINK_WHEN_DL_COMPLETE = 1      # Remove the file once it has been downloaded.
 
-    def post_file(self, 
+    def post_file(self,
                   card: int = None,                         # Resource ID [W]
                   client_id: str = None,                    # Internal use only.
                   cmd: str = None,                          # Only 'Download' supported for now, 'Upload' reserved for
@@ -8001,7 +8001,7 @@ class LFJsonCommand(JsonCommand):
                   errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_file(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8038,7 +8038,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8057,7 +8057,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#flash_attenuator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_flash_attenuator(self, 
+    def post_flash_attenuator(self,
                               filename: str = None,                     # File to use when uploading to attenuator.
                               resource: int = None,                     # Resource number. [W]
                               serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
@@ -8068,7 +8068,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_flash_attenuator(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8099,7 +8099,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8115,7 +8115,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#getavglatency
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_getavglatency(self, 
+    def post_getavglatency(self,
                            aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
                            cx: str = None,                           # Cross-connect or Connection-Group name [W]
                            response_json_list: list = None,
@@ -8123,7 +8123,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_getavglatency(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8150,7 +8150,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8164,7 +8164,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#getinrxbps
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_getinrxbps(self, 
+    def post_getinrxbps(self,
                         aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                         cx: str = None,                           # Cross-connect or Connection-Group name [W]
                         response_json_list: list = None,
@@ -8172,7 +8172,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_getinrxbps(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8199,7 +8199,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8213,7 +8213,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#getinrxrate
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_getinrxrate(self, 
+    def post_getinrxrate(self,
                          aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                          cx: str = None,                           # Cross-connect or Connection-Group name [W]
                          response_json_list: list = None,
@@ -8221,7 +8221,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_getinrxrate(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8248,7 +8248,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8262,7 +8262,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#getintxrate
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_getintxrate(self, 
+    def post_getintxrate(self,
                          aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                          cx: str = None,                           # Cross-connect or Connection-Group name [W]
                          response_json_list: list = None,
@@ -8270,7 +8270,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_getintxrate(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8297,7 +8297,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8311,7 +8311,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#getipadd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_getipadd(self, 
+    def post_getipadd(self,
                       aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                       cx: str = None,                           # Cross-connect name [W]
                       response_json_list: list = None,
@@ -8319,7 +8319,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_getipadd(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8346,7 +8346,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8360,7 +8360,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#getmac
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_getmac(self, 
+    def post_getmac(self,
                     aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                     cx: str = None,                           # Cross-connect name [W]
                     response_json_list: list = None,
@@ -8368,7 +8368,7 @@ class LFJsonCommand(JsonCommand):
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_getmac(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8395,7 +8395,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8409,7 +8409,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#getmask
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_getmask(self, 
+    def post_getmask(self,
                      aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                      cx: str = None,                           # Cross-connect name
                      response_json_list: list = None,
@@ -8417,7 +8417,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_getmask(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8444,7 +8444,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8458,7 +8458,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#getpktdrops
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_getpktdrops(self, 
+    def post_getpktdrops(self,
                          aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
                          cx: str = None,                           # Cross-connect or Connection-Group name [W]
                          response_json_list: list = None,
@@ -8466,7 +8466,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_getpktdrops(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8493,7 +8493,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8507,7 +8507,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#getrxendperrpkts
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_getrxendperrpkts(self, 
+    def post_getrxendperrpkts(self,
                               aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
                               cx: str = None,                           # Cross-connect or Connection-Group name [W]
                               response_json_list: list = None,
@@ -8515,7 +8515,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_getrxendperrpkts(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8542,7 +8542,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8556,7 +8556,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#getrxpkts
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_getrxpkts(self, 
+    def post_getrxpkts(self,
                        aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                        cx: str = None,                           # Cross-connect or Connection-Group name [W]
                        response_json_list: list = None,
@@ -8564,7 +8564,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_getrxpkts(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8591,7 +8591,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8605,7 +8605,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#getrxporterrpkts
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_getrxporterrpkts(self, 
+    def post_getrxporterrpkts(self,
                               aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
                               cx: str = None,                           # Cross-connect name [W]
                               response_json_list: list = None,
@@ -8613,7 +8613,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_getrxporterrpkts(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8640,7 +8640,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8654,7 +8654,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#gettxpkts
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_gettxpkts(self, 
+    def post_gettxpkts(self,
                        aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                        cx: str = None,                           # Cross-connect or Connection-Group name [W]
                        response_json_list: list = None,
@@ -8662,7 +8662,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_gettxpkts(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8689,7 +8689,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8703,7 +8703,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#gossip
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_gossip(self, 
+    def post_gossip(self,
                     message: str = None,                      # Message to show to others currently logged on. <tt
                     # escapearg='false'>Unescaped Value</tt> [W]
                     response_json_list: list = None,
@@ -8711,7 +8711,7 @@ class LFJsonCommand(JsonCommand):
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_gossip(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8736,7 +8736,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8749,14 +8749,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#help
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_help(self, 
+    def post_help(self,
                   command: str = None,                      # The command to get help for. Can be 'all', or blank.
                   response_json_list: list = None,
                   debug: bool = False,
                   errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_help(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8781,7 +8781,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8794,7 +8794,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#init_wiser
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_init_wiser(self, 
+    def post_init_wiser(self,
                         file_name: str = None,                    # The WISER file name for the desired emulation, or 'NA'
                         # for empty string.
                         node_count: str = None,                   # The number of WISER nodes for the desired emulation, or
@@ -8806,7 +8806,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_init_wiser(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8837,7 +8837,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8853,7 +8853,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#ios
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_ios(self, 
+    def post_ios(self,
                  arg1: str = None,                         # arg1
                  arg10: str = None,                        # arg10
                  arg11: str = None,                        # arg11
@@ -8880,7 +8880,7 @@ class LFJsonCommand(JsonCommand):
                  errors_warnings: list = None,
                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_ios(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -8945,7 +8945,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -8978,7 +8978,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#licenses
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_licenses(self, 
+    def post_licenses(self,
                       popup: str = None,                        # If 'popup', then cause a GUI popup msg, otherwise, just
                       # show text.
                       show_file: str = None,                    # If 'yes', then show the license file, not the parsed
@@ -8988,7 +8988,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_licenses(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9015,7 +9015,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9029,7 +9029,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#load
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_load(self, 
+    def post_load(self,
                   action: str = None,                       # Should be 'append' or 'overwrite'. [W]
                   clean_chambers: str = None,               # If yes, then Chambers will be cleaned up when overwrite is
                   # selected, otherwise they will be kept.
@@ -9043,7 +9043,7 @@ class LFJsonCommand(JsonCommand):
                   errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_load(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9076,7 +9076,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9096,7 +9096,7 @@ class LFJsonCommand(JsonCommand):
 
     class LogCaptureType(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         adb = "adb"                  #
         hostapd = "hostapd"          #
@@ -9104,7 +9104,7 @@ class LFJsonCommand(JsonCommand):
         lflogs = "lflogs"            #
         supplicant = "supplicant"    #
 
-    def post_log_capture(self, 
+    def post_log_capture(self,
                          destination: str = None,                  # Where to save the file to on the LANforge resource. If
                          # 'stdout', then content will be passed back as a keyed
                          # text message. [R]
@@ -9122,7 +9122,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_log_capture(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9159,7 +9159,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9182,7 +9182,7 @@ class LFJsonCommand(JsonCommand):
     class LogLevelLevel(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(LogLevelLevel, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -9214,7 +9214,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("LogLevelLevel has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_log_level(self, 
+    def post_log_level(self,
                        level: str = None,                        # Integer corresponding to the logging flags. [W]
                        target: str = None,                       # Options: 'gnu' | [file-endp-name].
                        response_json_list: list = None,
@@ -9222,7 +9222,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_log_level(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9249,7 +9249,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9263,7 +9263,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#log_msg
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_log_msg(self, 
+    def post_log_msg(self,
                      message: str = None,                      # Message to log. <tt escapearg='false'>Unescaped Value</tt>
                      # [W]
                      response_json_list: list = None,
@@ -9271,7 +9271,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_log_msg(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9296,7 +9296,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9309,7 +9309,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#login
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_login(self, 
+    def post_login(self,
                    name: str = None,                         # A single name with no white-spaces (15 characters or less)
                    # [W]
                    password: str = None,                     # Can be blank or 'NA' if no password is set, otherwise must be
@@ -9319,7 +9319,7 @@ class LFJsonCommand(JsonCommand):
                    errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_login(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9346,7 +9346,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9360,13 +9360,13 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#motd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_motd(self, 
+    def post_motd(self,
                   response_json_list: list = None,
                   debug: bool = False,
                   errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_motd(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9387,7 +9387,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9399,7 +9399,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#nc_show_cd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_nc_show_cd(self, 
+    def post_nc_show_cd(self,
                         collision_domain: str = None,             # Name of the Collision Domain, or 'all'. [W]
                         resource: int = None,                     # Resource number, or 'all'. [W]
                         shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -9408,7 +9408,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_nc_show_cd(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9437,7 +9437,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9452,7 +9452,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#nc_show_channel_groups
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_nc_show_channel_groups(self, 
+    def post_nc_show_channel_groups(self,
                                     channel_name: str = None,                 # Name of the channel, or 'all'. [W]
                                     resource: int = None,                     # Resource number, or 'all'. [W]
                                     shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -9461,7 +9461,7 @@ class LFJsonCommand(JsonCommand):
                                     errors_warnings: list = None,
                                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_nc_show_channel_groups(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9490,7 +9490,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9505,7 +9505,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#nc_show_endpoints
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_nc_show_endpoints(self, 
+    def post_nc_show_endpoints(self,
                                endpoint: str = None,                     # Name of endpoint, or 'all'. [W]
                                extra: str = None,                        # See above.
                                response_json_list: list = None,
@@ -9513,7 +9513,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_nc_show_endpoints(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9540,7 +9540,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9554,14 +9554,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#nc_show_pesq
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_nc_show_pesq(self, 
+    def post_nc_show_pesq(self,
                           endpoint: str = None,                     # Name of endpoint, or 'all'. [W]
                           response_json_list: list = None,
                           debug: bool = False,
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_nc_show_pesq(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9586,7 +9586,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9603,7 +9603,7 @@ class LFJsonCommand(JsonCommand):
     class NcShowPortsProbeFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(NcShowPortsProbeFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -9625,7 +9625,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("NcShowPortsProbeFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_nc_show_ports(self, 
+    def post_nc_show_ports(self,
                            port: str = None,                         # Port number, or 'all'. [W]
                            probe_flags: str = None,                  # See above, add them together for multiple probings.
                            # Leave blank if you want stats only.
@@ -9636,7 +9636,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_nc_show_ports(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9667,7 +9667,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9683,7 +9683,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#nc_show_ppp_links
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_nc_show_ppp_links(self, 
+    def post_nc_show_ppp_links(self,
                                link_num: str = None,                     # Ppp-Link number of the span, or 'all'. [W]
                                resource: int = None,                     # Resource number, or 'all'. [W]
                                shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -9692,7 +9692,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_nc_show_ppp_links(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9721,7 +9721,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9736,7 +9736,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#nc_show_spans
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_nc_show_spans(self, 
+    def post_nc_show_spans(self,
                            resource: int = None,                     # Resource number, or 'all'. [W]
                            shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
                            span_number: str = None,                  # Span-Number of the span, or 'all'. [W]
@@ -9745,7 +9745,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_nc_show_spans(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9774,7 +9774,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9789,7 +9789,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#nc_show_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_nc_show_vr(self, 
+    def post_nc_show_vr(self,
                         resource: int = None,                     # Resource number, or 'all'. [W]
                         router: str = None,                       # Name of the Virtual Router, or 'all'. [W]
                         shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -9798,7 +9798,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_nc_show_vr(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9827,7 +9827,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9842,7 +9842,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#nc_show_vrcx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_nc_show_vrcx(self, 
+    def post_nc_show_vrcx(self,
                           cx_name: str = None,                      # Name of the Virtual Router Connection, or 'all'. [W]
                           resource: int = None,                     # Resource number, or 'all'. [W]
                           shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -9851,7 +9851,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_nc_show_vrcx(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9880,7 +9880,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9895,7 +9895,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#notify_dhcp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_notify_dhcp(self, 
+    def post_notify_dhcp(self,
                          cmd: str = None,                          # set/down/timeout/info: What does DHCP want us to do?
                          # [W]
                          netmask: str = None,                      # New subnet mask.
@@ -9912,7 +9912,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_notify_dhcp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -9953,7 +9953,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -9974,7 +9974,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#port_reset_completed
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_port_reset_completed(self, 
+    def post_port_reset_completed(self,
                                   extra: str = None,                        # IP for SECIP, blank for others.
                                   port: str = None,                         # The port in question. [W]
                                   p_type: str = None,                       # SUNOS, NORMAL, or SECIP..let us know what kind
@@ -9984,7 +9984,7 @@ class LFJsonCommand(JsonCommand):
                                   errors_warnings: list = None,
                                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_port_reset_completed(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10013,7 +10013,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10028,7 +10028,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#probe_port
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_probe_port(self, 
+    def post_probe_port(self,
                         key: str = None,                          # Unique identifier for this request. Usually left
                         # blank.<br/> Use 'probe_port.quiet.[EID]' to suppress
                         # popup.
@@ -10040,7 +10040,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_probe_port(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10071,7 +10071,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10087,7 +10087,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#probe_ports
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_probe_ports(self, 
+    def post_probe_ports(self,
                          resource: int = None,                     # Resource number, or 'all'. [W]
                          shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
                          response_json_list: list = None,
@@ -10095,7 +10095,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_probe_ports(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10122,7 +10122,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10136,14 +10136,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#quiesce_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_quiesce_endp(self, 
+    def post_quiesce_endp(self,
                           endp_name: str = None,                    # Name of the endpoint, or 'all'. [R]
                           response_json_list: list = None,
                           debug: bool = False,
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_quiesce_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10168,7 +10168,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10181,14 +10181,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#quiesce_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_quiesce_group(self, 
+    def post_quiesce_group(self,
                            name: str = None,                         # The name of the connection group, or 'all' [R]
                            response_json_list: list = None,
                            debug: bool = False,
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_quiesce_group(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10213,7 +10213,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10226,13 +10226,13 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#quit
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_quit(self, 
+    def post_quit(self,
                   response_json_list: list = None,
                   debug: bool = False,
                   errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_quit(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10253,7 +10253,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10265,7 +10265,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#reboot_os
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_reboot_os(self, 
+    def post_reboot_os(self,
                        resource: int = None,                     # Resource number, or ALL. [W]
                        shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
                        response_json_list: list = None,
@@ -10273,7 +10273,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_reboot_os(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10300,7 +10300,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10314,7 +10314,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#report
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_report(self, 
+    def post_report(self,
                     reporting_on: str = None,                 # Should we globally enable/disable reporting. (YES, NO or NA)
                     rpt_dir: str = None,                      # Directory in which reports should be saved. [W]
                     save_endps: str = None,                   # Should we save endpoint reports or not. (YES, NO or NA)
@@ -10325,7 +10325,7 @@ class LFJsonCommand(JsonCommand):
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_report(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10358,7 +10358,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10378,13 +10378,13 @@ class LFJsonCommand(JsonCommand):
 
     class ResetPortPreIfdown(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         P_IN = "P-IN"      # Only call the portal login (do not reset drivers/supplicant/dhcp)
         P_OUT = "P-OUT"    # Only call the portal logout (do not reset drivers/supplicant/dhcp)
         YES = "YES"        # (include logout) Call portal-bot.pl ... <b>--logout</b> before going down.
 
-    def post_reset_port(self, 
+    def post_reset_port(self,
                         port: str = None,                         # Port number to reset, or ALL. [W]
                         pre_ifdown: str = None,                   # See above. Leave blank or use NA if unsure.
                         reset_ospf: str = None,                   # If set to 'NO' or 'NA', then OSPF will not be updated.
@@ -10396,7 +10396,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_reset_port(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10429,7 +10429,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10446,7 +10446,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#reset_serial_span
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_reset_serial_span(self, 
+    def post_reset_serial_span(self,
                                resource: int = None,                     # Resource (machine) number. [W]
                                shelf: int = 1,                           # Shelf number [R][D:1]
                                span: str = None,                         # Serial-Span number to reset. [W]
@@ -10455,7 +10455,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_reset_serial_span(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10484,7 +10484,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10499,7 +10499,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_adb
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_adb(self, 
+    def post_rm_adb(self,
                     adb_id: str = None,                       # Android device identifier (serial number).
                     resource: int = None,                     # Resource number. [W]
                     shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
@@ -10508,7 +10508,7 @@ class LFJsonCommand(JsonCommand):
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_adb(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10537,7 +10537,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10552,7 +10552,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_attenuator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_attenuator(self, 
+    def post_rm_attenuator(self,
                            resource: int = None,                     # Resource number [W]
                            serno: str = None,                        # Serial number for requested Attenuator. [W]
                            shelf: int = 1,                           # Shelf number, usually 1 [R][D:1]
@@ -10561,7 +10561,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_attenuator(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10590,7 +10590,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10605,14 +10605,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_cd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_cd(self, 
+    def post_rm_cd(self,
                    cd: str = None,                           # Name of Collision Domain. [W]
                    response_json_list: list = None,
                    debug: bool = False,
                    errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_cd(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10637,7 +10637,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10650,7 +10650,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_cd_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_cd_endp(self, 
+    def post_rm_cd_endp(self,
                         cd: str = None,                           # Name of Collision Domain. [W]
                         endp: str = None,                         # Endpoint name/id. [W]
                         response_json_list: list = None,
@@ -10658,7 +10658,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_cd_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10685,7 +10685,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10699,7 +10699,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_cd_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_cd_vr(self, 
+    def post_rm_cd_vr(self,
                       cd: str = None,                           # Name of Collision Domain. [W]
                       endp: str = None,                         # Virtual-Router name/id. [W]
                       response_json_list: list = None,
@@ -10707,7 +10707,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_cd_vr(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10734,7 +10734,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10748,7 +10748,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_cell_emulator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_cell_emulator(self, 
+    def post_rm_cell_emulator(self,
                               resource: int = None,                     # Resource number. [W]
                               serno: str = None,                        # Cell emulator serial number
                               shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
@@ -10757,7 +10757,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_cell_emulator(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10786,7 +10786,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10801,14 +10801,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_chamber
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_chamber(self, 
+    def post_rm_chamber(self,
                         chamber: str = None,                      # Chamber name, or 'ALL' [W]
                         response_json_list: list = None,
                         debug: bool = False,
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_chamber(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10833,7 +10833,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10846,7 +10846,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_chamber_path
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_chamber_path(self, 
+    def post_rm_chamber_path(self,
                              chamber: str = None,                      # Chamber Name. [W]
                              path: str = None,                         # Path Name, use 'ALL' to delete all paths. [W]
                              response_json_list: list = None,
@@ -10854,7 +10854,7 @@ class LFJsonCommand(JsonCommand):
                              errors_warnings: list = None,
                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_chamber_path(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10881,7 +10881,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10895,7 +10895,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_channel_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_channel_group(self, 
+    def post_rm_channel_group(self,
                               channel_name: str = None,                 # Name of the channel, or 'all'. [W]
                               resource: int = None,                     # Resource number, or 'all'. [W]
                               shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -10904,7 +10904,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_channel_group(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10933,7 +10933,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10948,7 +10948,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_client
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_client(self, 
+    def post_rm_client(self,
                        client_name: str = None,                  # Name of the client profile you wish to remove. [W]
                        client_password: str = None,              # Client password. Not required if we are super-user.
                        response_json_list: list = None,
@@ -10956,7 +10956,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_client(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -10983,7 +10983,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -10997,7 +10997,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_cx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_cx(self, 
+    def post_rm_cx(self,
                    cx_name: str = None,                      # Name of the cross-connect, or 'all'. [W]
                    test_mgr: str = None,                     # Name of test-mgr, or 'all'. [W]
                    response_json_list: list = None,
@@ -11005,7 +11005,7 @@ class LFJsonCommand(JsonCommand):
                    errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_cx(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11032,7 +11032,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11046,14 +11046,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_db
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_db(self, 
+    def post_rm_db(self,
                    db_name: str = None,                      # Name of the database to delete. [W]
                    response_json_list: list = None,
                    debug: bool = False,
                    errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_db(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11078,7 +11078,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11091,14 +11091,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_dut
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_dut(self, 
+    def post_rm_dut(self,
                     shelf: int = 1,                           # DUT name, or 'ALL' [W]
                     response_json_list: list = None,
                     debug: bool = False,
                     errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_dut(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11123,7 +11123,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11136,14 +11136,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_endp(self, 
+    def post_rm_endp(self,
                      endp_name: str = None,                    # Name of the endpoint, or 'YES_ALL'. [W]
                      response_json_list: list = None,
                      debug: bool = False,
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11168,7 +11168,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11181,14 +11181,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_event
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_event(self, 
+    def post_rm_event(self,
                       event_id: str = None,                     # Numeric event-id, or 'all' [W]
                       response_json_list: list = None,
                       debug: bool = False,
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_event(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11213,7 +11213,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11226,14 +11226,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_group(self, 
+    def post_rm_group(self,
                       name: str = None,                         # The name of the connection group. [W]
                       response_json_list: list = None,
                       debug: bool = False,
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_group(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11258,7 +11258,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11271,7 +11271,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_ppp_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_ppp_link(self, 
+    def post_rm_ppp_link(self,
                          resource: int = None,                     # Resource number that holds this PppLink. [W]
                          shelf: int = 1,                           # Name/id of the shelf. [R][D:1]
                          unit_num: str = None,                     # Unit-Number for the PppLink to be deleted. [W]
@@ -11280,7 +11280,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_ppp_link(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11309,7 +11309,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11324,14 +11324,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_profile
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_profile(self, 
+    def post_rm_profile(self,
                         name: str = None,                         # Profile name, or 'ALL' [W]
                         response_json_list: list = None,
                         debug: bool = False,
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_profile(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11356,7 +11356,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11369,7 +11369,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_resource
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_resource(self, 
+    def post_rm_resource(self,
                          resource: int = None,                     # Resource number. [W]
                          shelf: int = 1,                           # Shelf number. [R][D:1]
                          response_json_list: list = None,
@@ -11377,7 +11377,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_resource(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11404,7 +11404,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11418,7 +11418,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_rfgen
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_rfgen(self, 
+    def post_rm_rfgen(self,
                       p_id: str = None,                         # RF Generator ID (serial-number) [W]
                       resource: int = None,                     # Resource number [W]
                       shelf: int = 1,                           # Shelf number, usually 1 [R][D:1]
@@ -11427,7 +11427,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_rfgen(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11456,7 +11456,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11471,7 +11471,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_sec_ip
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_sec_ip(self, 
+    def post_rm_sec_ip(self,
                        ip_list: str = None,                      # IP1/prefix,IP2/prefix,...IPZ/prefix, or ALL [W]
                        port: str = None,                         # Name of network device (Port) from which these IPs will
                        # be removed. [W]
@@ -11482,7 +11482,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_sec_ip(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11513,7 +11513,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11529,7 +11529,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_span
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_span(self, 
+    def post_rm_span(self,
                      resource: int = None,                     # Resource number, or 'all'. [W]
                      shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
                      span_num: str = None,                     # Span-Number of the channel, or 'all'. [W]
@@ -11538,7 +11538,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_span(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11567,7 +11567,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11582,14 +11582,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_test_mgr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_test_mgr(self, 
+    def post_rm_test_mgr(self,
                          test_mgr: str = None,                     # Name of the test manager to be removed. [W]
                          response_json_list: list = None,
                          debug: bool = False,
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_test_mgr(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11614,7 +11614,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11627,7 +11627,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_text_blob
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_text_blob(self, 
+    def post_rm_text_blob(self,
                           name: str = None,                         # Text Blob Name, or 'ALL' [W]
                           p_type: str = None,                       # Text Blob type, or 'ALL' [W]
                           response_json_list: list = None,
@@ -11635,7 +11635,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_text_blob(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11662,7 +11662,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11676,7 +11676,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_tgcx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_tgcx(self, 
+    def post_rm_tgcx(self,
                      cxname: str = None,                       # The name of the CX. [W]
                      tgname: str = None,                       # The name of the connection group. [W]
                      response_json_list: list = None,
@@ -11684,7 +11684,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_tgcx(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11711,7 +11711,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11725,7 +11725,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_threshold
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_threshold(self, 
+    def post_rm_threshold(self,
                           endp: str = None,                         # Endpoint name or ID. [W]
                           thresh_id: str = None,                    # Threshold ID to remove. Use 'all' to remove all. [W]
                           response_json_list: list = None,
@@ -11733,7 +11733,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_threshold(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11760,7 +11760,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11774,14 +11774,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_traffic_profile
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_traffic_profile(self, 
+    def post_rm_traffic_profile(self,
                                 name: str = None,                         # Profile name, or 'ALL' [W]
                                 response_json_list: list = None,
                                 debug: bool = False,
                                 errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_traffic_profile(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11806,7 +11806,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11819,7 +11819,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_venue
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_venue(self, 
+    def post_rm_venue(self,
                       resource: int = None,                     # Resource number, or 'ALL' [W]
                       shelf: int = 1,                           # Shelf number. [R][D:1]
                       venu_id: str = None,                      # Number to uniquely identify this venue on this resource,
@@ -11829,7 +11829,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_venue(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11858,7 +11858,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11873,7 +11873,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_vlan
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_vlan(self, 
+    def post_rm_vlan(self,
                      port: str = None,                         # Port number or name of the virtual interface. [W]
                      resource: int = None,                     # Resource number. [W]
                      shelf: int = 1,                           # Shelf number. [R][D:1]
@@ -11882,7 +11882,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_vlan(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11911,7 +11911,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11926,7 +11926,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_vr(self, 
+    def post_rm_vr(self,
                    resource: int = None,                     # Resource number, or 'all'. [W]
                    router_name: str = None,                  # Virtual Router name, or 'all'. [W]
                    shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -11935,7 +11935,7 @@ class LFJsonCommand(JsonCommand):
                    errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_vr(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -11964,7 +11964,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -11979,7 +11979,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_vrcx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_vrcx(self, 
+    def post_rm_vrcx(self,
                      connection_name: str = None,              # Virtual Router Connection name, or 'all'. [W]
                      resource: int = None,                     # Resource number, or 'all'. [W]
                      shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -11993,7 +11993,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_vrcx(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12026,7 +12026,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12043,7 +12043,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rm_wanpath
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rm_wanpath(self, 
+    def post_rm_wanpath(self,
                         endp_name: str = None,                    # Name of the endpoint. [W]
                         wp_name: str = None,                      # Name of the wanpath. [W]
                         response_json_list: list = None,
@@ -12051,7 +12051,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rm_wanpath(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12078,7 +12078,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12092,7 +12092,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#rpt_script
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_rpt_script(self, 
+    def post_rpt_script(self,
                         endp: str = None,                         # Endpoint name or ID. [W]
                         flags: str = None,                        # See above for description of the defined flags.
                         group_action: str = None,                 # All or Sequential.
@@ -12105,7 +12105,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_rpt_script(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12142,7 +12142,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12164,13 +12164,13 @@ class LFJsonCommand(JsonCommand):
 
     class ScanWifiExtra(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         NA = "NA"                                      # (or left blank) the system does a full scan
         dump = "dump"                                  # then only cached values are returned
         trigger_freq__freq_ = "trigger freq [freq]"    # scan exactly those frequencies
 
-    def post_scan_wifi(self, 
+    def post_scan_wifi(self,
                        extra: str = None,                        # Extra arguments to the scan script, see above.
                        key: str = None,                          # Unique identifier for this request. Usually left blank.
                        port: str = None,                         # Port number or name of the virtual interface. [W]
@@ -12181,7 +12181,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_scan_wifi(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12214,7 +12214,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12235,7 +12235,7 @@ class LFJsonCommand(JsonCommand):
     class SetArmInfoArmFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetArmInfoArmFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -12256,7 +12256,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("SetArmInfoArmFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_set_arm_info(self, 
+    def post_set_arm_info(self,
                           arm_flags: str = None,                    # Armageddon-related flags, see above for details.
                           burst: str = None,                        # Burst amount, can significantly improve throughput
                           # with some modern drivers, similar to 'multi_pkts', and
@@ -12287,7 +12287,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_arm_info(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12348,7 +12348,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12382,12 +12382,12 @@ class LFJsonCommand(JsonCommand):
 
     class SetAttenuatorMode(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_0 = "0"    # Normal
         p_1 = "1"    # Pulse mode (API Tech 4205A modules directly connected via USB only)
 
-    def post_set_attenuator(self, 
+    def post_set_attenuator(self,
                             atten_count: str = None,                  # For cases where we are creating/setting a phantom
                             # attenuator.
                             atten_idx: str = None,                    # Attenuator index, or 'all'. [W]
@@ -12417,7 +12417,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_attenuator(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12468,7 +12468,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12494,7 +12494,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_chamber
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_chamber(self, 
+    def post_set_chamber(self,
                          chamber: str = None,                      # Chamber name [W]
                          cur_rotation: str = None,                 # Primarily used to store the last known rotation for
                          # turntables that do not report absolute position. Use NA
@@ -12508,7 +12508,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_chamber(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12543,7 +12543,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12561,7 +12561,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_cx_report_timer
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_cx_report_timer(self, 
+    def post_set_cx_report_timer(self,
                                  cx_name: str = None,                      # Name of cross-connect, or 'all'. [W]
                                  cxonly: str = None,                       # If you want to set the timer for ONLY the CX,
                                  # and not the endpoints, enter 'cxonly'.
@@ -12574,7 +12574,7 @@ class LFJsonCommand(JsonCommand):
                                  errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_cx_report_timer(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12605,7 +12605,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12624,7 +12624,7 @@ class LFJsonCommand(JsonCommand):
 
     class SetCxStateCxState(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         DELETED = "DELETED"    # Deletes the CX(s).
         QUIESCE = "QUIESCE"    # Stop transmitting and gracefully stop cross-connect.
@@ -12632,7 +12632,7 @@ class LFJsonCommand(JsonCommand):
         STOPPED = "STOPPED"    # Sets the CX(s) in the stopped state.
         SWITCH = "SWITCH"      # Sets the CX(s) in the running state, stopping any conflicting tests.
 
-    def post_set_cx_state(self, 
+    def post_set_cx_state(self,
                           cx_name: str = None,                      # Name of the cross-connect, or 'all'. [W]
                           cx_state: str = None,                     # One of: RUNNING, SWITCH, QUIESCE, STOPPED, or DELETED.
                           # [W]
@@ -12642,7 +12642,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_cx_state(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12671,7 +12671,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12686,7 +12686,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_endp_addr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_endp_addr(self, 
+    def post_set_endp_addr(self,
                            ip: str = None,                           # The IP Address. Used for TCP/IP and UDP/IP protocols.
                            mac: str = None,                          # The MAC address. Only needed for LANforge protocol
                            # Endpoints.
@@ -12700,7 +12700,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_endp_addr(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12733,7 +12733,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12750,7 +12750,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_endp_details
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_endp_details(self, 
+    def post_set_endp_details(self,
                               conn_timeout: str = None,                 # For TCP, the max time in miliseconds to wait for
                               # connection to establish.
                               dst_mac: str = None,                      # Destination MAC address, used for custom Ethernet
@@ -12784,7 +12784,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_endp_details(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12841,7 +12841,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12873,12 +12873,12 @@ class LFJsonCommand(JsonCommand):
 
     class SetEndpFilePlayback(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         OFF = "OFF"    # off
         ON = "ON"      # on
 
-    def post_set_endp_file(self, 
+    def post_set_endp_file(self,
                            file: str = None,                         # The file name to read the playback packets from.
                            name: str = None,                         # The name of the endpoint we are configuring. [R]
                            playback: str = None,                     # Should we playback the capture or not? ON or OFF. [R]
@@ -12887,7 +12887,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_endp_file(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -12916,7 +12916,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -12934,7 +12934,7 @@ class LFJsonCommand(JsonCommand):
 
     class SetEndpFlagFlag(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         AdvLatency = "AdvLatency"                          # Enable Advanced Latency Reporting, only valid for L3
         AdvLatencyOneWay = "AdvLatencyOneWay"              # Report Advanced Latency for one-way (Rx) traffic,
@@ -13001,7 +13001,7 @@ class LFJsonCommand(JsonCommand):
         VAD = "VAD"                                        # Enable VAD
         VerifySSLServer = "VerifySSLServer"                # Veify the SSL sever
 
-    def post_set_endp_flag(self, 
+    def post_set_endp_flag(self,
                            flag: str = None,                         # The name of the flag. [R]
                            name: str = None,                         # The name of the endpoint we are configuring. [R]
                            val: str = None,                          # Either 1 (for on), or 0 (for off). [R,0-1]
@@ -13010,7 +13010,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_endp_flag(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13039,7 +13039,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13057,7 +13057,7 @@ class LFJsonCommand(JsonCommand):
 
     class SetEndpPayloadPayloadType(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         PRBS_11_8_10 = "PRBS_11_8_10"    # PRBS (see above)
         PRBS_15_0_14 = "PRBS_15_0_14"    # PRBS (see above)
@@ -13071,7 +13071,7 @@ class LFJsonCommand(JsonCommand):
         random_fixed = "random_fixed"    # means generate one random payload, and send it over and over again.
         zeros = "zeros"                  # Payload is all zeros (00).
 
-    def post_set_endp_payload(self, 
+    def post_set_endp_payload(self,
                               name: str = None,                         # The name of the endpoint we are configuring. [R]
                               payload: str = None,                      # For custom payloads, enter the payload in hex, up
                               # to 2048 bytes. <tt escapearg='false'>Unescaped
@@ -13083,7 +13083,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_endp_payload(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13112,7 +13112,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13127,7 +13127,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_endp_pld_bounds
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_endp_pld_bounds(self, 
+    def post_set_endp_pld_bounds(self,
                                  is_random: str = None,                    # YES if random, anything else for NO.
                                  max_pld_size: str = None,                 # The maximum payload size, in bytes.
                                  min_pld_size: str = None,                 # The minimum payload size, in bytes.
@@ -13140,7 +13140,7 @@ class LFJsonCommand(JsonCommand):
                                  errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_endp_pld_bounds(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13173,7 +13173,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13190,7 +13190,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_endp_proxy
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_endp_proxy(self, 
+    def post_set_endp_proxy(self,
                             enabled: str = None,                      # YES or NO to enable or disable proxying.
                             endp_name: str = None,                    # Name of endpoint. [W]
                             proxy_ip: str = None,                     # Proxy IP Address.
@@ -13200,7 +13200,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_endp_proxy(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13231,7 +13231,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13247,7 +13247,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_endp_quiesce
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_endp_quiesce(self, 
+    def post_set_endp_quiesce(self,
                               name: str = None,                         # The name of the endpoint we are configuring. [R]
                               quiesce: str = None,                      # The number of seconds to quiesce this endpoint
                               # when told to quiesce. [R]
@@ -13256,7 +13256,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_endp_quiesce(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13283,7 +13283,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13297,7 +13297,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_endp_report_timer
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_endp_report_timer(self, 
+    def post_set_endp_report_timer(self,
                                    endp_name: str = None,                    # Name of endpoint. [R]
                                    milliseconds: str = None,                 # Report timer length in milliseconds.
                                    # [W,250-60000][D:5000]
@@ -13306,7 +13306,7 @@ class LFJsonCommand(JsonCommand):
                                    errors_warnings: list = None,
                                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_endp_report_timer(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13333,7 +13333,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13350,14 +13350,14 @@ class LFJsonCommand(JsonCommand):
 
     class SetEndpTosTos(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         LOWCOST = "LOWCOST"            #
         LOWDELAY = "LOWDELAY"          #
         RELIABILITY = "RELIABILITY"    #
         THROUGHPUT = "THROUGHPUT"      #
 
-    def post_set_endp_tos(self, 
+    def post_set_endp_tos(self,
                           name: str = None,                         # The name of the endpoint we are configuring. [R]
                           priority: str = None,                     # The socket priority, can be any positive number.
                           tos: str = None,                          # The Type of Service, can be HEX, see above.
@@ -13366,7 +13366,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_endp_tos(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13395,7 +13395,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13410,7 +13410,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_endp_tx_bounds
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_endp_tx_bounds(self, 
+    def post_set_endp_tx_bounds(self,
                                 is_bursty: str = None,                    # YES if bursty, anything else for NO.
                                 max_tx_rate: str = None,                  # The maximum transmit rate, in bits per second
                                 # (bps).
@@ -13422,7 +13422,7 @@ class LFJsonCommand(JsonCommand):
                                 errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_endp_tx_bounds(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13453,7 +13453,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13473,7 +13473,7 @@ class LFJsonCommand(JsonCommand):
     class SetEventInterestEiFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetEventInterestEiFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -13493,7 +13493,7 @@ class LFJsonCommand(JsonCommand):
     class SetEventInterestEvents1(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetEventInterestEvents1, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -13543,7 +13543,7 @@ class LFJsonCommand(JsonCommand):
     class SetEventInterestEvents2(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetEventInterestEvents2, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -13575,7 +13575,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("SetEventInterestEvents2 has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_set_event_interest(self, 
+    def post_set_event_interest(self,
                                 ei_flags: str = None,                     # Event Interest flags, see above. [W]
                                 event_cnt: str = None,                    # Maximum number of events to store.
                                 events1: str = None,                      # See description for possible values.
@@ -13588,7 +13588,7 @@ class LFJsonCommand(JsonCommand):
                                 errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_event_interest(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13625,7 +13625,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13647,7 +13647,7 @@ class LFJsonCommand(JsonCommand):
 
     class SetEventPriorityEvent(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         Bad_MAC = 20            # Invalid MAC address configured.
         Cleared = 13            # Counters were cleared for some entity.
@@ -13674,7 +13674,7 @@ class LFJsonCommand(JsonCommand):
 
     class SetEventPriorityPriority(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         AUTO = "AUTO"            # Let event creator decide the priority.
         CRITICAL = "CRITICAL"    #
@@ -13683,7 +13683,7 @@ class LFJsonCommand(JsonCommand):
         INFO = "INFO"            #
         WARNING = "WARNING"      #
 
-    def post_set_event_priority(self, 
+    def post_set_event_priority(self,
                                 event: str = None,                        # Number or name for the event, see above.
                                 # [R,0-21]
                                 priority: str = None,                     # Number or name for the priority. [R,0-5]
@@ -13692,7 +13692,7 @@ class LFJsonCommand(JsonCommand):
                                 errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_event_priority(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13719,7 +13719,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13733,7 +13733,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_fe_info
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_fe_info(self, 
+    def post_set_fe_info(self,
                          directory: str = None,                    # The directory to read/write in. Absolute path
                          # suggested.
                          io_direction: str = None,                 # Should we be reading or writing: options: read, write
@@ -13751,7 +13751,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_fe_info(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13794,7 +13794,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13819,7 +13819,7 @@ class LFJsonCommand(JsonCommand):
 
     class SetFlagFlag(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         brief = "brief"                              # Request more abbreviated output to various commands.
         prompt_newlines = "prompt_newlines"          # Add a newline after every prompt. Can help with scripts
@@ -13829,7 +13829,7 @@ class LFJsonCommand(JsonCommand):
         stream_events = "stream_events"              # Normally the CLI will not show Events (as seen in the
         # +Event
 
-    def post_set_flag(self, 
+    def post_set_flag(self,
                       client: str = None,                       # Specify the user, if it is not the current user. Requires
                       # admin privileges.
                       flag: str = None,                         # The name of the flag. [R]
@@ -13839,7 +13839,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_flag(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13868,7 +13868,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13883,7 +13883,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_gen_cmd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_gen_cmd(self, 
+    def post_set_gen_cmd(self,
                          command: str = None,                      # The rest of the command line arguments. <tt
                          # escapearg='false'>Unescaped Value</tt> [R]
                          name: str = None,                         # The name of the file endpoint we are configuring. [R]
@@ -13892,7 +13892,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_gen_cmd(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13919,7 +13919,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -13933,7 +13933,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_gps_info
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_gps_info(self, 
+    def post_set_gps_info(self,
                           altitude: str = None,                     # Altitude, assumes units are Meters.
                           ew: str = None,                           # East or west (Longitude).
                           lattitude: str = None,                    # The lattitude, as read from a GPS device.
@@ -13947,7 +13947,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_gps_info(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -13984,7 +13984,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -14003,7 +14003,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_ifup_script
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_ifup_script(self, 
+    def post_set_ifup_script(self,
                              flags: str = None,                        # Currently un-defined, use NA
                              port: str = None,                         # WiFi interface name or number. [W]
                              post_ifup_script: str = None,             # Script name with optional args, will run after
@@ -14017,7 +14017,7 @@ class LFJsonCommand(JsonCommand):
                              errors_warnings: list = None,
                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_ifup_script(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -14050,7 +14050,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -14067,7 +14067,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_l4_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_l4_endp(self, 
+    def post_set_l4_endp(self,
                          alias: str = None,                        # Name of endpoint. [R]
                          duration_max: str = None,                 # Maximum duration of media playback, in seconds
                          duration_min: str = None,                 # Minimum duration of media playback, in seconds
@@ -14080,7 +14080,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_l4_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -14117,7 +14117,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -14136,7 +14136,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_license
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_license(self, 
+    def post_set_license(self,
                          licenses: str = None,                     # License keys all appended into a single line. <tt
                          # escapearg='false'>Unescaped Value</tt> [W]
                          response_json_list: list = None,
@@ -14144,7 +14144,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_license(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -14169,7 +14169,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -14182,7 +14182,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_mc_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_mc_endp(self, 
+    def post_set_mc_endp(self,
                          mcast_dest_port: str = None,              # Multicast destination IP Port, for example: 55000
                          mcast_group: str = None,                  # Multicast group IP, ie: 224.1.1.2 IPv6 supported as
                          # well.
@@ -14194,7 +14194,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_mc_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -14227,7 +14227,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -14244,7 +14244,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_password
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_password(self, 
+    def post_set_password(self,
                           client: str = None,                       # Specify the client. If left blank, will use current
                           # client.
                           new_password: str = None,                 # New password, or 'NA' for blank password. [W]
@@ -14254,7 +14254,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_password(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -14283,7 +14283,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -14301,19 +14301,19 @@ class LFJsonCommand(JsonCommand):
 
     class SetPollModeMode(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         polling = "polling"    #
         push = "push"          #
 
-    def post_set_poll_mode(self, 
+    def post_set_poll_mode(self,
                            mode: str = None,                         # 'polling' or 'push'. [R]
                            response_json_list: list = None,
                            debug: bool = False,
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_poll_mode(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -14338,7 +14338,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -14355,7 +14355,7 @@ class LFJsonCommand(JsonCommand):
     class SetPortCmdFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetPortCmdFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -14385,7 +14385,7 @@ class LFJsonCommand(JsonCommand):
     class SetPortCurrentFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetPortCurrentFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -14437,7 +14437,7 @@ class LFJsonCommand(JsonCommand):
 
     class SetPortDhcpClientId(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         NA = "NA"                   # Do not change from current value.
         NONE = "NONE"               # Do not use dhcp client ID.
@@ -14447,7 +14447,7 @@ class LFJsonCommand(JsonCommand):
 
     class SetPortDhcpHostname(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         NA = "NA"                   # Do not change from current value.
         NONE = "NONE"               # Do not use dhcp Hostname
@@ -14457,7 +14457,7 @@ class LFJsonCommand(JsonCommand):
 
     class SetPortDhcpVendorId(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         NA = "NA"                 # Do not change from current value.
         NONE = "NONE"             # Do not use dhcp vendor ID
@@ -14466,7 +14466,7 @@ class LFJsonCommand(JsonCommand):
     class SetPortFlags2(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetPortFlags2, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -14490,7 +14490,7 @@ class LFJsonCommand(JsonCommand):
     class SetPortInterest(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetPortInterest, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -14538,7 +14538,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("SetPortInterest has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_set_port(self, 
+    def post_set_port(self,
                       alias: str = None,                        # A user-defined name for this interface. Can be BLANK or
                       # NA.
                       br_aging_time: str = None,                # MAC aging time, in seconds, 32-bit number (or peer IP for
@@ -14602,7 +14602,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_port(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -14699,7 +14699,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -14748,7 +14748,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_port2
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_port2(self, 
+    def post_set_port2(self,
                        dhclient_50: str = None,                  # Set DHCP Client option-50 text. DEFAULT means do not use
                        # this option.
                        port: str = None,                         # Port identifier. [R]
@@ -14759,7 +14759,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_port2(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -14790,7 +14790,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -14806,7 +14806,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_port_alias
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_port_alias(self, 
+    def post_set_port_alias(self,
                             alias: str = None,                        # New alias to assign to this virtual interface. [W]
                             port: str = None,                         # Physical Port identifier that owns the virtual
                             # interface. [R]
@@ -14819,7 +14819,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_port_alias(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -14852,7 +14852,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -14869,7 +14869,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_ppp_link_state
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_ppp_link_state(self, 
+    def post_set_ppp_link_state(self,
                                 link: str = None,                         # Unit Number of the PPP Link, or 'all'. [W]
                                 ppp_state: str = None,                    # One of: RUNNING, STOPPED, or DELETED. [R]
                                 resource: int = None,                     # Number of the Resource, or 'all'. [W]
@@ -14879,7 +14879,7 @@ class LFJsonCommand(JsonCommand):
                                 errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_ppp_link_state(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -14910,7 +14910,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -14929,11 +14929,11 @@ class LFJsonCommand(JsonCommand):
 
     class SetResourceResourceFlags(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         skip_load_db_on_start = 1      # Should we skip loading the DB on start?
 
-    def post_set_resource(self, 
+    def post_set_resource(self,
                           device_profiles: str = None,              # List of profiles, see above
                           max_helper_count: str = None,             # Maximum number of helper traffic generation processes.
                           # 0 means CPU-core-count (AUTO).
@@ -14959,7 +14959,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_resource(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -15008,7 +15008,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -15037,7 +15037,7 @@ class LFJsonCommand(JsonCommand):
     class SetRfgenRfgenFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetRfgenRfgenFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -15058,7 +15058,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("SetRfgenRfgenFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_set_rfgen(self, 
+    def post_set_rfgen(self,
                        bb_gain: str = None,                      # RX Gain, 0 - 62 in 2dB steps
                        burst_offset: str = None,                 # FCC5B burst offset in usec. Blank-time for W53-Chirp.
                        chirp_width_khz: str = None,              # W53 Chirp width in khz.
@@ -15104,7 +15104,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_rfgen(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -15197,7 +15197,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -15248,7 +15248,7 @@ class LFJsonCommand(JsonCommand):
     class SetScriptFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetScriptFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -15284,7 +15284,7 @@ class LFJsonCommand(JsonCommand):
 
     class SetScriptType(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         NONE = "NONE"                  # Delete any existing script.
         Script2544 = "Script2544"      # For RFC 2544 type testing.
@@ -15292,7 +15292,7 @@ class LFJsonCommand(JsonCommand):
         ScriptHunt = "ScriptHunt"      # Hunt for maximum speed with constraints.
         ScriptWL = "ScriptWL"          # For iterating through WanLink settings
 
-    def post_set_script(self, 
+    def post_set_script(self,
                         endp: str = None,                         # Endpoint, Connection Group or Attenuator name or ID. [R]
                         flags: str = None,                        # See above for description of the defined flags.
                         group_action: str = None,                 # How to handle group script operations: ALL, Sequential
@@ -15306,7 +15306,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_script(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -15343,7 +15343,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -15362,7 +15362,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_sec_ip
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_sec_ip(self, 
+    def post_set_sec_ip(self,
                         ip_list: str = None,                      # IP1/prefix,IP2/prefix,...IPZ/prefix. [W]
                         port: str = None,                         # Name of network device (Port) to which these IPs will be
                         # added. [R]
@@ -15373,7 +15373,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_sec_ip(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -15404,7 +15404,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -15420,7 +15420,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_test_id
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_test_id(self, 
+    def post_set_test_id(self,
                          resource: int = None,                     # Number of the Resource, or <tt>all</tt>. [W]
                          shelf: int = 1,                           # Name of the Shelf, or <tt>all</tt>. [R][D:1]
                          test_id: str = None,                      # Up to 15 character identifier.
@@ -15429,7 +15429,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_test_id(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -15458,7 +15458,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -15473,7 +15473,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_voip_info
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_voip_info(self, 
+    def post_set_voip_info(self,
                            aq_audio_band: str = None,                # Audio band for AQ scoring. 0: narrow-band, 1:
                            # super-wide-band, 2: full-band. Default is 0.
                            aq_call_report_count: str = None,         # Number of AQ Call Report. Default is 0.
@@ -15509,7 +15509,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_voip_info(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -15574,7 +15574,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -15607,7 +15607,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_vrcx_cost
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_vrcx_cost(self, 
+    def post_set_vrcx_cost(self,
                            interface_cost: str = None,               # If using OSPF, this sets the cost for this link
                            # (1-65535).
                            local_dev: str = None,                    # Name of port A for the local redirect device pair.
@@ -15626,7 +15626,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_vrcx_cost(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -15667,7 +15667,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -15688,7 +15688,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_wanlink_info
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_wanlink_info(self, 
+    def post_set_wanlink_info(self,
                               drop_freq: str = None,                    # How often, out of 1,000,000 packets, should we
                               # purposefully drop a packet.
                               dup_freq: str = None,                     # How often, out of 1,000,000 packets, should we
@@ -15722,7 +15722,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wanlink_info(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -15775,7 +15775,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -15805,12 +15805,12 @@ class LFJsonCommand(JsonCommand):
 
     class SetWanlinkPcapCapture(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         OFF = "OFF"    # stop capturing
         ON = "ON"      # start capturing
 
-    def post_set_wanlink_pcap(self, 
+    def post_set_wanlink_pcap(self,
                               capture: str = None,                      # Should we capture or not? ON or OFF. [R]
                               directory: str = None,                    # The directory name in which packet capture files
                               # will be written.
@@ -15820,7 +15820,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wanlink_pcap(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -15849,7 +15849,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -15868,7 +15868,7 @@ class LFJsonCommand(JsonCommand):
     class SetWanpathCorruptionFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetWanpathCorruptionFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -15889,7 +15889,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("SetWanpathCorruptionFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_set_wanpath_corruption(self, 
+    def post_set_wanpath_corruption(self,
                                     byte: str = None,                         # The byte to use for OVERWRITE_FIXED (or NA).
                                     flags: str = None,                        # The flags for this corruption.
                                     index: str = None,                        # The corruption to modify (0-5). [R,0-5]
@@ -15906,7 +15906,7 @@ class LFJsonCommand(JsonCommand):
                                     errors_warnings: list = None,
                                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wanpath_corruption(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -15945,7 +15945,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -15965,7 +15965,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_wanpath_filter
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_wanpath_filter(self, 
+    def post_set_wanpath_filter(self,
                                 defer_flush: str = None,                  # Enter 'YES' if you do NOT want this flushed to
                                 # the remote.
                                 dst_filter: str = None,                   # The destination MAC or IP/Mask, 'NA' for PCAP.
@@ -15984,7 +15984,7 @@ class LFJsonCommand(JsonCommand):
                                 errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wanpath_filter(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -16023,7 +16023,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -16046,13 +16046,13 @@ class LFJsonCommand(JsonCommand):
 
     class SetWanpathRunningRunning(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         AS_PARENT = "AS_PARENT"    # then it will be started and stopped as the parent WanLink is.
         RUNNING = "RUNNING"        # then it will be running at all times
         STOPPED = "STOPPED"        # then it will not be running at any time.
 
-    def post_set_wanpath_running(self, 
+    def post_set_wanpath_running(self,
                                  running: str = None,                      # The state, one of: AS_PARENT, RUNNING, STOPPED.
                                  # [R]
                                  wl_name: str = None,                      # The name of the WanLink endpoint we are
@@ -16063,7 +16063,7 @@ class LFJsonCommand(JsonCommand):
                                  errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wanpath_running(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -16092,7 +16092,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -16111,7 +16111,7 @@ class LFJsonCommand(JsonCommand):
     class SetWifiCorruptionsCorruptFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetWifiCorruptionsCorruptFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -16140,7 +16140,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("SetWifiCorruptionsCorruptFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_set_wifi_corruptions(self, 
+    def post_set_wifi_corruptions(self,
                                   corrupt_flags: str = None,                # Specify packet types to corrupt (see flags
                                   # above).
                                   corrupt_per_mil: str = None,              # Per-million: Station to randomly corrupt
@@ -16169,7 +16169,7 @@ class LFJsonCommand(JsonCommand):
                                   errors_warnings: list = None,
                                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wifi_corruptions(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -16218,7 +16218,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -16243,7 +16243,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_wifi_custom
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_wifi_custom(self, 
+    def post_set_wifi_custom(self,
                              port: str = None,                         # WiFi interface name or number. [W]
                              resource: int = None,                     # Resource number. [W]
                              shelf: int = 1,                           # Shelf number. [R][D:1]
@@ -16257,7 +16257,7 @@ class LFJsonCommand(JsonCommand):
                              errors_warnings: list = None,
                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wifi_custom(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -16290,7 +16290,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -16307,7 +16307,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_wifi_extra
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_wifi_extra(self, 
+    def post_set_wifi_extra(self,
                             anonymous_identity: str = None,           # Anonymous identity string for EAP.
                             anqp_3gpp_cell_net: str = None,           # 802.11u 3GCPP Cellular Network Info, VAP only.
                             ca_cert: str = None,                      # CA-CERT file name.
@@ -16358,7 +16358,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wifi_extra(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -16445,7 +16445,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -16489,7 +16489,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#set_wifi_extra2
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_set_wifi_extra2(self, 
+    def post_set_wifi_extra2(self,
                              bss_color: str = None,                    # Initial BSS Color requested. Zero means do not use
                              # bss-color.
                              corrupt_gtk_rekey_mic: str = None,        # Per-million: AP corrupts GTK Rekey MIC.
@@ -16522,7 +16522,7 @@ class LFJsonCommand(JsonCommand):
                              errors_warnings: list = None,
                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wifi_extra2(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -16583,7 +16583,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -16618,7 +16618,7 @@ class LFJsonCommand(JsonCommand):
     class SetWifiRadioFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetWifiRadioFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -16655,7 +16655,7 @@ class LFJsonCommand(JsonCommand):
 
     class SetWifiRadioMode(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         p_802_11a = 1      # 802.11a
         AUTO = 0           # 802.11g
@@ -16678,7 +16678,7 @@ class LFJsonCommand(JsonCommand):
         bgnAX = 13         # 802.11bgn-AX
         g = 3              # 802.11g
 
-    def post_set_wifi_radio(self, 
+    def post_set_wifi_radio(self,
                             active_peer_count: str = None,            # Number of locally-cached peer objects for this
                             # radio.
                             ampdu_factor: str = None,                 # ax200/ax210 only, currently. Requires module reload.
@@ -16735,7 +16735,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wifi_radio(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -16824,7 +16824,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -16873,7 +16873,7 @@ class LFJsonCommand(JsonCommand):
     class SetWifiTxoTxoFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetWifiTxoTxoFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -16894,7 +16894,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("SetWifiTxoTxoFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_set_wifi_txo(self, 
+    def post_set_wifi_txo(self,
                           port: str = None,                         # WiFi interface name or number. [W]
                           resource: int = None,                     # Resource number. [W]
                           shelf: int = 1,                           # Shelf number. [R][D:1]
@@ -16919,7 +16919,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wifi_txo(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -16968,7 +16968,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -16997,7 +16997,7 @@ class LFJsonCommand(JsonCommand):
     class SetWlCorruptionFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SetWlCorruptionFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -17018,7 +17018,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("SetWlCorruptionFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_set_wl_corruption(self, 
+    def post_set_wl_corruption(self,
                                byte: str = None,                         # The byte to use for OVERWRITE_FIXED (or NA).
                                flags: str = None,                        # The flags for this corruption.
                                index: str = None,                        # The corruption to modify (0-5). [R,0-5]
@@ -17034,7 +17034,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wl_corruption(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17071,7 +17071,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17093,12 +17093,12 @@ class LFJsonCommand(JsonCommand):
 
     class SetWlQdiscQdisc(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         FIFO = "FIFO"                                      # is the default queuing discipline, no arguments
         WRR__queue_queue_____ = "WRR,[queue,queue,...]"    # Weighted Round Robbin is also available
 
-    def post_set_wl_qdisc(self, 
+    def post_set_wl_qdisc(self,
                           name: str = None,                         # WanLink name [R]
                           qdisc: str = None,                        # FIFO, WRR,a,b,c,d,e,f,g etc [R]
                           response_json_list: list = None,
@@ -17106,7 +17106,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_set_wl_qdisc(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17133,7 +17133,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17147,7 +17147,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_adb
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_adb(self, 
+    def post_show_adb(self,
                       extra: str = None,                        # Optional command, see above.
                       resource: int = None,                     # Resource number, or 'all'. [W]
                       serno: str = None,                        # Serial number for requested ADB device, or 'all'. [W]
@@ -17157,7 +17157,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_adb(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17188,7 +17188,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17207,7 +17207,7 @@ class LFJsonCommand(JsonCommand):
 
     class ShowAlertsType(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         All = "All"                            #
         CX = "CX"                              #
@@ -17222,7 +17222,7 @@ class LFJsonCommand(JsonCommand):
         Span = "Span"                          #
         Test_Mgr = "Test_Mgr"                  #
 
-    def post_show_alerts(self, 
+    def post_show_alerts(self,
                          card: int = None,                         # Alert resource filter.
                          endp: str = None,                         # Alert endpoint filter.
                          extra: str = None,                        # Extra filter, currently ignored.
@@ -17234,7 +17234,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_alerts(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17269,7 +17269,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17287,7 +17287,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_attenuators
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_attenuators(self, 
+    def post_show_attenuators(self,
                               resource: int = None,                     # Resource number, or 'all'. [W]
                               serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
                               # [W]
@@ -17297,7 +17297,7 @@ class LFJsonCommand(JsonCommand):
                               errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_attenuators(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17326,7 +17326,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17341,7 +17341,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_cd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_cd(self, 
+    def post_show_cd(self,
                      collision_domain: str = None,             # Name of the Collision Domain, or 'all'. [W]
                      resource: int = None,                     # Resource number, or 'all'. [W]
                      shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -17350,7 +17350,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_cd(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17379,7 +17379,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17394,7 +17394,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_cell_emulator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_cell_emulator(self, 
+    def post_show_cell_emulator(self,
                                 resource: int = None,                     # Resource number, or 'all'. [W]
                                 serno: str = None,                        # Serial number for requested Cell Emulator, or
                                 # 'all'. [W]
@@ -17404,7 +17404,7 @@ class LFJsonCommand(JsonCommand):
                                 errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_cell_emulator(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17433,7 +17433,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17448,7 +17448,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_chamber
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_chamber(self, 
+    def post_show_chamber(self,
                           name: str = None,                         # Chamber Name or 'ALL'. [W][D:ALL]
                           splat: str = None,                        # Splat number (lower number = more recent) to view,
                           # ALL, or NA
@@ -17457,7 +17457,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_chamber(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17484,7 +17484,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17498,7 +17498,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_channel_groups
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_channel_groups(self, 
+    def post_show_channel_groups(self,
                                  channel_name: str = None,                 # Name of the channel, or 'all'. [W]
                                  resource: int = None,                     # Resource number, or 'all'. [W]
                                  shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -17507,7 +17507,7 @@ class LFJsonCommand(JsonCommand):
                                  errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_channel_groups(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17536,7 +17536,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17551,13 +17551,13 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_clients
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_clients(self, 
+    def post_show_clients(self,
                           response_json_list: list = None,
                           debug: bool = False,
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_clients(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17578,7 +17578,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17590,7 +17590,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_cx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_cx(self, 
+    def post_show_cx(self,
                      cross_connect: str = None,                # Specify cross-connect to act on, or 'all'. [W]
                      test_mgr: str = None,                     # Specify test-mgr to act on, or 'all'. [R]
                      response_json_list: list = None,
@@ -17598,7 +17598,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_cx(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17625,7 +17625,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17639,7 +17639,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_cxe
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_cxe(self, 
+    def post_show_cxe(self,
                       cross_connect: str = None,                # Specify cross-connect to show, or 'all'. [W]
                       test_mgr: str = None,                     # Specify test-mgr to use, or 'all'. [R]
                       response_json_list: list = None,
@@ -17647,7 +17647,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_cxe(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17674,7 +17674,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17688,13 +17688,13 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_dbs
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_dbs(self, 
+    def post_show_dbs(self,
                       response_json_list: list = None,
                       debug: bool = False,
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_dbs(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17715,7 +17715,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17727,14 +17727,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_dut
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_dut(self, 
+    def post_show_dut(self,
                       name: str = None,                         # DUT Name or 'ALL'. [W][D:ALL]
                       response_json_list: list = None,
                       debug: bool = False,
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_dut(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17759,7 +17759,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17772,7 +17772,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_endp_payload
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_endp_payload(self, 
+    def post_show_endp_payload(self,
                                max_bytes: str = None,                    # The max number of payload bytes to print out,
                                # default is 128. [R][D:128]
                                name: str = None,                         # The name of the endpoint we are configuring. [R]
@@ -17781,7 +17781,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_endp_payload(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17808,7 +17808,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17822,7 +17822,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_endpoints
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_endpoints(self, 
+    def post_show_endpoints(self,
                             endpoint: str = None,                     # Name of endpoint, or 'all'. [R]
                             extra: str = None,                        # See above.
                             response_json_list: list = None,
@@ -17830,7 +17830,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_endpoints(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17857,7 +17857,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17871,7 +17871,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_err
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_err(self, 
+    def post_show_err(self,
                       message: str = None,                      # Message to show to others currently logged on. <tt
                       # escapearg='false'>Unescaped Value</tt> [R]
                       response_json_list: list = None,
@@ -17879,7 +17879,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_err(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17904,7 +17904,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17917,13 +17917,13 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_event_interest
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_event_interest(self, 
+    def post_show_event_interest(self,
                                  response_json_list: list = None,
                                  debug: bool = False,
                                  errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_event_interest(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -17944,7 +17944,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -17959,7 +17959,7 @@ class LFJsonCommand(JsonCommand):
 
     class ShowEventsType(Enum):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         All = "All"                            #
         CX = "CX"                              #
@@ -17974,7 +17974,7 @@ class LFJsonCommand(JsonCommand):
         Span = "Span"                          #
         Test_Mgr = "Test_Mgr"                  #
 
-    def post_show_events(self, 
+    def post_show_events(self,
                          card: int = None,                         # Event resource filter.
                          endp: str = None,                         # Event endpoint filter.
                          extra: str = None,                        # Extra filter, currently ignored.
@@ -17986,7 +17986,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_events(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18021,7 +18021,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18039,7 +18039,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_files
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_files(self, 
+    def post_show_files(self,
                         dir_flags: str = None,                    # Determines format of listing, see above.
                         directory: str = None,                    # The sub-directory in which to list.
                         p_filter: str = None,                     # An optional filter, as used by the 'ls' command.
@@ -18052,7 +18052,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_files(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18087,7 +18087,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18105,7 +18105,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_group(self, 
+    def post_show_group(self,
                         group: str = None,                        # Can be name of connection group. Use 'all' or leave
                         # blank for all groups.
                         response_json_list: list = None,
@@ -18113,7 +18113,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_group(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18138,7 +18138,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18151,7 +18151,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_mlo_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_mlo_link(self, 
+    def post_show_mlo_link(self,
                            mlo_index: str = None,                    # MLO Link Index, or 'all'.
                            port: str = None,                         # Port number, or 'all'.
                            resource: int = None,                     # Resource number, or 'all'.
@@ -18161,7 +18161,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_mlo_link(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18192,7 +18192,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18208,14 +18208,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_pesq
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_pesq(self, 
+    def post_show_pesq(self,
                        endpoint: str = None,                     # Name of endpoint, or 'all'. [R]
                        response_json_list: list = None,
                        debug: bool = False,
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_pesq(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18240,7 +18240,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18253,7 +18253,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_ports
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_ports(self, 
+    def post_show_ports(self,
                         port: str = None,                         # Port number, or 'all'. [W]
                         probe_flags: str = None,                  # See above, add them together for multiple probings.
                         # Leave blank if you want stats only.
@@ -18264,7 +18264,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_ports(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18295,7 +18295,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18311,7 +18311,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_ppp_links
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_ppp_links(self, 
+    def post_show_ppp_links(self,
                             link_num: str = None,                     # Ppp-Link number of the span, or 'all'. [W]
                             resource: int = None,                     # Resource number, or 'all'. [W]
                             shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -18320,7 +18320,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_ppp_links(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18349,7 +18349,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18364,7 +18364,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_profile
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_profile(self, 
+    def post_show_profile(self,
                           name: str = None,                         # Profile Name or 'ALL'. Not specifying a profile is
                           # same as 'ALL'.
                           response_json_list: list = None,
@@ -18372,7 +18372,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_profile(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18397,7 +18397,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18410,7 +18410,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_resources
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_resources(self, 
+    def post_show_resources(self,
                             resource: int = None,                     # Resource number, or 'all'. [W]
                             shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
                             response_json_list: list = None,
@@ -18418,7 +18418,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_resources(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18445,7 +18445,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18459,7 +18459,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_rfgen
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_rfgen(self, 
+    def post_show_rfgen(self,
                         p_id: str = None,                         # RF Generator serial number, or 'all'.
                         resource: int = None,                     # Resource number, or 'all'. [W]
                         shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
@@ -18468,7 +18468,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_rfgen(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18497,7 +18497,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18512,7 +18512,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_rt
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_rt(self, 
+    def post_show_rt(self,
                      key: str = None,                          # Unique identifier for this request. Usually left blank.
                      resource: int = None,                     # Resource number. [W]
                      shelf: int = 1,                           # Shelf number. [R][D:1]
@@ -18522,7 +18522,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_rt(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18553,7 +18553,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18569,7 +18569,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_script_results
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_script_results(self, 
+    def post_show_script_results(self,
                                  endpoint: str = None,                     # Name of endpoint, cx-group, or 'all'. [R]
                                  key: str = None,                          # Optional 'key' to be used in keyed-text message
                                  # result.
@@ -18578,7 +18578,7 @@ class LFJsonCommand(JsonCommand):
                                  errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_script_results(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18605,7 +18605,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18619,7 +18619,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_spans
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_spans(self, 
+    def post_show_spans(self,
                         resource: int = None,                     # Resource number, or 'all'. [W]
                         shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
                         span_number: str = None,                  # Span-Number of the span, or 'all'. [W]
@@ -18628,7 +18628,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_spans(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18657,7 +18657,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18672,7 +18672,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_text_blob
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_text_blob(self, 
+    def post_show_text_blob(self,
                             brief: str = None,                        # Set to 'brief' for a brief listing of all text
                             # blobs.
                             name: str = None,                         # Text Blob Name or 'ALL'. [R]
@@ -18682,7 +18682,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_text_blob(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18711,7 +18711,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18726,14 +18726,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_tm
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_tm(self, 
+    def post_show_tm(self,
                      test_mgr: str = None,                     # Can be name of test manager, or 'all'. [R]
                      response_json_list: list = None,
                      debug: bool = False,
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_tm(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18758,7 +18758,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18771,14 +18771,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_traffic_profile
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_traffic_profile(self, 
+    def post_show_traffic_profile(self,
                                   name: str = None,                         # Profile Name or 'ALL'. [R]
                                   response_json_list: list = None,
                                   debug: bool = False,
                                   errors_warnings: list = None,
                                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_traffic_profile(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18803,7 +18803,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18816,7 +18816,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_venue
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_venue(self, 
+    def post_show_venue(self,
                         resource: int = None,                     # Resource number, or 'ALL' [W]
                         shelf: int = 1,                           # Shelf number. [R][D:1]
                         venu_id: str = None,                      # Number to uniquely identify this venue on this resource,
@@ -18826,7 +18826,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_venue(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18855,7 +18855,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18870,7 +18870,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_vr(self, 
+    def post_show_vr(self,
                      resource: int = None,                     # Resource number, or 'all'. [W]
                      router: str = None,                       # Name of the Virtual Router, or 'all'. [W]
                      shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -18879,7 +18879,7 @@ class LFJsonCommand(JsonCommand):
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_vr(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18908,7 +18908,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18923,7 +18923,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_vrcx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_vrcx(self, 
+    def post_show_vrcx(self,
                        cx_name: str = None,                      # Name of the Virtual Router Connection, or 'all'. [W]
                        resource: int = None,                     # Resource number, or 'all'. [W]
                        shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
@@ -18932,7 +18932,7 @@ class LFJsonCommand(JsonCommand):
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_vrcx(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -18961,7 +18961,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -18976,7 +18976,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#show_wanpaths
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_show_wanpaths(self, 
+    def post_show_wanpaths(self,
                            endpoint: str = None,                     # Name of endpoint, or 'all'. [W]
                            wanpath: str = None,                      # Name of wanpath, or 'all'. [W]
                            response_json_list: list = None,
@@ -18984,7 +18984,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_show_wanpaths(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19011,7 +19011,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19025,7 +19025,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#shutdown
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_shutdown(self, 
+    def post_shutdown(self,
                       chdir: str = None,                        # Directory to cd to before dying. Only useful when using
                       # gprof to debug, or 'NA' to ignore.
                       really: str = None,                       # Must be 'YES' for command to really work.
@@ -19036,7 +19036,7 @@ class LFJsonCommand(JsonCommand):
                       errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_shutdown(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19065,7 +19065,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19080,7 +19080,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#shutdown_os
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_shutdown_os(self, 
+    def post_shutdown_os(self,
                          resource: int = None,                     # Resource number, or ALL. [W]
                          shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
                          response_json_list: list = None,
@@ -19088,7 +19088,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_shutdown_os(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19115,7 +19115,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19129,7 +19129,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#shutdown_resource
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_shutdown_resource(self, 
+    def post_shutdown_resource(self,
                                resource: int = None,                     # Resource number, or ALL. [W]
                                shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
                                response_json_list: list = None,
@@ -19137,7 +19137,7 @@ class LFJsonCommand(JsonCommand):
                                errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_shutdown_resource(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19164,7 +19164,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19182,7 +19182,7 @@ class LFJsonCommand(JsonCommand):
     class SniffPortFlags(IntFlag):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             This class is stateless. It can do binary flag math, returning the integer value.
-            Example Usage: 
+            Example Usage:
                 int:flag_val = 0
                 flag_val = LFPost.set_flags(SniffPortFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -19202,7 +19202,7 @@ class LFJsonCommand(JsonCommand):
                 raise ValueError("SniffPortFlags has no member:[%s]" % name)
             return (cls[member].value for member in cls.__members__ if member == name)
 
-    def post_sniff_port(self, 
+    def post_sniff_port(self,
                         display: str = None,                      # The DISPLAY option, for example: 192.168.1.5:0.0. Will
                         # guess if left blank.
                         duration: str = None,                     # Duration for doing a capture (in seconds). Default is 5
@@ -19221,7 +19221,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_sniff_port(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19262,7 +19262,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19283,14 +19283,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#start_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_start_endp(self, 
+    def post_start_endp(self,
                         endp_name: str = None,                    # Name of the cross-connect, or 'all'. [R]
                         response_json_list: list = None,
                         debug: bool = False,
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_start_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19315,7 +19315,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19328,14 +19328,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#start_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_start_group(self, 
+    def post_start_group(self,
                          name: str = None,                         # The name of the connection group. [R]
                          response_json_list: list = None,
                          debug: bool = False,
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_start_group(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19360,7 +19360,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19373,7 +19373,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#start_ppp_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_start_ppp_link(self, 
+    def post_start_ppp_link(self,
                             resource: int = None,                     # Resource number that holds this PppLink. [W]
                             shelf: int = 1,                           # Name/id of the shelf. [R][D:1]
                             unit_num: str = None,                     # Unit-Number for the PppLink to be started. [R]
@@ -19382,7 +19382,7 @@ class LFJsonCommand(JsonCommand):
                             errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_start_ppp_link(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19411,7 +19411,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19426,14 +19426,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#stop_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_stop_endp(self, 
+    def post_stop_endp(self,
                        endp_name: str = None,                    # Name of the endpoint, or 'all'. [R]
                        response_json_list: list = None,
                        debug: bool = False,
                        errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_stop_endp(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19458,7 +19458,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19471,14 +19471,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#stop_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_stop_group(self, 
+    def post_stop_group(self,
                         name: str = None,                         # The name of the connection group, or 'all' [R]
                         response_json_list: list = None,
                         debug: bool = False,
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_stop_group(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19503,7 +19503,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19516,7 +19516,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#stop_ppp_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_stop_ppp_link(self, 
+    def post_stop_ppp_link(self,
                            resource: int = None,                     # Resource number that holds this PppLink. [W]
                            shelf: int = 1,                           # Name/id of the shelf. [R][D:1]
                            unit_num: str = None,                     # Unit-Number for the PppLink to be stopped. [W]
@@ -19525,7 +19525,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_stop_ppp_link(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19554,7 +19554,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19569,7 +19569,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#tail
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_tail(self, 
+    def post_tail(self,
                   cmd: str = None,                          # Command: start, stop, results
                   key: str = None,                          # File-name that we should be tailing.
                   message: str = None,                      # The contents to display (for results only) <tt
@@ -19581,7 +19581,7 @@ class LFJsonCommand(JsonCommand):
                   errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_tail(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19614,7 +19614,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19631,7 +19631,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#tm_register
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_tm_register(self, 
+    def post_tm_register(self,
                          client_name: str = None,                  # Name of client to be registered. (dflt is current
                          # client) [W]
                          test_mgr: str = None,                     # Name of test manager (can be all.) [R]
@@ -19640,7 +19640,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_tm_register(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19667,7 +19667,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19681,7 +19681,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#tm_unregister
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_tm_unregister(self, 
+    def post_tm_unregister(self,
                            client_name: str = None,                  # Name of client to be un-registered. (dflt is current
                            # client) [W]
                            test_mgr: str = None,                     # Name of test manager (can be all.) [R]
@@ -19690,7 +19690,7 @@ class LFJsonCommand(JsonCommand):
                            errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_tm_unregister(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19717,7 +19717,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19731,13 +19731,13 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#version
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_version(self, 
+    def post_version(self,
                      response_json_list: list = None,
                      debug: bool = False,
                      errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_version(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19758,7 +19758,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19770,13 +19770,13 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#who
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_who(self, 
+    def post_who(self,
                  response_json_list: list = None,
                  debug: bool = False,
                  errors_warnings: list = None,
                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_who(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19797,7 +19797,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19809,7 +19809,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#wifi_cli_cmd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_wifi_cli_cmd(self, 
+    def post_wifi_cli_cmd(self,
                           port: str = None,                         # Name of the WiFi station or AP interface to which this
                           # command will be directed. [R]
                           resource: int = None,                     # Resource number. [W]
@@ -19821,7 +19821,7 @@ class LFJsonCommand(JsonCommand):
                           errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_wifi_cli_cmd(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19852,7 +19852,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19868,7 +19868,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#wifi_event
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_wifi_event(self, 
+    def post_wifi_event(self,
                         device: str = None,                       # Interface or PHY in most cases. [R]
                         event: str = None,                        # What happened. [R]
                         msg: str = None,                          # Entire event in human readable form.
@@ -19878,7 +19878,7 @@ class LFJsonCommand(JsonCommand):
                         errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_wifi_event(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19909,7 +19909,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19925,7 +19925,7 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#wiser_reset
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_wiser_reset(self, 
+    def post_wiser_reset(self,
                          resource: int = None,                     # Resource number, or ALL. [W]
                          shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
                          response_json_list: list = None,
@@ -19933,7 +19933,7 @@ class LFJsonCommand(JsonCommand):
                          errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_wiser_reset(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -19960,7 +19960,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -19974,14 +19974,14 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#write
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-    def post_write(self, 
+    def post_write(self,
                    db_name: str = None,                      # The name the backup shall be saved as (blank means dflt)
                    response_json_list: list = None,
                    debug: bool = False,
                    errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
+            Example Usage:
                 response_json = []
                 result = post_write(response_json_list=response_json, param=value ...)
                 pprint.pprint( response_json )
@@ -20006,7 +20006,7 @@ class LFJsonCommand(JsonCommand):
             raise ValueError('cli_cmd may not be blank')
         if (not param_map) or (len(param_map) < 1):
             raise ValueError('param_map may not be empty')
-        
+
         """
         TODO: check for default argument values
         TODO: fix comma counting
@@ -20028,7 +20028,7 @@ class LFJsonQuery(JsonQuery):
                          debug=debug,
                          exit_on_error=exit_on_error)
 
-    # Auto generated methods follow: 
+    # Auto generated methods follow:
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <ADB> type requests
@@ -20041,16 +20041,16 @@ class LFJsonQuery(JsonQuery):
         /adb/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        api, app-id, bt+ctrl, bt+mac, device, device-type, model, name, phantom, 
+        api, app-id, bt+ctrl, bt+mac, device, device-type, model, name, phantom,
         product, release, resource-id, timed-out, unauth, user-name, wifi+mac
     Example URL: /adb?fields=api,app-id
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_adb(eid_list=['1.234', '1.344'],
-                                   requested_col_names=['wifi mac'], 
+                                   requested_col_names=['wifi mac'],
                                    debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'api':         # SDK API Version
         'app-id':      # Interop app identifier.
@@ -20074,7 +20074,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_adb(self, 
+    def get_adb(self,
                 eid_list: list = None,
                 requested_col_names: list = None,
                 wait_sec: float = 0.01,
@@ -20143,16 +20143,16 @@ class LFJsonQuery(JsonQuery):
         /alerts/since/$event_id
 
     When requesting specific column names, they need to be URL encoded:
-        eid, entity+id, event, event+description, id, name, priority, time-stamp, 
+        eid, entity+id, event, event+description, id, name, priority, time-stamp,
         type
     Example URL: /alerts?fields=eid,entity+id
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_alerts(eid_list=['1.234', '1.344'],
-                                      requested_col_names=['entity id'], 
+                                      requested_col_names=['entity id'],
                                       debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'eid':               # Time at which this event was created.This uses the clock on the source
                              # machine.
@@ -20169,7 +20169,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_alerts(self, 
+    def get_alerts(self,
                    eid_list: list = None,
                    requested_col_names: list = None,
                    wait_sec: float = 0.01,
@@ -20772,17 +20772,17 @@ class LFJsonQuery(JsonQuery):
         /arm/$cx_name
 
     When requesting specific column names, they need to be URL encoded:
-        avg+rtt, bps+a%C2%A0%E2%86%90%C2%A0b, bps+a%C2%A0%E2%86%92%C2%A0b, eid, endpoints+%28a%C2%A0%E2%86%94%C2%A0b%29, 
-        name, pkt+tx+a%C2%A0%E2%86%90%C2%A0b, pkt+tx+a%C2%A0%E2%86%92%C2%A0b, req+a%C2%A0%E2%86%90%C2%A0b, 
+        avg+rtt, bps+a%C2%A0%E2%86%90%C2%A0b, bps+a%C2%A0%E2%86%92%C2%A0b, eid, endpoints+%28a%C2%A0%E2%86%94%C2%A0b%29,
+        name, pkt+tx+a%C2%A0%E2%86%90%C2%A0b, pkt+tx+a%C2%A0%E2%86%92%C2%A0b, req+a%C2%A0%E2%86%90%C2%A0b,
         req+a%C2%A0%E2%86%92%C2%A0b, rpt+timer, state
     Example URL: /arm?fields=avg+rtt,bps+a%C2%A0%E2%86%90%C2%A0b
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_arm(eid_list=['1.234', '1.344'],
-                                   requested_col_names=['rpt timer'], 
+                                   requested_col_names=['rpt timer'],
                                    debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'avg rtt':                            # Average Round-Trip-Time (latency) for this connection (micro-seconds).
         'bps a&nbsp;&#x2190;&nbsp;b':         # Bits-per-second received by A from B over the last 3 seconds.
@@ -20801,7 +20801,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_arm(self, 
+    def get_arm(self,
                 eid_list: list = None,
                 requested_col_names: list = None,
                 wait_sec: float = 0.01,
@@ -20865,19 +20865,19 @@ class LFJsonQuery(JsonQuery):
         /arm-endp/$endp_name
 
     When requesting specific column names, they need to be URL encoded:
-        bps-rx-3s, bps-tx-3s, crc+fail, cx+drop+%25, cx+dropped, delay+%28us%29, destination+mac, 
-        dropped, dup+pkts, eid, elapsed, jitter+%28us%29, ll+bps+a%C2%A0%E2%86%92%C2%A0b, 
-        max+pkt+size, min+pkt+size, name, ooo+pkts, pps+rx, pps+tx, req+bps, run, 
-        rx+bytes, rx+drop+%25, rx+dup+%25, rx+ooo+%25, rx+pkts, rx+rate+%28last%29, script, 
+        bps-rx-3s, bps-tx-3s, crc+fail, cx+drop+%25, cx+dropped, delay+%28us%29, destination+mac,
+        dropped, dup+pkts, eid, elapsed, jitter+%28us%29, ll+bps+a%C2%A0%E2%86%92%C2%A0b,
+        max+pkt+size, min+pkt+size, name, ooo+pkts, pps+rx, pps+tx, req+bps, run,
+        rx+bytes, rx+drop+%25, rx+dup+%25, rx+ooo+%25, rx+pkts, rx+rate+%28last%29, script,
         thread-id, tx+bytes, tx+pkts, tx+rate+%28last%29
     Example URL: /arm-endp?fields=bps-rx-3s,bps-tx-3s
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_arm_endp(eid_list=['1.234', '1.344'],
-                                        requested_col_names=['destination mac'], 
+                                        requested_col_names=['destination mac'],
                                         debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'bps-rx-3s':                     # Bits-per-second received over the last 3 seconds.
         'bps-tx-3s':                     # Bits-per-second transmitted over the last 3 seconds.
@@ -20921,7 +20921,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_arm_endp(self, 
+    def get_arm_endp(self,
                      eid_list: list = None,
                      requested_col_names: list = None,
                      wait_sec: float = 0.01,
@@ -20991,16 +20991,16 @@ class LFJsonQuery(JsonQuery):
         /attenuators/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        entity+id, module+1, module+2, module+3, module+4, module+5, module+6, module+7, 
+        entity+id, module+1, module+2, module+3, module+4, module+5, module+6, module+7,
         module+8, name, notes, script, state, temperature
     Example URL: /attenuator?fields=entity+id,module+1
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_attenuator(eid_list=['1.234', '1.344'],
-                                          requested_col_names=['entity id'], 
+                                          requested_col_names=['entity id'],
                                           debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'entity id':   # Entity ID
         'module 1':    # Reported attenuator dB settings.
@@ -21019,7 +21019,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_attenuator(self, 
+    def get_attenuator(self,
                        eid_list: list = None,
                        requested_col_names: list = None,
                        wait_sec: float = 0.01,
@@ -21080,18 +21080,18 @@ class LFJsonQuery(JsonQuery):
         /chambers/$chamber_name
 
     When requesting specific column names, they need to be URL encoded:
-        chamber, chamber+connections, chamber+resources, chamber+type, duts, entity+id, 
-        flags, hide, isolation, marked, open, reported+rotation+%28deg%29, reported+rpm, 
-        reported+tilt+%28deg%29, resource, rotation+%28deg%29, rpm, smas, tilt+%28deg%29, turntable, 
+        chamber, chamber+connections, chamber+resources, chamber+type, duts, entity+id,
+        flags, hide, isolation, marked, open, reported+rotation+%28deg%29, reported+rpm,
+        reported+tilt+%28deg%29, resource, rotation+%28deg%29, rpm, smas, tilt+%28deg%29, turntable,
         turntable+type, virtual
     Example URL: /chamber?fields=chamber,chamber+connections
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_chamber(eid_list=['1.234', '1.344'],
-                                       requested_col_names=['entity id'], 
+                                       requested_col_names=['entity id'],
                                        debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'chamber':                 # -
         'chamber connections':     # -
@@ -21118,7 +21118,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_chamber(self, 
+    def get_chamber(self,
                     eid_list: list = None,
                     requested_col_names: list = None,
                     wait_sec: float = 0.01,
@@ -21180,13 +21180,13 @@ class LFJsonQuery(JsonQuery):
     request one of these URLs:
         /control/$command
 
-    
+
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_control(eid_list=['1.234', '1.344'],
                                        debug=True)
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_control(self, 
+    def get_control(self,
                     eid_list: list = None,
                     requested_col_names: list = None,
                     wait_sec: float = 0.01,
@@ -21260,17 +21260,17 @@ class LFJsonQuery(JsonQuery):
         /cxgroups/$id
 
     When requesting specific column names, they need to be URL encoded:
-        avg+rtt, bps+rx+a, bps+rx+b, drop+pkts+a, drop+pkts+b, eid, endpoints+%28a%C2%A0%E2%86%94%C2%A0b%29, 
-        entity+id, name, pkt+rx+a, pkt+rx+b, rpt+timer, rx+drop+%25+a, rx+drop+%25+b, 
+        avg+rtt, bps+rx+a, bps+rx+b, drop+pkts+a, drop+pkts+b, eid, endpoints+%28a%C2%A0%E2%86%94%C2%A0b%29,
+        entity+id, name, pkt+rx+a, pkt+rx+b, rpt+timer, rx+drop+%25+a, rx+drop+%25+b,
         state, type
     Example URL: /cx?fields=avg+rtt,bps+rx+a
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_cx(eid_list=['1.234', '1.344'],
-                                  requested_col_names=['entity id'], 
+                                  requested_col_names=['entity id'],
                                   debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'avg rtt':                            # Average Round-Trip-Time (latency) for this connection (ms).
         'bps rx a':                           # Endpoint A's real receive rate (bps).
@@ -21312,7 +21312,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_cx(self, 
+    def get_cx(self,
                eid_list: list = None,
                requested_col_names: list = None,
                wait_sec: float = 0.01,
@@ -21375,13 +21375,13 @@ class LFJsonQuery(JsonQuery):
         /database/
         /databases/
 
-    
+
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_database(eid_list=['1.234', '1.344'],
                                         debug=True)
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_database(self, 
+    def get_database(self,
                      eid_list: list = None,
                      requested_col_names: list = None,
                      wait_sec: float = 0.01,
@@ -21445,20 +21445,20 @@ class LFJsonQuery(JsonQuery):
         /dut/$name
 
     When requesting specific column names, they need to be URL encoded:
-        api+version, bssid-1, bssid-2, bssid-3, bssid-4, bssid-5, bssid-6, bssid-7, 
-        bssid-8, dut, eap-id, entity+id, hw+info, image+file, lan, mgt+ip, model+number, 
-        notes, num+ant+radio+1, num+ant+radio+2, num+ant+radio+3, password-1, password-2, 
-        password-3, password-4, password-5, password-6, password-7, password-8, serial+number, 
-        serial+port, ssid-1, ssid-2, ssid-3, ssid-4, ssid-5, ssid-6, ssid-7, ssid-8, 
+        api+version, bssid-1, bssid-2, bssid-3, bssid-4, bssid-5, bssid-6, bssid-7,
+        bssid-8, dut, eap-id, entity+id, hw+info, image+file, lan, mgt+ip, model+number,
+        notes, num+ant+radio+1, num+ant+radio+2, num+ant+radio+3, password-1, password-2,
+        password-3, password-4, password-5, password-6, password-7, password-8, serial+number,
+        serial+port, ssid-1, ssid-2, ssid-3, ssid-4, ssid-5, ssid-6, ssid-7, ssid-8,
         sw+info, wan
     Example URL: /dut?fields=api+version,bssid-1
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_dut(eid_list=['1.234', '1.344'],
-                                   requested_col_names=['entity id'], 
+                                   requested_col_names=['entity id'],
                                    debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'api version':     # API Version
         'bssid-1':         # WiFi BSSID for DUT. Empty BSSID fields default to '00:00:00:00:00:00'.
@@ -21487,28 +21487,28 @@ class LFJsonQuery(JsonQuery):
         'num ant radio 3': # Antenna count for DUT radio(s).
         'password-1':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
                            # Identity in the EID-ID field below anduse the EAP Password in this
-                           # field.  
+                           # field.
         'password-2':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
                            # Identity in the EID-ID field below anduse the EAP Password in this
-                           # field.  
+                           # field.
         'password-3':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
                            # Identity in the EID-ID field below anduse the EAP Password in this
-                           # field.  
+                           # field.
         'password-4':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
                            # Identity in the EID-ID field below anduse the EAP Password in this
-                           # field.  
+                           # field.
         'password-5':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
                            # Identity in the EID-ID field below anduse the EAP Password in this
-                           # field.  
+                           # field.
         'password-6':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
                            # Identity in the EID-ID field below anduse the EAP Password in this
-                           # field.  
+                           # field.
         'password-7':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
                            # Identity in the EID-ID field below anduse the EAP Password in this
-                           # field.  
+                           # field.
         'password-8':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
                            # Identity in the EID-ID field below anduse the EAP Password in this
-                           # field.  
+                           # field.
         'serial number':   # DUT Identifier (serial-number, or similar).If this represents an Android
                            # device managed over ADB, then use ADB identifier.
         'serial port':     # Resource and name of LANforge serial port that connects to this DUT.
@@ -21526,7 +21526,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_dut(self, 
+    def get_dut(self,
                 eid_list: list = None,
                 requested_col_names: list = None,
                 wait_sec: float = 0.01,
@@ -21590,24 +21590,24 @@ class LFJsonQuery(JsonQuery):
         /endp/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
-        1st+rx, a%2Fb, bursty, crc+fail, cwnd, cx+active, cx+estab, cx+estab%2Fs, cx+to, 
-        delay, destination+addr, dropped, dup+pkts, eid, elapsed, entity+id, jitter, 
-        max+pdu, max+rate, mcast+rx, min+pdu, min+rate, mng, name, ooo+pkts, pattern, 
-        pdu%2Fs+rx, pdu%2Fs+tx, pps+rx+ll, pps+tx+ll, rcv+buf, replays, run, rx+ber, 
-        rx+bytes, rx+drop+%25, rx+dup+%25, rx+ooo+%25, rx+pdus, rx+pkts+ll, rx+rate, rx+rate+%281m%29, 
-        rx+rate+%28last%29, rx+rate+ll, rx+wrong+dev, script, send+buf, source+addr, 
-        tcp+mss, tcp+rtx, tos, tx+bytes, tx+pdus, tx+pkts+ll, tx+rate, tx+rate+%281%C2%A0min%29, 
+        1st+rx, a%2Fb, bursty, crc+fail, cwnd, cx+active, cx+estab, cx+estab%2Fs, cx+to,
+        delay, destination+addr, dropped, dup+pkts, eid, elapsed, entity+id, jitter,
+        max+pdu, max+rate, mcast+rx, min+pdu, min+rate, mng, name, ooo+pkts, pattern,
+        pdu%2Fs+rx, pdu%2Fs+tx, pps+rx+ll, pps+tx+ll, rcv+buf, replays, run, rx+ber,
+        rx+bytes, rx+drop+%25, rx+dup+%25, rx+ooo+%25, rx+pdus, rx+pkts+ll, rx+rate, rx+rate+%281m%29,
+        rx+rate+%28last%29, rx+rate+ll, rx+wrong+dev, script, send+buf, source+addr,
+        tcp+mss, tcp+rtx, tos, tx+bytes, tx+pdus, tx+pkts+ll, tx+rate, tx+rate+%281%C2%A0min%29,
         tx+rate+%28last%29, tx+rate+ll, type        # hidden columns:
-        adv-one-way-latency, adv-rt-latency, drop-count-5m, latency-5m, rt-latency-5m, 
+        adv-one-way-latency, adv-rt-latency, drop-count-5m, latency-5m, rt-latency-5m,
         rx-silence-3s
     Example URL: /endp?fields=1st+rx,a%2Fb
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_endp(eid_list=['1.234', '1.344'],
-                                    requested_col_names=['entity id'], 
+                                    requested_col_names=['entity id'],
                                     debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         '1st rx':               # Miliseconds between starting the endpoint and receiving the first
                                 # packet.Note that LANforge UDP connections (not including multicast) will
@@ -21674,7 +21674,7 @@ class LFJsonQuery(JsonQuery):
                                 # be invalid.  If the 28-byte header is corrupted, LANforge will not
                                 # detectit, and may also give false positives for other packet errors.
                                 # Bit-Errors are only calculated forcertain payload patterns:  Increasing,
-                                # Decreasing, Zeros, Ones, and the PRBS patterns. 
+                                # Decreasing, Zeros, Ones, and the PRBS patterns.
         'rx bytes':             # Total received bytes count.
         'rx drop %':            # Percentage of packets that should have been received by Endpoint, but
                                 # were not, as calculated by the Cross-Connect.
@@ -21723,7 +21723,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_endp(self, 
+    def get_endp(self,
                  eid_list: list = None,
                  requested_col_names: list = None,
                  wait_sec: float = 0.01,
@@ -21785,13 +21785,13 @@ class LFJsonQuery(JsonQuery):
     request one of these URLs:
         /endsession
 
-    
+
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_endsession(eid_list=['1.234', '1.344'],
                                           debug=True)
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_endsession(self, 
+    def get_endsession(self,
                        eid_list: list = None,
                        requested_col_names: list = None,
                        wait_sec: float = 0.01,
@@ -21860,16 +21860,16 @@ class LFJsonQuery(JsonQuery):
         /events/since/$event_id
 
     When requesting specific column names, they need to be URL encoded:
-        eid, entity+id, event, event+description, id, name, priority, time-stamp, 
+        eid, entity+id, event, event+description, id, name, priority, time-stamp,
         type
     Example URL: /events?fields=eid,entity+id
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_events(eid_list=['1.234', '1.344'],
-                                      requested_col_names=['entity id'], 
+                                      requested_col_names=['entity id'],
                                       debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'eid':               # Time at which this event was created.This uses the clock on the source
                              # machine.
@@ -21886,7 +21886,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_events(self, 
+    def get_events(self,
                    eid_list: list = None,
                    requested_col_names: list = None,
                    wait_sec: float = 0.01,
@@ -21954,18 +21954,18 @@ class LFJsonQuery(JsonQuery):
         /fileio/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
-        buf-rd, buf-wr, bytes-rd, bytes-wr, crc+fail, eid, entity+id, files+%23, files-read, 
-        files-wr, io+fail, max-file-sz, max-rd-bps, max-rw-sz, max-wr-bps, min-file-sz, 
-        min-rd-bps, min-rw-sz, min-wr-bps, name, read-bps, rpt+timer, rx-bps-20s, 
+        buf-rd, buf-wr, bytes-rd, bytes-wr, crc+fail, eid, entity+id, files+%23, files-read,
+        files-wr, io+fail, max-file-sz, max-rd-bps, max-rw-sz, max-wr-bps, min-file-sz,
+        min-rd-bps, min-rw-sz, min-wr-bps, name, read-bps, rpt+timer, rx-bps-20s,
         status, tx-bps-20s, type, write-bps
     Example URL: /fileio?fields=buf-rd,buf-wr
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_fileio(eid_list=['1.234', '1.344'],
-                                      requested_col_names=['entity id'], 
+                                      requested_col_names=['entity id'],
                                       debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'buf-rd':      # Buffer reads.  When doing CRC, it takes two reads per 'packet', because
                        # we first read the header, then the payload.  Non-CRC reads ignore the
@@ -22009,7 +22009,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_fileio(self, 
+    def get_fileio(self,
                    eid_list: list = None,
                    requested_col_names: list = None,
                    wait_sec: float = 0.01,
@@ -22073,22 +22073,22 @@ class LFJsonQuery(JsonQuery):
         /generic/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
-        bps+rx, bps+tx, command, delay, dropped, eid, elapsed, entity+id, jitter, 
-        last+results, lr+bps+rx, lr+bps+tx, lr+delay, lr+dropped, lr+jitter, lr+pdu%2Fs+rx, 
-        lr+pdu%2Fs+tx, lr+rx+bytes, lr+rx+pkts, lr+tx+bytes, lr+tx+pkts, name, pdu%2Fs+rx, 
-        pdu%2Fs+tx, rpt+timer, rpt%23, rx+audio+delay, rx+audio+jitter, rx+audio+pkt+drop+%25, 
-        rx+bytes, rx+pkts, rx+video+delay, rx+video+fps, rx+video+jitter, rx+video+pkt+drop+%25, 
-        status, tx+audio+delay, tx+audio+jitter, tx+audio+pkt+drop+%25, tx+bytes, tx+pkts, 
-        tx+video+delay, tx+video+fps, tx+video+jitter, tx+video+pkt+drop+%25, type, 
-      
+        bps+rx, bps+tx, command, delay, dropped, eid, elapsed, entity+id, jitter,
+        last+results, lr+bps+rx, lr+bps+tx, lr+delay, lr+dropped, lr+jitter, lr+pdu%2Fs+rx,
+        lr+pdu%2Fs+tx, lr+rx+bytes, lr+rx+pkts, lr+tx+bytes, lr+tx+pkts, name, pdu%2Fs+rx,
+        pdu%2Fs+tx, rpt+timer, rpt%23, rx+audio+delay, rx+audio+jitter, rx+audio+pkt+drop+%25,
+        rx+bytes, rx+pkts, rx+video+delay, rx+video+fps, rx+video+jitter, rx+video+pkt+drop+%25,
+        status, tx+audio+delay, tx+audio+jitter, tx+audio+pkt+drop+%25, tx+bytes, tx+pkts,
+        tx+video+delay, tx+video+fps, tx+video+jitter, tx+video+pkt+drop+%25, type,
+
     Example URL: /generic?fields=bps+rx,bps+tx
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_generic(eid_list=['1.234', '1.344'],
-                                       requested_col_names=['entity id'], 
+                                       requested_col_names=['entity id'],
                                        debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'bps rx':              # Receive rate reported by this endpoint.
         'bps tx':              # Transmit rate reported by this endpoint.
@@ -22152,7 +22152,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_generic(self, 
+    def get_generic(self,
                     eid_list: list = None,
                     requested_col_names: list = None,
                     wait_sec: float = 0.01,
@@ -22214,13 +22214,13 @@ class LFJsonQuery(JsonQuery):
     request one of these URLs:
         /gui-cli/
 
-    
+
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_gui_cli(eid_list=['1.234', '1.344'],
                                        debug=True)
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_gui_cli(self, 
+    def get_gui_cli(self,
                     eid_list: list = None,
                     requested_col_names: list = None,
                     wait_sec: float = 0.01,
@@ -22284,22 +22284,22 @@ class LFJsonQuery(JsonQuery):
         /layer4/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
-        %21conn, acc.+denied, audio-format-bitrate, bad-proto, bad-url, bytes-rd, bytes-wr, 
-        dns-avg, dns-max, dns-min, eid, elapsed, entity+id, fb-avg, fb-max, fb-min, 
-        frame-rate, ftp-host, ftp-port, ftp-stor, http-p, http-r, http-t, login-denied, 
-        name, nf+%284xx%29, other-err, read, redir, rpt+timer, rslv-h, rslv-p, rx+rate, 
-        rx+rate+%281m%29, status, time-stamp, timeout, total-buffers, total-err, total-rebuffers, 
-        total-urls, total-wait-time, tx+rate, tx+rate+%281%C2%A0min%29, type, uc-avg, 
+        %21conn, acc.+denied, audio-format-bitrate, bad-proto, bad-url, bytes-rd, bytes-wr,
+        dns-avg, dns-max, dns-min, eid, elapsed, entity+id, fb-avg, fb-max, fb-min,
+        frame-rate, ftp-host, ftp-port, ftp-stor, http-p, http-r, http-t, login-denied,
+        name, nf+%284xx%29, other-err, read, redir, rpt+timer, rslv-h, rslv-p, rx+rate,
+        rx+rate+%281m%29, status, time-stamp, timeout, total-buffers, total-err, total-rebuffers,
+        total-urls, total-wait-time, tx+rate, tx+rate+%281%C2%A0min%29, type, uc-avg,
         uc-max, uc-min, urls%2Fs, video-format-bitrate, video-quality, write        # hidden columns:
         rpt-time
     Example URL: /layer4?fields=%21conn,acc.+denied
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_layer4(eid_list=['1.234', '1.344'],
-                                      requested_col_names=['entity id'], 
+                                      requested_col_names=['entity id'],
                                       debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         '!conn':                # Could not establish connection.
         'acc. denied':          # Access Access Denied Error.This could be password, user-name,
@@ -22385,7 +22385,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_layer4(self, 
+    def get_layer4(self,
                    eid_list: list = None,
                    requested_col_names: list = None,
                    wait_sec: float = 0.01,
@@ -22451,20 +22451,20 @@ class LFJsonQuery(JsonQuery):
         /mlo/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        active, activity, avg+chain+rssi, beacon+signal, chain+rssi, channel, disabled+reason, 
-        dormant, dup+pkts, eid, entity+id, esr+active, last+exit, noise, parent+dev, 
-        retry+failed, rx+bytes, rx+drop, rx+pkts, rx+rate, rx+rate+%281m%29, rx+signal, 
-        rx-rate, time-stamp, tx+bytes, tx+pkts, tx+rate, tx+rate+%281%C2%A0min%29, tx-rate, 
+        active, activity, avg+chain+rssi, beacon+signal, chain+rssi, channel, disabled+reason,
+        dormant, dup+pkts, eid, entity+id, esr+active, last+exit, noise, parent+dev,
+        retry+failed, rx+bytes, rx+drop, rx+pkts, rx+rate, rx+rate+%281m%29, rx+signal,
+        rx-rate, time-stamp, tx+bytes, tx+pkts, tx+rate, tx+rate+%281%C2%A0min%29, tx-rate,
         wifi+retries        # hidden columns:
         resource
     Example URL: /mlo?fields=active,activity
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_mlo(eid_list=['1.234', '1.344'],
-                                   requested_col_names=['entity id'], 
+                                   requested_col_names=['entity id'],
                                    debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'active':               # lc_key > lc_col_nameMLO Link is currently active.
         'activity':             # Percent of the channel that is utilized over the last minute.This
@@ -22477,12 +22477,12 @@ class LFJsonQuery(JsonQuery):
         'disabled reason':      # Reasons that ESR MLO may be disabled by the driver.
         'dormant':              # MLO Link is currently dormant.
         'dup pkts':             # Number of duplicated wifi packets received by this MLO Link.
-        'eid':                  # 
-        'entity id':            # 
+        'eid':                  #
+        'entity id':            #
         'esr active':           # MLO Link is currently active.
         'last exit':            # Reasons that ESR MLO mode was last exited by the driver.
         'noise':                # Wireless noise level.
-        'parent dev':           # 
+        'parent dev':           #
         'retry failed':         # Number of Wireless packets that the MLO Link failed to send due to
                                 # excessive retries.
         'rx bytes':             # Number of bytes received by this MLO Link.
@@ -22505,7 +22505,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_mlo(self, 
+    def get_mlo(self,
                 eid_list: list = None,
                 requested_col_names: list = None,
                 wait_sec: float = 0.01,
@@ -22562,13 +22562,13 @@ class LFJsonQuery(JsonQuery):
     request one of these URLs:
         /newsession
 
-    
+
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_newsession(eid_list=['1.234', '1.344'],
                                           debug=True)
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_newsession(self, 
+    def get_newsession(self,
                        eid_list: list = None,
                        requested_col_names: list = None,
                        wait_sec: float = 0.01,
@@ -22640,27 +22640,27 @@ class LFJsonQuery(JsonQuery):
         /ports/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        4way+time+%28us%29, activity, aid, alias, anqp+time+%28us%29, ap, avg+chain+rssi, 
-        beacon, bps+rx, bps+rx+ll, bps+tx, bps+tx+ll, bss+color, bytes+rx+ll, bytes+tx+ll, 
-        centerfrequency, chain+rssi, channel, collisions, connections, crypt, cx+ago, 
-        cx+time+%28us%29, device, dhcp+%28ms%29, down, entity+id, gateway+ip, hardware, ip, 
-        ipv6+address, ipv6+gateway, key%2Fphrase, login-fail, login-ok, logout-fail, 
-        logout-ok, mac, mask, misc, mode, mtu, no+cx+%28us%29, noise, parent+dev, phantom, 
-        port, port+type, pps+rx, pps+tx, qlen, reset, retry+failed, rf+loss, rx+bytes, 
-        rx+crc, rx+drop, rx+errors, rx+fifo, rx+frame, rx+length, rx+miss, rx+over, 
-        rx+pkts, rx-rate, sec, security, signal, ssid, status, time-stamp, tx+abort, 
-        tx+bytes, tx+crr, tx+errors, tx+fifo, tx+hb, tx+pkts, tx+wind, tx-failed+%25, 
+        4way+time+%28us%29, activity, aid, alias, anqp+time+%28us%29, ap, avg+chain+rssi,
+        beacon, bps+rx, bps+rx+ll, bps+tx, bps+tx+ll, bss+color, bytes+rx+ll, bytes+tx+ll,
+        centerfrequency, chain+rssi, channel, collisions, connections, crypt, cx+ago,
+        cx+time+%28us%29, device, dhcp+%28ms%29, down, entity+id, gateway+ip, hardware, ip,
+        ipv6+address, ipv6+gateway, key%2Fphrase, login-fail, login-ok, logout-fail,
+        logout-ok, mac, mask, misc, mode, mtu, no+cx+%28us%29, noise, parent+dev, phantom,
+        port, port+type, pps+rx, pps+tx, qlen, reset, retry+failed, rf+loss, rx+bytes,
+        rx+crc, rx+drop, rx+errors, rx+fifo, rx+frame, rx+length, rx+miss, rx+over,
+        rx+pkts, rx-rate, sec, security, signal, ssid, status, time-stamp, tx+abort,
+        tx+bytes, tx+crr, tx+errors, tx+fifo, tx+hb, tx+pkts, tx+wind, tx-failed+%25,
         tx-rate, wifi+retries        # hidden columns:
-        antenna_count, beacon_rx_signal, port_cur_flags_h, port_cur_flags_l, port_supported_flags_h, 
+        antenna_count, beacon_rx_signal, port_cur_flags_h, port_cur_flags_l, port_supported_flags_h,
         port_supported_flags_l, resource, rx_multicast, tx_dropped
     Example URL: /port?fields=4way+time+%28us%29,activity
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_port(eid_list=['1.234', '1.344'],
-                                    requested_col_names=['entity id'], 
+                                    requested_col_names=['entity id'],
                                     debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         '4way time (us)':  # TIme (in micro-seconds) it took to complete the last WiFi 4-way
                            # authentication.
@@ -22778,7 +22778,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_port(self, 
+    def get_port(self,
                  eid_list: list = None,
                  requested_col_names: list = None,
                  wait_sec: float = 0.01,
@@ -22842,17 +22842,17 @@ class LFJsonQuery(JsonQuery):
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_probe(eid_list=['1.234', '1.344'],
-                                     requested_col_names=['probe results'], 
+                                     requested_col_names=['probe results'],
                                      debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'entity id':     # Entity ID
         'probe results': # Probe the low level information about the port.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_probe(self, 
+    def get_probe(self,
                   eid_list: list = None,
                   requested_col_names: list = None,
                   wait_sec: float = 0.01,
@@ -22918,16 +22918,16 @@ class LFJsonQuery(JsonQuery):
         /profiles/$name
 
     When requesting specific column names, they need to be URL encoded:
-        antennas, bandwidth, eap-id, entity+id, frequency, instances, mode, name, 
+        antennas, bandwidth, eap-id, entity+id, frequency, instances, mode, name,
         notes, password, pattern, ssid, type
     Example URL: /profile?fields=antennas,bandwidth
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_profile(eid_list=['1.234', '1.344'],
-                                       requested_col_names=['entity id'], 
+                                       requested_col_names=['entity id'],
                                        debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'antennas':  # -
         'bandwidth': # -
@@ -22945,7 +22945,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_profile(self, 
+    def get_profile(self,
                     eid_list: list = None,
                     requested_col_names: list = None,
                     wait_sec: float = 0.01,
@@ -23009,16 +23009,16 @@ class LFJsonQuery(JsonQuery):
         /profiles/$name
 
     When requesting specific column names, they need to be URL encoded:
-        antennas, bandwidth, eap-id, entity+id, frequency, instances, mode, name, 
+        antennas, bandwidth, eap-id, entity+id, frequency, instances, mode, name,
         notes, password, pattern, ssid, type
     Example URL: /profiles?fields=antennas,bandwidth
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_profiles(eid_list=['1.234', '1.344'],
-                                        requested_col_names=['entity id'], 
+                                        requested_col_names=['entity id'],
                                         debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'antennas':  # -
         'bandwidth': # -
@@ -23036,7 +23036,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_profiles(self, 
+    def get_profiles(self,
                      eid_list: list = None,
                      requested_col_names: list = None,
                      wait_sec: float = 0.01,
@@ -23098,13 +23098,13 @@ class LFJsonQuery(JsonQuery):
     request one of these URLs:
         /quit
 
-    
+
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_quit(eid_list=['1.234', '1.344'],
                                     debug=True)
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_quit(self, 
+    def get_quit(self,
                  eid_list: list = None,
                  requested_col_names: list = None,
                  wait_sec: float = 0.01,
@@ -23169,18 +23169,18 @@ class LFJsonQuery(JsonQuery):
         /radiostatus/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        _links, antenna, ap, capabilities, channel, country, driver, entity+id, firmware+version, 
-        frag, frequency, max_sta, max_vap, max_vifs, monitors_down, monitors_up, 
-        phantom, port, resource, rts, stations_down, stations_up, tx-power, vaps_down, 
+        _links, antenna, ap, capabilities, channel, country, driver, entity+id, firmware+version,
+        frag, frequency, max_sta, max_vap, max_vifs, monitors_down, monitors_up,
+        phantom, port, resource, rts, stations_down, stations_up, tx-power, vaps_down,
         vaps_up, verbose+debug
     Example URL: /radiostatus?fields=_links,antenna
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_radiostatus(eid_list=['1.234', '1.344'],
-                                           requested_col_names=['firmware version'], 
+                                           requested_col_names=['firmware version'],
                                            debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         '_links':           # -
         'antenna':          # -
@@ -23211,7 +23211,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_radiostatus(self, 
+    def get_radiostatus(self,
                         eid_list: list = None,
                         requested_col_names: list = None,
                         wait_sec: float = 0.01,
@@ -23271,20 +23271,20 @@ class LFJsonQuery(JsonQuery):
         /resource/$shelf_id/$resource_id
 
     When requesting specific column names, they need to be URL encoded:
-        app-id, bps-rx-3s, bps-tx-3s, build+date, cli-port, cpu, ct-kernel, ctrl-ip, 
-        ctrl-port, device+type, df-boot, df-home, df-root, eid, entity+id, free+mem, 
-        free+swap, gps, hostname, hw+version, kernel, load, max+if-up, max+staged, 
-        mem, phantom, ports, rf-path, rx+bytes, shelf, sta+up, sw+version, swap, 
+        app-id, bps-rx-3s, bps-tx-3s, build+date, cli-port, cpu, ct-kernel, ctrl-ip,
+        ctrl-port, device+type, df-boot, df-home, df-root, eid, entity+id, free+mem,
+        free+swap, gps, hostname, hw+version, kernel, load, max+if-up, max+staged,
+        mem, phantom, ports, rf-path, rx+bytes, shelf, sta+up, sw+version, swap,
         tx+bytes, user        # hidden columns:
         timestamp
     Example URL: /resource?fields=app-id,bps-rx-3s
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_resource(eid_list=['1.234', '1.344'],
-                                        requested_col_names=['entity id'], 
+                                        requested_col_names=['entity id'],
                                         debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'app-id':      # Interop app ID, if this is an Interop resource.
         'bps-rx-3s':   # Rate in bits-per-second that the manager issending management data to
@@ -23338,7 +23338,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_resource(self, 
+    def get_resource(self,
                      eid_list: list = None,
                      requested_col_names: list = None,
                      wait_sec: float = 0.01,
@@ -23399,21 +23399,21 @@ class LFJsonQuery(JsonQuery):
         /rfgen/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        bb-gain, burst+offset, chirp+width, entity+id, frequency, frequency+modulation, 
-        gain, if-gain, name, ofdm+duration, ofdm+header+modulation, ofdm+payload+modulation, 
-        one+burst, pulse+count, pulse+interval, pulse+repetition+frequency+1, pulse+repetition+frequency+2, 
-        pulse+repetition+frequency+3, pulse+width, sample+rate, state, status, sweep+time, 
-        time+period+1+off, time+period+1+on, time+period+2+off, time+period+2+on, 
-        time+period+3+off, time+period+3+on, trials+center, trials+high, trials+low, 
+        bb-gain, burst+offset, chirp+width, entity+id, frequency, frequency+modulation,
+        gain, if-gain, name, ofdm+duration, ofdm+header+modulation, ofdm+payload+modulation,
+        one+burst, pulse+count, pulse+interval, pulse+repetition+frequency+1, pulse+repetition+frequency+2,
+        pulse+repetition+frequency+3, pulse+width, sample+rate, state, status, sweep+time,
+        time+period+1+off, time+period+1+on, time+period+2+off, time+period+2+on,
+        time+period+3+off, time+period+3+on, trials+center, trials+high, trials+low,
         trigger+amp, trigger+dbm, uut+channel
     Example URL: /rfgen?fields=bb-gain,burst+offset
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_rfgen(eid_list=['1.234', '1.344'],
-                                     requested_col_names=['entity id'], 
+                                     requested_col_names=['entity id'],
                                      debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'bb-gain':                      # RX AMP gain, (0-62, 2db steps)
         'burst offset':                 # FCC5 burst offset.For W53 this is the blank-time.
@@ -23460,7 +23460,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_rfgen(self, 
+    def get_rfgen(self,
                   eid_list: list = None,
                   requested_col_names: list = None,
                   wait_sec: float = 0.01,
@@ -23525,13 +23525,13 @@ class LFJsonQuery(JsonQuery):
         /scanresults/$shelf_id/$resource_id/$port_id
         /scanresults/$shelf_id/$resource_id/$port_id/$bssid
 
-    
+
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_scan(eid_list=['1.234', '1.344'],
                                     debug=True)
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_scan(self, 
+    def get_scan(self,
                  eid_list: list = None,
                  requested_col_names: list = None,
                  wait_sec: float = 0.01,
@@ -23590,17 +23590,17 @@ class LFJsonQuery(JsonQuery):
         /stations/$mac
 
     When requesting specific column names, they need to be URL encoded:
-        ap, auth-for, capabilities, chain+rssi, entity+id, idle, ip, roam-duration, 
-        rx+bytes, rx+pkts, rx+rate, signal, signal+avg, station+bssid, station+ssid, 
+        ap, auth-for, capabilities, chain+rssi, entity+id, idle, ip, roam-duration,
+        rx+bytes, rx+pkts, rx+rate, signal, signal+avg, station+bssid, station+ssid,
         tx+bytes, tx+pkts, tx+rate, tx+retries, tx-failed
     Example URL: /stations?fields=ap,auth-for
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_stations(eid_list=['1.234', '1.344'],
-                                        requested_col_names=['entity id'], 
+                                        requested_col_names=['entity id'],
                                         debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'ap':            # The Port that owns this station.
         'auth-for':      # Duration in seconds this station has been authenticated.
@@ -23631,7 +23631,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_stations(self, 
+    def get_stations(self,
                      eid_list: list = None,
                      requested_col_names: list = None,
                      wait_sec: float = 0.01,
@@ -23699,13 +23699,13 @@ class LFJsonQuery(JsonQuery):
         /status-msg/$session/this
         /status-msg/sessions
 
-    
+
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_status_msg(eid_list=['1.234', '1.344'],
                                           debug=True)
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_status_msg(self, 
+    def get_status_msg(self,
                        eid_list: list = None,
                        requested_col_names: list = None,
                        wait_sec: float = 0.01,
@@ -23848,10 +23848,10 @@ class LFJsonQuery(JsonQuery):
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_test_group(eid_list=['1.234', '1.344'],
-                                          requested_col_names=['entity id'], 
+                                          requested_col_names=['entity id'],
                                           debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'cross connects': # List of Test Manager's Cross-Connects.
         'entity id':      # Entity ID
@@ -23861,7 +23861,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_test_group(self, 
+    def get_test_group(self,
                        eid_list: list = None,
                        requested_col_names: list = None,
                        wait_sec: float = 0.01,
@@ -23932,10 +23932,10 @@ class LFJsonQuery(JsonQuery):
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_text(eid_list=['1.234', '1.344'],
-                                    requested_col_names=['text'], 
+                                    requested_col_names=['text'],
                                     debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'eid':  # -
         'name': # -
@@ -23944,7 +23944,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_text(self, 
+    def get_text(self,
                  eid_list: list = None,
                  requested_col_names: list = None,
                  wait_sec: float = 0.01,
@@ -24010,18 +24010,18 @@ class LFJsonQuery(JsonQuery):
         /voip/$cx_id
 
     When requesting specific column names, they need to be URL encoded:
-        bps+rx+a, bps+rx+b, delay+a+%E2%86%90+b, delay+a+%E2%86%92+b, eid, endpoints+%28a%C2%A0%E2%86%94%C2%A0b%29, 
-        entity+id, jitter+a+%E2%86%90+b, jitter+a+%E2%86%92+b, name, pkt+tx+a%C2%A0%E2%86%90%C2%A0b, 
-        pkt+tx+a%C2%A0%E2%86%92%C2%A0b, rpt+timer, rx+drop+%25+a, rx+drop+%25+b, state, 
+        bps+rx+a, bps+rx+b, delay+a+%E2%86%90+b, delay+a+%E2%86%92+b, eid, endpoints+%28a%C2%A0%E2%86%94%C2%A0b%29,
+        entity+id, jitter+a+%E2%86%90+b, jitter+a+%E2%86%92+b, name, pkt+tx+a%C2%A0%E2%86%90%C2%A0b,
+        pkt+tx+a%C2%A0%E2%86%92%C2%A0b, rpt+timer, rx+drop+%25+a, rx+drop+%25+b, state,
         type
     Example URL: /voip?fields=bps+rx+a,bps+rx+b
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_voip(eid_list=['1.234', '1.344'],
-                                    requested_col_names=['entity id'], 
+                                    requested_col_names=['entity id'],
                                     debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'bps rx a':                           # Endpoint B's real transmit rate (bps).Measured at the CX Type layer.
         'bps rx b':                           # Endpoint A's real transmit rate (bps).Measured at the CX Type layer.
@@ -24060,7 +24060,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_voip(self, 
+    def get_voip(self,
                  eid_list: list = None,
                  requested_col_names: list = None,
                  wait_sec: float = 0.01,
@@ -24124,21 +24124,21 @@ class LFJsonQuery(JsonQuery):
         /voip-endp/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
-        attenuation, audio+band, audio+length, avg+delay, calls+answered, calls+attempted, 
-        calls+completed, calls+failed, cf+404, cf+408, cf+busy, cf+canceled, channel, 
-        delay, destination+addr, device+type, dropped, dup+pkts, eid, elapsed, entity+id, 
-        jb+cur, jb+over, jb+silence, jb+under, jitter, mng, mobile+bt+mac, mos-lqo, 
-        mos-lqo%23, name, ooo+pkts, phone+%23, pingpong, reg+state, rst, rtp+rtt, run, 
-        rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, state, tx+bytes, tx+file, 
+        attenuation, audio+band, audio+length, avg+delay, calls+answered, calls+attempted,
+        calls+completed, calls+failed, cf+404, cf+408, cf+busy, cf+canceled, channel,
+        delay, destination+addr, device+type, dropped, dup+pkts, eid, elapsed, entity+id,
+        jb+cur, jb+over, jb+silence, jb+under, jitter, mng, mobile+bt+mac, mos-lqo,
+        mos-lqo%23, name, ooo+pkts, phone+%23, pingpong, reg+state, rst, rtp+rtt, run,
+        rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, state, tx+bytes, tx+file,
         tx+pkts, vad+pkts
     Example URL: /voip-endp?fields=attenuation,audio+band
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_voip_endp(eid_list=['1.234', '1.344'],
-                                         requested_col_names=['entity id'], 
+                                         requested_col_names=['entity id'],
                                          debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'attenuation':      # Attenuation (Automatic gain control) values from POLQA/PESQ report
                             # (unit: dB)
@@ -24205,7 +24205,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_voip_endp(self, 
+    def get_voip_endp(self,
                       eid_list: list = None,
                       requested_col_names: list = None,
                       wait_sec: float = 0.01,
@@ -24274,20 +24274,20 @@ class LFJsonQuery(JsonQuery):
         /vrcx/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        active+ipv6+router, bgp+4byte+as, bgp+damping, bgp+peers, cluster+id, collision+domain+id, 
-        confederation+id, damping+half+life, damping+max+suppress, damping+reuse, 
-        damping+suppress, entity+id, height, ipv6+radv, is+bgp+reflector, local+as, 
-        multicast+routing, name, netsmith-state, notes, pad, ripv2, router+connections, 
-        router+id, router+id, use+confederation, use+existing+cfg, use+ospf, use+rip+dft+route, 
+        active+ipv6+router, bgp+4byte+as, bgp+damping, bgp+peers, cluster+id, collision+domain+id,
+        confederation+id, damping+half+life, damping+max+suppress, damping+reuse,
+        damping+suppress, entity+id, height, ipv6+radv, is+bgp+reflector, local+as,
+        multicast+routing, name, netsmith-state, notes, pad, ripv2, router+connections,
+        router+id, router+id, use+confederation, use+existing+cfg, use+ospf, use+rip+dft+route,
         using+bgp, using+olsr, width, x, xorp+sha, y
     Example URL: /vr?fields=active+ipv6+router,bgp+4byte+as
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_vr(eid_list=['1.234', '1.344'],
-                                  requested_col_names=['netsmith-state'], 
+                                  requested_col_names=['netsmith-state'],
                                   debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'active ipv6 router':   # -
         'bgp 4byte as':         # -
@@ -24327,7 +24327,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_vr(self, 
+    def get_vr(self,
                eid_list: list = None,
                requested_col_names: list = None,
                wait_sec: float = 0.01,
@@ -24386,17 +24386,17 @@ class LFJsonQuery(JsonQuery):
         /vrcx/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        entity+id, height, interface+cost, local-a, local-b, netsmith-state, remote-a, 
-        remote-b, resource, rip+metric, vrrp+id, vrrp+interval, vrrp+ip, vrrp+ip-prefix, 
+        entity+id, height, interface+cost, local-a, local-b, netsmith-state, remote-a,
+        remote-b, resource, rip+metric, vrrp+id, vrrp+interval, vrrp+ip, vrrp+ip-prefix,
         vrrp+priority, wan+link, width, x, y
     Example URL: /vrcx?fields=entity+id,height
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_vrcx(eid_list=['1.234', '1.344'],
-                                    requested_col_names=['netsmith-state'], 
+                                    requested_col_names=['netsmith-state'],
                                     debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'entity id':      # -
         'height':         # -
@@ -24420,7 +24420,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_vrcx(self, 
+    def get_vrcx(self,
                  eid_list: list = None,
                  requested_col_names: list = None,
                  wait_sec: float = 0.01,
@@ -24496,10 +24496,10 @@ class LFJsonQuery(JsonQuery):
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_wifi_msg(eid_list=['1.234', '1.344'],
-                                        requested_col_names=['text'], 
+                                        requested_col_names=['text'],
                                         debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'resource':   # Resource that the wifi message is about.
         'text':       # Text content of the wifi message.
@@ -24508,7 +24508,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_wifi_msg(self, 
+    def get_wifi_msg(self,
                      eid_list: list = None,
                      requested_col_names: list = None,
                      wait_sec: float = 0.01,
@@ -24569,50 +24569,50 @@ class LFJsonQuery(JsonQuery):
         /wifi-stats/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        alias, ba_miss_count, entity+id, parent+dev, port, rx_ampdu_len_0_1, rx_ampdu_len_104_127, 
-        rx_ampdu_len_11_19, rx_ampdu_len_128_151, rx_ampdu_len_152_175, rx_ampdu_len_176_199, 
-        rx_ampdu_len_200_223, rx_ampdu_len_20_28, rx_ampdu_len_224_247, rx_ampdu_len_29_37, 
-        rx_ampdu_len_2_10, rx_ampdu_len_38_46, rx_ampdu_len_47_55, rx_ampdu_len_56_79, 
-        rx_ampdu_len_80_103, rx_cck, rx_he_2mu, rx_he_2ru, rx_he_3mu, rx_he_3ru, 
-        rx_he_4mu, rx_he_4ru, rx_he_5to8ru, rx_he_9to16ru, rx_he_ext_su, rx_he_gtr16ru, 
-        rx_he_su, rx_htgf, rx_htmix, rx_ofdm, rx_vht_2mu, rx_vht_3mu, rx_vht_4mu, 
-        rx_vht_su, time-stamp, tx_ampdu_len_0_1, tx_ampdu_len_104_127, tx_ampdu_len_11_19, 
-        tx_ampdu_len_128_151, tx_ampdu_len_152_175, tx_ampdu_len_176_199, tx_ampdu_len_200_223, 
-        tx_ampdu_len_20_28, tx_ampdu_len_224_247, tx_ampdu_len_29_37, tx_ampdu_len_2_10, 
-        tx_ampdu_len_38_46, tx_ampdu_len_47_55, tx_ampdu_len_56_79, tx_ampdu_len_80_103, 
-        tx_bf_ppdu_ebf, tx_bf_ppdu_ibf, tx_bf_rx_feedback_all, tx_bf_rx_feedback_he, 
-        tx_bf_rx_feedback_ht, tx_bf_rx_feedback_vht, tx_hetrig_2mu, tx_hetrig_2ru, 
-        tx_hetrig_3mu, tx_hetrig_3ru, tx_hetrig_4mu, tx_hetrig_4ru, tx_hetrig_5to8ru, 
-        tx_hetrig_9to16ru, tx_hetrig_gtr16ru, tx_hetrig_su, tx_msdu_pack_0, tx_msdu_pack_1, 
-        tx_msdu_pack_2, tx_msdu_pack_3, tx_msdu_pack_4, tx_msdu_pack_5, tx_msdu_pack_6, 
-        tx_msdu_pack_7, tx_pkt_ebf, tx_pkt_ibf, txo_mpdu_attempts, txo_mpdu_fail, 
-        txo_mpdu_ok, txo_mpdu_retry, v_rx_bw_160, v_rx_bw_20, v_rx_bw_320, v_rx_bw_40, 
-        v_rx_bw_80, v_rx_bw_he_ru, v_rx_mcs_0, v_rx_mcs_1, v_rx_mcs_10, v_rx_mcs_11, 
-        v_rx_mcs_12, v_rx_mcs_13, v_rx_mcs_2, v_rx_mcs_3, v_rx_mcs_4, v_rx_mcs_5, 
-        v_rx_mcs_6, v_rx_mcs_7, v_rx_mcs_8, v_rx_mcs_9, v_rx_mode_cck, v_rx_mode_eht, 
-        v_rx_mode_eht_mu, v_rx_mode_eht_trig, v_rx_mode_he_ext_su, v_rx_mode_he_mu, 
-        v_rx_mode_he_su, v_rx_mode_he_tb, v_rx_mode_ht, v_rx_mode_ht_gf, v_rx_mode_ofdm, 
-        v_rx_mode_vht, v_rx_nss_1, v_rx_nss_2, v_rx_nss_3, v_rx_nss_4, v_rx_ru_106, 
-        v_tx_bw_160, v_tx_bw_20, v_tx_bw_320, v_tx_bw_40, v_tx_bw_80, v_tx_mcs_0, 
-        v_tx_mcs_1, v_tx_mcs_10, v_tx_mcs_11, v_tx_mcs_12, v_tx_mcs_13, v_tx_mcs_2, 
-        v_tx_mcs_3, v_tx_mcs_4, v_tx_mcs_5, v_tx_mcs_6, v_tx_mcs_7, v_tx_mcs_8, v_tx_mcs_9, 
-        v_tx_mode_cck, v_tx_mode_eht, v_tx_mode_eht_mu, v_tx_mode_eht_trig, v_tx_mode_he_ext_su, 
-        v_tx_mode_he_mu, v_tx_mode_he_su, v_tx_mode_he_tb, v_tx_mode_ht, v_tx_mode_ht_gf, 
-        v_tx_mode_ofdm, v_tx_mode_vht, v_tx_nss_1, v_tx_nss_2, v_tx_nss_3, v_tx_nss_4, 
+        alias, ba_miss_count, entity+id, parent+dev, port, rx_ampdu_len_0_1, rx_ampdu_len_104_127,
+        rx_ampdu_len_11_19, rx_ampdu_len_128_151, rx_ampdu_len_152_175, rx_ampdu_len_176_199,
+        rx_ampdu_len_200_223, rx_ampdu_len_20_28, rx_ampdu_len_224_247, rx_ampdu_len_29_37,
+        rx_ampdu_len_2_10, rx_ampdu_len_38_46, rx_ampdu_len_47_55, rx_ampdu_len_56_79,
+        rx_ampdu_len_80_103, rx_cck, rx_he_2mu, rx_he_2ru, rx_he_3mu, rx_he_3ru,
+        rx_he_4mu, rx_he_4ru, rx_he_5to8ru, rx_he_9to16ru, rx_he_ext_su, rx_he_gtr16ru,
+        rx_he_su, rx_htgf, rx_htmix, rx_ofdm, rx_vht_2mu, rx_vht_3mu, rx_vht_4mu,
+        rx_vht_su, time-stamp, tx_ampdu_len_0_1, tx_ampdu_len_104_127, tx_ampdu_len_11_19,
+        tx_ampdu_len_128_151, tx_ampdu_len_152_175, tx_ampdu_len_176_199, tx_ampdu_len_200_223,
+        tx_ampdu_len_20_28, tx_ampdu_len_224_247, tx_ampdu_len_29_37, tx_ampdu_len_2_10,
+        tx_ampdu_len_38_46, tx_ampdu_len_47_55, tx_ampdu_len_56_79, tx_ampdu_len_80_103,
+        tx_bf_ppdu_ebf, tx_bf_ppdu_ibf, tx_bf_rx_feedback_all, tx_bf_rx_feedback_he,
+        tx_bf_rx_feedback_ht, tx_bf_rx_feedback_vht, tx_hetrig_2mu, tx_hetrig_2ru,
+        tx_hetrig_3mu, tx_hetrig_3ru, tx_hetrig_4mu, tx_hetrig_4ru, tx_hetrig_5to8ru,
+        tx_hetrig_9to16ru, tx_hetrig_gtr16ru, tx_hetrig_su, tx_msdu_pack_0, tx_msdu_pack_1,
+        tx_msdu_pack_2, tx_msdu_pack_3, tx_msdu_pack_4, tx_msdu_pack_5, tx_msdu_pack_6,
+        tx_msdu_pack_7, tx_pkt_ebf, tx_pkt_ibf, txo_mpdu_attempts, txo_mpdu_fail,
+        txo_mpdu_ok, txo_mpdu_retry, v_rx_bw_160, v_rx_bw_20, v_rx_bw_320, v_rx_bw_40,
+        v_rx_bw_80, v_rx_bw_he_ru, v_rx_mcs_0, v_rx_mcs_1, v_rx_mcs_10, v_rx_mcs_11,
+        v_rx_mcs_12, v_rx_mcs_13, v_rx_mcs_2, v_rx_mcs_3, v_rx_mcs_4, v_rx_mcs_5,
+        v_rx_mcs_6, v_rx_mcs_7, v_rx_mcs_8, v_rx_mcs_9, v_rx_mode_cck, v_rx_mode_eht,
+        v_rx_mode_eht_mu, v_rx_mode_eht_trig, v_rx_mode_he_ext_su, v_rx_mode_he_mu,
+        v_rx_mode_he_su, v_rx_mode_he_tb, v_rx_mode_ht, v_rx_mode_ht_gf, v_rx_mode_ofdm,
+        v_rx_mode_vht, v_rx_nss_1, v_rx_nss_2, v_rx_nss_3, v_rx_nss_4, v_rx_ru_106,
+        v_tx_bw_160, v_tx_bw_20, v_tx_bw_320, v_tx_bw_40, v_tx_bw_80, v_tx_mcs_0,
+        v_tx_mcs_1, v_tx_mcs_10, v_tx_mcs_11, v_tx_mcs_12, v_tx_mcs_13, v_tx_mcs_2,
+        v_tx_mcs_3, v_tx_mcs_4, v_tx_mcs_5, v_tx_mcs_6, v_tx_mcs_7, v_tx_mcs_8, v_tx_mcs_9,
+        v_tx_mode_cck, v_tx_mode_eht, v_tx_mode_eht_mu, v_tx_mode_eht_trig, v_tx_mode_he_ext_su,
+        v_tx_mode_he_mu, v_tx_mode_he_su, v_tx_mode_he_tb, v_tx_mode_ht, v_tx_mode_ht_gf,
+        v_tx_mode_ofdm, v_tx_mode_vht, v_tx_nss_1, v_tx_nss_2, v_tx_nss_3, v_tx_nss_4,
               # hidden columns:
         resource
     Example URL: /wifi-stats?fields=alias,ba_miss_count
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_wifi_stats(eid_list=['1.234', '1.344'],
-                                          requested_col_names=['entity id'], 
+                                          requested_col_names=['entity id'],
                                           debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'alias':                 # User-specified alias for this Port.
         'ba_miss_count':         # Radio level stat:  Beacon missed reported by firmware.
-        'entity id':             # 
+        'entity id':             #
         'parent dev':            # Parent device or port of this port. Blank if this device is not a child
                                  # of another device or port.
         'port':                  # Entity ID
@@ -24777,7 +24777,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_wifi_stats(self, 
+    def get_wifi_stats(self,
                        eid_list: list = None,
                        requested_col_names: list = None,
                        wait_sec: float = 0.01,
@@ -24845,17 +24845,17 @@ class LFJsonQuery(JsonQuery):
         /wlendp/$wl_ep_id
 
     When requesting specific column names, they need to be URL encoded:
-        bps+rx+a, bps+rx+b, eid, endpoints+%28a%C2%A0%E2%86%94%C2%A0b%29, entity+id, k-m, 
-        name, pkt+tx+a%C2%A0%E2%86%90%C2%A0b, pkt+tx+a%C2%A0%E2%86%92%C2%A0b, rpt+timer, 
+        bps+rx+a, bps+rx+b, eid, endpoints+%28a%C2%A0%E2%86%94%C2%A0b%29, entity+id, k-m,
+        name, pkt+tx+a%C2%A0%E2%86%90%C2%A0b, pkt+tx+a%C2%A0%E2%86%92%C2%A0b, rpt+timer,
         state
     Example URL: /wl?fields=bps+rx+a,bps+rx+b
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_wl(eid_list=['1.234', '1.344'],
-                                  requested_col_names=['entity id'], 
+                                  requested_col_names=['entity id'],
                                   debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'bps rx a':                           # Endpoint B's Max transmit rate (bps).
         'bps rx b':                           # Endpoint A's Max transmit rate (bps).
@@ -24880,7 +24880,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_wl(self, 
+    def get_wl(self,
                eid_list: list = None,
                requested_col_names: list = None,
                wait_sec: float = 0.01,
@@ -24944,19 +24944,19 @@ class LFJsonQuery(JsonQuery):
         /wl-endp/$wl_ep_id
 
     When requesting specific column names, they need to be URL encoded:
-        buffer, corrupt+1, corrupt+2, corrupt+3, corrupt+4, corrupt+5, corrupt+6, 
-        delay, dropfreq+%25, dropped, dup+pkts, dupfreq+%25, eid, elapsed, extrabuf, 
-        failed-late, jitfreq+%25, max+rate, maxjitter, maxlate, name, ooo+pkts, qdisc, 
-        reordfrq+%25, run, rx+bytes, rx+pkts, script, serdelay, tx+bytes, tx+drop+%25, 
+        buffer, corrupt+1, corrupt+2, corrupt+3, corrupt+4, corrupt+5, corrupt+6,
+        delay, dropfreq+%25, dropped, dup+pkts, dupfreq+%25, eid, elapsed, extrabuf,
+        failed-late, jitfreq+%25, max+rate, maxjitter, maxlate, name, ooo+pkts, qdisc,
+        reordfrq+%25, run, rx+bytes, rx+pkts, script, serdelay, tx+bytes, tx+drop+%25,
         tx+pkts, tx+rate, tx-failed, wps
     Example URL: /wl-endp?fields=buffer,corrupt+1
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_wl_endp(eid_list=['1.234', '1.344'],
-                                       requested_col_names=['eid'], 
+                                       requested_col_names=['eid'],
                                        debug=True)
 
-    The record returned will have these members: 
+    The record returned will have these members:
     {
         'buffer':      # Maximum size of receive buffer, in bytes.This is the sum of the amount
                        # needed for the transit buffers (delay * bandwidth)plus the WanLink
@@ -25015,7 +25015,7 @@ class LFJsonQuery(JsonQuery):
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_wl_endp(self, 
+    def get_wl_endp(self,
                     eid_list: list = None,
                     requested_col_names: list = None,
                     wait_sec: float = 0.01,
@@ -25078,13 +25078,13 @@ class LFJsonQuery(JsonQuery):
         /ws-msg/
         /ws-msg/$sessionid
 
-    
+
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_ws_msg(eid_list=['1.234', '1.344'],
                                       debug=True)
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-    def get_ws_msg(self, 
+    def get_ws_msg(self,
                    eid_list: list = None,
                    requested_col_names: list = None,
                    wait_sec: float = 0.01,
@@ -25181,9 +25181,9 @@ class LFSession(BaseSession):
             if not BaseSession.session_id:
                 self.logger.info("BaseSession.session_id absent")
         else:
-            self.logger.error('LFSession failed to establish session_id') 
+            self.logger.error('LFSession failed to establish session_id')
         if require_session and (not BaseSession.session_id):
-            self.logger.error('LFSession failed to setup session_id correctly') 
+            self.logger.error('LFSession failed to setup session_id correctly')
         self.query_instance = LFJsonQuery(session_obj=self, debug=debug, exit_on_error=exit_on_error)
         self.method_map : dict = {}
 
@@ -25212,8 +25212,8 @@ class LFSession(BaseSession):
 
     def find_method(self, cli_name: str = None):
         """---- ---- ---- ----
-            `find_method` is used to correlate the name of the CLI command to the 
-            class and method used by a python script. This provides a dyanmic approach 
+            `find_method` is used to correlate the name of the CLI command to the
+            class and method used by a python script. This provides a dyanmic approach
             to assembling method calls at runtime.
         ---- ---- ---- ---- """
         if not self.method_map or len(self.method_map) < 1:
