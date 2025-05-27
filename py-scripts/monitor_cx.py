@@ -1,45 +1,50 @@
 #!/usr/bin/env python3
 """
-NAME: monitor_cx.py
+NAME:       monitor_cx.py
 
-PURPOSE: The Monitor CX script is for collecting CSV data from running Layer 3 connections. It reports data for each
-        endpoint. Start this script after beginning traffic in the GUI or other means. When all connections have
-        stopped, this script will exit. If this script is run before connections are started, it will immediately
-        exit.
+PURPOSE:    This simple script serves to collect and report CSV data from running LANforge Layer-3 connections.
+            It reports data for each specified endpoint and assumes traffic is already running.
 
-EXAMPLE:
-#########################################
-# Examples
-#########################################
+NOTES:      When all connections have stopped, this script will exit. If this script is run before connections
+            are started, it will immediately exit.
 
-Begin by starting traffic in the GUI or other means.
+            This script is kept intentionally simple to serve as a reference querying LANforge, specifically Layer-3 connections.
+            It uses the auto-generated LANforge API code and serves as a good starting ground for customization.
 
-Example monitoring one connection:
-$ ./monitor_cx.py --host ct521a-jana --cx_names cx1 --csv_file connections.csv
+EXAMPLE:    # Monitor a single connection:
+            ./monitor_cx.py \
+                --host      ct521a-jana \
+                --cx_names  cx1 \
+                --csv_file  connections.csv
 
-Example monitoring all connections:
-$ ./monitor_cx.py --host ct521a-jana --cx_names all --csv_file connections.csv
+            # Monitor multiple connections:
+            ./monitor_cx.py \
+                --host      ct521a-jana \
+                --cx_names  cx1,cx2 \
+                --csv_file  connections.csv
 
+            # Monitor all connections:
+            ./monitor_cx.py \
+                --host      ct521a-jana \
+                --cx_names  all \
+                --csv_file  connections.csv
 
-SCRIPT_CLASSIFICATION:  Monitors Traffic
+SCRIPT_CLASSIFICATION:
+            Monitors Traffic
 
-SCRIPT_CATEGORIES:  CSV Generation
+SCRIPT_CATEGORIES:
+            CSV Generation
 
-NOTES:
-        This script is purposely simple. It should serve as a reasonable basis for querying connections
-        in general. Please make a copy of this script and edit it to customize which columns you wish to collect.
+STATUS:     Functional
 
-STATUS: functional
+VERIFIED_ON:
+            Oct 2, 2023 jed@candelatech
 
-VERIFIED_ON: Oct 2, 2023 jed@candelatech
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
 
-LICENSE
-          Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
-
-INCLUDE_IN_README: True
-
-
+INCLUDE_IN_README:
+            True
 """
 import os
 import sys
