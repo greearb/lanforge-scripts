@@ -62,9 +62,9 @@ sys.path.insert(1, "../")
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFSession  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonCommand  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonQuery  # noqa: E402
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
@@ -110,7 +110,7 @@ class CxMonitor:
         self.query.debug_on = True
         self.cxnames: list = []
         self.endp_names: dict = {}
-        self.lines_written: int = 0;
+        self.lines_written: int = 0
 
         if not filename:
             raise ValueError("Please specify a filename")
@@ -274,7 +274,7 @@ class CxMonitor:
                         endp_name_to_alias[LFUtils.eid_to_str(LFUtils.name_to_eid(endp_vals["eid"]))]
                     ])
                     endp_vals: dict = list(endp.values())[0]
-                    if not "run" in endp_vals:
+                    if "run" not in endp_vals:
                         pprint.pprint(list(endp_vals))
                         quitting_time = True
                         raise ValueError("cannot find run column for endpoint, please include the *run* column")
@@ -293,7 +293,7 @@ class CxMonitor:
 
                 if possibly_running < 1:
                     quitting_time = True
-            except KeyboardInterrupt as k:
+            except KeyboardInterrupt:
                 quitting_time = True
 
     def close(self):
