@@ -1478,9 +1478,9 @@ class LFJsonCommand(JsonCommand):
     def post_adb_bt(self, 
                     adb_id: str = None,                       # Android device identifier, use NA if it should not be
                     # used/specified. [W]
-                    keystrokes: str = None,                   # All remaining text after adb_bt will be sent as keystrokes.
-                    # For example: [... {adb_id} ctrl h ctrl f s e t t...] <tt
-                    # escapearg='false'>Unescaped Value</tt>
+                    keystrokes: str = None,                   # All remaining text will either be sent as keystrokes or
+                    # interpreted as a command which gets expanded into
+                    # keystrokes. <tt escapearg='false'>Unescaped Value</tt>
                     resource: int = None,                     # Resource number. [W]
                     shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
                     response_json_list: list = None,
@@ -21364,8 +21364,8 @@ class LFJsonQuery(JsonQuery):
         if response is None:
             return None
         return self.extract_values(response=response,
-                                   singular_key="cx",
-                                   plural_key="cxs")
+                                   singular_key="",
+                                   plural_key="")
     #
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <DATABASE> type requests
