@@ -341,14 +341,12 @@ def parse_args():
 
 
 def main():
+    help_summary = "The Monitor CX script is for collecting CSV data from running Layer 3 connections. It reports data for each " \
+                   "endpoint. Start this script after beginning traffic in the GUI or other means. When all connections have " \
+                   "stopped, this script will exit. If this script is run before connections are started, it will immediately exit."
+
     args = parse_args()
 
-    help_summary='''\
- The Monitor CX script is for collecting CSV data from running Layer 3 connections. It reports data for each
-endpoint. Start this script after beginning traffic in the GUI or other means. When all connections have
-stopped, this script will exit. If this script is run before connections are started, it will immediately
-exit.
-'''
     if args.help_summary:
         print(help_summary)
         exit(0)
