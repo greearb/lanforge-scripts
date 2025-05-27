@@ -309,7 +309,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
-        description="monitors connections and prints data to a csv file",
+        description="Monitor LANforge Layer-3 connections, saving reported data to specified CSV file",
     )
 
     parser.add_argument("-m", "--mgr", "--host",
@@ -317,20 +317,21 @@ def parse_args():
                         type=str,
                         default="localhost",
                         help="Hostname for where LANforge GUI is running")
-
     parser.add_argument("--cx_names",
                         nargs="+",
-                        help="spsace or comma separated list of cx names, or ALL")
+                        help="Space or comma separated list of specific cx names to monitor, or 'all'")
     parser.add_argument("--csv_file",
-                        help="csv filename to save data to")
+                        help="CSV filename to save data")
+
+    # TODO: Only seems to be one state we check for presently?
     parser.add_argument("--quit",
                         default=QuitWhen.ALL_CX_STOPPED,
-                        help="when to exit the script: all_cx_stopped: when all connections stop")
+                        help="When to exit the script: all_cx_stopped: when all connections stop")
 
     parser.add_argument("--debug",
                         action="store_true",
                         default=False,
-                        help="turn on debugging")
+                        help="Enable verbose debug logging")
     parser.add_argument("--log_level")
     parser.add_argument('--help_summary',
                         action="store_true",
@@ -353,10 +354,10 @@ exit.
         exit(0)
 
     if not args.csv_file:
-        print("No csv file name provided")
+        print("No CSV file name provided")
         exit(1)
     if not args.cx_names:
-        print("No connection names provided, did you mean ALL?")
+        print("No connection names provided, did you mean 'all'?")
         exit(1)
     if args.log_level:
         logger.setLevel(args.log_level)
