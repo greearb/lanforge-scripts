@@ -311,25 +311,30 @@ def parse_args():
         formatter_class=argparse.RawTextHelpFormatter,
         description="monitors connections and prints data to a csv file",
     )
-    parser.add_argument(
-        "--host", "--mgr", help="specify the GUI to connect to, assumes port 8080"
-    )
+
+    parser.add_argument("-m", "--mgr", "--host",
+                        dest="host",
+                        type=str,
+                        default="localhost",
+                        help="Hostname for where LANforge GUI is running")
+
     parser.add_argument("--cx_names",
                         nargs="+",
                         help="spsace or comma separated list of cx names, or ALL")
-    parser.add_argument("--csv_file", help="csv filename to save data to")
-    parser.add_argument(
-        "--quit",
-        default=QuitWhen.ALL_CX_STOPPED,
-        help="when to exit the script: all_cx_stopped: when all connections stop",
-    )
-    parser.add_argument(
-        "--debug", action="store_true", default=False, help="turn on debugging"
-    )
+    parser.add_argument("--csv_file",
+                        help="csv filename to save data to")
+    parser.add_argument("--quit",
+                        default=QuitWhen.ALL_CX_STOPPED,
+                        help="when to exit the script: all_cx_stopped: when all connections stop")
+
+    parser.add_argument("--debug",
+                        action="store_true",
+                        default=False,
+                        help="turn on debugging")
     parser.add_argument("--log_level")
-    parser.add_argument(
-        '--help_summary', action="store_true", help='Show summary of what this script does'
-    )
+    parser.add_argument('--help_summary',
+                        action="store_true",
+                        help='Show summary of what this script does')
 
     return parser.parse_args()
 
