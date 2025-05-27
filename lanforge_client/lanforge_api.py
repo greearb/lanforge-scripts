@@ -21364,8 +21364,8 @@ class LFJsonQuery(JsonQuery):
         if response is None:
             return None
         return self.extract_values(response=response,
-                                   singular_key="cx",
-                                   plural_key="cxs")
+                                   singular_key="",
+                                   plural_key="")
     #
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <DATABASE> type requests
