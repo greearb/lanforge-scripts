@@ -19,21 +19,41 @@ EXAMPLE:    Use './lf_create_vap_cv.py --help' to see command line usage and opt
             # Load an existing Chamber View scenario
             ./lf_create_vap_cv.py --mgr 192.168.200.222 --port 8080 --load_existing_scenario --old_scenario_name hello --instance_name oldscenario
 
-            # Basic 2.4GHz vAP configuration using VSCode launch JSON
-            "args": ["--mgr","localhost",
+            # Basic 2.4GHz vAP configuration
+
+            # VSCode launch JSON
+            "args": ["--mgr","192.168.50.104",
                 "--port", "8080",
                 "--lf_user", "lanforge",
                 "--lf_password", "lanforge",
-                "--vap_radio", "wiphy0",
-                "--vap_freq", "36",
+                "--delete_old_scenario",
+                "--vap_radio", "wiphy1",
+                "--vap_channel", "36",
                 "--vap_ssid", "test_vap",
                 "--vap_passwd", "password",
                 "--vap_security", "wpa2",
-                "--vap_upstream_port", "1.1.eth1"
+                "--vap_upstream_port", "1.1.eth2"
             ]
 
-            # Basic 5GHz vAP configuration using VSCode launch JSON
-            "args": ["--mgr","192.168.0.104",
+            # command line
+            ./lf_create_vap_cv.py\
+            --mgr 192.168.50.104\
+            --port 8080\
+            --lf_user lanforge\
+            --lf_password lanforge\
+            --delete_old_scenario\
+            --vap_radio wiphy1\
+            --vap_freq 36\
+            --vap_ssid test_vap\
+            --vap_passwd password\
+            --vap_security wpa2\
+            --vap_bw 20\
+            --vap_upstream_port 1.1.eth2
+
+            # Basic 5GHz vAP configuration using 
+
+            # VSCode launch JSON
+            "args": ["--mgr","192.168.50.104",
                 "--port", "8080",
                 "--lf_user", "lanforge",
                 "--lf_password", "lanforge",
@@ -47,6 +67,39 @@ EXAMPLE:    Use './lf_create_vap_cv.py --help' to see command line usage and opt
                 "--vap_bw", "20",
                 "--vap_upstream_port", "1.1.eth2"
             ]
+
+            # command line
+            ./lf_create_vap_cv.py\
+            --mgr 192.168.50.104\
+            --port 8080\
+            --lf_user lanforge\
+            --lf_password lanforge\
+            --delete_old_scenario\
+            --vap_radio wiphy3\
+            --vap_freq 5660\
+            --vap_ssid mtk7915_5g\
+            --vap_passwd lf_mtk7915_5g\
+            --vap_security wpa2\
+            --vap_bw 20\
+            --vap_upstream_port 1.1.eth2
+
+            # 6g passing in the --vap_channel
+            # command line
+            ./lf_create_vap_cv.py\
+            --mgr 192.168.101.137\
+            --port 8080\
+            --lf_user lanforge\
+            --lf_password lanforge\
+            --delete_old_scenario\
+            --scenario_name at7_vap_chan\
+            --vap_radio 1.2.wiphy2\
+            --vap_channel 1e\
+            --vap_ssid at7_6g\
+            --vap_passwd hello123\
+            --vap_security wpa3\
+            --vap_bw 320\
+            --vap_upstream_port 1.1.eth2
+
 
 SCRIPT_CLASSIFICATION:
             Creation
@@ -316,21 +369,41 @@ EXAMPLE:    Use './lf_create_vap_cv.py --help' to see command line usage and opt
             # Load an existing Chamber View scenario
             ./lf_create_vap_cv.py --mgr 192.168.200.222 --port 8080 --load_existing_scenario --old_scenario_name hello --instance_name oldscenario
 
-            # Basic 2.4GHz vAP configuration using VSCode launch JSON
-            "args": ["--mgr","localhost",
+            # Basic 2.4GHz vAP configuration
+
+            # VSCode launch JSON
+            "args": ["--mgr","192.168.50.104",
                 "--port", "8080",
                 "--lf_user", "lanforge",
                 "--lf_password", "lanforge",
-                "--vap_radio", "wiphy0",
-                "--vap_freq", "36",
+                "--delete_old_scenario",
+                "--vap_radio", "wiphy1",
+                "--vap_channel", "36",
                 "--vap_ssid", "test_vap",
                 "--vap_passwd", "password",
                 "--vap_security", "wpa2",
-                "--vap_upstream_port", "1.1.eth1"
+                "--vap_upstream_port", "1.1.eth2"
             ]
 
-            # Basic 5GHz vAP configuration using VSCode launch JSON
-            "args": ["--mgr","192.168.0.104",
+            # command line
+            ./lf_create_vap_cv.py\
+            --mgr 192.168.50.104\
+            --port 8080\
+            --lf_user lanforge\
+            --lf_password lanforge\
+            --delete_old_scenario\
+            --vap_radio wiphy1\
+            --vap_freq 36\
+            --vap_ssid test_vap\
+            --vap_passwd password\
+            --vap_security wpa2\
+            --vap_bw 20\
+            --vap_upstream_port 1.1.eth2
+
+            # Basic 5GHz vAP configuration using 
+
+            # VSCode launch JSON
+            "args": ["--mgr","192.168.50.104",
                 "--port", "8080",
                 "--lf_user", "lanforge",
                 "--lf_password", "lanforge",
@@ -344,6 +417,39 @@ EXAMPLE:    Use './lf_create_vap_cv.py --help' to see command line usage and opt
                 "--vap_bw", "20",
                 "--vap_upstream_port", "1.1.eth2"
             ]
+
+            # command line
+            ./lf_create_vap_cv.py\
+            --mgr 192.168.50.104\
+            --port 8080\
+            --lf_user lanforge\
+            --lf_password lanforge\
+            --delete_old_scenario\
+            --vap_radio wiphy3\
+            --vap_freq 5660\
+            --vap_ssid mtk7915_5g\
+            --vap_passwd lf_mtk7915_5g\
+            --vap_security wpa2\
+            --vap_bw 20\
+            --vap_upstream_port 1.1.eth2
+
+            # 6g passing in the --vap_channel
+            # command line
+            ./lf_create_vap_cv.py\
+            --mgr 192.168.101.137\
+            --port 8080\
+            --lf_user lanforge\
+            --lf_password lanforge\
+            --delete_old_scenario\
+            --scenario_name at7_vap_chan\
+            --vap_radio 1.2.wiphy2\
+            --vap_channel 1e\
+            --vap_ssid at7_6g\
+            --vap_passwd hello123\
+            --vap_security wpa3\
+            --vap_bw 320\
+            --vap_upstream_port 1.1.eth2
+
 
 SCRIPT_CLASSIFICATION:
             Creation
