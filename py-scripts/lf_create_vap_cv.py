@@ -383,8 +383,10 @@ INCLUDE_IN_README: False
                         help="Chamberview scenario name (by default: Automation")
     parser.add_argument("-vr", "--vap_radio", default="wiphy0",
                         help="vap radio name (by default: wiphy0")
-    parser.add_argument("-vf", "--vap_freq", default="2437",
-                        help="vap frequency (by default: 2437")
+    parser.add_argument("-vf", "--vap_freq",
+                        help="vap frequency, vap_frequency or vap_channel needs to be set")
+    parser.add_argument("-vc", "--vap_channel",
+                        help="vap channel,  vap_frequency or vap_channel needs to be set")
     parser.add_argument("-vs", "--vap_ssid", default="routed-AP",
                         help="vap ssid (by default: routed-AP")
     parser.add_argument("-vp", "--vap_passwd", default=None,
@@ -442,7 +444,34 @@ INCLUDE_IN_README: False
     vap_scenario_name = args.scenario_name
     vap_radio = args.vap_radio
     vap_upstream_port = args.vap_upstream_port
-    vap_freq = args.vap_freq
+    if args.vap_freq is not None:
+        vap_freq = args.vap_freq
+        logger.info("vap frequency {freq}".format(freq=vap_freq))
+    # conversion of 6e channel to frequency
+    # ch_6e = (f - 5000 )  / 5
+    # f = (ch_6e * 5) + 5000
+    elif args.vap_channel is not None:
+        if args.vap_channel != 'AUTO':
+            if 'e' in args.vap_channel:
+                channel_6e = args.vap_channel.replace('e', '')
+                vap_freq = ((int(channel_6e) + 190) * 5) + 5000
+                lf_6e_chan = int(channel_6e) + 190
+                logger.info("6e_chan: {chan} lf_6e_chan: {lf_chan} frequency: {freq}".format(chan=args.vap_channel, lf_chan=lf_6e_chan, freq=vap_freq))
+                # self.channel = lf_6e_chan
+            else:
+                if int(args.vap_channel) <= 13:
+                    # channel 1 is 2412 ,
+                    vap_freq = 2407 + int(args.vap_channel) * 5
+                elif int(args.vap_channel) == 14:
+                    vap_freq = 2484
+                # 5g or 6g Candela numbering
+                else:
+                    vap_freq = int(args.vap_channel) * 5 + 5000
+                logger.info("channel: {chan}  frequency: {freq}".format(chan=args.vap_channel, freq=vap_freq))
+    elif args.vap_freq is None and args.vap_channel is None:
+        logger.error("vap_freq or vap_channel must be entered as an argument")
+        exit(1)
+
     vap_ssid = args.vap_ssid
     vap_passwd = args.vap_passwd
     vap_security = args.vap_security
