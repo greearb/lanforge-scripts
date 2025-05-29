@@ -50,7 +50,7 @@ EXAMPLE:    Use './lf_create_vap_cv.py --help' to see command line usage and opt
             --vap_bw 20\
             --vap_upstream_port 1.1.eth2
 
-            # Basic 5GHz vAP configuration using 
+            # Basic 5GHz vAP configuration using
 
             # VSCode launch JSON
             "args": ["--mgr","192.168.50.104",
@@ -400,7 +400,7 @@ EXAMPLE:    Use './lf_create_vap_cv.py --help' to see command line usage and opt
             --vap_bw 20\
             --vap_upstream_port 1.1.eth2
 
-            # Basic 5GHz vAP configuration using 
+            # Basic 5GHz vAP configuration using
 
             # VSCode launch JSON
             "args": ["--mgr","192.168.50.104",
