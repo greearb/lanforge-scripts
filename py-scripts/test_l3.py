@@ -784,8 +784,8 @@ class L3VariableTime(Realm):
                  anqp_3gpp_cell_net_list=None,
                  ieee80211w_list=None,
                  interopt_mode=False,
-                 endp_input_list=[],
-                 graph_input_list=[],
+                 endp_input_list=None,
+                 graph_input_list=None,
                  real=False,
                  expected_passfail_value=None,
                  device_csv_name=None,
@@ -5678,7 +5678,7 @@ class L3VariableTime(Realm):
         self.dut_sw_version = dut_sw_version
         self.dut_serial_num = dut_serial_num
 
-    def generate_report(self,config_devices={}, group_device_map={}):
+    def generate_report(self, config_devices=None, group_device_map=None):
         self.report.set_obj_html("Objective", "The Layer 3 Traffic Generation Test is designed to test the performance of the "
                                  "Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream "
                                  "of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints, "
@@ -6263,7 +6263,7 @@ class L3VariableTime(Realm):
                 pass_fail_list.append('PASS')
             else:
                 pass_fail_list.append('FAIL')
-        return test_input_list,pass_fail_list
+        return test_input_list, pass_fail_list
 
 
 # Converting the upstream_port to IP address for configuration purposes
@@ -6275,7 +6275,7 @@ def change_port_to_ip(upstream_port, lfclient_host, lfclient_port):
             realm_obj = Realm(lfclient_host=lfclient_host, lfclient_port=lfclient_port)
             target_port_ip = realm_obj.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
             upstream_port = target_port_ip
-        except BaseException:
+        except Exception:
             logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
         logging.info(f"Upstream port IP {upstream_port}")
     else:
@@ -6469,7 +6469,7 @@ def query_real_clients(args):
     for key, value in response.items():
         if key == "resources":
             for element in value:
-                for (a, b) in element.items():
+                for (_, b) in element.items():
 
                     # Check if the resource is not phantom
                     if not b['phantom']:
@@ -6532,7 +6532,7 @@ def query_real_clients(args):
         csv_device_list = args.device_list[0].split(',')
         for endp in traffic_type:
             endp_input_list.append('L3_' + endp.split('_')[1].upper() + '_DL')
-        for i in range(len(csv_device_list)):
+        for _ in range(len(csv_device_list)):
             for endp in traffic_type:
                 graph_input_list.append('L3_' + endp.split('_')[1].upper() + '_DL')
     sample_list = []
@@ -6549,7 +6549,8 @@ def query_real_clients(args):
             exit(1)
         args.existing_station_list = sample_list
         args.use_existing_station_list = True
-    return endp_input_list,graph_input_list,config_devices,group_device_map
+    return endp_input_list, graph_input_list, config_devices, group_device_map
+
 
 def validate_args(args):
     if args.real and args.expected_passfail_value and args.device_csv_name:
@@ -7630,12 +7631,12 @@ and generate a report.
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-             
+
     validate_args(args)
     endp_input_list = []
     graph_input_list = []
     if args.real:
-        endp_input_list,graph_input_list,config_devices,group_device_map = query_real_clients(args)
+        endp_input_list, graph_input_list, config_devices, group_device_map = query_real_clients(args)
     # Validate existing station list configuration if specified before starting test
     if not args.use_existing_station_list and args.existing_station_list:
         logger.error("Existing stations specified, but argument \'--use_existing_station_list\' not specified")
