@@ -6363,6 +6363,194 @@ def configure_reporting(local_lf_report_dir: str,
     return report, kpi_csv, csv_outfile
 
 
+def query_real_clients(args):
+    endp_input_list = []
+    graph_input_list = []
+    group_device_map = {}
+    traffic_type = args.endp_type.split(',')
+    if args.lfmgr_port:
+        json_port = args.lfmgr_port
+    else:
+        json_port = 8080
+    upstream_port_ip = change_port_to_ip(args.upstream_port, args.lfmgr, json_port)
+    config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.lfmgr, file_name=args.file_name, wait_time=args.wait_time)
+    config_devices = {}
+    # group_device_map = {}
+    config_dict = {
+        'ssid': args.ssid,
+        'passwd': args.passwd,
+        'enc': args.security,
+        'eap_method': args.eap_method,
+        'eap_identity': args.eap_identity,
+        'ieee80211': args.ieee8021x,
+        'ieee80211u': args.ieee80211u,
+        'ieee80211w': args.ieee80211w,
+        'enable_pkc': args.enable_pkc,
+        'bss_transition': args.bss_transition,
+        'power_save': args.power_save,
+        'disable_ofdma': args.disable_ofdma,
+        'roam_ft_ds': args.roam_ft_ds,
+        'key_management': args.key_management,
+        'pairwise': args.pairwise,
+        'private_key': args.private_key,
+        'ca_cert': args.ca_cert,
+        'client_cert': args.client_cert,
+        'pk_passwd': args.pk_passwd,
+        'pac_file': args.pac_file,
+        'server_ip': upstream_port_ip,
+    }
+    if not args.expected_passfail_value and args.device_csv_name is None:
+        config_obj.device_csv_file(csv_name="device.csv")
+    # Configuration of devices with groups and profiles
+    if args.group_name and args.file_name and args.profile_name:
+        selected_groups = args.group_name.split(',')
+        selected_profiles = args.profile_name.split(',')
+        for i in range(len(selected_groups)):
+            config_devices[selected_groups[i]] = selected_profiles[i]
+        config_obj.initiate_group()
+        group_device_map = config_obj.get_groups_devices(data=selected_groups, groupdevmap=True)
+        # Configuration of group of devices for the corresponding profiles
+        args.device_list = [','.join(i for i in asyncio.run(config_obj.connectivity(config_devices, upstream=upstream_port_ip)))]
+    elif args.device_list:
+        all_devices = config_obj.get_all_devices()
+        if args.group_name is None and args.file_name is None and args.profile_name is None:
+            dev_list = args.device_list[0].split(',')
+            # Configuration of devices with SSID,Password and Security when device list is specified
+            if args.config:
+                args.device_list = [','.join(i for i in asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict)))]
+
+    elif args.device_list is None and args.config:
+        all_devices = config_obj.get_all_devices()
+        device_list = []
+        for device in all_devices:
+            if device["type"] != 'laptop':
+                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
+            else:
+                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+        logger.info("Available devices: %s", device_list)
+        args.device_list = [input("Enter the desired resources to run the test:")]
+        dev1_list = args.device_list[0].split(',')
+        # Configuration of devices with SSID , Password and Security when the device list is not specified
+        if args.config:
+            args.device_list = [','.join(i for i in asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict)))]
+    all = config_obj.get_all_devices()
+    logger.info("All devices %s Device List %s", all, args.device_list)
+    configdev_list = []
+    configure_list = []
+    if args.dowebgui and args.group_name:
+        configdev_list = args.device_list[0].split(',')
+        for device in all:
+            for config in configdev_list:
+                if device['os'] == 'Android' and device['eid'] == config:
+                    configure_list.append(config + " " + device['os'] + " " + device['user-name'])
+                elif device['shelf'] + '.' + device['resource'] == config:
+                    configure_list.append(config + " " + device['os'] + " " + device['hostname'])
+
+    logger.info("configure list %s", configure_list)
+    # Fetching real devices list
+    port_eid_list = []
+    same_eid_list = []
+    original_port_list = []
+    working_resources_list = []
+    eid_list = []
+    windows_list = []
+    devices_available = []
+    linux_list = []
+    mac_list = []
+    android_list = []
+    mac_id1_list = []
+    user_list = []
+    response = config_obj.json_get("/resource/all")
+
+    if "resources" not in response.keys():
+        logger.error("There are no real devices.")
+        exit(1)
+
+    for key, value in response.items():
+        if key == "resources":
+            for element in value:
+                for (a, b) in element.items():
+
+                    # Check if the resource is not phantom
+                    if not b['phantom']:
+                        working_resources_list.append(b["hw version"])
+
+                        # Categorize based on hw version (type of device)
+                        if "Win" in b['hw version']:
+                            eid_list.append(b['eid'])
+                            windows_list.append(b['hw version'])
+                            devices_available.append(b['eid'] + " " + 'Win' + " " + b['hostname'])
+                        elif "Linux" in b['hw version']:
+                            if 'ct' not in b['hostname']:
+                                if 'lf' not in b['hostname']:
+                                    eid_list.append(b['eid'])
+                                    linux_list.append(b['hw version'])
+                                    devices_available.append(b['eid'] + " " + 'Lin' + " " + b['hostname'])
+                        elif "Apple" in b['hw version']:
+                            eid_list.append(b['eid'])
+                            mac_list.append(b['hw version'])
+                            devices_available.append(b['eid'] + " " + 'Mac' + " " + b['hostname'])
+                        else:
+                            eid_list.append(b['eid'])
+                            android_list.append(b['hw version'])
+                            devices_available.append(b['eid'] + " " + 'android' + " " + b['user'])
+
+    response_port = config_obj.json_get("/port/all")
+    if "interfaces" not in response_port.keys():
+        logger.error("Error: 'interfaces' key not found in port data")
+        exit(1)
+    for interface in response_port['interfaces']:
+        for port, port_data in interface.items():
+
+            # Check conditions for non-phantom ports
+            if not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0':
+                # Check if the port's parent device matches with an eid in the eid_list
+                for id in eid_list:
+                    if id + '.' in port:
+                        original_port_list.append(port)
+                        port_eid_list.append(str(LFUtils.name_to_eid(port)[0]) + '.' + str(LFUtils.name_to_eid(port)[1]))
+                        mac_id1_list.append(str(LFUtils.name_to_eid(port)[0]) + '.' + str(LFUtils.name_to_eid(port)[1]) + ' ' + port_data['mac'])
+
+    for i in range(len(eid_list)):
+        for j in range(len(port_eid_list)):
+            if eid_list[i] == port_eid_list[j]:
+                same_eid_list.append(eid_list[i])
+
+    same_eid_list = [_eid + ' ' for _eid in same_eid_list]
+    for eid in same_eid_list:
+        for device in devices_available:
+            if eid in device:
+                user_list.append(device)
+    if args.device_list is None and not args.config and args.group_name is None:
+        logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(user_list))
+        args.device_list = [input("Enter the desired resources to run the test:")]
+
+    if args.device_list[0] == '' or args.device_list[0] == ',':
+        logger.info("Device list is empty")
+        exit(1)
+    if args.device_list:
+        csv_device_list = args.device_list[0].split(',')
+        for endp in traffic_type:
+            endp_input_list.append('L3_' + endp.split('_')[1].upper() + '_DL')
+        for i in range(len(csv_device_list)):
+            for endp in traffic_type:
+                graph_input_list.append('L3_' + endp.split('_')[1].upper() + '_DL')
+    sample_list = []
+    if args.device_list:
+        for interface in response_port['interfaces']:
+            for port, port_data in interface.items():
+                if not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0':
+                    port_list = port.split('.')
+                    for device in args.device_list[0].split(','):
+                        if (port_list[0] + '.' + port_list[1]) == device:
+                            sample_list.append([port])
+        if sample_list == []:
+            logger.info("Selected devices are not available")
+            exit(1)
+        args.existing_station_list = sample_list
+        args.use_existing_station_list = True
+    return endp_input_list,graph_input_list,config_devices,group_device_map
+
 def validate_args(args):
     if args.real and args.expected_passfail_value and args.device_csv_name:
         logger.error("Specify either --expected_passfail_value or --device_csv_name")
@@ -7444,200 +7632,10 @@ and generate a report.
         logger_config.load_lf_logger_config()
              
     validate_args(args)
-    traffic_type = args.endp_type.split(',')
     endp_input_list = []
     graph_input_list = []
-    if args.group_name:
-        selected_groups = args.group_name.split(',')
-    else:
-        selected_groups = []
-    if args.profile_name:
-        selected_profiles = args.profile_name.split(',')
-    else:
-        selected_profiles = []
-
     if args.real:
-        if args.lfmgr_port:
-            json_port = args.lfmgr_port
-        else:
-            json_port = 8080
-        upstream_port_ip = change_port_to_ip(args.upstream_port, args.lfmgr, json_port)
-        config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.lfmgr, file_name=args.file_name, wait_time=args.wait_time)
-        config_devices = {}
-        group_device_map = {}
-        config_dict = {
-            'ssid': args.ssid,
-            'passwd': args.passwd,
-            'enc': args.security,
-            'eap_method': args.eap_method,
-            'eap_identity': args.eap_identity,
-            'ieee80211': args.ieee8021x,
-            'ieee80211u': args.ieee80211u,
-            'ieee80211w': args.ieee80211w,
-            'enable_pkc': args.enable_pkc,
-            'bss_transition': args.bss_transition,
-            'power_save': args.power_save,
-            'disable_ofdma': args.disable_ofdma,
-            'roam_ft_ds': args.roam_ft_ds,
-            'key_management': args.key_management,
-            'pairwise': args.pairwise,
-            'private_key': args.private_key,
-            'ca_cert': args.ca_cert,
-            'client_cert': args.client_cert,
-            'pk_passwd': args.pk_passwd,
-            'pac_file': args.pac_file,
-            'server_ip': upstream_port_ip,
-        }
-        if not args.expected_passfail_value and args.device_csv_name is None:
-            config_obj.device_csv_file(csv_name="device.csv")
-        # Configuration of devices with groups and profiles
-        if args.group_name and args.file_name and args.profile_name:
-            selected_groups = args.group_name.split(',')
-            selected_profiles = args.profile_name.split(',')
-            for i in range(len(selected_groups)):
-                config_devices[selected_groups[i]] = selected_profiles[i]
-            config_obj.initiate_group()
-            group_device_map = config_obj.get_groups_devices(data=selected_groups, groupdevmap=True)
-            # Configuration of group of devices for the corresponding profiles
-            args.device_list = [','.join(i for i in asyncio.run(config_obj.connectivity(config_devices, upstream=upstream_port_ip)))]
-        elif args.device_list:
-            all_devices = config_obj.get_all_devices()
-            if args.group_name is None and args.file_name is None and args.profile_name is None:
-                dev_list = args.device_list[0].split(',')
-                # Configuration of devices with SSID,Password and Security when device list is specified
-                if args.config:
-                    args.device_list = [','.join(i for i in asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict)))]
-
-        elif args.device_list is None and args.config:
-            all_devices = config_obj.get_all_devices()
-            device_list = []
-            for device in all_devices:
-                if device["type"] != 'laptop':
-                    device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-                else:
-                    device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
-            logger.info("Available devices: %s", device_list)
-            args.device_list = [input("Enter the desired resources to run the test:")]
-            dev1_list = args.device_list[0].split(',')
-            # Configuration of devices with SSID , Password and Security when the device list is not specified
-            if args.config:
-                args.device_list = [','.join(i for i in asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict)))]
-        all = config_obj.get_all_devices()
-        logger.info("All devices %s Device List %s", all, args.device_list)
-        configdev_list = []
-        configure_list = []
-        if args.dowebgui and args.group_name:
-            configdev_list = args.device_list[0].split(',')
-            for device in all:
-                for config in configdev_list:
-                    if device['os'] == 'Android' and device['eid'] == config:
-                        configure_list.append(config + " " + device['os'] + " " + device['user-name'])
-                    elif device['shelf'] + '.' + device['resource'] == config:
-                        configure_list.append(config + " " + device['os'] + " " + device['hostname'])
-
-        logger.info("configure list %s", configure_list)
-        # Fetching real devices list
-        port_eid_list = []
-        same_eid_list = []
-        original_port_list = []
-        working_resources_list = []
-        eid_list = []
-        windows_list = []
-        devices_available = []
-        linux_list = []
-        mac_list = []
-        android_list = []
-        mac_id1_list = []
-        user_list = []
-        response = config_obj.json_get("/resource/all")
-
-        if "resources" not in response.keys():
-            logger.error("There are no real devices.")
-            exit(1)
-
-        for key, value in response.items():
-            if key == "resources":
-                for element in value:
-                    for (a, b) in element.items():
-
-                        # Check if the resource is not phantom
-                        if not b['phantom']:
-                            working_resources_list.append(b["hw version"])
-
-                            # Categorize based on hw version (type of device)
-                            if "Win" in b['hw version']:
-                                eid_list.append(b['eid'])
-                                windows_list.append(b['hw version'])
-                                devices_available.append(b['eid'] + " " + 'Win' + " " + b['hostname'])
-                            elif "Linux" in b['hw version']:
-                                if 'ct' not in b['hostname']:
-                                    if 'lf' not in b['hostname']:
-                                        eid_list.append(b['eid'])
-                                        linux_list.append(b['hw version'])
-                                        devices_available.append(b['eid'] + " " + 'Lin' + " " + b['hostname'])
-                            elif "Apple" in b['hw version']:
-                                eid_list.append(b['eid'])
-                                mac_list.append(b['hw version'])
-                                devices_available.append(b['eid'] + " " + 'Mac' + " " + b['hostname'])
-                            else:
-                                eid_list.append(b['eid'])
-                                android_list.append(b['hw version'])
-                                devices_available.append(b['eid'] + " " + 'android' + " " + b['user'])
-
-        response_port = config_obj.json_get("/port/all")
-        if "interfaces" not in response_port.keys():
-            logger.error("Error: 'interfaces' key not found in port data")
-            exit(1)
-        for interface in response_port['interfaces']:
-            for port, port_data in interface.items():
-
-                # Check conditions for non-phantom ports
-                if not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0':
-                    # Check if the port's parent device matches with an eid in the eid_list
-                    for id in eid_list:
-                        if id + '.' in port:
-                            original_port_list.append(port)
-                            port_eid_list.append(str(LFUtils.name_to_eid(port)[0]) + '.' + str(LFUtils.name_to_eid(port)[1]))
-                            mac_id1_list.append(str(LFUtils.name_to_eid(port)[0]) + '.' + str(LFUtils.name_to_eid(port)[1]) + ' ' + port_data['mac'])
-
-        for i in range(len(eid_list)):
-            for j in range(len(port_eid_list)):
-                if eid_list[i] == port_eid_list[j]:
-                    same_eid_list.append(eid_list[i])
-
-        same_eid_list = [_eid + ' ' for _eid in same_eid_list]
-        for eid in same_eid_list:
-            for device in devices_available:
-                if eid in device:
-                    user_list.append(device)
-        if args.device_list is None and not args.config and args.group_name is None:
-            logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(user_list))
-            args.device_list = [input("Enter the desired resources to run the test:")]
-
-        if args.device_list[0] == '' or args.device_list[0] == ',':
-            logger.info("Device list is empty")
-            exit(1)
-        if args.device_list:
-            csv_device_list = args.device_list[0].split(',')
-            for endp in traffic_type:
-                endp_input_list.append('L3_' + endp.split('_')[1].upper() + '_DL')
-            for i in range(len(csv_device_list)):
-                for endp in traffic_type:
-                    graph_input_list.append('L3_' + endp.split('_')[1].upper() + '_DL')
-        sample_list = []
-        if args.device_list:
-            for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0':
-                        port_list = port.split('.')
-                        for device in args.device_list[0].split(','):
-                            if (port_list[0] + '.' + port_list[1]) == device:
-                                sample_list.append([port])
-            if sample_list == []:
-                logger.info("Selected devices are not available")
-                exit(1)
-            args.existing_station_list = sample_list
-            args.use_existing_station_list = True
+        endp_input_list,graph_input_list,config_devices,group_device_map = query_real_clients(args)
     # Validate existing station list configuration if specified before starting test
     if not args.use_existing_station_list and args.existing_station_list:
         logger.error("Existing stations specified, but argument \'--use_existing_station_list\' not specified")
