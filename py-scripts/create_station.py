@@ -493,7 +493,6 @@ class CreateStation(Realm):
                                                     group=self.groupwise_cipher,
                                                     eap=self.eap_method,
                                                     identity=self.eap_identity,
-                                                    passwd=self.eap_password,
                                                     private_key=self.private_key,
                                                     ca_cert=self.ca_cert,
                                                     pk_password=self.pk_passwd,
@@ -993,27 +992,37 @@ def validate_args(args):
         logger.error("--radio required")
         exit(1)
 
-    # TODO: Revisit these requirements. May have made some incorrect assumptions
+    # TODO: Revisit these requirements for other EAP methods. Should be mostly correct for EAP-TLS and EAP-TTLS
     if args.eap_method is not None:
+        # Always require an EAP identity, whether it be set to 'anonymous' or a named user
         if args.eap_identity is None:
             logger.error("--eap_identity required")
             exit(1)
-        elif args.eap_password is None:
-            logger.error("--eap_password required")
+
+        # Default LANforge key management methods do not include EAP key management methods
+        # so require user to specify desired method
+        if args.key_mgmt is None:
+            logger.error("Key management method required ('--key_mgmt'). "
+                         "For example: 'WPA-EAP', 'WPA-EAP-SHA256', 'WPA-EAP-SUITE-B', "
+                         "'WPA-EAP-SUITE-B-192', 'FT-EAP', 'FT-EAP-SHA384'")
             exit(1)
-        elif args.key_mgmt is None:
-            logger.error("--key_mgmt required")
-            exit(1)
-        elif args.eap_method == 'TLS':
-            if args.pk_passwd is None:
-                logger.error("--pk_passwd required")
-                exit(1)
-            elif args.ca_cert is None:
-                logger.error('--ca_cert required')
+
+        if args.eap_method == 'TLS':
+            if args.ca_cert is None:
+                logger.error("CA certificate not specified ('--ca_cert')")
                 exit(1)
             elif args.private_key is None:
-                logger.error('--private_key required')
-                exit(0)
+                logger.error("Private key not specified ('--private_key')")
+                exit(1)
+
+            # TODO: Revisit this, possibly private key can have no password set so permit unset
+            if args.pk_passwd is None:
+                logger.warning("Private key password not specified ('--pk_passwd')")
+
+        elif args.eap_password is None:
+            # Don't need to check this for EAP-TLS
+            logger.error("EAP password not specified ('--eap_password')")
+            exit(1)
 
         # Only need to check WPA3 ciphers because user requests 802.1X authentication.
         # Personal WPA3 always uses SAE, so default '[BLANK]' is fine if ciphers
@@ -1025,10 +1034,10 @@ def validate_args(args):
         #   '<type1|type2>'
         if 'wpa3' in args.security or 'WPA3' in args.security:
             if args.pairwise_cipher == '[BLANK]':
-                logger.error('--pairwise_cipher required')
+                logger.error("Pairwise cipher not specified ('--pairwise_cipher')")
                 exit(1)
             elif args.groupwise_cipher == '[BLANK]':
-                logger.error('--groupwise_cipher required')
+                logger.error("Groupwise cipher not specified ('--groupwise_cipher')")
                 exit(1)
 
 
