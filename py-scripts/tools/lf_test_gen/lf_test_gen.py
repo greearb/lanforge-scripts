@@ -358,7 +358,7 @@ PURPOSE:
      This script is a tkinter GUI that can create rig, dut and test json used as an input to lf_check.py
 
 EXAMPLE:
-    ./lf_check_json_gen.py --radio_count 12
+    ./lf_check_json_gen.py --radio_count 12 --log_level debug
 
 
 
@@ -380,14 +380,21 @@ LICENSE:
 INCLUDE_IN_README: False
 ''')
     parser.add_argument('--radio_count', help='Number of radios to display on GUI', default='16')
+    parser.add_argument('--log_level', help='Set logging level: debug | info | warning | error | critical')
+
 
     args = parser.parse_args()
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+    else:
+        # for now default to debug
+        logger_config.set_level(level='debug')
+
     _radio_count = args.radio_count
 
     my_gui = json_gen_gui(radio_count=int(_radio_count))
     # TODO allow log level to be sets
-    logger_config = lf_logger_config.lf_logger_config()
-    logger_config.set_level(level='debug')
 
 
 if __name__ == '__main__':
