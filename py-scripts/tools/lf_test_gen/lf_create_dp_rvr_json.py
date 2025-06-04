@@ -327,10 +327,14 @@ class lf_create_dp_rvr_json():
         if count_band_radios > 0:
 
             for radio in range(0, self.radio_dict_size):
+                logger.debug(f"radio_dict[{radio}] = {self.radio_dict[radio].get()}")
                 if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
                     dp_rvr_test_name = str(self.suite_test_name_band_dict[radio].get()) + f"_{band}_W{radio}" + f"_{lf_dp_rvr_traffic_type_name}" + f"{traffic_direction}"
                     dp_rvr_batch_size = str(self.radio_batch_dict[radio].get())
                     dp_rvr_sta_max = dp_rvr_batch_size.rsplit(',', 1)
+                    dp_rvr_resource = self.radio_dict[radio].get()
+                    dp_rvr_resource = dp_rvr_resource.split(".")[1]
+                    logger.debug(f"dp_rvr_resource {dp_rvr_resource}")
                     if len(dp_rvr_sta_max) == 1:
                         dp_rvr_sta_max_int = int(dp_rvr_sta_max[0])
                     else:
@@ -363,8 +367,8 @@ class lf_create_dp_rvr_json():
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario {dp_rvr_test_name} ",
-                    " --raw_line \\"profile_link 1.1 STA-AUTO {dp_rvr_sta_max_int} 'DUT: USE_DUT_NAME {dut_radio}' NA wiphy{radio},AUTO -1 NA\\" ",
-                    " --raw_line \\"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\\""
+                    " --raw_line \\"profile_link 1.{dp_rvr_resource} STA-AUTO {dp_rvr_sta_max_int} 'DUT: USE_DUT_NAME {dut_radio}' NA wiphy{radio},AUTO -1 NA\\" ",
+                    " --raw_line \\"profile_link 1.{dp_rvr_resource} upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\\""
                 ]
             }},
             "{prefix}_{dp_rvr_test_name}":{{
@@ -471,7 +475,7 @@ INCLUDE_IN_README: False
 ''')
 
     parser.add_argument('--log_level',
-                        default=None,
+                        default="debug",
                         help='Set logging level: debug | info | warning | error | critical')
 
     # logging configuration
