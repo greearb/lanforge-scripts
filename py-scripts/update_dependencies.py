@@ -12,6 +12,7 @@ from subprocess import PIPE, call, run
 List of packages
 """
 pip_packages: list = [
+    'dlipower',
     'setuptools',
     'cryptography',
     'kaleido',
@@ -20,12 +21,14 @@ pip_packages: list = [
     'pandas',
     'paramiko',
     'pdfkit',
+    'pexpect',
     'pexpect-serial',
     'pip-search',
     'plotly',
     'psutil',
     'pyserial',
     'pyshark',
+    'requests',
     'scipy',
     'scp',
     'simple-geometry',
