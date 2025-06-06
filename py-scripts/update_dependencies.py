@@ -306,15 +306,15 @@ as necessary.'''
                         required=False, default=False, action="store_true",
                         help="The command `sudo pip3 install --upgrade pip` will be run before the virtual "
                              "environment is created. Requires a version of python3-pip to be installed. "
-                             "This option will help if pip is installed but packages fail with permission errors. " 
+                             "This option will help if pip is installed but packages fail with permission errors. "
                              "Do not use this option in PEP 668 externally managed environments.")
-    
+
     # help summary
     parser.add_argument('--help_summary',
                         default=None,
                         action="store_true",
                         help='Show summary of what this script does')
-    
+
 
     args = parser.parse_args()
     if args.help_summary:
