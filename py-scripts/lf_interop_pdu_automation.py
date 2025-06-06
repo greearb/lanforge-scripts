@@ -16,18 +16,12 @@ Note: Please ensure that PDU is powered on and has an ip assigned to it.
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
-import os
 import time
 import argparse
 from typing import Sequence
 from typing import Optional
 
-try:
-    import dlipower
-except:
-    print('Please wait we are installing DLI Power module for you!!!')
-    os.system('pip install dlipower')
-    import dlipower
+import dlipower
 
 
 class PDUAutomate:
