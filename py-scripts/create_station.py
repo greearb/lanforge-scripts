@@ -848,140 +848,137 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 INCLUDE_IN_README:
             False
 """)
-    required = parser.add_argument_group('required arguments')
-    required.add_argument('--start_id',
-                          type=int,
-                          help='Specify the station starting id \n e.g: --start_id <value> default 0',
-                          default=0)
-
-    optional = parser.add_argument_group('Optional arguments')
-    optional.add_argument("--prefix",
-                          type=str,
-                          help="Station prefix. Default: \'sta\'",
-                          default="sta")
-    optional.add_argument("--create_admin_down",
-                          help='Create ports in admin down state.',
-                          action='store_true')
-    optional.add_argument("--bssid",
-                          type=str,
-                          help="AP BSSID. For example, \"00:00:00:00:00:00\".",
-                          default="DEFAULT")  # TODO: Fix 'null' when not set issue (REST server-side issue)
-    optional.add_argument('--mode',
-                          help='Mode for your station (as a number)',
-                          default=0)
-    optional.add_argument('--station_flags',
-                          '--station_flag',
-                          dest='station_flags',
-                          help='station flags to add. eg: --station_flags ht40_disable',
-                          required=False,
-                          default=None)
-    optional.add_argument("--mac_pattern",
-                          help="MAC randomization pattern for created stations. "
-                               "In full MAC address pattern, the \'*\' indicates "
-                               "randomizable characters. Most users will not adjust "
-                               "this option. Note that this does not explicitly set "
-                               "the locally-administered address bit.",
-                          default="xx:xx:xx:*:*:xx")
-    optional.add_argument("--radio_antenna",
-                          help='Number of spatial streams: \n'
-                          ' default = -1 \n'
-                          ' 0 Diversity (All) \n'
-                          ' 1 Fixed-A (1x1) \n'
-                          ' 4 AB (2x2) \n'
-                          ' 7 ABC (3x3) \n'
-                          ' 8 ABCD (4x4) \n'
-                          ' 9 (8x8) \n',
-                          default='0')
-    optional.add_argument("--radio_channel",
-                          help='Radio Channel: \n'
-                          ' default: AUTO \n'
-                          ' e.g:   --radio_channel 6 (2.4G) \n'
-                          '\t--radio_channel 36 (5G) \n',
-                          default='AUTO')
-    optional.add_argument("--radio_tx_power",
-                          help='Radio tx-power \n'
-                          ' default: AUTO system defaults',
-                          default='AUTO')
-    optional.add_argument("--country_code",
-                          help='Radio Country Code:\n'
-                               'e.g: \t--country_code 840')
-    optional.add_argument("--eap_method",
-                          type=str,
-                          help='Enter EAP method e.g: TLS')
-    optional.add_argument("--eap_identity",
-                          "--radius_identity",
-                          dest="eap_identity",
-                          type=str,
-                          help="This is synonymous with the RADIUS username.")
-    optional.add_argument("--eap_anonymous_identity",
-                          type=str,
-                          help="",
-                          default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
-    optional.add_argument("--eap_password",
-                          "--radius_passwd",
-                          dest="eap_password",
-                          type=str,
-                          help="This is synonymous with the RADIUS user's password.")
-    optional.add_argument("--eap_phase1",
-                          type=str,
-                          help="EAP Phase 1 (outer authentication, i.e. TLS tunnel) parameters.\n"
-                               "For example, \"peapver=0\" or \"peapver=1 peaplabel=1\".\n"
-                               "Some WPA Enterprise setups may require \"auth=MSCHAPV2\"",
-                          default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
-    optional.add_argument("--eap_phase2",
-                          type=str,
-                          help="EAP Phase 2 (inner authentication) parameters.\n"
-                               "For example, \"autheap=MSCHAPV2 autheap=MD5\" for EAP-TTLS.",
-                          default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
-    optional.add_argument("--pk_passwd",
-                          type=str,
-                          help='Enter the private key password')
-    optional.add_argument("--ca_cert",
-                          type=str,
-                          help='Enter path for certificate e.g: /home/lanforge/ca.pem')
-    optional.add_argument("--private_key",
-                          type=str,
-                          help='Enter private key path e.g: /home/lanforge/client.p12')
-    optional.add_argument("--key_mgmt",
-                          type=str,
-                          help="Authentication key management. Combinations are supported.\n")
-    optional.add_argument("--pairwise_cipher",
-                          help='Pairwise Ciphers\n'
-                               'DEFAULT\n'
-                               'CCMP\n'
-                               'TKIP\n'
-                               'NONE\n'
-                               'CCMP-TKIP\n'
-                               'CCMP-256\n'
-                               'GCMP\n'
-                               'GCMP-256\n'
-                               'CCMP/GCMP-256',
-                               default='[BLANK]')
-    optional.add_argument("--groupwise_cipher",
-                          help='Groupwise Ciphers\n'
-                               'DEFAULT\n'
-                               'CCMP\n'
-                               'TKIP\n'
-                               'WEP104\n'
-                               'WEP40\n'
-                               'GTK_NOT_USED\n'
-                               'GCMP-256\n'
-                               'CCMP-256\n'
-                               'GCMP/CCMP-256\n'
-                               'ALL',
-                          default='[BLANK]')
-    optional.add_argument("--no_pre_cleanup",
-                          help='Add this flag to stop cleaning up before station creation',
-                          action='store_true')
-    optional.add_argument("--cleanup",
-                          help='Add this flag to clean up stations after creation',
-                          action='store_true')
-    optional.add_argument("--custom_wifi_cmd",
-                          help="Mention the custom wifi command.")
-    optional.add_argument("--initial_band_pref",
-                          type=str,
-                          choices=["2.4GHz", "5GHz", "6GHz"],
-                          help="Specify the initial band preference for created stations 2.4GHz, 5GHz or 6GHz")
+    parser.add_argument('--start_id',
+                        type=int,
+                        help='Specify the station starting id \n e.g: --start_id <value> default 0',
+                        default=0)
+    parser.add_argument("--prefix",
+                        type=str,
+                        help="Station prefix. Default: \'sta\'",
+                        default="sta")
+    parser.add_argument("--create_admin_down",
+                        help='Create ports in admin down state.',
+                        action='store_true')
+    parser.add_argument("--bssid",
+                        type=str,
+                        help="AP BSSID. For example, \"00:00:00:00:00:00\".",
+                        default="DEFAULT")  # TODO: Fix 'null' when not set issue (REST server-side issue)
+    parser.add_argument('--mode',
+                        help='Mode for your station (as a number)',
+                        default=0)
+    parser.add_argument('--station_flags',
+                        '--station_flag',
+                        dest='station_flags',
+                        help='station flags to add. eg: --station_flags ht40_disable',
+                        required=False,
+                        default=None)
+    parser.add_argument("--mac_pattern",
+                        help="MAC randomization pattern for created stations. "
+                             "In full MAC address pattern, the \'*\' indicates "
+                             "randomizable characters. Most users will not adjust "
+                             "this option. Note that this does not explicitly set "
+                             "the locally-administered address bit.",
+                        default="xx:xx:xx:*:*:xx")
+    parser.add_argument("--radio_antenna",
+                        help='Number of spatial streams: \n'
+                        ' default = -1 \n'
+                        ' 0 Diversity (All) \n'
+                        ' 1 Fixed-A (1x1) \n'
+                        ' 4 AB (2x2) \n'
+                        ' 7 ABC (3x3) \n'
+                        ' 8 ABCD (4x4) \n'
+                        ' 9 (8x8) \n',
+                        default='0')
+    parser.add_argument("--radio_channel",
+                        help='Radio Channel: \n'
+                        ' default: AUTO \n'
+                        ' e.g:   --radio_channel 6 (2.4G) \n'
+                        '\t--radio_channel 36 (5G) \n',
+                        default='AUTO')
+    parser.add_argument("--radio_tx_power",
+                        help='Radio tx-power \n'
+                        ' default: AUTO system defaults',
+                        default='AUTO')
+    parser.add_argument("--country_code",
+                        help='Radio Country Code:\n'
+                             'e.g: \t--country_code 840')
+    parser.add_argument("--eap_method",
+                        type=str,
+                        help='Enter EAP method e.g: TLS')
+    parser.add_argument("--eap_identity",
+                        "--radius_identity",
+                        dest="eap_identity",
+                        type=str,
+                        help="This is synonymous with the RADIUS username.")
+    parser.add_argument("--eap_anonymous_identity",
+                        type=str,
+                        help="",
+                        default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
+    parser.add_argument("--eap_password",
+                        "--radius_passwd",
+                        dest="eap_password",
+                        type=str,
+                        help="This is synonymous with the RADIUS user's password.")
+    parser.add_argument("--eap_phase1",
+                        type=str,
+                        help="EAP Phase 1 (outer authentication, i.e. TLS tunnel) parameters.\n"
+                             "For example, \"peapver=0\" or \"peapver=1 peaplabel=1\".\n"
+                             "Some WPA Enterprise setups may require \"auth=MSCHAPV2\"",
+                        default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
+    parser.add_argument("--eap_phase2",
+                        type=str,
+                        help="EAP Phase 2 (inner authentication) parameters.\n"
+                             "For example, \"autheap=MSCHAPV2 autheap=MD5\" for EAP-TTLS.",
+                        default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
+    parser.add_argument("--pk_passwd",
+                        type=str,
+                        help='Enter the private key password')
+    parser.add_argument("--ca_cert",
+                        type=str,
+                        help='Enter path for certificate e.g: /home/lanforge/ca.pem')
+    parser.add_argument("--private_key",
+                        type=str,
+                        help='Enter private key path e.g: /home/lanforge/client.p12')
+    parser.add_argument("--key_mgmt",
+                        type=str,
+                        help="Authentication key management. Combinations are supported.\n")
+    parser.add_argument("--pairwise_cipher",
+                        help='Pairwise Ciphers\n'
+                             'DEFAULT\n'
+                             'CCMP\n'
+                             'TKIP\n'
+                             'NONE\n'
+                             'CCMP-TKIP\n'
+                             'CCMP-256\n'
+                             'GCMP\n'
+                             'GCMP-256\n'
+                             'CCMP/GCMP-256',
+                             default='[BLANK]')
+    parser.add_argument("--groupwise_cipher",
+                        help='Groupwise Ciphers\n'
+                             'DEFAULT\n'
+                             'CCMP\n'
+                             'TKIP\n'
+                             'WEP104\n'
+                             'WEP40\n'
+                             'GTK_NOT_USED\n'
+                             'GCMP-256\n'
+                             'CCMP-256\n'
+                             'GCMP/CCMP-256\n'
+                             'ALL',
+                        default='[BLANK]')
+    parser.add_argument("--no_pre_cleanup",
+                        help='Add this flag to stop cleaning up before station creation',
+                        action='store_true')
+    parser.add_argument("--cleanup",
+                        help='Add this flag to clean up stations after creation',
+                        action='store_true')
+    parser.add_argument("--custom_wifi_cmd",
+                        help="Mention the custom wifi command.")
+    parser.add_argument("--initial_band_pref",
+                        type=str,
+                        choices=["2.4GHz", "5GHz", "6GHz"],
+                        help="Specify the initial band preference for created stations 2.4GHz, 5GHz or 6GHz")
 
     return parser.parse_args()
 
