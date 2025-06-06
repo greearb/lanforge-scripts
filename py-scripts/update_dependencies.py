@@ -23,7 +23,6 @@ pip_packages: list = [
     'pdfkit',
     'pexpect',
     'pexpect-serial',
-    'pip-search',
     'plotly',
     'psutil',
     'pyserial',
