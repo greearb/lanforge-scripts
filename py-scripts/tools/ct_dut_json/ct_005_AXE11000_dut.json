@@ -6,7 +6,7 @@
             "The dut related configuration is contained in this file",
             "DUT_SET_NAME is an input to wifi capacity, dataplane and ap_auto tests, for --set parameter",
             "The DUT_NAME must be part of DUT_SET_NAME"
-        ]  
+        ]
     },
     "test_dut":{
         "DUT_SET_NAME": "DUT_NAME GT-AXE11000",
@@ -19,7 +19,8 @@
             "ssid_idx=1":{"ssid_idx":"1","SSID_USED":"asus11axe-5","SSID_PW_USED":"hello123","BSSID_TO_USE":"7c:10:c9:61:99:14","SECURITY_USED":"wpa2"},
             "ssid_idx=2":{"ssid_idx":"2","SSID_USED":"asus11axe-6","SSID_PW_USED":"hello123","BSSID_TO_USE":"7c:10:c9:61:99:18","SECURITY_USED":"wpa3"},
             "ssid_idx=3":{"ssid_idx":"3","SSID_USED":"asus11axe-guest-6","SSID_PW_USED":"hello123","BSSID_TO_USE":"7c:10:c9:61:99:19","SECURITY_USED":"wpa3"}
-        }
+        },
+        "UPSTREAM_PORT":"1.1.eth2",
+        "UPSTREAM_ALIAS":"eth2"
     }
 }
-			
