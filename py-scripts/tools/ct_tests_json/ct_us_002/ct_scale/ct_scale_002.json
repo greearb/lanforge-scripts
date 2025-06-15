@@ -7,8 +7,8 @@
            "as a unique identifier for tha chamber-view test run"
        ]
    },
-   "test_suites":{
-       "ct_scale":{
+   "test_cv_scale_test_suites":{
+       "cv_scale_test":{
            "SCALE_2G_5G":{
                "enabled":"TRUE",
                "timeout":"600",
