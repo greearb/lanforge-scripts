@@ -7,8 +7,8 @@
             "as a unique identifier for tha chamber-view test run"
         ]
     },
-    "test_suites":{
-        "cv_tests":{
+    "test_cv_port_reset_test_suites":{
+        "cv_port_reset_test":{
             "LOAD_PORT_REST_DB":{
                "enabled":"TRUE",
                "timeout":"600",
