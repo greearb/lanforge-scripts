@@ -92,6 +92,7 @@
                   " --raw_line 'reset_duration_min: 5000'",
                   " --raw_line 'reset_duration_max: 10000'",
                   " --raw_line 'minimum_port_up_duration_ms: 5000'",
+                  " --raw_line 'cap_pf_percent_combo: 800000'",
                   " --pull_report",
                   " --local_lf_report_dir REPORT_PATH",
                   " --test_tag 'AP_AUTO_CAPACITY'",
