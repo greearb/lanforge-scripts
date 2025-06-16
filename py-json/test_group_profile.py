@@ -56,6 +56,7 @@ class TestGroupProfile(LFCliBase):
 
     def check_group_exists(self):
         test_groups = self.local_realm.json_get("/testgroups/all")
+        # This breaks on only one existing group, this expects an array not a single object
         if test_groups is not None and "groups" in test_groups:
             test_groups = test_groups["groups"]
             for group in test_groups:
