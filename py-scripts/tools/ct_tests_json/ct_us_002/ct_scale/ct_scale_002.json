@@ -7,7 +7,7 @@
            "as a unique identifier for tha chamber-view test run"
        ]
    },
-   "test_cv_scale_test_suites":{
+   "test_suites":{
        "cv_scale_test":{
            "SCALE_2G_5G":{
                "enabled":"TRUE",
