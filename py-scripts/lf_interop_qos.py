@@ -93,6 +93,7 @@ import json
 import shutil
 import asyncio
 import csv
+import re
 from datetime import datetime, timedelta
 from collections import defaultdict
 
@@ -170,7 +171,9 @@ class ThroughputQOS(Realm):
                  csv_direction=None,
                  expected_passfail_val=None,
                  csv_name=None,
-                 wait_time=60):
+                 wait_time=60,
+                 get_live_view=False,
+                 total_floors=0):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
         self.ssid_list = []
@@ -255,6 +258,8 @@ class ThroughputQOS(Realm):
         self.wait_time = wait_time
         self.group_device_map = {}
         self.config = config
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
 
     def os_type(self):
         response = self.json_get("/resource/all")
@@ -568,6 +573,66 @@ class ThroughputQOS(Realm):
                 count += 1
             logger.info("cross connections with TOS type created.")
 
+    def monitor_cx(self):
+        """
+        This function waits for up to 20 iterations to allow all CXs (connections) to be created.
+
+        If some CXs are still not created after 20 iterations, then the CXs related to that device are removed,
+        along with their associated client and MAC entries from all relevant lists.
+        """
+
+        max_retry = 20
+        current_retry = 0
+        while current_retry < max_retry:
+            not_running_cx = []
+            overallresponse = self.json_get('/cx/all')  # Get all current CXs from the layer-3 tab
+            created_cx_list = list(self.cx_profile.created_cx.keys())
+            l3_existing_cx = list(overallresponse.keys())
+            count_of_cx = 0
+            for created_cxs in created_cx_list:
+                if created_cxs in l3_existing_cx:
+                    count_of_cx += 1
+                else:
+                    # Extract base device name (e.g., from '1.16androidsamsunga7_UDP_UL_BE-8' to '1.16androidsamsunga7')
+                    # to track the whole device if any TOS-based CX fails.
+                    not_running_cx.append(created_cxs.split('_')[0])   # CX was not created
+            if count_of_cx == len(created_cx_list):
+                break
+            logger.info(f"Try {current_retry + 1} out of 20: Waiting for the cross-connection to be created.")
+            time.sleep(2)
+            current_retry += 1
+        cxs_to_remove = []
+
+        # Collect all CXs related to the failed device (from `not_running_cx`),
+        # including those created for other TOS types, and add them to `cxs_to_remove`.
+        for cx in self.cx_profile.created_cx:
+            for not_created_cx in not_running_cx:
+                if not_created_cx in cx:
+                    cxs_to_remove.append(cx)
+
+        # Remove each failed CX and delete it from the created CX tracking dictionary.
+        for cx in cxs_to_remove:
+            logger.info(f"Removing failed CX: {cx}")
+            super().rm_cx(cx)
+            del self.cx_profile.created_cx[cx]
+
+        devices_to_be_removed = []
+        for item in not_running_cx:
+            match = re.match(r'^[0-9.]+', item)
+            if match:
+                devices_to_be_removed.append(match.group())
+
+        # If there are devices to remove, filter them out from all related client and MAC lists
+        # to keep the lists consistent with the currently considered devices.
+        if len(devices_to_be_removed) != 0:
+            self.real_client_list1 = [item for item in self.real_client_list1 if item.split()[0] not in devices_to_be_removed]
+            self.input_devices_list = [item for item in self.input_devices_list if item.split('.')[0] + '.' + item.split('.')[1] not in devices_to_be_removed]
+            filtered = [(dev, mac) for dev, mac in zip(self.real_client_list, self.mac_id_list) if dev.split()[0] not in devices_to_be_removed]
+            self.real_client_list, self.mac_id_list = zip(*filtered) if filtered else ([], [])
+            self.real_client_list = list(self.real_client_list)
+            self.mac_id_list = list(self.mac_id_list)
+            self.num_stations = len(self.real_client_list)
+
     def monitor(self):
         # TODO: Fix this. This is poor style
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download, avg_upload, avg_download, avg_upload_throughput, avg_download_throughput, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b, dropa_connections, dropb_connections = {  # noqa: E501
@@ -641,6 +706,11 @@ class ThroughputQOS(Realm):
         time_break = 0
         # Added background_run to allow the test to continue running, bypassing the duration limit for nile requirement.
         rates_data = defaultdict(list)
+        individual_device_data = {}
+        cx_list = list(self.cx_profile.created_cx.keys())
+        for cx in cx_list:
+            columns = ['bps rx a', 'bps rx b']
+            individual_device_data[cx] = pd.DataFrame(columns=columns)
         while datetime.now() < end_time or getattr(self, "background_run", None):
             index += 1
             current_time = datetime.now()
@@ -648,6 +718,7 @@ class ThroughputQOS(Realm):
             t_response = {}
             overallresponse = self.json_get('/cx/all')
 
+            # rssi_list = {}
             try:
                 # for dynamic data, taken rx rate (last) from layer3 endp tab
                 l3_endp_data = list(self.json_get('/endp/list?fields=rx rate (last),rx drop %25,name')['endpoint'])
@@ -658,6 +729,7 @@ class ThroughputQOS(Realm):
                             rates_data['.'.join(port.split('.')[:2]) + ' rx_rate'].append(port_data['rx-rate'])
                             rates_data['.'.join(port.split('.')[:2]) + ' tx_rate'].append(port_data['tx-rate'])
                             rates_data['.'.join(port.split('.')[:2]) + ' RSSI'].append(port_data['signal'])
+                            # rssi_list[self.input_devices_list.index(port)] = port_data['signal']
                 cx_list = list(self.cx_profile.created_cx.keys())
                 # t_response data order - [rx rate(last)_A,rx rate(last)_B,rx drop % A,rx drop %B] A or B will considered based upon the name in L3 Endps tab
                 for cx in cx_list:
@@ -798,6 +870,11 @@ class ThroughputQOS(Realm):
                         self.df_for_webui.append(self.overall[-1])
                         previous_time = current_time
             if self.dowebgui == "True":
+                for key,value in t_response.items():
+                    row_data = [value[0],value[1]]
+                    individual_device_data[key].loc[len(individual_device_data[key])] = row_data
+                for port, df in individual_device_data.items():
+                    df.to_csv(f"{runtime_dir}/{port}.csv", index=False)
                 df1 = pd.DataFrame(self.df_for_webui)
                 df1.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
 
@@ -925,9 +1002,10 @@ class ThroughputQOS(Realm):
                         temp = sta.rsplit('-', 1)
                         current_tos = temp[0].split('_')[-1]  # slicing TOS from CX name
                         temp = int(temp[1])
+                        counter = 0
                         if int(self.cx_profile.side_b_min_bps) != 0:
                             tos_download[current_tos].append(connections_download[sta])
-                            tos_drop_dict['rx_drop_a'][current_tos].append(drop_a_per[temp])
+                            tos_drop_dict['rx_drop_a'][current_tos].append(drop_a_per[counter])
                             tx_b_download[current_tos].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
                             rx_a_download[current_tos].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
                         else:
@@ -935,6 +1013,7 @@ class ThroughputQOS(Realm):
                             tos_drop_dict['rx_drop_a'][current_tos].append(float(0))
                             tx_b_download[current_tos].append(int(0))
                             rx_a_download[current_tos].append(int(0))
+                        counter += 1
                     tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
                     tos_download.update({"beQOS": float(f"{sum(tos_download['BE']):.2f}")})
                     tos_download.update({"videoQOS": float(f"{sum(tos_download['VI']):.2f}")})
@@ -956,9 +1035,10 @@ class ThroughputQOS(Realm):
                         temp = sta.rsplit('-', 1)
                         current_tos = temp[0].split('_')[-1]
                         temp = int(temp[1])
+                        counter = 0
                         if int(self.cx_profile.side_a_min_bps) != 0:
                             tos_upload[current_tos].append(connections_upload[sta])
-                            tos_drop_dict['rx_drop_b'][current_tos].append(drop_b_per[temp])
+                            tos_drop_dict['rx_drop_b'][current_tos].append(drop_b_per[counter])
                             tx_b_upload[current_tos].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
                             rx_a_upload[current_tos].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
                         else:
@@ -966,6 +1046,7 @@ class ThroughputQOS(Realm):
                             tos_drop_dict['rx_drop_b'][current_tos].append(float(0))
                             tx_b_upload[current_tos].append(int(0))
                             rx_a_upload[current_tos].append(int(0))
+                        counter += 1
                     tos_upload.update({"bkQOS": float(f"{sum(tos_upload['BK']):.2f}")})
                     tos_upload.update({"beQOS": float(f"{sum(tos_upload['BE']):.2f}")})
                     tos_upload.update({"videoQOS": float(f"{sum(tos_upload['VI']):.2f}")})
@@ -1216,10 +1297,17 @@ class ThroughputQOS(Realm):
         report.build_graph()
         self.generate_individual_graph(res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b)
         report.test_setup_table(test_setup_data=input_setup_info, value="Information")
-        report.build_custom()
         report.build_footer()
         report.write_html()
         report.write_pdf()
+
+        # if(self.get_live_view):
+        #     script_dir = os.path.dirname(os.path.abspath(__file__))
+        #     folder_path = os.path.join(script_dir, "heatmap_images")
+        #     for f in os.listdir(folder_path):
+        #         file_path = os.path.join(folder_path, f)
+        #         if os.path.isfile(file_path):
+        #             os.remove(file_path)
 
     # Generates a separate table in the report for each group, including its respective devices.
     def generate_dataframe(self, groupdevlist, clients_list, mac, ssid, tos, upload, download, individual_upload,
@@ -1317,13 +1405,61 @@ class ThroughputQOS(Realm):
         else:
             return None
 
-    def generate_individual_graph(self, res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b):
+    def get_live_view_images(self, multicast_exists=False):
+        image_paths_by_tos = {}      # { "BE": [img1, img2, ...], "VO": [...], ... }
+        rssi_image_paths_by_floor = {} if not multicast_exists else {}  # Empty if skipping RSSI
+        print('tos tos', self.tos)
+
+        for floor in range(int(self.total_floors)):
+            for tos in self.tos:
+                timeout = 60  # seconds
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+
+                throughput_image_path = os.path.join(
+                    script_dir, "heatmap_images", f"{self.test_name}_throughput_{tos}_{floor+1}.png"
+                )
+
+                if not multicast_exists:
+                    rssi_image_path = os.path.join(
+                        script_dir, "heatmap_images", f"{self.test_name}_rssi_{floor+1}.png"
+                    )
+
+                start_time = time.time()
+
+                while True:
+                    throughput_ready = os.path.exists(throughput_image_path)
+                    rssi_ready = True if multicast_exists else os.path.exists(rssi_image_path)
+
+                    if throughput_ready and rssi_ready:
+                        break
+
+                    if time.time() - start_time > timeout:
+                        print(f"Timeout: Images for TOS '{tos}' on Floor {floor+1} not found within 60 seconds.")
+                        break
+                    time.sleep(1)
+
+                if throughput_ready:
+                    image_paths_by_tos.setdefault(tos, []).append(throughput_image_path)
+
+            # Only check and store RSSI if not multicast
+            if not multicast_exists and os.path.exists(rssi_image_path):
+                rssi_image_paths_by_floor[floor + 1] = rssi_image_path
+
+        return image_paths_by_tos, rssi_image_paths_by_floor
+
+
+
+    def generate_individual_graph(self, res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b,totalfloors=None,multicast_exists=False):
+        if totalfloors!=None:
+            self.total_floors = totalfloors
         load = ""
         upload_list, download_list, individual_upload_list, individual_download_list = [], [], [], []
         individual_set, colors, labels = [], [], []
         individual_drop_a_list, individual_drop_b_list = [], []
         list1 = [[], [], [], []]
         data_set = {}
+        if (self.dowebgui and self.get_live_view) or multicast_exists:
+            tos_images,rssi_images = self.get_live_view_images()
         # Initialized dictionaries to store average upload ,download and drop values with respect to tos
         avg_res = {'Upload': {
             'VO': [],
@@ -1489,6 +1625,14 @@ class ThroughputQOS(Realm):
                     report.set_csv_filename(graph_png)
                     report.move_csv_file()
                     report.build_graph()
+                    if (self.dowebgui and self.get_live_view) or multicast_exists:
+                        for image_path in tos_images['BK']:
+                            report.set_custom_html('<div style="page-break-before: always;"></div>')
+                            report.build_custom()
+                            # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                            # report.build_custom()
+                            report.set_custom_html(f'<img src="file://{image_path}" style="width: 1200px; height: 800px;"></img>')
+                            report.build_custom()
                     individual_avgupload_list = []
                     individual_avgdownload_list = []
                     for i in range(len(individual_upload_list)):
@@ -1559,6 +1703,15 @@ class ThroughputQOS(Realm):
                         dataframe1 = pd.DataFrame(bk_dataframe)
                         report.set_table_dataframe(dataframe1)
                         report.build_table()
+                    # if (self.dowebgui and self.get_live_view) or multicast_exists:
+                    #     for image_path in tos_images['BK']:
+                    #         report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    #         report.build_custom()
+                    #         # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                    #         # report.build_custom()
+                    #         report.set_custom_html(f'<img src="file://{image_path}"></img>')
+                    #         report.build_custom()
+
                 logger.info("Graph and table for BK tos are built")
                 if "BE" in self.tos:
                     if self.direction == "Bi-direction":
@@ -1612,6 +1765,14 @@ class ThroughputQOS(Realm):
                     report.set_csv_filename(graph_png)
                     report.move_csv_file()
                     report.build_graph()
+                    if (self.dowebgui and self.get_live_view) or multicast_exists:
+                        for image_path in tos_images['BE']:
+                            report.set_custom_html('<div style="page-break-before: always;"></div>')
+                            report.build_custom()
+                            # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                            # report.build_custom()
+                            report.set_custom_html(f'<img src="file://{image_path}" style="width: 1200px; height: 800px;"></img>')
+                            report.build_custom()
                     individual_avgupload_list = []
                     individual_avgdownload_list = []
                     for i in range(len(individual_upload_list)):
@@ -1680,6 +1841,14 @@ class ThroughputQOS(Realm):
                         dataframe2 = pd.DataFrame(be_dataframe)
                         report.set_table_dataframe(dataframe2)
                         report.build_table()
+                    # if (self.dowebgui and self.get_live_view) or multicast_exists:
+                    #     for image_path in tos_images['BE']:
+                    #         report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    #         report.build_custom()
+                    #         # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                    #         # report.build_custom()
+                    #         report.set_custom_html(f'<img src="file://{image_path}"></img>')
+                    #         report.build_custom()
                 logger.info("Graph and table for BE tos are built")
                 if "VI" in self.tos:
                     if self.direction == "Bi-direction":
@@ -1733,6 +1902,14 @@ class ThroughputQOS(Realm):
                     report.set_csv_filename(graph_png)
                     report.move_csv_file()
                     report.build_graph()
+                    if (self.dowebgui and self.get_live_view) or multicast_exists:
+                        for image_path in tos_images['VI']:
+                            report.set_custom_html('<div style="page-break-before: always;"></div>')
+                            report.build_custom()
+                            # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                            # report.build_custom()
+                            report.set_custom_html(f'<img src="file://{image_path}" style="width: 1200px; height: 800px;"></img>')
+                            report.build_custom()
                     individual_avgupload_list = []
                     individual_avgdownload_list = []
                     for i in range(len(individual_upload_list)):
@@ -1801,6 +1978,14 @@ class ThroughputQOS(Realm):
                         dataframe3 = pd.DataFrame(vi_dataframe)
                         report.set_table_dataframe(dataframe3)
                         report.build_table()
+                    # if (self.dowebgui and self.get_live_view) or multicast_exists:
+                    #     for image_path in tos_images['VI']:
+                    #         report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    #         report.build_custom()
+                    #         # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                    #         # report.build_custom()
+                    #         report.set_custom_html(f'<img src="file://{image_path}"></img>')
+                    #         report.build_custom()
                 logger.info("Graph and table for VI tos are built")
                 if "VO" in self.tos:
                     if self.direction == "Bi-direction":
@@ -1854,6 +2039,14 @@ class ThroughputQOS(Realm):
                     report.set_csv_filename(graph_png)
                     report.move_csv_file()
                     report.build_graph()
+                    if (self.dowebgui and self.get_live_view) or multicast_exists:
+                        for image_path in tos_images['VO']:
+                            report.set_custom_html('<div style="page-break-before: always;"></div>')
+                            report.build_custom()
+                            # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                            # report.build_custom()
+                            report.set_custom_html(f'<img src="file://{image_path}" style="width: 1200px; height: 800px;"></img>')
+                            report.build_custom()
                     individual_avgupload_list = []
                     individual_avgdownload_list = []
                     for i in range(len(individual_upload_list)):
@@ -1924,6 +2117,13 @@ class ThroughputQOS(Realm):
                         report.set_table_dataframe(dataframe4)
                         report.build_table()
                 logger.info("Graph and table for VO tos are built")
+            if self.dowebgui and self.get_live_view and not multicast_exists:
+                for floor,rssi_image_path in rssi_images.items():
+                    if os.path.exists(rssi_image_path):
+                        report.set_custom_html('<div style="page-break-before: always;"></div>')
+                        report.build_custom()
+                        report.set_custom_html(f'<img src="file://{rssi_image_path}" style="width: 1000px; height: 800px;"></img>')
+                        report.build_custom()
         else:
             print("No individual graph to generate.")
         # storing overall throughput CSV in the report directory
@@ -2216,6 +2416,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
     optional.add_argument('--device_csv_name', type=str, help='Enter the csv name to store expected values', default=None)
     optional.add_argument("--wait_time", type=int, help="Enter the maximum wait time for configurations to apply", default=60)
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
+    optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     args = parser.parse_args()
 
     # help summary
@@ -2310,7 +2512,9 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
                                        expected_passfail_val=args.expected_passfail_value,
                                        csv_name=args.device_csv_name,
                                        wait_time=args.wait_time,
-                                       config=args.config
+                                       config=args.config,
+                                       get_live_view=args.get_live_view,
+                                       total_floors=args.total_floors
                                        )
         throughput_qos.os_type()
         _, configured_device, _, configuration = throughput_qos.phantom_check()
@@ -2349,6 +2553,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
                 df1.to_csv('{}/overall_throughput.csv'.format(throughput_qos.result_dir), index=False)
                 raise ValueError("Aborting the test....")
         throughput_qos.build()
+        throughput_qos.monitor_cx()
         throughput_qos.start(False, False)
         time.sleep(10)
         connections_download, connections_upload, drop_a_per, drop_b_per, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b = throughput_qos.monitor()
@@ -2365,6 +2570,22 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         "contact": "support@candelatech.com"
     }
     throughput_qos.cleanup()
+
+    # Update webgui running json with latest entry and test status completed
+    if throughput_qos.dowebgui == "True":
+        last_entry = throughput_qos.overall[len(throughput_qos.overall) - 1]
+        last_entry["status"] = "Stopped"
+        last_entry["timestamp"] = datetime.now().strftime("%d/%m %I:%M:%S %p")
+        last_entry["remaining_time"] = "0"
+        last_entry["end_time"] = last_entry["timestamp"]
+        throughput_qos.df_for_webui.append(
+            last_entry
+        )
+        df1 = pd.DataFrame(throughput_qos.df_for_webui)
+        df1.to_csv('{}/overall_throughput.csv'.format(args.result_dir, ), index=False)
+
+        # copying to home directory i.e home/user_name
+        throughput_qos.copy_reports_to_home_dir()
     if args.group_name:
         throughput_qos.generate_report(
             data=data,
@@ -2383,22 +2604,6 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             connections_download_avg=connections_download_avg,
             avg_drop_a=avg_drop_a,
             avg_drop_b=avg_drop_b)
-
-    # Update webgui running json with latest entry and test status completed
-    if throughput_qos.dowebgui == "True":
-        last_entry = throughput_qos.overall[len(throughput_qos.overall) - 1]
-        last_entry["status"] = "Stopped"
-        last_entry["timestamp"] = datetime.now().strftime("%d/%m %I:%M:%S %p")
-        last_entry["remaining_time"] = "0"
-        last_entry["end_time"] = last_entry["timestamp"]
-        throughput_qos.df_for_webui.append(
-            last_entry
-        )
-        df1 = pd.DataFrame(throughput_qos.df_for_webui)
-        df1.to_csv('{}/overall_throughput.csv'.format(args.result_dir, ), index=False)
-
-        # copying to home directory i.e home/user_name
-        throughput_qos.copy_reports_to_home_dir()
 
 
 if __name__ == "__main__":

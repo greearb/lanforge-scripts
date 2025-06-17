@@ -119,7 +119,7 @@ class HttpDownload(Realm):
                  test_name=None, _exit_on_fail=False, client_type="", port_list=[], devices_list=[], macid_list=[], lf_username="lanforge", lf_password="lanforge", result_dir="", dowebgui=False,
                  device_list=[], get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
                  eap_identity=None, ieee80211=None, ieee80211u=None, ieee80211w=None, enable_pkc=None, bss_transition=None, power_save=None, disable_ofdma=None, roam_ft_ds=None, key_management=None,
-                 pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60):
+                 pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60,get_live_view=False,total_floors=0,):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -195,6 +195,8 @@ class HttpDownload(Realm):
         self.api_url = 'http://{}:{}'.format(self.host, self.port)
         self.group_device_map = {}
         self.individual_device_csv_names = []
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
 
 # The 'phantom_check' will be handled within the 'get_real_client_list' function
     def get_real_client_list(self):
@@ -991,7 +993,7 @@ class HttpDownload(Realm):
                                         _color_name=['steelblue'],
                                         _show_bar_value=True,
                                         _enable_csv=True,
-                                        _graph_image_name="ucg-avg", _color_edge=['black'],
+                                        _graph_image_name="ucg-avg_http", _color_edge=['black'],
                                         _color=['steelblue'],
                                         _label=bands)
         graph_png = graph.build_bar_graph_horizontal()
@@ -1023,7 +1025,7 @@ class HttpDownload(Realm):
                                           _color_name=['orange'],
                                           _show_bar_value=True,
                                           _enable_csv=True,
-                                          _graph_image_name="Total-url", _color_edge=['black'],
+                                          _graph_image_name="Total-url_http", _color_edge=['black'],
                                           _color=['orange'],
                                           _label=bands)
         graph_png = graph_2.build_bar_graph_horizontal()
@@ -1096,6 +1098,33 @@ class HttpDownload(Realm):
         report.move_csv_file()
         report.move_graph_image()
         report.build_graph()
+        if(self.dowebgui and self.get_live_view):
+            print('total floors',self.total_floors)
+            for floor in range(0,int(self.total_floors)):
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                throughput_image_path = os.path.join(script_dir, "heatmap_images", f"http_{self.test_name}_{floor+1}.png")
+                print('image_path',f"{self.test_name}_{floor+1}.png")
+                # rssi_image_path = os.path.join(script_dir, "heatmap_images", f"{self.test_name}_rssi_{floor+1}.png")
+                timeout = 60  # seconds
+                start_time = time.time()
+
+                while not (os.path.exists(throughput_image_path)):
+                    if time.time() - start_time > timeout:
+                        print("Timeout: Images not found within 60 seconds.")
+                        break
+                    time.sleep(1)
+                while not os.path.exists(throughput_image_path):
+                    if os.path.exists(throughput_image_path):
+                        break
+                    # time.sleep(10)
+                if os.path.exists(throughput_image_path):
+                    report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    report.build_custom()
+                    # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                    # report.build_custom()
+                    report.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                    report.build_custom()
+                    # os.remove(throughput_image_path)
 
         # report.set_obj_html("Summary Table Description", "This Table shows you the summary "
         #                     "result of Webpage Download Test as PASS or FAIL criteria. If the average time taken by " +
@@ -1317,6 +1346,12 @@ class HttpDownload(Realm):
         print("returned file {}".format(html_file))
         print(html_file)
         report.write_pdf()
+        # if(self.get_live_view):
+        #     folder_path = os.path.join(script_dir, "heatmap_images")
+        #     for f in os.listdir(folder_path):
+        #         file_path = os.path.join(folder_path, f)
+        #         if os.path.isfile(file_path):
+        #             os.remove(file_path)
 
     def copy_reports_to_home_dir(self):
         curr_path = self.result_dir
@@ -1520,6 +1555,59 @@ class HttpDownload(Realm):
             else:
                 rx_rate_list.append('-')
         return signal_list, link_speed_list, rx_rate_list
+
+    def monitor_cx(self):
+        """
+        This function waits for upto 20 iterations to allow all CXs (connections) to be created.
+
+        If some CXs are still not created after 20 iterations, then the CXs related to that device are removed,
+        along with their associated client and MAC entries from all relevant lists.
+        """
+        max_retry = 20
+        current_retry = 0
+        failed_cx = []
+        flag = 0
+        idx_list = []
+        del_device_list, del_mac_list, del_port_list, del_device_list1 = [], [], [], []
+        while current_retry < max_retry:
+            failed_cx.clear()
+            idx_list.clear()
+            del_device_list.clear()
+            del_mac_list.clear()
+            del_port_list.clear()
+            del_device_list1.clear()
+            created_cx_list = list(self.http_profile.created_cx.keys())
+            for i, created_cxs in enumerate(created_cx_list):
+                try:
+                    _ = self.local_realm.json_get("layer4/%s/list?fields=%s" %
+                                                  (created_cxs, 'status'))['endpoint']['status']
+                except BaseException:
+                    logger.error(f'cx not created for {self.port_list[i]}')
+                    failed_cx.append(created_cxs)
+                    del_device_list.append(self.device_list[i])
+                    del_mac_list.append(self.macid_list[i])
+                    del_port_list.append(self.port_list[i])
+                    del_device_list1.append(self.devices_list[i])
+            if len(failed_cx) == 0:
+                flag = 1
+                break
+            logger.info(f'Try {current_retry} out of 20: Waiting for the cross-connections to be created.')
+            time.sleep(2)
+            current_retry += 1
+
+        if flag:
+            logger.info('cross connections found for all devices')
+            return
+        for cx in failed_cx:
+            del self.http_profile.created_cx[cx]
+        for i in range(len(del_port_list)):
+            self.port_list.remove(del_port_list[i])
+            self.macid_list.remove(del_mac_list[i])
+            self.device_list.remove(del_device_list[i])
+            self.devices_list.remove(del_device_list1[i])
+        if len(self.port_list) == 0:
+            logger.error('No cross connections created, aborting test')
+            exit(1)
 
 
 def validate_args(args):
@@ -1735,6 +1823,8 @@ def main():
     optional.add_argument("--wait_time", type=int, help='Specify the maximum time to wait for Configuration', default=60)
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
 
+    optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     help_summary = '''\
 lf_webpage.py will verify that N clients are connected on a specified band and can download
 some amount of file data from the HTTP server while measuring the time taken by clients to download the file and number of
@@ -1862,7 +1952,9 @@ times the file is downloaded.
                             expected_passfail_value=args.expected_passfail_value,
                             device_csv_name=args.device_csv_name,
                             wait_time=args.wait_time,
-                            config=args.config
+                            config=args.config,
+                            get_live_view= args.get_live_view,
+                            total_floors = args.total_floors
                             )
         if args.client_type == "Real":
             if not isinstance(args.device_list, list):
@@ -1886,38 +1978,6 @@ times the file is downloaded.
                         "configuration_status": "configured"
                     }
                     http.updating_webui_runningjson(obj)
-            android_devices, windows_devices, linux_devices, mac_devices = 0, 0, 0, 0
-            all_devices_names = []
-            device_type = []
-            total_devices = ""
-            for i in device_list:
-                split_device_name = i.split(" ")
-                if 'android' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Android)"))
-                    device_type.append("Android")
-                    android_devices += 1
-                elif 'Win' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Windows)"))
-                    device_type.append("Windows")
-                    windows_devices += 1
-                elif 'Lin' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Linux)"))
-                    device_type.append("Linux")
-                    linux_devices += 1
-                elif 'Mac' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Mac)"))
-                    device_type.append("Mac")
-                    mac_devices += 1
-
-            # Build total_devices string based on counts
-            if android_devices > 0:
-                total_devices += f" Android({android_devices})"
-            if windows_devices > 0:
-                total_devices += f" Windows({windows_devices})"
-            if linux_devices > 0:
-                total_devices += f" Linux({linux_devices})"
-            if mac_devices > 0:
-                total_devices += f" Mac({mac_devices})"
             args.num_stations = len(port_list)
         if not args.get_url_from_file:
             http.file_create(ssh_port=args.ssh_port)
@@ -1928,6 +1988,9 @@ times the file is downloaded.
         http.set_values()
         http.precleanup()
         http.build()
+        if args.client_type == 'Real':
+            http.monitor_cx()
+            logger.info(f'Test started on the devices : {http.port_list}')
         test_time = datetime.now()
         # Solution For Leap Year conflict changed it to %Y
         test_time = test_time.strftime("%Y %d %H:%M:%S")
@@ -1947,7 +2010,8 @@ times the file is downloaded.
             uc_avg_val = http.data['uc_avg']
             url_times = http.data['url_data']
             rx_bytes_val = http.data['bytes_rd']
-            rx_rate_val = http.data['rx rate (1m)']
+            print('rx_rate_Val',http.data['rx rate (1m)'])
+            rx_rate_val = list(http.data['rx rate (1m)'])
         else:
             uc_avg_val = http.my_monitor('uc-avg')
             url_times = http.my_monitor('total-urls')
@@ -2080,6 +2144,38 @@ times the file is downloaded.
         if int(duration == 3600) or (int(duration) > 3600):
             duration = str(duration / 3600) + "h"
 
+    android_devices, windows_devices, linux_devices, mac_devices = 0, 0, 0, 0
+    all_devices_names = []
+    device_type = []
+    total_devices = ""
+    for i in http.devices_list:
+        split_device_name = i.split(" ")
+        if 'android' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Android)"))
+            device_type.append("Android")
+            android_devices += 1
+        elif 'Win' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Windows)"))
+            device_type.append("Windows")
+            windows_devices += 1
+        elif 'Lin' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Linux)"))
+            device_type.append("Linux")
+            linux_devices += 1
+        elif 'Mac' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Mac)"))
+            device_type.append("Mac")
+            mac_devices += 1
+
+    # Build total_devices string based on counts
+    if android_devices > 0:
+        total_devices += f" Android({android_devices})"
+    if windows_devices > 0:
+        total_devices += f" Windows({windows_devices})"
+    if linux_devices > 0:
+        total_devices += f" Linux({linux_devices})"
+    if mac_devices > 0:
+        total_devices += f" Mac({mac_devices})"
     if args.client_type == "Real":
         if args.group_name:
             group_names = ', '.join(configuration.keys())
@@ -2089,7 +2185,7 @@ times the file is downloaded.
                 "AP name": args.ap_name,
                 "Configuration": configmap,
                 "Configured Devices": ", ".join(all_devices_names),
-                "No of Devices": "Total" + f"({args.num_stations})" + total_devices,
+                "No of Devices": "Total" + f"({len(all_devices_names)})" + total_devices,
                 "Traffic Direction": "Download",
                 "Traffic Duration ": duration
             }
@@ -2099,7 +2195,7 @@ times the file is downloaded.
                 "SSID": ssid,
                 "Device List": ", ".join(all_devices_names),
                 "Security": security,
-                "No of Devices": "Total" + f"({args.num_stations})" + total_devices,
+                "No of Devices": "Total" + f"({len(all_devices_names)})" + total_devices,
                 "Traffic Direction": "Download",
                 "Traffic Duration ": duration
             }
@@ -2158,6 +2254,15 @@ times the file is downloaded.
         # "": args.bands,
         # "PASS/FAIL": data
     # }
+    if args.dowebgui:
+        http.data_for_webui["status"] = ["STOPPED"] * len(http.devices_list)
+        http.data_for_webui['rx rate (1m)'] = http.data['rx rate (1m)']
+        http.data_for_webui["start_time"] = http.data["start_time"]
+        http.data_for_webui["end_time"] = http.data["end_time"]
+        http.data_for_webui["remaining_time"] = http.data["remaining_time"]
+        df1 = pd.DataFrame(http.data_for_webui)
+        df1.to_csv('{}/http_datavalues.csv'.format(http.result_dir), index=False)
+
     http.generate_report(date, num_stations=args.num_stations,
                          duration=args.duration, test_setup_info=test_setup_info, dataset=dataset, lis=lis,
                          bands=args.bands, threshold_2g=args.threshold_2g, threshold_5g=args.threshold_5g,
@@ -2171,13 +2276,6 @@ times the file is downloaded.
     http.postcleanup()
     # FOR WEBGUI, filling csv at the end to get the last terminal logs
     if args.dowebgui:
-        http.data_for_webui["status"] = ["STOPPED"] * len(http.devices_list)
-        http.data_for_webui["start_time"] = http.data["start_time"]
-        http.data_for_webui["end_time"] = http.data["end_time"]
-        http.data_for_webui["remaining_time"] = http.data["remaining_time"]
-        df1 = pd.DataFrame(http.data_for_webui)
-        df1.to_csv('{}/http_datavalues.csv'.format(http.result_dir), index=False)
-
         http.copy_reports_to_home_dir()
 
 

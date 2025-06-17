@@ -167,6 +167,8 @@ class FtpTest(LFCliBase):
                  pk_passwd=None,
                  pac_file=None,
                  expected_passfail_val=None,
+                 get_live_view=False,
+                 total_floors=0,
                  config=False,
                  csv_name=None):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
@@ -264,6 +266,8 @@ class FtpTest(LFCliBase):
         self.pass_fail_list = []
         self.test_input_list = []
         self.api_url = 'http://{}:{}'.format(self.host, self.port)
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
 
         logger.info("Test is Initialized")
 
@@ -905,9 +909,15 @@ class FtpTest(LFCliBase):
         max_bytes_rd = []
         rx_rate_val = []
         individual_device_data = {}
+        client_id_list = []
+        print('listtttt',self.input_devices_list)
         for port in self.input_devices_list:
             columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI']
             individual_device_data[port] = pd.DataFrame(columns=columns)
+            kk = port.split('.')
+            print('kk',kk)
+            client_id_list.append('.'.join(kk[:2]))
+
         while (current_time < endtime):
 
             # data in json format
@@ -927,6 +937,7 @@ class FtpTest(LFCliBase):
             self.data['UC-MIN'] = self.uc_min
             self.data['UC-AVG'] = self.uc_avg
             self.data['UC-MAX'] = self.uc_max
+            self.data['client_id'] = client_id_list
 
             rx_rate_val.append(list(self.rx_rate))
             for i, port in enumerate(self.input_devices_list):
@@ -1274,9 +1285,17 @@ class FtpTest(LFCliBase):
                     self.channel_list.append(str(port_data['channel']))
                     self.mode_list.append(str(port_data['mode']))
                     self.ssid_list.append(str(port_data['ssid']))
+
         if self.dowebgui:
+            client_id_list = []
+            for port in self.input_devices_list:
+                kk = port.split('.')
+                # print('kk',kk)
+                client_id_list.append('.'.join(kk[:2]))
             self.data_for_webui = {
                 "client": self.cx_list,
+                "client_id": client_id_list,
+                "Rx Rate(1m)":self.rx_rate,
                 "url_data": self.url_data,
                 "bytes rd": self.bytes_rd,
                 "uc_min": self.uc_min,
@@ -1861,7 +1880,7 @@ class FtpTest(LFCliBase):
                                         _color_name=['orange'],
                                         _show_bar_value=True,
                                         _enable_csv=True,
-                                        _graph_image_name="Total-url", _color_edge=['black'],
+                                        _graph_image_name="Total-url_ftp", _color_edge=['black'],
                                         _color=['orange'],
                                         _label=[self.direction])
         graph_png = graph.build_bar_graph_horizontal()
@@ -1894,7 +1913,7 @@ class FtpTest(LFCliBase):
                                         _color_name=['steelblue'],
                                         _show_bar_value=True,
                                         _enable_csv=True,
-                                        _graph_image_name="ucg-avg", _color_edge=['black'],
+                                        _graph_image_name="ucg-avg_ftp", _color_edge=['black'],
                                         _color=['steelblue'],
                                         _label=[self.direction])
         graph_png = graph.build_bar_graph_horizontal()
@@ -1905,6 +1924,31 @@ class FtpTest(LFCliBase):
         self.report.set_csv_filename(graph_png)
         self.report.move_csv_file()
         self.report.build_graph()
+        if(self.dowebgui and self.get_live_view):
+            for floor in range(0,int(self.total_floors)):
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                throughput_image_path = os.path.join(script_dir, "heatmap_images", f"ftp_{self.test_name}_{floor+1}.png")
+                # rssi_image_path = os.path.join(script_dir, "heatmap_images", f"{self.test_name}_rssi_{floor+1}.png")
+                timeout = 60  # seconds
+                start_time = time.time()
+
+                while not (os.path.exists(throughput_image_path)):
+                    if time.time() - start_time > timeout:
+                        print("Timeout: Images not found within 60 seconds.")
+                        break
+                    time.sleep(1)
+                while not os.path.exists(throughput_image_path):
+                    if os.path.exists(throughput_image_path):
+                        break
+                    # time.sleep(10)
+                if os.path.exists(throughput_image_path):
+                    self.report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    self.report.build_custom()
+                    # self.report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                    # self.report.build_custom()
+                    self.report.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                    self.report.build_custom()
+                    # os.remove(throughput_image_path)
         self.report.set_obj_html("File Download Time (sec)", "The below table will provide information of "
                                  "minimum, maximum and the average time taken by clients to download a file in seconds")
         self.report.build_objective()
@@ -1978,6 +2022,12 @@ class FtpTest(LFCliBase):
         logger.info("returned file {}".format(html_file))
         logger.info(html_file)
         self.report.write_pdf()
+        if(self.get_live_view):
+            folder_path = os.path.join(script_dir, "heatmap_images")
+            for f in os.listdir(folder_path):
+                file_path = os.path.join(folder_path, f)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
 
         # The following lines can be used when the kpi results are needed
         # self.kpi_results
@@ -2311,6 +2361,67 @@ class FtpTest(LFCliBase):
         else:
             return None
 
+    def monitor_cx(self):
+        """
+        This function waits for upto 20 iterations to allow all CXs (connections) to be created.
+
+        If some CXs are still not created after 20 iterations, then the CXs related to that device are removed,
+        along with their associated client and MAC entries from all relevant lists.
+        """
+        max_retry = 20
+        current_retry = 0
+        failed_cx = []
+        flag = 0
+        idx_list = []
+        del_device_list = []
+        del_mac_list = []
+        del_input_devices_list = []
+        del_device_list1 = []
+        del_real_client_list = []
+        while current_retry < max_retry:
+            failed_cx.clear()
+            idx_list.clear()
+            del_device_list.clear()
+            del_mac_list.clear()
+            del_input_devices_list.clear()
+            del_device_list1.clear()
+            del_real_client_list.clear()
+            created_cx_list = list(self.cx_list)
+            for i, created_cxs in enumerate(created_cx_list):
+                try:
+                    _ = self.local_realm.json_get("layer4/%s/list?fields=%s" %
+                                                  (created_cxs, 'status'))['endpoint']['status']
+                except BaseException:
+                    logger.error(f'cx not created for {self.input_devices_list[i]}')
+                    failed_cx.append(created_cxs)
+                    del_device_list.append(self.device_list[i])
+                    del_mac_list.append(self.mac_id_list[i])
+                    del_input_devices_list.append(self.input_devices_list[i])
+                    del_device_list1.append(self.real_client_list1[i])
+                    del_real_client_list.append(self.real_client_list[i])
+            if len(failed_cx) == 0:
+                flag = 1
+                break
+            logger.info(f'Try {current_retry} out of 20: Waiting for the cross-connections to be created.')
+            time.sleep(2)
+            current_retry += 1
+
+        if flag:
+            logger.info('cross connections found for all devices')
+            return
+        for cx in failed_cx:
+            self.cx_list.remove(cx)
+        for i in range(len(del_input_devices_list)):
+            logger.info(f'Cross connection not created for {self.input_devices_list[i]}')
+            self.input_devices_list.remove(del_input_devices_list[i])
+            self.mac_id_list.remove(del_mac_list[i])
+            self.device_list.remove(del_device_list[i])
+            self.real_client_list1.remove(del_device_list1[i])
+            self.real_client_list.remove(del_real_client_list[i])
+        if len(self.input_devices_list) == 0:
+            logger.error('No cross connections created, aborting test')
+            exit(1)
+
 
 def validate_args(args):
     """Validate CLI arguments."""
@@ -2578,6 +2689,8 @@ INCLUDE_IN_README: False
     optional.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
     optional.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
 
+    optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     # logging configuration
     optional.add_argument(
         "--lf_logger_config_json",
@@ -2706,7 +2819,9 @@ some amount of file data from the FTP server while measuring the time taken by c
                               expected_passfail_val=args.expected_passfail_value,
                               csv_name=args.device_csv_name,
                               wait_time=args.wait_time,
-                              config=args.config
+                              config=args.config,
+                              get_live_view= args.get_live_view,
+                              total_floors = args.total_floors
                               )
 
                 interation_num = interation_num + 1
@@ -2743,6 +2858,9 @@ some amount of file data from the FTP server while measuring the time taken by c
                     logger.info(obj.get_fail_message())
                     exit(1)
 
+                if obj.clients_type == 'Real':
+                    obj.monitor_cx()
+                    logger.info(f'Test started on the devices : {obj.input_devices_list}')
                 # First time stamp
                 time1 = datetime.now()
                 logger.info("Traffic started running at %s", time1)
@@ -2793,6 +2911,13 @@ some amount of file data from the FTP server while measuring the time taken by c
         "Security": args.security,
         "Contact": "support@candelatech.com"
     }
+    if args.dowebgui:
+        obj.data_for_webui["status"] = ["STOPPED"] * len(obj.url_data)
+
+        df1 = pd.DataFrame(obj.data_for_webui)
+        df1.to_csv('{}/ftp_datavalues.csv'.format(obj.result_dir), index=False)
+        # copying to home directory i.e home/user_name
+        # obj.copy_reports_to_home_dir()
     # Report generation when groups are specified
     if args.group_name:
         obj.generate_report(ftp_data, date, input_setup_info, test_rig=args.test_rig,
@@ -2807,14 +2932,18 @@ some amount of file data from the FTP server while measuring the time taken by c
                             dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                             dut_serial_num=args.dut_serial_num, test_id=args.test_id,
                             bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir)
-# FOR WEB-UI // to fetch the last logs of the execution.
-    if args.dowebgui:
-        obj.data_for_webui["status"] = ["STOPPED"] * len(obj.url_data)
 
-        df1 = pd.DataFrame(obj.data_for_webui)
-        df1.to_csv('{}/ftp_datavalues.csv'.format(obj.result_dir), index=False)
-        # copying to home directory i.e home/user_name
+    if args.dowebgui:
         obj.copy_reports_to_home_dir()
+
+# FOR WEB-UI // to fetch the last logs of the execution.
+    # if args.dowebgui:
+    #     obj.data_for_webui["status"] = ["STOPPED"] * len(obj.url_data)
+
+    #     df1 = pd.DataFrame(obj.data_for_webui)
+    #     df1.to_csv('{}/ftp_datavalues.csv'.format(obj.result_dir), index=False)
+    #     # copying to home directory i.e home/user_name
+    #     obj.copy_reports_to_home_dir()
 
 
 if __name__ == '__main__':

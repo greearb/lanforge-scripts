@@ -206,6 +206,8 @@ class Throughput(Realm):
                  dowebgui=False,
                  precleanup=False,
                  do_interopability=False,
+                 get_heatmap=False,
+                 total_floors=0,
                  ip="localhost",
                  csv_direction='',
                  device_csv_name=None,
@@ -302,6 +304,8 @@ class Throughput(Realm):
         self.overall_avg_rssi = overall_avg_rssi if overall_avg_rssi is not None else []
         self.dowebgui = dowebgui
         self.do_interopability = do_interopability
+        self.get_heatmap = get_heatmap
+        self.total_floors = total_floors
         self.ip = ip
         self.device_found = False
         self.gave_incremental = False
@@ -378,6 +382,7 @@ class Throughput(Realm):
 
         """
         port_eid_list, same_eid_list, original_port_list = [], [], []
+        interop_response = self.json_get("/adb")
         obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
         upstream_port_ip = self.change_port_to_ip(self.upstream)
         config_devices = {}
@@ -469,7 +474,15 @@ class Throughput(Realm):
                                 if b['kernel'] == '':
                                     self.eid_list.append(b['eid'])
                                     self.mac_list.append(b['hw version'])
-                                    self.devices_available.append(b['eid'] + " " + 'iOS' + " " + b['hostname'])
+                                    if "devices"  in interop_response.keys():
+                                        interop_devices = interop_response['devices']
+                                        if(len([v['user-name'] for d in interop_devices for k, v in d.items() if v.get('resource-id') == b['eid']]) == 0):
+                                            self.devices_available.append(b['eid'] + " " + 'iOS' + " " + b['hostname'])
+                                        else:
+                                            ios_username = [v['user-name'] for d in interop_devices for k, v in d.items() if v.get('resource-id') == b['eid']][0]
+                                            self.devices_available.append(b['eid'] + " " + 'iOS' + " " + ios_username)
+                                    else:
+                                        self.devices_available.append(b['eid'] + " " + 'iOS' + " " + b['hostname'])
                                 else:
                                     self.eid_list.append(b['eid'])
                                     self.mac_list.append(b['hw version'])
@@ -969,9 +982,9 @@ class Throughput(Realm):
                 if (current_time - previous_time).total_seconds() >= time_break:
                     individual_df_for_webui.loc[len(individual_df_for_webui)] = individual_df_data
                     if self.group_name is None:
-                        individual_df_for_webui.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
+                        individual_df.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
                     else:
-                        individual_df_for_webui.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
+                        individual_df.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
                     previous_time = current_time
 
                 # Append data to individual_df and save to CSV
@@ -1150,7 +1163,7 @@ class Throughput(Realm):
                 individual_df_for_webui.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
                 individual_df.to_csv('overall_throughput.csv', index=False)
             else:
-                individual_df_for_webui.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
+                individual_df.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
                 individual_df.to_csv('throughput_data.csv', index=False)
         else:
             individual_df.to_csv('throughput_data.csv', index=False)
@@ -1803,6 +1816,40 @@ class Throughput(Realm):
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
                 report.build_graph()
+                if(self.dowebgui and self.get_heatmap):
+                    for floor in range(0,int(self.total_floors)):
+                        script_dir = os.path.dirname(os.path.abspath(__file__))
+                        throughput_image_path = os.path.join(script_dir, "heatmap_images", f"{self.test_name}_throughput_{floor+1}.png")
+                        rssi_image_path = os.path.join(script_dir, "heatmap_images", f"{self.test_name}_rssi_{floor+1}.png")
+                        timeout = 60  # seconds
+                        start_time = time.time()
+
+                        while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
+                            if time.time() - start_time > timeout:
+                                print("Timeout: Images not found within 60 seconds.")
+                                break
+                            time.sleep(1)
+                        while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
+                            if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
+                                break
+                            # time.sleep(10)
+                        if os.path.exists(throughput_image_path):
+                            report.set_custom_html('<div style="page-break-before: always;"></div>')
+                            report.build_custom()
+                            # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                            # report.build_custom()
+                            report.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                            report.build_custom()
+                            # os.remove(throughput_image_path)
+
+                        if os.path.exists(rssi_image_path):
+                            report.set_custom_html('<div style="page-break-before: always;"></div>')
+                            report.build_custom()
+                            # report.set_custom_html("<h2>Average RSSI Heatmap: </h2>")
+                            # report.build_custom()
+                            report.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
+                            report.build_custom()
+                            # os.remove(rssi_image_path)
                 if self.group_name:
                     report.set_obj_html(
                         _obj_title="Detailed Result Table For Groups ",
@@ -2228,10 +2275,52 @@ class Throughput(Realm):
                 report.set_custom_html('<hr>')
                 report.build_custom()
 
+            if(self.dowebgui and self.get_heatmap and self.do_interopability):
+                for floor in range(0,int(self.total_floors)):
+                    script_dir = os.path.dirname(os.path.abspath(__file__))
+                    throughput_image_path = os.path.join(script_dir, "heatmap_images", f"{self.test_name}_throughput_{floor+1}.png")
+                    rssi_image_path = os.path.join(script_dir, "heatmap_images", f"{self.test_name}_rssi_{floor+1}.png")
+                    timeout = 60  # seconds
+                    start_time = time.time()
+
+                    while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
+                        if time.time() - start_time > timeout:
+                            print("Timeout: Images not found within 60 seconds.")
+                            break
+                        time.sleep(1)
+                    while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
+                        if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
+                            break
+                        # time.sleep(10)
+                    if os.path.exists(throughput_image_path):
+                        report.set_custom_html('<div style="page-break-before: always;"></div>')
+                        report.build_custom()
+                        # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                        # report.build_custom()
+                        report.set_custom_html(f'<img src="file://{throughput_image_path}"  style="width:1200px; height:800px;"></img>')
+                        report.build_custom()
+                        # os.remove(throughput_image_path)
+
+                    if os.path.exists(rssi_image_path):
+                        report.set_custom_html('<div style="page-break-before: always;"></div>')
+                        report.build_custom()
+                        # report.set_custom_html("<h2>Average RSSI Heatmap: </h2>")
+                        # report.build_custom()
+                        report.set_custom_html(f'<img src="file://{rssi_image_path}"  style="width:1200px; height:800px;"></img>')
+                        report.build_custom()
+
+
         # report.build_custom()
         report.build_footer()
         report.write_html()
         report.write_pdf(_orientation="Landscape")
+        if(self.get_heatmap):
+            folder_path = os.path.join(script_dir, "heatmap_images")
+
+            for f in os.listdir(folder_path):
+                file_path = os.path.join(folder_path, f)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
 
     # Creates a separate DataFrame for each group of devices.
     def generate_dataframe(self, groupdevlist, typeofdevice, devusername, devssid, devmac, devchannel, devmode, devdirection, devofdownload, devobsdownload,
@@ -2684,7 +2773,7 @@ Copyright 2023 Candela Technologies Inc.
     required.add_argument('--upload', help='--upload traffic load per connection (upload rate)', default='2560')
     required.add_argument('--download', help='--download traffic load per connection (download rate)', default='2560')
     required.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="")
-    required.add_argument('--report_timer', help='--duration to collect data', default="5s")
+    required.add_argument('--report_timer', help='--duration to collect data', default="1s")
     required.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
     required.add_argument('--dowebgui', help="If true will execute script for webgui", action='store_true')
     required.add_argument('--tos', default="Best_Efforts")
@@ -2703,6 +2792,8 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default="open")
     optional.add_argument('--test_name', help='Specify test name to store the runtime csv results', default=None)
     optional.add_argument('--result_dir', help='Specify the result dir to store the runtime logs', default='')
+    optional.add_argument('--get_heatmap', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     optional.add_argument("--expected_passfail_value", help="Specify the expected number of urls", default=None)
     optional.add_argument("--device_csv_name", type=str, help='Specify the csv name to store expected url values', default=None)
     optional.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
@@ -2836,6 +2927,8 @@ Copyright 2023 Candela Technologies Inc.
                                 do_interopability=args.do_interopability,
                                 incremental=args.incremental,
                                 precleanup=args.precleanup,
+                                get_heatmap= args.get_heatmap,
+                                total_floors = args.total_floors,
                                 csv_direction=csv_direction,
                                 expected_passfail_value=args.expected_passfail_value,
                                 device_csv_name=args.device_csv_name,
