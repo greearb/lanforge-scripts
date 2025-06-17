@@ -44,9 +44,9 @@ rpt_path_make_subdir: 1
 bg: 0xE0ECF8
 dut_info_override:
 dut_info_cmd:
-test_rig:
-test_tag:
-rpt_name:
+test_rig:CT_US_002
+test_tag:PORT_RESET
+rpt_name:PORT_RESET
 rpt_dir_prefix_textfield:
 show_scan: 1
 auto_helper: 1
