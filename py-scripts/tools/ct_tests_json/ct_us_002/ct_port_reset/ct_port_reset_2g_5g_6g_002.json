@@ -33,8 +33,6 @@
                     " --raw_lines_file ./tools/ct_tests_json/ct_us_002/ct_port_reset/port_reset_002.txt",
                     " --pull_report",
                     " --local_lf_report_dir REPORT_PATH",
-                    " --test_tag 'PORT_RESET'",
-                    " --test_rig TEST_RIG ",
                     " --set DUT_SET_NAME",
                     " --verbosity 11"
                 ]
