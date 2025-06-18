@@ -149,6 +149,7 @@ import shutil
 import asyncio
 import csv
 import matplotlib.pyplot as plt
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -206,7 +207,7 @@ class Throughput(Realm):
                  dowebgui=False,
                  precleanup=False,
                  do_interopability=False,
-                 get_heatmap=False,
+                 get_live_view=False,
                  total_floors=0,
                  ip="localhost",
                  csv_direction='',
@@ -304,7 +305,7 @@ class Throughput(Realm):
         self.overall_avg_rssi = overall_avg_rssi if overall_avg_rssi is not None else []
         self.dowebgui = dowebgui
         self.do_interopability = do_interopability
-        self.get_heatmap = get_heatmap
+        self.get_live_view = get_live_view
         self.total_floors = total_floors
         self.ip = ip
         self.device_found = False
@@ -339,6 +340,7 @@ class Throughput(Realm):
         self.config = config
         self.configdevices = {}
         self.group_device_map = {}
+        self.config_dict = {}
 
     def os_type(self):
         """
@@ -376,6 +378,50 @@ class Throughput(Realm):
                     self.android_list.append(hw_version)
         self.laptop_list = self.windows_list + self.linux_list + self.mac_list
 
+    def disconnect_all_devices(self,devices_to_disconnect=[]):
+        """
+        Disconnects either all devices or a specific list of devices from Wi-Fi networks.
+        """
+        obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
+        # all_devices = obj.get_all_devices()
+        # GET ANDROIDS FROM DEVICE LIST
+        adb_obj = DeviceConfig.ADB_DEVICES(lanforge_ip=self.host)
+
+        async def do_disconnect():
+            all_devices = obj.get_all_devices()
+            # TO DISCONNECT ALL DEVICES
+            if len(devices_to_disconnect) == 0:
+                android_resources = [d for d in all_devices if d.get('os') == 'Android' and d.get('eid') in self.device_list]
+                if(len(android_resources)>0):
+                    # TO STOP APP FOR ALL DEVICES FOR ANDROIDS
+                    await adb_obj.stop_app(port_list=android_resources)
+                # TO FORGET ALL NETWORKS FOR ALL OS TYPES
+                await obj.connectivity(device_list=self.device_list, wifi_config=self.config_dict, disconnect=True)
+            # TO DISCONNECT SPECIFIC DEVICES
+            else:
+                android_resources = [d for d in all_devices if d.get('os') == 'Android' and d.get('eid') in devices_to_disconnect]
+                if(len(android_resources)>0):
+                    await adb_obj.stop_app(port_list=android_resources)
+                await obj.connectivity(device_list=devices_to_disconnect, wifi_config=self.config_dict, disconnect=True)
+
+        asyncio.run(do_disconnect())
+    
+    def configure_specific(self,device_to_configure_list):
+        """
+        Configure specific devices using the provided list of device IDs or names.
+        """
+        obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
+        all_devices = obj.get_all_devices()
+        asyncio.run(obj.connectivity(device_list=device_to_configure_list, wifi_config=self.config_dict))
+
+
+    def extract_digits_until_alpha(self,s):
+        """
+        Extracts digits (including decimals) from the start of a string until the first alphabet.
+        """
+        match = re.match(r'^[\d.]+', s)
+        return match.group() if match else ''
+
     def phantom_check(self):
         """
         Checks for non-phantom resources and ports, categorizes them, and prepares a list of available devices for testing.
@@ -386,7 +432,7 @@ class Throughput(Realm):
         obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
         upstream_port_ip = self.change_port_to_ip(self.upstream)
         config_devices = {}
-        config_dict = {
+        self.config_dict = {
             'ssid': self.ssid,
             'passwd': self.password,
             'enc': self.security,
@@ -427,7 +473,7 @@ class Throughput(Realm):
 
             self.device_list = self.device_list.split(',')
             if self.config:
-                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=config_dict))
+                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=self.config_dict))
         # Configuration of devices with SSID , Password and Security when the device list is not specified
         elif self.device_list == [] and self.config:
             all_devices = obj.get_all_devices()
@@ -438,9 +484,9 @@ class Throughput(Realm):
                 else:
                     device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
             logger.info("AVAILABLE RESOURCES", device_list)
-            self.device_list = input("Enter the desired resources to run the test:").split(',')
+            self.device_list = input("Select the desired resources to run the test:").split(',')
             if self.config:
-                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=config_dict))
+                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=self.config_dict))
 
         # Retrieve all resources from the LANforge
         response = self.json_get("/resource/all")
@@ -529,7 +575,7 @@ class Throughput(Realm):
         configure_list = []
         if len(self.device_list) == 0 and self.config == False and self.group_name is None:
             logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(self.user_list))
-            self.device_list = input("Enter the desired resources to run the test:").split(',')
+            self.device_list = input("Select the desired resources to run the test:").split(',')
         # If self.device_list is provided, check availability against devices_available
         if len(self.device_list) != 0:
             devices_list = self.device_list
@@ -1446,8 +1492,8 @@ class Throughput(Realm):
 
             # objective title and description
             report.set_obj_html(_obj_title="Objective",
-                                _obj="The Candela Client Capacity test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like android, Linux,"
-                                " windows, and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for"
+                                _obj="The Candela Client Capacity test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like Android, Linux,"
+                                " Windows, MacOS and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for"
                                 " this test, we aim to assess the capacity of network to handle high volumes of traffic while"
                                 " each trial. Along with throughput other measurements made are client connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the"
                                 " AP to be able to handle several stations (within the limitations of the AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that"
@@ -1601,8 +1647,8 @@ class Throughput(Realm):
                             rssi_data.append(int(round(sum(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()) /
                                              len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
                             # Calculate and append upload and download throughput to lists
-                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
-                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
+                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
                             if self.cx_profile.side_a_min_pdu == -1:
                                 packet_size_in_table.append('AUTO')
                             else:
@@ -1621,8 +1667,8 @@ class Throughput(Realm):
                                              len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
 
                             # Calculate and append upload and download throughput to lists
-                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
-                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
+                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
                             # Append average download drop data from filtered dataframe
 
                             download_drop.append(round((sum(filtered_df[[col for col in filtered_df.columns if "Rx % Drop A" in col][0]].values.tolist()[1:dl_len]) / (dl_len - 1)), 2))
@@ -1635,8 +1681,8 @@ class Throughput(Realm):
                         elif self.direction == 'Upload':
 
                             # Calculate and append upload and download throughput to lists
-                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
-                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
+                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
 
                             rssi_data.append(int(round(sum(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()) /
                                              len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
@@ -1668,8 +1714,8 @@ class Throughput(Realm):
                                              len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
 
                             # Calculate and append upload and download throughput to lists
-                            upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
-                            download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                            upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                            download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
 
                             if self.cx_profile.side_a_min_pdu == -1:
                                 packet_size_in_table.append('AUTO')
@@ -1686,8 +1732,8 @@ class Throughput(Realm):
                                              len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
 
                             # Calculate and append upload and download throughput to lists
-                            upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
-                            download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                            upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                            download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
                             # Append average download drop data from filtered dataframe
                             download_drop.append(round((sum(filtered_df[[col for col in filtered_df.columns if "Rx % Drop A" in col][0]].values.tolist()[1:dl_len]) / (dl_len - 1)), 2))
                             if self.cx_profile.side_a_min_pdu == -1:
@@ -1698,8 +1744,8 @@ class Throughput(Realm):
                         elif self.direction == 'Upload':
 
                             # Calculate and append upload and download throughput to lists
-                            upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
-                            download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                            upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                            download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
                             rssi_data.append(int(round(sum(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()) /
                                              len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
 
@@ -1816,40 +1862,9 @@ class Throughput(Realm):
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
                 report.build_graph()
-                if(self.dowebgui and self.get_heatmap):
-                    for floor in range(0,int(self.total_floors)):
-                        script_dir = os.path.dirname(os.path.abspath(__file__))
-                        throughput_image_path = os.path.join(script_dir, "heatmap_images", f"{self.test_name}_throughput_{floor+1}.png")
-                        rssi_image_path = os.path.join(script_dir, "heatmap_images", f"{self.test_name}_rssi_{floor+1}.png")
-                        timeout = 60  # seconds
-                        start_time = time.time()
-
-                        while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
-                            if time.time() - start_time > timeout:
-                                print("Timeout: Images not found within 60 seconds.")
-                                break
-                            time.sleep(1)
-                        while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
-                            if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
-                                break
-                            # time.sleep(10)
-                        if os.path.exists(throughput_image_path):
-                            report.set_custom_html('<div style="page-break-before: always;"></div>')
-                            report.build_custom()
-                            # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
-                            # report.build_custom()
-                            report.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
-                            report.build_custom()
-                            # os.remove(throughput_image_path)
-
-                        if os.path.exists(rssi_image_path):
-                            report.set_custom_html('<div style="page-break-before: always;"></div>')
-                            report.build_custom()
-                            # report.set_custom_html("<h2>Average RSSI Heatmap: </h2>")
-                            # report.build_custom()
-                            report.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
-                            report.build_custom()
-                            # os.remove(rssi_image_path)
+                if(self.dowebgui and self.get_live_view):
+                    self.add_live_view_images_to_report(report)
+                    
                 if self.group_name:
                     report.set_obj_html(
                         _obj_title="Detailed Result Table For Groups ",
@@ -1922,11 +1937,11 @@ class Throughput(Realm):
                         " Channel ": self.channel_list[0:int(incremental_capacity_list[i])],
                         " Mode": self.mode_list[0:int(incremental_capacity_list[i])],
                         # " Direction":direction_in_table[0:int(incremental_capacity_list[i])],
-                        " Offered download rate ": download_list[0:int(incremental_capacity_list[i])],
-                        " Observed Average download rate ": [str(n) + " Mbps" for n in download_data[0:int(incremental_capacity_list[i])]],
-                        " Offered upload rate ": upload_list[0:int(incremental_capacity_list[i])],
-                        " Observed Average upload rate ": [str(n) + " Mbps" for n in upload_data[0:int(incremental_capacity_list[i])]],
-                        " RSSI ": ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[0:int(incremental_capacity_list[i])]],
+                        " Offered download rate (Mbps) ": download_list[0:int(incremental_capacity_list[i])],
+                        " Observed Average download rate (Mbps) ": [str(n)  for n in download_data[0:int(incremental_capacity_list[i])]],
+                        " Offered upload rate (Mbps) ": upload_list[0:int(incremental_capacity_list[i])],
+                        " Observed Average upload rate (Mbps) ": [str(n)  for n in upload_data[0:int(incremental_capacity_list[i])]],
+                        " RSSI (dBm) ": ['' if n == 0 else '-' + str(n)  for n in rssi_data[0:int(incremental_capacity_list[i])]],
                         # " Link Speed ":self.link_speed_list[0:int(incremental_capacity_list[i])],
                         " Packet Size(Bytes) ": [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
                     }
@@ -1969,7 +1984,7 @@ class Throughput(Realm):
             # objective title and description
             report.set_obj_html(_obj_title="Objective",
                                 _obj="The Candela Interoperability test is designed to measure an Access Point’s client performance when handling different amounts of Real clients"
-                                " like android, Linux, windows, and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and"
+                                " like Android, Linux, Windows, MacOS and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and"
                                 " measure the per-client throughput for each trial. Along with throughput other measurements made are client connection times, Station 4-Way"
                                 " Handshake time, DHCP times, and more. The expected behavior is for the AP to be able to handle several stations (within the limitations of the"
                                 " AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that scales well will not show a"
@@ -2072,8 +2087,8 @@ class Throughput(Realm):
                                          len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
 
                         # Calculate and append upload and download throughput to lists
-                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
-                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
 
                         direction_in_table.append(self.direction)
                     elif self.direction == 'Download':
@@ -2088,15 +2103,15 @@ class Throughput(Realm):
                         download_drop.append(round((sum(filtered_df[[col for col in filtered_df.columns if "Rx % Drop A" in col][0]].values.tolist()[1:dl_len]) / (dl_len - 1)), 2))
 
                         # Calculate and append upload and download throughput to lists
-                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
-                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
 
                         direction_in_table.append(self.direction)
                     elif self.direction == 'Upload':
 
                         # Calculate and append upload and download throughput to lists
-                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
-                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
                         rssi_data.append(int(round(sum(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()) /
                                          len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
                         upload_drop.append(round((sum(filtered_df[[col for col in filtered_df.columns if "Rx % Drop B" in col][0]].values.tolist()[1:ul_len]) / (ul_len - 1)), 2))
@@ -2249,11 +2264,11 @@ class Throughput(Realm):
                 bk_dataframe[" MAC "] = self.mac_id_list[int(incremental_capacity_list[i]) - 1]
                 bk_dataframe[" Channel "] = self.channel_list[int(incremental_capacity_list[i]) - 1]
                 bk_dataframe[" Mode"] = self.mode_list[int(incremental_capacity_list[i]) - 1]
-                bk_dataframe[" Offered download rate "] = download_list[-1]
-                bk_dataframe[" Observed Average download rate "] = [str(download_data[-1]) + " Mbps"]
-                bk_dataframe[" Offered upload rate "] = upload_list[-1]
-                bk_dataframe[" Observed Average upload rate "] = [str(upload_data[-1]) + " Mbps"]
-                bk_dataframe[" RSSI "] = ['' if rssi_data[-1] == 0 else '-' + str(rssi_data[-1]) + " dbm"]
+                bk_dataframe[" Offered download rate (Mbps)"] = download_list[-1]
+                bk_dataframe[" Observed Average download rate (Mbps)"] = [str(download_data[-1])]
+                bk_dataframe[" Offered upload rate (Mbps)"] = upload_list[-1]
+                bk_dataframe[" Observed Average upload rate (Mbps)"] = [str(upload_data[-1])]
+                bk_dataframe[" RSSI (dBm)"] = ['' if rssi_data[-1] == 0 else '-' + str(rssi_data[-1])]
 
                 if self.direction == "Bi-direction":
                     bk_dataframe[" Average Rx Drop B% "] = upload_drop
@@ -2275,52 +2290,14 @@ class Throughput(Realm):
                 report.set_custom_html('<hr>')
                 report.build_custom()
 
-            if(self.dowebgui and self.get_heatmap and self.do_interopability):
-                for floor in range(0,int(self.total_floors)):
-                    script_dir = os.path.dirname(os.path.abspath(__file__))
-                    throughput_image_path = os.path.join(script_dir, "heatmap_images", f"{self.test_name}_throughput_{floor+1}.png")
-                    rssi_image_path = os.path.join(script_dir, "heatmap_images", f"{self.test_name}_rssi_{floor+1}.png")
-                    timeout = 60  # seconds
-                    start_time = time.time()
-
-                    while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
-                        if time.time() - start_time > timeout:
-                            print("Timeout: Images not found within 60 seconds.")
-                            break
-                        time.sleep(1)
-                    while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
-                        if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
-                            break
-                        # time.sleep(10)
-                    if os.path.exists(throughput_image_path):
-                        report.set_custom_html('<div style="page-break-before: always;"></div>')
-                        report.build_custom()
-                        # report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
-                        # report.build_custom()
-                        report.set_custom_html(f'<img src="file://{throughput_image_path}"  style="width:1200px; height:800px;"></img>')
-                        report.build_custom()
-                        # os.remove(throughput_image_path)
-
-                    if os.path.exists(rssi_image_path):
-                        report.set_custom_html('<div style="page-break-before: always;"></div>')
-                        report.build_custom()
-                        # report.set_custom_html("<h2>Average RSSI Heatmap: </h2>")
-                        # report.build_custom()
-                        report.set_custom_html(f'<img src="file://{rssi_image_path}"  style="width:1200px; height:800px;"></img>')
-                        report.build_custom()
-
+            if(self.dowebgui and self.get_live_view and self.do_interopability):
+                self.add_live_view_images_to_report(report)
+            
 
         # report.build_custom()
         report.build_footer()
         report.write_html()
         report.write_pdf(_orientation="Landscape")
-        if(self.get_heatmap):
-            folder_path = os.path.join(script_dir, "heatmap_images")
-
-            for f in os.listdir(folder_path):
-                file_path = os.path.join(folder_path, f)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
 
     # Creates a separate DataFrame for each group of devices.
     def generate_dataframe(self, groupdevlist, typeofdevice, devusername, devssid, devmac, devchannel, devmode, devdirection, devofdownload, devobsdownload,
@@ -2611,6 +2588,42 @@ class Throughput(Realm):
 
         return upstream_port
 
+    def add_live_view_images_to_report(self,report):
+        """
+        This function looks for throughput and RSSI images for each floor
+        in the 'live_view_images' folder within `self.result_dir`.
+        It waits up to **60 seconds** for each image. If an image is found,
+        it's added to the `report` on a new page; otherwise, it's skipped.
+
+        **Args:**
+            self: An object containing `total_floors`, `result_dir`, and `test_name`.
+            report: An object with `set_custom_html()` and `build_custom()` methods.
+        """
+        for floor in range(0,int(self.total_floors)):
+            throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor+1}.png")
+            rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor+1}.png")
+            timeout = 60  # seconds
+            start_time = time.time()
+
+            while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
+                if time.time() - start_time > timeout:
+                    print("Timeout: Images not found within 60 seconds.")
+                    break
+                time.sleep(1)
+            while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
+                if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
+                    break
+            if os.path.exists(throughput_image_path):
+                report.set_custom_html('<div style="page-break-before: always;"></div>')
+                report.build_custom()
+                report.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                report.build_custom()
+
+            if os.path.exists(rssi_image_path):
+                report.set_custom_html('<div style="page-break-before: always;"></div>')
+                report.build_custom()
+                report.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
+                report.build_custom()
 
 # To validate the input args
 def validate_args(args):
@@ -2792,7 +2805,7 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default="open")
     optional.add_argument('--test_name', help='Specify test name to store the runtime csv results', default=None)
     optional.add_argument('--result_dir', help='Specify the result dir to store the runtime logs', default='')
-    optional.add_argument('--get_heatmap', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
     optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     optional.add_argument("--expected_passfail_value", help="Specify the expected number of urls", default=None)
     optional.add_argument("--device_csv_name", type=str, help='Specify the csv name to store expected url values', default=None)
@@ -2818,6 +2831,8 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--profile_name', type=str, help='Specify the profile name to apply configurations to the devices.')
     optional.add_argument("--wait_time", type=int, help='Specify the maximum time to wait for Configuration', default=60)
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
+    optional.add_argument("--default_config", action="store_true", help="To stop configuring the devices in interoperability")
+    optional.add_argument("--thpt_mbps", action="store_true", help="Interpret rated download and upload values as Mbps instead of bytes")
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
 
     args = parser.parse_args()
@@ -2834,6 +2849,14 @@ Copyright 2023 Candela Technologies Inc.
 
     logger_config = lf_logger_config.lf_logger_config()
 
+    if(args.thpt_mbps):
+        if args.download != '2560' and args.download != '0' and args.upload != '0' and args.upload != '2560':
+            args.download = str(int(args.download) * 1000000)
+            args.upload = str(int(args.upload) * 1000000)
+        elif args.upload != '2560' and args.upload != '0':
+            args.upload = str(int(args.upload) * 1000000)
+        else:
+            args.download = str(int(args.download) * 1000000)
     loads = {}
     iterations_before_test_stopped_by_user = []
     gave_incremental = False
@@ -2927,7 +2950,7 @@ Copyright 2023 Candela Technologies Inc.
                                 do_interopability=args.do_interopability,
                                 incremental=args.incremental,
                                 precleanup=args.precleanup,
-                                get_heatmap= args.get_heatmap,
+                                get_live_view= args.get_live_view,
                                 total_floors = args.total_floors,
                                 csv_direction=csv_direction,
                                 expected_passfail_value=args.expected_passfail_value,
@@ -2996,6 +3019,9 @@ Copyright 2023 Candela Technologies Inc.
         overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
 
         for i in range(len(to_run_cxs)):
+            if args.do_interopability:
+                # To get resource of device under test in interopability
+                device_to_run_resource = throughput.extract_digits_until_alpha(to_run_cxs[i][0])
             # Check the load type specified by the user
             if args.load_type == "wc_intended_load":
                 # Perform intended load for the current iteration
@@ -3011,6 +3037,12 @@ Copyright 2023 Candela Technologies Inc.
                 if (args.do_interopability and i != 0):
                     throughput.stop_specific(to_run_cxs[i - 1])
                     time.sleep(5)
+                if not args.default_config:
+                    if (args.do_interopability and i == 0):
+                        throughput.disconnect_all_devices()
+                    if args.do_interopability and "iOS" not in to_run_cxs[i][0]:
+                        logger.info("Configuring device of resource{}".format(to_run_cxs[i][0]))
+                        throughput.configure_specific([device_to_run_resource])
                 throughput.start_specific(to_run_cxs[i])
 
             # Determine device names based on the current iteration
@@ -3018,7 +3050,9 @@ Copyright 2023 Candela Technologies Inc.
 
             # Monitor throughput and capture all dataframes and test stop status
             all_dataframes, test_stopped_by_user = throughput.monitor(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time)
-
+            if args.do_interopability and "iOS" not in to_run_cxs[i][0] and not args.default_config:
+                # logger.info("Disconnecting device of resource{}".format(to_run_cxs[i][0]))
+                throughput.disconnect_all_devices([device_to_run_resource])
             # Check if the test was stopped by the user
             if test_stopped_by_user == False:
 
