@@ -310,6 +310,12 @@ or deselect to remove from the test json''')
                         self.use_radio_6g_var_dict[radio].set("Do Not Use")
                     elif '7921e' in radio_name_tmp:
                         self.use_radio_6g_var_dict[radio].set("Do Not Use")
+                    elif 'mt7996' in radio_name_tmp:
+                        if '802.11bgn' in radio_type or '802.11an' in radio_type:
+                            self.use_radio_6g_var_dict[radio].set("Do Not Use")
+                        else:
+                            self.use_radio_6g_var_dict[radio].set("Use")
+                            self.suite_test_name_6g_dict[radio] = self.radio_model_dict[radio]
                     else:
                         self.use_radio_6g_var_dict[radio].set("Use")
                         self.suite_test_name_6g_dict[radio] = self.radio_model_dict[radio]
