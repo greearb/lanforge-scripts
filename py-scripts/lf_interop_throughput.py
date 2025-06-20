@@ -214,6 +214,7 @@ class Throughput(Realm):
                  do_interopability=False,
                  get_live_view=False,
                  total_floors=0,
+                 default_config = False,
                  ip="localhost",
                  csv_direction='',
                  device_csv_name=None,
@@ -346,6 +347,8 @@ class Throughput(Realm):
         self.configdevices = {}
         self.group_device_map = {}
         self.config_dict = {}
+        self.configured_devices_check = {}
+        self.default_config = default_config
 
     def os_type(self):
         """
@@ -417,13 +420,20 @@ class Throughput(Realm):
         """
         obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
         all_devices = obj.get_all_devices()
-        android_resources = [d for d in all_devices if d.get('os') == 'Android' and d.get('eid') in device_to_configure_list]
-        laptop_resources = [d for d in all_devices if d.get('os') != 'Android' and d.get('eid') in device_to_configure_list]
-        print("android_resourcessssssssssssss",android_resources, laptop_resources, device_to_configure_list)
+        android_resources = [d for d in all_devices if (d.get('os') == 'Android') and d.get('eid') in device_to_configure_list]
+        laptop_resources = [d for d in all_devices if (d.get('os') != 'Android'  ) and '1.' + d.get('resource') in device_to_configure_list]
         devices_connected = asyncio.run(obj.connectivity(device_list=device_to_configure_list, wifi_config=self.config_dict))
-        if len(devices_connected)>0:
+        if len(devices_connected) > 0:
+            if android_resources:
+                self.configured_devices_check[android_resources[0]['user-name']] = True
+            elif laptop_resources:
+                self.configured_devices_check[laptop_resources[0]['hostname']] = True
             return True
         else:
+            if android_resources:
+                self.configured_devices_check[android_resources[0]['user-name']] = False
+            elif laptop_resources:
+                self.configured_devices_check[laptop_resources[0]['hostname']] = False
             return False
 
     def extract_digits_until_alpha(self,s):
@@ -1155,7 +1165,7 @@ class Throughput(Realm):
                 break
             if not self.background_run and self.background_run is not None:
                 break
-            if not is_device_configured:
+            if not is_device_configured and not self.default_config:
                 break
         for index, key in enumerate(throughput):
             for i in range(len(throughput[key])):
@@ -1472,6 +1482,12 @@ class Throughput(Realm):
         logger.debug("{}.csv".format(graph_image_name))
 
         return f"{graph_image_name}.png"
+    
+    def convert_to_table(self,configured_devices_check):
+        return {
+            "Username": list(configured_devices_check.keys()),
+            "Configuration Status": ["Pass" if status else "Fail" for status in configured_devices_check.values()]
+        }
 
     def generate_report(self, iterations_before_test_stopped_by_user, incremental_capacity_list, data=None, data1=None, report_path='', result_dir_name='Throughput_Test_report',
                         selected_real_clients_names=None):
@@ -2061,6 +2077,17 @@ class Throughput(Realm):
             }
             report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
 
+            if(not self.default_config):
+
+                report.set_obj_html(_obj_title="Configuration Status of Devices",
+                                    _obj="The table below shows the configuration status of each device with respect to the SSID connection.")
+                report.build_objective()
+
+                configured_dataframe = self.convert_to_table(self.configured_devices_check)
+                dataframe1 = pd.DataFrame(configured_dataframe)
+                report.set_table_dataframe(dataframe1)
+                report.build_table()
+
             # Loop through iterations and build graphs, tables for each device
             for i in range(len(iterations_before_test_stopped_by_user)):
                 rssi_signal_data = []
@@ -2080,7 +2107,8 @@ class Throughput(Realm):
                 # Fetch devices_on_running from real_client_list
                 devices_on_running.append(self.real_client_list[data1[i][-1] - 1].split(" ")[-1])
 
-                print("devicesssssss",devices_on_running[0])
+                if(not self.default_config and not self.configured_devices_check[devices_on_running[0]]):
+                    continue
 
                 for k in devices_on_running:
                     # individual_device_data=[]
@@ -2994,7 +3022,8 @@ Copyright 2023 Candela Technologies Inc.
                                 pk_passwd=args.pk_passwd,
                                 pac_file=args.pac_file,
                                 wait_time=args.wait_time,
-                                config=args.config
+                                config=args.config,
+                                default_config = args.default_config
                                 )
 
         if gave_incremental:
@@ -3037,11 +3066,11 @@ Copyright 2023 Candela Technologies Inc.
         overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
 
         for i in range(len(to_run_cxs)):
+            is_device_configured = True
             if args.do_interopability:
                 # To get resource of device under test in interopability
                 device_to_run_resource = throughput.extract_digits_until_alpha(to_run_cxs[i][0])
 
-                is_device_configured = True
             # Check the load type specified by the user
             if args.load_type == "wc_intended_load":
                 # Perform intended load for the current iteration
@@ -3068,7 +3097,6 @@ Copyright 2023 Candela Technologies Inc.
 
             # Determine device names based on the current iteration
             device_names = created_cx_lists_keys[:to_run_cxs_len[i][-1]]
-            print("oooooooooooopssssssssss",device_names)
 
             # Monitor throughput and capture all dataframes and test stop status
             all_dataframes, test_stopped_by_user = throughput.monitor(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured)
