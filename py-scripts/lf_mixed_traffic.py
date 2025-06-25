@@ -1368,7 +1368,7 @@ class Mixed_Traffic(Realm):
                 uc_avg_val = self.http_obj.data['uc_avg']
                 url_times = self.http_obj.data['url_data']
                 rx_bytes_val = self.http_obj.data['bytes_rd']
-                rx_rate_val = self.http_obj.data['rx_rate']
+                rx_rate_val = self.http_obj.data['rx rate (1m)']
             else:
                 uc_avg_val = self.http_obj.my_monitor('uc-avg')
                 url_times = self.http_obj.my_monitor('total-urls')
