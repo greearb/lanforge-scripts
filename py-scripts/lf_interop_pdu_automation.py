@@ -21,8 +21,6 @@ import argparse
 from typing import Sequence
 from typing import Optional
 
-import dlipower
-
 try:
     import dlipower
 except ModuleNotFoundError:
