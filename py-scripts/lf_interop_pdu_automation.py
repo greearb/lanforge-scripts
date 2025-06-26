@@ -23,6 +23,12 @@ from typing import Optional
 
 import dlipower
 
+try:
+    import dlipower
+except ModuleNotFoundError:
+    print('The module dlipower not installed, use pip install dlipower')
+    print('The module dlipower not available on F27, try F30+')
+
 
 class PDUAutomate:
     def __init__(self, hostname, user, password):
