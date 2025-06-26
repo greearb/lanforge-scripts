@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_interop_pdu_automation.py
 
-PURPOSE: lf_interop_pdu_automation.py  is a stand-alone automation script which will automatically power on/off for
-certain interval in loop to prevent the mobile phones over charging.
+PURPOSE: lf_interop_pdu_automation.py  is a stand-alone automation script
+which will automatically power on/off for certain interval in loop to
+prevent the mobile phones over charging.
 
-USE './python3 lf_interop_pdu_automation.py --host 192.168.200.50 --user username --password pass --current
-starting_status_of_port --port all/1,2,3 --on_time integer(minutes) --off_time integer(minutes)
-    Eg : ./python3 lf_interop_pdu_automation.py --host 192.168.200.50 --user admin --password Candela@123 --current on
-    --port all --on_time 1 --off_time 1'
+USE './python3 lf_interop_pdu_automation.py --host 192.168.200.50
+    --user username --password pass --current starting_status_of_port
+    --port all/1,2,3 --on_time integer(minutes) --off_time integer(minutes)
+    Eg : ./python3 lf_interop_pdu_automation.py --host 192.168.200.50
+    --user admin --password Candela@123 --current on --port all
+    --on_time 1 --off_time 1'
 
 Note: Please ensure that PDU is powered on and has an ip assigned to it.
 
@@ -20,6 +22,7 @@ import time
 import argparse
 from typing import Sequence
 from typing import Optional
+import traceback
 
 try:
     import dlipower
@@ -41,7 +44,8 @@ class PDUAutomate:
     def login(self):
         try:
             self.power_switch = dlipower.PowerSwitch(hostname=self.hostname, userid=self.user, password=self.password)
-        except:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             print('[STATUS] PDU device is Off, please connect it and try after sometime!!!')
             exit(0)
 
@@ -77,7 +81,8 @@ class PDUAutomate:
                 port = str(self.port).split(",")
                 for i in port:
                     self.power_switch[int(i) - 1].state = "ON"
-            except:
+            except Exception as x:
+                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                 self.power_switch[int(self.port) - 1].state = "ON"
         else:
             for outlet in self.power_switch:
@@ -90,7 +95,8 @@ class PDUAutomate:
                 port = str(self.port).split(",")
                 for i in port:
                     self.power_switch[int(i) - 1].state = "OFF"
-            except:
+            except Exception as x:
+                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                 self.power_switch[int(self.port) - 1].state = "OFF"
         else:
             for outlet in self.power_switch:
