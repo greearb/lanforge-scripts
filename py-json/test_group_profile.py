@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# flake8: noqa
+# flake8: noqa: E501
 import sys
 import os
 import importlib
