@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa: E501
 import sys
 import os
 import importlib
@@ -12,7 +11,7 @@ LFCliBase = lfcli_base.LFCliBase
 
 
 class TestGroupProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, local_realm, test_group_name=None, debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, test_group_name=None, debug_=False):  # noqa: 501
         super().__init__(lfclient_host, lfclient_port, debug_)
         self.local_realm = local_realm
         self.group_name = test_group_name
@@ -20,43 +19,44 @@ class TestGroupProfile(LFCliBase):
 
     def start_group(self):
         if self.group_name is not None:
-            self.local_realm.json_post("/cli-json/start_group", {"name": self.group_name})
+            self.local_realm.json_post("/cli-json/start_group", {"name": self.group_name})  # noqa: 501
+            self.local_realm.json_post("/cli-json/start_group", {"name": self.group_name})  # noqa: 501
         else:
             raise ValueError("test_group name must be set.")
 
     def quiesce_group(self):
         if self.group_name is not None:
-            self.local_realm.json_post("/cli-json/quiesce_group", {"name": self.group_name})
+            self.local_realm.json_post("/cli-json/quiesce_group", {"name": self.group_name})  # noqa: 501
         else:
             raise ValueError("test_group name must be set.")
 
     def stop_group(self):
         if self.group_name is not None:
-            self.local_realm.json_post("/cli-json/stop_group", {"name": self.group_name})
+            self.local_realm.json_post("/cli-json/stop_group", {"name": self.group_name})  # noqa: 501
         else:
             raise ValueError("test_group name must be set.")
 
     def create_group(self):
         if self.group_name is not None:
-            self.local_realm.json_post("/cli-json/add_group", {"name": self.group_name})
+            self.local_realm.json_post("/cli-json/add_group", {"name": self.group_name})  # noqa: 501
         else:
             raise ValueError("test_group name must be set.")
 
     def rm_group(self):
         if self.group_name is not None:
-            self.local_realm.json_post("/cli-json/rm_group", {"name": self.group_name})
+            self.local_realm.json_post("/cli-json/rm_group", {"name": self.group_name})  # noqa: 501
         else:
             raise ValueError("test_group name must be set.")
 
     def add_cx(self, cx_name):
-        self.local_realm.json_post("/cli-json/add_tgcx", {"tgname": self.group_name, "cxname": cx_name})
+        self.local_realm.json_post("/cli-json/add_tgcx", {"tgname": self.group_name, "cxname": cx_name})  # noqa: 501
 
     def rm_cx(self, cx_name):
-        self.local_realm.json_post("/cli-json/rm_tgcx", {"tgname": self.group_name, "cxname": cx_name})
+        self.local_realm.json_post("/cli-json/rm_tgcx", {"tgname": self.group_name, "cxname": cx_name})  # noqa: 501
 
     def check_group_exists(self):
         test_groups = self.local_realm.json_get("/testgroups/all")
-        # This breaks on only one existing group, this expects an array not a single object
+        # This breaks on only one existing group, this expects an array not a single object  # noqa: 501
         if test_groups is not None and "groups" in test_groups:
             test_groups = test_groups["groups"]
             for group in test_groups:
