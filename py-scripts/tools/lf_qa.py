@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 '''
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
 Usage: lf_qa.py --store --png --show --path <path to directories to traverse> --database <name of database>
@@ -21,7 +20,6 @@ import time
 import logging
 import re
 import traceback
-
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
@@ -51,7 +49,7 @@ class csv_sql:
         logger.debug("lf_qa path: {path}".format(path=self.path))
         logger.debug("lf_qa path_comp: {path}".format(path=self.path_comp))
         logger.debug("lf_qa lf_qa_report_path: {path}".format(path=self.lf_qa_report_path))
-        self.test_window_days=_test_window_days
+        self.test_window_days = _test_window_days
         self.file = _file
         self.database = _database
         self.table = _table
@@ -119,7 +117,7 @@ class csv_sql:
             for line in meta_data_fd:
                 if "lanforge_kernel_version:" in line:
                     kernel_version = line.replace("$ lanforge_kernel_version:", "")
-                    kernel_version = test_run.strip()
+                    kernel_version = kernel_version.strip()
                     logger.info("meta_data_path: {meta_data_path} Kernel Version: {kernel}".format(
                         meta_data_path=meta_data_path, kernel=kernel_version))
                     break
@@ -140,9 +138,9 @@ class csv_sql:
             for line in meta_data_fd:
                 if "radio_firmware" in line:
                     radio_firmware = line.replace("$ radio_firmware:", "")
-                    radio_firmware = test_run.strip()
+                    radio_firmware = radio_firmware.strip()
                     logger.info("meta_data_path: {meta_data_path} Radio Firmware : {radio_fw}".format(
-                        meta_data_path=meta_data_path, kernel=kernel_version))
+                        meta_data_path=meta_data_path, radio_fw=radio_firmware))
                     break
             meta_data_fd.close()
         except Exception as x:
@@ -151,7 +149,6 @@ class csv_sql:
             logger.info("exception reading meta get_kernel_version_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
         return radio_firmware
-
 
     def get_gui_info_from_meta(sefl, _kpi_path):
         gui_version = "NA"
@@ -176,9 +173,8 @@ class csv_sql:
                     if (match is not None):
                         gui_build_date = match.group(1)
 
-
                     logger.info("meta_data_path: {meta_data_path} GUI Version: {gui_version} GUI Build Date {gui_build_date}".format(
-                        meta_data_path=meta_data_path, gui_version=gui_version,gui_build_date=gui_build_date))
+                        meta_data_path=meta_data_path, gui_version=gui_version, gui_build_date=gui_build_date))
 
                     break
             meta_data_fd.close()
@@ -208,9 +204,8 @@ class csv_sql:
                     pattern = "Compiled on:  (\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+)"
 
                     match = re.search(pattern, line)
-                    if (match  is not None):
+                    if (match is not None):
                         server_build_date = match.group(1)
-
 
                     logger.info("meta_data_path: {meta_data_path} server Version: {server_version}".format(
                         meta_data_path=meta_data_path, server_version=server_version))
@@ -249,10 +244,8 @@ class csv_sql:
                 _kpi_path=_kpi_path))
         return test_dir
 
-
-    #def get_server_from_meta(sefl, _kpi_path):
-    #def get_gui_from_meta(sefl, _kpi_path):
-
+    # def get_server_from_meta(sefl, _kpi_path):
+    # def get_gui_from_meta(sefl, _kpi_path):
 
     def get_test_id_test_tag(self, _kpi_path):
         test_id = "NA"
@@ -404,10 +397,10 @@ class csv_sql:
                     index_html_file = parent_path + "/index.html"
                     if os.path.exists(index_html_file):
                         readme_html_file = parent_path + "/readme.html"
-                        os.rename(index_html_file,readme_html_file)
+                        os.rename(index_html_file, readme_html_file)
 
                     dir_path = '../' + parent_name
-                    pdf_path = '../' + parent_name + "/" +  pdf_base_name
+                    pdf_path = '../' + parent_name + "/" + pdf_base_name
                     html_path = "../" + parent_name + "/readme.html"
 
                     kpi_path = os.path.join(parent_path, "kpi.csv")
@@ -487,8 +480,8 @@ class csv_sql:
                     if test_tag == test_tag_comp and test_id == test_id_comp:
                         kpi_chart_comp_found = True
                         logger.debug("test_tag : {tag} test_tag_comp : {ctag} test_id : {test_id} test_id_comp : {test_id_comp}".format(
-                            tag=test_tag,ctag=test_tag_comp,test_id=test_id,test_id_comp=test_id_comp
-                        ) )
+                            tag=test_tag, ctag=test_tag_comp, test_id=test_id, test_id_comp=test_id_comp
+                        ))
                         # get relative path
                         kpi_chart_comp_relative = os.path.relpath(kpi_chart_comp, self.lf_qa_report_path)
                         logger.debug("kpi_chart_comp_relative: {r_chart}".format(r_chart=kpi_chart_comp_relative))
@@ -506,7 +499,7 @@ class csv_sql:
                                     <img src="{kpi_chart_src}" style="width:400px;max-width:400px" title="{kpi_chart_title}">
                                 </a>
                             </td>
-                        """.format(test_tag=test_tag_comp, test_id=test_id_comp, dir_path=compare_results_dir,kpi_chart_ref=kpi_chart_comp_relative, kpi_chart_src=kpi_chart_comp_relative, kpi_chart_title=kpi_chart_comp_relative)
+                        """.format(test_tag=test_tag_comp, test_id=test_id_comp, dir_path=compare_results_dir, kpi_chart_ref=kpi_chart_comp_relative, kpi_chart_src=kpi_chart_comp_relative, kpi_chart_title=kpi_chart_comp_relative)  # noqa: E501
                         break
                     if kpi_chart_comp_found:
                         # even if comparison not found increase the index
@@ -524,7 +517,6 @@ class csv_sql:
             kpi_chart_html += """</tr>"""
         kpi_chart_html += """</tbody></table>"""
         return kpi_chart_html
-
 
     def get_kpi_chart_html_relative(self):
         kpi_chart_html = """
@@ -572,13 +564,13 @@ class csv_sql:
         kpi_chart_html += """</tbody></table>"""
         return kpi_chart_html
 
-
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
     # sqlite browser:
     # Fedora  sudo dnf install sqlitebrowser
     # Ubuntu sudo apt-get install sqlite3
     #
+
     def store(self):
         logger.info("reading kpi and storing in db {}".format(self.database))
         path = Path(self.path)
@@ -589,7 +581,6 @@ class csv_sql:
         if not self.kpi_list:
             logger.info("WARNING: used --store , no new kpi.csv found, check input path or remove --store from command line")
 
-        rows = []
         for kpi in self.kpi_list:  # TODO note empty kpi.csv failed test
             df_kpi_tmp = pd.read_csv(kpi, sep='\t')
             # only store the path to the kpi.csv file
@@ -614,8 +605,7 @@ class csv_sql:
             df_kpi_tmp['server_ver'], df_kpi_tmp['server_build_date'] = self.get_server_info_from_meta(_kpi_path)
 
             # this next line creats duplicate entries
-            self.df = pd.concat([self.df,df_kpi_tmp], ignore_index=True)
-
+            self.df = pd.concat([self.df, df_kpi_tmp], ignore_index=True)
 
         self.conn = sqlite3.connect(self.database)
         try:
@@ -690,17 +680,14 @@ class csv_sql:
             exit(1)
         self.conn.close()
 
-
-
     def generate_png(self, group, test_id_list, test_tag,
                      test_rig, kpi_path_list, kpi_fig, df_tmp):
         # save the figure - figures will be over written png
         # for testing
-        png_server_img = ''
         # generate the png files
         logger.info("generate png and kpi images from kpi kpi_path:{}".format(
             df_tmp['kpi_path']))
-            # LAN-1535 scripting: test_l3.py output masks other output when browsing (index.html) create relative paths in reports
+        # LAN-1535 scripting: test_l3.py output masks other output when browsing (index.html) create relative paths in reports
         # generate png img path
         png_path = os.path.join(
             kpi_path_list[-1], "{}_{}_{}_kpi.png".format(group, test_tag, test_rig))
@@ -719,9 +706,7 @@ class csv_sql:
             png_present = False
             # exit(1)
         except Exception as x:
-            traceback.print_exception(
-                Exception, x, x.__traceback__, chain=True)
-            logger.info("BaseException kpi_fig.write_image{msg}".format(msg=err))
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             png_present = False
             # exit(1)
         # generate html image (interactive)
@@ -751,12 +736,12 @@ class csv_sql:
             self.html_results += """<br>"""
             self.html_results += """<br>"""
 
-
     # TODO determin the subtest pass and fail graph
     # df is sorted by date oldest to newest
     # get the test_run for last run
     # query the db for  all pass and fail or last run
     # put in table
+
     def sub_test_information(self):
         logger.info("generate table and graph from subtest data per run: {}".format(
             time.time()))
@@ -772,8 +757,8 @@ class csv_sql:
             traceback.print_exception(
                 Exception, x, x.__traceback__, chain=True)
             logger.info(("Database empty reading subtest: "
-                   "KeyError(key) when sorting by Date for db: {db},"
-                   " check Database name, path to kpi, typo in path, exiting".format(db=self.database)))
+                         "KeyError(key) when sorting by Date for db: {db},"
+                         " check Database name, path to kpi, typo in path, exiting".format(db=self.database)))
             exit(1)
         self.conn.close()
 
@@ -912,10 +897,10 @@ class csv_sql:
                         # if the recent test is over a week old do not include in run
                         # 1 day = 86400000 milli seconds
                         # 1 week = 604800000 milli seconds
-                        time_difference = int(time_now) -int(recent_test_run)
-                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} test_window_epoch: {test_window_epoch} oldest_test_run: {oldest_test_run}".format(
-                            time_now=time_now,recent_test_run=recent_test_run,test_window_epoch=test_window_epoch, time_difference=time_difference, oldest_test_run=oldest_test_run))
-                        ##if (time_difference) < 604800000:  # TODO have window be configurable
+                        time_difference = int(time_now) - int(recent_test_run)
+                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} test_window_epoch: {test_window_epoch} oldest_test_run: {oldest_test_run}".format(  # noqa: E501
+                            time_now=time_now, recent_test_run=recent_test_run, test_window_epoch=test_window_epoch, time_difference=time_difference, oldest_test_run=oldest_test_run))
+                        # if (time_difference) < 604800000:  # TODO have window be configurable
                         if (time_difference) < test_window_epoch:  # TODO have window be configurable
                             units_list = list(df_tmp['Units'])
                             logger.info(
@@ -933,7 +918,7 @@ class csv_sql:
                                             'Subtest-Pass',
                                             'Subtest-Fail',
                                             'kernel'
-                                            ],
+                                        ],
                                         color="short-description",
                                         hover_name="short-description",
                                         size_max=60)).update_traces(
@@ -958,12 +943,12 @@ class csv_sql:
                                 kpi_fig.update_layout(autotypenumbers='convert types')
 
                                 self.generate_png(df_tmp=df_tmp,
-                                                group=group,
-                                                test_id_list=test_id_list,
-                                                test_tag=test_tag,
-                                                test_rig=test_rig,
-                                                kpi_path_list=kpi_path_list,
-                                                kpi_fig=kpi_fig)
+                                                  group=group,
+                                                  test_id_list=test_id_list,
+                                                  test_tag=test_tag,
+                                                  test_rig=test_rig,
+                                                  kpi_path_list=kpi_path_list,
+                                                  kpi_fig=kpi_fig)
 
                             else:
                                 kpi_fig = (
@@ -985,7 +970,7 @@ class csv_sql:
                                             'dut-sw-version',
                                             'dut-model-num',
                                             'dut-serial-num'
-                                            ],
+                                        ],
                                         color="short-description",
                                         hover_name="short-description",
                                         size_max=60)).update_traces(
@@ -1020,12 +1005,12 @@ class csv_sql:
                                 kpi_fig.update_layout(autotypenumbers='convert types')
 
                                 self.generate_png(df_tmp=df_tmp,
-                                                group=group,
-                                                test_id_list=test_id_list,
-                                                test_tag=test_tag,
-                                                test_rig=test_rig,
-                                                kpi_path_list=kpi_path_list,
-                                                kpi_fig=kpi_fig)
+                                                  group=group,
+                                                  test_id_list=test_id_list,
+                                                  test_tag=test_tag,
+                                                  test_rig=test_rig,
+                                                  kpi_path_list=kpi_path_list,
+                                                  kpi_fig=kpi_fig)
 
 
 # Feature, Sum up the subtests passed/failed from the kpi files for each
@@ -1096,7 +1081,6 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
 
     parser.add_argument('--server', help="--server , server switch is deprecated ", default="")
 
-
     # logging configuration:
     parser.add_argument('--log_level',
                         default=None,
@@ -1135,7 +1119,6 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
     __dir = args.dir
     __test_window_days = args.test_window_days
 
-
     logger.info("config:\
             path:{path} file:{file}\
             database:{database} table:{table} \
@@ -1165,8 +1148,8 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
 
     csv_dash = csv_sql(
         _path=__path,
-        _path_comp = __path_comp,
-        _lf_qa_report_path = __lf_qa_report_path,
+        _path_comp=__path_comp,
+        _lf_qa_report_path=__lf_qa_report_path,
         _file=__file,
         _database=__database,
         _table=__table,
@@ -1220,7 +1203,6 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         # pdf_parent_path = os.path.dirname(pdf_link_path)
         # pdf_parent_name = os.path.basename(pdf_parent_path)
 
-
         pdf_url = './' + pdf_file
         report.build_pdf_link("PDF_Report", pdf_url)
 
@@ -1233,7 +1215,6 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         report_parent_basename = os.path.basename(report_parent_path)
         report_parent_url = './../../../' + report_parent_basename
         report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)
-
 
         # links table for tests
         report.set_table_title("Test Suite")
