@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa: E501
 """
 ## NAME: test_l3_longevity.py
 
@@ -1625,7 +1624,7 @@ class L3VariableTime(Realm):
 
                                         # Find latency, jitter for connections
                                         # using this port.
-                                        latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll = self.get_endp_stats_for_port(port_data["port"], endps)
+                                        latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll = self.get_endp_stats_for_port(port_data["port"], endps)  # noqa: E501
 
                                         # now report the ap_chanim_stats along
                                         # side of the ap_stats_5g
@@ -2006,7 +2005,7 @@ class L3VariableTime(Realm):
                                         logger.info(pformat(response))
                                     else:
                                         cx_data = response[cx_name]
-                                        type, state, pkt_rx_a, pkt_rx_b, bps_rx_a, bps_rx_b, rx_drop_percent_a, rx_drop_percent_b, drop_pkts_a, drop_pkts_b, avg_rtt, rpt_timer, eid = self.get_l3_stats_for_cx(cx_data)
+                                        type, state, pkt_rx_a, pkt_rx_b, bps_rx_a, bps_rx_b, rx_drop_percent_a, rx_drop_percent_b, drop_pkts_a, drop_pkts_b, avg_rtt, rpt_timer, eid = self.get_l3_stats_for_cx(cx_data)  # noqa: E501
 
                                         self.write_l3_csv(cx_name,
                                                           type,
@@ -2056,7 +2055,7 @@ class L3VariableTime(Realm):
 
                     # we should be able to add the values for each eid
                     all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                                    'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
+                                                                                                    'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()  # noqa: E501
                     all_dl_ports_stations_sum_file_name = self.outfile[:-4]
                     all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + "-dl-all-eids-sum-per-interval.csv"
 
