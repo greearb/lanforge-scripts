@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 '''
     lf_inspect.py  --database <test.db>
 
@@ -10,21 +9,17 @@ TODO :  Add to help how to run or which parameters needed to run: on lanforge, a
 import sys
 import os
 import importlib
-import plotly.express as px
 import pandas as pd
 import sqlite3
 import argparse
 from pathlib import Path
 import time
 import logging
-import re
 import csv
 import traceback
-import math
 import datetime
 import shutil
 import socket
-
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
@@ -55,7 +50,7 @@ class inspect_sql:
                  _test_suite='db_compare',
                  _test_window_days='7'
                  ):
-        
+
         # get the server information
         self.hostname = socket.getfqdn()
         self.server_ip = socket.gethostbyname(self.hostname)
@@ -70,8 +65,7 @@ class inspect_sql:
         if self.lf_inspect_report_url.startswith('/'):
             self.lf_inspect_report_url = self.lf_inspect_report_url[1:]
 
-
-        self.test_window_days=_test_window_days
+        self.test_window_days = _test_window_days
         self.path = _path
         self.dir = _dir
         self.table = _table
@@ -137,7 +131,7 @@ class inspect_sql:
         # Allure information
         self.junit_results = ""
         self.junit_path_only = ""
-        self.allure_time_stamp =  str(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
+        self.allure_time_stamp = str(datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
 
     def set_junit_results(self, junit_results):
         self.junit_results = junit_results
@@ -145,49 +139,29 @@ class inspect_sql:
     def set_junit_path_only(self, junit_path_only):
         self.junit_path_only = junit_path_only
 
-    def get_html_results(self):
-        return self.html_results
-
-    # TODO allow for running of multiple test suites
-    def start_junit_testsuites(self):
-        self.junit_results += """<?xml version="1.0" encoding="UTF-8" ?>
-            <testsuites>
-        """
-
-    def finish_junit_testsuites(self):
-        self.junit_results += """
-        </testsuites>
-        """
     # TODO have the suite name be the DB
+
     def start_junit_testsuite(self):
-        if(len(self.database_list)) == 1:
+        if (len(self.database_list)) == 1:
             # remove file extenstion from db name
             lf_inspect_database_name = os.path.splitext(str(os.path.basename(self.database_list[0])))[0]
             # for now assume 2, TODO loop though list
         else:
-            lf_inspect_database_name = os.path.splitext(str(os.path.basename(self.database_list[0])))[0]+"_"+os.path.spliter(str(os.path.basename(self.database_list[1])))[0]
+            lf_inspect_database_name = os.path.splitext(str(os.path.basename(self.database_list[0])))[0] + "_" + os.path.spliter(str(os.path.basename(self.database_list[1])))[0]
 
-        #self.junit_results += """
-        #<testsuite name="{suite}  time="{duration}" timestamp="{start}">
-        #""".format(suite=lf_inspect_database_name, duration=self.suite_duration,start=self.allure_time_stamp)
+        # self.junit_results += """
+        # <testsuite name="{suite}  time="{duration}" timestamp="{start}">
+        # """.format(suite=lf_inspect_database_name, duration=self.suite_duration,start=self.allure_time_stamp)
 
         self.junit_results += """
         <testsuite name="{suite}" timestamp="{start}">
         """.format(suite=lf_inspect_database_name, start=self.allure_time_stamp)
 
-
     # TODO
-    #def start_junit_testsuite(self):
+    # def start_junit_testsuite(self):
     #    self.junit_results += """
     #    <testsuite name="{suite}  time="{duration}" timestamp="{start}">
     #    """.format(suite=self.test_suite, duration=self.suite_duration,start=self.allure_time_stamp)
-
-
-
-    def finish_junit_testsuite(self):
-        self.junit_results += """
-        </testsuite>
-        """
 
     def get_junit_results(self):
         return self.junit_results
@@ -215,21 +189,13 @@ class inspect_sql:
         self.csv_results_writer.writerow(self.csv_results_column_headers)
         self.csv_results_file.flush()
 
-    def get_junit_results(self):
-        return self.junit_results
-
     # TODO allow for running of multiple test suites
     def start_junit_testsuites(self):
         self.junit_results += """<?xml version="1.0" encoding="UTF-8" ?>
             <testsuites>
         """
 
-    def finish_junit_testsuites(self):
-        self.junit_results += """
-        </testsuites>
-        """
-
-    #def start_junit_testsuite(self):
+    # def start_junit_testsuite(self):
     #    self.junit_results += """
     #    <testsuite name="{suite}">
     #    """.format(suite=self.test_suite)
@@ -239,16 +205,12 @@ class inspect_sql:
         </testsuite>
         """
 
-    def get_junit_results(self):
-        return self.junit_results
-
     def get_html_results(self):
         return self.html_results
 
-
-
     # Helper methods
     # for the same db
+
     def compare_data(self):
         if len(self.database_list) == 1:
             # TODO in future have ability to extract single DUT and compare
@@ -266,9 +228,9 @@ class inspect_sql:
     def compare_multi_db_info(self):
         logger.info("compare the data in multiple db: {db_list}".format(db_list=self.database_list))
 
-        col_list= []
+        col_list = []
         attrib_list = []
-        #if the element list is empty the compare only on db index
+        # if the element list is empty the compare only on db index
         if self.element_list:
             self.compare_on_element = True
             for element in self.element_list:
@@ -276,8 +238,6 @@ class inspect_sql:
                 col_list.append(element_tmp[0])
                 attrib_list.append(element_tmp[1])  # note this is a list of two elements separated by &&
             sub_attrib_list = attrib_list[0].split('&&')
-
-
 
         # start the html results for the compare
         self.start_html_results()
@@ -304,7 +264,7 @@ class inspect_sql:
             exit(1)
 
         if self.element_list:
-            df_1 = df_1.loc[df_1[col_list[0]] == sub_attrib_list[0]]         
+            df_1 = df_1.loc[df_1[col_list[0]] == sub_attrib_list[0]]
 
         self.conn.close()
 
@@ -335,9 +295,9 @@ class inspect_sql:
             for graph_group in df_1['Graph-Group'].unique():
                 for description in df_1['short-description'].unique():
                     df_tmp = df_1.loc[
-                        (df_1['Graph-Group'] == str(graph_group))
-                        & (df_1['test-tag'] == str(test_tag))
-                        & (df_1['short-description'] == str(description))]
+                        (df_1['Graph-Group'] == str(graph_group)) &
+                        (df_1['test-tag'] == str(test_tag)) &
+                        (df_1['short-description'] == str(description))]
 
                     # For comparing two databases there only needs to be a single entry
                     if not df_tmp.empty:
@@ -350,16 +310,16 @@ class inspect_sql:
                         # if the recent test is over a week old do not include in run
                         # 1 day = 86400000 milli seconds
                         # 1 week = 604800000 milli seconds
-                        time_difference = int(time_now) -int(recent_test_run)
-                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} test_window_epoch: {test_window_epoch} oldest_test_run: {oldest_test_run}".format(
-                            time_now=time_now,recent_test_run=recent_test_run,test_window_epoch=test_window_epoch, time_difference=time_difference, oldest_test_run=oldest_test_run))
+                        time_difference = int(time_now) - int(recent_test_run)
+                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} test_window_epoch: {test_window_epoch} oldest_test_run: {oldest_test_run}".format(  # noqa: E501
+                            time_now=time_now, recent_test_run=recent_test_run, test_window_epoch=test_window_epoch, time_difference=time_difference, oldest_test_run=oldest_test_run))
                         if (time_difference) < test_window_epoch:
 
                             # find the same information in db2
                             df_tmp_comp = df_2.loc[
-                                (df_2['Graph-Group'] == str(graph_group))
-                                & (df_2['test-tag'] == str(test_tag))
-                                & (df_2['short-description'] == str(description))]
+                                (df_2['Graph-Group'] == str(graph_group)) &
+                                (df_2['test-tag'] == str(test_tag)) &
+                                (df_2['short-description'] == str(description))]
                             if not df_tmp_comp.empty:
                                 logger.info("db2 contains: {group} {tag} {desc}".format(group=graph_group, tag=test_tag, desc=description))
 
@@ -380,8 +340,8 @@ class inspect_sql:
                                 logger.debug("type: {data} {data2}".format(data=type(df_data_2), data2=df_data_2))
 
                                 percent_delta = 0
-                                if((float(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
-                                    percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
+                                if ((float(df_data_1['numeric-score']) != 0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
+                                    percent_delta = round(((float(df_data_2['numeric-score']) / float(df_data_1['numeric-score'])) * 100), 2)
 
                                 self.performance_total += 1
 
@@ -398,39 +358,39 @@ class inspect_sql:
                                         background = self.background_green
                                         self.performance_good += 1
                                         logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
-                                # changing the performce to > 80 7/9/2024 - 
+                                # changing the performce to > 80 7/9/2024 -
                                 elif percent_delta >= 80:
-                                    logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    logger.info("Performance Good {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                     self.test_result = "Good"
                                     background = self.background_green
                                     self.performance_good += 1
                                 elif percent_delta >= 70:
-                                    logger.info("Performance Fair {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    logger.info("Performance Fair {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                     self.test_result = "Fair"
                                     background = self.background_purple
                                     self.performance_fair += 1
                                 elif percent_delta >= 50:
-                                    logger.info("Performance Poor {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    logger.info("Performance Poor {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                     self.test_result = "Poor"
                                     background = self.background_orange
                                     self.performance_poor += 1
                                 elif percent_delta == 0:
                                     # for UL in test-tag and DL 0 or DL in test-tag and UL 0 this case should not be a failure
                                     if 'UL+DL' in df_data_1['short-description'] and 'DL_UL' in df_data_1['test-tag']:
-                                        logger.info("For test {test} the {discription} DL not being monitored Not Applicable".format(
-                                                test=df_data_1['test-tag'],description=df_data_1['short-description']))
+                                        logger.info("For test {test} the {description} DL not being monitored Not Applicable".format(
+                                            test=df_data_1['test-tag'], description=df_data_1['short-description']))
                                         background = self.background_red
                                         self.performance_critical += 1
                                         self.test_result = "Critical"
                                     elif 'DL' in df_data_1['short-description'] and 'UL' in df_data_1['test-tag']:
-                                        logger.info("For test {test} the {discription} DL not being monitored Not Applicable".format(
-                                                test=df_data_1['test-tag'],description=df_data_1['short-description']))
+                                        logger.info("For test {test} the {description} DL not being monitored Not Applicable".format(
+                                            test=df_data_1['test-tag'], description=df_data_1['short-description']))
                                         background = self.background_green
                                         self.performance_good += 1
                                         self.test_result = "Good"
                                     elif 'DL' in df_data_1['short-description'] and 'UL' in df_data_1['test-tag']:
-                                        logger.info("For test {test} the {discription} DL not being monitored Not Applicable".format(
-                                                test=df_data_1['test-tag'],description=df_data_1['short-description']))
+                                        logger.info("For test {test} the {description} DL not being monitored Not Applicable".format(
+                                            test=df_data_1['test-tag'], description=df_data_1['short-description']))
                                         background = self.background_green
                                         self.performance_good += 1
                                         self.test_result = "Good"
@@ -439,39 +399,38 @@ class inspect_sql:
                                     elif 'Failed' in df_data_1['short-description']:
                                         # Only check the lastest run to see if zero
                                         # if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) !=0.0)):
-                                        if((float(df_data_2['numeric-score']) !=0.0)):
-                                            logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                        if ((float(df_data_2['numeric-score']) != 0.0)):
+                                            logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                             background = self.background_red
                                             self.performance_critical += 1
                                             self.test_result = "Critical"
                                         else:
-                                            logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                            logger.info("Performance Good {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                             self.test_result = "Good"
                                             background = self.background_green
                                             self.performance_good += 1
                                     elif 'Max Stations IP' in df_data_1['short-description']:
-                                        if((float(df_data_2['numeric-score']) == 0.0)):
-                                            logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                        if ((float(df_data_2['numeric-score']) == 0.0)):
+                                            logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                             background = self.background_red
                                             self.performance_critical += 1
                                             self.test_result = "Critical"
                                         else:
-                                            logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                            logger.info("Performance Good {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                             self.test_result = "Good"
                                             background = self.background_green
                                             self.performance_good += 1
 
                                     else:
-                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                         self.test_result = "Critical"
                                         background = self.background_red
                                         self.performance_critical += 1
                                 else:
-                                    logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                     self.test_result = "Critical"
                                     background = self.background_red
                                     self.performance_critical += 1
-
 
                                 # we can get most anything from the dataframe
                                 # TODO use the dataframe export line to CSV?
@@ -545,7 +504,7 @@ class inspect_sql:
                                 # record the junit results
                                 self.junit_results += """
                                     <testcase name="{name}" classname="{suite}" id="{description}" time="{time}">
-                                    """.format(name=self.junit_test, suite=self.test_suite, description=description,time="1")
+                                    """.format(name=self.junit_test, suite=self.test_suite, description=description, time="1")
 
                                 # remove junit xml characters
                                 str_df_data_1 = str(df_data_1).replace('<', '').replace('>', '')
@@ -565,13 +524,13 @@ class inspect_sql:
                                     <property name="Last Data" value="{df_data_1}" />
                                     <property name="Perv Data" value="{df_data_2}" />
                                     """.format(server_ip=self.server_ip, lf_inspect=self.lf_inspect_report_url,
-                                            test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
-                                            percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
-                                
+                                               test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
+                                               percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+
                                 # End properties
                                 self.junit_results += """
                                 </properties>
-                                """                
+                                """
                                 # Anything other then Good is a failure for allure
                                 if self.test_result != "Good":
                                     self.junit_results += """
@@ -623,9 +582,7 @@ class inspect_sql:
         for test_tag in df3['test-tag'].unique():
             for graph_group in df3['Graph-Group'].unique():
                 for description in df3['short-description'].unique():
-                    df_tmp = df3.loc[(df3['Graph-Group'] == str(graph_group))
-                                     & (df3['test-tag'] == str(test_tag))
-                                     & (df3['short-description'] == str(description))]
+                    df_tmp = df3.loc[(df3['Graph-Group'] == str(graph_group)) & (df3['test-tag'] == str(test_tag)) & (df3['short-description'] == str(description))]
 
                     # TODO need to be sure that there is at least two entries
                     if not df_tmp.empty and len(df_tmp.index) >= 2:
@@ -637,9 +594,9 @@ class inspect_sql:
                         # if the recent test is over a week old do not include in run
                         # 1 day = 86400000 milli seconds
                         # 1 week = 604800000 milli seconds
-                        time_difference = int(time_now) -int(recent_test_run)
-                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} test_window_epoch: {test_window_epoch} oldest_test_run: {oldest_test_run}".format(
-                            time_now=time_now,recent_test_run=recent_test_run,test_window_epoch=test_window_epoch, time_difference=time_difference, oldest_test_run=oldest_test_run))
+                        time_difference = int(time_now) - int(recent_test_run)
+                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} test_window_epoch: {test_window_epoch} oldest_test_run: {oldest_test_run}".format(  # noqa: E501
+                            time_now=time_now, recent_test_run=recent_test_run, test_window_epoch=test_window_epoch, time_difference=time_difference, oldest_test_run=oldest_test_run))
                         if (time_difference) < test_window_epoch:
 
                             # Note if graph group is score there is sub tests for pass and fail
@@ -658,10 +615,10 @@ class inspect_sql:
                             df_data_2 = df_tmp.iloc[db_index_2]
 
                             percent_delta = 0
-                            if((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
-                                percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
+                            if ((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
+                                percent_delta = round(((float(df_data_2['numeric-score']) / float(df_data_1['numeric-score'])) * 100), 2)
 
-                            self.performance_total += 1                            
+                            self.performance_total += 1
 
                             # AP auto basic connectivity the failure is if the connection took longer then 500 ms
                             if 'Basic Client Connectivity' in df_data_2['short-description']:
@@ -677,21 +634,20 @@ class inspect_sql:
                                     self.performance_good += 1
                                     logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
 
-
                             elif percent_delta >= 80:
-                                logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                logger.info("Performance Good {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                 self.test_result = "Good"
                                 background = self.background_green
                                 self.performance_good += 1
 
                             elif percent_delta >= 70:
-                                logger.info("Performance Fair {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                logger.info("Performance Fair {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                 self.test_result = "Fair"
                                 background = self.background_purple
                                 self.performance_fair += 1
 
                             elif percent_delta >= 50:
-                                logger.info("Performance Poor {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                logger.info("Performance Poor {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                 self.test_result = "Poor"
                                 background = self.background_orange
                                 self.performance_poor += 1
@@ -711,27 +667,26 @@ class inspect_sql:
 
                                 # negative logic like Stations Failed IP if zero is a goot thing
                                 elif 'Failed' in df_data_1['short-description']:
-                                    if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) != 0.0)):
-                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    if ((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) != 0.0)):
+                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                         background = self.background_red
                                         self.performance_critical += 1
                                         self.test_result = "Critical"
                                     else:
-                                        logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                        logger.info("Performance Good {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                         self.test_result = "Good"
                                         background = self.background_green
                                         self.performance_good += 1
                                 else:
-                                    logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                     self.test_result = "Critical"
                                     background = self.background_red
                                     self.performance_critical += 1
                             else:
-                                logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                 self.test_result = "Critical"
                                 background = self.background_red
                                 self.performance_critical += 1
-
 
                             # we can get most anything from the dataframe
                             # TODO use the dataframe export line to CSV?
@@ -818,8 +773,8 @@ class inspect_sql:
                             self.junit_results += """
                             <properties>
                             """
-                            # note the order of the data is 1,0  
-                            # the last run (0) is stored in numeric_score_2 
+                            # note the order of the data is 1,0
+                            # the last run (0) is stored in numeric_score_2
                             # the previous run (1) is stored in numeric_score 1
                             self.junit_results += """
                                 <property name="Performance" value="{test_result}" />
@@ -829,12 +784,12 @@ class inspect_sql:
                                 <property name="Last Data" value="{df_data_2}" />
                                 <property name="Perv Data" value="{df_data_1}" />
                                 """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
-                                            percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
-                            
+                                           percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+
                             # End properties
                             self.junit_results += """
                             </properties>
-                            """                
+                            """
                             # need to have tests return error messages
                             if self.test_result != "Good":
                                 self.junit_results += """
@@ -931,9 +886,9 @@ class inspect_sql:
             for graph_group in df_1['Graph-Group'].unique():
                 for description in df_1['short-description'].unique():
                     df_tmp = df_1.loc[
-                        (df_1['Graph-Group'] == str(graph_group))
-                        & (df_1['test-tag'] == str(test_tag))
-                        & (df_1['short-description'] == str(description))]
+                        (df_1['Graph-Group'] == str(graph_group)) &
+                        (df_1['test-tag'] == str(test_tag)) &
+                        (df_1['short-description'] == str(description))]
 
                     # For comparing two databases there only needs to be a single entry
                     if not df_tmp.empty:
@@ -946,16 +901,13 @@ class inspect_sql:
                         # if the recent test is over a week old do not include in run
                         # 1 day = 86400000 milli seconds
                         # 1 week = 604800000 milli seconds
-                        time_difference = int(time_now) -int(recent_test_run)
-                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} test_window_epoch: {test_window_epoch} oldest_test_run: {oldest_test_run}".format(
-                            time_now=time_now,recent_test_run=recent_test_run,test_window_epoch=test_window_epoch, time_difference=time_difference, oldest_test_run=oldest_test_run))
+                        time_difference = int(time_now) - int(recent_test_run)
+                        logger.info("time_now: {time_now} recent_test_run: {recent_test_run} difference: {time_difference} test_window_epoch: {test_window_epoch} oldest_test_run: {oldest_test_run}".format(  # noqa: E501
+                            time_now=time_now, recent_test_run=recent_test_run, test_window_epoch=test_window_epoch, time_difference=time_difference, oldest_test_run=oldest_test_run))
                         if (time_difference) < test_window_epoch:
 
                             # find the same information in db2
-                            df_tmp_comp = df_2.loc[
-                                (df_2['Graph-Group'] == str(graph_group))
-                                & (df_2['test-tag'] == str(test_tag))
-                                & (df_2['short-description'] == str(description))]
+                            df_tmp_comp = df_2.loc[(df_2['Graph-Group'] == str(graph_group)) & (df_2['test-tag'] == str(test_tag)) & (df_2['short-description'] == str(description))]
                             logger.debug("df_tmp_comp {}".format(df_tmp_comp))
                             if not df_tmp_comp.empty:
                                 logger.info("db2 contains: {group} {tag} {desc}".format(group=graph_group, tag=test_tag, desc=description))
@@ -977,10 +929,10 @@ class inspect_sql:
                                 logger.debug("type: {data} {data2}".format(data=type(df_data_2), data2=df_data_2))
 
                                 percent_delta = 0
-                                if((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
-                                    percent_delta = round(((float(df_data_2['numeric-score'])/float(df_data_1['numeric-score'])) * 100), 2)
+                                if ((float(df_data_1['numeric-score']) != 0.0 and df_data_1['numeric-score'] is not None) and df_data_2 is not None):
+                                    percent_delta = round(((float(df_data_2['numeric-score']) / float(df_data_1['numeric-score'])) * 100), 2)
 
-                                self.performance_total += 1                                
+                                self.performance_total += 1
 
                                 # AP auto basic connectivity the failure is if the connection took longer then 500 ms
                                 if 'Basic Client Connectivity' in df_data_2['short-description']:
@@ -996,19 +948,18 @@ class inspect_sql:
                                         self.performance_good += 1
                                         logger.info("Basic Client Connectivity {connect_time} < 500 ms so passed".format(connect_time=float(df_data_2['numeric-score'])))
 
-
                                 elif percent_delta >= 80:
-                                    logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    logger.info("Performance Good {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                     self.test_result = "Good"
                                     background = self.background_green
                                     self.performance_good += 1
                                 elif percent_delta >= 70:
-                                    logger.info("Performance Fair {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    logger.info("Performance Fair {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                     self.test_result = "Fair"
                                     background = self.background_purple
                                     self.performance_fair += 1
                                 elif percent_delta >= 50:
-                                    logger.info("Performance Poor {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    logger.info("Performance Poor {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                     self.test_result = "Poor"
                                     background = self.background_orange
                                     self.performance_poor += 1
@@ -1027,23 +978,23 @@ class inspect_sql:
 
                                     # negative logic like Stations Failed IP if zero is a goot thing
                                     elif 'Failed' in df_data_1['short-description']:
-                                        if((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) !=0.0)):
-                                            logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                        if ((float(df_data_1['numeric-score']) != 0.0) or (float(df_data_2['numeric-score']) != 0.0)):
+                                            logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                             background = self.background_red
                                             self.performance_critical += 1
                                             self.test_result = "Critical"
                                         else:
-                                            logger.info("Performance Good {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                            logger.info("Performance Good {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                             self.test_result = "Good"
                                             background = self.background_green
                                             self.performance_good += 1
-                                    else:             
-                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    else:
+                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                         self.test_result = "Critical"
                                         background = self.background_red
                                         self.performance_critical += 1
                                 else:
-                                    logger.info("Performance Critical {percent} {description}".format(percent=percent_delta,description=df_data_2['short-description']))
+                                    logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                     self.test_result = "Critical"
                                     background = self.background_red
                                     self.performance_critical += 1
@@ -1139,12 +1090,12 @@ class inspect_sql:
                                     <property name="Last Data" value="{df_data_1}" />
                                     <property name="Perv Data" value="{df_data_2}" />
                                     """.format(test_result=self.test_result, numeric_score_1=df_data_1['numeric-score'], numeric_score_2=df_data_2['numeric-score'],
-                                            percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
-                                
+                                               percent=percent_delta, df_data_1=str_df_data_1, df_data_2=str_df_data_2)
+
                                 # End properties
                                 self.junit_results += """
                                 </properties>
-                                """                
+                                """
 
                                 if self.test_result != "Good":
                                     self.junit_results += """
@@ -1249,10 +1200,10 @@ class inspect_sql:
                     test_id, test_tag = self.get_test_id_test_tag(kpi_path)
                     suite_html_results += """
                     <tr style="text-align: center; margin-bottom: 0; margin-top: 0;">
-                        <td>{test_id}</td><td>{test_tag}</td><td><a href="{html_path}" target="_blank">html</a> / 
-                        <a href="{pdf_path}" target="_blank">pdf</a> / 
+                        <td>{test_id}</td><td>{test_tag}</td><td><a href="{html_path}" target="_blank">html</a> /
+                        <a href="{pdf_path}" target="_blank">pdf</a> /
                         <a href="{dir_path}" target="_blank">results_dir</a></td>
-                        <td>{parent_name}</td></tr> 
+                        <td>{parent_name}</td></tr>
                     """.format(test_id=test_id, test_tag=test_tag, html_path=html_path, pdf_path=pdf_path, dir_path=dir_path, parent_name=parent_name)
         suite_html_results += """
                     </tbody>
@@ -1296,7 +1247,7 @@ To compare a kpi element such as dut-model-num
 if db_index is not specified:
     for single db compare, will compare last run with previous
     for multiple db compare will compre last run in both db
---db_index 0,1 with a single db will compare last to previous 
+--db_index 0,1 with a single db will compare last to previous
 --db_index 0,0 with two db entered will compare:
         the last run in db one with last run of db 2
 --db_index n1,n1 will compare the oldest in both db if 2 db's entered and will be interperated as -1,-1
@@ -1305,8 +1256,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
                             ''')
 
     parser.add_argument('--element', help='''
-                        --element  dut-model-num==dut1&&dut2  will column element dut-model-num between  dut1,dut2  
-                        for single db will look in same db for both, 
+                        --element  dut-model-num==dut1&&dut2  will column element dut-model-num between  dut1,dut2
+                        for single db will look in same db for both,
                         (not supported) if two db then first dut queried in first db and second dut quired in second db''')
     parser.add_argument('--table', help='--table qa_table  default: qa_table', default='qa_table')
     parser.add_argument('--dir', help="--dir <results directory> default lf_qa", default="lf_inspect")
@@ -1315,7 +1266,6 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     parser.add_argument('--flat_dir', help="--flat_dir , will place the results in the top directory", action='store_true')
     parser.add_argument('--test_suite', help="--test_suite , the test suite is to help identify the tests run for the lf_inspect comparison", default="lf_inspect_compare")
     parser.add_argument('--test_window_days', help="--test_window,  days to look back for test results , used to elimnate older tests being reported default 3 days", default="3")
-
 
     # logging configuration:
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
@@ -1345,8 +1295,8 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
         __element_list = []
 
     if args.db_index is not None:
-        db_index = args.db_index.replace('n','-')
-        __db_index_list =db_index.split(',')
+        db_index = args.db_index.replace('n', '-')
+        __db_index_list = db_index.split(',')
     else:
         if len(__database_list) > 1:
             # compare the lastest in both dbs
@@ -1398,7 +1348,7 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
         _report_path=report_path,
         _log_path=log_path,
         _lf_inspect_report_path=__lf_inspect_report_path,
-        _test_suite = __test_suite,
+        _test_suite=__test_suite,
         _test_window_days=__test_window_days
     )
 
@@ -1420,14 +1370,14 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     report.start_content_div2()
     if len(__database_list) == 1:
         # comparison was done on specific elements in the database
-        if __element_list: 
+        if __element_list:
             #   currently there should only be one element
             for element in __element_list:
                 element_tmp = element.split("==")
             sub_attrib_list = element_tmp[1].split('&&')
 
             objective = '''QA test run comparision between database: {db_1} index: {index_1} and index: {index_2}
-                        '''.format(db_1=__database_list[0],index_1=__db_index_list[0],index_2=__db_index_list[1])
+                        '''.format(db_1=__database_list[0], index_1=__db_index_list[0], index_2=__db_index_list[1])
             report.set_obj_html("Objective", objective)
             report.build_objective()
             report.set_text("Column headings with #1 : {attrib_1}".format(attrib_1=sub_attrib_list[0]))
@@ -1435,11 +1385,9 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
             report.set_text("Column headings with #2 : {attrib_2}".format(attrib_2=sub_attrib_list[1]))
             report.build_text_simple()
 
-
-
         else:
             objective = '''QA test run comparision in database : {db_1} index: {index_1} and index: {index_2} ,
-                        '''.format(db_1=__database_list[0],index_1=__db_index_list[0],index_2=__db_index_list[1])
+                        '''.format(db_1=__database_list[0], index_1=__db_index_list[0], index_2=__db_index_list[1])
             report.set_obj_html("Objective", objective)
             report.build_objective()
             report.set_text("Column headings with #1 for first db_index: {attrib_1}".format(attrib_1=__db_index_list[0]))
@@ -1451,28 +1399,27 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
 
     else:
 
-        if __element_list: 
+        if __element_list:
             #   currently there should only be one element
             for element in __element_list:
                 element_tmp = element.split("==")
             sub_attrib_list = element_tmp[1].split('&&')
 
-            objective = '''QA test run comparision between database: {db_1} index: {index_1} and database: {db_2} index: {index_2} with element attribute:  {element}  
-                        '''.format(db_1=__database_list[0],index_1=__db_index_list[0],db_2=__database_list[1],index_2=__db_index_list[1],element=element_tmp[0])
+            objective = '''QA test run comparision between database: {db_1} index: {index_1} and database: {db_2} index: {index_2} with element attribute:  {element}
+                        '''.format(db_1=__database_list[0], index_1=__db_index_list[0], db_2=__database_list[1], index_2=__db_index_list[1], element=element_tmp[0])
             report.set_obj_html("Objective", objective)
             report.build_objective()
-            report.set_text("Column headings with #1 db {db_1} index {index_1}: {attrib_1}".format(db_1=__database_list[0],index_1=__db_index_list[0],attrib_1=sub_attrib_list[0]))
+            report.set_text("Column headings with #1 db {db_1} index {index_1}: {attrib_1}".format(db_1=__database_list[0], index_1=__db_index_list[0], attrib_1=sub_attrib_list[0]))
             report.build_text_simple()
-            report.set_text("Column headings with #2 db {db_2} index {index_2}: {attrib_2}".format(db_2=__database_list[1],index_2=__db_index_list[1],attrib_2=sub_attrib_list[1]))
+            report.set_text("Column headings with #2 db {db_2} index {index_2}: {attrib_2}".format(db_2=__database_list[1], index_2=__db_index_list[1], attrib_2=sub_attrib_list[1]))
             report.build_text_simple()
 
         else:
-            objective = '''QA test run comparision between database: {db_1} index: {index_1} and database: {db_2} index: {index_2} 
-                        '''.format(db_1=__database_list[0],index_1=__db_index_list[0],db_2=__database_list[1],index_2=__db_index_list[1])
+            objective = '''QA test run comparision between database: {db_1} index: {index_1} and database: {db_2} index: {index_2}
+                        '''.format(db_1=__database_list[0], index_1=__db_index_list[0], db_2=__database_list[1], index_2=__db_index_list[1])
             report.set_obj_html("Objective", objective)
             report.build_objective()
             report.set_text("Column headings with # 1 first database , Column headings with #2 for second database")
-
 
     report.set_table_title("Key:")
     report.build_table_title()
@@ -1485,12 +1432,11 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     report.set_table_title("LF Inspect Suite Summary Total Tests Run: {tests}".format(tests=inspect_db.performance_total))
     report.build_table_title()
 
-    
-    # report.set_text("Total Tests: {total} Good: {good} Fair: {fair} Poor: {poor} Critical: {critical}".format(total=inspect_db.performance_total,good=inspect_db.performance_good,fair=inspect_db.performance_fair,poor=inspect_db.performance_poor,critical=inspect_db.performance_critical))
+    # report.set_text("Total Tests: {total} Good: {good} Fair: {fair} Poor: {poor} Critical: {critical}".format(total=inspect_db.performance_total,good=inspect_db.performance_good,fair=inspect_db.performance_fair,poor=inspect_db.performance_poor,critical=inspect_db.performance_critical))  # noqa: E501
     # report.build_text_simple()
 
     percent_good = 0
-    percent_fair = 0 
+    percent_fair = 0
     percent_poor = 0
     percent_critical = 0
 
@@ -1500,28 +1446,26 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     performance_critical = inspect_db.performance_critical
 
     if inspect_db.performance_good != 0:
-        percent_good = round(((float(inspect_db.performance_good)/float(inspect_db.performance_total)) * 100), 2)
+        percent_good = round(((float(inspect_db.performance_good) / float(inspect_db.performance_total)) * 100), 2)
     if inspect_db.performance_fair != 0:
-        percent_fair = round(((float(inspect_db.performance_fair)/float(inspect_db.performance_total)) * 100), 2)
+        percent_fair = round(((float(inspect_db.performance_fair) / float(inspect_db.performance_total)) * 100), 2)
     if inspect_db.performance_poor != 0:
-        percent_poor = round(((float(inspect_db.performance_poor)/float(inspect_db.performance_total)) * 100), 2)
+        percent_poor = round(((float(inspect_db.performance_poor) / float(inspect_db.performance_total)) * 100), 2)
     if inspect_db.performance_critical != 0:
-        percent_critical = round(((float(inspect_db.performance_critical)/float(inspect_db.performance_total)) * 100), 2)
+        percent_critical = round(((float(inspect_db.performance_critical) / float(inspect_db.performance_total)) * 100), 2)
 
     # report.set_text("Percent: Good: {good} Fair: {fair} Poor: {poor} Critical: {critical}".format(good=percent_good,fair=percent_fair,poor=percent_poor,critical=percent_critical))
     # report.build_text_simple()
 
-    dict = {'Heading':['Tests','Percent'],
-    'Good':[performance_good,percent_good],
-    'Fair':[performance_fair,percent_fair],
-    'Poor':[performance_poor,percent_poor],
-    'Critical':[performance_critical,percent_critical]}
+    dict = {'Heading': ['Tests', 'Percent'],
+            'Good': [performance_good, percent_good],
+            'Fair': [performance_fair, percent_fair],
+            'Poor': [performance_poor, percent_poor],
+            'Critical': [performance_critical, percent_critical]}
 
     lf_inspect_summary_df = pd.DataFrame(dict)
     report.set_table_dataframe(lf_inspect_summary_df)
     report.build_table()
-
-
 
     report.set_table_title("Test Compare")
     report.build_table_title()
@@ -1537,23 +1481,22 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     report_parent_path = report.get_parent_path()
     report_parent_basename = os.path.basename(report_parent_path)
     report_parent_url = './../../../' + report_parent_basename
-    report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)    
+    report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)
 
     # save the juni.xml file
-    junit_name = args.outfile
+    # junit_name = args.outfile
     junit_results = inspect_db.get_junit_results()
     report.set_junit_results(junit_results)
-    test_suite = str(__test_suite)
+    # test_suite = str(__test_suite)
 
     # junit_xml, junit_path_only = report.write_junit_results(test_suite=test_suite)
     #  os.path.splitext(str(os.path.basename(self.database_list[0])))[0]
-    if(len(__database_list)) == 1:
+    if (len(__database_list)) == 1:
         lf_inspect_database_name = os.path.splitext(str(os.path.basename(__database_list[0])))[0]
     # for now assume 2, TODO loop though list
     else:
-        lf_inspect_database_name = os.path.splitext(str(os.path.basename(__database_list[0])))[0]+"_"+os.path.splitext(str(os.path.basename(__database_list[1])))[0]
+        lf_inspect_database_name = os.path.splitext(str(os.path.basename(__database_list[0])))[0] + "_" + os.path.splitext(str(os.path.basename(__database_list[1])))[0]
     junit_xml, junit_path_only = report.write_junit_results(test_suite=lf_inspect_database_name)
-
 
     # TODO path in the allure results path
     # Need to go up one directory
@@ -1562,23 +1505,20 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     if not os.path.isdir(allure_results_path):
         os.mkdir(allure_results_path)
 
-    logger.info("copy junit from {junit} to {allure_junit}".format(junit=junit_xml,allure_junit=allure_results_path))
+    logger.info("copy junit from {junit} to {allure_junit}".format(junit=junit_xml, allure_junit=allure_results_path))
 
-    shutil.copy2(junit_xml,allure_results_path)
-
+    shutil.copy2(junit_xml, allure_results_path)
 
     inspect_db.set_junit_results(junit_xml)
     inspect_db.set_junit_path_only(junit_path_only)
 
-    junit_info = "junit.xml: allure serve {}".format(junit_xml)
+    # junit_info = "junit.xml: allure serve {}".format(junit_xml)
     allure_info = "junit.xml path: allure serve {}".format(junit_path_only)
 
     # report.set_text(junit_info)
     # report.build_text_simple()
     report.set_text(allure_info)
     report.build_text_simple()
-
-
 
     report.build_footer()
 
@@ -1587,13 +1527,12 @@ Note: in the Allure report the dataframe indexs will be reduced by 1
     # DO NOT remove the print statement
     print("html report: {}".format(html_report))
     try:
-        report.write_pdf_with_timestamp(_page_size='A4',_orientation='Landscape')
+        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
     except Exception as x:
         traceback.print_exception(Exception, x, x.__traceback__, chain=True)
         logger.info("exception write_pdf_with_timestamp()")
 
     logger.info("lf_inspect_html_report: " + html_report)
-
 
     # print later so shows up last
     logger.info("junit.xml: allure serve {}".format(junit_xml))
