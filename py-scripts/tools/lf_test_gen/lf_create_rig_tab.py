@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-# flake8: noqa
+
 import tkinter
-from tkinter import messagebox
 from tkinter import ttk
-from tkinter import StringVar
 import importlib
 
 lf_rig_json = importlib.import_module("lf_create_rig_json")
