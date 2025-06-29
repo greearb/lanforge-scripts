@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 import sys
 import os
 import importlib
@@ -220,8 +219,8 @@ This script is for testing WAN to LAN traffic.
     parser.add_argument('--vr_name', help='--vr_name sets the name to be used by the virtual router', default="vr_test")
 
     args = parser.parse_args()
-    help_summary='''\
-Work in progress.  This script is for testing WAN to LAN traffic. 
+    help_summary = '''\
+Work in progress.  This script is for testing WAN to LAN traffic.
 '''
     if args.help_summary:
         print(help_summary)
