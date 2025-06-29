@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-# flake8: noqa
+
 import tkinter
-from tkinter import messagebox
 from tkinter import ttk
-from tkinter import StringVar
 import importlib
 import logging
 
@@ -89,14 +87,14 @@ class lf_create_ap_auto_tab():
 
         self.lf_ap_auto_duration = tkinter.Label(self.lf_ap_auto_frame, text='test duration (ms)')
         self.lf_ap_auto_duration.grid(row=4, column=0)
-        self.lf_ap_auto_duration_combobox = ttk.Combobox(self.lf_ap_auto_frame, values=["<Custom>", "5000 (5 sec)", "10000 (10 sec)", "15000 (15 sec)", "20000 (20 sec)", "30000 (30 sec)", "60000 (1 min)", "300000 (5min)"])
+        self.lf_ap_auto_duration_combobox = ttk.Combobox(self.lf_ap_auto_frame, values=["<Custom>", "5000 (5 sec)", "10000 (10 sec)", "15000 (15 sec)", "20000 (20 sec)", "30000 (30 sec)", "60000 (1 min)", "300000 (5min)"])  # noqa: E501
         self.lf_ap_auto_duration_combobox.current(3)
         self.lf_ap_auto_duration_combobox.grid(row=4, column=1)
         self.window_tooltip.bind(self.lf_ap_auto_duration_combobox, '''Select the duration of each iteration  ''')
 
         # Column 0
         self.lf_ap_auto_basic_client_connectivity_var = tkinter.StringVar(value="Use")
-        self.lf_ap_auto_basic_client_connectivity_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Basic Client Connectivity (basic_cx)", variable=self.lf_ap_auto_basic_client_connectivity_var,
+        self.lf_ap_auto_basic_client_connectivity_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Basic Client Connectivity (basic_cx)", variable=self.lf_ap_auto_basic_client_connectivity_var,  # noqa: E501
                                                                               onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_basic_client_connectivity_check.grid(row=5, column=0, sticky="news")
         self.window_tooltip.bind(self.lf_ap_auto_basic_client_connectivity_check, '''Basic Client Connectivity (basic_cx)
@@ -107,7 +105,7 @@ class lf_create_ap_auto_tab():
 
         self.lf_ap_auto_band_steering_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_band_steering_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Band Steering (band_steering)", variable=self.lf_ap_auto_band_steering_var,
-                                                                           onvalue="Use", offvalue="Do Not Use")
+                                                                  onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_band_steering_check.grid(row=6, column=0, sticky="news")
         self.window_tooltip.bind(self.lf_ap_auto_band_steering_check, '''Band Steering
         Test weather AP will direct stations to lesser utilized channel.
@@ -127,17 +125,12 @@ Supports mulitple loops
 Estimated duration: 27 minutes.
 Configuration key: capacity''')
 
-
-
-
         self.lf_ap_auto_channel_switching_test_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_channel_switching_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Channel Switching (channel_switch)", variable=self.lf_ap_auto_channel_switching_test_var,
                                                                       onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_channel_switching_check.grid(row=8, column=0, sticky="news")
         self.window_tooltip.bind(self.lf_ap_auto_channel_switching_check, '''Channel Switching
 Configuration key: channel_switch''')
-
-
 
         self.lf_ap_auto_long_term_var = tkinter.StringVar(value="Do Not Use")
         self.lf_ap_auto_long_term_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Long Term (long_term)", variable=self.lf_ap_auto_long_term_var,
@@ -160,7 +153,7 @@ Configurationkey: mix_stability
 ''')
 
         self.lf_ap_auto_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Single STA Throughtput vs Pkt Size (tput_single_sta)", variable=self.lf_ap_auto_throughput_vs_pkt_size_var,
+        self.lf_ap_auto_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Single STA Throughtput vs Pkt Size (tput_single_sta)", variable=self.lf_ap_auto_throughput_vs_pkt_size_var,  # noqa: E501
                                                                            onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_throughput_vs_pkt_size_check.grid(row=6, column=1, sticky="news")
         self.window_tooltip.bind(self.lf_ap_auto_throughput_vs_pkt_size_check, '''Single STA Throughput vs Pkt Size
@@ -170,7 +163,7 @@ Estimbated duration: 49 minutes.
 Configuration key: tput_single_sta''')
 
         self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Multi STA Throughput vs Pkt Size (tput_multi_sta)", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
+        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Multi STA Throughput vs Pkt Size (tput_multi_sta)", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,  # noqa: E501
                                                                                          onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check.grid(row=7, column=1, sticky="news")
         self.window_tooltip.bind(self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check, '''Multi STA Throughput vs Pkt Size
@@ -178,16 +171,14 @@ Throughput vs Pkt Size Estimated duration: 50 minutes * number-of-stations-count
 Hunt to find best throughput at different frame sizes and different numbers of stations.
 Supports multiple loops''')
 
-
-
 #        self.lf_ap_auto_band_steering_var = tkinter.StringVar(value="Do Not Use")
 #        self.lf_ap_auto_band_steering_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Band-Steering", variable=self.lf_ap_auto_band_steering_var,
 #                                                                  onvalue="Use", offvalue="Do Not Use")
 #        self.lf_ap_auto_band_steering_check.grid(row=8, column=1)
 #        self.window_tooltip.bind(self.lf_ap_auto_band_steering_check, '''Band-Steering Estimated duration: 10 minutes.
-#Test weather AP will direct stations to lesser utilized channel.
-#Requires that SSID are same for all DUT radios
-#and that BSSIDs are configured properly in the DUT''')
+# Test weather AP will direct stations to lesser utilized channel.
+# Requires that SSID are same for all DUT radios
+# and that BSSIDs are configured properly in the DUT''')
 
         # row 11
         self.lf_ap_auto_use_qa_var = tkinter.StringVar(value="Use")
@@ -206,10 +197,9 @@ lf_inspect will compare performance between two individual runs for Chamber View
 
         self.lf_ap_auto_use_combined_var = tkinter.StringVar(value="Use")
         self.lf_ap_auto_use_combined_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="across multiple radios", variable=self.lf_ap_auto_use_inspect_var,
-                                                                onvalue="Use", offvalue="Do Not Use")
+                                                                 onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_use_combined_check.grid(row=11, column=2)
         self.window_tooltip.bind(self.lf_ap_auto_use_combined_check, '''This will create a test cast that uses all the radios selected for AP Auto''')
-
 
         # row 12
         self.lf_ap_auto_save = ttk.Button(self.lf_ap_auto_frame, text='Create AP Auto Test Suite Json', command=self.create_ap_auto_json)
@@ -302,7 +292,7 @@ lf_inspect will compare performance between two individual runs for Chamber View
             _lf_ap_auto_stability=self.lf_ap_auto_stability_var,
             _lf_ap_auto_throughput_vs_pkt_size=self.lf_ap_auto_throughput_vs_pkt_size_var,
             _lf_ap_auto_multi_station_throughput_vs_pkt_size=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
-            #_lf_ap_auto_band_steering=self.lf_ap_auto_band_steering_var,
+            # _lf_ap_auto_band_steering=self.lf_ap_auto_band_steering_var,
         )
 
         if self.radio_frame.suite_radios_2g != "":
