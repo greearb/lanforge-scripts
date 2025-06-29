@@ -195,6 +195,11 @@ class inspect_sql:
             <testsuites>
         """
 
+    def finish_junit_testsuites(self):
+        self.junit_results += """
+        </testsuites>
+        """
+
     # def start_junit_testsuite(self):
     #    self.junit_results += """
     #    <testsuite name="{suite}">
