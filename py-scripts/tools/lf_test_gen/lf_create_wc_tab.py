@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-# flake8: noqa
+
 import tkinter
-from tkinter import messagebox
 from tkinter import ttk
-from tkinter import StringVar
 import importlib
 import logging
 
@@ -84,7 +82,7 @@ class lf_create_wc_tab():
 
         self.lf_wc_duration = tkinter.Label(self.lf_wc_frame, text='test duration (ms)')
         self.lf_wc_duration.grid(row=4, column=0)
-        self.lf_wc_duration_combobox = ttk.Combobox(self.lf_wc_frame, values=["<Custom>", "5000 (5 sec)", "10000 (10 sec)", "15000 (15 sec)", "20000 (20 sec)", "30000 (30 sec)", "60000 (1 min)", "300000 (5min)"])
+        self.lf_wc_duration_combobox = ttk.Combobox(self.lf_wc_frame, values=["<Custom>", "5000 (5 sec)", "10000 (10 sec)", "15000 (15 sec)", "20000 (20 sec)", "30000 (30 sec)", "60000 (1 min)", "300000 (5min)"])  # noqa: E501
         self.lf_wc_duration_combobox.current(3)
         self.lf_wc_duration_combobox.grid(row=4, column=1)
         self.window_tooltip.bind(self.lf_wc_duration_combobox, '''Select the duration of each iteration  ''')
@@ -114,7 +112,8 @@ MU MIMO will perform poor for AX radios for virtual stations greater then one, u
         self.lf_wc_dl_rate = tkinter.Label(self.lf_wc_frame, text="dl_rate")
         self.lf_wc_dl_rate.grid(row=6, column=0)
         self.lf_wc_dl_rate_combobox = ttk.Combobox(self.lf_wc_frame, values=["custom>", "0", "9.6K", "56K", "128K", "256K", "384K", "768K", "1M",
-                                                                             "1.544M", "2M", "6M", "10M", "30M", "37M", "44.736M", "100M", "152M", "155.52M", "304M", "622.08M", "1G", "2.488G", "4.97664G",
+                                                                             "1.544M", "2M", "6M", "10M", "30M", "37M", "44.736M", "100M", "152M",
+                                                                             "155.52M", "304M", "622.08M", "1G", "2.488G", "4.97664G",
                                                                              "5G", "9.94328G", "10G", "20G", "25G", "40G", "50G", "100G"])
         self.lf_wc_dl_rate_combobox.current(8)
         self.lf_wc_dl_rate_combobox.grid(row=6, column=1)
@@ -123,7 +122,8 @@ MU MIMO will perform poor for AX radios for virtual stations greater then one, u
         self.lf_wc_ul_rate = tkinter.Label(self.lf_wc_frame, text="ul_rate")
         self.lf_wc_ul_rate.grid(row=6, column=2)
         self.lf_wc_ul_rate_combobox = ttk.Combobox(self.lf_wc_frame, values=["custom>", "0", "9.6K", "56K", "128K", "256K", "384K", "768K", "1M",
-                                                                             "1.544M", "2M", "6M", "10M", "30M", "37M", "44.736M", "100M", "152M", "155.52M", "304M", "622.08M", "1G", "2.488G", "4.97664G",
+                                                                             "1.544M", "2M", "6M", "10M", "30M", "37M", "44.736M", "100M",
+                                                                             "152M", "155.52M", "304M", "622.08M", "1G", "2.488G", "4.97664G",
                                                                              "5G", "9.94328G", "10G", "20G", "25G", "40G", "50G", "100G"])
         self.lf_wc_ul_rate_combobox.current(8)
         self.lf_wc_ul_rate_combobox.grid(row=6, column=3)
