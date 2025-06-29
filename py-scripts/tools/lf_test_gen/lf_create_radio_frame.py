@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-# flake8: noqa
+
 import tkinter
-from tkinter import messagebox
 from tkinter import ttk
-from tkinter import StringVar
 import importlib
 import requests
 import logging
@@ -48,7 +46,7 @@ class lf_create_radio_frame():
 
         # 6. Configure the Canvas and Scrollable Content Frame
         self.radio_content_frame.bind("<Configure>", lambda e:
-        self.radio_canvas.configure(scrollregion=self.radio_canvas.bbox("all")))
+                                      self.radio_canvas.configure(scrollregion=self.radio_canvas.bbox("all")))
 
         # 7. Add Widgets to the Content Frame
         self.radio_label = tkinter.Label(self.radio_content_frame, text="Use Radio")
@@ -61,7 +59,7 @@ class lf_create_radio_frame():
         self.lf_radio_frame.rowconfigure(0, weight=1)
 
         # 9: Pack Widgets onto the Winddow
-        self.radio_canvas.create_window((0,0), window=self.radio_content_frame, anchor="nw")
+        self.radio_canvas.create_window((0, 0), window=self.radio_content_frame, anchor="nw")
         self.radio_canvas.grid(row=0, column=0, sticky="nsew")
         self.radio_scrollbar.grid(row=0, column=1, sticky="ns")
 
@@ -95,7 +93,6 @@ class lf_create_radio_frame():
 
         self.radio_6g_label = tkinter.Label(self.radio_content_frame, text="6g")
         self.radio_6g_label.grid(row=1, column=3)
-
 
         self.radio_label = tkinter.Label(self.radio_content_frame, text="Radio")
         self.radio_label.grid(row=1, column=4)
@@ -141,8 +138,6 @@ class lf_create_radio_frame():
         self.suite_test_name_5g_dict = {}
         self.suite_test_name_6g_dict = {}
 
-
-
         for radio in range(0, self.max_radios):
 
             use_radio_var = tkinter.StringVar(value="Do Not Use")
@@ -176,7 +171,6 @@ or deselect to remove from the test json''')
             self.window_tooltip.bind(use_radio_6g_check, '''Read Radio info will select 6g band as capability if applicable
 The check box may be selected to allow the band to be included in the test json
 or deselect to remove from the test json''')
-
 
             radio_entry_var = tkinter.StringVar()
             self.radio_dict[radio] = radio_entry_var
@@ -275,7 +269,7 @@ or deselect to remove from the test json''')
                 radio_name_tmp = radio_name_tmp.strip()
                 if "mt" in radio_name_tmp:
                     if "7921k" in radio_name_tmp:
-                        radio_name_tmp = radio_name_tmp.replace('mt7921e (','mt').replace(')','')
+                        radio_name_tmp = radio_name_tmp.replace('mt7921e (', 'mt').replace(')', '')
                     else:
                         radio_name_tmp = radio_name_tmp.split(' ', maxsplit=1)[0]
                 elif "ath10" in radio_name_tmp:
