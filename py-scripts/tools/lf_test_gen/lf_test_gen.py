@@ -1,11 +1,8 @@
 #!/usr/bin/python3
-# flake8: noqa
 
 import tkinter
 from tkinter import messagebox
 from tkinter import ttk
-from tkinter import StringVar
-import requests
 import importlib
 import sys
 import os
@@ -81,11 +78,11 @@ class json_gen_gui():
         self.tabControl.add(self.wc_tab, text='Wifi Capacity')
         self.tabControl.add(self.dp_rvr_tab, text='Data Plane , RvR')
         self.tabControl.add(self.ap_auto_tab, text='AP Auto Beta')
-        #self.tabControl.add(self.functional_tab, text = 'Functional Tests')
-        #self.tabControl.add(self.creation_tab, text = 'Creation Tests')
-        #self.tabControl.add(self.interop_tab, text = 'Interop Tests')
+        # self.tabControl.add(self.functional_tab, text = 'Functional Tests')
+        # self.tabControl.add(self.creation_tab, text = 'Creation Tests')
+        # self.tabControl.add(self.interop_tab, text = 'Interop Tests')
 
-        #self.tabControl.add(self.practice_tab, text = 'Pratice Tests')
+        # self.tabControl.add(self.practice_tab, text = 'Pratice Tests')
         # self.tabControl.add(self.practice_tab, text = 'Practice') # Please Do not Delete.
         self.tabControl.pack(expand=1, fill="both")
 
@@ -339,7 +336,7 @@ class json_gen_gui():
         if self.suite_radios_2g == "" and self.suite_radios_5g == "" and self.suite_radios_6g == "":
             tkinter.messagebox.showinfo(title="message", message="Please Read or Select LANforge Radios on LANforge tab")
         else:
-            tkinter.messagebox.showinfo(title="success", message="created \n" + self.lf_ap_auto_2g_file_entry_var.get() + "\n" + self.lf_ap_auto_5g_file_entry_var.get() + "\n" + self.lf_ap_auto_6g_file_entry.get())
+            tkinter.messagebox.showinfo(title="success", message="created \n" + self.lf_ap_auto_2g_file_entry_var.get() + "\n" + self.lf_ap_auto_5g_file_entry_var.get() + "\n" + self.lf_ap_auto_6g_file_entry.get())  # noqa: E501
 
 
 def main():
@@ -382,7 +379,6 @@ INCLUDE_IN_README: False
     parser.add_argument('--radio_count', help='Number of radios to display on GUI', default='16')
     parser.add_argument('--log_level', help='Set logging level: debug | info | warning | error | critical')
 
-
     args = parser.parse_args()
     logger_config = lf_logger_config.lf_logger_config()
     if args.log_level:
@@ -393,7 +389,8 @@ INCLUDE_IN_README: False
 
     _radio_count = args.radio_count
 
-    my_gui = json_gen_gui(radio_count=int(_radio_count))
+    # my_gui = json_gen_gui(radio_count=int(_radio_count))
+    json_gen_gui(radio_count=int(_radio_count))
     # TODO allow log level to be sets
 
 
