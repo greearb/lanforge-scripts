@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: create_l3.py
 
@@ -185,11 +184,11 @@ PURPOSE: This script is used to create the user-specified Layer-3 cross-connecti
 
 EXAMPLE:
         (If the specified endpoints are not present in the port manager,the cross-connects will be in a PHANTOM state.)
-        
+
         # For layer-3 cx creation on LANforge:
 
             ./create_l3.py --mgr localhost --endp_a eth1 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000 --no_cleanup
-        
+
         # For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
 
             ./create_l3.py --mgr localhost --endp_a 1.1.sta0000 --endp_b 1.2.sta0000 --min_rate_a 56000 --min_rate_b 40000 --no_cleanup
@@ -198,15 +197,15 @@ EXAMPLE:
 
             ./create_l3.py --mgr localhost --endp_a sta0000,sta0001 --endp_b eth2 --min_rate_a 56000 --min_rate_b 40000 --cx_type lf_udp
              --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
-            
+
         # With tos & pkts_to_send cross-connections
-        
+
             ./create_l3.py --mgr localhost --endp_a sta00 --endp_b eth2 --min_ip_port_a 1000 --tos VI --pkts_to_send 10 --no_cleanup
 
         # For batch creation functionality:
 
             ./create_l3.py --mgr 192.168.200.93 --endp_a 1.1.eth1 --endp_b 1.1.wlan2 --min_rate_a 6200000 --min_rate_b 6200000
-             --batch_quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000 
+             --batch_quantity 10 --endp_a_increment 0 --endp_b_increment 1 --min_ip_port_a 1000 --min_ip_port_b 2000
              --ip_port_increment_a 1 --ip_port_increment_b 1 --multi_conn_a 1 --multi_conn_b 1 --no_cleanup
 
 SCRIPT_CLASSIFICATION:  Creation
@@ -320,10 +319,10 @@ def main():
     args = parse_args()
 
     help_summary = '''\
-    This script is made to set up/ crate a Layer-3 cross-connections. It allows running traffic from the upstream port 
-    (eth1/eth2) to the station and vice versa. Additionally, it supports running traffic directly between stations. 
+    This script is made to set up/ crate a Layer-3 cross-connections. It allows running traffic from the upstream port
+    (eth1/eth2) to the station and vice versa. Additionally, it supports running traffic directly between stations.
     The script also has a useful feature for batch modifying or batch creation functionality.
-    
+
     The script will create CX only, will not run/start traffic and will not generate any report.
         '''
 
