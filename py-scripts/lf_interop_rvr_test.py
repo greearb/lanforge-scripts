@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
-# flake8: noqa
-
 """
 NAME: lf_interop_rvr_test.py
 
 PURPOSE: lf_interop_rvr_test.py will measure the performance of stations over a certain distance of the DUT. Distance is emulated
         using programmable attenuators and throughput test is run at each distance/RSSI step.
 
-python3 -u lf_interop_rvr_test.py --mgr 192.168.244.97 --mgr_port 8080 --upstream eth1 --security wpa2 --ssid "SIDDDD" --password "sdvsdvs" --traffic_type lf_tcp --traffic 10000000 --test_duration 1m --sta_names 1.133.wlan0,1.160.en0 --atten_serno 1008 920 --atten_idx 1,2 all --atten_val "10..10..10"
+python3 -u lf_interop_rvr_test.py --mgr 192.168.244.97 --mgr_port 8080 --upstream eth1 --security wpa2 --ssid "SIDDDD" --password "sdvsdvs" --traffic_type lf_tcp --traffic 10000000 --test_duration 1m --sta_names 1.133.wlan0,1.160.en0 --atten_serno 1008 920 --atten_idx 1,2 all --atten_val "10..10..10"  # noqa: E501
 Use './lf_interop_rvr_test.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
 
+import argparse
+from datetime import datetime, timedelta
 import sys
 import os
 import importlib
 import logging
 import time
 import pandas as pd
-import random
 import csv
 import json
 
@@ -42,13 +41,10 @@ lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_bar_graph_horizontal = lf_graph.lf_bar_graph_horizontal
 interop_modify = importlib.import_module("py-scripts.lf_interop_modify")
 
-import time
-from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
-import argparse
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
@@ -64,9 +60,9 @@ class RvR(Realm):
                  mode=0, ap_model="", traffic_type="lf_tcp,lf_udp", traffic_direction="bidirectional",
                  side_a_min_rate=0, side_a_max_rate=0,
                  sta_names=None, side_b_min_rate=56, side_b_max_rate=0, number_template="00000", test_duration="2m",
-                 sta_list=[1, 1],atten_dict={"2222":['all']},
+                 sta_list=[1, 1], atten_dict={"2222": ['all']},
                  atten_val=[["0"]], traffic=500, radio_list=['wiphy0', 'wiphy3'],
-                 test_name=None,dowebgui=False,result_dir='',multiple_attenuation_values = False,
+                 test_name=None, dowebgui=False, result_dir='', multiple_attenuation_values=False,
                  _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
@@ -109,18 +105,19 @@ class RvR(Realm):
         self.attenuator_profile = self.new_attenuator_profile()
         self.atten_dict = atten_dict
         self.atten_values = atten_val
-        self.multiple_attenuation_values=multiple_attenuation_values
+        self.multiple_attenuation_values = multiple_attenuation_values
         self.list_of_data = None
         self.attenuator_db_signal = []
         self.throughput_phone = None
         self.overall_data = []
-        self.dowebgui=dowebgui
+        self.dowebgui = dowebgui
         self.stop_test = False
-        self.test_name=test_name
-        self.result_dir=result_dir
+        self.test_name = test_name
+        self.result_dir = result_dir
         self.overall_df = []
         self.overall_end_time = None
         self.overall_start_time = None
+
     def initialize_attenuator(self):
         for atten in self.atten_dict:
             self.attenuator_profile.atten_serno = atten
@@ -134,8 +131,8 @@ class RvR(Realm):
             self.attenuator_profile.create()
         # self.attenuator_profile.show()
 
-    def set_attenuation(self, serial ,idx, value):
-        logger.info("setting attenutor {} module {} to {}".format(serial ,idx, value))
+    def set_attenuation(self, serial, idx, value):
+        logger.info("setting attenutor {} module {} to {}".format(serial, idx, value))
         self.attenuator_profile.atten_serno = serial
         self.attenuator_profile.atten_idx = idx
         self.attenuator_profile.atten_val = str(int(value) * 10)
@@ -181,7 +178,7 @@ class RvR(Realm):
     def build(self):
         throughput_dbm = {}
         throughput_phone = {}
-        phone_signal = {}
+        # phone_signal = {}
         if len(self.traffic_type) == 2:
             throughput_dbm = {f"{self.traffic_type[0]}": {}, f"{self.traffic_type[1]}": {}}
             throughput_phone = {f"{self.traffic_type[0]}": {}, f"{self.traffic_type[1]}": {}}
@@ -202,7 +199,7 @@ class RvR(Realm):
                 signal = []
                 for atten in self.atten_dict:
                     for mod in self.atten_dict[atten]["modules"]:
-                        self.set_attenuation(atten,mod,value=self.atten_dict[atten]["attenuation"][index])
+                        self.set_attenuation(atten, mod, value=self.atten_dict[atten]["attenuation"][index])
                 self.start_l3()
                 time.sleep(20)
                 upload, download = self.monitor()
@@ -275,13 +272,13 @@ class RvR(Realm):
                     os_type = (
                         "Windows" if "Windows" in resource_hw_data['resource']['device type'] else
                         "Mac" if "Mac OS" in resource_hw_data['resource']['device type'] else
-                        "Linux" if ("Linux/Interop" in resource_hw_data['resource']['device type'] and 
+                        "Linux" if ("Linux/Interop" in resource_hw_data['resource']['device type'] and
                                     not resource_hw_data['resource']["ct-kernel"]) else
                         "Android" if "Android" in resource_hw_data['resource']['device type'] else
                         "IOS" if "IOS" in resource_hw_data['resource']['device type'] else
                         ""
                     )
-                    os_type_list.append(os_type)                
+                    os_type_list.append(os_type)
                     # phone_radio.append(alias[i]['mode'])
                     # Mapping Radio Name in human readable format
                     if 'a' not in alias[i]['mode'] or "20" in alias[i]['mode']:
@@ -305,7 +302,7 @@ class RvR(Realm):
         start_time = datetime.now()
         end_time = start_time + timedelta(seconds=int(self.test_duration))
         index = -1
-        connections = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+        # connections = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
         [(upload.append([]), download.append([])) for i in range(len(self.cx_profile.created_cx))]
         while datetime.now() < end_time:
             index += 1
@@ -314,7 +311,7 @@ class RvR(Realm):
                     ','.join(self.cx_profile.created_cx.keys()), ",".join(['bps rx a', 'bps rx b']))).values())[2:]
             throughput[index] = list(
                 map(lambda i: [x for x in i.values()], response))
-            curr_time=datetime.now()
+            curr_time = datetime.now()
             timestamps.append(curr_time.strftime("%Y-%m-%d %H:%M:%S"))
             # if test is executed from webui then updating csv in realtime
             if self.dowebgui:
@@ -331,16 +328,16 @@ class RvR(Realm):
 
                 if not self.overall_end_time or not self.overall_start_time:
                     self.overall_start_time = start_time
-                    self.overall_end_time = start_time + timedelta( seconds=(int(self.test_duration) * len(self.atten_values[0]))+ 20 * (len(self.atten_values[0])-1))
+                    self.overall_end_time = start_time + timedelta(seconds=(int(self.test_duration) * len(self.atten_values[0])) + 20 * (len(self.atten_values[0]) - 1))
 
                 time_difference = abs(self.overall_end_time - curr_time)
-                
-                overall_total_hours=time_difference.total_seconds() / 3600
-                overall_remaining_minutes=(overall_total_hours % 1) * 60
-                remaining_minutes_instrf=[str(int(overall_total_hours)) + " hr and " + str(int(overall_remaining_minutes)) + " min" if int(overall_total_hours) != 0 or int(overall_remaining_minutes) != 0 else '<1 min'][0]
-                indivisual_df = [download_sum,upload_sum,curr_time.strftime("%Y-%m-%d %H:%M:%S"),"Running",self.overall_start_time.strftime("%Y-%m-%d %H:%M:%S"),self.overall_end_time.strftime("%Y-%m-%d %H:%M:%S"),remaining_minutes_instrf]
+
+                overall_total_hours = time_difference.total_seconds() / 3600
+                overall_remaining_minutes = (overall_total_hours % 1) * 60
+                remaining_minutes_instrf = [str(int(overall_total_hours)) + " hr and " + str(int(overall_remaining_minutes)) + " min" if int(overall_total_hours) != 0 or int(overall_remaining_minutes) != 0 else '<1 min'][0]  # noqa: E501
+                indivisual_df = [download_sum, upload_sum, curr_time.strftime("%Y-%m-%d %H:%M:%S"), "Running", self.overall_start_time.strftime("%Y-%m-%d %H:%M:%S"), self.overall_end_time.strftime("%Y-%m-%d %H:%M:%S"), remaining_minutes_instrf]  # noqa: E501
                 self.overall_df.append(indivisual_df)
-                pd.DataFrame(self.overall_df,columns=["download","upload","timestamp","status","start_time","end_time","remaining_time"]).to_csv('{}/rvr_overalldata.csv'.format(self.result_dir), index=False)
+                pd.DataFrame(self.overall_df, columns=["download", "upload", "timestamp", "status", "start_time", "end_time", "remaining_time"]).to_csv('{}/rvr_overalldata.csv'.format(self.result_dir), index=False)  # noqa: E501
 
                 # Check if test was stopped by the user
                 with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
@@ -348,7 +345,7 @@ class RvR(Realm):
                     data = json.load(file)
                     if data["status"] != "Running":
                         logger.warning('Test is stopped by the user')
-                        self.stop_test=True
+                        self.stop_test = True
                         break
             time.sleep(1)
         # # rx_rate list is calculated
@@ -358,9 +355,9 @@ class RvR(Realm):
                 download[i].append(throughput[key][i][0])
         upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
-        logger.info("upload: {}".format( upload_throughput ))
-        logger.info("download: {}".format( download_throughput ))
-        self.overall_data.append({"timestamps":timestamps,"upload":upload,"download":download})
+        logger.info("upload: {}".format(upload_throughput))
+        logger.info("download: {}".format(download_throughput))
+        self.overall_data.append({"timestamps": timestamps, "upload": upload, "download": download})
         return upload_throughput, download_throughput
 
     def set_report_data(self, data):
@@ -381,9 +378,6 @@ class RvR(Realm):
                     for key in res[traffic]:
                         if 'download' in res[traffic][key]:
                             res[traffic][key].pop('upload')
-            table_df = {}
-            num_stations = []
-            mode = []
             graph_df = {}
             if len(self.traffic_type) == 2:
                 graph_df = {f"{self.traffic_type[0]}": {}, f"{self.traffic_type[1]}": {}}
@@ -416,7 +410,7 @@ class RvR(Realm):
             res.update({"graph_df": graph_df})
         return res
 
-    def generate_report(self, data, test_setup_info, input_setup_info,report_path=''):
+    def generate_report(self, data, test_setup_info, input_setup_info, report_path=''):
         each_phone_data = self.set_report_data(self.throughput_phone)
         res = self.set_report_data(data)
         report = lf_report(_output_pdf="lf_interop_rvr_test.pdf",
@@ -431,11 +425,11 @@ class RvR(Realm):
         report.build_banner()
         # objective title and description
         report.set_obj_html(_obj_title="Objective", _obj="The objective of this RVR test is to assess the performance of the"
-                                                        " Device Under Test (DUT) across varying distances by emulating real-world"
-                                                        " attenuation using programmable attenuators. This test measures throughput"
-                                                        " at each RSSI step, providing insights into signal strength, link quality,"
-                                                        " and data transmission efficiency. The results enable the analysis of upstream"
-                                                        " and downstream RSSI curves for different traffic types and station configurations using LANforge Interop.")
+                            " Device Under Test (DUT) across varying distances by emulating real-world"
+                            " attenuation using programmable attenuators. This test measures throughput"
+                            " at each RSSI step, providing insights into signal strength, link quality,"
+                            " and data transmission efficiency. The results enable the analysis of upstream"
+                            " and downstream RSSI curves for different traffic types and station configurations using LANforge Interop.")
         report.build_objective()
         report.test_setup_table(test_setup_data=test_setup_info, value="Device Under Test")
         report.end_content_div()
@@ -458,7 +452,7 @@ class RvR(Realm):
             report.set_obj_html(
                 _obj_title="Overall {} throughput for {} real clients using {} traffic."
                 .format(res["graph_df"][traffic_type]["direction"], len(self.list_of_data[0]), "TCP" if traffic_type ==
-                                                                                                        "lf_tcp" else "UDP" if traffic_type == "lf_udp" else "TCP and UDP"),
+                        "lf_tcp" else "UDP" if traffic_type == "lf_udp" else "TCP and UDP"),
                 _obj="The below graph represents overall {} throughput for different attenuation levels ".format(
                     res["graph_df"][traffic_type]["direction"]))
             report.build_objective()
@@ -531,24 +525,24 @@ class RvR(Realm):
         report.write_pdf()
 
         self.generate_overall_csv(report_path_date_time)
-        
-    def generate_overall_csv(self,dir_path):
+
+    def generate_overall_csv(self, dir_path):
         for idx, obj in enumerate(self.overall_data):
-            filename = "attenuation_at_"+"-".join([atten_val[idx]  for atten_val in self.atten_values]) +"_overall_data.csv" if self.multiple_attenuation_values else f"attenuation_at_{self.atten_values[0][idx]}" +"_overall_data.csv"
+            filename = "attenuation_at_" + "-".join([atten_val[idx] for atten_val in self.atten_values]) + "_overall_data.csv" if self.multiple_attenuation_values else f"attenuation_at_{self.atten_values[0][idx]}" + "_overall_data.csv"  # noqa: E501
             file_path = os.path.join(dir_path, filename)
             upload = obj["upload"]
             download = obj["download"]
             timestamps = obj["timestamps"]
             with open(file_path, mode='w', newline='') as file:
                 writer = csv.writer(file)
-                
+
                 # Create header
                 header = ['Timestamp']
                 for indx in range(len(upload)):
                     header.append(f"{self.list_of_data[1][indx]}_Upload")
                     header.append(f"{self.list_of_data[1][indx]}_Download")
                 writer.writerow(header)
-                
+
                 # Write rows with timestamp, upload, and download values
                 for idx in range(len(timestamps)):
                     row = [timestamps[idx]]
@@ -570,21 +564,21 @@ class RvR(Realm):
         for traffic_type in phone_x:
             for phone in phone_x[traffic_type]:
                 for direction in phone_x[traffic_type][phone]:
-                    if direction == "Signal Strength" :
+                    if direction == "Signal Strength":
                         RSSISignal[phone] = phone_x[traffic_type][phone][direction]
                     elif direction == "upload":
                         Upload[phone] = phone_x[traffic_type][phone][direction]
                     else:
                         Download[phone] = phone_x[traffic_type][phone][direction]
 
-        final_dataset_per_client = {} 
-        # creating per-client dataset based on traffic direction 
+        final_dataset_per_client = {}
+        # creating per-client dataset based on traffic direction
         for traffic_type in phone_x:
-            final_dataset_per_client[traffic_type]={}
+            final_dataset_per_client[traffic_type] = {}
             for phone in phone_x[traffic_type]:
-                final_dataset_per_client[traffic_type][phone]={}
+                final_dataset_per_client[traffic_type][phone] = {}
                 if self.traffic_direction == "bidirectional":
-                    final_dataset_per_client[traffic_type][phone]["bidirectional"] = [phone_x[traffic_type][phone]["upload"],phone_x[traffic_type][phone]["download"]]
+                    final_dataset_per_client[traffic_type][phone]["bidirectional"] = [phone_x[traffic_type][phone]["upload"], phone_x[traffic_type][phone]["download"]]
                 elif self.traffic_direction == "upload":
                     final_dataset_per_client[traffic_type][phone]["upload"] = [phone_x[traffic_type][phone]["upload"]]
                 else:
@@ -595,16 +589,16 @@ class RvR(Realm):
         final_dataset_per_attenuation = {}
         # creating per-attenuation dataset based on traffic direction
         for traffic_type in res:
-            final_dataset_per_attenuation[traffic_type]={}
+            final_dataset_per_attenuation[traffic_type] = {}
             for attenuation in res[traffic_type]:
-                final_dataset_per_attenuation[traffic_type][attenuation]={}
+                final_dataset_per_attenuation[traffic_type][attenuation] = {}
                 if self.traffic_direction == "bidirectional":
-                    final_dataset_per_attenuation[traffic_type][attenuation]["bidirectional"] = [res[traffic_type][attenuation]["upload"],res[traffic_type][attenuation]["download"]]
+                    final_dataset_per_attenuation[traffic_type][attenuation]["bidirectional"] = [res[traffic_type][attenuation]["upload"], res[traffic_type][attenuation]["download"]]
                 elif self.traffic_direction == "upload":
                     final_dataset_per_attenuation[traffic_type][attenuation]["upload"] = [res[traffic_type][attenuation]["upload"]]
                 else:
                     final_dataset_per_attenuation[traffic_type][attenuation]["download"] = [res[traffic_type][attenuation]["download"]]
-        res = final_dataset_per_attenuation              
+        res = final_dataset_per_attenuation
         # for traffic_type in phone_x:
         #     for phone in phone_x[traffic_type]:
         #         for direction in phone_x[traffic_type][phone]:
@@ -615,27 +609,27 @@ class RvR(Realm):
             for phone in phone_x[traffic_type]:
                 for direction in phone_x[traffic_type][phone]:
                     traffic_name = "TCP" if (traffic_type == "lf_tcp") else "UDP" if (
-                            traffic_type == "lf_udp") else "TCP and UDP"
+                        traffic_type == "lf_udp") else "TCP and UDP"
                     report.set_obj_html(_obj_title=f"{phone} : {traffic_name} {direction}", _obj="")
                     report.build_objective()
                     line_graph = lf_graph.lf_line_graph(_data_set=phone_x[traffic_type][phone][direction],
                                                         _xaxis_name="Attenuation",
                                                         _yaxis_name='Throughput(in Mbps)' if (
-                                                                direction == 'upload' or direction == 'download' or direction == 'bidirectional' ) else 'RSSI Strength(in dBm)',
-                                                        _xaxis_categories=self.attenuator_db_signal,
-                                                        _graph_image_name=f"rvr_{traffic_type}_{phone}_{direction}",
-                                                        _label=['upload'] if direction == 'upload' else ['download'] if direction == "download" else ["upload","download"] if direction == "bidirectional" else ['RSSI Strength'],
-                                                        _color=['olivedrab'] if direction == 'upload' else ['orangered'] if direction == 'download' else ["olivedrab","orangered"] if direction == "bidirectional" else ['mediumblue'],
-                                                        _xaxis_step=1,
-                                                        _graph_title="Throughput vs Attenuation" if (
-                                                                direction == 'upload' or direction == 'download' or direction == "bidirectional") else "RSSI Signal Strength(in dBm)",
-                                                        _title_size=16,
-                                                        _figsize=(18, 6),
-                                                        _legend_loc="best",
-                                                        _marker=['o', 'o'],
-                                                        _legend_box=None,
-                                                        _dpi=200,
-                                                        _enable_csv=True)
+                        direction == 'upload' or direction == 'download' or direction == 'bidirectional') else 'RSSI Strength(in dBm)',
+                        _xaxis_categories=self.attenuator_db_signal,
+                        _graph_image_name=f"rvr_{traffic_type}_{phone}_{direction}",
+                        _label=['upload'] if direction == 'upload' else ['download'] if direction == "download" else ["upload", "download"] if direction == "bidirectional" else ['RSSI Strength'],
+                        _color=['olivedrab'] if direction == 'upload' else ['orangered'] if direction == 'download' else ["olivedrab", "orangered"] if direction == "bidirectional" else ['mediumblue'],
+                        _xaxis_step=1,
+                        _graph_title="Throughput vs Attenuation" if (
+                        direction == 'upload' or direction == 'download' or direction == "bidirectional") else "RSSI Signal Strength(in dBm)",
+                        _title_size=16,
+                        _figsize=(18, 6),
+                        _legend_loc="best",
+                        _marker=['o', 'o'],
+                        _legend_box=None,
+                        _dpi=200,
+                        _enable_csv=True)
                     line_graph_png = line_graph.build_line_graph()
 
                     logger.info("graph name {}".format(line_graph_png))
@@ -659,7 +653,7 @@ class RvR(Realm):
                 }
                 if self.traffic_direction == "bidirectional":
                     table_data["Upload(in Mbps)"] = Upload[phone]
-                    table_data["Download(in Mbps)"] = Download[phone]                    
+                    table_data["Download(in Mbps)"] = Download[phone]
                 elif self.traffic_direction == "download":
                     table_data["Download(in Mbps)"] = Download[phone]
                 else:
@@ -673,29 +667,29 @@ class RvR(Realm):
         for traffic_type in res:
             for attenuation in res[traffic_type]:
                 for direction in res[traffic_type][attenuation]:
-                    formated_attenuation=attenuation.replace('"',"").replace("'","").replace("(","").replace(")","").replace(" ","").replace(",","")
+                    formated_attenuation = attenuation.replace('"', "").replace("'", "").replace("(", "").replace(")", "").replace(" ", "").replace(",", "")
                     report.set_obj_html(
-                        _obj_title=f"Individual {direction} Throughput for {len(self.list_of_data[0])} clients using {'TCP' if traffic_type == 'lf_tcp' else 'UDP' if traffic_type == 'lf_udp' else 'TCP and UDP'} traffic over {attenuation} attenuation",
+                        _obj_title=f"Individual {direction} Throughput for {len(self.list_of_data[0])} clients using {'TCP' if traffic_type == 'lf_tcp' else 'UDP' if traffic_type == 'lf_udp' else 'TCP and UDP'} traffic over {attenuation} attenuation",  # noqa: E501
                         _obj=f"The below graph represents Individual {self.traffic_direction} throughput of all stations when attenuation set to {attenuation}")
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=res[traffic_type][attenuation][direction],
-                                            _yaxis_name="Dervice Name",
-                                            _xaxis_name="Throughput(in Mbps)",
-                                            _yaxis_categories=self.list_of_data[1],
-                                            _graph_image_name=f"rvr_{traffic_type}_{formated_attenuation}",
-                                            _label=['upload'] if direction == 'upload' else ['download'] if self.traffic_direction == 'download' else ['upload','download'],
-                                            _color=['olivedrab'] if direction == 'upload' else ['orangered'] if self.traffic_direction == 'download' else ['olivedrab','orangered'],
-                                            _color_edge='grey',
-                                            _yaxis_step=1,
-                                            _graph_title=f"Individual throughput with {attenuation} attenuation",
-                                            _title_size=16,
-                                            _bar_height=0.15,
-                                            _figsize=(18, 6),
-                                            _legend_loc="best",
-                                            _legend_box=None,
-                                            _dpi=96,
-                                            _show_bar_value=True,
-                                            _enable_csv=True)
+                                                    _yaxis_name="Dervice Name",
+                                                    _xaxis_name="Throughput(in Mbps)",
+                                                    _yaxis_categories=self.list_of_data[1],
+                                                    _graph_image_name=f"rvr_{traffic_type}_{formated_attenuation}",
+                                                    _label=['upload'] if direction == 'upload' else ['download'] if self.traffic_direction == 'download' else ['upload', 'download'],
+                                                    _color=['olivedrab'] if direction == 'upload' else ['orangered'] if self.traffic_direction == 'download' else ['olivedrab', 'orangered'],
+                                                    _color_edge='grey',
+                                                    _yaxis_step=1,
+                                                    _graph_title=f"Individual throughput with {attenuation} attenuation",
+                                                    _title_size=16,
+                                                    _bar_height=0.15,
+                                                    _figsize=(18, 6),
+                                                    _legend_loc="best",
+                                                    _legend_box=None,
+                                                    _dpi=96,
+                                                    _show_bar_value=True,
+                                                    _enable_csv=True)
                     graph_png = graph.build_bar_graph_horizontal()
 
                     logger.info("graph name {}".format(graph_png))
@@ -707,7 +701,7 @@ class RvR(Realm):
                     report.move_csv_file()
                     report.build_graph()
 
-                    logger.info("Attenuation Step(dB) {} \nThroughput(Mbps) {}".format(self.attenuator_db_signal,res[traffic_type][attenuation][direction]))   
+                    logger.info("Attenuation Step(dB) {} \nThroughput(Mbps) {}".format(self.attenuator_db_signal, res[traffic_type][attenuation][direction]))
                     report.start_content_div()
                     report.set_table_title("<h3>Table for Graph")
                     report.build_table_title()
@@ -715,13 +709,13 @@ class RvR(Realm):
                         "Attenuation Step(dB)": [attenuation] * len(graph.data_set[0]),
                         "Device Name": self.list_of_data[1],
                         "Traffic type": [
-                                            'TCP' if traffic_type == 'lf_tcp' else 'UDP' if traffic_type == 'lf_udp' else 'TCP and UDP'] * len(
+                            'TCP' if traffic_type == 'lf_tcp' else 'UDP' if traffic_type == 'lf_udp' else 'TCP and UDP'] * len(
                             graph.data_set[0]),
                     }
                     if self.traffic_direction == "bidirectional":
                         table_data["Upload(in Mbps)"] = res[traffic_type][attenuation][direction][0]
                         table_data["Download(in Mbps)"] = res[traffic_type][attenuation][direction][1]
-                        table_data["Overall"] = [float(u) + float(d) for u, d in zip(res[traffic_type][attenuation][direction][0], res[traffic_type][attenuation][direction][1])]                  
+                        table_data["Overall"] = [float(u) + float(d) for u, d in zip(res[traffic_type][attenuation][direction][0], res[traffic_type][attenuation][direction][1])]
                     elif self.traffic_direction == "upload":
                         table_data["Upload(in Mbps)"] = res[traffic_type][attenuation][direction][0]
                     else:
@@ -738,7 +732,7 @@ def main():
     --------------------
     Generic command layout:
     =====================================================================
-    sudo python3 rvr_test.py --mgr localhost --mgr_port 8080 --upstream eth1 --num_stations 40 
+    sudo python3 ./lf_interop_rvr_test.py --mgr localhost --mgr_port 8080 --upstream eth1 --num_stations 40
     --security wpa2 --ssid NETGEAR73-5G --password fancylotus986 --radio wiphy3 --atten_serno 2222 --atten_idx all
     --atten_val 10..10..20 --test_duration 1m --ap_model WAX610 --traffic 100''', allow_abbrev=False)
     optional = parser.add_argument_group('optional arguments')
@@ -766,11 +760,11 @@ def main():
     optional.add_argument('--ap_model', help="AP Model Name", default="Test-AP")
     # required.add_argument('--num_stations', help='number of stations to create, works only if create_sta is True',
     #                       required=True)
-    optional.add_argument('-as', '--atten_serno',nargs='+', help='Serial number for requested Attenuators Ex: --atten_serno srial1 serial2 serial3', default=['2222'])
-    optional.add_argument('-ai', '--atten_idx',nargs='+',
+    optional.add_argument('-as', '--atten_serno', nargs='+', help='Serial number for requested Attenuators Ex: --atten_serno srial1 serial2 serial3', default=['2222'])
+    optional.add_argument('-ai', '--atten_idx', nargs='+',
                           help='Attenuator index eg. For module 1 = 0,module 2 = 1 --> --atten_idx 0,2 5 all',
                           default='all')
-    optional.add_argument('-av', '--atten_val',nargs='+',
+    optional.add_argument('-av', '--atten_val', nargs='+',
                           help='Requested attenuation in dB ex:--> --atten_val 0..10..40 (here attenuation start '
                                'from 0 and end with 50 with increment value of 10 each time)', default='0')
     optional.add_argument('--debug', help="to enable debug", default=False)
@@ -782,13 +776,13 @@ def main():
                         help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
     optional.add_argument('--dowebgui', action="store_true",
-                        help='To notify if the script triggered from webui')
-    optional.add_argument('--result_dir',type=str,default='',help='result directory for webui execution')
-    optional.add_argument('--test_name', type=str,default=None,help='Test name parameter for webgui execution')
+                          help='To notify if the script triggered from webui')
+    optional.add_argument('--result_dir', type=str, default='', help='result directory for webui execution')
+    optional.add_argument('--test_name', type=str, default=None, help='Test name parameter for webgui execution')
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 lf_interop_rvr_test.py will measure the performance of stations over a certain distance of the DUT. Distance is emulated
 using programmable attenuators and throughput test is run at each distance/RSSI step.
 '''
@@ -872,14 +866,14 @@ using programmable attenuators and throughput test is run at each distance/RSSI 
     # If atten_vals length is less than modules or atten_serno, extend it with the last value
     max_len = len(args.atten_serno)
     multiple_attenuation_values = False
-    if len(args.atten_val) > 1 :
+    if len(args.atten_val) > 1:
         multiple_attenuation_values = True
     # Extend the attenuation values to match the length of serials if necessary
     if len(args.atten_val) < max_len:
         last_val = args.atten_val[-1]  # Get the last value in atten_vals
         args.atten_val.extend([last_val] * (max_len - len(args.atten_val)))
- 
-    atten_dict = {serial: {'modules' : mod, 'attenuation': atten_val}for serial, mod, atten_val in zip(args.atten_serno, modules, args.atten_val)}
+
+    atten_dict = {serial: {'modules': mod, 'attenuation': atten_val}for serial, mod, atten_val in zip(args.atten_serno, modules, args.atten_val)}
     logger.info(atten_dict)
     rvr_obj = RvR(host=args.mgr,
                   port=args.mgr_port,
@@ -898,7 +892,7 @@ using programmable attenuators and throughput test is run at each distance/RSSI 
                   ap_model=args.ap_model,
                   atten_dict=atten_dict,
                   atten_val=args.atten_val,
-                  multiple_attenuation_values = multiple_attenuation_values,
+                  multiple_attenuation_values=multiple_attenuation_values,
                   traffic_type=args.traffic_type,
                   traffic_direction=args.traffic_direction,
                   sta_names=args.sta_names.split(","),
@@ -933,12 +927,12 @@ using programmable attenuators and throughput test is run at each distance/RSSI 
     input_setup_info = {
         "contact": "support@candelatech.com"
     }
-    rvr_obj.generate_report(data=data, test_setup_info=test_setup_info, input_setup_info=input_setup_info,report_path=rvr_obj.result_dir )
+    rvr_obj.generate_report(data=data, test_setup_info=test_setup_info, input_setup_info=input_setup_info, report_path=rvr_obj.result_dir)
     rvr_obj.cleanup()
     if rvr_obj.dowebgui:
-        rvr_obj.overall_df[-1][3]="Stopped"
-        rvr_obj.overall_df[-1][5]=rvr_obj.overall_df[-1][2]
-        pd.DataFrame(rvr_obj.overall_df,columns=["download","upload","timestamp","status","start_time","end_time","remaining_time"]).to_csv('{}/rvr_overalldata.csv'.format(rvr_obj.result_dir), index=False)
+        rvr_obj.overall_df[-1][3] = "Stopped"
+        rvr_obj.overall_df[-1][5] = rvr_obj.overall_df[-1][2]
+        pd.DataFrame(rvr_obj.overall_df, columns=["download", "upload", "timestamp", "status", "start_time", "end_time", "remaining_time"]).to_csv('{}/rvr_overalldata.csv'.format(rvr_obj.result_dir), index=False)  # noqa: E501
 
 
 if __name__ == "__main__":
