@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# flake8: noqa
+
 """
 NAME: lf_create_dut_json.py
 
@@ -41,7 +41,6 @@ import logging
 import importlib
 import os
 import sys
-import traceback
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
