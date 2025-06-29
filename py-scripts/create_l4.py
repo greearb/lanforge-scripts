@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: create_l4.py
 
@@ -252,8 +251,8 @@ Tested on 02/13/2023:
     shelf = rv[0]
     resource = rv[1]
     port_name = rv[2]
-    request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
-        lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
+    request_command = 'http://{lfmgr}:{lfport}/port/{shelf}/{resource}/{port_name}'.format(
+        lfmgr=args.mgr, lfport=args.mgr_port, shelf=shelf, resource=resource, port_name=port_name)
     logger.info("port request command: {request_command}".format(request_command=request_command))
     request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
     logger.info("port request status_code {status}".format(status=request.status_code))
