@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 
 """
     Script for creating a variable number of stations.
@@ -97,7 +96,7 @@ class MeasureTimeUp(Realm):
                                                 radio=item)
             start_num = self.num_sta + start_num + 1
             sta_names.extend(sta_list)
-            # TODO:  Add checks for return code 
+            # TODO:  Add checks for return code
             self.station_profile.create(radio=item, sta_names_=sta_list, debug=self.debug)
 
     def station_up(self):
@@ -161,7 +160,7 @@ Command example:
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 ./measure_station_time_up.py is for creating a variable number of stations and
 measures the time it took to admin them up and get IP addresses.
 '''
@@ -169,11 +168,9 @@ measures the time it took to admin them up and get IP addresses.
         print(help_summary)
         exit(0)
 
-
     if not args.report_file:
         print("error: the following arguments are required: --report_file")
         exit(1)
-
 
     if args.report_file.split('.')[-1] not in ['pkl', 'csv', 'xlsx']:
         raise NameError('Please make sure your file name ends with either pkl, csv, or xlsx')
@@ -222,6 +219,7 @@ measures the time it took to admin them up and get IP addresses.
     # TODO:  Check pass/fail and exit accordingly
     # TODO:  Add KPI:  Min/max/avg of each station's time to get an IP address, data can be read/deduced
     # by looking at port-mgr output.
+
 
 if __name__ == "__main__":
     main()
