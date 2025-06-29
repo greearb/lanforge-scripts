@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-# flake8: noqa
+
 import tkinter
-from tkinter import messagebox
 from tkinter import ttk
-from tkinter import StringVar
 import importlib
 import logging
 
@@ -201,7 +199,7 @@ May also enter custom Example 0..+100..700''')
         row += 1
         self.lf_dp_rvr_duration = tkinter.Label(self.lf_dp_rvr_frame, text='test duration')
         self.lf_dp_rvr_duration.grid(row=row, column=0)
-        self.lf_dp_rvr_duration_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<Custom>", "5000 (5 sec)", "10000 (10 sec)", "15000 (15 sec)", "20000 (20 sec)", "30000 (30 sec)", "60000 (1 min)", "180000 (3 min)", "300000 (5min)"])
+        self.lf_dp_rvr_duration_combobox = ttk.Combobox(self.lf_dp_rvr_frame, values=["<Custom>", "5000 (5 sec)", "10000 (10 sec)", "15000 (15 sec)", "20000 (20 sec)", "30000 (30 sec)", "60000 (1 min)", "180000 (3 min)", "300000 (5min)"])  # noqa: E501
         self.lf_dp_rvr_duration_combobox.current(3)
         self.lf_dp_rvr_duration_combobox.grid(row=row, column=1)
         self.window_tooltip.bind(self.lf_dp_rvr_duration_combobox, '''Enter the test duration , for custom it is in ms
