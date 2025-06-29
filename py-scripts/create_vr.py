@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: create_vr.py
 
@@ -76,6 +75,7 @@ Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 # TODO - script under development
+
 
 class CreateVR(Realm):
     def __init__(self,
@@ -191,8 +191,7 @@ class CreateVR(Realm):
         #     resource=self.vr_name[1])
         # test to make sure that vrcx is inside vr we expect
         self.vr_profile.vrcx_list(resource=self.vr_name[1], do_sync=True)
-        vr_list = self.vr_profile.router_list(
-            resource=self.vr_name[1], do_refresh=True)
+        # vr_list = self.vr_profile.router_list(resource=self.vr_name[1], do_refresh=True)
         router = self.vr_profile.find_cached_router(
             resource=self.vr_name[1], router_name=self.vr_name[2])
         logger.info("cached router 120: {router}".format(router=router))
@@ -220,7 +219,7 @@ def main():
     Through this script, services like DHCP, NAT can be provided to the vr.
     '''
     # /home/lanforge-scripts/py-json/LANforge/lfcli_base.py - for bare args parser
-    # /home/lanforge-scripts/py-json/LANforge/lfcli_base.py - for bare args parser    
+    # /home/lanforge-scripts/py-json/LANforge/lfcli_base.py - for bare args parser
     parser = LFCliBase.create_bare_argparse(
         prog=__file__,
         description="""\
@@ -240,7 +239,7 @@ NOTES:
          kernel version: 5.19.17+
          gui version: 5.4.6
 
-""".format(f=__file__))
+""")
     required = parser.add_argument_group('required arguments')
     required.add_argument('--vr_name', '--vr_names', required=False,
                           help='EID of virtual router, like 1.2.vr0')
