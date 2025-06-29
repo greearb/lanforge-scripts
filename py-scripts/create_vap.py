@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: create_vap.py
 
@@ -120,16 +119,16 @@ class CreateVAP(Realm):
         logger.info("Creating VAPs")
         # TODO:  Add cmd line arguments to control the various options of the VAP profile.
         if self.vap_profile.create(resource=self.resource,
-                                radio=self.radio,
-                                channel=self.channel,
-                                up=True,
-                                debug=self.debug,
-                                use_ht40=True,
-                                use_ht80=True,
-                                use_ht160=False,
-                                suppress_related_commands_=True,
-                                use_radius=False,
-                                hs20_enable=False):
+                                   radio=self.radio,
+                                   channel=self.channel,
+                                   up=True,
+                                   debug=self.debug,
+                                   use_ht40=True,
+                                   use_ht80=True,
+                                   use_ht160=False,
+                                   suppress_related_commands_=True,
+                                   use_radius=False,
+                                   hs20_enable=False):
             self._pass("PASS: VAP build finished")
             return True
         else:
@@ -192,7 +191,7 @@ NOTES:
         '--mac',
         help='Custom mac address',
         default="xx:xx:xx:xx:*:xx")
-    optional.add_argument('--mode', default='0') # 0 means auto  # TODO:  Add help for other available modes.
+    optional.add_argument('--mode', default='0')  # 0 means auto  # TODO:  Add help for other available modes.
     optional.add_argument('--channel', default=36)
     optional.add_argument('--country_code', default=0)
     optional.add_argument('--resource', default=1)
