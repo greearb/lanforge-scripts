@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: test_l4.py
 
@@ -114,8 +113,8 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFSession  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonCommand  # noqa: E402 F401
 TestGroupProfile = realm.TestGroupProfile
 port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
@@ -193,7 +192,6 @@ class IPV4L4(Realm):
                                  stream_warnings=True,
                                  require_session=True,
                                  exit_on_error=True)
-        self.command: LFJsonCommand
         self.command = self.session.get_command()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -252,9 +250,7 @@ class IPV4L4(Realm):
         endp_list = self.json_get("/layer4/all")
         # logger.info("endp_list: {endp_list}".format(endp_list=endp_list))
 
-        endp_rx_drop_map = {}
         endp_rx_map = {}
-        our_endps = {}
         endps = []
 
         total_bytes_rd = 0
@@ -356,13 +352,13 @@ class IPV4L4(Realm):
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endps, total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_seconds, total_urls
 
-    def set_port_report_timer(self,cx_names=None):
-        for cx_name in cx_names:    
+    def set_port_report_timer(self, cx_names=None):
+        for cx_name in cx_names:
             self.command.post_set_cx_report_timer(cx_name=cx_name,
-                                             test_mgr="default_tm",
-                                             milliseconds=int(self.rpt_timer),
-                                             debug=self.debug)
-        
+                                                  test_mgr="default_tm",
+                                                  milliseconds=int(self.rpt_timer),
+                                                  debug=self.debug)
+
     def build(self):
         l4_7_port_lst = []
         if 'http' in self.url:
@@ -444,7 +440,7 @@ class IPV4L4(Realm):
                 self.cx_profile.created_cx = {}
                 if len(exist_l4['endpoint']) > 1:
                     for i in exist_l4['endpoint']:
-                        if i[list(i.keys())[0]]['name']!="":
+                        if i[list(i.keys())[0]]['name'] != "":
                             self.cx_profile.created_cx[list(i.keys())[0]] = 'CX_' + i[list(i.keys())[0]]['name']
                 else:
                     if self.cx_profile.created_cx[exist_l4['endpoint']['name']] != "":
@@ -734,7 +730,7 @@ Generic command example:
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 Work in Progress:
 This script will create stations and endpoints to generate and verify layer-4 traffic by monitoring the urls/s,
  bytes-rd, or bytes-wr attribute of the endpoints.
@@ -889,8 +885,8 @@ This script will create stations and endpoints to generate and verify layer-4 tr
         shelf = rv[0]
         resource = rv[1]
         port_name = rv[2]
-        request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
-            lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
+        request_command = 'http://{lfmgr}:{lfport}/port/{shelf}/{resource}/{port_name}'.format(
+            lfmgr=args.mgr, lfport=args.mgr_port, shelf=shelf, resource=resource, port_name=port_name)
         logger.info("port request command: {request_command}".format(request_command=request_command))
 
         request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
@@ -948,7 +944,6 @@ This script will create stations and endpoints to generate and verify layer-4 tr
     ip_test.cleanup(station_list, clean_all_sta=False if num_sta else True, clean_all_l4_7=False if num_sta else True)
     ip_test.build()
     ip_test.start()
-    l4_cx_results = {}
     layer4traffic_list = []
     layer4_tm = []
     ip_test_json_data = ip_test.json_get('layer4')['endpoint']
@@ -962,10 +957,10 @@ This script will create stations and endpoints to generate and verify layer-4 tr
         for endp in ip_test.json_get('layer4')['endpoint']:
             if endp[list(endp.keys())[0]]['name'] != '':
                 layer4traffic_list.append([*endp.keys()][0])
-        layer4traffic = ','.join([str(elem) for i,elem in enumerate(layer4traffic_list)])
+        layer4traffic = ','.join([str(elem) for i, elem in enumerate(layer4traffic_list)])
     # TODO pass in what is to be monitored on the command line
-    for cx_name in layer4traffic_list :
-        layer4_tm.append('CX_'+cx_name)
+    for cx_name in layer4traffic_list:
+        layer4_tm.append('CX_' + cx_name)
     ip_test.set_port_report_timer(cx_names=layer4_tm)
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
                                # report_file is for the monitor
@@ -996,7 +991,6 @@ This script will create stations and endpoints to generate and verify layer-4 tr
     csv_results_file = ip_test.get_csv_name()
     logger.info("csv_results_file: %s", csv_results_file)
     # csv_results_file = kpi_path + "/" + kpi_filename
-    report_title = "Layer 4-7 Traffic Generation "
     report.set_title("Layer 4-7 Traffic Generation: test_l4.py")
     report.build_banner_left()
     report.start_content_div2()
