@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_graph.py
 
@@ -25,7 +24,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pdfkit
 from matplotlib.colors import ListedColormap
-import matplotlib.ticker as mticker
+# import matplotlib.ticker as mticker
 import argparse
 import traceback
 import logging
@@ -147,9 +146,9 @@ class lf_bar_graph:
             for border in self.remove_border:
                 ax.spines[border].set_color(None)
                 if 'left' in self.remove_border:    # to remove the y-axis labeling
-                    yaxis_visable =False
+                    yaxis_visable = False
                 else:
-                    yaxis_visable=True
+                    yaxis_visable = True
                 ax.yaxis.set_visible(yaxis_visable)
 
         def show_value(rectangles):
@@ -157,7 +156,7 @@ class lf_bar_graph:
                 h = rect.get_height()
                 plt.text(rect.get_x() + rect.get_width() / 2., h, h,
                          ha='center', va='bottom', rotation=self.text_rotation, fontsize=self.text_font)
-
+        br1 = None
         for _ in self.data_set:
             if i > 0:
                 br = br1
@@ -181,10 +180,10 @@ class lf_bar_graph:
             plt.xticks(np.arange(0,
                                  len(self.xaxis_categories),
                                  step=self.xaxis_step),
-                       fontsize=self.xticks_font,rotation=self.xticks_rotation)
+                       fontsize=self.xticks_font, rotation=self.xticks_rotation)
         else:
             plt.xticks([i + self._xaxis_value_location for i in np.arange(0, len(self.data_set[0]), step=self.xaxis_step)],
-                       self.xaxis_categories, fontsize=self.xticks_font,rotation=self.xticks_rotation)
+                       self.xaxis_categories, fontsize=self.xticks_font, rotation=self.xticks_rotation)
         plt.legend(
             handles=self.legend_handles,
             loc=self.legend_loc,
@@ -212,10 +211,9 @@ class lf_bar_graph:
                     raise ValueError(
                         "Length and x-axis values and y-axis values should be same.")
             else:
-                 logger.debug("No Dataset Found")
+                logger.debug("No Dataset Found")
         logger.debug("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
-
 
 
 class lf_bar_graph_horizontal:
@@ -311,27 +309,27 @@ class lf_bar_graph_horizontal:
             for border in self.remove_border:
                 ax.spines[border].set_color(None)
                 if 'left' in self.remove_border:    # to remove the y-axis labeling
-                    yaxis_visable =False
+                    yaxis_visable = False
                 else:
-                    yaxis_visable=True
+                    yaxis_visable = True
                 ax.yaxis.set_visible(yaxis_visable)
 
         def show_value(rectangles):
             for rect in rectangles:
                 w = rect.get_width()
-                y = rect.get_y()
-                h = rect.get_height()
-                x = rect.get_x()
+                # y = rect.get_y()
+                # h = rect.get_height()
+                # x = rect.get_x()
                 # adding 1 may not always work based on the x axis scale may need to be configurable
-                plt.text(w + 1 , rect.get_y() + rect.get_height() / 4., w,
+                plt.text(w + 1, rect.get_y() + rect.get_height() / 4., w,
                          ha='center', va='bottom', rotation=self.text_rotation, fontsize=self.text_font)
-
+        br1 = None
         for _ in self.data_set:
             if i > 0:
                 br = br1
                 br2 = [y + self.bar_height for y in br]
                 rects = plt.barh(br2, self.data_set[i], color=self.color[i], height=self.bar_height,
-                                edgecolor=self.color_edge, label=self.label[i])
+                                 edgecolor=self.color_edge, label=self.label[i])
                 if self.show_bar_value:
                     show_value(rects)
                 br1 = br2
@@ -339,7 +337,7 @@ class lf_bar_graph_horizontal:
             else:
                 br1 = np.arange(len(self.data_set[i]))
                 rects = plt.barh(br1, self.data_set[i], color=self.color[i], height=self.bar_height,
-                                edgecolor=self.color_edge, label=self.label[i])
+                                 edgecolor=self.color_edge, label=self.label[i])
                 if self.show_bar_value:
                     show_value(rects)
                 i = i + 1
@@ -349,10 +347,10 @@ class lf_bar_graph_horizontal:
             plt.yticks(np.arange(0,
                                  len(self.yaxis_categories),
                                  step=self.yaxis_step),
-                       fontsize=self.yticks_font,rotation=self.yticks_rotation)
+                       fontsize=self.yticks_font, rotation=self.yticks_rotation)
         else:
             plt.yticks([i + self._yaxis_value_location for i in np.arange(0, len(self.data_set[0]), step=self.yaxis_step)],
-                       self.yaxis_categories, fontsize=self.yticks_font,rotation=self.yticks_rotation)
+                       self.yaxis_categories, fontsize=self.yticks_font, rotation=self.yticks_rotation)
         plt.legend(
             handles=self.legend_handles,
             loc=self.legend_loc,
@@ -380,11 +378,9 @@ class lf_bar_graph_horizontal:
                     raise ValueError(
                         "Length and x-axis values and y-axis values should be same.")
             else:
-                 logger.debug("No Dataset Found")
+                logger.debug("No Dataset Found")
         logger.debug("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
-
-
 
 
 class lf_scatter_graph:
@@ -467,14 +463,16 @@ class lf_scatter_graph:
         return "%s.png" % self.graph_image_name
 
 # have a second yaxis with line graph
+
+
 class lf_bar_line_graph:
-    def __init__(self, 
+    def __init__(self,
                  _data_set1=None,
                  # Note data_set2, data_set2_poly and data_set2_spline needs same size list
                  _data_set2=None,
-                 _data_set2_poly=[False], # Values are True or False
+                 _data_set2_poly=[False],  # Values are True or False
                  _data_set2_poly_degree=[3],
-                 _data_set2_interp1d=[False], # Values are True or False
+                 _data_set2_interp1d=[False],  # Values are True or False
                  _xaxis_name="x-axis",
                  _y1axis_name="y1-axis",
                  _y2axis_name="y2-axis",
@@ -584,7 +582,7 @@ class lf_bar_line_graph:
                 i = i + 1
 
         fig, ax1 = plt.subplots(figsize=self.figsize)
-        
+
         ax2 = ax1.twinx()
 
         i = 0
@@ -595,6 +593,7 @@ class lf_bar_line_graph:
                 ax1.text(rect.get_x() + rect.get_width() / 2., h, h,
                          ha='center', va='bottom', rotation=self.text_rotation, fontsize=self.text_font)
 
+        br1 = None
         for _ in self.data_set1:
             if i > 0:
                 br = br1
@@ -616,12 +615,12 @@ class lf_bar_line_graph:
         ax1.set_ylabel(self.y1axis_name, fontweight='bold', fontsize=15)
         if self.xaxis_categories[0] == 0:
             xsteps = plt.xticks(np.arange(0,
-                                 len(self.xaxis_categories),
-                                 step=self.xaxis_step),
-                       fontsize=self.xticks_font)
+                                          len(self.xaxis_categories),
+                                          step=self.xaxis_step),
+                                fontsize=self.xticks_font)
         else:
-            xsteps = plt.xticks([i + self._xaxis_value_location for i in np.arange(0, len(self.data_set1[0]), step=self.xaxis_step)],
-                       self.xaxis_categories, fontsize=self.xticks_font)
+            xsteps = plt.xticks([i + self._xaxis_value_location for i in np.arange(0, len(self.data_set1[0]), step=self.xaxis_step)],  # noqa: F841
+                                self.xaxis_categories, fontsize=self.xticks_font)
         ax1.legend(
             handles=self.legend_handles,
             loc=self.legend_loc1,
@@ -629,11 +628,11 @@ class lf_bar_line_graph:
             ncol=self.legend_ncol,
             fontsize=self.legend_fontsize)
 
-
         # overlay line graph
+
         def show_value2(data):
             for item, value in enumerate(data):
-                ax2.text(item, value, "{value}".format(value=value), ha='center',rotation=self.text_rotation, fontsize=self.text_font)
+                ax2.text(item, value, "{value}".format(value=value), ha='center', rotation=self.text_rotation, fontsize=self.text_font)
 
         i = 0
         for _ in self.data_set2:
@@ -647,7 +646,7 @@ class lf_bar_line_graph:
             show_value2(self.data_set2[i])
             # do polynomial smoothing
             if self.data_set2_poly[i]:
-                poly = np.polyfit(br1,self.data_set2[i],self.data_set2_poly_degree[i])
+                poly = np.polyfit(br1, self.data_set2[i], self.data_set2_poly_degree[i])
                 poly_y = np.poly1d(poly)(br1)
                 ax2.plot(
                     br1,
@@ -656,7 +655,7 @@ class lf_bar_line_graph:
                     label=self.label2_poly[i]
                 )
             if self.data_set2_interp1d[i]:
-                cubic_interpolation_model = interpolate.interp1d(br1, self.data_set2[i],kind="cubic")
+                cubic_interpolation_model = interpolate.interp1d(br1, self.data_set2[i], kind="cubic")
 
                 x_sm = np.array(br1)
                 x_smooth = np.linspace(x_sm.min(), x_sm.max(), 500)
@@ -671,8 +670,8 @@ class lf_bar_line_graph:
             i += 1
         ax2.set_xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
         ax2.set_ylabel(self.y2axis_name, fontweight='bold', fontsize=15)
-        ax2.tick_params(axis = 'y', labelcolor = 'orange')
-            
+        ax2.tick_params(axis='y', labelcolor='orange')
+
         ax2.legend(
             handles=self.legend_handles,
             loc=self.legend_loc2,
@@ -701,10 +700,9 @@ class lf_bar_line_graph:
                     raise ValueError(
                         "Length and x-axis values and y-axis values should be same.")
             else:
-                 logger.debug("No Dataset Found")
+                logger.debug("No Dataset Found")
         logger.debug("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
-
 
 
 class lf_stacked_graph:
@@ -727,6 +725,7 @@ class lf_stacked_graph:
         obj.build_stacked_graph()
 
     """
+
     def __init__(self,
                  _data_set=None,
                  _xaxis_name="Stations",
@@ -790,7 +789,7 @@ class lf_stacked_graph:
             if len(self.data_set) > 3:
                 for i in range(3, len(self.data_set)):
                     plt.bar(self.data_set[0], self.data_set[i],
-                            bottom=np.array(self.data_set[i - 2]) + np.array(self.data_set[i - 1]),color=self.color[i - 1])
+                            bottom=np.array(self.data_set[i - 2]) + np.array(self.data_set[i - 1]), color=self.color[i - 1])
             plt.legend(self.label)
         elif type(self.data_set) is dict:
             lable_values = []
@@ -821,7 +820,7 @@ class lf_stacked_graph:
             for i, v in enumerate(fail_values):
                 if v != 0:
                     plt.text(i + .005, v * 0.45 + pass_values[i], "%s%s" % (v, "%"), color=self.bar_text_color,
-                             fontweight=self.bar_font_weight, fontsize=self.bar_font_size, ha="center", va="center" ,
+                             fontweight=self.bar_font_weight, fontsize=self.bar_font_size, ha="center", va="center",
                              rotation=self.bar_text_rotation)
             plt.legend([bar_1, bar_2], self.label, title=self.legend_title, bbox_to_anchor=self.legend_bbox,
                        loc=self.legend_loc)
@@ -1058,9 +1057,9 @@ class lf_line_graph:
 
 def main():
     help_summary = '''\
-     This script facilitates the generation of comprehensive graphical reports. It offers a variety of graph types, 
-     including bar graphs, horizontal bar graphs, scatter graphs, bar-line graphs, stacked graphs, horizontal stacked 
-     graphs, and line graphs. 
+     This script facilitates the generation of comprehensive graphical reports. It offers a variety of graph types,
+     including bar graphs, horizontal bar graphs, scatter graphs, bar-line graphs, stacked graphs, horizontal stacked
+     graphs, and line graphs.
     '''
     # arguments
     parser = argparse.ArgumentParser(
@@ -1198,7 +1197,7 @@ INCLUDE_IN_README
     pdfkit.from_file(output_html_2, output_pdf_2, options=options)
 
     # test build_bar_graph_horizontal with defaults
-    dataset = [[45, 67, 34, 22, 31, 52, 60, 71, 24, 25, 45, 67, 34, 22, 31, 52, 60, 71, 24, 25], [22, 45, 12, 34, 70, 80, 14, 35, 44, 45,22, 45, 12, 34, 70, 80, 14, 35, 44, 45 ], [30, 55, 69, 37, 77, 24, 25, 77, 77, 80, 30, 55, 69, 37, 77, 24, 25, 77, 77, 80]] 
+    dataset = [[45, 67, 34, 22, 31, 52, 60, 71, 24, 25, 45, 67, 34, 22, 31, 52, 60, 71, 24, 25], [22, 45, 12, 34, 70, 80, 14, 35, 44, 45, 22, 45, 12, 34, 70, 80, 14, 35, 44, 45], [30, 55, 69, 37, 77, 24, 25, 77, 77, 80, 30, 55, 69, 37, 77, 24, 25, 77, 77, 80]]  # noqa: E501
     y_axis_values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
     # calculate the height of the y-axis .25 * number of values
@@ -1208,21 +1207,19 @@ INCLUDE_IN_README
     output_html_3 = "graph_3.html"
     output_pdf_3 = "graph_3.pdf"
 
-
-
     graph = lf_bar_graph_horizontal(_data_set=dataset,
-                         _xaxis_name="Throughput 2 (Mbps)",
-                         _yaxis_name="stations",
-                         _yaxis_categories=y_axis_values,
-                         _graph_image_name="Bi-single_radio_2.4GHz",
-                         _label=["bi-downlink", "bi-uplink", 'uplink'],
-                         _color=None,
-                         _color_edge='red',
-                         _figsize=(x_fig_size, y_fig_size),
-                         _show_bar_value= True,
-                        _text_font=6,
-                        _text_rotation=True,
-                        _enable_csv=True)
+                                    _xaxis_name="Throughput 2 (Mbps)",
+                                    _yaxis_name="stations",
+                                    _yaxis_categories=y_axis_values,
+                                    _graph_image_name="Bi-single_radio_2.4GHz",
+                                    _label=["bi-downlink", "bi-uplink", 'uplink'],
+                                    _color=None,
+                                    _color_edge='red',
+                                    _figsize=(x_fig_size, y_fig_size),
+                                    _show_bar_value=True,
+                                    _text_font=6,
+                                    _text_rotation=True,
+                                    _enable_csv=True)
     graph_html_obj = """
         <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (graph.build_bar_graph_horizontal()) + """ border='1' />
         <br><br>
