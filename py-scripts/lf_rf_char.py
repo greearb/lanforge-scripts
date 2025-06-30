@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # flake8: noqa
-
 """
 NAME: lf_rf_test.py
 
@@ -1194,7 +1193,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                         help="number of attempts to check for DHCP lease before aborting script",
                         type=int,
                         default=20)
-    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')    
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
     return parser.parse_args()
 
@@ -1209,18 +1208,21 @@ def validate_args(args: argparse.Namespace):
         logger.error("--vap_port is a required parameter")
         exit(1)
 
-    if not args.vap_port:
+    if not args.vap_radio:
         logger.error("--vap_radio is a required parameter")
         exit(1)
 
-    if not args.vap_vw:
-        logger.error("--vap_radio is a required parameter")
+    if not args.vap_bw:
+        logger.error("--vap_bw is a required parameter")
         exit(1)
 
     if not args.vap_channel:
-        logger.error("--vap_radio is a required parameter")
+        logger.error("--vap_channel is a required parameter")
         exit(1)
 
+    if not args.vap_antenna:
+        logger.error("--vap_antenna is a required parameter")
+        exit(1)
 
     # vAP radio required as full EID
     if not args.vap_radio.startswith("1."):
@@ -1457,10 +1459,10 @@ def generate_report(rf_char: RfCharTest,
     data_set_debug = """inspect data sets for even distribution:
         tx_interval: {}
         tx_interval_time: {}
-        rssi_signal: {} 
-        rssi_1: {} 
-        rssi_2: {} 
-        rssi_3: {} 
+        rssi_signal: {}
+        rssi_1: {}
+        rssi_2: {}
+        rssi_3: {}
         rssi_4: {}""".format(len(tx_interval),
                              len(tx_interval_time),
                              len(rssi_signal),
@@ -2547,7 +2549,7 @@ The purpose of this script is to do RF Characteristics Test.  This script is a w
 '''
     if args.help_summary:
         print(help_summary)
-        exit(0)        
+        exit(0)
 
     configure_logger(log_level=args.log_level,
                      logger_json_config=args.lf_logger_config_json)
