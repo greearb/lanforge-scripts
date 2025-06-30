@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 
 """
 NAME: create_l3_stations.py
@@ -289,9 +288,9 @@ class CreateL3(Realm):
 def main():
     help_summary = '''\
     This script creates a variable number of stations with individual cross-connects and endpoints.
-    The stations are initially set to the UP state, but the cross-connections are kept in a stopped state. It also 
+    The stations are initially set to the UP state, but the cross-connections are kept in a stopped state. It also
     supports batch creation functionality, making it convenient to generate multiple stations at once.
-    
+
     The script will creates stations & CX only, will not run/start traffic and will not generate any report.
         '''
     parser = LFCliBase.create_basic_argparse(
@@ -485,6 +484,7 @@ INCLUDE_IN_README: False
         ip_var_test.exit_success()
     else:
         ip_var_test.exit_fail()
+
 
 if __name__ == "__main__":
     main()
