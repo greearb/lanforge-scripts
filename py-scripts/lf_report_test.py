@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 '''
 NAME: lf_report_test.py
 
@@ -41,7 +40,7 @@ lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
 
 def main():
     # Testing: generate data frame
-    help_summary='''\
+    help_summary = '''\
      This script is useful to test the functionality of the lf_graph and lf_report modules and generates pdf and html reports
     '''
     parser = argparse.ArgumentParser(
@@ -75,7 +74,7 @@ INCLUDE_IN_README
         default='localhost')
     # the args parser is not really used , this is so the report is not generated when testing
     # the imports with --help
-    parser.add_argument('--help_summary',help='provides help_summary to understand the script',action="store_true")
+    parser.add_argument('--help_summary', help='provides help_summary to understand the script', action="store_true")
     args = parser.parse_args()
     if args.help_summary:
         print(help_summary)
@@ -255,7 +254,8 @@ INCLUDE_IN_README
     # report.write_pdf(_page_size = 'A4', _orientation='Landscape')
     report.write_pdf(_page_size='Legal', _orientation='Landscape')
     # report.write_pdf(_page_size = 'Legal', _orientation='Portrait')
-
     # report.generate_report()
+
+
 if __name__ == "__main__":
     main()
