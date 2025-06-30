@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_rf_test.py
 
@@ -36,9 +35,9 @@ import logging
 import importlib
 import datetime
 import pandas as pd
-import json
-import traceback
-import csv
+# import json
+# import traceback
+# import csv
 import time
 import re
 import platform
@@ -47,10 +46,10 @@ import numpy as np
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
-from lanforge_client.logg import Logg
+from lanforge_client.logg import Logg  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonQuery  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonCommand  # noqa: E402
+from lanforge_client.lanforge_api import LFSession  # noqa: E402
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 lf_json_api = importlib.import_module("py-scripts.lf_json_api")
@@ -127,7 +126,7 @@ class RfCharTest(Realm):
 
         self.polling_interval = polling_interval
         self.duration = duration
-        self.timeout_sec = timeout_sec # max seconds to establish the traffic command
+        self.timeout_sec = timeout_sec  # max seconds to establish the traffic command
 
         self.frame = frame
         self.frame_interval = frame_interval
@@ -139,7 +138,7 @@ class RfCharTest(Realm):
 
         self.gen_endpoint = ''
         self.cx_state = ''
-        self.bookmark_event_id : int = 0
+        self.bookmark_event_id: int = 0
 
         # create api_json
         self.json_vap_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
@@ -197,7 +196,6 @@ class RfCharTest(Realm):
         # logging
         self.debug = debug
 
-
     def remove_generic_cx(self):
         # self.command.die_on_error = False
         # self.exit_on_error = False
@@ -235,7 +233,6 @@ class RfCharTest(Realm):
                                               suppress_related_commands=True,
                                               debug=True)
 
-
     def get_recent_lease_events(self):
         """
         Check DHCP lease info from DHCP events.
@@ -262,20 +259,19 @@ class RfCharTest(Realm):
         # pprint(["events", dhcp_events])
         return dhcp_events
 
-
     def dut_info(self):
         self.json_vap_api.request = 'stations'
         json_stations = []
         sta_ap = ''
         dut_ip = ''
         dut_mac = ''
-        dut_hostname = ''
+        # dut_hostname = ''
 
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
         self.vap_eid = "%s.%s.%s" % (self.shelf, self.resource, self.port_name)
 
         event_recs = self.get_recent_lease_events()
-        other_findings : dict = {}
+        other_findings: dict = {}
         # look for event containing the vap_name then get the station IP from events
 
         logger.info(f"Gathering station DUT info from vAP \'{self.port_name}\' events")
@@ -284,7 +280,7 @@ class RfCharTest(Realm):
             if not (('event description' in record) or record['event description']):
                 continue
 
-            hunks : list[str] = record['event description'].split(" ")
+            hunks: list[str] = record['event description'].split(" ")
             if hunks[6] != self.port_name:
                 if hunks[6] not in other_findings:
                     other_findings[hunks[6]] = []
@@ -344,12 +340,12 @@ class RfCharTest(Realm):
 
             if sta_ap == "":
                 logger.info("  No stations using vAP [%s]" % self.vap_eid)
-                station_macs : list[str] = []
+                station_macs: list[str] = []
                 for record in json_stations['stations']:
                     bss = next(iter(record))
-                    station_macs.append(bss[bss.rindex('.')+1:])
-                logger.info("   stations seen: "+", ".join(station_macs))
-                #logger.warning(pformat(json_stations))
+                    station_macs.append(bss[bss.rindex('.') + 1:])
+                logger.info("   stations seen: " + ", ".join(station_macs))
+                # logger.warning(pformat(json_stations))
                 return False
 
         # Make sure the station is on correct IP vap
@@ -393,7 +389,7 @@ class RfCharTest(Realm):
                     if (m is not None):
                         dut_mac = m.group(1)
                         dut_ip = m.group(2)
-                        dut_hostname = m.group(3)
+                        # dut_hostname = m.group(3)
                     else:
                         pat = "(\\S+)\\s+(\\S+)"
                         m = re.search(pat, line)
@@ -407,7 +403,7 @@ class RfCharTest(Realm):
                 logger.error(f"Port probe MAC mismatch. Expected {self.dut_mac}, found {dut_mac}")
                 return False
             self.dut_ip = dut_ip
-            #self.dut_hostname = dut_hostname
+            # self.dut_hostname = dut_hostname
 
         logger.info(f"Found station DUT with MAC {self.dut_mac} and IPv4 address {self.dut_ip}")
         return True
@@ -527,7 +523,6 @@ class RfCharTest(Realm):
                               debug=False,
                               timeout=10)
 
-
     def set_cx_state(self):
         self.command.post_set_cx_state(cx_name=self.gen_endpoint,
                                        cx_state=self.cx_state,
@@ -544,8 +539,6 @@ class RfCharTest(Realm):
             if noun in events_rec:
                 # pprint(events_rec[noun])
                 self.bookmark_event_id = int(events_rec[noun]["id"])
-
-
 
     def configure_vap(self):
         """Configure vAP including mode, channel, channel width, txpower."""
@@ -568,23 +561,23 @@ class RfCharTest(Realm):
 
         vap_flags = "NA"
         vap_flagmask = "NA"
-        t_channel : int = 0
-        t_band : int = 0
+        t_channel: int = 0
+        t_band: int = 0
 
         if "e" in self.vap_channel:
             # we are 6Ghz
-            t_channel = int( self.vap_channel[0:-1])
+            t_channel = int(self.vap_channel[0:-1])
             logger.warning("6gz channel is {}".format(t_channel))
             if (t_channel >= 1) and (t_channel <= 233):
-                t_band=6
+                t_band = 6
         else:
             t_channel = int(self.vap_channel)
             if (t_channel >= 1) and (t_channel <= 15):
-                t_band=2
+                t_band = 2
             elif (t_channel >= 32) and (t_channel <= 177):
-                t_band=5
+                t_band = 5
             elif (t_channel >= 191):
-                t_band=6
+                t_band = 6
         if t_channel == 0:
             raise Exception("strange channel: {}".format(self.vap_channel))
         if t_band < 2:
@@ -603,8 +596,8 @@ class RfCharTest(Realm):
             | self.command.AddVapFlags.use_rrm_report
         t_flags: int = -1
         t_flagmask: int = self.command.AddVapFlags.disable_ht40 \
-                            | self.command.AddVapFlags.disable_ht80 \
-                            | self.command.AddVapFlags.ht160_enable
+            | self.command.AddVapFlags.disable_ht80 \
+            | self.command.AddVapFlags.ht160_enable
         if t_band == 6:
             # have to specify hostapd_config in flags to make sure that custom config
             # checkbox gets turned off
@@ -627,8 +620,8 @@ class RfCharTest(Realm):
 
             if self.vap_bw == "20":
                 t_flags |= self.command.AddVapFlags.disable_ht40
-                    # disabling ht80 appears to remove usefulness of disable_ht40
-                    # | self.command.AddVapFlags.disable_ht80
+                # disabling ht80 appears to remove usefulness of disable_ht40
+                # | self.command.AddVapFlags.disable_ht80
             if self.vap_bw == "40":
                 t_flags |= self.command.AddVapFlags.disable_ht80
             if self.vap_bw == "80":
@@ -652,10 +645,10 @@ class RfCharTest(Realm):
 
         v_name = self.vap_port
         if self.vap_port.find('.') > -1:
-            v_name = self.vap_port[self.vap_port.rindex('.')+1:]
+            v_name = self.vap_port[self.vap_port.rindex('.') + 1:]
         r_name = self.vap_radio
         if self.vap_radio.find('.') > -1:
-            r_name = self.vap_radio[self.vap_radio.rindex('.')+1:]
+            r_name = self.vap_radio[self.vap_radio.rindex('.') + 1:]
 
         logger.debug("configure_vap: vap_mode            [{}]".format(self.vap_mode))
         logger.debug("configure_vap: vap_radio           [{}]".format(self.vap_radio))
@@ -675,7 +668,7 @@ class RfCharTest(Realm):
                                   flags_mask=vap_flagmask,
                                   debug=True)
         queried_mode = "none"
-        e_w : list = []
+        e_w: list = []
         poll_start_sec = lanforge_api._now_sec()
         deadline_sec = poll_start_sec + 16
         while (queried_mode == "none") and (deadline_sec > lanforge_api._now_sec()):
@@ -686,7 +679,7 @@ class RfCharTest(Realm):
             if not response:
                 logger.error("No response to query get_port()")
             else:
-                logger.debug(" Response: %s"        % pformat(response))
+                logger.debug(" Response: %s" % pformat(response))
             if e_w:
                 logger.warning("get_port warnings: %s" % pformat(e_w))
             if "mode" in response:
@@ -706,10 +699,10 @@ class RfCharTest(Realm):
         # again. Lets prompt the port and the virtual router to
         # refresh to help get our dhcp leases visible as soon as possible
         time.sleep(1)
-        ncsp_flags : int = LFJsonCommand.NcShowPortsProbeFlags.WIFI \
-                            | LFJsonCommand.NcShowPortsProbeFlags.MII \
-                            | LFJsonCommand.NcShowPortsProbeFlags.BRIDGE \
-                            | LFJsonCommand.NcShowPortsProbeFlags.GW
+        ncsp_flags: int = LFJsonCommand.NcShowPortsProbeFlags.WIFI \
+            | LFJsonCommand.NcShowPortsProbeFlags.MII \
+            | LFJsonCommand.NcShowPortsProbeFlags.BRIDGE \
+            | LFJsonCommand.NcShowPortsProbeFlags.GW
         self.command.post_nc_show_ports(shelf=1,
                                         resource=self.resource,
                                         port=self.port_name,
@@ -720,7 +713,6 @@ class RfCharTest(Realm):
         self.command.post_show_vr(shelf=1, resource=self.resource, router='all')
         self.command.post_show_vrcx(shelf=1, resource=self.resource, cx_name='all')
 
-
     def verify_dut_stations(self, deadline_millis: int, dhcp_lookup_ms: int, max_dhcp_lookups: int):
         """
         Verify that there exists one or more station DUTs with DHCP leases from the vAP DUT.
@@ -729,7 +721,7 @@ class RfCharTest(Realm):
         begin_lease_lookup_ms = now_millis()
         last_vap_reset = now_millis()
         try_count = int(max_dhcp_lookups)
-        found_station : bool = False
+        found_station: bool = False
 
         # Iterate for defined number of tries, counting down 'try_count' until we find
         # stations with DHCP leases corresponding to this vAP
@@ -748,10 +740,10 @@ class RfCharTest(Realm):
             self.command.post_nc_show_ports(shelf=1,
                                             resource=self.resource,
                                             port=self.port_name,
-                                            probe_flags=(LFJsonCommand.NcShowPortsProbeFlags.WIFI \
-                                                            | LFJsonCommand.NcShowPortsProbeFlags.MII \
-                                                            | LFJsonCommand.NcShowPortsProbeFlags.ETHTOOL \
-                                                            | LFJsonCommand.NcShowPortsProbeFlags.EASY_IP_INFO),
+                                            probe_flags=(LFJsonCommand.NcShowPortsProbeFlags.WIFI |
+                                                         LFJsonCommand.NcShowPortsProbeFlags.MII |
+                                                         LFJsonCommand.NcShowPortsProbeFlags.ETHTOOL |
+                                                         LFJsonCommand.NcShowPortsProbeFlags.EASY_IP_INFO),
                                             debug=self.debug)
             # rf_char.command.post_show_vr(shelf=1, resource=rf_char.resource, router='all', debug=rf_char.debug)
 
@@ -759,7 +751,7 @@ class RfCharTest(Realm):
                                          resource=self.resource,
                                          port=self.port_name,
                                          key='probe_port.quiet.' + self.vap_eid)
-            time.sleep(dhcp_lookup_ms/1000)
+            time.sleep(dhcp_lookup_ms / 1000)
             try_count -= 1
 
             # A vAP can take about 15 seconds to acquire a lease, hopefully 10.
@@ -769,7 +761,7 @@ class RfCharTest(Realm):
                 logger.warning(f"Resetting vAP port {v_name}")
 
                 if v_name.find('.') > -1:
-                    v_name = self.vap_port[ self.vap_port.rindex('.')+1 :]
+                    v_name = self.vap_port[self.vap_port.rindex('.') + 1:]
 
                 self.command.post_reset_port(shelf=1,
                                              resource=self.resource,
@@ -856,7 +848,7 @@ class RfCharTest(Realm):
         cur_time = datetime.datetime.now()
         end_time = self.parse_time(self.duration) + cur_time
         polling_interval_milliseconds = self.duration_time_to_milliseconds(self.polling_interval)
-        sleep_interval = (polling_interval_milliseconds/1000)/2
+        sleep_interval = (polling_interval_milliseconds / 1000) / 2
         interval = 0
         # initialize time stamps
         json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
@@ -909,7 +901,7 @@ class RfCharTest(Realm):
             # port not needed for all
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
             logger.info("json_stations {json}".format(json=pformat(json_stations)))
-            chain_rssi : list = []
+            chain_rssi: list = []
             if "station" in json_stations:
                 self.rssi_signal.append(json_stations['station']['signal'])
                 chain_rssi_str = json_stations['station']['chain rssi']
@@ -919,7 +911,7 @@ class RfCharTest(Realm):
                 # pprint(json_stations)
                 # This should give us faster lookup if I knew how to use it.
                 # sta_key = "0.0.0.%s"%(self.dut_mac)
-                #pprint("key: %s"%(sta_key))
+                # pprint("key: %s"%(sta_key))
                 for s in json_stations['stations']:
                     keys = list(s.keys())
                     vals = s[keys[0]]
@@ -971,8 +963,8 @@ class RfCharTest(Realm):
         # TODO make the get_request more generic just set the request
         self.json_rad_api.request = 'wifi-stats'
         # Read the vap device stats, it will also be able to report underlying radio stats as needed.
-        request_attempts : int = 6
-        json_wifi_stats : dict = None
+        request_attempts: int = 6
+        json_wifi_stats: dict = None
         while request_attempts >= 0:
             request_attempts -= 1
             json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information(port=self.vap_port)
@@ -984,7 +976,7 @@ class RfCharTest(Realm):
                 continue
             request_attempts = -1
 
-        logger.debug("wifi-stats output, vap-radio: %s radio port name %s:"%(self.vap_radio, self.port_name))
+        logger.debug("wifi-stats output, vap-radio: %s radio port name %s:" % (self.vap_radio, self.port_name))
         # pprint(json_wifi_stats)
 
         # Stop Traffic
@@ -1013,6 +1005,7 @@ def num_sort(strn):
     if len(computed_num) > 0:
         return int(computed_num[0])
     return -1
+
 
 def length_sort(strn):
     return len(strn[0])
@@ -1259,7 +1252,7 @@ def validate_args(args: argparse.Namespace):
             exit(1)
 
         txpower_int = int(txpower_int_str)
-        if not(-1 <= txpower_int and txpower_int <= 30):
+        if not (-1 <= txpower_int and txpower_int <= 30):
             logger.error("vAP TX power must be either \'DEFAULT\' or an integer within range -1 to 30, inclusive")
             exit(1)
 
@@ -1328,7 +1321,7 @@ def configure_reporting(no_html: bool,
 
     # Configure report CSV generation
     # TODO: Use KPI CSV?
-    #kpi_csv = lf_kpi_csv.lf_kpi_csv(
+    # kpi_csv = lf_kpi_csv.lf_kpi_csv(
     #    _kpi_path=kpi_path,
     #    _kpi_test_rig=test_rig,
     #    _kpi_test_tag=test_tag,
@@ -1345,7 +1338,7 @@ def configure_reporting(no_html: bool,
         csv_outfile = report.file_add_path(csv_outfile)
         logger.info(f"Test CSV data will be output to file \'{csv_outfile}\'")
     else:
-        logger.info(f"No CSV output file specified, disabling test CSV data output")
+        logger.info("No CSV output file specified, disabling test CSV data output")
 
     return report
 
@@ -1478,11 +1471,11 @@ def generate_report(rf_char: RfCharTest,
                                      " RSSI 1 ": [i for i in rssi_1],
                                      " RSSI 2 ": [j for j in rssi_2],
                                      " RSSI 3 ": [m for m in rssi_3],
-                                     " RSSI 4 ": [l for l in rssi_4]})
+                                     " RSSI 4 ": [n for n in rssi_4]})
     except Exception as e:
         logger.error("Unable to build pandas DataFrame. Check for uneven data.")
         print(e)
-        print (data_set_debug)
+        print(data_set_debug)
         sys.exit(1)
 
     report.set_table_dataframe(df_rssi_info.replace(np.nan, ''))
@@ -1520,20 +1513,20 @@ def generate_report(rf_char: RfCharTest,
         report.build_graph()
 
     # tx-rate / rx-rate negotiated rates line chart
-    rx_rates : list[float] = []
-    tx_rates : list[float] = []
+    rx_rates: list[float] = []
+    tx_rates: list[float] = []
 
     for index in range(0, min(len(rf_char.rx_rate), len(rf_char.tx_rate))):
         rx_str = rf_char.rx_rate[index]
         tx_str = rf_char.tx_rate[index]
         # print ("t:[{}] r:[{}] ".format(tx_str, rx_str))
         if "Mbps" in rx_str:
-            rx_rates.append(float(rx_str[0 : rx_str.find(" ")]))
+            rx_rates.append(float(rx_str[0: rx_str.find(" ")]))
         else:
             rx_rates.append(0.0)
 
         if "Mbps" in tx_str:
-            tx_rates.append(float(tx_str[0 : tx_str.find(" ")]))
+            tx_rates.append(float(tx_str[0: tx_str.find(" ")]))
         else:
             tx_rates.append(0.0)
 
@@ -2544,7 +2537,7 @@ def generate_report(rf_char: RfCharTest,
 
 def main():
     args = parse_args()
-    help_summary='''\
+    help_summary = '''\
 The purpose of this script is to do RF Characteristics Test.  This script is a work in progress put on hold.
 '''
     if args.help_summary:
