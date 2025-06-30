@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-# flake8: noqa
+import sys
+import json
+import logging
+import logging.config
+import argparse  # used for help summary
 
-help_summary='''\
+help_summary = '''\
 This program is a helper  class for setting up python logger
 This helper is used by most of the LANforge python scripts.
 '''
 
 
-script_description="""
+script_description = """
 NAME: lf_logger_config.py
 
 PURPOSE:
@@ -60,13 +64,6 @@ LICENSE:
 
 INCLUDE_IN_README
 """
-
-import sys
-import json
-import logging
-import logging.config
-import argparse # used for help summary
-
 
 # gets the root logger
 logger = logging.getLogger()
