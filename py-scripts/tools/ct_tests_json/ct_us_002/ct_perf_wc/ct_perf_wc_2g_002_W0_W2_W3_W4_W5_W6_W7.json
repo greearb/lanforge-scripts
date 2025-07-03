@@ -5,7 +5,7 @@
             "When doing a create_chamberview.py --create_scenario <name> ",
             "has no correlation to the --instance_name , instance name is used ",
             "as a unique identifier for tha chamber-view test run"
-        ]  
+        ]
     },
     "test_suites":{
         "wc_perf_2g_W0_W2_W3_W4_W5_W6_W7":{
@@ -115,7 +115,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario WC_ATH10K_9984_2G_W0 ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 32 'DUT: USE_DUT_NAME Radio-1' NA wiphy3,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 64 'DUT: USE_DUT_NAME Radio-1' NA wiphy3,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
@@ -378,6 +378,6 @@
                     " "
                 ]
             }
-        }         
+        }
     }
 }
