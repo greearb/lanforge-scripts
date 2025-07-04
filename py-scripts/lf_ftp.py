@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_ftp.py
 
@@ -2665,7 +2664,7 @@ some amount of file data from the FTP server while measuring the time taken by c
         logger_config.load_lf_logger_config()
 
     # 1st time stamp for test duration
-    time_stamp1 = datetime.now()
+    # time_stamp1 = datetime.now()
 
     # use for creating ftp_test dictionary
     interation_num = 0
@@ -2837,7 +2836,7 @@ some amount of file data from the FTP server while measuring the time taken by c
                 logger.info("Test ended at %s", time2)
 
     # 2nd time stamp for test duration
-    time_stamp2 = datetime.now()
+    # time_stamp2 = datetime.now()
 
     # total time for test duration
     # test_duration = str(time_stamp2 - time_stamp1)[:-7]
