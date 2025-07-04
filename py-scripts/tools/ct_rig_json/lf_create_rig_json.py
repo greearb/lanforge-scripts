@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 '''
 NAME: lf_create_rig_json.py
 
@@ -52,7 +51,6 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../../")))
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
-
 
 
 class lf_create_rig_json():
@@ -185,7 +183,6 @@ INCLUDE_IN_README: False
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
-
     args = parser.parse_args()
 
     # set up logger
@@ -201,22 +198,20 @@ INCLUDE_IN_README: False
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-
     if args.test_server is None:
         _test_server = args.lf_mgr
     else:
-        _test_server = args.test_server        
-    _file=args.file
-    _lf_mgr=args.lf_mgr
-    _lf_mgr_port=args.lf_mgr_port
-    _lf_user=args.lf_user
-    _lf_passwd=args.lf_passwd
-    _test_rig=args.test_rig
-    _test_bed=args.test_bed
-    _test_db=args.test_db
-    _upstream_port=args.upstream_port
-    _test_timeout=args.test_timeout
-    
+        _test_server = args.test_server
+    _file = args.file
+    _lf_mgr = args.lf_mgr
+    _lf_mgr_port = args.lf_mgr_port
+    _lf_user = args.lf_user
+    _lf_passwd = args.lf_passwd
+    _test_rig = args.test_rig
+    _test_bed = args.test_bed
+    _test_db = args.test_db
+    _upstream_port = args.upstream_port
+    _test_timeout = args.test_timeout
 
     rig_json = lf_create_rig_json(_file=_file,
                                   _lf_mgr=_lf_mgr,
