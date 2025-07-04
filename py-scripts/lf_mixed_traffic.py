@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_mixed_traffic.py
 
@@ -796,15 +795,15 @@ class Mixed_Traffic(Realm):
                                 'sent': result_data['tx pkts'],
                                 'recv': result_data['rx pkts'],
                                 'dropped': result_data['dropped'],
-                                'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
-                                'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
-                                'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
+                                'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
+                                'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
+                                'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
                                 'mac': current_device_data['mac'],
                                 'channel': current_device_data['channel'],
                                 'ssid': current_device_data['ssid'],
                                 'mode': current_device_data['mode'],
                                 'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
-                                'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
+                                'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],  # noqa: E501
                                 'remarks': [],
                                 'last_result': [result_data['last results'].split('\n')[-2] if len(result_data['last results']) != 0 else ""][0]}
                             result_json[station]['remarks'] = self.ping_test_obj.generate_remarks(result_json[station])
@@ -819,15 +818,15 @@ class Mixed_Traffic(Realm):
                                     'sent': ping_data['tx pkts'],
                                     'recv': ping_data['rx pkts'],
                                     'dropped': ping_data['dropped'],
-                                    'min_rtt': [(ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0]).replace(',', '') if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
-                                    'avg_rtt': [(ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1]).replace(',', '') if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
-                                    'max_rtt': [(ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2]).replace(',', '') if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
+                                    'min_rtt': [(ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[0]).replace(',', '') if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
+                                    'avg_rtt': [(ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[1]).replace(',', '') if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
+                                    'max_rtt': [(ping_data['last results'].split('\n')[-2].split()[-1].split(':')[-1].split('/')[2]).replace(',', '') if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
                                     'mac': current_device_data['mac'],
                                     'channel': current_device_data['channel'],
                                     'ssid': current_device_data['ssid'],
                                     'mode': current_device_data['mode'],
                                     'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
-                                    'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],
+                                    'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],  # noqa: E501
                                     'remarks': [],
                                     'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]}
                                 result_json[station]['remarks'] = self.ping_test_obj.generate_remarks(result_json[station])
@@ -847,9 +846,9 @@ class Mixed_Traffic(Realm):
                                     'sent': result_data['tx pkts'],
                                     'recv': result_data['rx pkts'],
                                     'dropped': result_data['dropped'],
-                                    'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
-                                    'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
-                                    'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],
+                                    'min_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
+                                    'avg_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
+                                    'max_rtt': [result_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(result_data['last results']) != 0 and 'min/avg/max' in result_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
                                     'mac': current_device_data['mac'],
                                     'channel': current_device_data['channel'],
                                     'ssid': current_device_data['ssid'],
@@ -871,9 +870,9 @@ class Mixed_Traffic(Realm):
                                         'sent': ping_data['tx pkts'],
                                         'recv': ping_data['rx pkts'],
                                         'dropped': ping_data['dropped'],
-                                        'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
-                                        'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
-                                        'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],
+                                        'min_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[0] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
+                                        'avg_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[1] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
+                                        'max_rtt': [ping_data['last results'].split('\n')[-2].split()[-1].split('/')[2] if len(ping_data['last results']) != 0 and 'min/avg/max' in ping_data['last results'].split('\n')[-2] else '0'][0],  # noqa: E501
                                         'mac': current_device_data['mac'],
                                         'channel': current_device_data['channel'],
                                         'ssid': current_device_data['ssid'],
@@ -959,7 +958,7 @@ class Mixed_Traffic(Realm):
                 self.qos_test_obj.avg_drop_b = []
                 time.sleep(10)
                 try:
-                    connections_download, connections_upload, drop_a_per, drop_b_per, self.qos_test_obj.connections_download_avg, self.qos_test_obj.connections_upload_avg, self.qos_test_obj.avg_drop_a, self.qos_test_obj.avg_drop_b = self.qos_test_obj.monitor()
+                    connections_download, connections_upload, drop_a_per, drop_b_per, self.qos_test_obj.connections_download_avg, self.qos_test_obj.connections_upload_avg, self.qos_test_obj.avg_drop_a, self.qos_test_obj.avg_drop_b = self.qos_test_obj.monitor()  # noqa: E501
                 except Exception as e:
                     print(f"Failed at Monitoring the CX... {e}")
                 self.qos_test_obj.stop()
@@ -1006,7 +1005,7 @@ class Mixed_Traffic(Realm):
                 self.qos_test_obj.generate_report(data=self.data,
                                                   input_setup_info={"contact": "support@candelatech.com"},
                                                   report_path=self.report_path,
-                                                  result_dir_name=f"Qos_Test_Report_{qos_tos_real}{band}", connections_upload_avg=self.qos_test_obj.connections_upload_avg, connections_download_avg=self.qos_test_obj.connections_download_avg, avg_drop_a=self.qos_test_obj.avg_drop_a, avg_drop_b=self.qos_test_obj.avg_drop_b)
+                                                  result_dir_name=f"Qos_Test_Report_{qos_tos_real}{band}", connections_upload_avg=self.qos_test_obj.connections_upload_avg, connections_download_avg=self.qos_test_obj.connections_download_avg, avg_drop_a=self.qos_test_obj.avg_drop_a, avg_drop_b=self.qos_test_obj.avg_drop_b)  # noqa: E501
 
                 self.data_set, self.load, self.res = self.qos_test_obj.generate_graph_data_set(self.data)
 
@@ -1303,7 +1302,7 @@ class Mixed_Traffic(Realm):
                 self.http_obj.devices_list = self.user_query[1]
                 self.http_obj.macid_list = self.user_query[2]
                 # removing the iOS devices from station list
-                self.http_obj.port_list, self.http_obj.devices_list, self.http_obj.macid_list = self.filter_iOS_devices(self.user_query[0], self.user_query[1], self.user_query[2])
+                self.http_obj.port_list, self.http_obj.devices_list, self.http_obj.macid_list = self.filter_iOS_devices(self.user_query[0], self.user_query[1], self.user_query[2])  # noqa: E501
                 self.http_dev = self.http_obj.devices_list
                 self.http_mac = self.http_obj.macid_list
                 if (len(self.http_obj.port_list) == 0):
@@ -1658,7 +1657,8 @@ class Mixed_Traffic(Realm):
             logger.info("Start the test and run for a duration")
             # TODO: Check return value of start()
             self.multicast_test_obj.start(False)
-            csv_results_file = self.multicast_test_obj.get_results_csv()
+            # csv_results_file = self.multicast_test_obj.get_results_csv()
+            self.multicast_test_obj.get_results_csv()
             report.set_title("Multicast Test")
             report.build_banner_cover()
             report.start_content_div2()
@@ -1726,7 +1726,7 @@ class Mixed_Traffic(Realm):
             "DUT Firmware": self.dut_firmware,
             "SSID": self.ssid,
             "Security": self.security,
-            "No of Devices": f"{len(self.user_query[0]) if self.real else len(self.station_list)} (Virtual Clients: {virtual_sta_count}, Windows: {windows_count}, Linux: {linux_count}, Mac: {mac_count}, Android: {android_count} ,iOS: {ios_count})",
+            "No of Devices": f"{len(self.user_query[0]) if self.real else len(self.station_list)} (Virtual Clients: {virtual_sta_count}, Windows: {windows_count}, Linux: {linux_count}, Mac: {mac_count}, Android: {android_count} ,iOS: {ios_count})",  # noqa: E501
             "Test Duration (HH:MM:SS)": self.time_formate}
         self.lf_report_mt.set_table_title("Test Setup Information")
         self.lf_report_mt.build_table_title()
@@ -1958,7 +1958,7 @@ class Mixed_Traffic(Realm):
                                                   _yaxis_name="Throughput (Mbps)",
                                                   _xaxis_categories=["BK,BE,VI,VO"],
                                                   _xaxis_label=['1 Mbps', '2 Mbps', '3 Mbps', '4 Mbps', '5 Mbps'],
-                                                  _graph_image_name=f"tos_",
+                                                  _graph_image_name="tos_",
                                                   _label=["BK", "BE", "VI", "VO"],
                                                   _xaxis_step=1,
                                                   _graph_title=f"Overall {qos_obj.direction} throughput – BK,BE,VO,VI traffic streams",
@@ -1994,8 +1994,8 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.test_setup_table(test_setup_data=ftp_test_config_df, value="Test Setup Information")
                 self.lf_report_mt.set_obj_html(_obj_title=f"No.of times file {self.ftp_test_obj.direction}",
                                                _obj=f"The below graph represents number of times a file {self.ftp_test_obj.direction} for each client"
-                                                    f" (WiFi) traffic.  X-axis shows “No of times file {self.ftp_test_obj.direction}” and Y-axis shows "
-                                                    f"“Client names“.")
+                                               f" (WiFi) traffic.  X-axis shows “No of times file {self.ftp_test_obj.direction}” and Y-axis shows "
+                                               f"“Client names“.")
                 self.lf_report_mt.build_objective()
                 sta_list = ""
                 if self.real:
@@ -2032,7 +2032,7 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.build_graph()
                 self.lf_report_mt.set_obj_html(_obj_title=f"Average time taken to {self.ftp_test_obj.direction} file ",
                                                _obj=f"The below graph represents average time taken to {self.ftp_test_obj.direction} for each client  "
-                                                    f"(WiFi) traffic.  X-axis shows “Average time taken to {self.ftp_test_obj.direction} a file ” and Y-axis shows “Client names“.")
+                                               f"(WiFi) traffic.  X-axis shows “Average time taken to {self.ftp_test_obj.direction} a file ” and Y-axis shows “Client names“.")
                 self.lf_report_mt.build_objective()
                 graph = lf_graph.lf_bar_graph_horizontal(_data_set=[self.ftp_test_obj.uc_avg],
                                                          _xaxis_name=f"Average time taken to {self.ftp_test_obj.direction} file in ms",
@@ -2148,7 +2148,7 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.test_setup_table(test_setup_data=multicast_test_config_df, value="Test Setup Information")
                 for tos in tos_list:
                     if self.client_dict_A[tos]["ul_A"] and self.client_dict_A[tos]["dl_A"]:
-                        min_bps_a = self.client_dict_A["min_bps_a"]
+                        # min_bps_a = self.client_dict_A["min_bps_a"]
                         min_bps_b = self.client_dict_A["min_bps_b"]
 
                         client_ul_A_data = []
@@ -2199,7 +2199,7 @@ class Mixed_Traffic(Realm):
                         self.lf_report_mt.set_obj_html(
                             _obj_title=f"Individual throughput with intended load {int(min_bps_b) / 1000000} Mbps station for traffic {tos} (WiFi).",
                             _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
-                                 f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “Throughput in Mbps”.")
+                            f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “Throughput in Mbps”.")
                         self.lf_report_mt.build_objective()
                         graph = lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
                                                                  _xaxis_name="Throughput in Mbps",
@@ -2539,7 +2539,7 @@ INCLUDE_IN_README: False
     Bands = args.band[0].split(',')
 
     # checking all required arguments for wifi config
-    if (args.use_default_config == False):
+    if (args.use_default_config is False):
         if ('2.4G' in Bands):
             if (args.twog_ssid is None):
                 print('--twog_ssid is required')
@@ -2594,7 +2594,7 @@ INCLUDE_IN_README: False
     configure = not args.use_default_config
     # Virtual stations setting up the start_id, num_sta, sta_list
     # num_sta = args.num_stations
-    station_list = []
+    # station_list = []
 
     # for creating directory and placing reports
     parent_dir = os.getcwd()
@@ -2848,7 +2848,7 @@ INCLUDE_IN_README: False
                             mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = t3_parent.recv()
                             t3.join()
                         if "4" in args.tests:
-                            mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2, mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status = t4_parent.recv()
+                            mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2, mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status = t4_parent.recv()  # noqa: E501
                             t4.join()
                         if "5" in args.tests:
                             class temp_multi_cast_obj():
@@ -2931,7 +2931,7 @@ INCLUDE_IN_README: False
             mixed_obj.ssid = ssid
             mixed_obj.security = security
             # tests will run with respect to bands
-            logger.info("Selected Tests List: ".format(args.tests))
+            logger.info(f"Selected Tests List: {args.tests}")
             if args.tests:
                 if args.parallel:
                     if "1" in args.tests:
@@ -3047,7 +3047,7 @@ INCLUDE_IN_README: False
                         mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = t3_parent.recv()
                         t3.join()
                     if "4" in args.tests:
-                        mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2, mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status = t4_parent.recv()
+                        mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2, mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status = t4_parent.recv()  # noqa: E501
                         t4.join()
                     if "5" in args.tests:
                         class temp_multi_cast_obj():
