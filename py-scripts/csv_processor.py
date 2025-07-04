@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
-# flake8: noqa
 import sys
 import os
 import argparse
 import pandas as pd
 
-#https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html
-#https://queirozf.com/entries/pandas-dataframe-plot-examples-with-matplotlib-pyplot
+# https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html
+# https://queirozf.com/entries/pandas-dataframe-plot-examples-with-matplotlib-pyplot
 
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-class L3CSVParcer():
-    def __init__(self,csv_file):
 
+class L3CSVParcer():
+    def __init__(self, csv_file):
 
         # left this in for testing
         '''csv_obj = open(csv_file, 'r')
@@ -29,21 +28,21 @@ class L3CSVParcer():
             if row[1] == 'rx':
                 print(row)'''
 
-        include_summary = ['Time epoch','Time','Monitor','least','most','average']
+        include_summary = ['Time epoch', 'Time', 'Monitor', 'least', 'most', 'average']
         self.csv_file = csv_file
-        df_s = pd.read_csv(self.csv_file,header = 0, usecols = lambda column : any(substr in column for substr in include_summary))
+        df_s = pd.read_csv(self.csv_file, header=0, usecols=lambda column: any(substr in column for substr in include_summary))
 
         print('{}'.format(csv_file))
-        csv_file_summary = self.csv_file.replace('results_','results_summary_')
+        csv_file_summary = self.csv_file.replace('results_', 'results_summary_')
 
-        df_s.to_csv(csv_file_summary, index = False, header=True)
+        df_s.to_csv(csv_file_summary, index=False, header=True)
 
-        include_raw = ['Time epoch','Time','Monitor','LT','MT']
+        include_raw = ['Time epoch', 'Time', 'Monitor', 'LT', 'MT']
         self.csv_file = csv_file
-        df_r = pd.read_csv(self.csv_file,header = 0, usecols = lambda column : any(substr in column for substr in include_raw))
+        df_r = pd.read_csv(self.csv_file, header=0, usecols=lambda column: any(substr in column for substr in include_raw))
 
-        csv_file_raw = self.csv_file.replace('results_','results_raw_')
-        df_r.to_csv(csv_file_raw, index = False, header=True)
+        csv_file_raw = self.csv_file.replace('results_', 'results_raw_')
+        df_r.to_csv(csv_file_raw, index=False, header=True)
 
         '''df_rx_delta = df_r.loc[df['Monitor'] == 'rx_delta']
 
@@ -123,26 +122,25 @@ class L3CSVParcer():
 
 def main():
 
-    #debug_on = False
+    # debug_on = False
     parser = argparse.ArgumentParser(
         prog='csv_processor.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
  This script is an simple example on how to process data from a csv file.
             ''',
-        
+
         description='''csv_processor.py:
 
         ''')
 
-
-    parser.add_argument('-i','--infile', help="file of csv data", default='longevity_results_08_14_2020_14_37.csv')
-    parser.add_argument('--debug', help='--debug:  Enable debugging',default=True)
+    parser.add_argument('-i', '--infile', help="file of csv data", default='longevity_results_08_14_2020_14_37.csv')
+    parser.add_argument('--debug', help='--debug:  Enable debugging', default=True)
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 This script is an simple example on how to process data from a csv file.
 This script is no longer supported.
 '''
@@ -150,13 +148,12 @@ This script is no longer supported.
         print(help_summary)
         exit(0)
 
-    #debug_on = args.debug
+    # debug_on = args.debug
 
     if args.infile:
         csv_file_name = args.infile
 
     L3CSVParcer(csv_file_name)
-
 
 
 if __name__ == "__main__":
